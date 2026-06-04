@@ -150,6 +150,12 @@ export async function getAppointment(id: string): Promise<Appointment | null> {
   return redis.get<Appointment>(`appointment:${id}`)
 }
 
+export async function updateAppointment(id: string, updates: Partial<Appointment>): Promise<void> {
+  const current = await getAppointment(id)
+  if (!current) throw new Error('Appointment not found')
+  await redis.set(`appointment:${id}`, JSON.stringify({ ...current, ...updates }))
+}
+
 export async function getParentAppointments(parentId: string): Promise<Appointment[]> {
   const ids = await redis.lrange(`appointments:parent:${parentId}`, 0, 20)
   const appts = await Promise.all(ids.map(id => getAppointment(id)))

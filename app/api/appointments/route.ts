@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyToken } from '@/lib/auth'
-import { createAppointment, getParentAppointments, getParent } from '@/lib/db'
+import { createAppointment, updateAppointment, getParentAppointments, getParent } from '@/lib/db'
 import { sendEmail, appointmentConfirmEmail } from '@/lib/mailer'
 
 export const dynamic = 'force-dynamic'
@@ -48,9 +48,7 @@ export async function POST(req: Request) {
       meetingUrl: '',
       notes: notes || '',
     })
-    // Auto-generate Jitsi Meet room URL (free, no account required)
     const roomName = `AmineAcademy${appt.id.replace(/[^a-zA-Z0-9]/g, '')}`
-    const { updateAppointment } = await import('@/lib/db')
     await updateAppointment(appt.id, { meetingUrl: `https://meet.jit.si/${roomName}` })
     const appointment = { ...appt, meetingUrl: `https://meet.jit.si/${roomName}` }
 

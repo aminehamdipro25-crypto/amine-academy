@@ -73,6 +73,9 @@ export default function HeroSection() {
           </div>
         </div>
         <div className="flex items-center gap-3">
+          <Link href="/demo" className="text-white/70 hover:text-white text-sm font-medium transition-colors hidden sm:block">
+            جولة تجريبية
+          </Link>
           <Link href="/parent/login" className="text-white/80 hover:text-white text-sm font-medium transition-colors">
             بوابة الأولياء
           </Link>

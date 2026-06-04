@@ -69,8 +69,6 @@ export async function createStudent(data: Omit<Student, 'id' | 'createdAt'>): Pr
     ['SET', `student:${id}`, JSON.stringify(student)],
     ['LPUSH', `students:parent:${data.parentId}`, id],
   ])
-  // Add to parent's childrenIds
-  await updateParent(data.parentId, {})  // trigger refresh
   return student
 }
 

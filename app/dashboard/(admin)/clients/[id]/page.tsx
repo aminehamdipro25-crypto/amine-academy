@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import {
   ArrowRight, Mail, Phone, MapPin, Calendar, CheckCircle, Clock, XCircle,
-  AlertCircle, Video, User, Brain, Star, Edit2, Save, X
+  AlertCircle, Video, User, Brain, Star, Edit2, Save, X, Key, Copy
 } from 'lucide-react'
 import type { Parent, Student, Appointment } from '@/lib/types'
 
@@ -37,6 +37,7 @@ export default function ClientDetailPage() {
   const [plan, setPlan] = useState('')
   const [expiry, setExpiry] = useState('')
   const [msg, setMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null)
+  const [studentCodes, setStudentCodes] = useState<Record<string, string>>({})
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -81,6 +82,20 @@ export default function ClientDetailPage() {
     } finally {
       setSaving(false)
     }
+  }
+
+  async function generateStudentCode(studentId: string) {
+    try {
+      const res = await fetch('/api/auth/student-access', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ studentId }),
+      })
+      const d = await res.json()
+      if (d.ok) {
+        setStudentCodes(prev => ({ ...prev, [studentId]: d.code }))
+      }
+    } catch { /* ignore */ }
   }
 
   if (loading) return (
@@ -272,6 +287,26 @@ export default function ClientDetailPage() {
                           </div>
                         )
                       })}
+                    </div>
+                    <div className="mt-3 flex items-center gap-2">
+                      {studentCodes[s.id] ? (
+                        <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-3 py-2 flex-1">
+                          <Key className="w-3.5 h-3.5 text-green-600 flex-shrink-0" />
+                          <span className="font-black text-green-700 tracking-widest ltr-num text-sm">{studentCodes[s.id]}</span>
+                          <button
+                            onClick={() => navigator.clipboard.writeText(studentCodes[s.id])}
+                            className="ml-auto text-green-500 hover:text-green-700">
+                            <Copy className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => generateStudentCode(s.id)}
+                          className="flex items-center gap-1.5 text-xs font-bold text-brand-600 bg-brand-50 px-3 py-2 rounded-xl hover:bg-brand-100 transition-colors">
+                          <Key className="w-3.5 h-3.5" />
+                          إنشاء رمز دخول
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}

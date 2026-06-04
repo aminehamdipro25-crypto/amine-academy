@@ -14,10 +14,10 @@ export default function StudentLoginPage() {
     setLoading(true)
     setError('')
     try {
-      const res = await fetch('/api/auth/client', {
-        method: 'POST',
+      const res = await fetch('/api/auth/student-access', {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, role: 'student' }),
+        body: JSON.stringify({ code: form.code }),
       })
       const data = await res.json()
       if (res.ok) {

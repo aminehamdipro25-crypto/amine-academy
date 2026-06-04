@@ -93,31 +93,46 @@ export default function HeroSection() {
         </div>
 
         {/* Main heading */}
-        <h1 className="text-4xl md:text-6xl font-black text-white leading-tight mb-6">
-          طفلك يستحق
+        <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-white leading-tight mb-6">
+          طفلك يفكّر
           <span className="block text-transparent bg-clip-text bg-gradient-to-l from-calm-teal to-calm-lavender">
-            أفضل رحلة تطور
+            بطريقة مختلفة
+          </span>
+          <span className="block text-3xl md:text-4xl lg:text-5xl mt-2 text-white/80 font-bold">
+            ونحن نتحدّث لغته
           </span>
         </h1>
 
-        <p className="text-white/75 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed mb-10">
-          برامج رياضية معدلة ونفسية متخصصة لأطفال وشباب
-          <strong className="text-white"> ADHD وطيف التوحد</strong>،
-          من عمر 5 إلى 22 سنة، بإشراف مباشر من الأستاذ أمين.
+        <p className="text-white/70 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed mb-4">
+          المنصة العربية الأولى التي تجمع
+          <strong className="text-white"> الرياضة المعدّلة (APA) + تعديل السلوك (ABA) + التدريب المعرفي (CBT)</strong>
+          {' '}في جلسات تفاعلية مباشرة لأطفال ADHD وطيف التوحد.
+        </p>
+        <p className="text-white/50 text-sm mb-10">
+          للأعمار 5 – 22 سنة • قطر 🇶🇦 وتونس 🇹🇳 والعالم العربي
         </p>
 
         {/* CTAs */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-14">
           <Link href="/register"
-            className="flex items-center gap-2 bg-white text-brand-700 hover:bg-brand-50 font-black text-lg px-8 py-4 rounded-2xl transition-all hover:scale-105 shadow-lg shadow-black/20">
-            ابدأ رحلة طفلك الآن
+            className="flex items-center gap-2 bg-white text-brand-700 hover:bg-brand-50 font-black text-lg px-8 py-4 rounded-2xl transition-all hover:scale-105 shadow-2xl shadow-black/30">
+            احجز الجلسة التقييمية المجانية
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <Link href="#how-it-works"
             className="flex items-center gap-2 border-2 border-white/30 text-white hover:bg-white/10 font-bold text-lg px-8 py-4 rounded-2xl transition-colors">
             <Play className="w-5 h-5" />
-            كيف تعمل الأكاديمية؟
+            شاهد كيف تعمل الجلسة
           </Link>
+        </div>
+
+        {/* Trust badges */}
+        <div className="flex items-center justify-center gap-6 flex-wrap mb-10">
+          {['APA معتمد', 'ABA بروتوكول', 'CBT للأطفال', 'PEERS Protocol'].map(b => (
+            <span key={b} className="text-white/50 text-xs font-bold border border-white/20 px-3 py-1 rounded-full">
+              ✓ {b}
+            </span>
+          ))}
         </div>
 
         {/* Countdown timer */}
@@ -137,11 +152,11 @@ export default function HeroSection() {
         )}
 
         {/* Quick stats */}
-        <div className="grid grid-cols-3 gap-6 max-w-lg mx-auto mt-14 pt-10 border-t border-white/10">
+        <div className="grid grid-cols-3 gap-6 max-w-lg mx-auto mt-4 pt-10 border-t border-white/10">
           {[
-            { icon: Users, value: '+200', label: 'طفل مسجّل' },
-            { icon: Award, value: '+5', label: 'سنوات خبرة' },
-            { icon: Star,  value: '98%', label: 'رضا الأولياء' },
+            { icon: Users, value: '+200', label: 'طفل في البرنامج' },
+            { icon: Award, value: '+5',   label: 'سنوات خبرة متخصصة' },
+            { icon: Star,  value: '98%',  label: 'رضا أولياء الأمور' },
           ].map(({ icon: Icon, value, label }) => (
             <div key={label} className="text-center">
               <Icon className="w-6 h-6 text-calm-teal mx-auto mb-2" />

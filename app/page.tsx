@@ -2,7 +2,7 @@ import HeroSection from '@/components/landing/HeroSection'
 import StatsSection from '@/components/landing/StatsSection'
 import FeaturesSection from '@/components/landing/FeaturesSection'
 import ProgramsSection from '@/components/landing/ProgramsSection'
-import HowItWorks from '@/components/landing/HowItWorks'
+import InteractiveSessionSection from '@/components/landing/InteractiveSessionSection'
 import PlansSection from '@/components/landing/PlansSection'
 import TestimonialsSection from '@/components/landing/TestimonialsSection'
 import CTASection from '@/components/landing/CTASection'
@@ -16,7 +16,7 @@ export default function HomePage() {
       <StatsSection />
       <FeaturesSection />
       <ProgramsSection />
-      <HowItWorks />
+      <InteractiveSessionSection />
       <PlansSection />
       <TestimonialsSection />
       <CTASection />

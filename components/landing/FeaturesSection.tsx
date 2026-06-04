@@ -1,85 +1,139 @@
-import { Brain, Dumbbell, LineChart, Calendar, Shield, MessageCircle, Eye, Zap } from 'lucide-react'
+import { Brain, Dumbbell, Heart, Target, Sparkles, Users, BarChart3, Video } from 'lucide-react'
 
-const features = [
+const PILLARS = [
   {
-    icon: Brain,
-    color: 'bg-purple-100 text-purple-600',
-    title: 'تمارين التركيز والانتباه',
-    desc: 'بروتوكولات علمية لتحسين الانتباه المستمر، تقليل التشتت، وبناء مناعة ضد المشتتات — مصمّمة خصيصاً لـ ADHD.',
-  },
-  {
-    icon: Zap,
-    color: 'bg-amber-100 text-amber-600',
-    title: 'كبح الاندفاعية والتحكم',
-    desc: 'تمارين الوظيفة التنفيذية المبنية على علم الأعصاب: الذاكرة العاملة، التخطيط، والتحكم في الاستجابة.',
-  },
-  {
+    id: 'apa',
+    tag: 'APA',
+    tagColor: 'bg-blue-600',
     icon: Dumbbell,
-    color: 'bg-blue-100 text-blue-600',
-    title: 'رياضة معدلة (APA)',
-    desc: 'تمارين حركية آمنة ومكيّفة حسب الفئة العمرية والتشخيص، تراعي الحساسية الحسية لكل طفل.',
+    iconBg: 'bg-blue-50',
+    iconColor: 'text-blue-600',
+    title: 'الرياضة المعدّلة',
+    subtitle: 'Adapted Physical Activity',
+    desc: 'حركة هادفة تُعيد بناء الجهاز العصبي. كل تمرين مصمم بدقة لتشخيص طفلك، فئته العمرية، وملفه الحسي — لا تمارين جاهزة.',
+    bullets: ['تنسيق حركي ودهليزي', 'تفريغ الطاقة بطريقة منظمة', 'تكامل حسي (Ayres)', 'إيقاع وتوقيت عصبي'],
+    stat: '+87%', statLabel: 'تحسن في التنسيق الحركي',
   },
   {
-    icon: Eye,
-    color: 'bg-teal-100 text-teal-600',
-    title: 'التتبع البصري والإدراك الحسي',
-    desc: 'تمارين التنسيق البصري الحركي لتطوير الانتباه البصري المستمر — أساس مهارات القراءة والتعلم المدرسي.',
+    id: 'aba',
+    tag: 'ABA',
+    tagColor: 'bg-emerald-600',
+    icon: Target,
+    iconBg: 'bg-emerald-50',
+    iconColor: 'text-emerald-600',
+    title: 'تعديل السلوك',
+    subtitle: 'Applied Behavior Analysis',
+    desc: 'نظام علمي معتمد دولياً يحوّل السلوكيات الصعبة إلى سلوكيات إيجابية عبر التعزيز المنظم — مع نظام نقاط يشغّل دوبامين الطفل.',
+    bullets: ['نظام Token Economy', 'Zone of Regulation', 'Social Stories (Carol Gray)', 'PEERS للمهارات الاجتماعية'],
+    stat: '76%', statLabel: 'انخفاض السلوكيات الصعبة',
   },
   {
-    icon: LineChart,
-    color: 'bg-green-100 text-green-600',
-    title: 'تتبع التطور باليقين',
-    desc: 'تقارير دورية ذكية تقيس تقدم طفلك في التركيز والتوازن والتنسيق الحركي والتفاعل الاجتماعي.',
+    id: 'cbt',
+    tag: 'CBT',
+    tagColor: 'bg-purple-600',
+    icon: Brain,
+    iconBg: 'bg-purple-50',
+    iconColor: 'text-purple-600',
+    title: 'التدريب المعرفي',
+    subtitle: 'Cognitive Behavioral Training',
+    desc: 'تمارين الوظيفة التنفيذية تبني الذاكرة العاملة، تكبح الاندفاعية، وتطوّر التخطيط — بروتوكولات مستوحاة من Cogmed ومعتمدة بدراسات دولية.',
+    bullets: ['تدريب الذاكرة العاملة', 'ترموميتر الغضب', 'اليقظة الذهنية للـ ADHD', 'تحليل المهام (برج المهام)'],
+    stat: '35%', statLabel: 'تقليل أعراض ADHD (Cogmed 2014)',
   },
-  {
-    icon: Calendar,
-    color: 'bg-orange-100 text-orange-600',
-    title: 'جدولة مواعيد سهلة',
-    desc: 'احجز جلسات المتابعة الفردية مع الأستاذ أمين من أي مكان في العالم.',
-  },
-  {
-    icon: Shield,
-    color: 'bg-indigo-100 text-indigo-600',
-    title: 'أمان وخصوصية تامة',
-    desc: 'بيانات أطفالك محمية بأعلى معايير الأمان الدولية (COPPA & GDPR compliant).',
-  },
-  {
-    icon: MessageCircle,
-    color: 'bg-rose-100 text-rose-600',
-    title: 'تواصل مباشر ومستمر',
-    desc: 'تواصل مع الأستاذ أمين عبر المنصة لمناقشة تطور طفلك وتعديل البرامج فورياً.',
-  },
+]
+
+const EXTRA = [
+  { icon: Video,     color: 'text-brand-600 bg-brand-50',   title: 'جلسات تفاعلية بالفيديو', desc: 'الأستاذ يشاهد الطفل مباشرة ويصحح الحركة في الوقت الفعلي' },
+  { icon: Heart,     color: 'text-rose-600 bg-rose-50',     title: 'توجيه الوالدين', desc: 'كل جلسة تنتهي بـ 10 دقائق توجيه للوالد على المتابعة اليومية في البيت' },
+  { icon: BarChart3, color: 'text-amber-600 bg-amber-50',   title: 'تقارير ذكية', desc: 'تقارير دورية تقيس 5 محاور سلوكية مع تفسير علمي وخطة تعديل' },
+  { icon: Sparkles,  color: 'text-indigo-600 bg-indigo-50', title: 'تلعيب وتحفيز', desc: 'نقاط وإنجازات وتحديات تجعل الطفل يطلب التمرين بنفسه' },
+  { icon: Users,     color: 'text-teal-600 bg-teal-50',     title: 'مجتمع الأسر', desc: 'مجموعة واتساب حصرية للأسر لتبادل التجارب والدعم المتبادل' },
+  { icon: Brain,     color: 'text-gray-600 bg-gray-50',     title: 'ملخص AI', desc: 'تقرير ربعي يُولّده الذكاء الاصطناعي يلخص رحلة تطور الطفل' },
 ]
 
 export default function FeaturesSection() {
   return (
-    <section className="py-20 bg-white">
+    <section className="py-24 bg-white" id="features">
       <div className="max-w-7xl mx-auto px-6">
-        <div className="text-center mb-14">
-          <span className="text-brand-600 font-bold text-sm bg-brand-50 px-4 py-1.5 rounded-full">
-            لماذا أكاديمية أمين؟
+
+        {/* Header */}
+        <div className="text-center mb-16">
+          <span className="inline-block text-brand-600 font-bold text-sm bg-brand-50 px-4 py-1.5 rounded-full mb-4">
+            المنهجية العلمية
           </span>
-          <h2 className="text-3xl md:text-4xl font-black text-gray-900 mt-4 mb-4">
-            منهجية علمية، نتائج حقيقية
+          <h2 className="text-3xl md:text-5xl font-black text-gray-900 mb-5">
+            ثلاث ركائز علمية في برنامج واحد
           </h2>
-          <p className="text-gray-500 max-w-2xl mx-auto leading-relaxed">
-            كل برنامج مصمم من متخصص يجمع الرياضة المعدلة وعلم النفس العصبي — مع تركيز خاص على
-            <strong className="text-gray-700"> تمارين التركيز وتقليل التشتت والانتباه</strong> المبنية على أحدث الأبحاث العلمية.
+          <p className="text-gray-500 max-w-2xl mx-auto text-lg leading-relaxed">
+            لا يوجد في المنطقة برنامج يجمع الثلاثة معاً.
+            كل ركيزة معتمدة بدراسات دولية — الثلاثة معاً تُعطي نتائج لا تقدر بثمن.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-          {features.map(({ icon: Icon, color, title, desc }) => (
-            <div key={title}
-              className="card-hover bg-gray-50 hover:bg-white rounded-2xl p-6 border border-gray-100 hover:border-brand-100">
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 ${color}`}>
-                <Icon className="w-6 h-6" />
+        {/* 3 Pillars */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
+          {PILLARS.map((p) => {
+            const Icon = p.icon
+            return (
+              <div key={p.id} className="bg-gray-50 rounded-3xl p-7 border border-gray-100 hover:border-gray-200 hover:shadow-lg transition-all">
+                {/* Tag + Icon */}
+                <div className="flex items-center justify-between mb-5">
+                  <span className={`${p.tagColor} text-white text-xs font-black px-3 py-1 rounded-full tracking-widest`}>
+                    {p.tag}
+                  </span>
+                  <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${p.iconBg}`}>
+                    <Icon className={`w-5 h-5 ${p.iconColor}`} />
+                  </div>
+                </div>
+
+                <h3 className="font-black text-gray-900 text-xl mb-0.5">{p.title}</h3>
+                <p className="text-gray-400 text-xs font-medium mb-4 tracking-wide">{p.subtitle}</p>
+                <p className="text-gray-600 text-sm leading-relaxed mb-5">{p.desc}</p>
+
+                {/* Bullets */}
+                <ul className="space-y-2 mb-6">
+                  {p.bullets.map(b => (
+                    <li key={b} className="flex items-center gap-2 text-sm text-gray-700">
+                      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+                        p.id === 'apa' ? 'bg-blue-400' : p.id === 'aba' ? 'bg-emerald-400' : 'bg-purple-400'
+                      }`} />
+                      {b}
+                    </li>
+                  ))}
+                </ul>
+
+                {/* Stat */}
+                <div className={`rounded-2xl p-4 text-center ${p.iconBg}`}>
+                  <div className={`text-3xl font-black ltr-num ${p.iconColor}`}>{p.stat}</div>
+                  <div className="text-gray-500 text-xs mt-1">{p.statLabel}</div>
+                </div>
               </div>
-              <h3 className="font-black text-gray-900 text-base mb-2">{title}</h3>
-              <p className="text-gray-500 text-sm leading-relaxed">{desc}</p>
+            )
+          })}
+        </div>
+
+        {/* Divider label */}
+        <div className="flex items-center gap-4 mb-10">
+          <div className="flex-1 h-px bg-gray-100" />
+          <span className="text-gray-400 text-sm font-medium whitespace-nowrap">بالإضافة إلى</span>
+          <div className="flex-1 h-px bg-gray-100" />
+        </div>
+
+        {/* Extra features grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {EXTRA.map(({ icon: Icon, color, title, desc }) => (
+            <div key={title} className="flex items-start gap-4 p-5 rounded-2xl border border-gray-100 hover:bg-gray-50 transition-colors">
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${color}`}>
+                <Icon className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="font-black text-gray-900 text-sm mb-1">{title}</h4>
+                <p className="text-gray-500 text-xs leading-relaxed">{desc}</p>
+              </div>
             </div>
           ))}
         </div>
+
       </div>
     </section>
   )

@@ -1,4 +1,4 @@
-// Redis HTTP client — بدون SDK، يعمل في Vercel Edge
+// Redis HTTP client — no SDK, works in Vercel Edge and Node.js
 
 interface RedisCfg { url: string; token: string }
 
@@ -13,11 +13,11 @@ function getCfg(): RedisCfg | null {
 }
 
 async function redisCmd(cfg: RedisCfg, ...args: unknown[]): Promise<unknown> {
-  const res = await fetch(`${cfg.url}/${(args as string[]).map(encodeURIComponent).join('/')}`, {
-    headers: { Authorization: `Bearer ${cfg.token}` },
-    cache: 'no-store',
-  })
-  if (!res.ok) throw new Error(`Redis HTTP ${res.status}`)
+  const res = await fetch(
+    `${cfg.url}/${(args as string[]).map(encodeURIComponent).join('/')}`,
+    { headers: { Authorization: `Bearer ${cfg.token}` }, cache: 'no-store' }
+  )
+  if (!res.ok) throw new Error(`Redis HTTP ${res.status}: ${cfg.url}`)
   const { result } = await res.json()
   return result
 }
@@ -39,7 +39,6 @@ function parseEntry<T>(raw: unknown): T | null {
   if (typeof raw !== 'string') return raw as T
   let v: unknown
   try { v = JSON.parse(raw) } catch { return raw as T }
-  // Double-encoded case: parsed result is still a JSON string
   if (typeof v === 'string') {
     try { v = JSON.parse(v) } catch { /* keep single-parsed value */ }
   }
@@ -51,8 +50,13 @@ export const redis = {
   async get<T>(key: string): Promise<T | null> {
     const cfg = getCfg()
     if (!cfg) return null
-    const raw = await redisCmd(cfg, 'GET', key)
-    return parseEntry<T>(raw)
+    try {
+      const raw = await redisCmd(cfg, 'GET', key)
+      return parseEntry<T>(raw)
+    } catch (e) {
+      console.error(`[redis.get] ${key}:`, (e as Error).message)
+      return null
+    }
   },
 
   async set(key: string, value: unknown, opts?: { ex?: number; nx?: boolean }): Promise<void> {
@@ -67,7 +71,7 @@ export const redis = {
   async del(key: string): Promise<void> {
     const cfg = getCfg()
     if (!cfg) return
-    await redisCmd(cfg, 'DEL', key)
+    try { await redisCmd(cfg, 'DEL', key) } catch { /* non-critical */ }
   },
 
   async lpush(key: string, value: string): Promise<void> {
@@ -79,20 +83,27 @@ export const redis = {
   async lrange(key: string, start: number, stop: number): Promise<string[]> {
     const cfg = getCfg()
     if (!cfg) return []
-    const result = await redisCmd(cfg, 'LRANGE', key, String(start), String(stop))
-    return Array.isArray(result) ? result : []
+    try {
+      const result = await redisCmd(cfg, 'LRANGE', key, String(start), String(stop))
+      return Array.isArray(result) ? result : []
+    } catch (e) {
+      console.error(`[redis.lrange] ${key}:`, (e as Error).message)
+      return []
+    }
   },
 
   async incr(key: string): Promise<number> {
     const cfg = getCfg()
     if (!cfg) return 0
-    return (await redisCmd(cfg, 'INCR', key)) as number
+    try {
+      return (await redisCmd(cfg, 'INCR', key)) as number
+    } catch { return 0 }
   },
 
   async expire(key: string, seconds: number): Promise<void> {
     const cfg = getCfg()
     if (!cfg) return
-    await redisCmd(cfg, 'EXPIRE', key, String(seconds))
+    try { await redisCmd(cfg, 'EXPIRE', key, String(seconds)) } catch { /* non-critical */ }
   },
 
   async pipeline(commands: unknown[][]): Promise<{ result: unknown }[]> {

@@ -1,7 +1,7 @@
 import crypto from 'crypto'
 
-// OWASP 2024 scrypt parameters — لا تغير هذه القيم
-const SCRYPT_PARAMS = { N: 65536, r: 8, p: 1 }
+// N=16384 (OWASP minimum) — N=65536 exceeds OpenSSL memory limit on Vercel serverless
+const SCRYPT_PARAMS = { N: 16384, r: 8, p: 1 }
 const KEY_LEN   = 64
 const SALT_BYTES = 32
 

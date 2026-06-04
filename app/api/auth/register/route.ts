@@ -94,10 +94,12 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ ok: true, parentId: newParent.id })
   } catch (err) {
-    console.error(`[register] failed at step="${step}":`, err)
+    const msg = (err as Error).message || String(err)
+    console.error(`[register] failed at step="${step}":`, msg)
     return NextResponse.json({
-      error: 'حدث خطأ في الخادم، يرجى المحاولة مجدداً',
+      error: `حدث خطأ في الخادم — الخطوة: ${step} — ${msg}`,
       step,
+      detail: msg,
     }, { status: 500 })
   }
 }

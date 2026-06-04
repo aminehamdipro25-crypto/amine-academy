@@ -3,12 +3,13 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, Users, LineChart,
-  Calendar, MessageSquare, FileText, LogOut,
+  Calendar, MessageSquare, FileText, LogOut, Dumbbell,
 } from 'lucide-react'
 
 const navItems = [
   { href: '/parent/dashboard',    label: 'الرئيسية',      icon: LayoutDashboard },
   { href: '/parent/children',     label: 'أطفالي',        icon: Users },
+  { href: '/parent/exercises',    label: 'التمارين',      icon: Dumbbell },
   { href: '/parent/progress',     label: 'التطور',        icon: LineChart },
   { href: '/parent/appointments', label: 'المواعيد',      icon: Calendar },
   { href: '/parent/reports',      label: 'التقارير',      icon: FileText },

@@ -1,5 +1,6 @@
 import { getAllAppointments, getAllParents } from '@/lib/db'
-import { Calendar, Clock, Video, AlertCircle, CheckCircle2, XCircle, User } from 'lucide-react'
+import { Calendar, Clock, Video, AlertCircle, CheckCircle2, XCircle, User, Plus } from 'lucide-react'
+import Link from 'next/link'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -46,9 +47,16 @@ export default async function AppointmentsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-black text-gray-900">جدول المواعيد</h1>
-        <p className="text-gray-500 text-sm mt-1">إدارة جلسات المتابعة والتقييم</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-black text-gray-900">جدول المواعيد</h1>
+          <p className="text-gray-500 text-sm mt-1">إدارة جلسات المتابعة والتقييم</p>
+        </div>
+        <Link href="/dashboard/appointments/new"
+          className="flex items-center gap-2 bg-brand-600 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-brand-700 transition-colors">
+          <Plus className="w-4 h-4" />
+          موعد جديد
+        </Link>
       </div>
 
       {error && (

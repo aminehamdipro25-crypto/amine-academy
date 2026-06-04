@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ArrowLeft, MessageCircle } from 'lucide-react'
+import { ArrowLeft, MessageCircle, Play } from 'lucide-react'
 
 export default function CTASection() {
   const wa = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '21600000000'
@@ -14,7 +14,7 @@ export default function CTASection() {
         <p className="text-white/70 text-lg leading-relaxed mb-10">
           كل يوم تأخير هو يوم ضائع من التطور. انضم لأكثر من 200 عائلة تثق في أكاديمية أمين.
         </p>
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
           <Link href="/register"
             className="flex items-center gap-2 bg-white text-brand-700 hover:bg-brand-50 font-black text-lg px-8 py-4 rounded-2xl transition-all hover:scale-105 shadow-lg shadow-black/20">
             سجّل الآن مجاناً
@@ -28,6 +28,11 @@ export default function CTASection() {
             تواصل عبر واتساب
           </a>
         </div>
+        <Link href="/demo"
+          className="inline-flex items-center gap-2 text-white/60 hover:text-white/90 text-sm font-medium transition-colors">
+          <Play className="w-4 h-4" />
+          أو شاهد جولة تجريبية للمنصة أولاً
+        </Link>
       </div>
     </section>
   )

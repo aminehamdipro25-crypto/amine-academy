@@ -1,6 +1,7 @@
 import HeroSection from '@/components/landing/HeroSection'
 import StatsSection from '@/components/landing/StatsSection'
 import FeaturesSection from '@/components/landing/FeaturesSection'
+import AttentionSection from '@/components/landing/AttentionSection'
 import ProgramsSection from '@/components/landing/ProgramsSection'
 import InteractiveSessionSection from '@/components/landing/InteractiveSessionSection'
 import PlansSection from '@/components/landing/PlansSection'
@@ -15,6 +16,7 @@ export default function HomePage() {
       <HeroSection />
       <StatsSection />
       <FeaturesSection />
+      <AttentionSection />
       <ProgramsSection />
       <InteractiveSessionSection />
       <PlansSection />

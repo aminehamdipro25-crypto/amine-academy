@@ -14,30 +14,29 @@ function calcAgeGroup(birthDate: string): AgeGroup {
 }
 
 export async function POST(req: NextRequest) {
+  let step = 'parse'
   try {
     const body = await req.json().catch(() => null)
     if (!body) return NextResponse.json({ error: 'بيانات غير صالحة' }, { status: 400 })
-
     const { parent, child, plan } = body
 
-    if (!parent?.email?.trim() || !parent?.password || !parent?.firstName?.trim() || !parent?.lastName?.trim()) {
+    step = 'validate'
+    if (!parent?.email?.trim() || !parent?.password || !parent?.firstName?.trim() || !parent?.lastName?.trim())
       return NextResponse.json({ error: 'بيانات ولي الأمر غير مكتملة' }, { status: 400 })
-    }
-    if (parent.password.length < 6) {
+    if (parent.password.length < 6)
       return NextResponse.json({ error: 'كلمة المرور يجب أن تكون 6 أحرف على الأقل' }, { status: 400 })
-    }
-    if (!child?.firstName?.trim() || !child?.birthDate) {
+    if (!child?.firstName?.trim() || !child?.birthDate)
       return NextResponse.json({ error: 'بيانات الطفل غير مكتملة' }, { status: 400 })
-    }
 
-    // Check email not already taken
+    step = 'check-email'
     const existing = await getParentByEmail(parent.email.trim())
-    if (existing) {
+    if (existing)
       return NextResponse.json({ error: 'البريد الإلكتروني مسجّل مسبقاً — يمكنك تسجيل الدخول' }, { status: 409 })
-    }
 
+    step = 'hash-password'
     const passwordHash = hashPassword(parent.password)
 
+    step = 'create-parent'
     const newParent = await createParent({
       email: parent.email.toLowerCase().trim(),
       passwordHash,
@@ -55,6 +54,7 @@ export async function POST(req: NextRequest) {
       notes: '',
     })
 
+    step = 'create-student'
     const student = await createStudent({
       parentId: newParent.id,
       firstName: child.firstName.trim(),
@@ -77,10 +77,10 @@ export async function POST(req: NextRequest) {
       notes: '',
     })
 
-    // Link child to parent
+    step = 'link-child'
     await updateParent(newParent.id, { childrenIds: [student.id] })
 
-    // Welcome email — non-fatal
+    step = 'email'
     try {
       const code = await createActivationCode(newParent.email)
       await sendEmail({
@@ -92,13 +92,12 @@ export async function POST(req: NextRequest) {
       console.warn('[register] email skipped:', (mailErr as Error).message)
     }
 
-    return NextResponse.json({
-      ok: true,
-      parentId: newParent.id,
-      message: 'تم التسجيل بنجاح! سيتواصل معك الأستاذ أمين قريباً.',
-    })
+    return NextResponse.json({ ok: true, parentId: newParent.id })
   } catch (err) {
-    console.error('[register] fatal:', err)
-    return NextResponse.json({ error: 'حدث خطأ في الخادم، يرجى المحاولة مجدداً' }, { status: 500 })
+    console.error(`[register] failed at step="${step}":`, err)
+    return NextResponse.json({
+      error: 'حدث خطأ في الخادم، يرجى المحاولة مجدداً',
+      step,
+    }, { status: 500 })
   }
 }

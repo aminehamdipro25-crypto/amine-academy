@@ -62,10 +62,11 @@ export const redis = {
   async set(key: string, value: unknown, opts?: { ex?: number; nx?: boolean }): Promise<void> {
     const cfg = getCfg()
     if (!cfg) throw new Error('Redis not configured')
-    const args: unknown[] = ['SET', key, JSON.stringify(value)]
-    if (opts?.ex) args.push('EX', opts.ex)
-    if (opts?.nx) args.push('NX')
-    await redisCmd(cfg, ...args)
+    // Use pipeline (POST body) to avoid URL length limits for large JSON values
+    const cmd: unknown[] = ['SET', key, JSON.stringify(value)]
+    if (opts?.ex) { cmd.push('EX'); cmd.push(opts.ex) }
+    if (opts?.nx) cmd.push('NX')
+    await redisPipeline(cfg, [cmd])
   },
 
   async del(key: string): Promise<void> {

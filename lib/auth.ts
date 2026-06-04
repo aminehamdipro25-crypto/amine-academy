@@ -67,8 +67,8 @@ export async function createAdminSession(): Promise<string> {
 
 export async function verifyAdminSession(token: string | undefined): Promise<boolean> {
   if (!token) return false
-  const result = await redis.get<string>(`admin_sess:${token}`)
-  return result === '1'
+  const result = await redis.get<unknown>(`admin_sess:${token}`)
+  return result !== null
 }
 
 export async function revokeAdminSession(token: string): Promise<void> {

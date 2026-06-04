@@ -9,7 +9,8 @@ export const runtime = 'nodejs'
 
 export async function GET() {
   try {
-    const token = cookies().get('parent_token')?.value
+    const cookieStore = await cookies()
+    const token = cookieStore.get('parent_token')?.value
     const payload = await verifyToken(token)
     if (!payload || payload.role !== 'parent') {
       return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
@@ -24,7 +25,8 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    const token = cookies().get('parent_token')?.value
+    const cookieStore = await cookies()
+    const token = cookieStore.get('parent_token')?.value
     const payload = await verifyToken(token)
     if (!payload || payload.role !== 'parent') {
       return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
@@ -36,15 +38,21 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'بيانات غير مكتملة' }, { status: 400 })
     }
 
-    const appointment = await createAppointment({
+    const appt = await createAppointment({
       parentId: payload.id,
       studentId,
       date,
       timeSlot,
       type,
       status: 'scheduled',
+      meetingUrl: '',
       notes: notes || '',
     })
+    // Auto-generate Jitsi Meet room URL (free, no account required)
+    const roomName = `AmineAcademy${appt.id.replace(/[^a-zA-Z0-9]/g, '')}`
+    const { updateAppointment } = await import('@/lib/db')
+    await updateAppointment(appt.id, { meetingUrl: `https://meet.jit.si/${roomName}` })
+    const appointment = { ...appt, meetingUrl: `https://meet.jit.si/${roomName}` }
 
     try {
       const parent = await getParent(payload.id)

@@ -3,9 +3,13 @@
 interface RedisCfg { url: string; token: string }
 
 function getCfg(): RedisCfg | null {
-  const url   = process.env.UPSTASH_REDIS_REST_URL   || process.env.KV_REST_API_URL
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN
-  return (url && token) ? { url: url.replace(/\/$/, ''), token } : null
+  const rawUrl   = process.env.UPSTASH_REDIS_REST_URL   || process.env.KV_REST_API_URL
+  const rawToken = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN
+  if (!rawUrl || !rawToken) return null
+  // Strip accidental quotes/whitespace from Vercel env var copy-paste
+  const url   = rawUrl.trim().replace(/^["']|["']$/g, '').replace(/\/$/, '')
+  const token = rawToken.trim().replace(/^["']|["']$/g, '')
+  return { url, token }
 }
 
 async function redisCmd(cfg: RedisCfg, ...args: unknown[]): Promise<unknown> {
@@ -29,15 +33,18 @@ async function redisPipeline(cfg: RedisCfg, commands: unknown[][]): Promise<{ re
   return res.json()
 }
 
-// Double JSON.parse — Upstash يعيد بيانات مُشفَّرة مرتين أحياناً
+// Upstash REST wraps stored values as JSON strings — parse once (or twice when double-encoded)
 function parseEntry<T>(raw: unknown): T | null {
   if (raw === null || raw === undefined) return null
-  try {
-    let v = raw
-    if (typeof v === 'string') v = JSON.parse(v)
-    if (typeof v === 'string') v = JSON.parse(v)
-    return v && typeof v === 'object' ? (v as T) : null
-  } catch { return null }
+  if (typeof raw !== 'string') return raw as T
+  let v: unknown
+  try { v = JSON.parse(raw) } catch { return raw as T }
+  // Double-encoded case: parsed result is still a JSON string
+  if (typeof v === 'string') {
+    try { v = JSON.parse(v) } catch { /* keep single-parsed value */ }
+  }
+  if (v === null || v === undefined) return null
+  return v as T
 }
 
 export const redis = {

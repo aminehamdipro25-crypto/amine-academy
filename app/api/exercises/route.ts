@@ -5,30 +5,41 @@ import { getAllExercises, createExercise } from '@/lib/db'
 import type { AgeGroup, Diagnosis, ExerciseCategory } from '@/lib/types'
 
 export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
 
 export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url)
-  const ageGroup = searchParams.get('age') as AgeGroup | null
-  const category = searchParams.get('category') as ExerciseCategory | null
-  const diagnosis = searchParams.get('diagnosis') as Diagnosis | null
+  try {
+    const { searchParams } = new URL(req.url)
+    const ageGroup = searchParams.get('age') as AgeGroup | null
+    const category = searchParams.get('category') as ExerciseCategory | null
+    const diagnosis = searchParams.get('diagnosis') as Diagnosis | null
 
-  let exercises = await getAllExercises()
+    let exercises = await getAllExercises()
 
-  if (ageGroup) exercises = exercises.filter(e => e.ageGroups.includes(ageGroup))
-  if (category) exercises = exercises.filter(e => e.category === category)
-  if (diagnosis) exercises = exercises.filter(e => e.diagnoses.includes(diagnosis))
+    if (ageGroup)  exercises = exercises.filter(e => e.ageGroups.includes(ageGroup))
+    if (category)  exercises = exercises.filter(e => e.category === category)
+    if (diagnosis) exercises = exercises.filter(e => e.diagnoses.includes(diagnosis))
 
-  return NextResponse.json({ exercises })
+    return NextResponse.json({ exercises })
+  } catch (err) {
+    console.error('[exercises-get]', err)
+    return NextResponse.json({ error: 'خطأ في الخادم' }, { status: 500 })
+  }
 }
 
 export async function POST(req: Request) {
-  const adminToken = cookies().get('admin_token')?.value
-  const isAdmin = await verifyAdminSession(adminToken)
-  if (!isAdmin) {
-    return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
-  }
+  try {
+    const adminToken = cookies().get('admin_token')?.value
+    const isAdmin = await verifyAdminSession(adminToken)
+    if (!isAdmin) {
+      return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+    }
 
-  const data = await req.json()
-  const exercise = await createExercise(data)
-  return NextResponse.json({ exercise }, { status: 201 })
+    const data = await req.json()
+    const exercise = await createExercise(data)
+    return NextResponse.json({ exercise }, { status: 201 })
+  } catch (err) {
+    console.error('[exercises-post]', err)
+    return NextResponse.json({ error: 'خطأ في الخادم' }, { status: 500 })
+  }
 }

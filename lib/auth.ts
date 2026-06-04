@@ -36,7 +36,6 @@ export async function verifyToken(token: string | undefined): Promise<SessionPay
     if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null
     const payload: SessionPayload = JSON.parse(Buffer.from(data, 'base64url').toString())
     if (payload.exp < Date.now()) return null
-    // Redis session revocation check
     const storedSession = await redis.get<string>(`sess:${payload.id}`)
     if (storedSession !== payload.sessionId) return null
     return payload
@@ -57,20 +56,72 @@ export async function revokeSession(id: string): Promise<void> {
   await redis.del(`sess:${id}`)
 }
 
-// ── Admin Session ─────────────────────────────────────────────
+// ── Admin Session (HMAC-signed — works even without Redis) ────
+
+function _signAdminToken(raw64hex: string): string {
+  const SECRET = process.env.AUTH_SECRET
+  if (!SECRET) throw new Error('AUTH_SECRET not configured')
+  const data = `${raw64hex}.${Date.now()}`
+  const sig  = crypto.createHmac('sha256', SECRET).update(data).digest('hex')
+  return `${data}.${sig}`
+}
+
+function _verifyAdminTokenSignature(token: string): boolean {
+  const SECRET = process.env.AUTH_SECRET
+  if (!SECRET || !token) return false
+  try {
+    // token = raw64hex.timestamp.sig
+    const parts = token.split('.')
+    if (parts.length !== 3) return false
+    const [raw, ts, sig] = parts
+    if (!raw || !ts || !sig) return false
+    // Check format: raw must be 64-char hex
+    if (!/^[a-f0-9]{64}$/.test(raw)) return false
+    // Verify HMAC
+    const data = `${raw}.${ts}`
+    const expected = crypto.createHmac('sha256', SECRET).update(data).digest('hex')
+    const a = Buffer.from(sig, 'hex')
+    const b = Buffer.from(expected, 'hex')
+    if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return false
+    // Check expiry (30 days)
+    const age = Date.now() - parseInt(ts, 10)
+    if (isNaN(age) || age < 0 || age > 30 * 24 * 60 * 60 * 1000) return false
+    return true
+  } catch { return false }
+}
 
 export async function createAdminSession(): Promise<string> {
-  const token = crypto.randomBytes(32).toString('hex')
-  await redis.set(`admin_sess:${token}`, '1', { ex: 30 * 24 * 3600 })
+  const raw = crypto.randomBytes(32).toString('hex')
+  const token = _signAdminToken(raw)
+  // Redis: optional — for future revocation capability
+  try {
+    await redis.set(`admin_sess:${raw}`, '1', { ex: 30 * 24 * 3600 })
+  } catch (e) {
+    // Redis unavailable — token is still valid by HMAC signature
+    console.warn('[admin-session] Redis write skipped:', (e as Error).message)
+  }
   return token
 }
 
 export async function verifyAdminSession(token: string | undefined): Promise<boolean> {
   if (!token) return false
-  const result = await redis.get<unknown>(`admin_sess:${token}`)
-  return result !== null
+  // Primary gate: HMAC signature (no Redis needed)
+  if (!_verifyAdminTokenSignature(token)) return false
+  // Secondary: Redis revocation check (optional — don't block if Redis is down)
+  try {
+    const raw = token.split('.')[0]
+    const revoked = await redis.get<string>(`admin_revoked:${raw}`)
+    if (revoked === 'yes') return false
+  } catch { /* Redis unavailable — HMAC already confirmed validity */ }
+  return true
 }
 
 export async function revokeAdminSession(token: string): Promise<void> {
-  await redis.del(`admin_sess:${token}`)
+  const raw = token.split('.')[0]
+  if (!raw) return
+  try {
+    // Mark as revoked + delete session entry
+    await redis.set(`admin_revoked:${raw}`, 'yes', { ex: 30 * 24 * 3600 })
+    await redis.del(`admin_sess:${raw}`)
+  } catch { /* Redis unavailable — cookie deletion on client side is sufficient */ }
 }

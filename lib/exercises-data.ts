@@ -528,4 +528,348 @@ export const DEFAULT_EXERCISES: Omit<Exercise, 'id' | 'createdAt'>[] = [
     psychologyObjective: 'Eye contact before action forces inhibitory control; cooperative format builds joint attention and social motivation simultaneously',
     psychologyObjectiveAr: 'التواصل البصري قبل الفعل يُجبر على كبح الاستجابة؛ الصيغة التعاونية تبني الانتباه المشترك والدافعية الاجتماعية في آنٍ واحد',
   },
+
+  // ══════════════════════════════════════════════════════════════
+  // ⑥ تعديل السلوك — Zone of Regulation (مناطق التنظيم)
+  // ══════════════════════════════════════════════════════════════
+  {
+    title: 'Zone of Regulation Body Check-In',
+    titleAr: 'فحص حالتي — مناطق التنظيم الأربع',
+    description: 'Child identifies their emotional-arousal zone (Blue/Green/Yellow/Red) using body cues, then chooses a matching calming strategy — the cornerstone of self-regulation',
+    descriptionAr: 'يحدد الطفل منطقته العاطفية (أزرق/أخضر/أصفر/أحمر) من إشارات جسمه، ثم يختار استراتيجية تهدئة مناسبة — حجر الأساس لتنظيم الذات',
+    category: 'focus',
+    ageGroups: ['5-11', '12-17'],
+    diagnoses: ['ADHD', 'AUTISM', 'ADHD+AUTISM', 'OTHER'],
+    difficulty: 'beginner',
+    durationMinutes: 10,
+    points: 35,
+    instructions: [
+      'Post the 4-zone chart (Blue=slow/tired, Green=ready/happy, Yellow=wiggling/excited, Red=out-of-control)',
+      'Ask: "What does your body feel right now?" — scan heart rate, tension, breathing',
+      'Child points to their zone and names 1 body clue (fast heartbeat = Yellow zone)',
+      'Together choose a matching tool: Blue→jumping, Yellow→deep breathing, Red→squeeze ball',
+      'Practice the chosen tool for 3 minutes, then re-check the zone',
+    ],
+    instructionsAr: [
+      'اعرض مخطط المناطق الأربع: أزرق=بطيء/متعب، أخضر=مستعد/سعيد، أصفر=متحرك/مثار، أحمر=خارج السيطرة',
+      'اسأل: "كيف يشعر جسمك الآن؟" — راقب نبضات القلب، التوتر، التنفس',
+      'يشير الطفل إلى منطقته ويذكر إشارة جسدية واحدة (قلب سريع = المنطقة الصفراء)',
+      'اختارا معاً أداة مناسبة: أزرق→القفز، أصفر→التنفس العميق، أحمر→عصر كرة',
+      'مارس الأداة المختارة 3 دقائق ثم أعد فحص المنطقة',
+    ],
+    equipment: ['zone chart poster', 'stress ball'],
+    contraindications: [],
+    psychologyObjective: 'Lewin & Kuypers Zone of Regulation framework: builds interoceptive awareness, emotional vocabulary, and self-regulation without shame — bridges feeling and action',
+    psychologyObjectiveAr: 'إطار مناطق التنظيم: يبني الوعي الداخلي بالجسم، المفردات العاطفية، والتنظيم الذاتي دون إحساس بالخجل — يجسر الشعور والفعل',
+  },
+
+  // ══════════════════════════════════════════════════════════════
+  // ⑦ نظام النقاط والمكافآت (Token Economy — ABA)
+  // ══════════════════════════════════════════════════════════════
+  {
+    title: 'Token Economy Daily Chart',
+    titleAr: 'نظام النقاط اليومي (بنك المكافآت)',
+    description: 'Structured ABA-based token economy: child earns tokens for target behaviors (sitting, following instructions, completing tasks) and exchanges them for meaningful rewards',
+    descriptionAr: 'نظام مكافآت ABA منظم: يكسب الطفل رموزاً مقابل السلوكيات المستهدفة (الجلوس، اتباع التعليمات، إنجاز المهام) ويستبدلها بمكافآت ذات معنى',
+    category: 'social',
+    ageGroups: ['5-11', '12-17'],
+    diagnoses: ['ADHD', 'AUTISM', 'ADHD+AUTISM'],
+    difficulty: 'beginner',
+    durationMinutes: 5,
+    points: 50,
+    instructions: [
+      'Define 3 target behaviors with child: e.g. "stay seated 5 min", "complete one task", "use kind words"',
+      'Each success earns 1 star/sticker on the chart — make the reward immediate and specific',
+      'Set exchange rate: 5 stars = 10-minute preferred activity, 15 stars = special outing',
+      'Review chart together at day\'s end — celebrate every star, never remove earned tokens',
+      'Gradually fade tokens as behavior becomes routine (after 3 consistent weeks)',
+    ],
+    instructionsAr: [
+      'حدد 3 سلوكيات هدف مع الطفل: مثل "البقاء جالساً 5 دقائق"، "إنجاز مهمة واحدة"، "استخدام كلمات لطيفة"',
+      'كل نجاح يكسب نجمة/ملصقاً على المخطط — اجعل المكافأة فورية ومحددة',
+      'حدد معدل الاستبدال: 5 نجوم = 10 دقائق نشاط مفضل، 15 نجمة = نزهة خاصة',
+      'راجعا المخطط معاً في نهاية اليوم — احتفل بكل نجمة، لا تسحب الرموز المكتسبة أبداً',
+      'قلل الرموز تدريجياً عندما يصبح السلوك روتيناً (بعد 3 أسابيع منتظمة)',
+    ],
+    equipment: ['star chart', 'stickers', 'reward menu'],
+    contraindications: [],
+    psychologyObjective: 'Operant conditioning (Skinner): immediate positive reinforcement of specific behaviors builds neural pathways for self-regulation; gradually shifts from extrinsic to intrinsic motivation',
+    psychologyObjectiveAr: 'التكييف الإجرائي (سكينر): التعزيز الإيجابي الفوري للسلوكيات المحددة يبني مسارات عصبية للتنظيم الذاتي؛ ينتقل تدريجياً من التحفيز الخارجي إلى الداخلي',
+  },
+
+  // ══════════════════════════════════════════════════════════════
+  // ⑧ التدخل المعرفي السلوكي — إدارة الغضب (CBT)
+  // ══════════════════════════════════════════════════════════════
+  {
+    title: 'Anger Thermometer & Cool-Down Protocol',
+    titleAr: 'ترموميتر الغضب وبروتوكول التهدئة',
+    description: 'CBT-based anger management: child learns to identify anger escalation levels 1-10 and applies matched cool-down strategies before reaching the explosion point',
+    descriptionAr: 'إدارة الغضب بالعلاج المعرفي السلوكي: يتعلم الطفل تحديد مستويات تصاعد الغضب 1-10 وتطبيق استراتيجيات تهدئة مناسبة قبل الوصول لنقطة الانفجار',
+    category: 'focus',
+    ageGroups: ['5-11', '12-17', '18-22'],
+    diagnoses: ['ADHD', 'ADHD+AUTISM', 'OTHER'],
+    difficulty: 'intermediate',
+    durationMinutes: 15,
+    points: 45,
+    instructions: [
+      'Draw anger thermometer together: 1-3=calm, 4-6=frustrated, 7-8=angry, 9-10=explosion',
+      'Map body signals to each level: level 5 = clenched fists, racing heart',
+      'Assign a strategy to each zone: level 4 = slow breathing, level 7 = walk away + squeeze ball',
+      'Role-play a trigger scenario — stop when reaching level 5 and apply the tool',
+      'Review: "What was your thermometer at? Did the tool help?" — build metacognitive awareness',
+    ],
+    instructionsAr: [
+      'ارسما معاً ترموميتر الغضب: 1-3=هادئ، 4-6=محبط، 7-8=غاضب، 9-10=انفجار',
+      'ضع إشارات الجسم لكل مستوى: المستوى 5 = قبضات مشدودة، قلب متسارع',
+      'خصص استراتيجية لكل منطقة: المستوى 4 = التنفس البطيء، المستوى 7 = ابتعد + اعصر الكرة',
+      'لعب أدوار مع مثير محاكٍ — توقف عند الوصول للمستوى 5 وطبق الأداة',
+      'راجع: "كان ترموميترك عند كم؟ هل ساعدت الأداة؟" — ابنِ الوعي بالتفكير',
+    ],
+    equipment: ['anger thermometer worksheet', 'stress ball'],
+    contraindications: ['acute aggressive episode — wait until calm'],
+    psychologyObjective: 'CBT emotional granularity training (Barrett 2017): labeling anger levels with precision reduces amygdala reactivity; matched coping strategies prevent behavioral escalation',
+    psychologyObjectiveAr: 'تدريب الدقة العاطفية CBT (باريت 2017): وضع ملصقات دقيقة لمستويات الغضب يقلل من نشاط اللوزة الدماغية؛ استراتيجيات التكيف المناسبة تمنع التصعيد السلوكي',
+  },
+
+  // ══════════════════════════════════════════════════════════════
+  // ⑨ القصة الاجتماعية (Social Stories — Carol Gray)
+  // ══════════════════════════════════════════════════════════════
+  {
+    title: 'Social Story: The Classroom Transition',
+    titleAr: 'القصة الاجتماعية: الانتقال بين الأنشطة',
+    description: 'Carol Gray Social Story protocol: a personalized narrative explaining WHY transitions happen and WHAT to do — reduces anxiety and meltdowns during activity changes',
+    descriptionAr: 'بروتوكول القصة الاجتماعية: سرد شخصي يشرح لماذا تحدث الانتقالات وماذا أفعل — يقلل القلق والانهيارات خلال تغيير الأنشطة',
+    category: 'social',
+    ageGroups: ['5-11'],
+    diagnoses: ['AUTISM', 'ADHD+AUTISM'],
+    difficulty: 'beginner',
+    durationMinutes: 10,
+    points: 30,
+    instructions: [
+      'Write the story using 4 sentence types: Descriptive ("When the bell rings..."), Perspective ("My teacher wants me to..."), Directive ("I can take 3 deep breaths..."), Affirmative ("This helps everyone")',
+      'Illustrate with the child\'s own drawings or photos',
+      'Read it 3x per day for 2 weeks — morning, before the transition, and at bedtime',
+      'After the actual transition, ask: "Remember the story? What did you do?"',
+      'Celebrate success with the token chart — reinforce the story-guided behavior',
+    ],
+    instructionsAr: [
+      'اكتب القصة بـ4 أنواع جمل: وصفية ("عندما يرن الجرس...")، منظور ("معلمي يريد مني...")، توجيهية ("يمكنني أخذ 3 أنفاس عميقة...")، تأكيدية ("هذا يساعد الجميع")',
+      'صوّر القصة برسوم الطفل أو صوره الشخصية',
+      'اقرأها 3 مرات يومياً لأسبوعين — الصباح، قبل الانتقال، وقت النوم',
+      'بعد الانتقال الفعلي، اسأل: "تذكرت القصة؟ ماذا فعلت؟"',
+      'احتفل بالنجاح في مخطط النقاط — عزز السلوك المستوحى من القصة',
+    ],
+    equipment: ['story booklet', 'photos or drawings'],
+    contraindications: [],
+    psychologyObjective: 'Carol Gray Social Stories (1993): provides missing social context for autistic children, reduces theory-of-mind demand, and creates cognitive scripts that bridge intention and action',
+    psychologyObjectiveAr: 'القصص الاجتماعية كارول غراي (1993): توفر السياق الاجتماعي المفقود للأطفال التوحديين، تقلل متطلبات نظرية العقل، وتنشئ نصوصاً إدراكية تجسر النية والفعل',
+  },
+
+  // ══════════════════════════════════════════════════════════════
+  // ⑩ تدريب الذاكرة العاملة (Cogmed-style Working Memory)
+  // ══════════════════════════════════════════════════════════════
+  {
+    title: 'Reverse Sequence Challenge',
+    titleAr: 'تحدي التسلسل المعكوس',
+    description: 'Cogmed-inspired working memory training: child repeats sequences of numbers/movements in reverse order, progressively challenging the central executive system',
+    descriptionAr: 'تدريب الذاكرة العاملة: يكرر الطفل تسلسلات من الأرقام/الحركات بالترتيب المعكوس، مع تحدٍ تدريجي للنظام التنفيذي المركزي',
+    category: 'focus',
+    ageGroups: ['5-11', '12-17'],
+    diagnoses: ['ADHD', 'ADHD+AUTISM'],
+    difficulty: 'intermediate',
+    durationMinutes: 12,
+    points: 50,
+    instructions: [
+      'Start with 2-digit reverse: say "3-7", child repeats "7-3" — 3 correct = level up',
+      'Add movement: tap head=1, touch shoulder=2, stomp=3 — perform sequence in reverse',
+      'Progress to 4-step sequences when 3 consecutive successes achieved',
+      'Keep sessions short (10 min max) — cognitive fatigue degrades performance quality',
+      'Record longest successful reverse span — celebrate new personal records',
+    ],
+    instructionsAr: [
+      'ابدأ بعكس رقمين: قل "3-7"، يكرر الطفل "7-3" — 3 صحيحة = ارتقِ مستوى',
+      'أضف حركة: اضرب الرأس=1، المس الكتف=2، الدوس=3 — أدِّ التسلسل معكوساً',
+      'تقدم إلى 4 خطوات عند تحقيق 3 نجاحات متتالية',
+      'أبقِ الجلسات قصيرة (10 دقائق كحد أقصى) — الإرهاق الإدراكي يدهور جودة الأداء',
+      'سجّل أطول امتداد عكسي ناجح — احتفل بالأرقام القياسية الشخصية',
+    ],
+    equipment: ['score card'],
+    contraindications: [],
+    psychologyObjective: 'Baddeley\'s working memory model: phonological loop + visuospatial sketchpad training via reverse span increases central executive capacity, shown to reduce ADHD symptoms (Cogmed meta-analysis, 2014)',
+    psychologyObjectiveAr: 'نموذج الذاكرة العاملة لباديلي: تدريب الحلقة الصوتية والمفكرة البصرية عبر الامتداد المعكوس يزيد سعة المدير التنفيذي المركزي، ثبت تقليله أعراض ADHD (تحليل كوغميد، 2014)',
+  },
+
+  // ══════════════════════════════════════════════════════════════
+  // ⑪ برنامج المهارات الاجتماعية PEERS (لـ 12-22 سنة)
+  // ══════════════════════════════════════════════════════════════
+  {
+    title: 'PEERS Conversation Entry Protocol',
+    titleAr: 'بروتوكول بدء المحادثة (PEERS)',
+    description: 'Evidence-based PEERS social skills protocol for teens: step-by-step rules for joining conversations, managing awkward silences, and exiting gracefully',
+    descriptionAr: 'بروتوكول المهارات الاجتماعية PEERS للمراهقين: قواعد خطوة بخطوة للانضمام للمحادثات، التعامل مع الصمت المحرج، والخروج بلباقة',
+    category: 'social',
+    ageGroups: ['12-17', '18-22'],
+    diagnoses: ['AUTISM', 'ADHD', 'ADHD+AUTISM'],
+    difficulty: 'intermediate',
+    durationMinutes: 20,
+    points: 60,
+    instructions: [
+      'Step 1 — Look for conversational entry points: group of 2-3, open body language, laughter',
+      'Step 2 — Listen to topic first (10-15 seconds) before speaking',
+      'Step 3 — Use a casual comment related to what they said: "That\'s funny, I heard..." or "Oh really? I think..."',
+      'Step 4 — Ask 1 follow-up question to show interest: "Have you tried...?"',
+      'Step 5 — Exit gracefully: "I have to go, but it was great talking to you!"',
+      'Role-play each step with the professor, then with a peer',
+    ],
+    instructionsAr: [
+      'الخطوة 1 — ابحث عن فرص الدخول: مجموعة 2-3، لغة جسد منفتحة، ضحك',
+      'الخطوة 2 — استمع للموضوع أولاً (10-15 ثانية) قبل الكلام',
+      'الخطوة 3 — استخدم تعليقاً غير رسمي مرتبطاً بما قيل: "هذا مضحك، سمعت..." أو "آه حقاً؟ أعتقد..."',
+      'الخطوة 4 — اطرح سؤالاً متابعاً لإظهار الاهتمام: "هل جربت...؟"',
+      'الخطوة 5 — اخرج بلباقة: "يجب أن أذهب، لكن كان من الرائع التحدث معك!"',
+      'لعب دور لكل خطوة مع الأستاذ، ثم مع أحد الأقران',
+    ],
+    equipment: ['conversation cards'],
+    contraindications: [],
+    psychologyObjective: 'PEERS UCLA protocol (Laugeson 2014): only evidence-based social skills program with RCT for ASD teens showing 88% success in friendship quality at 5-year follow-up',
+    psychologyObjectiveAr: 'بروتوكول PEERS جامعة UCLA (لوجيسون 2014): البرنامج الوحيد للمهارات الاجتماعية المعتمد بدراسة عشوائية مضبوطة يُظهر نجاحاً 88% في جودة الصداقة في متابعة 5 سنوات',
+  },
+
+  // ══════════════════════════════════════════════════════════════
+  // ⑫ تدريب الوظيفة التنفيذية — التخطيط والتنظيم
+  // ══════════════════════════════════════════════════════════════
+  {
+    title: 'Task Tower: Breaking Down Goals',
+    titleAr: 'برج المهام: تحليل الأهداف',
+    description: 'Executive function training: child learns to decompose a large task into small, timed sub-tasks using a visual tower model — builds planning, initiation, and task persistence',
+    descriptionAr: 'تدريب الوظيفة التنفيذية: يتعلم الطفل تحليل مهمة كبيرة إلى مهام فرعية صغيرة موقوتة باستخدام نموذج البرج البصري — يبني التخطيط، المبادرة، والمثابرة',
+    category: 'focus',
+    ageGroups: ['12-17', '18-22'],
+    diagnoses: ['ADHD', 'ADHD+AUTISM'],
+    difficulty: 'intermediate',
+    durationMinutes: 20,
+    points: 55,
+    instructions: [
+      'Choose a task the child finds overwhelming (homework, cleaning room)',
+      'Draw a tower with 5-7 blocks — each block = one small sub-task (5-10 min max)',
+      'Estimate time for each block together, then set a visible timer',
+      'Work one block at a time — cross off completed blocks (dopamine reward from visual progress)',
+      'Allow a 2-minute movement break between blocks',
+      'Debrief: "Which block was hardest? What helped you start?"',
+    ],
+    instructionsAr: [
+      'اختر مهمة يجدها الطفل ساحقة (واجبات، ترتيب الغرفة)',
+      'ارسم برجاً من 5-7 مكعبات — كل مكعب = مهمة فرعية صغيرة (5-10 دقائق كحد أقصى)',
+      'اقدّرا الوقت لكل مكعب معاً، ثم ضع مؤقتاً مرئياً',
+      'اعمل مكعباً واحداً في كل مرة — شطّب المكعبات المنجزة (مكافأة الدوبامين من التقدم البصري)',
+      'اسمح بفترة حركة 2 دقيقة بين المكعبات',
+      'ناقش: "أي مكعب كان الأصعب؟ ما الذي ساعدك على البدء؟"',
+    ],
+    equipment: ['task tower worksheet', 'visual timer'],
+    contraindications: [],
+    psychologyObjective: 'Barkley\'s self-regulation model: externalizing time and goals compensates for ADHD\'s temporal blindness; chunking activates dopamine reward circuits on completion of each sub-task',
+    psychologyObjectiveAr: 'نموذج التنظيم الذاتي لباركلي: إخراج الوقت والأهداف للخارج يعوض عمى الوقت في ADHD؛ التقسيم يُنشّط دوائر مكافأة الدوبامين عند إنجاز كل مهمة فرعية',
+  },
+
+  // ══════════════════════════════════════════════════════════════
+  // ⑬ اليقظة الذهنية للأطفال (Mindfulness-ADHD)
+  // ══════════════════════════════════════════════════════════════
+  {
+    title: 'Mindful Movement: Walking Meditation',
+    titleAr: 'الحركة اليقظة: التأمل المشي',
+    description: 'MBSR-adapted mindfulness for ADHD: slow mindful walking with full body-scan attention — anchors wandering mind using kinesthetic input, not stillness',
+    descriptionAr: 'اليقظة الذهنية المعدلة للـ ADHD: المشي البطيء اليقظ مع انتباه مسح الجسم الكامل — يُرسّخ العقل الهائم باستخدام المدخلات الحركية، لا السكون',
+    category: 'focus',
+    ageGroups: ['5-11', '12-17', '18-22'],
+    diagnoses: ['ADHD', 'AUTISM', 'ADHD+AUTISM', 'OTHER'],
+    difficulty: 'beginner',
+    durationMinutes: 8,
+    points: 30,
+    instructions: [
+      'Walk VERY slowly — each step takes 5 seconds: lift heel, move leg, place toe, then heel',
+      'Narrate out loud: "I feel the floor under my left heel... I notice my knee bending..."',
+      'When mind wanders (it will), gently return: "Back to my foot, now..."',
+      'Count steps silently from 1 to 10, then restart — structured counting prevents boredom',
+      'End with 1 minute standing: "Feel both feet on the ground. Notice 3 things you can hear"',
+    ],
+    instructionsAr: [
+      'امشِ ببطء شديد — كل خطوة تأخذ 5 ثوانٍ: ارفع الكعب، حرك الساق، ضع إصبع القدم، ثم الكعب',
+      'صف بصوت عالٍ: "أشعر بالأرض تحت كعبي الأيسر... ألاحظ ركبتي تنثني..."',
+      'عندما يتشتت الذهن (وسيحدث)، ارجع بلطف: "عودة إلى قدمي، الآن..."',
+      'عدّ الخطوات بصمت من 1 إلى 10 ثم أعد — العدد المنظم يمنع الملل',
+      'أنهِ بدقيقة واقفاً: "أشعر بكلتا قدميَّ على الأرض. ألاحظ 3 أشياء أسمعها"',
+    ],
+    equipment: ['quiet floor space (2-3 meters)'],
+    contraindications: [],
+    psychologyObjective: 'Zylowska MindfulADHD protocol: movement-based mindfulness bypasses the stillness barrier in ADHD; kinesthetic anchor + verbal narration recruits prefrontal cortex without demanding prolonged inhibition',
+    psychologyObjectiveAr: 'بروتوكول اليقظة الذهنية لـ ADHD (زيلوفسكا): اليقظة القائمة على الحركة تتجاوز حاجز السكون في ADHD؛ المرتكز الحركي + السرد اللفظي يُجنّد قشرة الفص الجبهي دون طلب تثبيط مطوّل',
+  },
+
+  // ══════════════════════════════════════════════════════════════
+  // ⑭ إيقاع الجسم والتنسيق (Interactive Metronome)
+  // ══════════════════════════════════════════════════════════════
+  {
+    title: 'Rhythmic Beat Synchronization',
+    titleAr: 'مزامنة الإيقاع الحركي',
+    description: 'Interactive Metronome-inspired exercise: synchronizing claps/stomps to a beat trains neural timing networks, directly improving attention, impulse control, and motor coordination',
+    descriptionAr: 'تمرين مستوحى من الميترونوم التفاعلي: مزامنة التصفيق/الدوس مع الإيقاع يدرّب شبكات التوقيت العصبي، مما يحسن مباشرة الانتباه وكبح الاندفاعية والتنسيق الحركي',
+    category: 'motor',
+    ageGroups: ['5-11', '12-17'],
+    diagnoses: ['ADHD', 'AUTISM', 'ADHD+AUTISM'],
+    difficulty: 'beginner',
+    durationMinutes: 12,
+    points: 40,
+    instructions: [
+      'Set metronome to 60 BPM — simple hand clap to every beat for 1 minute',
+      'Increase complexity: clap-clap-stomp pattern, synced to beat',
+      'Add bilateral component: alternate right hand then left hand on beat',
+      'Partner variation: professor and child clap alternately on the beat',
+      'Challenge mode: professor varies tempo — child must immediately re-sync',
+    ],
+    instructionsAr: [
+      'اضبط الميترونوم على 60 نبضة/دقيقة — تصفيق بسيط مع كل نبضة لمدة دقيقة',
+      'زد التعقيد: نمط تصفيق-تصفيق-دوس، متزامن مع الإيقاع',
+      'أضف مكوناً ثنائي الجانب: اليد اليمنى ثم اليسرى بالتناوب مع النبضة',
+      'تنويع مع شريك: الأستاذ والطفل يتناوبان التصفيق على الإيقاع',
+      'وضع التحدي: الأستاذ يغيّر الإيقاع — يجب على الطفل إعادة المزامنة فوراً',
+    ],
+    equipment: ['metronome app (free)', 'floor space'],
+    contraindications: ['hearing impairment — use visual metronome'],
+    psychologyObjective: 'Interactive Metronome studies (Shaffer 2001): timing training reduces ADHD symptoms by 35% through cerebellar-prefrontal loop strengthening, improving temporal processing fundamental to attention and impulse control',
+    psychologyObjectiveAr: 'دراسات الميترونوم التفاعلي (شافر 2001): يقلل تدريب التوقيت أعراض ADHD بنسبة 35% عبر تقوية الحلقة المخيخية-الجبهية، مما يحسن المعالجة الزمنية الأساسية للانتباه وكبح الاندفاعية',
+  },
+
+  // ══════════════════════════════════════════════════════════════
+  // ⑮ التكامل الحسي — بروتوكول ويلبارجر
+  // ══════════════════════════════════════════════════════════════
+  {
+    title: 'Deep Pressure & Proprioceptive Reset',
+    titleAr: 'بروتوكول الضغط العميق وإعادة ضبط الحس العميق',
+    description: 'Wilbarger Deep Pressure Protocol: structured deep-touch input to arms/back/legs calms the nervous system within 90 seconds — evidence-based sensory diet for hyper/hyposensitive children',
+    descriptionAr: 'بروتوكول ويلبارجر للضغط العميق: مدخلات لمس عميق منظمة على الذراعين/الظهر/الساقين تهدئ الجهاز العصبي في 90 ثانية — نظام غذاء حسي معتمد للأطفال فرطي/ناقصي الحساسية',
+    category: 'sensory',
+    ageGroups: ['5-11', '12-17'],
+    diagnoses: ['AUTISM', 'ADHD+AUTISM'],
+    difficulty: 'beginner',
+    durationMinutes: 5,
+    points: 25,
+    instructions: [
+      'Use a soft brush or hands with firm, even pressure — never light tickling strokes',
+      'Sequence: both arms (front→back), upper back, both legs (front→back) — 10 strokes each',
+      'Immediately follow with 10 joint compressions: press shoulders down gently 10 times',
+      'Child tells you: "1-2-3" pressure = too light, "4-5-6" = just right, "7-8-9" = too hard',
+      'Repeat every 2 hours if needed — establish as pre-activity calming routine',
+    ],
+    instructionsAr: [
+      'استخدم فرشاة ناعمة أو يدين بضغط ثابت وموحد — لا تربيتات خفيفة مدغدغة أبداً',
+      'التسلسل: كلا الذراعين (أمام→خلف)، أعلى الظهر، كلا الساقين (أمام→خلف) — 10 حركات لكل جزء',
+      'أعقِب مباشرة بـ10 ضغطات على المفاصل: اضغط على الكتفين للأسفل برفق 10 مرات',
+      'يخبرك الطفل: "1-2-3" ضغط = خفيف جداً، "4-5-6" = مناسب تماماً، "7-8-9" = قوي جداً',
+      'كرر كل ساعتين إذا لزم — أسّسه كروتين تهدئة قبل الأنشطة',
+    ],
+    equipment: ['soft tactile brush (or dry hands)'],
+    contraindications: ['tactile defensiveness — introduce gradually', 'broken skin'],
+    psychologyObjective: 'Ayres Sensory Integration: proprioceptive and deep tactile input modulates reticular activating system arousal, reducing sensory overload and increasing nervous system readiness for learning',
+    psychologyObjectiveAr: 'التكامل الحسي أيرز: المدخلات الحس عميق واللمس العميق تنظم إثارة نظام التنشيط الشبكي، تقلل الحمل الحسي الزائد وتزيد جاهزية الجهاز العصبي للتعلم',
+  },
 ]

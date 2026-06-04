@@ -46,7 +46,7 @@ export default function RegisterPage() {
       })
       const data = await res.json()
       if (res.ok) {
-        router.push('/payment')
+        router.push('/register/success')
       } else {
         setError(data.error || 'حدث خطأ')
       }

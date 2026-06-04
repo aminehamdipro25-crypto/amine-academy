@@ -1,10 +1,10 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { Suspense, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { CheckCircle, Mail, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 
-export default function ActivatePage() {
+function ActivateForm() {
   const params = useSearchParams()
   const router = useRouter()
   const [email, setEmail] = useState(params.get('email') || '')
@@ -107,5 +107,17 @@ export default function ActivatePage() {
         </p>
       </div>
     </div>
+  )
+}
+
+export default function ActivatePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-brand-600 animate-spin" />
+      </div>
+    }>
+      <ActivateForm />
+    </Suspense>
   )
 }

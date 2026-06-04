@@ -17,7 +17,7 @@ export default function RegisterSuccessPage() {
         <div className="bg-white rounded-2xl border border-gray-100 p-6 mb-6 text-right space-y-4">
           <h2 className="font-black text-gray-900 text-center mb-4">الخطوات التالية</h2>
           {[
-            { step: '1', text: 'تحقق من بريدك الإلكتروني — سيصلك رمز التفعيل', icon: Mail },
+            { step: '1', text: 'تحقق من بريدك الإلكتروني — سيصلك رمز تفعيل مكوّن من 6 أرقام', icon: Mail },
             { step: '2', text: 'سيتواصل معك الأستاذ أمين على واتساب', icon: MessageCircle },
             { step: '3', text: 'ستُحدد معاً موعد التقييم الأولي للطفل', icon: CheckCircle },
           ].map(({ step, text, icon: Icon }) => (
@@ -30,6 +30,13 @@ export default function RegisterSuccessPage() {
           ))}
         </div>
 
+        <div className="flex flex-col sm:flex-row gap-3 mb-4">
+          <Link href="/activate"
+            className="flex-1 bg-brand-600 text-white font-bold py-3 px-4 rounded-xl hover:bg-brand-700 transition-colors text-center text-sm flex items-center justify-center gap-2">
+            <Mail className="w-4 h-4" />
+            تفعيل الحساب برمز البريد
+          </Link>
+        </div>
         <div className="flex flex-col sm:flex-row gap-3">
           <a
             href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '97430653759'}?text=${encodeURIComponent('مرحباً الأستاذ أمين، أنا سجّلت للتو في أكاديمية أمين وأنتظر تفعيل اشتراكي.')}`}

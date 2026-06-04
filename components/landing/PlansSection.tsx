@@ -1,16 +1,21 @@
+'use client'
+
+import { useState } from 'react'
 import Link from 'next/link'
 import { Check, Video, MessageCircle, FileText, Brain, Zap, Star } from 'lucide-react'
 
-const plans = [
+type Currency = 'QAR' | 'TND'
+
+const PLANS = [
   {
     id: 'basic',
     name: 'الأساسي',
-    price: '49',
-    currency: 'د.ت',
+    prices: { QAR: 179, TND: 49 },
     period: 'شهرياً',
     color: 'border-gray-200',
     headerBg: 'bg-white',
     headerText: 'text-gray-900',
+    priceText: 'text-gray-900',
     badge: null,
     badgeColor: '',
     subtitle: 'للبدء والتقييم',
@@ -18,13 +23,13 @@ const plans = [
     iconBg: 'bg-brand-100',
     iconColor: 'text-brand-600',
     features: [
-      { text: 'برنامج تمارين أسبوعي مخصص', included: true },
-      { text: 'مكتبة 25+ تمرين علمي (APA+CBT)', included: true },
-      { text: 'تقرير شهري بالتقدم', included: true },
-      { text: 'دعم عبر البريد الإلكتروني', included: true },
-      { text: 'جلسة متابعة بالفيديو', included: false },
-      { text: 'نظام تعديل السلوك (ABA)', included: false },
-      { text: 'تقييم ذكاء اصطناعي', included: false },
+      { text: 'برنامج تمارين أسبوعي مخصص', ok: true },
+      { text: 'مكتبة 25+ تمرين علمي (APA + CBT)', ok: true },
+      { text: 'تقرير شهري بالتقدم', ok: true },
+      { text: 'دعم عبر البريد الإلكتروني', ok: true },
+      { text: 'جلسة تفاعلية بالفيديو', ok: false },
+      { text: 'بروتوكول تعديل السلوك (ABA)', ok: false },
+      { text: 'تقرير الذكاء الاصطناعي', ok: false },
     ],
     cta: 'ابدأ الأساسي',
     ctaStyle: 'border-2 border-brand-500 text-brand-600 hover:bg-brand-50',
@@ -32,26 +37,26 @@ const plans = [
   {
     id: 'standard',
     name: 'المتقدم',
-    price: '99',
-    currency: 'د.ت',
+    prices: { QAR: 369, TND: 99 },
     period: 'شهرياً',
     color: 'border-brand-400 ring-4 ring-brand-100',
     headerBg: 'bg-brand-600',
     headerText: 'text-white',
+    priceText: 'text-white',
     badge: '⭐ الأكثر طلباً',
-    badgeColor: 'bg-white text-brand-600',
+    badgeColor: 'bg-white text-brand-700',
     subtitle: 'الخيار الأمثل للأسر',
     icon: Video,
     iconBg: 'bg-white/20',
     iconColor: 'text-white',
     features: [
-      { text: 'كل مزايا الأساسي', included: true },
-      { text: '1 جلسة تفاعلية شهرية بالفيديو', included: true },
-      { text: 'نظام مناطق التنظيم (Zone of Regulation)', included: true },
-      { text: 'تقارير أسبوعية للأولياء', included: true },
-      { text: 'واتساب مباشر مع الأستاذ', included: true },
-      { text: 'تعديل البرنامج حسب التطور', included: true },
-      { text: 'تقييم ذكاء اصطناعي ربعي', included: false },
+      { text: 'كل مزايا الأساسي', ok: true },
+      { text: 'جلسة تفاعلية شهرية بالفيديو مع الأستاذ', ok: true },
+      { text: 'نظام مناطق التنظيم (Zone of Regulation)', ok: true },
+      { text: 'تقارير أسبوعية لولي الأمر', ok: true },
+      { text: 'واتساب مباشر مع الأستاذ', ok: true },
+      { text: 'تعديل البرنامج حسب التطور', ok: true },
+      { text: 'تقرير الذكاء الاصطناعي ربعياً', ok: false },
     ],
     cta: 'ابدأ المتقدم',
     ctaStyle: 'bg-white text-brand-700 hover:bg-brand-50 font-black',
@@ -59,37 +64,42 @@ const plans = [
   {
     id: 'premium',
     name: 'المتميز',
-    price: '179',
-    currency: 'د.ت',
+    prices: { QAR: 659, TND: 179 },
     period: 'شهرياً',
     color: 'border-amber-300',
     headerBg: 'bg-gradient-to-bl from-amber-500 to-orange-500',
     headerText: 'text-white',
+    priceText: 'text-white',
     badge: '👑 VIP',
-    badgeColor: 'bg-white text-amber-600',
+    badgeColor: 'bg-white text-amber-700',
     subtitle: 'رعاية متكاملة لا تُضاهى',
     icon: Star,
     iconBg: 'bg-white/20',
     iconColor: 'text-white',
     features: [
-      { text: 'كل مزايا المتقدم', included: true },
-      { text: '2 جلستا تفاعليتان بالفيديو شهرياً', included: true },
-      { text: 'بروتوكول ABA + PEERS كامل', included: true },
-      { text: 'تقارير يومية للأولياء', included: true },
-      { text: 'مراسلة غير محدودة 24/7', included: true },
-      { text: 'خطة تغذية مكملة للتركيز', included: true },
-      { text: 'تقرير شامل بالذكاء الاصطناعي فصلياً', included: true },
+      { text: 'كل مزايا المتقدم', ok: true },
+      { text: '2 جلسات تفاعلية بالفيديو شهرياً', ok: true },
+      { text: 'بروتوكول ABA + PEERS كامل', ok: true },
+      { text: 'تقارير يومية لولي الأمر', ok: true },
+      { text: 'مراسلة غير محدودة 24/7', ok: true },
+      { text: 'خطة تغذية مكملة للتركيز', ok: true },
+      { text: 'تقرير شامل بالذكاء الاصطناعي فصلياً', ok: true },
     ],
     cta: 'ابدأ المتميز',
     ctaStyle: 'bg-gradient-to-l from-amber-500 to-orange-500 text-white hover:opacity-90 font-black',
   },
 ]
 
+const CURRENCY_SYMBOLS: Record<Currency, string> = { QAR: 'ر.ق', TND: 'د.ت' }
+const CURRENCY_LABELS: Record<Currency, string> = { QAR: '🇶🇦 قطر (ر.ق)', TND: '🇹🇳 تونس (د.ت)' }
+
 export default function PlansSection() {
+  const [currency, setCurrency] = useState<Currency>('QAR')
+
   return (
     <section className="py-20 bg-gray-50" id="plans">
       <div className="max-w-7xl mx-auto px-6">
-        <div className="text-center mb-14">
+        <div className="text-center mb-10">
           <span className="text-brand-600 font-bold text-sm bg-brand-50 px-4 py-1.5 rounded-full">
             خطط الاشتراك
           </span>
@@ -97,54 +107,75 @@ export default function PlansSection() {
             استثمار في مستقبل طفلك
           </h2>
           <p className="text-gray-500 max-w-2xl mx-auto">
-            برامج علمية معتمدة تجمع الرياضة المعدّلة (APA) مع تعديل السلوك (ABA) وتدريب التركيز (CBT)
-            — كل شيء في جلسة تفاعلية واحدة مع الأستاذ أمين.
+            برامج علمية تجمع الرياضة المعدّلة (APA) مع تعديل السلوك (ABA) وتدريب التركيز (CBT)
+            — في جلسات تفاعلية مباشرة مع الأستاذ أمين.
           </p>
         </div>
 
-        {/* Session highlight banner */}
-        <div className="max-w-2xl mx-auto mb-10 bg-brand-900 rounded-2xl p-5 flex items-center gap-4 text-white">
-          <div className="w-12 h-12 bg-brand-600 rounded-xl flex items-center justify-center flex-shrink-0">
+        {/* Currency Toggle */}
+        <div className="flex justify-center mb-10">
+          <div className="bg-white border border-gray-200 rounded-2xl p-1.5 flex gap-1 shadow-sm">
+            {(['QAR', 'TND'] as Currency[]).map(c => (
+              <button
+                key={c}
+                onClick={() => setCurrency(c)}
+                className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${
+                  currency === c
+                    ? 'bg-brand-600 text-white shadow-sm'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                {CURRENCY_LABELS[c]}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Interactive session banner */}
+        <div className="max-w-2xl mx-auto mb-10 bg-brand-900 rounded-2xl p-5 flex items-start gap-4 text-white">
+          <div className="w-12 h-12 bg-brand-600 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
             <Video className="w-6 h-6" />
           </div>
           <div>
-            <p className="font-black text-sm">كيف تعمل الجلسة التفاعلية؟</p>
-            <p className="text-white/70 text-xs mt-0.5">
-              اتصال فيديو مباشر مع الأستاذ أمين • تمارين حية يؤديها الطفل أمام الشاشة • تغذية راجعة فورية •
-              توجيه الوالد على كيفية المتابعة اليومية في البيت
+            <p className="font-black text-sm mb-1">كيف تعمل الجلسة التفاعلية؟</p>
+            <p className="text-white/70 text-xs leading-relaxed">
+              اتصال فيديو مباشر مع الأستاذ أمين • الطفل يؤدي التمارين أمام الشاشة •
+              تغذية راجعة فورية • توجيه الوالد لكيفية المتابعة اليومية في البيت
             </p>
           </div>
         </div>
 
+        {/* Plans grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-          {plans.map((plan) => {
+          {PLANS.map((plan) => {
             const PlanIcon = plan.icon
+            const price = plan.prices[currency]
+            const symbol = CURRENCY_SYMBOLS[currency]
             return (
               <div key={plan.id}
-                className={`rounded-2xl border-2 overflow-hidden bg-white relative ${plan.color} transition-shadow hover:shadow-xl`}>
+                className={`rounded-2xl border-2 overflow-hidden bg-white relative transition-shadow hover:shadow-xl ${plan.color}`}>
                 {plan.badge && (
                   <div className={`absolute top-4 left-4 text-xs font-black px-3 py-1 rounded-full ${plan.badgeColor}`}>
                     {plan.badge}
                   </div>
                 )}
-                {/* Header */}
-                <div className={`${plan.headerBg} p-6 ${plan.headerText}`}>
+                <div className={`${plan.headerBg} p-6`}>
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${plan.iconBg}`}>
                     <PlanIcon className={`w-5 h-5 ${plan.iconColor}`} />
                   </div>
                   <h3 className={`font-black text-xl ${plan.headerText}`}>{plan.name}</h3>
-                  <p className={`text-sm opacity-70 mt-0.5 ${plan.headerText}`}>{plan.subtitle}</p>
+                  <p className={`text-sm mt-0.5 ${plan.headerText} opacity-70`}>{plan.subtitle}</p>
                   <div className="flex items-baseline gap-1 mt-3">
-                    <span className={`text-3xl font-black ltr-num ${plan.headerText}`}>{plan.price}</span>
-                    <span className={`text-sm opacity-70 ${plan.headerText}`}>{plan.currency} / {plan.period}</span>
+                    <span className={`text-3xl font-black ltr-num ${plan.priceText}`}>{price}</span>
+                    <span className={`text-sm ${plan.priceText} opacity-70`}>{symbol} / {plan.period}</span>
                   </div>
                 </div>
-                {/* Features */}
                 <div className="p-6">
                   <ul className="space-y-2.5 mb-6">
                     {plan.features.map((f) => (
-                      <li key={f.text} className={`flex items-start gap-2 text-sm ${f.included ? 'text-gray-700' : 'text-gray-300 line-through'}`}>
-                        <Check className={`w-4 h-4 flex-shrink-0 mt-0.5 ${f.included ? 'text-green-500' : 'text-gray-200'}`} />
+                      <li key={f.text}
+                        className={`flex items-start gap-2 text-sm ${f.ok ? 'text-gray-700' : 'text-gray-300 line-through'}`}>
+                        <Check className={`w-4 h-4 flex-shrink-0 mt-0.5 ${f.ok ? 'text-green-500' : 'text-gray-200'}`} />
                         {f.text}
                       </li>
                     ))}
@@ -163,7 +194,7 @@ export default function PlansSection() {
           {[
             { icon: MessageCircle, text: 'تواصل مباشر على واتساب', sub: 'لأي استفسار' },
             { icon: FileText, text: 'لا عقود طويلة الأمد', sub: 'إلغاء في أي وقت' },
-            { icon: Brain, text: 'نتائج مضمونة علمياً', sub: 'مبني على أبحاث دولية' },
+            { icon: Brain, text: 'نتائج مضمونة علمياً', sub: 'مبنية على أبحاث دولية' },
           ].map(({ icon: Icon, text, sub }) => (
             <div key={text} className="flex flex-col items-center gap-2">
               <Icon className="w-5 h-5 text-brand-500" />

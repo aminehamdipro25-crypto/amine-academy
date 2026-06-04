@@ -17,7 +17,7 @@ export const metadata: Metadata = {
     default: 'أكاديمية أمين الدولية | ADHD & Autism — رياضة معدلة وعلم نفس',
     template: '%s | أكاديمية أمين',
   },
-  description: 'منصة تفاعلية عالمية للرياضة المعدلة وعلم النفس لأطفال وشباب اضطراب ADHD وطيف التوحد. برامج متخصصة من 5 إلى 22 سنة بإشراف البروفيسور أمين.',
+  description: 'منصة تفاعلية عالمية للرياضة المعدلة وعلم النفس لأطفال وشباب اضطراب ADHD وطيف التوحد. برامج متخصصة من 5 إلى 22 سنة بإشراف الأستاذ أمين.',
   keywords: [
     'ADHD', 'أطفال ADHD', 'طيف التوحد', 'Autism', 'رياضة معدلة',
     'علم النفس الرياضي', 'تمارين للتوحد', 'أكاديمية أمين', 'Amine Academy',
@@ -44,7 +44,7 @@ const jsonLd = {
   alternateName: 'Amine Academy',
   url: BASE_URL,
   description: 'منصة تفاعلية للرياضة المعدلة وعلم النفس لأطفال ADHD وطيف التوحد',
-  founder: { '@type': 'Person', name: 'البروفيسور أمين' },
+  founder: { '@type': 'Person', name: 'الأستاذ أمين' },
   educationalCredentialAwarded: 'برنامج تطوير حركي ونفسي',
   audience: {
     '@type': 'Audience',

@@ -103,7 +103,7 @@ export default function HeroSection() {
         <p className="text-white/75 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed mb-10">
           برامج رياضية معدلة ونفسية متخصصة لأطفال وشباب
           <strong className="text-white"> ADHD وطيف التوحد</strong>،
-          من عمر 5 إلى 22 سنة، بإشراف مباشر من البروفيسور أمين.
+          من عمر 5 إلى 22 سنة، بإشراف مباشر من الأستاذ أمين.
         </p>
 
         {/* CTAs */}

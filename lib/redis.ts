@@ -40,7 +40,11 @@ function parseEntry<T>(raw: unknown): T | null {
   let v: unknown
   try { v = JSON.parse(raw) } catch { return raw as T }
   if (typeof v === 'string') {
-    try { v = JSON.parse(v) } catch { /* keep single-parsed value */ }
+    try {
+      const v2 = JSON.parse(v)
+      // Only accept double-parse if result is object/array — never coerce "572180" → 572180
+      if (v2 !== null && typeof v2 === 'object') v = v2
+    } catch { /* keep single-parsed string */ }
   }
   if (v === null || v === undefined) return null
   return v as T

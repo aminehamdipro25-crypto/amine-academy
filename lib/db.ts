@@ -196,7 +196,8 @@ export async function createActivationCode(email: string): Promise<string> {
 
 export async function verifyActivationCode(email: string, code: string): Promise<boolean> {
   const stored = await redis.get<string>(`activation:${email}`)
-  return stored === code
+  if (stored === null || stored === undefined) return false
+  return String(stored).trim() === String(code).trim()
 }
 
 export async function deleteActivationCode(email: string): Promise<void> {

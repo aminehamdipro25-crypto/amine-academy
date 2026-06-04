@@ -22,7 +22,7 @@ export default function AdminHeader() {
             أ
           </div>
           <div className="hidden sm:block">
-            <div className="text-sm font-bold text-gray-900">البروفيسور أمين</div>
+            <div className="text-sm font-bold text-gray-900">الأستاذ أمين</div>
             <div className="text-xs text-gray-500">مشرف النظام</div>
           </div>
         </div>

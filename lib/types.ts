@@ -28,7 +28,7 @@ export interface Parent {
   lastLoginAt: string | null
   reminderCount: number
   lastReminderAt: string | null
-  notes: string                 // ملاحظات البروفيسور
+  notes: string                 // ملاحظات الأستاذ
 }
 
 // ── Student (Child) ──────────────────────────────────────────

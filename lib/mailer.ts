@@ -83,11 +83,11 @@ export function welcomeParentEmail(parentName: string, activationCode: string): 
 export function appointmentConfirmEmail(parentName: string, date: string, time: string): string {
   return wrap('#4ade80', `
     <h2 style="color:#1e293b;font-size:20px;margin:0 0 16px">تم تأكيد موعدك ✅</h2>
-    <p style="color:#475569;line-height:1.8">السيد/ة ${parentName}، تم تأكيد موعد المتابعة مع البروفيسور أمين.</p>
+    <p style="color:#475569;line-height:1.8">السيد/ة ${parentName}، تم تأكيد موعد المتابعة مع الأستاذ أمين.</p>
     <div style="background:#f0fdf4;border-right:4px solid #4ade80;padding:16px;border-radius:8px;margin:24px 0">
       <p style="margin:0;color:#166534">📅 التاريخ: ${date}</p>
       <p style="margin:8px 0 0;color:#166534">⏰ الوقت: ${time}</p>
     </div>
-    <p style="color:#64748b;font-size:14px">سيتواصل معك البروفيسور أمين قبل 30 دقيقة من الموعد.</p>
+    <p style="color:#64748b;font-size:14px">سيتواصل معك الأستاذ أمين قبل 30 دقيقة من الموعد.</p>
   `)
 }

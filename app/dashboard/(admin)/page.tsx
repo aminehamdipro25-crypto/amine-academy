@@ -21,7 +21,7 @@ export default async function AdminDashboardPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-black text-gray-900">لوحة التحكم الرئيسية</h1>
-        <p className="text-gray-500 text-sm mt-1">مرحباً بك، البروفيسور أمين</p>
+        <p className="text-gray-500 text-sm mt-1">مرحباً بك، الأستاذ أمين</p>
       </div>
 
       {/* Stats */}

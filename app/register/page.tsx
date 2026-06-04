@@ -46,7 +46,7 @@ export default function RegisterPage() {
       })
       const data = await res.json()
       if (res.ok) {
-        router.push('/payment')
+        router.push('/register/success')
       } else {
         setError(data.error || 'حدث خطأ')
       }
@@ -247,10 +247,10 @@ export default function RegisterPage() {
               <h2 className="font-black text-xl text-gray-900 mb-5">اختر خطة الاشتراك</h2>
               <div className="space-y-3">
                 {[
-                  { id: 'basic', name: 'الأساسي', price: 'XX', features: ['برنامج أسبوعي', 'تتبع التطور', 'تقرير شهري'] },
-                  { id: 'standard', name: 'المتقدم', price: 'XX', features: ['برنامج مخصص', 'جلسة متابعة شهرية', 'واتساب مباشر'], recommended: true },
-                  { id: 'premium', name: 'المتميز', price: 'XX', features: ['كل المزايا', 'جلستان شهرياً', 'تقارير يومية'] },
-                ].map(({ id, name, price, features, recommended }) => (
+                  { id: 'basic',    name: 'الأساسي', qar: 179, tnd: 49,  features: ['برنامج أسبوعي مخصص', 'مكتبة 25+ تمرين', 'تقرير شهري'] },
+                  { id: 'standard', name: 'المتقدم', qar: 369, tnd: 99,  features: ['جلسة فيديو شهرية', 'واتساب مباشر', 'تقارير أسبوعية'], recommended: true },
+                  { id: 'premium',  name: 'المتميز', qar: 659, tnd: 179, features: ['جلستان بالفيديو', 'ABA + PEERS كامل', 'تقارير يومية'] },
+                ].map(({ id, name, qar, tnd, features, recommended }) => (
                   <button key={id} type="button"
                     onClick={() => setPlan(id)}
                     className={`w-full text-right p-4 rounded-2xl border-2 transition-all ${
@@ -266,7 +266,10 @@ export default function RegisterPage() {
                         <span className="font-black text-gray-900">{name}</span>
                         {recommended && <span className="text-xs bg-brand-600 text-white px-2 py-0.5 rounded-full font-bold">مُوصى</span>}
                       </div>
-                      <span className="font-black text-brand-600 ltr-num">{price} <span className="text-xs font-normal text-gray-500">د.ت/شهر</span></span>
+                      <div className="text-right">
+                        <div className="font-black text-brand-600 ltr-num text-sm">{qar} <span className="text-xs font-normal text-gray-500">ر.ق</span></div>
+                        <div className="text-gray-400 ltr-num text-xs">{tnd} <span className="text-xs">د.ت</span></div>
+                      </div>
                     </div>
                     <div className="flex flex-wrap gap-2 pr-7">
                       {features.map(f => (

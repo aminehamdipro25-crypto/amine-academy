@@ -29,7 +29,8 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const adminToken = cookies().get('admin_token')?.value
+    const cookieStore = await cookies()
+    const adminToken = cookieStore.get('admin_token')?.value
     const isAdmin = await verifyAdminSession(adminToken)
     if (!isAdmin) {
       return NextResponse.json({ error: 'unauthorized' }, { status: 401 })

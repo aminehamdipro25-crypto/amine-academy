@@ -1,0 +1,40 @@
+{
+  "name": "amine-academy",
+  "version": "1.0.0",
+  "description": "Amine Academy — منصة تفاعلية عالمية لأطفال ADHD & Autism",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "repository": {
+    "type": "git",
+    "url": "http://local_proxy@127.0.0.1:34863/git/aminehamdipro25-crypto/amine-academy"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.20.7",
+    "@upstash/redis": "^1.31.0",
+    "autoprefixer": "^10.4.17",
+    "lucide-react": "^0.344.0",
+    "next": "^14.2.0",
+    "nodemailer": "^6.9.11",
+    "postcss": "^8.4.38",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "recharts": "^2.12.0",
+    "tailwindcss": "^3.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.5",
+    "@types/nodemailer": "^6.4.14",
+    "@types/react": "^18.2.55",
+    "eslint": "^8.56.0",
+    "eslint-config-next": "^14.2.0",
+    "typescript": "^5.3.3"
+  }
+}

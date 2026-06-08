@@ -5,19 +5,24 @@ import { useEffect, useState } from 'react'
 import { useLang, tr } from '@/lib/i18n'
 import LangToggle from '@/components/shared/LangToggle'
 
-const OFFER_DURATION = 5 * 24 * 60 * 60 * 1000
+const DEFAULT_OFFER_DAYS = 5
 const LS_KEY = 'aa_offer_expiry'
+const LS_DURATION_KEY = 'aa_offer_duration'
 
-function useCountdown() {
+function useCountdown(offerDays: number) {
   const [time, setTime] = useState({ d: 0, h: 0, m: 0, s: 0, expired: false })
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
     setMounted(true)
+    const durationMs = offerDays * 24 * 60 * 60 * 1000
+    const storedDuration = parseInt(localStorage.getItem(LS_DURATION_KEY) || '0', 10)
     let expiry = parseInt(localStorage.getItem(LS_KEY) || '0', 10)
-    if (!expiry || expiry < Date.now()) {
-      expiry = Date.now() + OFFER_DURATION
+    // Reset countdown if duration changed or no valid expiry
+    if (!expiry || expiry < Date.now() || storedDuration !== durationMs) {
+      expiry = Date.now() + durationMs
       localStorage.setItem(LS_KEY, String(expiry))
+      localStorage.setItem(LS_DURATION_KEY, String(durationMs))
     }
     const tick = () => {
       const diff = expiry - Date.now()
@@ -33,7 +38,7 @@ function useCountdown() {
     tick()
     const id = setInterval(tick, 1000)
     return () => clearInterval(id)
-  }, [])
+  }, [offerDays])
 
   if (!mounted) return null
   return time
@@ -51,7 +56,14 @@ function CountdownUnit({ value, label }: { value: number; label: string }) {
 }
 
 export default function HeroSection() {
-  const time = useCountdown()
+  const [offerDays, setOfferDays] = useState(DEFAULT_OFFER_DAYS)
+  useEffect(() => {
+    fetch('/api/public/settings')
+      .then(r => r.json())
+      .then(d => { if (d?.offerDurationDays) setOfferDays(d.offerDurationDays) })
+      .catch(() => {})
+  }, [])
+  const time = useCountdown(offerDays)
   const { lang } = useLang()
   const t = tr[lang]
   const isAr = lang === 'ar'

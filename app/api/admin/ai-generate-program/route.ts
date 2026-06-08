@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyAdminSession } from '@/lib/auth'
 import { getStudent, getAllExercises } from '@/lib/db'
+import { redis } from '@/lib/redis'
 import Anthropic from '@anthropic-ai/sdk'
+import type { AssessmentResult } from '@/lib/types'
 
 export const runtime = 'nodejs'
 
@@ -15,8 +17,40 @@ const DIAG_AR: Record<string, string> = {
 const AGE_AR: Record<string, string> = { '5-11': '5-11 سنوات', '12-17': '12-17 سنوات', '18-22': '18-22 سنوات' }
 const SEV_AR: Record<number, string> = { 1: 'خفيف', 2: 'متوسط', 3: 'شديد' }
 const SENS_AR: Record<string, string> = { low: 'منخفضة', medium: 'متوسطة', high: 'مرتفعة' }
+const SEV_LABEL: Record<string, string> = { none: 'لا يوجد', mild: 'خفيف', moderate: 'متوسط', severe: 'شديد' }
 const CAT_AR: Record<string, string> = {
   motor: 'حركي', focus: 'تركيز وانتباه', balance: 'توازن', energy: 'طاقة', sensory: 'حسي', social: 'اجتماعي'
+}
+
+async function getStudentAssessments(studentId: string): Promise<AssessmentResult[]> {
+  try {
+    const ids = await redis.lrange(`assessments:student:${studentId}`, 0, 5)
+    const results = await Promise.all(ids.map(id => redis.get<AssessmentResult>(`assessment:${id}`)))
+    return results.filter(Boolean) as AssessmentResult[]
+  } catch {
+    return []
+  }
+}
+
+function formatAssessmentsForPrompt(assessments: AssessmentResult[]): string {
+  if (assessments.length === 0) return 'لا توجد تقييمات مسجّلة بعد.'
+  const lines: string[] = []
+  for (const a of assessments) {
+    const typeLabel = a.type === 'adhd' ? 'تقييم ADHD' : a.type === 'autism' ? 'تقييم طيف التوحد' : `تقييم ${a.type}`
+    lines.push(`\n### ${typeLabel} (${new Date(a.createdAt).toLocaleDateString('ar')})`)
+    lines.push(`- الدرجة الإجمالية: ${a.totalScore} | الشدة: ${SEV_LABEL[a.severity] || a.severity}`)
+    if (Object.keys(a.domainScores).length > 0) {
+      lines.push('- النتائج حسب المجال:')
+      for (const [domain, score] of Object.entries(a.domainScores)) {
+        lines.push(`  • ${domain}: ${score}`)
+      }
+    }
+    if (a.recommendations.length > 0) {
+      lines.push('- التوصيات:')
+      a.recommendations.slice(0, 3).forEach(r => lines.push(`  → ${r}`))
+    }
+  }
+  return lines.join('\n')
 }
 
 export async function POST(req: NextRequest) {
@@ -34,9 +68,10 @@ export async function POST(req: NextRequest) {
     const { studentId } = await req.json().catch(() => ({}))
     if (!studentId) return NextResponse.json({ error: 'studentId مطلوب' }, { status: 400 })
 
-    const [student, allExercises] = await Promise.all([
+    const [student, allExercises, assessments] = await Promise.all([
       getStudent(studentId),
       getAllExercises(),
+      getStudentAssessments(studentId),
     ])
 
     if (!student) return NextResponse.json({ error: 'الطالب غير موجود' }, { status: 404 })
@@ -52,7 +87,9 @@ export async function POST(req: NextRequest) {
       `• ID: ${ex.id} | ${ex.titleAr || ex.title} | فئة: ${CAT_AR[ex.category] || ex.category} | مستوى: ${ex.difficulty} | مدة: ${ex.durationMinutes} دقيقة | نقاط: ${ex.points}`
     ).join('\n')
 
-    const prompt = `أنت خبير متخصص في برامج الرياضة المعدلة وعلم النفس لأطفال ADHD وطيف التوحد. مهمتك إنشاء برنامج أسبوعي علمي ومخصص.
+    const assessmentSummary = formatAssessmentsForPrompt(assessments)
+
+    const prompt = `أنت خبير متخصص في برامج الرياضة المعدلة وعلم النفس لأطفال ADHD وطيف التوحد. مهمتك إنشاء برنامج أسبوعي علمي ومخصص بناءً على ملف الطفل الكامل بما يشمل نتائج التقييمات الرسمية.
 
 ## ملف الطفل:
 - الاسم: ${student.firstName} ${student.lastName}
@@ -63,25 +100,31 @@ export async function POST(req: NextRequest) {
 - الحساسية السمعية: ${SENS_AR[student.sensoryProfile.audioSensitivity]}
 - الحساسية اللمسية: ${SENS_AR[student.sensoryProfile.touchSensitivity]}
 
+## نتائج التقييمات السريرية:
+${assessmentSummary}
+
 ## التمارين المتاحة:
 ${exList}
 
 ## تعليمات التوليد:
 1. أنشئ جدولاً أسبوعياً من الاثنين إلى الجمعة (السبت والأحد راحة)
 2. ضع 2-3 تمارين لكل يوم
-3. الأولويات:
+3. الأولويات الأساسية:
    - ADHD: ابدأ بتمارين الطاقة والحركي، ثم التركيز والانتباه
    - التوحد: اهتم بالتمارين الحسية والاجتماعية والتوازن
    - شدة خفيفة: مستوى مبتدئ/متوسط | شدة متوسطة/شديدة: ابدأ بالمبتدئ
    - حساسية سمعية عالية: تجنب التمارين الصاخبة
    - حساسية لمسية عالية: تجنب التمارين ذات الملمس الكثيف
-4. نوّع التمارين على مدار الأسبوع، لا تكرر نفس التمرين كل يوم
-5. اجعل الثلاثاء والخميس أخف قليلاً من باقي الأيام
+4. إذا وُجدت تقييمات سريرية فاستخدم نتائجها مباشرةً:
+   - المجالات ذات الدرجات العالية تحتاج تمارين علاجية مستهدفة
+   - التوصيات الواردة في التقييم يجب أن تنعكس في اختيار التمارين
+5. نوّع التمارين على مدار الأسبوع، لا تكرر نفس التمرين كل يوم
+6. اجعل الثلاثاء والخميس أخف قليلاً من باقي الأيام
 
 ## الرد المطلوب (JSON فقط، بدون أي نص إضافي):
 {
   "title": "برنامج ${student.firstName} التطوري",
-  "rationale": "جملة واحدة تشرح المنطق العلمي للبرنامج",
+  "rationale": "جملتان تشرحان المنطق العلمي للبرنامج مع ذكر نتائج التقييم إن وُجدت",
   "schedule": {
     "monday": ["id1", "id2", "id3"],
     "tuesday": ["id4", "id5"],
@@ -96,7 +139,7 @@ ${exList}
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
     const message = await client.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 1024,
+      max_tokens: 1536,
       messages: [{ role: 'user', content: prompt }],
     })
 

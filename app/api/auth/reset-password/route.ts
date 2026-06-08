@@ -1,40 +1,51 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getParentByEmail, verifyPasswordResetToken, deletePasswordResetToken, updateParent } from '@/lib/db'
+import { getParentByEmail, updateParent, verifyPasswordResetToken, deletePasswordResetToken } from '@/lib/db'
 import { hashPassword } from '@/lib/password'
+import { isRateLimited, getClientIp } from '@/lib/rateLimit'
 
 export const runtime = 'nodejs'
 
 export async function POST(req: NextRequest) {
+  const ip = getClientIp(req)
+  if (await isRateLimited(`pwd_reset_use:${ip}`, 10, 3600)) {
+    return NextResponse.json({ error: 'حاول مجدداً بعد قليل' }, { status: 429 })
+  }
+
   try {
-    const { email, token, password } = await req.json().catch(() => ({}))
-
-    if (!email || !token || !password) {
-      return NextResponse.json({ error: 'جميع الحقول مطلوبة' }, { status: 400 })
+    const body = await req.json().catch(() => ({}))
+    const { token, email, password } = body as {
+      token?: string
+      email?: string
+      password?: string
     }
 
-    if (typeof password !== 'string' || password.length < 6) {
-      return NextResponse.json({ error: 'كلمة المرور يجب أن تكون 6 أحرف على الأقل' }, { status: 400 })
+    if (!token || !email || !password) {
+      return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
     }
 
-    const normalizedEmail = String(email).trim().toLowerCase()
+    if (password.length < 8) {
+      return NextResponse.json({ error: 'كلمة المرور يجب أن تكون 8 أحرف على الأقل' }, { status: 400 })
+    }
 
-    const valid = await verifyPasswordResetToken(normalizedEmail, String(token).trim())
+    const sanitizedEmail = String(email).trim().toLowerCase()
+    const valid = await verifyPasswordResetToken(sanitizedEmail, String(token).trim())
+
     if (!valid) {
-      return NextResponse.json({ error: 'الرابط غير صالح أو منتهي الصلاحية' }, { status: 400 })
+      return NextResponse.json({ error: 'الرابط غير صالح أو انتهت صلاحيته' }, { status: 400 })
     }
 
-    const parent = await getParentByEmail(normalizedEmail)
+    const parent = await getParentByEmail(sanitizedEmail)
     if (!parent) {
-      return NextResponse.json({ error: 'الحساب غير موجود' }, { status: 400 })
+      return NextResponse.json({ error: 'الحساب غير موجود' }, { status: 404 })
     }
 
     const passwordHash = hashPassword(password)
     await updateParent(parent.id, { passwordHash })
-    await deletePasswordResetToken(normalizedEmail)
+    await deletePasswordResetToken(sanitizedEmail)
 
     return NextResponse.json({ ok: true })
-  } catch (e) {
-    console.error('[reset-password]', e)
-    return NextResponse.json({ error: 'حدث خطأ في الخادم' }, { status: 500 })
+  } catch (err) {
+    console.error('[reset-password]', err)
+    return NextResponse.json({ error: 'خطأ في الخادم' }, { status: 500 })
   }
 }

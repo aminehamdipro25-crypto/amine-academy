@@ -7,6 +7,21 @@ const CAT_EMOJI: Record<string, string> = {
   motor: '🏃', focus: '🎯', balance: '🌊', energy: '⚡', sensory: '🌈', social: '🤝',
 }
 
+interface CompleteResult {
+  ok: boolean
+  alreadyDone: boolean
+  pointsEarned: number
+  newTotalPoints: number
+  newStreak: number
+  newAchievements: string[]
+}
+
+interface Toast {
+  id: number
+  type: 'points' | 'achievement'
+  message: string
+}
+
 export default function StudentExercisesPage() {
   const [exercises, setExercises] = useState<Exercise[]>([])
   const [loading, setLoading] = useState(true)
@@ -16,11 +31,20 @@ export default function StudentExercisesPage() {
   const [timer, setTimer] = useState(0)
   const [running, setRunning] = useState(false)
   const [celebrated, setCelebrated] = useState<string | null>(null)
+  const [toasts, setToasts] = useState<Toast[]>([])
+  const [achievementBanner, setAchievementBanner] = useState<string[]>([])
+  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     fetch('/api/student/me')
       .then(r => r.json())
-      .then(d => setExercises(d.todayExercises || []))
+      .then(d => {
+        setExercises(d.todayExercises || [])
+        // Pre-mark exercises already completed today (from Redis)
+        if (Array.isArray(d.completedTodayIds) && d.completedTodayIds.length > 0) {
+          setDone(new Set<string>(d.completedTodayIds))
+        }
+      })
       .finally(() => setLoading(false))
   }, [])
 
@@ -30,16 +54,59 @@ export default function StudentExercisesPage() {
     return () => clearInterval(id)
   }, [running])
 
+  function addToast(type: Toast['type'], message: string) {
+    const id = Date.now()
+    setToasts(prev => [...prev, { id, type, message }])
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4000)
+  }
+
   function open(ex: Exercise) { setSelected(ex); setStep(0); setTimer(0); setRunning(false) }
   function close() { setSelected(null); setRunning(false) }
 
-  function finish() {
-    if (!selected) return
+  async function finish() {
+    if (!selected || saving) return
     setRunning(false)
-    const next = new Set(done); next.add(selected.id); setDone(next)
-    setCelebrated(selected.id)
-    setSelected(null)
-    setTimeout(() => setCelebrated(null), 3000)
+    setSaving(true)
+
+    try {
+      const res = await fetch('/api/student/complete-exercise', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ exerciseId: selected.id, points: selected.points }),
+      })
+      const data: CompleteResult = await res.json()
+
+      if (data.ok && !data.alreadyDone) {
+        // Mark as done in local state
+        const next = new Set(done)
+        next.add(selected.id)
+        setDone(next)
+
+        // Show celebration overlay
+        setCelebrated(selected.id)
+        setTimeout(() => setCelebrated(null), 3000)
+
+        // Show points toast
+        addToast('points', `+${data.pointsEarned} نقطة! المجموع: ${data.newTotalPoints} ⭐`)
+
+        // Show achievement banners
+        if (data.newAchievements.length > 0) {
+          setAchievementBanner(data.newAchievements)
+          setTimeout(() => setAchievementBanner([]), 5000)
+        }
+      } else if (data.alreadyDone) {
+        // Already done — still mark in local state
+        const next = new Set(done)
+        next.add(selected.id)
+        setDone(next)
+        addToast('points', 'أتممت هذا التمرين بالفعل اليوم ✅')
+      }
+    } catch {
+      addToast('points', 'حدث خطأ، حاول مجدداً')
+    } finally {
+      setSaving(false)
+      setSelected(null)
+    }
   }
 
   if (loading) return (
@@ -51,15 +118,38 @@ export default function StudentExercisesPage() {
 
   return (
     <div className="space-y-4">
+      {/* Celebration overlay */}
       {celebrated && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 pointer-events-none">
           <div className="text-center animate-badge-pop">
             <div className="text-8xl mb-4">🎉</div>
             <div className="text-white font-black text-3xl">أحسنت!</div>
-            <div className="text-white/80 text-lg mt-2">+50 نقطة! 🌟</div>
           </div>
         </div>
       )}
+
+      {/* Achievement unlock banner */}
+      {achievementBanner.length > 0 && (
+        <div className="fixed top-4 left-4 right-4 z-50 space-y-2 pointer-events-none">
+          {achievementBanner.map((name, i) => (
+            <div key={i} className="bg-yellow-400 text-yellow-900 font-black text-center py-3 px-4 rounded-2xl shadow-lg animate-badge-pop">
+              🏆 وسام جديد: {name}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Toast notifications */}
+      <div className="fixed bottom-24 left-4 right-4 z-50 space-y-2 pointer-events-none">
+        {toasts.map(toast => (
+          <div
+            key={toast.id}
+            className="bg-gray-900/90 text-white text-center py-3 px-4 rounded-2xl text-sm font-bold shadow-lg animate-badge-pop"
+          >
+            {toast.message}
+          </div>
+        ))}
+      </div>
 
       <div className="text-center py-2">
         <h1 className="font-black text-2xl text-gray-900">تمارين اليوم 💪</h1>
@@ -107,7 +197,10 @@ export default function StudentExercisesPage() {
                     <span>⭐ {ex.points} نقطة</span>
                   </div>
                 </div>
-                {!isDone && <Play className="w-6 h-6 text-brand-500 flex-shrink-0" />}
+                {isDone
+                  ? <CheckCircle className="w-6 h-6 text-green-500 flex-shrink-0" />
+                  : <Play className="w-6 h-6 text-brand-500 flex-shrink-0" />
+                }
               </div>
             )
           })}
@@ -163,8 +256,15 @@ export default function StudentExercisesPage() {
                     التالي ←
                   </button>
                 ) : (
-                  <button onClick={finish} className="flex-1 bg-green-600 text-white font-black py-4 rounded-2xl text-lg flex items-center justify-center gap-2">
-                    <CheckCircle className="w-5 h-5" /> انتهيت! 🎉
+                  <button
+                    onClick={finish}
+                    disabled={saving}
+                    className="flex-1 bg-green-600 text-white font-black py-4 rounded-2xl text-lg flex items-center justify-center gap-2 disabled:opacity-60"
+                  >
+                    {saving
+                      ? <span className="animate-pulse">جاري الحفظ...</span>
+                      : <><CheckCircle className="w-5 h-5" /> انتهيت! 🎉</>
+                    }
                   </button>
                 )}
               </div>

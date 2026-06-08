@@ -233,6 +233,17 @@ export interface SessionPayload {
   exp: number
 }
 
+// ── Messages ──────────────────────────────────────────────────
+export interface Message {
+  id: string
+  threadId: string      // parentId
+  from: 'admin' | 'parent'
+  senderName: string
+  content: string
+  read: boolean
+  createdAt: string
+}
+
 // ── Payments ──────────────────────────────────────────────────
 export type PaymentMethod = 'fawran' | 'bank_transfer_qa' | 'bank_transfer_tn' | 'whatsapp'
 export type PaymentStatus = 'pending' | 'confirmed' | 'rejected' | 'expired'

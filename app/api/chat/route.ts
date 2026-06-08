@@ -13,6 +13,8 @@ const SYSTEM = `أنت مساعد ذكي لأكاديمية أمين الدول�
 
 interface Message { role: 'user' | 'assistant'; content: string }
 
+export const runtime = 'nodejs'
+
 export async function POST(req: Request) {
   const ip = getClientIp(req)
 
@@ -41,7 +43,11 @@ export async function POST(req: Request) {
       messages:   messages.slice(-6),
     })
 
-    return NextResponse.json({ reply: (response.content[0] as { text: string }).text.trim() })
+    const block = response.content[0]
+    if (!block || block.type !== 'text') {
+      return NextResponse.json({ reply: 'للتواصل الفوري، راسلنا على واتساب.' })
+    }
+    return NextResponse.json({ reply: block.text.trim() })
   } catch {
     return NextResponse.json({ reply: 'للتواصل الفوري، راسلنا على واتساب.' })
   }

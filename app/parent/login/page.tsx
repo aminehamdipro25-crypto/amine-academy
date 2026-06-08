@@ -83,6 +83,11 @@ export default function ParentLoginPage() {
               </button>
             </div>
           </div>
+          <div className="flex justify-end">
+            <Link href="/parent/forgot-password" className="text-sm text-brand-600 hover:underline">
+              نسيت كلمة المرور؟
+            </Link>
+          </div>
 
           {error && (
             <div className="bg-red-50 text-red-600 text-sm font-medium px-4 py-3 rounded-xl">{error}</div>

@@ -91,3 +91,21 @@ export function appointmentConfirmEmail(parentName: string, date: string, time: 
     <p style="color:#64748b;font-size:14px">سيتواصل معك الأستاذ أمين قبل 30 دقيقة من الموعد.</p>
   `)
 }
+
+export function resetPasswordEmail(resetUrl: string): string {
+  return wrap('#5b6ef2', `
+    <h2 style="color:#1e293b;font-size:20px;margin:0 0 16px">إعادة تعيين كلمة المرور 🔐</h2>
+    <p style="color:#475569;line-height:1.8">تلقينا طلباً لإعادة تعيين كلمة المرور الخاصة بحسابك في أكاديمية أمين الدولية.</p>
+    <p style="color:#475569;line-height:1.8">انقر على الزر أدناه لإنشاء كلمة مرور جديدة:</p>
+    <div style="text-align:center;margin:32px 0">
+      <a href="${resetUrl}"
+        style="display:inline-block;background:#5b6ef2;color:white;text-decoration:none;font-size:16px;font-weight:700;padding:14px 36px;border-radius:12px;letter-spacing:0.5px">
+        إعادة تعيين كلمة المرور
+      </a>
+    </div>
+    <div style="background:#fef9ec;border-right:4px solid #f59e0b;padding:12px 16px;border-radius:8px;margin:24px 0">
+      <p style="margin:0;color:#92400e;font-size:13px">⚠️ هذا الرابط صالح لمدة ساعة واحدة فقط.</p>
+    </div>
+    <p style="color:#64748b;font-size:13px">إذا لم تطلب إعادة تعيين كلمة المرور، يمكنك تجاهل هذه الرسالة بأمان — حسابك بخير.</p>
+  `)
+}

@@ -1,9 +1,10 @@
 'use client'
 import Link from 'next/link'
-import { ArrowLeft, Star, Users, Award, Play } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Star, Users, Award, Play } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { useLang, tr } from '@/lib/i18n'
+import LangToggle from '@/components/shared/LangToggle'
 
-// Countdown Timer — شخصي لكل زائر (localStorage)
 const OFFER_DURATION = 5 * 24 * 60 * 60 * 1000
 const LS_KEY = 'aa_offer_expiry'
 
@@ -51,10 +52,14 @@ function CountdownUnit({ value, label }: { value: number; label: string }) {
 
 export default function HeroSection() {
   const time = useCountdown()
+  const { lang } = useLang()
+  const t = tr[lang]
+  const isAr = lang === 'ar'
 
   return (
-    <section className="relative min-h-screen bg-gradient-to-br from-brand-900 via-brand-800 to-brand-950 overflow-hidden">
-      {/* Background decorative elements — calm, non-distracting */}
+    <section className={`relative min-h-screen bg-gradient-to-br from-brand-900 via-brand-800 to-brand-950 overflow-hidden ${isAr ? 'direction-rtl' : 'direction-ltr'}`}
+      dir={isAr ? 'rtl' : 'ltr'}>
+      {/* Background decorative */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-20 right-10 w-64 h-64 bg-brand-500/10 rounded-full blur-3xl" />
         <div className="absolute bottom-20 left-10 w-80 h-80 bg-calm-teal/10 rounded-full blur-3xl" />
@@ -64,92 +69,88 @@ export default function HeroSection() {
       {/* Nav */}
       <nav className="relative z-10 flex items-center justify-between px-6 py-5 max-w-7xl mx-auto">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center text-white font-black text-lg">
-            A
-          </div>
+          <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center text-white font-black text-lg">A</div>
           <div>
-            <span className="text-white font-black text-lg block leading-none">أكاديمية أمين</span>
+            <span className="text-white font-black text-lg block leading-none">
+              {isAr ? 'أكاديمية أمين' : 'Amine Academy'}
+            </span>
             <span className="text-white/60 text-xs">ADHD & Autism Academy</span>
           </div>
         </div>
         <div className="flex items-center gap-3">
           <Link href="/demo" className="text-white/70 hover:text-white text-sm font-medium transition-colors hidden sm:block">
-            جولة تجريبية
+            {t.nav.trial}
           </Link>
           <Link href="/parent/login" className="text-white/80 hover:text-white text-sm font-medium transition-colors">
-            بوابة الأولياء
+            {t.nav.parents}
           </Link>
           <Link href="/register"
             className="bg-white text-brand-700 hover:bg-brand-50 font-bold text-sm px-5 py-2.5 rounded-xl transition-colors">
-            سجّل الآن
+            {t.nav.register}
           </Link>
+          <LangToggle />
         </div>
       </nav>
 
       {/* Hero content */}
       <div className="relative z-10 max-w-7xl mx-auto px-6 pt-16 pb-24 text-center">
-
         {/* Badge */}
         <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur border border-white/20 rounded-full px-4 py-2 mb-8">
           <Star className="w-4 h-4 text-gold-400 fill-gold-400" />
-          <span className="text-white/90 text-sm font-medium">منصة عالمية معتمدة للرياضة المعدلة وعلم النفس</span>
+          <span className="text-white/90 text-sm font-medium">{t.hero.badge}</span>
         </div>
 
         {/* Main heading */}
         <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-white leading-tight mb-6">
-          طفلك يفكّر
+          {t.hero.h1a}
           <span className="block text-transparent bg-clip-text bg-gradient-to-l from-calm-teal to-calm-lavender">
-            بطريقة مختلفة
+            {t.hero.h1b}
           </span>
           <span className="block text-3xl md:text-4xl lg:text-5xl mt-2 text-white/80 font-bold">
-            ونحن نتحدّث لغته
+            {t.hero.h1c}
           </span>
         </h1>
 
         <p className="text-white/70 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed mb-4">
-          المنصة العربية الأولى التي تجمع
-          <strong className="text-white"> الرياضة المعدّلة (APA) + تعديل السلوك (ABA) + التدريب المعرفي (CBT)</strong>
-          {' '}في جلسات تفاعلية مباشرة لأطفال ADHD وطيف التوحد.
+          {t.hero.desc}
         </p>
-        <p className="text-white/50 text-sm mb-10">
-          للأعمار 5 – 22 سنة • قطر 🇶🇦 وتونس 🇹🇳 والعالم العربي
-        </p>
+        <p className="text-white/50 text-sm mb-10">{t.hero.ages}</p>
 
         {/* CTAs */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-14">
           <Link href="/register"
             className="flex items-center gap-2 bg-white text-brand-700 hover:bg-brand-50 font-black text-lg px-8 py-4 rounded-2xl transition-all hover:scale-105 shadow-2xl shadow-black/30">
-            احجز الجلسة التقييمية المجانية
-            <ArrowLeft className="w-5 h-5" />
+            {t.hero.cta1}
+            {isAr ? <ArrowLeft className="w-5 h-5" /> : <ArrowRight className="w-5 h-5" />}
           </Link>
           <Link href="#how-it-works"
             className="flex items-center gap-2 border-2 border-white/30 text-white hover:bg-white/10 font-bold text-lg px-8 py-4 rounded-2xl transition-colors">
             <Play className="w-5 h-5" />
-            شاهد كيف تعمل الجلسة
+            {t.hero.cta2}
           </Link>
         </div>
 
         {/* Trust badges */}
         <div className="flex items-center justify-center gap-6 flex-wrap mb-10">
-          {['APA معتمد', 'ABA بروتوكول', 'CBT للأطفال', 'PEERS Protocol'].map(b => (
+          {['APA Certified', 'ABA Protocol', 'CBT for Children', 'PEERS Protocol'].map(b => (
             <span key={b} className="text-white/50 text-xs font-bold border border-white/20 px-3 py-1 rounded-full">
               ✓ {b}
             </span>
           ))}
         </div>
 
-        {/* Countdown timer */}
+        {/* Countdown */}
         {time && !time.expired && (
           <div className="inline-flex flex-col items-center gap-4 bg-white/10 backdrop-blur border border-white/20 rounded-2xl px-8 py-5">
-            <p className="text-white/80 text-sm font-medium">⏰ عرض التسجيل المبكر ينتهي خلال</p>
+            <p className="text-white/80 text-sm font-medium">{t.hero.offerLabel}</p>
             <div className="flex items-center gap-3">
-              <CountdownUnit value={time.d} label="يوم" />
+              <CountdownUnit value={time.d} label={t.hero.units.d} />
               <span className="text-white/60 text-xl font-black mb-4">:</span>
-              <CountdownUnit value={time.h} label="ساعة" />
+              <CountdownUnit value={time.h} label={t.hero.units.h} />
               <span className="text-white/60 text-xl font-black mb-4">:</span>
-              <CountdownUnit value={time.m} label="دقيقة" />
+              <CountdownUnit value={time.m} label={t.hero.units.m} />
               <span className="text-white/60 text-xl font-black mb-4">:</span>
-              <CountdownUnit value={time.s} label="ثانية" />
+              <CountdownUnit value={time.s} label={t.hero.units.s} />
             </div>
           </div>
         )}
@@ -157,9 +158,9 @@ export default function HeroSection() {
         {/* Quick stats */}
         <div className="grid grid-cols-3 gap-6 max-w-lg mx-auto mt-4 pt-10 border-t border-white/10">
           {[
-            { icon: Users, value: '+200', label: 'طفل في البرنامج' },
-            { icon: Award, value: '+5',   label: 'سنوات خبرة متخصصة' },
-            { icon: Star,  value: '98%',  label: 'رضا أولياء الأمور' },
+            { icon: Users, value: '+200', label: t.hero.stats.children },
+            { icon: Award, value: '+5',   label: t.hero.stats.years },
+            { icon: Star,  value: '98%',  label: t.hero.stats.satisfaction },
           ].map(({ icon: Icon, value, label }) => (
             <div key={label} className="text-center">
               <Icon className="w-6 h-6 text-calm-teal mx-auto mb-2" />

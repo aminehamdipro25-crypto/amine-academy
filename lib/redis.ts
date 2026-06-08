@@ -12,8 +12,18 @@ function getCfg(): RedisCfg | null {
   return { url, token }
 }
 
+async function timedFetch(url: string, opts: RequestInit, ms = 8000): Promise<Response> {
+  const ctrl = new AbortController()
+  const id = setTimeout(() => ctrl.abort(), ms)
+  try {
+    return await fetch(url, { ...opts, signal: ctrl.signal })
+  } finally {
+    clearTimeout(id)
+  }
+}
+
 async function redisCmd(cfg: RedisCfg, ...args: unknown[]): Promise<unknown> {
-  const res = await fetch(
+  const res = await timedFetch(
     `${cfg.url}/${(args as string[]).map(encodeURIComponent).join('/')}`,
     { headers: { Authorization: `Bearer ${cfg.token}` }, cache: 'no-store' }
   )
@@ -23,7 +33,7 @@ async function redisCmd(cfg: RedisCfg, ...args: unknown[]): Promise<unknown> {
 }
 
 async function redisPipeline(cfg: RedisCfg, commands: unknown[][]): Promise<{ result: unknown }[]> {
-  const res = await fetch(`${cfg.url}/pipeline`, {
+  const res = await timedFetch(`${cfg.url}/pipeline`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${cfg.token}`, 'Content-Type': 'application/json' },
     body: JSON.stringify(commands),

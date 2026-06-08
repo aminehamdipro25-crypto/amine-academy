@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Cairo } from 'next/font/google'
 import './globals.css'
+import { LanguageProvider } from '@/lib/i18n'
 
 const cairo = Cairo({
   subsets: ['arabic', 'latin'],
@@ -70,7 +71,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="font-cairo antialiased">
+        <LanguageProvider>
         {children}
+        </LanguageProvider>
         {GA_ID && (
           <>
             <script

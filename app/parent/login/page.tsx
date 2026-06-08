@@ -15,22 +15,29 @@ export default function ParentLoginPage() {
     e.preventDefault()
     setLoading(true)
     setError('')
+    const ctrl = new AbortController()
+    const tid = setTimeout(() => ctrl.abort(), 15000)
     try {
       const res = await fetch('/api/auth/client', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...form, role: 'parent' }),
+        signal: ctrl.signal,
       })
       const data = await res.json()
       if (res.ok) {
         router.push('/parent/dashboard')
-        router.refresh()
       } else {
         setError(data.error || 'بيانات غير صحيحة')
       }
-    } catch {
-      setError('حدث خطأ في الاتصال')
+    } catch (e) {
+      if ((e as Error).name === 'AbortError') {
+        setError('انتهت مهلة الاتصال — تحقق من اتصالك وحاول مجدداً')
+      } else {
+        setError('حدث خطأ في الاتصال')
+      }
     } finally {
+      clearTimeout(tid)
       setLoading(false)
     }
   }

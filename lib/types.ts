@@ -158,6 +158,73 @@ export interface Achievement {
   unlockedAt: string
 }
 
+// ── Session Platform ──────────────────────────────────────────
+
+export interface ExerciseResult {
+  exerciseType:    string
+  exerciseLabelAr: string
+  score:           number   // 0-100
+  accuracy:        number   // 0-100
+  duration:        number   // seconds
+  errors:          number
+  metadata:        Record<string, number | string>
+  completedAt:     string
+}
+
+export interface SessionObservations {
+  attention:    1|2|3|4|5
+  cooperation:  1|2|3|4|5
+  energy:       1|2|3|4|5
+  mood:         1|2|3|4|5
+  anxiety:      1|2|3|4|5
+}
+
+export interface SessionLog {
+  id:              string
+  appointmentId:   string
+  studentId:       string
+  therapistNotes:  string
+  observations:    SessionObservations
+  exercises:       ExerciseResult[]
+  durationSeconds: number
+  highlights:      string[]
+  createdAt:       string
+}
+
+export type AssessmentType = 'adhd' | 'autism' | 'learning-difficulties' | 'motor' | 'cognitive'
+
+export interface AssessmentAnswer {
+  itemId:  string
+  rating:  0|1|2|3
+}
+
+export interface AssessmentResult {
+  id:            string
+  studentId:     string
+  type:          AssessmentType
+  subtype?:      string
+  domainScores:  Record<string, number>
+  totalScore:    number
+  severity:      'none' | 'mild' | 'moderate' | 'severe'
+  recommendations: string[]
+  answers:       AssessmentAnswer[]
+  completedAt:   string
+  createdAt:     string
+}
+
+export interface LearningDifficultyProfile {
+  id:         string
+  studentId:  string
+  dyslexia:   { severity: 'none'|'mild'|'moderate'|'severe'; indicators: string[] }
+  dyscalculia:{ severity: 'none'|'mild'|'moderate'|'severe'; indicators: string[] }
+  dysgraphia: { severity: 'none'|'mild'|'moderate'|'severe'; indicators: string[] }
+  workingMemory: { severity: 'none'|'mild'|'moderate'|'severe'; indicators: string[] }
+  processingSpeed: { severity: 'none'|'mild'|'moderate'|'severe'; indicators: string[] }
+  recommendations: string[]
+  updatedAt:  string
+  createdAt:  string
+}
+
 // ── Session Tokens ────────────────────────────────────────────
 export interface SessionPayload {
   id: string

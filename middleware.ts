@@ -38,9 +38,18 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  // ── Session Platform (admin only) ─────────────────────────
+  if (pathname.startsWith('/session')) {
+    const token = request.cookies.get('admin_token')?.value
+    const valid = await verifyAdminSession(token)
+    if (!valid) {
+      return NextResponse.redirect(new URL('/dashboard/login', request.url))
+    }
+  }
+
   return NextResponse.next()
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/parent/:path*', '/student/:path*'],
+  matcher: ['/dashboard/:path*', '/parent/:path*', '/student/:path*', '/session/:path*'],
 }

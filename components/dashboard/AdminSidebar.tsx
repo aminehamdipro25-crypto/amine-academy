@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, Users, Dumbbell, Calendar,
-  BarChart3, FileText, LogOut, Brain, ClipboardList,
+  BarChart3, FileText, LogOut, Brain, ClipboardList, BookOpen,
 } from 'lucide-react'
 
 const navItems = [
@@ -12,6 +12,7 @@ const navItems = [
   { href: '/dashboard/programs', label: 'البرامج', icon: ClipboardList },
   { href: '/dashboard/exercises', label: 'التمارين', icon: Dumbbell },
   { href: '/dashboard/appointments', label: 'المواعيد', icon: Calendar },
+  { href: '/dashboard/learning-difficulties', label: 'صعوبات التعلم', icon: BookOpen },
   { href: '/dashboard/reports', label: 'التقارير', icon: FileText },
   { href: '/dashboard/analytics', label: 'الإحصائيات', icon: BarChart3 },
 ]

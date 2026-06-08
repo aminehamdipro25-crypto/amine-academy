@@ -4,8 +4,29 @@ import { useState, useEffect, useCallback } from 'react'
 import {
   Settings, Save, RefreshCw, CheckCircle, AlertCircle,
   DollarSign, Tag, Clock, Phone, TrendingDown, BarChart2,
+  Mail, Send, ExternalLink,
 } from 'lucide-react'
 import type { SiteSettings } from '@/lib/site-settings'
+
+interface EnvStatus {
+  gmailConfigured: boolean
+  gmailUser: string | null
+  resendConfigured: boolean
+  anthropicConfigured: boolean
+  upstashConfigured: boolean
+  baseUrl: string | null
+}
+
+function StatusBadge({ ok, label }: { ok: boolean; label: string }) {
+  return (
+    <div className={`flex items-center gap-2 text-sm font-medium ${ok ? 'text-green-700' : 'text-red-600'}`}>
+      {ok
+        ? <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+        : <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />}
+      {label}
+    </div>
+  )
+}
 
 type PlanKey = 'basic' | 'standard' | 'premium'
 type Currency = 'QAR' | 'TND'
@@ -82,6 +103,44 @@ export default function AdminSettingsPage() {
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const [errorMsg, setErrorMsg] = useState('')
 
+  // Email diagnostics
+  const [envStatus, setEnvStatus] = useState<EnvStatus | null>(null)
+  const [testEmailTo, setTestEmailTo] = useState('')
+  const [testEmailState, setTestEmailState] = useState<'idle' | 'sending' | 'ok' | 'error'>('idle')
+  const [testEmailMsg, setTestEmailMsg] = useState('')
+
+  const fetchEnvStatus = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/test-email')
+      if (res.ok) setEnvStatus(await res.json())
+    } catch { /* silent */ }
+  }, [])
+
+  async function sendTestEmail() {
+    const to = testEmailTo.trim() || envStatus?.gmailUser?.replace(/\*+/, '') || ''
+    if (!to.includes('@')) { setTestEmailMsg('أدخل بريداً صالحاً'); setTestEmailState('error'); return }
+    setTestEmailState('sending')
+    setTestEmailMsg('')
+    try {
+      const res = await fetch('/api/admin/test-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to: testEmailTo || undefined }),
+      })
+      const data = await res.json()
+      if (data.ok) {
+        setTestEmailState('ok')
+        setTestEmailMsg(`تم الإرسال إلى ${data.to}`)
+      } else {
+        setTestEmailState('error')
+        setTestEmailMsg(data.error || 'فشل الإرسال')
+      }
+    } catch {
+      setTestEmailState('error')
+      setTestEmailMsg('خطأ في الاتصال بالخادم')
+    }
+  }
+
   const fetchSettings = useCallback(async () => {
     setLoading(true)
     try {
@@ -99,7 +158,8 @@ export default function AdminSettingsPage() {
 
   useEffect(() => {
     fetchSettings()
-  }, [fetchSettings])
+    fetchEnvStatus()
+  }, [fetchSettings, fetchEnvStatus])
 
   async function handleSave() {
     if (!settings) return
@@ -449,6 +509,100 @@ export default function AdminSettingsPage() {
         <p className="text-xs text-amber-600 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2 mt-4">
           ⚠️ ضع أرقاماً حقيقية فقط — الأرقام الوهمية تضر بثقة العملاء وقد تعرّضك لمشاكل قانونية.
         </p>
+      </div>
+
+      {/* Email & System diagnostics */}
+      <div className="bg-white rounded-2xl border border-gray-100 p-6">
+        <h2 className="font-black text-gray-900 mb-5 flex items-center gap-2 text-lg">
+          <Mail className="w-5 h-5 text-blue-500" />
+          تشخيص البريد الإلكتروني والبيئة
+        </h2>
+
+        {/* Env var status grid */}
+        {envStatus ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
+            <div className="bg-gray-50 rounded-xl p-3">
+              <p className="text-xs text-gray-400 mb-1.5 font-medium">Gmail</p>
+              <StatusBadge ok={envStatus.gmailConfigured} label={envStatus.gmailConfigured ? (envStatus.gmailUser || 'مُعدّ') : 'غير مُعدّ'} />
+            </div>
+            <div className="bg-gray-50 rounded-xl p-3">
+              <p className="text-xs text-gray-400 mb-1.5 font-medium">Upstash Redis</p>
+              <StatusBadge ok={envStatus.upstashConfigured} label={envStatus.upstashConfigured ? 'متصل' : 'غير مُعدّ'} />
+            </div>
+            <div className="bg-gray-50 rounded-xl p-3">
+              <p className="text-xs text-gray-400 mb-1.5 font-medium">Anthropic AI</p>
+              <StatusBadge ok={envStatus.anthropicConfigured} label={envStatus.anthropicConfigured ? 'مُعدّ' : 'غير مُعدّ'} />
+            </div>
+          </div>
+        ) : (
+          <div className="h-20 bg-gray-50 rounded-xl animate-pulse mb-6" />
+        )}
+
+        {/* Warning if Gmail not configured */}
+        {envStatus && !envStatus.gmailConfigured && (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-5">
+            <p className="text-amber-800 font-bold text-sm mb-2">البريد غير مُعدّ في Vercel</p>
+            <p className="text-amber-700 text-xs leading-relaxed mb-3">
+              متغيرات <code className="bg-amber-100 px-1 rounded">GMAIL_USER</code> و{' '}
+              <code className="bg-amber-100 px-1 rounded">GMAIL_APP_PASSWORD</code> مفقودة في بيئة الإنتاج.
+              لهذا السبب لا تصل رسائل "نسيت كلمة المرور" إلى المستخدمين.
+            </p>
+            <a
+              href="https://vercel.com/dashboard"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-800 hover:underline"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+              افتح Vercel Dashboard ← Project ← Settings ← Environment Variables
+            </a>
+            <div className="mt-3 bg-white border border-amber-200 rounded-lg p-3 space-y-1 font-mono text-xs text-gray-700">
+              <p><span className="text-amber-600 font-bold">GMAIL_USER</span> = amine.hamdi.pro25@gmail.com</p>
+              <p><span className="text-amber-600 font-bold">GMAIL_APP_PASSWORD</span> = [كلمة مرور تطبيق Gmail الخاصة بك]</p>
+              <p><span className="text-amber-600 font-bold">UPSTASH_REDIS_REST_URL</span> = [رابط Upstash]</p>
+              <p><span className="text-amber-600 font-bold">UPSTASH_REDIS_REST_TOKEN</span> = [مفتاح Upstash]</p>
+              <p><span className="text-amber-600 font-bold">AUTH_SECRET</span> = [سر المصادقة]</p>
+              <p><span className="text-amber-600 font-bold">ANTHROPIC_API_KEY</span> = [مفتاح Claude AI]</p>
+            </div>
+          </div>
+        )}
+
+        {/* Test email form */}
+        <div className="space-y-3">
+          <p className="text-sm font-bold text-gray-700">إرسال بريد اختباري</p>
+          <div className="flex gap-2">
+            <input
+              type="email"
+              value={testEmailTo}
+              onChange={e => setTestEmailTo(e.target.value)}
+              placeholder="اتركه فارغاً لإرساله إلى GMAIL_USER"
+              className="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
+              dir="ltr"
+            />
+            <button
+              onClick={sendTestEmail}
+              disabled={testEmailState === 'sending'}
+              className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl transition-colors disabled:opacity-60"
+            >
+              {testEmailState === 'sending'
+                ? <RefreshCw className="w-4 h-4 animate-spin" />
+                : <Send className="w-4 h-4" />}
+              إرسال
+            </button>
+          </div>
+          {testEmailState === 'ok' && (
+            <div className="flex items-center gap-2 text-green-700 text-sm bg-green-50 border border-green-200 rounded-xl px-4 py-3">
+              <CheckCircle className="w-4 h-4" />
+              {testEmailMsg}
+            </div>
+          )}
+          {testEmailState === 'error' && (
+            <div className="flex items-start gap-2 text-red-700 text-sm bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+              <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <span className="break-all">{testEmailMsg}</span>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Sticky save bar on mobile */}

@@ -257,7 +257,7 @@ export default function PlansSection() {
                       </li>
                     ))}
                   </ul>
-                  <Link href="/register"
+                  <Link href={`/checkout?plan=${plan.id}&currency=${currency}`}
                     className={`block w-full text-center font-bold py-3.5 rounded-xl transition-all ${plan.ctaStyle}`}>
                     {isAr ? `${plan.cta} ←` : `${plan.ctaEn} →`}
                   </Link>

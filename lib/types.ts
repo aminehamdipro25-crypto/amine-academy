@@ -232,3 +232,34 @@ export interface SessionPayload {
   sessionId: string
   exp: number
 }
+
+// ── Messages ──────────────────────────────────────────────────
+export interface Message {
+  id: string
+  threadId: string      // parentId
+  from: 'admin' | 'parent'
+  senderName: string
+  content: string
+  read: boolean
+  createdAt: string
+}
+
+// ── Payments ──────────────────────────────────────────────────
+export type PaymentMethod = 'fawran' | 'bank_transfer_qa' | 'bank_transfer_tn' | 'whatsapp'
+export type PaymentStatus = 'pending' | 'confirmed' | 'rejected' | 'expired'
+export interface PendingPayment {
+  id: string
+  parentId?: string   // if logged-in parent
+  guestName: string
+  guestEmail: string
+  guestPhone: string
+  plan: 'basic' | 'standard' | 'premium'
+  currency: 'QAR' | 'TND'
+  amount: number
+  method: PaymentMethod
+  status: PaymentStatus
+  referenceCode: string   // e.g. "AA-2024-XXXX"
+  adminNotes?: string
+  createdAt: string
+  confirmedAt?: string
+}

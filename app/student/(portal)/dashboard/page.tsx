@@ -7,6 +7,7 @@ interface StudentData {
   student: Student
   todayExercises: Exercise[]
   completedToday: number
+  completedTodayIds: string[]
 }
 
 export default function StudentDashboardPage() {
@@ -27,9 +28,11 @@ export default function StudentDashboardPage() {
     </div>
   )
 
-  const { student, todayExercises, completedToday } = data ?? {
-    student: null, todayExercises: [], completedToday: 0,
+  const { student, todayExercises, completedTodayIds } = data ?? {
+    student: null, todayExercises: [], completedTodayIds: [],
   }
+  // Use Redis-backed count (completedTodayIds length) for accurate display
+  const completedToday = completedTodayIds?.length ?? 0
 
   if (!student) return (
     <div className="text-center py-20">

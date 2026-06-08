@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowRight, Plus, Minus, Save } from 'lucide-react'
+import { ArrowRight, Plus, Minus, Save, Sparkles } from 'lucide-react'
 import type { Parent, Student } from '@/lib/types'
 
 const METRICS = [
@@ -19,6 +19,7 @@ export default function NewReportPage() {
   const [clients, setClients] = useState<ParentWithStudents[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [generatingAI, setGeneratingAI] = useState(false)
   const [error, setError] = useState('')
 
   // Form state
@@ -58,6 +59,42 @@ export default function NewReportPage() {
     const p = clients.find(c => c.id === pid)
     if (p?.students?.length) setSelectedStudentId(p.students[0].id)
     else setSelectedStudentId('')
+  }
+
+  async function generateAISummary() {
+    if (!selectedStudentId || generatingAI) return
+    setGeneratingAI(true)
+    setError('')
+    try {
+      const behaviorRatings = METRICS.map(m => ({
+        metric: m.key,
+        score: ratings[m.key] || 3,
+      }))
+      const res = await fetch('/api/admin/ai-generate-report-summary', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          studentId: selectedStudentId,
+          type,
+          periodStart,
+          periodEnd,
+          completedExercises: completed,
+          totalExercises: total,
+          pointsEarned: points,
+          behaviorRatings,
+        }),
+      })
+      const data = await res.json()
+      if (data.summary) {
+        setProfessorNotes(data.summary)
+      } else {
+        setError(data.error || 'تعذر توليد الملخص')
+      }
+    } catch {
+      setError('تعذر الاتصال بخادم الذكاء الاصطناعي')
+    } finally {
+      setGeneratingAI(false)
+    }
   }
 
   async function submit() {
@@ -229,12 +266,26 @@ export default function NewReportPage() {
 
         {/* Professor notes */}
         <div>
-          <label className="block text-xs font-bold text-gray-500 mb-1.5">ملاحظات الأستاذ</label>
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="text-xs font-bold text-gray-500">ملاحظات الأستاذ</label>
+            <button
+              type="button"
+              onClick={generateAISummary}
+              disabled={!selectedStudentId || generatingAI}
+              className="flex items-center gap-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold text-xs px-3 py-1.5 rounded-lg disabled:opacity-40 transition-colors"
+            >
+              {generatingAI
+                ? <div className="w-3 h-3 border-2 border-purple-600 border-t-transparent rounded-full animate-spin" />
+                : <Sparkles className="w-3.5 h-3.5" />
+              }
+              {generatingAI ? 'جاري التوليد...' : '✨ توليد ملخص AI'}
+            </button>
+          </div>
           <textarea
             value={professorNotes}
             onChange={e => setProfessorNotes(e.target.value)}
             rows={5}
-            placeholder="اكتب ملاحظاتك حول الجلسة، ملاحظات التحسن، توصيات للأسرة..."
+            placeholder="اكتب ملاحظاتك حول الجلسة، ملاحظات التحسن، توصيات للأسرة... أو اضغط «توليد ملخص AI» لاقتراح تلقائي"
             className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-brand-300 focus:outline-none resize-none"
           />
           <p className="text-xs text-gray-400 mt-1 text-left ltr-num">{professorNotes.length}/3000</p>

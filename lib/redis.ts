@@ -113,6 +113,34 @@ export const redis = {
     return redisPipeline(cfg, commands)
   },
 
+  /** Add one member to a Redis Set. Returns the number of elements added. */
+  async sadd(key: string, member: string): Promise<number> {
+    const cfg = getCfg()
+    if (!cfg) return 0
+    try {
+      return (await redisCmd(cfg, 'SADD', key, member)) as number
+    } catch { return 0 }
+  },
+
+  /** Check if member is in a Redis Set. Returns 1 (yes) or 0 (no). */
+  async sismember(key: string, member: string): Promise<number> {
+    const cfg = getCfg()
+    if (!cfg) return 0
+    try {
+      return (await redisCmd(cfg, 'SISMEMBER', key, member)) as number
+    } catch { return 0 }
+  },
+
+  /** Return all members of a Redis Set. */
+  async smembers(key: string): Promise<string[]> {
+    const cfg = getCfg()
+    if (!cfg) return []
+    try {
+      const result = await redisCmd(cfg, 'SMEMBERS', key)
+      return Array.isArray(result) ? (result as string[]) : []
+    } catch { return [] }
+  },
+
   isConfigured(): boolean {
     return getCfg() !== null
   },

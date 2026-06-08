@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Users, Calendar, TrendingUp, Bell, ArrowLeft } from 'lucide-react'
+import { Users, Calendar, TrendingUp, Bell, ArrowLeft, MessageSquare } from 'lucide-react'
 import type { Parent, Student } from '@/lib/types'
 
 interface DashboardData {
@@ -14,12 +14,19 @@ interface DashboardData {
 export default function ParentDashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [unreadMessages, setUnreadMessages] = useState(0)
 
   useEffect(() => {
     fetch('/api/parent/me')
       .then(r => r.json())
       .then(d => setData(d))
       .finally(() => setLoading(false))
+
+    // Check for unread messages from admin (without marking them read)
+    fetch('/api/messages')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d) setUnreadMessages(d.unreadFromAdmin ?? 0) })
+      .catch(() => { /* silent */ })
   }, [])
 
   if (loading) return (
@@ -55,6 +62,13 @@ export default function ParentDashboardPage() {
             <Bell className="w-4 h-4" />
             <span className="text-sm font-medium">لديك {unreadReports} تقرير جديد غير مقروء</span>
           </div>
+        )}
+        {unreadMessages > 0 && (
+          <Link href="/parent/chat" className="mt-3 bg-white/20 hover:bg-white/30 rounded-xl px-4 py-2 flex items-center gap-2 transition-colors">
+            <MessageSquare className="w-4 h-4" />
+            <span className="text-sm font-medium">لديك رسالة جديدة من الأستاذ</span>
+            <ArrowLeft className="w-3.5 h-3.5 mr-auto" />
+          </Link>
         )}
       </div>
 

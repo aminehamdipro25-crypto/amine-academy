@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import AdminSidebar from '@/components/dashboard/AdminSidebar'
 import AdminHeader from '@/components/dashboard/AdminHeader'
+import AdminBreadcrumb from '@/components/dashboard/AdminBreadcrumb'
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -28,7 +29,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Main */}
       <div className="flex-1 flex flex-col min-w-0">
         <AdminHeader onMenuToggle={() => setSidebarOpen(o => !o)} />
-        <main className="flex-1 p-4 md:p-6 overflow-auto">{children}</main>
+        <main className="flex-1 p-4 md:p-6 overflow-auto">
+          <AdminBreadcrumb />
+          {children}
+        </main>
       </div>
     </div>
   )

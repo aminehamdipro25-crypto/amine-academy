@@ -1,11 +1,22 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Check, Video, MessageCircle, FileText, Brain, Zap, Star } from 'lucide-react'
 import { useLang } from '@/lib/i18n'
 
 type Currency = 'QAR' | 'TND'
+
+interface PublicSettings {
+  prices: {
+    basic:    { QAR: number; TND: number }
+    standard: { QAR: number; TND: number }
+    premium:  { QAR: number; TND: number }
+  }
+  discountPct: number
+  discountLabel: string
+  offerDurationDays: number
+}
 
 const PLANS = [
   {
@@ -112,6 +123,16 @@ export default function PlansSection() {
   const [currency, setCurrency] = useState<Currency>('QAR')
   const { lang } = useLang()
   const isAr = lang === 'ar'
+  const [settings, setSettings] = useState<PublicSettings | null>(null)
+  const [settingsLoading, setSettingsLoading] = useState(true)
+
+  useEffect(() => {
+    fetch('/api/public/settings')
+      .then(r => r.json())
+      .then((data: PublicSettings) => setSettings(data))
+      .catch(() => {})
+      .finally(() => setSettingsLoading(false))
+  }, [])
 
   return (
     <section className="py-20 bg-gray-50" id="plans" dir={isAr ? 'rtl' : 'ltr'}>
@@ -170,7 +191,10 @@ export default function PlansSection() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
           {PLANS.map((plan) => {
             const PlanIcon = plan.icon
-            const price = plan.prices[currency]
+            const planId = plan.id as 'basic' | 'standard' | 'premium'
+            const basePrice = settings?.prices[planId]?.[currency] ?? plan.prices[currency]
+            const discountPct = settings?.discountPct ?? 0
+            const discountedPrice = discountPct > 0 ? Math.round(basePrice * (1 - discountPct / 100)) : null
             const symbol = CURRENCY_SYMBOLS[currency]
             return (
               <div key={plan.id}
@@ -186,10 +210,29 @@ export default function PlansSection() {
                   </div>
                   <h3 className={`font-black text-xl ${plan.headerText}`}>{isAr ? plan.name : plan.nameEn}</h3>
                   <p className={`text-sm mt-0.5 ${plan.headerText} opacity-70`}>{isAr ? plan.subtitle : plan.subtitleEn}</p>
-                  <div className="flex items-baseline gap-1 mt-3">
-                    <span className={`text-3xl font-black ltr-num ${plan.priceText}`}>{price}</span>
-                    <span className={`text-sm ${plan.priceText} opacity-70`}>{symbol} / {isAr ? plan.period : plan.periodEn}</span>
-                  </div>
+                  {settingsLoading ? (
+                    <div className="mt-3 h-9 w-24 bg-white/20 rounded-xl animate-pulse" />
+                  ) : (
+                    <div className="mt-3">
+                      {discountedPrice !== null ? (
+                        <div className="flex items-baseline gap-2 flex-wrap">
+                          <span className={`text-3xl font-black ltr-num ${plan.priceText}`}>{discountedPrice}</span>
+                          <span className={`text-sm ${plan.priceText} opacity-50 line-through ltr-num`}>{basePrice}</span>
+                          <span className={`text-sm ${plan.priceText} opacity-70`}>{symbol} / {isAr ? plan.period : plan.periodEn}</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-baseline gap-1">
+                          <span className={`text-3xl font-black ltr-num ${plan.priceText}`}>{basePrice}</span>
+                          <span className={`text-sm ${plan.priceText} opacity-70`}>{symbol} / {isAr ? plan.period : plan.periodEn}</span>
+                        </div>
+                      )}
+                      {discountedPrice !== null && settings?.discountLabel && (
+                        <span className={`inline-block mt-1.5 text-xs font-bold px-2 py-0.5 rounded-full bg-white/20 ${plan.priceText}`}>
+                          {settings.discountLabel}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
                 <div className="p-6">
                   <ul className="space-y-2.5 mb-6">

@@ -13,15 +13,23 @@ const config: Config = {
         brand: {
           50:  '#f0f4ff',
           100: '#e0eaff',
-          200: '#c7d6fe',
-          300: '#a4b9fc',
-          400: '#7a94f8',
-          500: '#5b6ef2',  // primary
-          600: '#4650e3',
-          700: '#3840c8',
-          800: '#3037a2',
-          900: '#2c3280',
-          950: '#1c1f52',
+          200: '#c7d7fe',
+          300: '#a5b4fc',
+          400: '#818cf8',
+          500: '#6366f1',  // primary — indigo slightly warmer
+          600: '#4f46e5',
+          700: '#4338ca',
+          800: '#3730a3',
+          900: '#312e81',
+          950: '#1e1b4b',
+        },
+        // Warm accent for CTAs — adds energy without overstimulating
+        accent: {
+          50:  '#fff7ed',
+          100: '#ffedd5',
+          400: '#fb923c',
+          500: '#f97316',  // orange — primary CTA accent
+          600: '#ea6c0a',
         },
         calm: {
           green: '#4ade80',

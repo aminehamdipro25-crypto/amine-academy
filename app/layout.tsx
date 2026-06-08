@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Cairo } from 'next/font/google'
 import './globals.css'
 import { LanguageProvider } from '@/lib/i18n'
+import ScrollToTop from '@/components/ScrollToTop'
 
 const cairo = Cairo({
   subsets: ['arabic', 'latin'],
@@ -74,6 +75,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <LanguageProvider>
         {children}
         </LanguageProvider>
+        <ScrollToTop />
         {GA_ID && (
           <>
             <script

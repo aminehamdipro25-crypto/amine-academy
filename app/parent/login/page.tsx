@@ -81,6 +81,13 @@ export default function ParentLoginPage() {
             <div className="bg-red-50 text-red-600 text-sm font-medium px-4 py-3 rounded-xl">{error}</div>
           )}
 
+          <div className="text-left">
+            <Link href="/parent/forgot-password"
+              className="text-brand-600 text-sm font-medium hover:underline">
+              نسيت كلمة المرور؟
+            </Link>
+          </div>
+
           <button
             type="submit" disabled={loading}
             className={`w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-3 rounded-xl transition-colors ${loading ? 'opacity-60 cursor-not-allowed' : ''}`}>

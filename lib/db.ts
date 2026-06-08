@@ -210,7 +210,8 @@ export async function deleteActivationCode(email: string): Promise<void> {
 // ── Password Reset Tokens ─────────────────────────────────────
 
 export async function createPasswordResetToken(email: string): Promise<string> {
-  const token = require('crypto').randomBytes(32).toString('hex')
+  const { randomBytes } = await import('crypto')
+  const token = randomBytes(32).toString('hex')
   await redis.set(`pwd_reset:${email}`, token, { ex: 3600 }) // 1 hour
   return token
 }

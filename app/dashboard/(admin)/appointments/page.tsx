@@ -1,5 +1,5 @@
 import { getAllAppointments, getAllParents } from '@/lib/db'
-import { Calendar, Clock, Video, AlertCircle, CheckCircle2, XCircle, User, Plus } from 'lucide-react'
+import { Calendar, Clock, Video, AlertCircle, CheckCircle2, XCircle, User, Plus, MonitorPlay } from 'lucide-react'
 import Link from 'next/link'
 
 export const dynamic = 'force-dynamic'
@@ -201,15 +201,20 @@ export default async function AppointmentsPage() {
                         <p className="text-xs text-gray-500 truncate">{appt.notes || '—'}</p>
                       </td>
                       <td className="px-4 py-4">
-                        {appt.meetingUrl ? (
-                          <a href={appt.meetingUrl} target="_blank" rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-xs font-bold text-green-600 hover:underline">
-                            <Video className="w-3 h-3" />
-                            رابط
-                          </a>
-                        ) : (
-                          <span className="text-gray-300 text-xs">—</span>
-                        )}
+                        <div className="flex flex-col gap-1">
+                          <Link href={`/session/${appt.id}`}
+                            className="inline-flex items-center gap-1 text-xs font-bold text-brand-600 bg-brand-50 hover:bg-brand-100 px-2 py-1 rounded-lg transition-colors">
+                            <MonitorPlay className="w-3 h-3" />
+                            بدء الجلسة
+                          </Link>
+                          {appt.meetingUrl && (
+                            <a href={appt.meetingUrl} target="_blank" rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-xs font-bold text-green-600 hover:underline">
+                              <Video className="w-3 h-3" />
+                              رابط الاجتماع
+                            </a>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   )

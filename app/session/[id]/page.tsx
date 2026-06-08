@@ -1,0 +1,420 @@
+'use client'
+import { useState, useEffect, useRef } from 'react'
+import { useParams, useRouter } from 'next/navigation'
+import {
+  Clock, X, Save,
+} from 'lucide-react'
+import type { ExerciseResult, AssessmentResult, SessionObservations } from '@/lib/types'
+
+import MemoryCards     from '@/components/session/exercises/MemoryCards'
+import SequenceMemory  from '@/components/session/exercises/SequenceMemory'
+import NBackTask       from '@/components/session/exercises/NBackTask'
+import WordRecall      from '@/components/session/exercises/WordRecall'
+import BreathingGuide  from '@/components/session/exercises/BreathingGuide'
+import TapTarget       from '@/components/session/exercises/TapTarget'
+import SimonSays       from '@/components/session/exercises/SimonSays'
+import LetterMatch     from '@/components/session/exercises/LetterMatch'
+import ADHDScale       from '@/components/session/assessments/ADHDScale'
+import LearningDifficultiesScale from '@/components/session/assessments/LearningDifficultiesScale'
+
+type ActiveView =
+  | { type: 'exercise'; id: string }
+  | { type: 'assessment'; id: string }
+  | null
+
+const EXERCISES = [
+  { id:'memory-cards',    labelAr:'مطابقة البطاقات',         icon:'🃏', category:'ذاكرة',      color:'bg-purple-900/40 border-purple-500' },
+  { id:'sequence-memory', labelAr:'تذكر التسلسل',            icon:'🔢', category:'ذاكرة',      color:'bg-blue-900/40 border-blue-500' },
+  { id:'n-back',          labelAr:'ذاكرة N-Back',             icon:'🧩', category:'ذاكرة',      color:'bg-indigo-900/40 border-indigo-500' },
+  { id:'word-recall',     labelAr:'تذكر الكلمات',             icon:'📝', category:'ذاكرة',      color:'bg-violet-900/40 border-violet-500' },
+  { id:'breathing',       labelAr:'تمارين التنفس',            icon:'🌬️', category:'تنفس',       color:'bg-cyan-900/40 border-cyan-500' },
+  { id:'tap-target',      labelAr:'التناسق الحركي',           icon:'🎯', category:'حركي',       color:'bg-orange-900/40 border-orange-500' },
+  { id:'simon-says',      labelAr:'سايمون يقول',              icon:'🎨', category:'إدراكي',     color:'bg-green-900/40 border-green-500' },
+  { id:'letter-match',    labelAr:'مطابقة الحروف',            icon:'🔤', category:'صعوبات التعلم', color:'bg-amber-900/40 border-amber-500' },
+]
+
+const ASSESSMENTS = [
+  { id:'adhd',                labelAr:'مقياس ADHD',             icon:'⚡', color:'bg-blue-900/40 border-blue-500' },
+  { id:'learning-difficulties', labelAr:'صعوبات التعلم',       icon:'📚', color:'bg-amber-900/40 border-amber-500' },
+]
+
+function formatTime(s: number) {
+  const m = Math.floor(s / 60).toString().padStart(2, '0')
+  const sec = (s % 60).toString().padStart(2, '0')
+  return `${m}:${sec}`
+}
+
+function ScoreBar({ score, color = 'bg-brand-500' }: { score: number; color?: string }) {
+  return (
+    <div className="w-full bg-white/10 rounded-full h-1.5 mt-1">
+      <div className={`h-1.5 rounded-full ${color}`} style={{ width: `${score}%` }} />
+    </div>
+  )
+}
+
+export default function SessionPage() {
+  const { id } = useParams<{ id: string }>()
+  const router = useRouter()
+  const startRef = useRef(Date.now())
+
+  const [elapsed, setElapsed] = useState(0)
+  const [running, setRunning] = useState(false)
+  const [activeView, setActiveView] = useState<ActiveView>(null)
+  const [results, setResults] = useState<ExerciseResult[]>([])
+  const [assessments, setAssessments] = useState<AssessmentResult[]>([])
+  const [notes, setNotes] = useState('')
+  const [difficulty, setDifficulty] = useState<1|2|3>(1)
+  const [saved, setSaved] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [studentAge, setStudentAge] = useState(8)
+  const [studentName, setStudentName] = useState('')
+  const [observations, setObservations] = useState<SessionObservations>({
+    attention:3, cooperation:3, energy:3, mood:3, anxiety:3,
+  })
+  const [tab, setTab] = useState<'exercises'|'assessments'|'log'>('exercises')
+
+  // Load appointment/student info
+  useEffect(() => {
+    fetch(`/api/appointments/${id}`)
+      .then(r => r.json())
+      .then(({ appointment }) => {
+        if (appointment?.studentId) {
+          fetch(`/api/students/${appointment.studentId}`)
+            .then(r => r.json())
+            .then(({ student }) => {
+              if (student) {
+                setStudentName(`${student.firstName} ${student.lastName}`)
+                const age = Math.floor((Date.now() - new Date(student.birthDate).getTime()) / (365.25 * 24 * 3600000))
+                setStudentAge(age)
+                setDifficulty(student.severityLevel as 1|2|3)
+              }
+            }).catch(() => {})
+        }
+      }).catch(() => {})
+  }, [id])
+
+  // Timer
+  useEffect(() => {
+    if (!running) return
+    const t = setInterval(() => setElapsed(e => e + 1), 1000)
+    return () => clearInterval(t)
+  }, [running])
+
+  function startSession() {
+    setRunning(true)
+    startRef.current = Date.now()
+  }
+
+  function handleExerciseComplete(result: ExerciseResult) {
+    setResults(r => [...r, result])
+    setActiveView(null)
+  }
+
+  function handleAssessmentComplete(result: AssessmentResult) {
+    setAssessments(a => [...a, result])
+    setActiveView(null)
+    // Save assessment to API
+    fetch('/api/assessments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(result),
+    }).catch(() => {})
+  }
+
+  async function saveSession() {
+    setSaving(true)
+    try {
+      await fetch(`/api/sessions/${id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          studentId: id,
+          therapistNotes: notes,
+          observations,
+          exercises: results,
+          durationSeconds: elapsed,
+          highlights: results.filter(r => r.score >= 80).map(r => `${r.exerciseLabelAr}: ${r.score}%`),
+        }),
+      })
+      setSaved(true)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  // Avg score
+  const avgScore = results.length
+    ? Math.round(results.reduce((s, r) => s + r.score, 0) / results.length)
+    : 0
+
+  const observationLabels: Record<keyof SessionObservations, string> = {
+    attention: 'الانتباه', cooperation: 'التعاون', energy: 'الطاقة', mood: 'المزاج', anxiety: 'القلق',
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-950 text-white flex flex-col">
+
+      {/* Header */}
+      <header className="bg-gray-900 border-b border-white/10 px-4 py-3 flex items-center gap-4">
+        <button onClick={() => router.back()} className="text-white/50 hover:text-white transition-colors">
+          <X className="w-5 h-5" />
+        </button>
+
+        <div className="flex-1 flex items-center gap-4">
+          <div>
+            <h1 className="font-black text-white text-sm">
+              {studentName || 'جلسة تفاعلية'}
+            </h1>
+            <p className="text-white/40 text-xs">#{id?.slice(-6)}</p>
+          </div>
+
+          {/* Timer */}
+          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg ${
+            running ? 'bg-green-900/40 border border-green-500/40' : 'bg-white/5 border border-white/10'
+          }`}>
+            <Clock className="w-4 h-4 text-green-400" />
+            <span className="font-black text-lg ltr-num">{formatTime(elapsed)}</span>
+          </div>
+
+          {!running && (
+            <button onClick={startSession}
+              className="bg-green-600 hover:bg-green-500 text-white font-black px-4 py-1.5 rounded-lg text-sm transition-colors">
+              ▶ ابدأ الجلسة
+            </button>
+          )}
+        </div>
+
+        <div className="flex items-center gap-3">
+          {/* Difficulty */}
+          <div className="flex items-center gap-1">
+            {([1,2,3] as const).map(d => (
+              <button key={d} onClick={() => setDifficulty(d)}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-colors ${
+                  difficulty === d ? 'bg-brand-600 text-white' : 'bg-white/10 text-white/50'
+                }`}>
+                {d === 1 ? 'سهل' : d === 2 ? 'متوسط' : 'صعب'}
+              </button>
+            ))}
+          </div>
+
+          {/* Score */}
+          {results.length > 0 && (
+            <div className="text-center">
+              <div className="font-black text-brand-400 text-lg">{avgScore}%</div>
+              <div className="text-white/40 text-xs">متوسط</div>
+            </div>
+          )}
+
+          <button onClick={saveSession} disabled={saving}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-sm transition-colors ${
+              saved ? 'bg-green-600 text-white' : 'bg-brand-600 hover:bg-brand-700 text-white'
+            }`}>
+            <Save className="w-4 h-4" />
+            {saving ? 'جار الحفظ...' : saved ? 'تم الحفظ ✓' : 'حفظ'}
+          </button>
+        </div>
+      </header>
+
+      <div className="flex flex-1 overflow-hidden">
+
+        {/* Sidebar */}
+        <aside className="w-72 bg-gray-900 border-l border-white/10 flex flex-col">
+          {/* Tabs */}
+          <div className="flex border-b border-white/10">
+            {(['exercises','assessments','log'] as const).map(t => (
+              <button key={t} onClick={() => setTab(t)}
+                className={`flex-1 py-2.5 text-xs font-bold transition-colors ${
+                  tab === t ? 'text-white border-b-2 border-brand-500' : 'text-white/40 hover:text-white/70'
+                }`}>
+                {t === 'exercises' ? '🎮 تمارين' : t === 'assessments' ? '📊 تقييم' : '📝 سجل'}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-3 space-y-2">
+            {tab === 'exercises' && EXERCISES.map(ex => (
+              <button key={ex.id}
+                onClick={() => setActiveView({ type: 'exercise', id: ex.id })}
+                disabled={!running}
+                className={`w-full flex items-center gap-3 p-3 rounded-xl border text-right transition-all
+                  ${running ? `${ex.color} hover:scale-[1.02]` : 'bg-white/5 border-white/10 opacity-40 cursor-not-allowed'}
+                  ${activeView?.type === 'exercise' && activeView.id === ex.id ? 'scale-[1.02]' : ''}
+                `}>
+                <span className="text-2xl">{ex.icon}</span>
+                <div className="text-right">
+                  <div className="text-white font-bold text-sm">{ex.labelAr}</div>
+                  <div className="text-white/40 text-xs">{ex.category}</div>
+                </div>
+              </button>
+            ))}
+
+            {tab === 'assessments' && (
+              <div className="space-y-2">
+                {ASSESSMENTS.map(as => (
+                  <button key={as.id}
+                    onClick={() => setActiveView({ type: 'assessment', id: as.id })}
+                    className={`w-full flex items-center gap-3 p-3 rounded-xl border text-right transition-all ${as.color} hover:scale-[1.02]`}>
+                    <span className="text-2xl">{as.icon}</span>
+                    <div className="text-white font-bold text-sm">{as.labelAr}</div>
+                  </button>
+                ))}
+
+                {/* Observation ratings */}
+                <div className="mt-4 bg-white/5 rounded-xl p-3">
+                  <h3 className="font-black text-white/70 text-xs mb-3">ملاحظات الجلسة</h3>
+                  {(Object.keys(observations) as (keyof SessionObservations)[]).map(key => (
+                    <div key={key} className="mb-2">
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="flex gap-1">
+                          {([1,2,3,4,5] as const).map(v => (
+                            <button key={v}
+                              onClick={() => setObservations(o => ({ ...o, [key]: v }))}
+                              className={`w-5 h-5 rounded text-xs font-bold transition-colors ${
+                                observations[key] >= v ? 'bg-brand-500 text-white' : 'bg-white/10 text-white/30'
+                              }`}>
+                              {v}
+                            </button>
+                          ))}
+                        </div>
+                        <span className="text-white/50 text-xs">{observationLabels[key]}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {tab === 'log' && (
+              <div className="space-y-2">
+                {results.length === 0 && (
+                  <p className="text-white/30 text-sm text-center py-4">لم تبدأ أي تمرين بعد</p>
+                )}
+                {results.map((r, i) => (
+                  <div key={i} className="bg-white/5 rounded-xl p-3">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className={`text-sm font-black ${r.score >= 80 ? 'text-green-400' : r.score >= 60 ? 'text-amber-400' : 'text-red-400'}`}>
+                        {r.score}%
+                      </span>
+                      <span className="text-white/70 text-xs font-bold">{r.exerciseLabelAr}</span>
+                    </div>
+                    <ScoreBar score={r.score}
+                      color={r.score >= 80 ? 'bg-green-500' : r.score >= 60 ? 'bg-amber-500' : 'bg-red-500'} />
+                    <div className="flex justify-between mt-1.5">
+                      <span className="text-white/30 text-xs">{r.duration}ث</span>
+                      <span className="text-white/30 text-xs">دقة: {r.accuracy}%</span>
+                    </div>
+                  </div>
+                ))}
+
+                {assessments.map((a, i) => (
+                  <div key={i} className="bg-amber-900/20 border border-amber-500/30 rounded-xl p-3">
+                    <div className="flex items-center justify-between">
+                      <span className={`text-xs font-black px-2 py-0.5 rounded-full ${
+                        a.severity === 'none' ? 'bg-green-900/50 text-green-400' :
+                        a.severity === 'mild' ? 'bg-amber-900/50 text-amber-400' :
+                        a.severity === 'moderate' ? 'bg-orange-900/50 text-orange-400' :
+                        'bg-red-900/50 text-red-400'
+                      }`}>
+                        {a.severity === 'none' ? 'طبيعي' : a.severity === 'mild' ? 'خفيف' : a.severity === 'moderate' ? 'متوسط' : 'شديد'}
+                      </span>
+                      <span className="text-white/70 text-xs font-bold">
+                        {a.type === 'adhd' ? 'تقييم ADHD' : 'صعوبات التعلم'}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Notes */}
+          <div className="p-3 border-t border-white/10">
+            <textarea
+              value={notes}
+              onChange={e => setNotes(e.target.value)}
+              placeholder="ملاحظات المعالج..."
+              className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm text-white placeholder-white/30 resize-none focus:outline-none focus:border-brand-500"
+              rows={3}
+              dir="rtl"
+            />
+          </div>
+        </aside>
+
+        {/* Main exercise area */}
+        <main className="flex-1 flex items-center justify-center bg-gray-950 relative overflow-auto">
+          {!activeView && !running && (
+            <div className="text-center">
+              <div className="text-8xl mb-6">🎯</div>
+              <h2 className="text-2xl font-black text-white mb-3">جاهز للجلسة؟</h2>
+              <p className="text-white/40 mb-8">اضغط &quot;ابدأ الجلسة&quot; لتفعيل التمارين</p>
+              <button onClick={startSession}
+                className="bg-green-600 hover:bg-green-500 text-white font-black px-10 py-4 rounded-2xl text-lg transition-colors">
+                ▶ ابدأ الجلسة
+              </button>
+            </div>
+          )}
+
+          {!activeView && running && (
+            <div className="text-center">
+              <div className="text-6xl mb-4">✨</div>
+              <p className="text-white/40">اختر تمريناً من القائمة الجانبية</p>
+              {results.length > 0 && (
+                <div className="mt-8 bg-white/5 rounded-2xl p-6 max-w-sm mx-auto">
+                  <h3 className="font-black text-white mb-4">ملخص الجلسة</h3>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <div className="text-2xl font-black text-brand-400">{results.length}</div>
+                      <div className="text-xs text-white/40">تمارين</div>
+                    </div>
+                    <div>
+                      <div className="text-2xl font-black text-green-400">{avgScore}%</div>
+                      <div className="text-xs text-white/40">متوسط</div>
+                    </div>
+                    <div>
+                      <div className="text-2xl font-black text-amber-400">{formatTime(elapsed)}</div>
+                      <div className="text-xs text-white/40">مدة</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeView?.type === 'exercise' && (
+            <div className="w-full max-w-2xl mx-auto py-6">
+              {activeView.id === 'memory-cards'    && <MemoryCards onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'sequence-memory' && <SequenceMemory onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'n-back'          && <NBackTask onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'word-recall'     && <WordRecall onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'breathing'       && <BreathingGuide onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'tap-target'      && <TapTarget onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'simon-says'      && <SimonSays onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'letter-match'    && <LetterMatch onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
+            </div>
+          )}
+
+          {activeView?.type === 'assessment' && (
+            <div className="w-full max-w-2xl mx-auto py-6 px-4">
+              <div className="bg-gray-900 rounded-2xl overflow-hidden">
+                {activeView.id === 'adhd' && (
+                  <ADHDScale
+                    studentId={id || ''}
+                    onComplete={handleAssessmentComplete}
+                    onCancel={() => setActiveView(null)}
+                  />
+                )}
+                {activeView.id === 'learning-difficulties' && (
+                  <LearningDifficultiesScale
+                    studentId={id || ''}
+                    onComplete={handleAssessmentComplete}
+                    onCancel={() => setActiveView(null)}
+                  />
+                )}
+              </div>
+            </div>
+          )}
+        </main>
+      </div>
+    </div>
+  )
+}

@@ -109,8 +109,8 @@ ${ratingsText || '- لم تحدد تقييمات بعد'}
     })
 
     const summary = message.content
-      .filter(b => b.type === 'text')
-      .map(b => (b as { type: 'text'; text: string }).text)
+      .filter((b): b is { type: 'text'; text: string } => b.type === 'text')
+      .map(b => b.text)
       .join('')
       .trim()
 

@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import { verifyAdminSession, createSession } from '@/lib/auth'
 import { getStudent, getStudentsByParent } from '@/lib/db'
 import { redis } from '@/lib/redis'
+import { isRateLimited, getClientIp } from '@/lib/rateLimit'
 
 export const runtime = 'nodejs'
 
@@ -34,6 +35,10 @@ export async function POST(req: NextRequest) {
 // Student uses the code to log in
 export async function PUT(req: NextRequest) {
   try {
+    const ip = getClientIp(req)
+    if (await isRateLimited(`student_code:${ip}`, 10, 3600)) {
+      return NextResponse.json({ error: 'حاول مجدداً بعد ساعة' }, { status: 429 })
+    }
     const { code } = await req.json().catch(() => ({}))
     if (!code) return NextResponse.json({ error: 'أدخل رمز الدخول' }, { status: 400 })
 

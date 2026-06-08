@@ -1,14 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
+import { verifyAdminSession } from '@/lib/auth'
 import { redis } from '@/lib/redis'
-import { generateId } from '@/lib/auth'
 import type { SessionLog } from '@/lib/types'
 
 export const runtime = 'nodejs'
+
+function clamp(n: number): 1 | 2 | 3 | 4 | 5 {
+  const v = Math.min(5, Math.max(1, Math.round(n)))
+  return v as 1 | 2 | 3 | 4 | 5
+}
+
+async function requireAdmin(): Promise<boolean> {
+  const cookieStore = await cookies()
+  const token = cookieStore.get('admin_token')?.value
+  return verifyAdminSession(token)
+}
 
 export async function GET(
   _req: NextRequest,
   { params }: { params: { appointmentId: string } }
 ) {
+  if (!await requireAdmin()) {
+    return NextResponse.json({ log: null }, { status: 401 })
+  }
   try {
     const log = await redis.get<SessionLog>(`session-log:${params.appointmentId}`)
     return NextResponse.json({ log })
@@ -21,30 +36,38 @@ export async function POST(
   req: NextRequest,
   { params }: { params: { appointmentId: string } }
 ) {
+  if (!await requireAdmin()) {
+    return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
+  }
   try {
     const body = await req.json()
-    const id = generateId('AP')
+    const id = `SL-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`
+    const studentId = String(body.studentId || '').replace(/[^a-zA-Z0-9-_]/g, '')
     const log: SessionLog = {
       id,
       appointmentId: params.appointmentId,
-      studentId: body.studentId || '',
-      therapistNotes: body.therapistNotes || '',
-      observations: body.observations || {
-        attention: 3, cooperation: 3, energy: 3, mood: 3, anxiety: 3,
+      studentId,
+      therapistNotes: String(body.therapistNotes || '').slice(0, 5000),
+      observations: {
+        attention:   clamp(Number(body.observations?.attention)   || 3),
+        cooperation: clamp(Number(body.observations?.cooperation) || 3),
+        energy:      clamp(Number(body.observations?.energy)      || 3),
+        mood:        clamp(Number(body.observations?.mood)        || 3),
+        anxiety:     clamp(Number(body.observations?.anxiety)     || 3),
       },
-      exercises: body.exercises || [],
-      durationSeconds: body.durationSeconds || 0,
-      highlights: body.highlights || [],
+      exercises: Array.isArray(body.exercises) ? body.exercises : [],
+      durationSeconds: Number(body.durationSeconds) || 0,
+      highlights: Array.isArray(body.highlights) ? body.highlights : [],
       createdAt: new Date().toISOString(),
     }
     await redis.set(`session-log:${params.appointmentId}`, log, { ex: 365 * 24 * 3600 })
-    // Also push to student's session history
-    await redis.pipeline([
-      ['LPUSH', `sessions:student:${log.studentId}`, params.appointmentId],
-    ])
+    if (studentId) {
+      await redis.pipeline([['LPUSH', `sessions:student:${studentId}`, params.appointmentId]])
+    }
     return NextResponse.json({ ok: true, id })
   } catch (err) {
-    return NextResponse.json({ error: (err as Error).message }, { status: 500 })
+    console.error('[session-log POST]', err)
+    return NextResponse.json({ error: 'خطأ في الخادم' }, { status: 500 })
   }
 }
 
@@ -52,13 +75,39 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: { appointmentId: string } }
 ) {
+  if (!await requireAdmin()) {
+    return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
+  }
   try {
     const body = await req.json()
     const existing = await redis.get<SessionLog>(`session-log:${params.appointmentId}`)
-    const updated = { ...(existing || {}), ...body, appointmentId: params.appointmentId }
+    if (!existing) {
+      return NextResponse.json({ error: 'السجل غير موجود' }, { status: 404 })
+    }
+    // Whitelist updatable fields to prevent overwriting critical data
+    const updated: SessionLog = {
+      ...existing,
+      therapistNotes: body.therapistNotes !== undefined
+        ? String(body.therapistNotes).slice(0, 5000)
+        : existing.therapistNotes,
+      observations: body.observations
+        ? {
+            attention:   clamp(Number(body.observations.attention)   || existing.observations.attention),
+            cooperation: clamp(Number(body.observations.cooperation) || existing.observations.cooperation),
+            energy:      clamp(Number(body.observations.energy)      || existing.observations.energy),
+            mood:        clamp(Number(body.observations.mood)        || existing.observations.mood),
+            anxiety:     clamp(Number(body.observations.anxiety)     || existing.observations.anxiety),
+          }
+        : existing.observations,
+      highlights: Array.isArray(body.highlights) ? body.highlights : existing.highlights,
+      durationSeconds: body.durationSeconds !== undefined
+        ? Number(body.durationSeconds)
+        : existing.durationSeconds,
+    }
     await redis.set(`session-log:${params.appointmentId}`, updated, { ex: 365 * 24 * 3600 })
     return NextResponse.json({ ok: true })
   } catch (err) {
-    return NextResponse.json({ error: (err as Error).message }, { status: 500 })
+    console.error('[session-log PATCH]', err)
+    return NextResponse.json({ error: 'خطأ في الخادم' }, { status: 500 })
   }
 }

@@ -104,8 +104,8 @@ export default function ExercisesPage() {
           ) : (
             <button onClick={() => handleSeed(true)} disabled={seeding}
               className="flex items-center gap-2 bg-gray-700 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-gray-800 transition-colors disabled:opacity-60">
-              {seeding ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-              إضافة مجدداً
+              {seeding ? <RefreshCw className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+              إعادة التحميل الكاملة (35 تمرين)
             </button>
           )}
         </div>
@@ -171,7 +171,7 @@ export default function ExercisesPage() {
           <p className="text-gray-300 text-sm mt-2 mb-6">اضغط "تحميل التمارين الافتراضية" لإضافة المكتبة الكاملة</p>
           <button onClick={() => handleSeed(false)} disabled={seeding}
             className="bg-brand-600 text-white px-6 py-3 rounded-xl text-sm font-bold hover:bg-brand-700 transition-colors disabled:opacity-60">
-            {seeding ? 'جارٍ التحميل...' : '🚀 تحميل 25+ تمرين علمي'}
+            {seeding ? 'جارٍ التحميل...' : '🚀 تحميل 35 تمرين علمي'}
           </button>
         </div>
       ) : (

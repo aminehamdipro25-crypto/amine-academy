@@ -114,6 +114,15 @@ export async function getAllExercises(): Promise<Exercise[]> {
   return exercises.filter(Boolean) as Exercise[]
 }
 
+export async function deleteAllExercises(): Promise<number> {
+  const ids = await redis.lrange('exercises:index', 0, -1)
+  if (ids.length > 0) {
+    await Promise.all(ids.map(id => redis.del(`exercise:${id}`)))
+  }
+  await redis.del('exercises:index')
+  return ids.length
+}
+
 // ── Programs ──────────────────────────────────────────────────
 
 export async function createProgram(data: Omit<Program, 'id'>): Promise<Program> {

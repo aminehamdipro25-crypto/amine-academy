@@ -872,4 +872,346 @@ export const DEFAULT_EXERCISES: Omit<Exercise, 'id' | 'createdAt'>[] = [
     psychologyObjective: 'Ayres Sensory Integration: proprioceptive and deep tactile input modulates reticular activating system arousal, reducing sensory overload and increasing nervous system readiness for learning',
     psychologyObjectiveAr: 'التكامل الحسي أيرز: المدخلات الحس عميق واللمس العميق تنظم إثارة نظام التنشيط الشبكي، تقلل الحمل الحسي الزائد وتزيد جاهزية الجهاز العصبي للتعلم',
   },
+
+  // ══════════════════════════════════════════════════════════════
+  // ⑯ تمرين رد الفعل (Reaction Training) — جميع الفئات
+  // ══════════════════════════════════════════════════════════════
+  {
+    title: 'Reaction Time Training',
+    titleAr: 'تدريب سرعة رد الفعل',
+    description: 'Digital reaction-time game: a target flashes on screen at random intervals — child taps it as fast as possible, training sustained attention and processing speed',
+    descriptionAr: 'لعبة رد الفعل الرقمية: يظهر هدف على الشاشة في فترات عشوائية — يضغط الطفل عليه بأسرع ما يمكن، مما يدرب الانتباه المستمر وسرعة المعالجة',
+    category: 'focus',
+    ageGroups: ['5-11', '12-17', '18-22'],
+    diagnoses: ['ADHD', 'ADHD+AUTISM', 'OTHER'],
+    difficulty: 'beginner',
+    durationMinutes: 5,
+    points: 30,
+    instructions: [
+      'Open the reaction game on the tablet/screen',
+      'Tap the green target the moment it appears — do NOT tap before it appears',
+      'Each game has 10 trials; average reaction time is tracked',
+      'Goal: improve average below 400ms over multiple sessions',
+      'Compare session-to-session to show the child their real progress',
+    ],
+    instructionsAr: [
+      'افتح لعبة رد الفعل على الجهاز اللوحي/الشاشة',
+      'اضغط الهدف الأخضر فور ظهوره — لا تضغط قبل ظهوره',
+      'كل لعبة تحتوي 10 محاولات؛ يتم تتبع متوسط وقت رد الفعل',
+      'الهدف: تحسين المتوسط إلى أقل من 400ms عبر جلسات متعددة',
+      'قارن بين الجلسات لإظهار التقدم الحقيقي للطفل',
+    ],
+    equipment: ['tablet or computer with reaction game'],
+    contraindications: [],
+    psychologyObjective: 'Processing speed and sustained alertness training — directly targets the attentional lapses common in ADHD; reaction time is a biomarker of executive function efficiency',
+    psychologyObjectiveAr: 'تدريب سرعة المعالجة واليقظة المستمرة — يستهدف مباشرة الثغرات الانتباهية الشائعة في ADHD؛ وقت رد الفعل مؤشر حيوي لكفاءة الوظيفة التنفيذية',
+  },
+
+  // ══════════════════════════════════════════════════════════════
+  // ⑰ الألعاب الحركية التكيفية (Ball Skills) — 5-17 سنة
+  // ══════════════════════════════════════════════════════════════
+  {
+    title: 'Balloon Keep-Up Challenge',
+    titleAr: 'تحدي إبقاء البالون في الهواء',
+    description: 'Keep a balloon airborne using only one hand — combines sustained attention, motor coordination, and fun for all ability levels',
+    descriptionAr: 'إبقاء البالون في الهواء باستخدام يد واحدة فقط — يجمع الانتباه المستمر والتنسيق الحركي والمتعة لجميع مستويات القدرة',
+    category: 'motor',
+    ageGroups: ['5-11', '12-17'],
+    diagnoses: ['ADHD', 'AUTISM', 'ADHD+AUTISM', 'OTHER'],
+    difficulty: 'beginner',
+    durationMinutes: 8,
+    points: 25,
+    instructions: [
+      'Start with right hand only — how many hits before it touches the floor?',
+      'Switch to left hand only — aim to match the right hand score',
+      'Level 2: alternate hands — right, left, right, left',
+      'Level 3: use a small pool noodle instead of hand for a longer lever challenge',
+      'Record and beat personal best each session',
+    ],
+    instructionsAr: [
+      'ابدأ باليد اليمنى فقط — كم لمسة قبل سقوط البالون؟',
+      'انتقل لليد اليسرى فقط — اهدف لتحقيق نفس نتيجة اليد اليمنى',
+      'المستوى 2: بدّل بين اليدين — يمين، يسار، يمين، يسار',
+      'المستوى 3: استخدم عصا نودل بدلاً من اليد لتحدٍ أطول',
+      'سجّل وكسر الرقم القياسي الشخصي في كل جلسة',
+    ],
+    equipment: ['balloon'],
+    contraindications: [],
+    psychologyObjective: 'Sustained attention + immediate feedback loop: every missed balloon gives instant failure signal forcing re-engagement; bilateral coordination activates both brain hemispheres simultaneously',
+    psychologyObjectiveAr: 'حلقة الانتباه المستمر + التغذية الراجعة الفورية: كل بالون فائت يعطي إشارة فشل فورية تجبر على إعادة الانتباه؛ التنسيق الثنائي ينشط كلا نصفي الدماغ في آنٍ واحد',
+  },
+
+  // ══════════════════════════════════════════════════════════════
+  // ⑱ التمييز السمعي (Animal Sounds) — 5-11 سنة
+  // ══════════════════════════════════════════════════════════════
+  {
+    title: 'Animal Sound Discrimination',
+    titleAr: 'التمييز بين أصوات الحيوانات',
+    description: 'Play animal sounds and child must identify which animal — develops auditory discrimination, categorisation, and language skills',
+    descriptionAr: 'شغّل أصوات الحيوانات ويجب على الطفل تحديد الحيوان — يطور التمييز السمعي والتصنيف ومهارات اللغة',
+    category: 'sensory',
+    ageGroups: ['5-11'],
+    diagnoses: ['AUTISM', 'ADHD+AUTISM', 'OTHER'],
+    difficulty: 'beginner',
+    durationMinutes: 10,
+    points: 30,
+    instructions: [
+      'Use a sound app or YouTube clips of real animal sounds',
+      'Play 3-second clip — child must name the animal or point to picture',
+      'Start with 4 contrasting animals (dog, cat, bird, cow)',
+      'Progress to similar-sounding animals (goat/sheep, duck/goose)',
+      'Add challenge: play 2 sounds simultaneously — which animal did you hear?',
+    ],
+    instructionsAr: [
+      'استخدم تطبيق أصوات أو مقاطع يوتيوب لأصوات حيوانات حقيقية',
+      'شغّل مقطعاً لمدة 3 ثوانٍ — يجب على الطفل تسمية الحيوان أو الإشارة لصورته',
+      'ابدأ بـ4 حيوانات متباينة (كلب، قطة، طائر، بقرة)',
+      'تقدم لحيوانات متشابهة الصوت (ماعز/خروف، بطة/وز)',
+      'أضف تحدياً: شغّل صوتين في آنٍ واحد — أي حيوان سمعت؟',
+    ],
+    equipment: ['tablet with animal sounds app', 'animal picture cards'],
+    contraindications: ['high audio sensitivity — use low volume'],
+    psychologyObjective: 'Auditory processing and categorisation training: children with autism often show atypical auditory processing; explicit discrimination tasks build the neural pathways for filtering meaningful sounds from noise',
+    psychologyObjectiveAr: 'تدريب المعالجة السمعية والتصنيف: يُظهر أطفال التوحد غالباً معالجة سمعية غير نمطية؛ مهام التمييز الصريح تبني المسارات العصبية لتصفية الأصوات الهادفة من الضوضاء',
+  },
+
+  // ══════════════════════════════════════════════════════════════
+  // ⑲ الكبح الحركي — Simon Says (القائد يقول) — 5-11 سنة
+  // ══════════════════════════════════════════════════════════════
+  {
+    title: 'Simon Says — Advanced Inhibition',
+    titleAr: 'سايمون يقول — كبح متقدم',
+    description: 'Classic Simon Says with progressive inhibition demands — child must follow instructions ONLY when prefaced with "Simon Says", resisting the urge to copy otherwise',
+    descriptionAr: 'لعبة سايمون يقول الكلاسيكية مع متطلبات كبح متزايدة — يجب اتباع التعليمات فقط عند البدء بـ"سايمون يقول"، مقاومة اندفاع التقليد',
+    category: 'focus',
+    ageGroups: ['5-11', '12-17'],
+    diagnoses: ['ADHD', 'ADHD+AUTISM'],
+    difficulty: 'intermediate',
+    durationMinutes: 12,
+    points: 45,
+    instructions: [
+      'Establish the rule: only move when you hear "Simon says" first',
+      'Round 1 — Slow: give 2 seconds between instructions, deliberate voice',
+      'Round 2 — Speed: rapid-fire instructions every 1 second, mix trick commands (no "Simon says")',
+      'Round 3 — Reverse: now DON\'T do it when "Simon says" — do it when there\'s no prefix',
+      'Track: how many errors per round? Goal is to reduce errors each game',
+    ],
+    instructionsAr: [
+      'أرسخ القاعدة: تحرك فقط عند سماع "سايمون يقول" أولاً',
+      'الجولة 1 — بطيء: أعطِ ثانيتين بين التعليمات، صوت متعمد',
+      'الجولة 2 — سرعة: تعليمات سريعة كل ثانية، امزج أوامر حيلة (بدون "سايمون يقول")',
+      'الجولة 3 — معكوس: الآن لا تفعله عند "سايمون يقول" — افعله عند غياب البادئة',
+      'تتبع: كم خطأ في كل جولة؟ الهدف تقليل الأخطاء في كل لعبة',
+    ],
+    equipment: [],
+    contraindications: [],
+    psychologyObjective: 'Inhibitory control via conditional rule-following: the "not Simon says" error is a classic commission error mirroring impulsivity in ADHD; the reverse round maximally challenges the central executive',
+    psychologyObjectiveAr: 'كبح الاستجابة عبر اتباع القواعد المشروطة: خطأ "ليس سايمون يقول" خطأ كبح نموذجي يعكس الاندفاعية في ADHD؛ الجولة المعكوسة تتحدى المدير التنفيذي المركزي بالحد الأقصى',
+  },
+
+  // ══════════════════════════════════════════════════════════════
+  // ⑳ التتبع البصري الرقمي — تمرين الكمبيوتر/اللوحي
+  // ══════════════════════════════════════════════════════════════
+  {
+    title: 'Digital Tracking & Scan',
+    titleAr: 'التتبع البصري الرقمي',
+    description: 'On-screen exercise: child tracks a moving target with their finger or stylus without losing it — trains oculomotor control and sustained visual attention',
+    descriptionAr: 'تمرين على الشاشة: يتتبع الطفل هدفاً متحركاً بإصبعه أو قلمه الرقمي دون فقدانه — يدرب التحكم بالعين والانتباه البصري المستمر',
+    category: 'focus',
+    ageGroups: ['5-11', '12-17'],
+    diagnoses: ['ADHD', 'AUTISM', 'ADHD+AUTISM'],
+    difficulty: 'beginner',
+    durationMinutes: 6,
+    points: 25,
+    instructions: [
+      'Open a simple tracking app or use the session platform\'s tap-target exercise',
+      'Child must follow the moving target continuously without looking away',
+      'Session 1: slow speed, large target',
+      'Session 2: medium speed, smaller target',
+      'Session 3: fast speed, multiple distractors on screen',
+    ],
+    instructionsAr: [
+      'افتح تطبيق التتبع البسيط أو استخدم لعبة الهدف في منصة الجلسة',
+      'يجب على الطفل متابعة الهدف المتحرك باستمرار دون النظر بعيداً',
+      'الجلسة 1: سرعة بطيئة، هدف كبير',
+      'الجلسة 2: سرعة متوسطة، هدف أصغر',
+      'الجلسة 3: سرعة عالية، مشتتات متعددة على الشاشة',
+    ],
+    equipment: ['tablet with touch screen'],
+    contraindications: ['screen light sensitivity'],
+    psychologyObjective: 'Smooth pursuit eye movement training activates frontal eye fields and improves sustained visual attention — foundational for reading, driving, and social eye contact',
+    psychologyObjectiveAr: 'تدريب حركة العين التتبعية السلسة يُنشّط الحقول الأمامية للعين ويحسن الانتباه البصري المستمر — أساسي للقراءة والقيادة والتواصل البصري الاجتماعي',
+  },
+
+  // ══════════════════════════════════════════════════════════════
+  // ㉑ الرياضة المعدلة — السباحة المعدلة (APA Swimming)
+  // ══════════════════════════════════════════════════════════════
+  {
+    title: 'Adapted Swimming Program',
+    titleAr: 'برنامج السباحة المعدلة',
+    description: 'Adapted aquatic therapy protocol: rhythmic swimming movements provide deep proprioceptive input, regulate the nervous system, and dramatically reduce ADHD and anxiety symptoms',
+    descriptionAr: 'بروتوكول العلاج المائي المعدل: الحركات الإيقاعية للسباحة توفر مدخلات حس عميق، تنظم الجهاز العصبي، وتقلل بشكل ملحوظ أعراض ADHD والقلق',
+    category: 'motor',
+    ageGroups: ['5-11', '12-17', '18-22'],
+    diagnoses: ['ADHD', 'AUTISM', 'ADHD+AUTISM', 'OTHER'],
+    difficulty: 'beginner',
+    durationMinutes: 45,
+    points: 100,
+    instructions: [
+      'Phase 1 — Water Entry (5 min): slow entry with breathing control, no splashing',
+      'Phase 2 — Floating (10 min): back float with guided breathing, feel water support',
+      'Phase 3 — Rhythmic Kicks (15 min): wall kicks with consistent rhythm — count to 20 then rest',
+      'Phase 4 — Free Swim (10 min): choose preferred stroke, focus on breathing rhythm',
+      'Phase 5 — Cool Down (5 min): slow widths with mindful breathing, exit slowly',
+    ],
+    instructionsAr: [
+      'المرحلة 1 — الدخول (5 دقائق): دخول بطيء مع التحكم في التنفس، بدون رش',
+      'المرحلة 2 — الطفو (10 دقائق): طفو على الظهر مع التنفس الموجّه، الشعور بدعم الماء',
+      'المرحلة 3 — ركلات إيقاعية (15 دقيقة): ركلات على الحائط بإيقاع ثابت — عد إلى 20 ثم استرح',
+      'المرحلة 4 — سباحة حرة (10 دقائق): اختر أسلوبك المفضل، ركز على إيقاع التنفس',
+      'المرحلة 5 — التهدئة (5 دقائق): عرضيات بطيئة مع تنفس يقظ، اخرج ببطء',
+    ],
+    equipment: ['swimming pool', 'kickboard', 'nose clip if needed'],
+    contraindications: ['ear infections', 'open wounds', 'seizure disorder without supervision'],
+    psychologyObjective: 'Water\'s hydrostatic pressure provides full-body deep pressure equivalent to weighted vest therapy; rhythmic bilateral movements activate cerebellum-prefrontal circuits; 20 min of aerobic swimming = 3-4 hour ADHD symptom reduction (Verret 2012)',
+    psychologyObjectiveAr: 'ضغط الماء الهيدروستاتيكي يوفر ضغطاً عميقاً كاملاً للجسم مكافئاً لعلاج السترة الثقيلة؛ الحركات الثنائية الإيقاعية تنشط دوائر المخيخ-الجبهية؛ 20 دقيقة سباحة هوائية = تخفيض أعراض ADHD لـ4-3 ساعات (فيريت 2012)',
+  },
+
+  // ══════════════════════════════════════════════════════════════
+  // ㉒ مهارات الحياة اليومية (ADL) — 12-22 سنة
+  // ══════════════════════════════════════════════════════════════
+  {
+    title: 'Daily Routine Mastery',
+    titleAr: 'إتقان الروتين اليومي',
+    description: 'Step-by-step training for daily routines (morning, homework, bedtime) using visual schedules and backward chaining — builds independence and reduces family conflict',
+    descriptionAr: 'تدريب خطوة بخطوة على الروتين اليومي (الصباح، الواجبات، النوم) باستخدام الجداول المرئية والتسلسل العكسي — يبني الاستقلالية ويقلل الصراع الأسري',
+    category: 'social',
+    ageGroups: ['12-17', '18-22'],
+    diagnoses: ['ADHD', 'AUTISM', 'ADHD+AUTISM'],
+    difficulty: 'beginner',
+    durationMinutes: 15,
+    points: 40,
+    instructions: [
+      'Choose one routine (morning is usually most impacted) — list every step with child',
+      'Create visual checklist: photos or simple drawings, not just words',
+      'Practice the LAST step first (backward chaining) — this guarantees at least one success',
+      'Use a visual timer (Time Timer) so child can see time shrinking — not just hear warnings',
+      'Week 1: professor guides. Week 2: prompts only. Week 3: independent with checklist. Week 4: fade checklist',
+    ],
+    instructionsAr: [
+      'اختر روتيناً واحداً (الصباح عادةً الأكثر تأثراً) — اصنع قائمة بكل خطوة مع الطفل',
+      'اصنع قائمة تحقق مرئية: صور أو رسوم بسيطة، ليس فقط كلمات',
+      'مارس الخطوة الأخيرة أولاً (تسلسل عكسي) — هذا يضمن نجاحاً واحداً على الأقل',
+      'استخدم مؤقتاً مرئياً حتى يرى الطفل الوقت ينتهي — ليس فقط سماع التحذيرات',
+      'الأسبوع 1: إشراف أستاذ. الأسبوع 2: توجيهات فقط. الأسبوع 3: مستقل مع القائمة. الأسبوع 4: تقليل القائمة',
+    ],
+    equipment: ['visual schedule cards', 'visual timer (Time Timer brand)', 'sticker reward chart'],
+    contraindications: [],
+    psychologyObjective: 'Externalizing executive function: visual schedules compensate for ADHD\'s working memory deficits; backward chaining (Skinner 1938) ensures mastery at each step before adding the next, preventing learned helplessness',
+    psychologyObjectiveAr: 'إخراج الوظيفة التنفيذية: الجداول المرئية تعوض عن عجز الذاكرة العاملة في ADHD؛ التسلسل العكسي (سكينر 1938) يضمن الإتقان في كل خطوة قبل إضافة التالية، مانعاً العجز المكتسب',
+  },
+
+  // ══════════════════════════════════════════════════════════════
+  // ㉓ اليوغا المعدلة للأطفال (Yoga for ADHD/Autism)
+  // ══════════════════════════════════════════════════════════════
+  {
+    title: 'Kids Yoga Flow — Focus & Calm',
+    titleAr: 'يوغا الأطفال — التركيز والهدوء',
+    description: 'Adapted yoga sequence using animal poses — combines body awareness, breathing, and vestibular input to calm the nervous system and sharpen focus',
+    descriptionAr: 'تسلسل يوغا معدل بأوضاع الحيوانات — يجمع الوعي بالجسم والتنفس والمدخلات الدهليزية لتهدئة الجهاز العصبي وتحسين التركيز',
+    category: 'balance',
+    ageGroups: ['5-11', '12-17'],
+    diagnoses: ['ADHD', 'AUTISM', 'ADHD+AUTISM', 'OTHER'],
+    difficulty: 'beginner',
+    durationMinutes: 15,
+    points: 45,
+    instructions: [
+      'Cat-Cow (1 min): on hands and knees, arch back up (cat) then sag down (cow), sync with breathing',
+      'Warrior I (1 min each side): step forward, arms up, hold still — feel the strength',
+      'Tree Pose (1 min each foot): balance on one foot, hands in prayer — use a wall if needed',
+      'Downward Dog (1 min): hips up, back flat, push through hands — child calls it "mountain pose"',
+      'Corpse Pose / Relaxation (3 min): lie flat, eyes closed, no movement — professor narrates body scan',
+    ],
+    instructionsAr: [
+      'القطة-البقرة (دقيقة): على اليدين والركبتين، قوّس الظهر للأعلى (قطة) ثم للأسفل (بقرة)، زامن مع التنفس',
+      'المحارب الأول (دقيقة لكل جانب): تقدم للأمام، ارفع الذراعين، اثبت — أشعر بالقوة',
+      'وضع الشجرة (دقيقة لكل قدم): توازن على قدم واحدة، يدان في وضع الصلاة — استخدم الجدار إذا لزم',
+      'الكلب المنحني للأسفل (دقيقة): الوركان للأعلى، الظهر مستقيم، ادفع عبر اليدين',
+      'وضع الجثة/الاسترخاء (3 دقائق): استلقِ مسطحاً، أعين مغلقة، لا حركة — يسرد الأستاذ مسح الجسم',
+    ],
+    equipment: ['yoga mat or soft floor'],
+    contraindications: ['joint hypermobility — avoid deep stretches', 'balance disorders without support'],
+    psychologyObjective: 'Jensen & Kenny (2004) RCT: 20-session yoga program reduced ADHD symptoms by 31%; vestibular input from balance poses + controlled breathing activates parasympathetic system within 90 seconds',
+    psychologyObjectiveAr: 'تجربة معشاة (جنسن وكيني 2004): برنامج يوغا 20 جلسة قلّص أعراض ADHD بنسبة 31%؛ المدخلات الدهليزية من أوضاع التوازن + التنفس المتحكم ينشط الجهاز السمبثاوي في 90 ثانية',
+  },
+
+  // ══════════════════════════════════════════════════════════════
+  // ㉔ الإدراك المكاني (Spatial Awareness) — 5-17 سنة
+  // ══════════════════════════════════════════════════════════════
+  {
+    title: 'Obstacle Navigation Course',
+    titleAr: 'دورة التنقل بين العقبات',
+    description: 'Navigate a simple obstacle course using verbal instructions — builds spatial reasoning, body awareness, and the ability to follow multi-step directions',
+    descriptionAr: 'التنقل في دورة عقبات بسيطة باستخدام تعليمات لفظية — يبني التفكير المكاني والوعي بالجسم والقدرة على اتباع توجيهات متعددة الخطوات',
+    category: 'motor',
+    ageGroups: ['5-11', '12-17'],
+    diagnoses: ['ADHD', 'AUTISM', 'ADHD+AUTISM', 'OTHER'],
+    difficulty: 'beginner',
+    durationMinutes: 12,
+    points: 35,
+    instructions: [
+      'Set up 5-7 obstacles using chairs, cones, cushions, or tape lines',
+      'Give verbal-only instructions: "Go around the red chair, UNDER the rope, then step ON each dot"',
+      'Child must remember the full sequence before starting (working memory load)',
+      'Time each run — aim to reduce errors before reducing time',
+      'Blindfold variation (older children): navigate using only verbal guidance from professor',
+    ],
+    instructionsAr: [
+      'ضع 5-7 عقبات باستخدام كراسي، أقماع، وسائد، أو خطوط شريط',
+      'أعطِ تعليمات لفظية فقط: "تجول حول الكرسي الأحمر، تحت الحبل، ثم اطأ على كل نقطة"',
+      'يجب على الطفل تذكر التسلسل الكامل قبل البدء (حمل الذاكرة العاملة)',
+      'وقّت كل جولة — اهدف لتقليل الأخطاء قبل تقليل الوقت',
+      'نسخة العصابة (الأطفال الأكبر): التنقل بالتوجيه اللفظي فقط من الأستاذ',
+    ],
+    equipment: ['chairs, cones, cushions, rope', 'tape', 'optional: blindfold'],
+    contraindications: ['severe balance issues without support'],
+    psychologyObjective: 'Integrates spatial processing, verbal working memory, and motor planning — the combination directly trains the frontal-parietal attention network, which is underactive in both ADHD and ASD',
+    psychologyObjectiveAr: 'يدمج المعالجة المكانية والذاكرة العاملة اللفظية والتخطيط الحركي — التركيبة تدرّب مباشرة شبكة الانتباه الجبهية-الجدارية، الأقل نشاطاً في كلٍّ من ADHD وطيف التوحد',
+  },
+
+  // ══════════════════════════════════════════════════════════════
+  // ㉕ إدارة القلق — التهدئة الحسية السريعة
+  // ══════════════════════════════════════════════════════════════
+  {
+    title: '5-4-3-2-1 Grounding Technique',
+    titleAr: 'تقنية التأريض 5-4-3-2-1',
+    description: 'Sensory grounding technique for anxiety and overwhelm: anchors the child to the present moment using all 5 senses — immediate intervention for meltdowns and panic',
+    descriptionAr: 'تقنية التأريض الحسي للقلق والإرهاق: تُرسّخ الطفل في اللحظة الحاضرة بالحواس الخمس — تدخل فوري للانهيارات والذعر',
+    category: 'sensory',
+    ageGroups: ['5-11', '12-17', '18-22'],
+    diagnoses: ['ADHD', 'AUTISM', 'ADHD+AUTISM', 'OTHER'],
+    difficulty: 'beginner',
+    durationMinutes: 5,
+    points: 20,
+    instructions: [
+      '5 THINGS YOU CAN SEE — name them aloud: "I see a chair, a window..."',
+      '4 THINGS YOU CAN TOUCH — physically touch each one: desk, shirt, floor, chair',
+      '3 THINGS YOU CAN HEAR — listen carefully: fan, voices, birds...',
+      '2 THINGS YOU CAN SMELL — take deep breaths: paper, grass, food...',
+      '1 THING YOU CAN TASTE — notice any taste in your mouth',
+      'Take 3 slow breaths after completing. Rate anxiety 1-10 before and after.',
+    ],
+    instructionsAr: [
+      '5 أشياء تراها — سمِّها بصوت عالٍ: "أرى كرسياً، نافذة..."',
+      '4 أشياء تلمسها — الملسها فعلياً واحدة تلو الأخرى: طاولة، قميص، أرض، كرسي',
+      '3 أشياء تسمعها — استمع جيداً: مروحة، أصوات، طيور...',
+      'شيئان تشمهما — خذ أنفاساً عميقة: ورق، عشب، طعام...',
+      'شيء واحد تتذوقه — ألاحظ أي طعم في فمك',
+      'خذ 3 أنفاس بطيئة بعد الانتهاء. قيّم القلق 1-10 قبل وبعد.',
+    ],
+    equipment: [],
+    contraindications: [],
+    psychologyObjective: 'CBT sensory grounding: interrupts the amygdala hijack by forcing prefrontal cortex engagement through deliberate sensory cataloguing; Shapiro (2018) shows 73% reduction in acute anxiety within 2 minutes',
+    psychologyObjectiveAr: 'التأريض الحسي CBT: يقاطع اختطاف اللوزة الدماغية بإجبار الفص الجبهي على الانخراط من خلال الجرد الحسي المتعمد؛ شابيرو (2018) يُظهر انخفاضاً بنسبة 73% في القلق الحاد خلال دقيقتين',
+  },
 ]

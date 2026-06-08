@@ -14,6 +14,10 @@ import BreathingGuide  from '@/components/session/exercises/BreathingGuide'
 import TapTarget       from '@/components/session/exercises/TapTarget'
 import SimonSays       from '@/components/session/exercises/SimonSays'
 import LetterMatch     from '@/components/session/exercises/LetterMatch'
+import ReactionGame    from '@/components/session/exercises/ReactionGame'
+import StroopTest      from '@/components/session/exercises/StroopTest'
+import StopSignal      from '@/components/session/exercises/StopSignal'
+import EmotionCards    from '@/components/session/exercises/EmotionCards'
 import ADHDScale       from '@/components/session/assessments/ADHDScale'
 import LearningDifficultiesScale from '@/components/session/assessments/LearningDifficultiesScale'
 
@@ -30,7 +34,11 @@ const EXERCISES = [
   { id:'breathing',       labelAr:'تمارين التنفس',            icon:'🌬️', category:'تنفس',       color:'bg-cyan-900/40 border-cyan-500' },
   { id:'tap-target',      labelAr:'التناسق الحركي',           icon:'🎯', category:'حركي',       color:'bg-orange-900/40 border-orange-500' },
   { id:'simon-says',      labelAr:'سايمون يقول',              icon:'🎨', category:'إدراكي',     color:'bg-green-900/40 border-green-500' },
-  { id:'letter-match',    labelAr:'مطابقة الحروف',            icon:'🔤', category:'صعوبات التعلم', color:'bg-amber-900/40 border-amber-500' },
+  { id:'letter-match',    labelAr:'مطابقة الحروف',            icon:'🔤', category:'صعوبات التعلم', color:'bg-amber-900/40 border-amber-500'  },
+  { id:'reaction-game',   labelAr:'سرعة رد الفعل',            icon:'⚡', category:'حركي',          color:'bg-yellow-900/40 border-yellow-500' },
+  { id:'stroop-test',     labelAr:'ستروب — كبح الاستجابة',    icon:'🎨', category:'انتباه',         color:'bg-rose-900/40 border-rose-500'     },
+  { id:'stop-signal',     labelAr:'توقف أو اكمل',             icon:'🛑', category:'اندفاعية',       color:'bg-red-900/40 border-red-500'       },
+  { id:'emotion-cards',   labelAr:'التعرف على المشاعر',       icon:'🎭', category:'اجتماعي',        color:'bg-pink-900/40 border-pink-500'     },
 ]
 
 const ASSESSMENTS = [
@@ -389,7 +397,11 @@ export default function SessionPage() {
               {activeView.id === 'breathing'       && <BreathingGuide onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
               {activeView.id === 'tap-target'      && <TapTarget onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
               {activeView.id === 'simon-says'      && <SimonSays onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'letter-match'    && <LetterMatch onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'letter-match'    && <LetterMatch    onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'reaction-game'  && <ReactionGame   onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'stroop-test'    && <StroopTest     onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'stop-signal'    && <StopSignal     onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'emotion-cards'  && <EmotionCards   onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
             </div>
           )}
 

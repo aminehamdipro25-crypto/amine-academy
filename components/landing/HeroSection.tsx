@@ -160,7 +160,7 @@ export default function HeroSection() {
         {time && !time.expired && (
           <div className="inline-flex flex-col items-center gap-4 bg-white/10 backdrop-blur border border-white/20 rounded-2xl px-8 py-5">
             <p className="text-white/80 text-sm font-medium">{t.hero.offerLabel}</p>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3" dir="ltr">
               <CountdownUnit value={time.d} label={t.hero.units.d} />
               <span className="text-white/60 text-xl font-black mb-4">:</span>
               <CountdownUnit value={time.h} label={t.hero.units.h} />

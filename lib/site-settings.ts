@@ -1,19 +1,23 @@
 import { redis } from '@/lib/redis'
 
 export interface SiteSettings {
-  // Prices in QAR and TND
   prices: {
     basic:    { QAR: number; TND: number }
     standard: { QAR: number; TND: number }
     premium:  { QAR: number; TND: number }
   }
-  // Discount
-  discountPct: number   // 0 = no discount, 20 = 20% off
-  discountLabel: string // e.g. "عرض التسجيل المبكر"
-  // Countdown offer duration in days
+  discountPct: number
+  discountLabel: string
   offerDurationDays: number
-  // Contact
   whatsappNumber: string
+  // Landing page stats (editable by admin — put YOUR real numbers)
+  stats: {
+    childrenCount: string    // e.g. "+12" or "12"
+    satisfactionPct: string  // e.g. "97%"
+    protocolsCount: string   // e.g. "+25"
+    sessionMinutes: string   // e.g. "45"
+    yearsExperience: string  // e.g. "+5"
+  }
 }
 
 const SETTINGS_KEY = 'site:settings'
@@ -28,6 +32,13 @@ const DEFAULT_SETTINGS: SiteSettings = {
   discountLabel: 'عرض التسجيل المبكر',
   offerDurationDays: 5,
   whatsappNumber: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '',
+  stats: {
+    childrenCount:    '12',
+    satisfactionPct:  '97%',
+    protocolsCount:   '+25',
+    sessionMinutes:   '45',
+    yearsExperience:  '+5',
+  },
 }
 
 export async function getSiteSettings(): Promise<SiteSettings> {
@@ -43,6 +54,7 @@ export async function getSiteSettings(): Promise<SiteSettings> {
           standard: { ...DEFAULT_SETTINGS.prices.standard, ...(stored.prices?.standard ?? {}) },
           premium:  { ...DEFAULT_SETTINGS.prices.premium,  ...(stored.prices?.premium  ?? {}) },
         },
+        stats: { ...DEFAULT_SETTINGS.stats, ...(stored.stats ?? {}) },
       }
     }
   } catch (e) {

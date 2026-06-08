@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import {
   Settings, Save, RefreshCw, CheckCircle, AlertCircle,
-  DollarSign, Tag, Clock, Phone, TrendingDown,
+  DollarSign, Tag, Clock, Phone, TrendingDown, BarChart2,
 } from 'lucide-react'
 import type { SiteSettings } from '@/lib/site-settings'
 
@@ -398,6 +398,57 @@ export default function AdminSettingsPage() {
             مثال: <span className="font-mono ltr-num">+9741234567</span>
           </p>
         </div>
+      </div>
+
+      {/* Landing page stats */}
+      <div className="bg-white rounded-2xl border border-gray-100 p-6">
+        <h2 className="font-black text-gray-900 mb-2 flex items-center gap-2 text-lg">
+          <BarChart2 className="w-5 h-5 text-brand-500" />
+          إحصائيات الصفحة الرئيسية
+        </h2>
+        <p className="text-xs text-gray-400 mb-5">
+          هذه الأرقام تظهر للزوار — ضع أرقامك الحقيقية فقط لبناء الثقة.
+        </p>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <Field label="عدد الأطفال المستفيدين">
+            <Input
+              value={settings.stats?.childrenCount ?? ''}
+              onChange={v => setSettings(prev => prev ? { ...prev, stats: { ...prev.stats!, childrenCount: v } } : prev)}
+              placeholder="12"
+            />
+          </Field>
+          <Field label="نسبة رضا الأولياء">
+            <Input
+              value={settings.stats?.satisfactionPct ?? ''}
+              onChange={v => setSettings(prev => prev ? { ...prev, stats: { ...prev.stats!, satisfactionPct: v } } : prev)}
+              placeholder="97%"
+            />
+          </Field>
+          <Field label="سنوات الخبرة">
+            <Input
+              value={settings.stats?.yearsExperience ?? ''}
+              onChange={v => setSettings(prev => prev ? { ...prev, stats: { ...prev.stats!, yearsExperience: v } } : prev)}
+              placeholder="+5"
+            />
+          </Field>
+          <Field label="عدد البروتوكولات العلمية">
+            <Input
+              value={settings.stats?.protocolsCount ?? ''}
+              onChange={v => setSettings(prev => prev ? { ...prev, stats: { ...prev.stats!, protocolsCount: v } } : prev)}
+              placeholder="+25"
+            />
+          </Field>
+          <Field label="مدة الجلسة (دقيقة)">
+            <Input
+              value={settings.stats?.sessionMinutes ?? ''}
+              onChange={v => setSettings(prev => prev ? { ...prev, stats: { ...prev.stats!, sessionMinutes: v } } : prev)}
+              placeholder="45"
+            />
+          </Field>
+        </div>
+        <p className="text-xs text-amber-600 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2 mt-4">
+          ⚠️ ضع أرقاماً حقيقية فقط — الأرقام الوهمية تضر بثقة العملاء وقد تعرّضك لمشاكل قانونية.
+        </p>
       </div>
 
       {/* Sticky save bar on mobile */}

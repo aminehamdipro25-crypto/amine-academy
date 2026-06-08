@@ -3,7 +3,8 @@ import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import {
   ArrowRight, Mail, Phone, MapPin, Calendar, CheckCircle, Clock, XCircle,
-  AlertCircle, Video, User, Brain, Star, Edit2, Save, X, Key, Copy
+  AlertCircle, Video, User, Brain, Star, Edit2, Save, X, Key, Copy,
+  PauseCircle, Trash2
 } from 'lucide-react'
 import type { Parent, Student, Appointment } from '@/lib/types'
 
@@ -38,6 +39,9 @@ export default function ClientDetailPage() {
   const [expiry, setExpiry] = useState('')
   const [msg, setMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null)
   const [studentCodes, setStudentCodes] = useState<Record<string, string>>({})
+  const [suspending, setSuspending] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -81,6 +85,44 @@ export default function ClientDetailPage() {
       }
     } finally {
       setSaving(false)
+    }
+  }
+
+  async function suspendAccount() {
+    setSuspending(true)
+    setMsg(null)
+    try {
+      const res = await fetch(`/api/admin/clients/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subscriptionStatus: status === 'suspended' ? 'active' : 'suspended' }),
+      })
+      if (res.ok) {
+        setMsg({ type: 'ok', text: status === 'suspended' ? 'تم تفعيل الحساب ✓' : 'تم إيقاف الحساب ✓' })
+        await load()
+      } else {
+        setMsg({ type: 'err', text: 'فشل تغيير الحالة' })
+      }
+    } finally {
+      setSuspending(false)
+    }
+  }
+
+  async function deleteAccount() {
+    setDeleting(true)
+    try {
+      const res = await fetch(`/api/admin/clients/${id}`, { method: 'DELETE' })
+      if (res.ok) {
+        router.push('/dashboard/clients')
+      } else {
+        setMsg({ type: 'err', text: 'فشل حذف الحساب' })
+        setDeleting(false)
+        setConfirmDelete(false)
+      }
+    } catch {
+      setMsg({ type: 'err', text: 'حدث خطأ' })
+      setDeleting(false)
+      setConfirmDelete(false)
     }
   }
 
@@ -234,6 +276,44 @@ export default function ClientDetailPage() {
               : <Save className="w-4 h-4" />}
             حفظ التغييرات
           </button>
+
+          {/* Suspend / Delete */}
+          <div className="border-t border-gray-100 pt-3 space-y-2">
+            <button onClick={suspendAccount} disabled={suspending}
+              className={`w-full font-bold py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 transition-colors disabled:opacity-50 ${
+                parent.subscriptionStatus === 'suspended'
+                  ? 'bg-green-50 text-green-700 hover:bg-green-100'
+                  : 'bg-amber-50 text-amber-700 hover:bg-amber-100'
+              }`}>
+              {suspending ? <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                : <PauseCircle className="w-4 h-4" />}
+              {parent.subscriptionStatus === 'suspended' ? 'إعادة تفعيل الحساب' : 'إيقاف الحساب مؤقتاً'}
+            </button>
+
+            {!confirmDelete ? (
+              <button onClick={() => setConfirmDelete(true)}
+                className="w-full bg-red-50 text-red-700 font-bold py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 hover:bg-red-100 transition-colors">
+                <Trash2 className="w-4 h-4" />
+                حذف العميل نهائياً
+              </button>
+            ) : (
+              <div className="bg-red-50 border border-red-200 rounded-xl p-3 space-y-2">
+                <p className="text-xs font-bold text-red-700 text-center">هل أنت متأكد؟ سيُحذف كل البيانات نهائياً!</p>
+                <div className="flex gap-2">
+                  <button onClick={() => setConfirmDelete(false)}
+                    className="flex-1 bg-white border border-gray-200 text-gray-600 font-bold py-2 rounded-lg text-xs">
+                    إلغاء
+                  </button>
+                  <button onClick={deleteAccount} disabled={deleting}
+                    className="flex-1 bg-red-600 text-white font-black py-2 rounded-lg text-xs flex items-center justify-center gap-1">
+                    {deleting ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      : <Trash2 className="w-3 h-3" />}
+                    تأكيد الحذف
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
 
           <p className="text-xs text-gray-400 ltr-num text-center">ID: {parent.id}</p>
         </div>

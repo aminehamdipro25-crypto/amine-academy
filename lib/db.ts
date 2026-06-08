@@ -221,3 +221,42 @@ export async function verifyPasswordResetToken(email: string, token: string): Pr
 export async function deletePasswordResetToken(email: string): Promise<void> {
   await redis.del(`pwd_reset:${email}`)
 }
+
+// ── Delete Parent (+ children, appointments index cleanup) ────
+
+export async function deleteParentFull(parentId: string): Promise<void> {
+  const parent = await getParent(parentId)
+  if (!parent) return
+
+  const studentIds = await redis.lrange(`students:parent:${parentId}`, 0, -1)
+  const appointmentIds = await redis.lrange(`appointments:parent:${parentId}`, 0, -1)
+  const reportIds: string[] = []
+
+  for (const sid of studentIds) {
+    const rids = await redis.lrange(`reports:student:${sid}`, 0, -1)
+    reportIds.push(...rids)
+  }
+
+  const cmds: [string, ...string[]][] = [
+    ['DEL', `parent:${parentId}`],
+    ['DEL', `parent:email:${parent.email}`],
+    ['DEL', `students:parent:${parentId}`],
+    ['DEL', `appointments:parent:${parentId}`],
+    ['LREM', 'parents:index', '0', parentId],
+  ]
+
+  for (const sid of studentIds) {
+    cmds.push(['DEL', `student:${sid}`])
+    cmds.push(['DEL', `reports:student:${sid}`])
+    cmds.push(['DEL', `program:student:${sid}`])
+  }
+  for (const aid of appointmentIds) {
+    cmds.push(['DEL', `appointment:${aid}`])
+    cmds.push(['LREM', 'appointments:index', '0', aid])
+  }
+  for (const rid of reportIds) {
+    cmds.push(['DEL', `report:${rid}`])
+  }
+
+  await redis.pipeline(cmds)
+}

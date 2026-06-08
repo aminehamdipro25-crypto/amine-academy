@@ -62,7 +62,7 @@ const EXTRA = [
   { icon: BarChart3, color: 'text-amber-600 bg-amber-50',   title: 'تقارير ذكية', titleEn: 'Smart Reports', desc: 'تقارير دورية تقيس 5 محاور سلوكية مع تفسير علمي وخطة تعديل', descEn: 'Periodic reports measuring 5 behavioral dimensions with scientific interpretation and adjustment plans' },
   { icon: Sparkles,  color: 'text-indigo-600 bg-indigo-50', title: 'تلعيب وتحفيز', titleEn: 'Gamification & Motivation', desc: 'نقاط وإنجازات وتحديات تجعل الطفل يطلب التمرين بنفسه', descEn: 'Points, achievements, and challenges that make children ask to exercise on their own' },
   { icon: Users,     color: 'text-teal-600 bg-teal-50',     title: 'مجتمع الأسر', titleEn: 'Family Community', desc: 'مجموعة واتساب حصرية للأسر لتبادل التجارب والدعم المتبادل', descEn: 'Exclusive WhatsApp group for families to share experiences and support each other' },
-  { icon: Brain,     color: 'text-gray-600 bg-gray-50',     title: 'ملخص AI', titleEn: 'AI Summary', desc: 'تقرير ربعي يُولّده الذكاء الاصطناعي يلخص رحلة تطور الطفل', descEn: 'Quarterly AI-generated report summarizing the child\'s development journey' },
+  { icon: Brain,     color: 'text-amber-600 bg-amber-50',   title: 'صعوبات التعلم', titleEn: 'Learning Difficulties', desc: 'تشخيص وتدخل متخصص لعسر القراءة والكتابة والحساب — برامج مخصصة لكل طفل', descEn: 'Specialized diagnosis & intervention for dyslexia, dysgraphia & dyscalculia — personalized programs for every child' },
 ]
 
 export default function FeaturesSection() {

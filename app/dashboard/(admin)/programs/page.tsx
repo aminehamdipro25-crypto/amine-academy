@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Calendar, Dumbbell, Save, ChevronDown, ChevronUp, Plus, X } from 'lucide-react'
+import { Calendar, Dumbbell, Save, ChevronDown, ChevronUp, Plus, X, Sparkles, Loader2 } from 'lucide-react'
 import type { Parent, Student, Exercise } from '@/lib/types'
 
 interface ParentWithStudents extends Parent { students: Student[] }
@@ -36,6 +36,35 @@ export default function ProgramsPage() {
   )
   const [expandedDay, setExpandedDay] = useState<string | null>('monday')
   const [filterCat, setFilterCat] = useState('all')
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiRationale, setAiRationale] = useState('')
+
+  async function generateWithAI() {
+    if (!studentId) { setError('اختر الطالب أولاً'); return }
+    setAiLoading(true)
+    setError('')
+    setAiRationale('')
+    try {
+      const res = await fetch('/api/admin/ai-generate-program', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ studentId }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setSchedule(data.schedule)
+        setTitle(data.title)
+        setAiRationale(data.rationale)
+        setSuccess('✓ تم توليد البرنامج بالذكاء الاصطناعي — راجعه وعدّله ثم احفظه')
+      } else {
+        setError(data.error || 'فشل التوليد')
+      }
+    } catch {
+      setError('حدث خطأ في الاتصال')
+    } finally {
+      setAiLoading(false)
+    }
+  }
 
   useEffect(() => {
     Promise.all([
@@ -164,6 +193,28 @@ export default function ProgramsPage() {
             <span className="font-bold">{selectedStudent.firstName}</span> — {selectedStudent.ageGroup} سنة • {selectedStudent.diagnosis} • المستوى {selectedStudent.severityLevel}
           </div>
         )}
+
+        {/* AI Generator */}
+        <div className="border-t border-gray-100 pt-4">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-xs font-bold text-gray-700">توليد ذكي بالـ AI</p>
+              <p className="text-xs text-gray-400 mt-0.5">يحلل Claude حالة الطفل ويختار التمارين المناسبة تلقائياً</p>
+            </div>
+            <button
+              onClick={generateWithAI}
+              disabled={!studentId || aiLoading}
+              className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-brand-600 text-white font-black px-5 py-2.5 rounded-xl text-sm hover:opacity-90 disabled:opacity-40 transition-all shadow-md whitespace-nowrap">
+              {aiLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+              {aiLoading ? 'جارٍ التوليد...' : 'توليد بالذكاء الاصطناعي'}
+            </button>
+          </div>
+          {aiRationale && (
+            <div className="mt-3 bg-purple-50 border border-purple-200 rounded-xl px-4 py-3 text-xs text-purple-800 font-medium">
+              🧠 {aiRationale}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Weekly schedule builder */}

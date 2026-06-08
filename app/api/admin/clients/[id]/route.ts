@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyAdminSession } from '@/lib/auth'
-import { getParent, updateParent, getStudentsByParent, getParentAppointments } from '@/lib/db'
+import { getParent, updateParent, getStudentsByParent, getParentAppointments, deleteParentFull } from '@/lib/db'
 import type { SubscriptionStatus } from '@/lib/types'
 
 export const runtime = 'nodejs'
@@ -77,6 +77,27 @@ export async function PATCH(
     return NextResponse.json({ ok: true })
   } catch (e) {
     console.error('[admin/clients/patch]', e)
+    return NextResponse.json({ error: 'حدث خطأ في الخادم' }, { status: 500 })
+  }
+}
+
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const cookieStore = await cookies()
+    const token = cookieStore.get('admin_token')?.value
+    if (!await verifyAdminSession(token)) {
+      return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
+    }
+    const { id } = await params
+    const parent = await getParent(id)
+    if (!parent) return NextResponse.json({ error: 'المشترك غير موجود' }, { status: 404 })
+    await deleteParentFull(id)
+    return NextResponse.json({ ok: true })
+  } catch (e) {
+    console.error('[admin/clients/delete]', e)
     return NextResponse.json({ error: 'حدث خطأ في الخادم' }, { status: 500 })
   }
 }

@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Calendar, Dumbbell, Save, ChevronDown, ChevronUp, Plus, X } from 'lucide-react'
+import { Calendar, Save, ChevronDown, ChevronUp, Plus, X, Sparkles } from 'lucide-react'
 import type { Parent, Student, Exercise } from '@/lib/types'
 
 interface ParentWithStudents extends Parent { students: Student[] }
@@ -22,9 +22,10 @@ export default function ProgramsPage() {
   const [clients, setClients] = useState<ParentWithStudents[]>([])
   const [exercises, setExercises] = useState<Exercise[]>([])
   const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
+  const [saving, setSaving]         = useState(false)
+  const [generating, setGenerating] = useState(false)
+  const [error, setError]           = useState('')
+  const [success, setSuccess]       = useState('')
 
   const [parentId, setParentId] = useState('')
   const [studentId, setStudentId] = useState('')
@@ -81,6 +82,30 @@ export default function ProgramsPage() {
   const CAT_LABELS: Record<string, string> = {
     motor: 'حركي', focus: 'تركيز', balance: 'توازن',
     energy: 'طاقة', sensory: 'حسي', social: 'اجتماعي',
+  }
+
+  async function generateWithAI() {
+    if (!studentId) { setError('اختر الطالب أولاً'); return }
+    setGenerating(true)
+    setError('')
+    try {
+      const res = await fetch('/api/admin/ai-generate-program', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ studentId }),
+      })
+      const data = await res.json()
+      if (data.ok) {
+        setSchedule(data.schedule)
+        setSuccess(`✨ تم توليد برنامج لـ ${data.studentName} — ${data.totalExercises} تمرين موزع على الأسبوع`)
+      } else {
+        setError(data.error || 'فشل التوليد')
+      }
+    } catch {
+      setError('تعذر الاتصال بالذكاء الاصطناعي')
+    } finally {
+      setGenerating(false)
+    }
   }
 
   async function submit() {
@@ -259,13 +284,28 @@ export default function ProgramsPage() {
         </div>
       </div>
 
-      <button onClick={submit} disabled={saving || !studentId}
-        className="w-full bg-brand-600 text-white font-black py-4 rounded-2xl flex items-center justify-center gap-2 hover:bg-brand-700 disabled:opacity-50 transition-colors text-lg">
-        {saving
-          ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-          : <><Save className="w-5 h-5" />{' '}حفظ البرنامج</>
-        }
-      </button>
+      <div className="flex flex-col sm:flex-row gap-3">
+        <button
+          onClick={generateWithAI}
+          disabled={generating || !studentId}
+          className="flex-1 bg-purple-600 text-white font-black py-4 rounded-2xl flex items-center justify-center gap-2 hover:bg-purple-700 disabled:opacity-50 transition-colors"
+        >
+          {generating
+            ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            : <><Sparkles className="w-5 h-5" /> توليد تلقائي بالذكاء الاصطناعي</>
+          }
+        </button>
+        <button
+          onClick={submit}
+          disabled={saving || !studentId}
+          className="flex-1 bg-brand-600 text-white font-black py-4 rounded-2xl flex items-center justify-center gap-2 hover:bg-brand-700 disabled:opacity-50 transition-colors text-lg"
+        >
+          {saving
+            ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            : <><Save className="w-5 h-5" /> حفظ البرنامج</>
+          }
+        </button>
+      </div>
     </div>
   )
 }

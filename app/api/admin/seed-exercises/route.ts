@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyAdminSession } from '@/lib/auth'
-import { getAllExercises, createExercise } from '@/lib/db'
+import { getAllExercises, createExercise, deleteAllExercises } from '@/lib/db'
 import { DEFAULT_EXERCISES } from '@/lib/exercises-data'
 
 export const runtime = 'nodejs'
@@ -20,10 +20,12 @@ export async function POST(req: NextRequest) {
       if (!force) {
         return NextResponse.json({
           ok: false,
-          message: `يوجد ${existing.length} تمرين مسبقاً. أرسل { force: true } للإضافة مجدداً.`,
+          message: `يوجد ${existing.length} تمرين مسبقاً. استخدم زر "إعادة التحميل الكاملة" لحذف القديم وتحميل ${DEFAULT_EXERCISES.length} تمرين.`,
           count: existing.length,
         })
       }
+      // Delete all existing exercises first to avoid duplicates
+      await deleteAllExercises()
     }
 
     const created: string[] = []

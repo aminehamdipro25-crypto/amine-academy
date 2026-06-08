@@ -1,6 +1,6 @@
 'use client'
 import Link from 'next/link'
-import { ArrowLeft, ArrowRight, Star, Users, Award, Play } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Star, Users, Award, Play, LayoutDashboard } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useLang, tr } from '@/lib/i18n'
 import LangToggle from '@/components/shared/LangToggle'
@@ -93,12 +93,17 @@ export default function HeroSection() {
           <Link href="/demo" className="text-white/70 hover:text-white text-sm font-medium transition-colors hidden sm:block">
             {t.nav.trial}
           </Link>
-          <Link href="/parent/login" className="text-white/80 hover:text-white text-sm font-medium transition-colors">
+          <Link href="/parent/login" className="text-white/80 hover:text-white text-sm font-medium transition-colors hidden sm:block">
             {t.nav.parents}
           </Link>
           <Link href="/register"
             className="bg-white text-brand-700 hover:bg-brand-50 font-bold text-sm px-5 py-2.5 rounded-xl transition-colors">
             {t.nav.register}
+          </Link>
+          <Link href="/dashboard"
+            className="flex items-center gap-1.5 bg-brand-600/80 hover:bg-brand-600 border border-white/20 text-white font-bold text-xs px-3 py-2 rounded-xl transition-all">
+            <LayoutDashboard className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">لوحة التحكم</span>
           </Link>
           <LangToggle />
         </div>

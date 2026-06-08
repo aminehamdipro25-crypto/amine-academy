@@ -207,25 +207,28 @@ function CheckoutForm() {
   function MethodInstructions({ m, refCode }: { m: PaymentMethod; refCode?: string }) {
     if (m === 'fawran') return (
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-800 leading-relaxed">
-        <p className="font-bold mb-1">ادفع عبر فوران (FAWRAN)</p>
-        <p>أرسل المبلغ <strong>{finalPrice} {symbol}</strong> إلى الرقم: <strong dir="ltr">+974 3065 3759</strong></p>
+        <p className="font-bold mb-1">ادفع عبر فوران (فوراً)</p>
+        <p>أرسل المبلغ <strong>{finalPrice} {symbol}</strong> إلى رقم فوران: <strong dir="ltr">30653759</strong></p>
         <p className="mt-1">ثم أرسل لقطة الشاشة عبر واتساب مع رمز المرجع <strong>{refCode ?? '...'}</strong></p>
       </div>
     )
     if (m === 'bank_transfer_qa') return (
       <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-sm text-green-800 leading-relaxed">
-        <p className="font-bold mb-1">تحويل بنكي — قطر (QNB)</p>
-        <p>IBAN: <span dir="ltr" className="font-mono font-bold">QA57QNBA000000000000693123456</span></p>
+        <p className="font-bold mb-1">تحويل بنكي — قطر (Commercial Bank)</p>
+        <p>الاسم: <strong>AMINE HAMDI</strong></p>
+        <p className="mt-1">IBAN: <span dir="ltr" className="font-mono font-bold text-xs">QA49CBQA0000004620515300190001</span></p>
         <p className="mt-1">المرجع: <strong>{refCode ?? '...'}</strong></p>
-        <p className="mt-1 text-xs text-green-600">* يرجى ذكر رمز المرجع في خانة الملاحظات</p>
+        <p className="mt-1 text-xs text-green-600">* يرجى ذكر رمز المرجع في خانة الملاحظات عند التحويل</p>
       </div>
     )
     if (m === 'bank_transfer_tn') return (
       <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-sm text-green-800 leading-relaxed">
-        <p className="font-bold mb-1">تحويل بنكي — تونس (UIB)</p>
-        <p>RIB: <span dir="ltr" className="font-mono font-bold">08 006 0100096050117</span></p>
+        <p className="font-bold mb-1">تحويل بريدي — تونس (La Poste / CCP)</p>
+        <p>الاسم: <strong>HAMDI AMINE B JALOUL</strong></p>
+        <p className="mt-1">IBAN: <span dir="ltr" className="font-mono font-bold text-xs">TN59 1780 1000 0002 1931 0870</span></p>
+        <p className="mt-0.5">رمز SWIFT: <span dir="ltr" className="font-mono font-bold">LPTNTNTT</span></p>
         <p className="mt-1">المرجع: <strong>{refCode ?? '...'}</strong></p>
-        <p className="mt-1 text-xs text-green-600">* يرجى ذكر رمز المرجع في خانة الملاحظات</p>
+        <p className="mt-1 text-xs text-green-600">* يرجى ذكر رمز المرجع في خانة الملاحظات عند التحويل</p>
       </div>
     )
     if (m === 'whatsapp') return (

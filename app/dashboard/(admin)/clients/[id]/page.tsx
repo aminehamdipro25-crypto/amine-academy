@@ -4,7 +4,7 @@ import { useParams, useRouter } from 'next/navigation'
 import {
   ArrowRight, Mail, Phone, MapPin, Calendar, CheckCircle, Clock, XCircle,
   AlertCircle, Video, User, Brain, Star, Edit2, Save, X, Key, Copy,
-  PauseCircle, Trash2, LogIn, RotateCcw, ExternalLink,
+  PauseCircle, Trash2, LogIn, RotateCcw, ExternalLink, Eye, EyeOff, Lock,
 } from 'lucide-react'
 import type { Parent, Student, Appointment } from '@/lib/types'
 
@@ -45,6 +45,10 @@ export default function ClientDetailPage() {
   const [impersonating, setImpersonating] = useState(false)
   const [resetLinkState, setResetLinkState] = useState<'idle' | 'loading' | 'done'>('idle')
   const [resetLinkData, setResetLinkData] = useState<{ url: string; whatsapp: string; phone: string } | null>(null)
+  const [showPwdForm, setShowPwdForm] = useState(false)
+  const [newPwd, setNewPwd] = useState('')
+  const [showNewPwd, setShowNewPwd] = useState(false)
+  const [pwdSaving, setPwdSaving] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -126,6 +130,34 @@ export default function ClientDetailPage() {
       setMsg({ type: 'err', text: 'حدث خطأ' })
       setDeleting(false)
       setConfirmDelete(false)
+    }
+  }
+
+  async function saveNewPassword() {
+    if (newPwd.length < 8) {
+      setMsg({ type: 'err', text: 'كلمة المرور يجب أن تكون 8 أحرف على الأقل' })
+      return
+    }
+    setPwdSaving(true)
+    setMsg(null)
+    try {
+      const res = await fetch(`/api/admin/clients/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newPassword: newPwd }),
+      })
+      if (res.ok) {
+        setMsg({ type: 'ok', text: 'تم تغيير كلمة المرور بنجاح ✓' })
+        setNewPwd('')
+        setShowPwdForm(false)
+      } else {
+        const d = await res.json()
+        setMsg({ type: 'err', text: d.error || 'فشل تغيير كلمة المرور' })
+      }
+    } catch {
+      setMsg({ type: 'err', text: 'خطأ في الاتصال' })
+    } finally {
+      setPwdSaving(false)
     }
   }
 
@@ -390,6 +422,44 @@ export default function ClientDetailPage() {
               : <Save className="w-4 h-4" />}
             حفظ التغييرات
           </button>
+
+          {/* Direct password reset */}
+          <div className="border-t border-gray-100 pt-3">
+            <button
+              onClick={() => { setShowPwdForm(p => !p); setNewPwd('') }}
+              className="w-full flex items-center justify-between text-xs font-bold text-gray-500 hover:text-gray-800 transition-colors py-1"
+            >
+              <span className="flex items-center gap-1.5"><Lock className="w-3.5 h-3.5" /> تغيير كلمة المرور مباشرة</span>
+              <span>{showPwdForm ? '▲' : '▼'}</span>
+            </button>
+            {showPwdForm && (
+              <div className="mt-2 space-y-2">
+                <div className="relative">
+                  <input
+                    type={showNewPwd ? 'text' : 'password'}
+                    value={newPwd}
+                    onChange={e => setNewPwd(e.target.value)}
+                    placeholder="كلمة مرور جديدة (8 أحرف+)"
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm pr-3 pl-9 focus:ring-2 focus:ring-brand-300 focus:outline-none"
+                  />
+                  <button type="button" onClick={() => setShowNewPwd(p => !p)}
+                    className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                    {showNewPwd ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                <button
+                  onClick={saveNewPassword}
+                  disabled={pwdSaving || newPwd.length < 8}
+                  className="w-full bg-amber-500 hover:bg-amber-600 text-white font-black py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+                >
+                  {pwdSaving
+                    ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    : <Lock className="w-4 h-4" />}
+                  تعيين كلمة المرور
+                </button>
+              </div>
+            )}
+          </div>
 
           {/* Suspend / Delete */}
           <div className="border-t border-gray-100 pt-3 space-y-2">

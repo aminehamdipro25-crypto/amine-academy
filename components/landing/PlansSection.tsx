@@ -121,6 +121,7 @@ const CURRENCY_LABELS: Record<Currency, string> = { QAR: '🇶🇦 قطر (ر.ق
 
 export default function PlansSection() {
   const [currency, setCurrency] = useState<Currency>('QAR')
+  const [userChoseCurrency, setUserChoseCurrency] = useState(false)
   const { lang } = useLang()
   const isAr = lang === 'ar'
   const [settings, setSettings] = useState<PublicSettings | null>(null)
@@ -133,6 +134,18 @@ export default function PlansSection() {
       .catch(() => {})
       .finally(() => setSettingsLoading(false))
   }, [])
+
+  useEffect(() => {
+    if (userChoseCurrency) return
+    fetch('/api/geo')
+      .then(r => r.json())
+      .then((data: { country: string; currency: Currency }) => {
+        if (!userChoseCurrency) {
+          setCurrency(data.currency)
+        }
+      })
+      .catch(() => {})
+  }, [userChoseCurrency])
 
   return (
     <section className="py-20 bg-gray-50" id="plans" dir={isAr ? 'rtl' : 'ltr'}>
@@ -157,7 +170,7 @@ export default function PlansSection() {
             {(['QAR', 'TND'] as Currency[]).map(c => (
               <button
                 key={c}
-                onClick={() => setCurrency(c)}
+                onClick={() => { setUserChoseCurrency(true); setCurrency(c) }}
                 className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${
                   currency === c
                     ? 'bg-brand-600 text-white shadow-sm'

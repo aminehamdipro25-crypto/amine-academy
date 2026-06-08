@@ -23,7 +23,7 @@
 
 import { redis } from './redis'
 import { generateId } from './auth'
-import type { Parent, Student, Exercise, Program, Appointment, ProgressReport } from './types'
+import type { Parent, Student, Exercise, Program, Appointment, ProgressReport, PendingPayment } from './types'
 
 // ── Parents ───────────────────────────────────────────────────
 
@@ -220,6 +220,55 @@ export async function verifyPasswordResetToken(email: string, token: string): Pr
 
 export async function deletePasswordResetToken(email: string): Promise<void> {
   await redis.del(`pwd_reset:${email}`)
+}
+
+// ── Pending Payments ──────────────────────────────────────────
+//   payment:{id}           → PendingPayment JSON (TTL 30d)
+//   payments:index         → [payment IDs]
+//   payments:parent:{pid}  → [payment IDs] for logged-in parents
+
+export async function createPendingPayment(
+  data: Omit<PendingPayment, 'id' | 'referenceCode' | 'createdAt'>
+): Promise<PendingPayment> {
+  const id = generateId('AP')
+  const year = new Date().getFullYear()
+  const rand = Math.floor(1000 + Math.random() * 9000).toString()
+  const referenceCode = `AA-${year}-${rand}`
+  const payment: PendingPayment = {
+    ...data,
+    id,
+    referenceCode,
+    createdAt: new Date().toISOString(),
+  }
+  const TTL_30D = 30 * 24 * 3600
+  const cmds: [string, ...string[]][] = [
+    ['SET', `payment:${id}`, JSON.stringify(payment), 'EX', String(TTL_30D)],
+    ['LPUSH', 'payments:index', id],
+  ]
+  if (data.parentId) {
+    cmds.push(['LPUSH', `payments:parent:${data.parentId}`, id])
+  }
+  await redis.pipeline(cmds)
+  return payment
+}
+
+export async function getPendingPayment(id: string): Promise<PendingPayment | null> {
+  return redis.get<PendingPayment>(`payment:${id}`)
+}
+
+export async function updatePendingPayment(
+  id: string,
+  updates: Partial<PendingPayment>
+): Promise<void> {
+  const current = await getPendingPayment(id)
+  if (!current) throw new Error('Payment not found')
+  await redis.set(`payment:${id}`, { ...current, ...updates })
+}
+
+export async function getAllPendingPayments(): Promise<PendingPayment[]> {
+  const ids = await redis.lrange('payments:index', 0, 100)
+  const payments = await Promise.all(ids.map(id => getPendingPayment(id)))
+  return payments.filter(Boolean) as PendingPayment[]
 }
 
 // ── Delete Parent (+ children, appointments index cleanup) ────

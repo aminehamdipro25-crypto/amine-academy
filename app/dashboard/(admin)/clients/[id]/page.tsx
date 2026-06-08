@@ -4,7 +4,7 @@ import { useParams, useRouter } from 'next/navigation'
 import {
   ArrowRight, Mail, Phone, MapPin, Calendar, CheckCircle, Clock, XCircle,
   AlertCircle, Video, User, Brain, Star, Edit2, Save, X, Key, Copy,
-  PauseCircle, Trash2
+  PauseCircle, Trash2, LogIn, RotateCcw, ExternalLink,
 } from 'lucide-react'
 import type { Parent, Student, Appointment } from '@/lib/types'
 
@@ -42,6 +42,9 @@ export default function ClientDetailPage() {
   const [suspending, setSuspending] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [impersonating, setImpersonating] = useState(false)
+  const [resetLinkState, setResetLinkState] = useState<'idle' | 'loading' | 'done'>('idle')
+  const [resetLinkData, setResetLinkData] = useState<{ url: string; whatsapp: string; phone: string } | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -126,6 +129,53 @@ export default function ClientDetailPage() {
     }
   }
 
+  async function enterAsParent() {
+    setImpersonating(true)
+    setMsg(null)
+    try {
+      const res = await fetch(`/api/admin/impersonate/${id}`, {
+        method: 'POST',
+        credentials: 'include',
+      })
+      if (res.ok) {
+        window.open('/parent/dashboard', '_blank', 'noopener')
+      } else {
+        const d = await res.json()
+        setMsg({ type: 'err', text: d.error || 'فشل الدخول' })
+      }
+    } catch {
+      setMsg({ type: 'err', text: 'خطأ في الاتصال' })
+    } finally {
+      setImpersonating(false)
+    }
+  }
+
+  async function generateResetLink() {
+    setResetLinkState('loading')
+    try {
+      const res = await fetch(`/api/admin/reset-parent-link/${id}`, { method: 'POST' })
+      const d = await res.json()
+      if (res.ok && d.ok) {
+        const waText = encodeURIComponent(
+          `مرحباً ${d.parentName}، يمكنك إعادة تعيين كلمة مرور حسابك في أكاديمية أمين من خلال هذا الرابط:\n${d.resetUrl}\n(الرابط صالح لمدة ساعة واحدة)`
+        )
+        const phone = d.whatsappPhone || ''
+        setResetLinkData({
+          url: d.resetUrl,
+          whatsapp: `https://wa.me/${phone}?text=${waText}`,
+          phone,
+        })
+        setResetLinkState('done')
+      } else {
+        setMsg({ type: 'err', text: d.error || 'فشل إنشاء الرابط' })
+        setResetLinkState('idle')
+      }
+    } catch {
+      setMsg({ type: 'err', text: 'خطأ في الاتصال' })
+      setResetLinkState('idle')
+    }
+  }
+
   async function generateStudentCode(studentId: string) {
     try {
       const res = await fetch('/api/auth/student-access', {
@@ -200,7 +250,7 @@ export default function ClientDetailPage() {
               <span className="flex items-center gap-1 ltr-num"><Calendar className="w-3.5 h-3.5" />{new Date(parent.createdAt).toLocaleDateString('ar-SA')}</span>
             </div>
           </div>
-          <div className="flex gap-2 flex-shrink-0">
+          <div className="flex flex-wrap gap-2 flex-shrink-0">
             {parent.phone && (
               <a href={`https://wa.me/${parent.phone.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer"
                 className="flex items-center gap-1.5 bg-green-50 text-green-700 font-bold text-xs px-3 py-2 rounded-xl hover:bg-green-100 transition-colors">
@@ -213,9 +263,73 @@ export default function ClientDetailPage() {
               <Mail className="w-3.5 h-3.5" />
               بريد
             </a>
+            <button
+              onClick={enterAsParent}
+              disabled={impersonating}
+              title="افتح بوابة الولي كما يراها هو"
+              className="flex items-center gap-1.5 bg-purple-50 text-purple-700 font-bold text-xs px-3 py-2 rounded-xl hover:bg-purple-100 transition-colors disabled:opacity-50">
+              {impersonating
+                ? <div className="w-3.5 h-3.5 border-2 border-purple-700 border-t-transparent rounded-full animate-spin" />
+                : <LogIn className="w-3.5 h-3.5" />}
+              دخول كالولي
+            </button>
+            <button
+              onClick={generateResetLink}
+              disabled={resetLinkState === 'loading'}
+              title="أنشئ رابط إعادة تعيين كلمة المرور وأرسله للولي"
+              className="flex items-center gap-1.5 bg-orange-50 text-orange-700 font-bold text-xs px-3 py-2 rounded-xl hover:bg-orange-100 transition-colors disabled:opacity-50">
+              {resetLinkState === 'loading'
+                ? <div className="w-3.5 h-3.5 border-2 border-orange-700 border-t-transparent rounded-full animate-spin" />
+                : <RotateCcw className="w-3.5 h-3.5" />}
+              رابط كلمة المرور
+            </button>
           </div>
         </div>
       </div>
+
+      {/* Reset password link panel */}
+      {resetLinkState === 'done' && resetLinkData && (
+        <div className="bg-orange-50 border border-orange-200 rounded-2xl p-5 space-y-3">
+          <div className="flex items-center justify-between">
+            <p className="font-black text-orange-800 text-sm flex items-center gap-2">
+              <RotateCcw className="w-4 h-4" />
+              رابط إعادة تعيين كلمة المرور (صالح ساعة واحدة)
+            </p>
+            <button onClick={() => { setResetLinkState('idle'); setResetLinkData(null) }}
+              className="text-orange-400 hover:text-orange-700">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="bg-white border border-orange-200 rounded-xl px-3 py-2 flex items-center gap-2">
+            <span className="text-xs text-gray-600 break-all flex-1 ltr-num select-all">{resetLinkData.url}</span>
+            <button
+              onClick={() => navigator.clipboard.writeText(resetLinkData.url)}
+              className="text-orange-500 hover:text-orange-700 flex-shrink-0">
+              <Copy className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="flex gap-2">
+            {resetLinkData.phone && (
+              <a
+                href={resetLinkData.whatsapp}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 bg-green-600 hover:bg-green-700 text-white font-bold text-sm px-4 py-2.5 rounded-xl transition-colors">
+                <Phone className="w-4 h-4" />
+                إرسال عبر واتساب
+              </a>
+            )}
+            <a
+              href={resetLinkData.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 bg-orange-600 hover:bg-orange-700 text-white font-bold text-sm px-4 py-2.5 rounded-xl transition-colors">
+              <ExternalLink className="w-4 h-4" />
+              فتح الرابط
+            </a>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Subscription management */}

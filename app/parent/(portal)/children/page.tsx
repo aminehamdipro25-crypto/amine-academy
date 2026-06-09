@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Users, Calendar, BookOpen, TrendingUp, Star, Zap } from 'lucide-react'
+import { TrendingUp, Dumbbell } from 'lucide-react'
 import type { Student } from '@/lib/types'
 
 const DIAGNOSIS_LABELS: Record<string, string> = {
@@ -9,6 +9,10 @@ const DIAGNOSIS_LABELS: Record<string, string> = {
   AUTISM: 'طيف التوحد',
   'ADHD+AUTISM': 'ADHD + طيف التوحد',
   OTHER: 'أخرى',
+}
+
+const DIAG_EMOJI: Record<string, string> = {
+  ADHD: '⚡', AUTISM: '🌈', 'ADHD+AUTISM': '🌟', OTHER: '💙',
 }
 
 const AGE_COLORS: Record<string, string> = {
@@ -42,21 +46,27 @@ export default function ChildrenPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-black text-2xl text-gray-900">أطفالي</h1>
-        <p className="text-gray-500 text-sm mt-0.5">ملف تفصيلي لكل طفل</p>
+      {/* Page header */}
+      <div className="flex items-center gap-3 mb-6">
+        <div className="w-11 h-11 bg-brand-50 rounded-2xl flex items-center justify-center text-2xl shadow-[0_2px_8px_-2px_rgba(124,92,252,0.15)]">
+          👨‍👩‍👧
+        </div>
+        <div>
+          <h1 className="font-black text-xl text-gray-900">أطفالي</h1>
+          <p className="text-gray-400 text-sm">ملف تفصيلي لكل طفل</p>
+        </div>
       </div>
 
       {children.length === 0 ? (
-        <div className="bg-white rounded-3xl border-2 border-dashed border-gray-200 p-12 text-center">
-          <Users className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-          <h3 className="font-bold text-gray-600 mb-2">لم يُضف أي طفل بعد</h3>
-          <p className="text-gray-400 text-sm mb-5">تواصل مع الأستاذ أمين عبر واتساب لاستكمال تسجيل طفلك.</p>
+        <div className="bg-white rounded-3xl border-2 border-dashed border-[#E8DBFF] p-14 text-center">
+          <div className="text-6xl mb-4" style={{animation:'float 4s ease-in-out infinite'}}>👶</div>
+          <h3 className="font-black text-gray-700 text-lg mb-2">لم يُضف أي طفل بعد</h3>
+          <p className="text-gray-400 text-sm max-w-xs mx-auto mb-6 leading-relaxed">تواصل مع الأستاذ أمين عبر واتساب لاستكمال تسجيل طفلك</p>
           <a
             href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '97430653759'}?text=${encodeURIComponent('مرحباً، أريد استكمال تسجيل طفلي في أكاديمية أمين')}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 bg-green-600 text-white font-bold px-5 py-2.5 rounded-xl text-sm hover:bg-green-700 transition-colors"
+            className="inline-flex items-center gap-2 bg-green-600 text-white font-bold px-5 py-2.5 rounded-2xl text-sm hover:bg-green-700 transition-colors"
           >
             تواصل عبر واتساب
           </a>
@@ -64,107 +74,104 @@ export default function ChildrenPage() {
       ) : (
         <div className="space-y-6">
           {children.map(child => {
-            const sev = SEVERITY_LABELS[child.severityLevel] || SEVERITY_LABELS[1]
             const gradient = AGE_COLORS[child.ageGroup] || 'from-brand-600 to-brand-800'
-            const age = child.birthDate
-              ? Math.floor((Date.now() - new Date(child.birthDate).getTime()) / (1000 * 60 * 60 * 24 * 365.25))
-              : null
 
             return (
-              <div key={child.id} className="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm">
-                {/* Header */}
-                <div className={`bg-gradient-to-l ${gradient} p-6 text-white`}>
-                  <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center text-3xl font-black">
-                      {child.firstName[0]}
+              <div key={child.id} className="bg-white rounded-3xl border border-[#F0E8FF] shadow-[0_1px_4px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] overflow-hidden hover:-translate-y-1 hover:shadow-[0_8px_32px_-4px_rgba(124,92,252,0.16)] transition-all duration-200">
+                {/* Top color banner based on age group */}
+                <div className={`h-2 bg-gradient-to-r ${gradient}`} />
+
+                {/* Card content */}
+                <div className="p-5">
+                  {/* Avatar + name row */}
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${gradient} flex items-center justify-center text-3xl shadow-warm-sm`}>
+                      {DIAG_EMOJI[child.diagnosis] || '🌟'}
                     </div>
                     <div className="flex-1">
-                      <h2 className="font-black text-xl">{child.firstName} {child.lastName}</h2>
-                      <div className="flex items-center gap-3 mt-1 flex-wrap">
-                        {age && <span className="text-white/80 text-sm ltr-num">{age} سنة</span>}
-                        <span className="text-white/80 text-sm">{DIAGNOSIS_LABELS[child.diagnosis] || child.diagnosis}</span>
-                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full bg-white/20 text-white`}>
-                          {sev.label}
-                        </span>
+                      <div className="font-black text-gray-900 text-lg">{child.firstName} {child.lastName}</div>
+                      <div className="text-gray-400 text-xs mt-0.5">{child.ageGroup} سنة</div>
+                    </div>
+                    {SEVERITY_LABELS[child.severityLevel] && (
+                      <span className={`text-xs font-bold px-3 py-1 rounded-full ${SEVERITY_LABELS[child.severityLevel].color}`}>
+                        {SEVERITY_LABELS[child.severityLevel].label}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Diagnosis pill */}
+                  <div className="flex items-center gap-2 mb-4">
+                    <span className="text-xs bg-brand-50 text-brand-700 font-bold px-3 py-1.5 rounded-full border border-brand-100">
+                      {DIAGNOSIS_LABELS[child.diagnosis] || child.diagnosis}
+                    </span>
+                  </div>
+
+                  {/* Stats row */}
+                  <div className="grid grid-cols-3 gap-2 mb-4">
+                    <div className="bg-[#FFF8E8] rounded-2xl p-3 text-center">
+                      <div className="text-xl">⭐</div>
+                      <div className="font-black text-amber-700 text-sm ltr-num">{child.totalPoints}</div>
+                      <div className="text-[10px] text-amber-600">نقطة</div>
+                    </div>
+                    <div className="bg-[#FFF3E8] rounded-2xl p-3 text-center">
+                      <div className="text-xl">🔥</div>
+                      <div className="font-black text-orange-700 text-sm ltr-num">{child.streak}</div>
+                      <div className="text-[10px] text-orange-600">يوم متتالي</div>
+                    </div>
+                    <div className="bg-[#F0F8FF] rounded-2xl p-3 text-center">
+                      <div className="text-xl">🏆</div>
+                      <div className="font-black text-blue-700 text-sm ltr-num">{child.achievements?.length || 0}</div>
+                      <div className="text-[10px] text-blue-600">إنجاز</div>
+                    </div>
+                  </div>
+
+                  {/* Sensory profile */}
+                  {child.sensoryProfile && (
+                    <div className="mb-4">
+                      <h3 className="font-bold text-gray-700 text-sm mb-3">الملف الحسي</h3>
+                      <div className="grid grid-cols-3 gap-3">
+                        {[
+                          { label: 'البصر', value: child.sensoryProfile?.visualSensitivity },
+                          { label: 'السمع', value: child.sensoryProfile?.audioSensitivity },
+                          { label: 'اللمس', value: child.sensoryProfile?.touchSensitivity },
+                        ].map(({ label, value }) => {
+                          const color = value === 'high' ? 'text-red-600 bg-red-50' : value === 'low' ? 'text-green-600 bg-green-50' : 'text-amber-600 bg-amber-50'
+                          const levelLabel = value === 'high' ? 'حساسية عالية' : value === 'low' ? 'حساسية منخفضة' : 'حساسية متوسطة'
+                          return (
+                            <div key={label} className={`rounded-2xl p-3 text-center ${color}`}>
+                              <div className="font-bold text-xs mb-0.5">{label}</div>
+                              <div className="text-xs opacity-80">{levelLabel}</div>
+                            </div>
+                          )
+                        })}
                       </div>
                     </div>
-                    <div className="text-center hidden sm:block">
-                      <div className="text-white font-black text-2xl ltr-num">{child.totalPoints}</div>
-                      <div className="text-white/70 text-xs">نقطة</div>
+                  )}
+
+                  {/* Achievements */}
+                  {child.achievements?.length > 0 && (
+                    <div className="mb-4">
+                      <h3 className="font-bold text-gray-700 text-sm mb-2">الإنجازات</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {child.achievements.slice(0, 6).map((a, i) => (
+                          <span key={i} className="text-xs bg-[#F3EEFF] text-brand-700 border border-[#F0E8FF] px-3 py-1.5 rounded-full font-bold">
+                            🏆 {typeof a === 'string' ? a : (a as { titleAr?: string; title?: string }).titleAr || (a as { titleAr?: string; title?: string }).title || ''}
+                          </span>
+                        ))}
+                      </div>
                     </div>
+                  )}
+
+                  {/* Links row */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <Link href="/parent/exercises" className="flex items-center justify-center gap-1.5 bg-brand-50 hover:bg-brand-100 text-brand-700 font-bold text-xs px-3 py-2.5 rounded-2xl transition-colors">
+                      <Dumbbell className="w-3.5 h-3.5" /> التمارين
+                    </Link>
+                    <Link href="/parent/progress" className="flex items-center justify-center gap-1.5 bg-[#F0FFF9] hover:bg-[#DCFFF2] text-emerald-700 font-bold text-xs px-3 py-2.5 rounded-2xl transition-colors">
+                      <TrendingUp className="w-3.5 h-3.5" /> التطور
+                    </Link>
                   </div>
                 </div>
-
-                {/* Stats */}
-                <div className="grid grid-cols-3 divide-x divide-x-reverse divide-gray-100 border-b border-gray-100">
-                  <div className="p-4 text-center">
-                    <Star className="w-4 h-4 text-amber-500 mx-auto mb-1" />
-                    <div className="font-black text-gray-900 ltr-num">{child.totalPoints}</div>
-                    <div className="text-xs text-gray-400">نقطة</div>
-                  </div>
-                  <div className="p-4 text-center">
-                    <Zap className="w-4 h-4 text-orange-500 mx-auto mb-1" />
-                    <div className="font-black text-gray-900 ltr-num">{child.streak}</div>
-                    <div className="text-xs text-gray-400">يوم متتالي</div>
-                  </div>
-                  <div className="p-4 text-center">
-                    <TrendingUp className="w-4 h-4 text-brand-600 mx-auto mb-1" />
-                    <div className="font-black text-gray-900">{child.ageGroup}</div>
-                    <div className="text-xs text-gray-400">الفئة العمرية</div>
-                  </div>
-                </div>
-
-                {/* Sensory profile */}
-                <div className="p-5 border-b border-gray-100">
-                  <h3 className="font-bold text-gray-700 text-sm mb-3">الملف الحسي</h3>
-                  <div className="grid grid-cols-3 gap-3">
-                    {[
-                      { label: 'البصر', value: child.sensoryProfile?.visualSensitivity },
-                      { label: 'السمع', value: child.sensoryProfile?.audioSensitivity },
-                      { label: 'اللمس', value: child.sensoryProfile?.touchSensitivity },
-                    ].map(({ label, value }) => {
-                      const color = value === 'high' ? 'text-red-600 bg-red-50' : value === 'low' ? 'text-green-600 bg-green-50' : 'text-amber-600 bg-amber-50'
-                      const levelLabel = value === 'high' ? 'حساسية عالية' : value === 'low' ? 'حساسية منخفضة' : 'حساسية متوسطة'
-                      return (
-                        <div key={label} className={`rounded-xl p-3 text-center ${color}`}>
-                          <div className="font-bold text-xs mb-0.5">{label}</div>
-                          <div className="text-xs opacity-80">{levelLabel}</div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-
-                {/* Quick links */}
-                <div className="p-5">
-                  <h3 className="font-bold text-gray-700 text-sm mb-3">روابط سريعة</h3>
-                  <div className="grid grid-cols-3 gap-3">
-                    {[
-                      { href: '/parent/exercises', icon: BookOpen, label: 'التمارين', color: 'bg-purple-50 text-purple-700' },
-                      { href: '/parent/appointments', icon: Calendar, label: 'المواعيد', color: 'bg-brand-50 text-brand-700' },
-                      { href: '/parent/progress', icon: TrendingUp, label: 'التطور', color: 'bg-emerald-50 text-emerald-700' },
-                    ].map(({ href, icon: Icon, label, color }) => (
-                      <Link key={href} href={href} className={`rounded-xl p-3 text-center ${color} hover:opacity-80 transition-opacity`}>
-                        <Icon className="w-5 h-5 mx-auto mb-1" />
-                        <div className="text-xs font-bold">{label}</div>
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Achievements */}
-                {child.achievements?.length > 0 && (
-                  <div className="px-5 pb-5">
-                    <h3 className="font-bold text-gray-700 text-sm mb-2">الإنجازات</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {child.achievements.slice(0, 6).map((a, i) => (
-                        <span key={i} className="text-xs bg-amber-50 text-amber-700 border border-amber-200 px-3 py-1.5 rounded-full font-bold">
-                          🏆 {typeof a === 'string' ? a : (a as { titleAr?: string; title?: string }).titleAr || (a as { titleAr?: string; title?: string }).title || ''}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
             )
           })}

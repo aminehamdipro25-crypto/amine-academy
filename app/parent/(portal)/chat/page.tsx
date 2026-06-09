@@ -70,7 +70,7 @@ function AIChatTab() {
   return (
     <div className="flex flex-col flex-1 min-h-0">
       {/* Contact links */}
-      <div className="bg-white border-b border-gray-100 px-5 py-3 flex items-center justify-between flex-shrink-0">
+      <div className="bg-white border-b border-[#F0E8FF] px-5 py-3 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 bg-green-500 rounded-full" />
           <span className="text-xs text-gray-500">المساعد الذكي متاح الآن</span>
@@ -80,14 +80,14 @@ function AIChatTab() {
             href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '97430653759'}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 bg-green-50 text-green-700 font-bold text-xs px-3 py-1.5 rounded-xl hover:bg-green-100 transition-colors"
+            className="flex items-center gap-1.5 bg-green-50 text-green-700 font-bold text-xs px-3 py-1.5 rounded-2xl hover:bg-green-100 transition-colors"
           >
             <Phone className="w-3.5 h-3.5" />
             واتساب
           </a>
           <a
             href="mailto:amine.hamdi.pro25@gmail.com"
-            className="flex items-center gap-1.5 bg-brand-50 text-brand-700 font-bold text-xs px-3 py-1.5 rounded-xl hover:bg-brand-100 transition-colors"
+            className="flex items-center gap-1.5 bg-brand-50 text-brand-700 font-bold text-xs px-3 py-1.5 rounded-2xl hover:bg-brand-100 transition-colors"
           >
             <Mail className="w-3.5 h-3.5" />
             بريد
@@ -96,14 +96,14 @@ function AIChatTab() {
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto bg-gray-50 px-4 py-4 space-y-4">
+      <div className="flex-1 overflow-y-auto bg-[#FFF8F0] px-4 py-4 space-y-4">
         {msgs.map((m, i) => (
           <div key={i} className={`flex ${m.role === 'user' ? 'justify-start' : 'justify-end'}`}>
             <div className={`max-w-[80%] ${m.role === 'user' ? 'order-2' : 'order-1'}`}>
-              <div className={`rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+              <div className={`px-4 py-3 text-sm leading-relaxed ${
                 m.role === 'user'
-                  ? 'bg-brand-600 text-white rounded-tr-sm'
-                  : 'bg-white border border-gray-100 text-gray-800 rounded-tl-sm shadow-sm'
+                  ? 'bg-brand-500 text-white rounded-3xl rounded-tr-lg'
+                  : 'bg-white border border-[#F0E8FF] text-gray-700 rounded-3xl rounded-tl-lg shadow-card'
               }`}>
                 {m.text}
               </div>
@@ -115,7 +115,7 @@ function AIChatTab() {
         ))}
         {loading && (
           <div className="flex justify-end">
-            <div className="bg-white border border-gray-100 rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm">
+            <div className="bg-white border border-[#F0E8FF] rounded-3xl rounded-tl-lg px-4 py-3 shadow-card">
               <div className="flex gap-1">
                 {[0, 0.15, 0.3].map((d, i) => (
                   <div key={i} className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: `${d}s` }} />
@@ -128,12 +128,12 @@ function AIChatTab() {
       </div>
 
       {/* Quick replies */}
-      <div className="bg-white border-t border-gray-100 px-4 py-2 flex gap-2 overflow-x-auto flex-shrink-0">
+      <div className="bg-white border-t border-[#F0E8FF] px-4 py-2 flex gap-2 overflow-x-auto flex-shrink-0">
         {QUICK.map(q => (
           <button
             key={q}
             onClick={() => send(q)}
-            className="text-xs bg-gray-50 hover:bg-brand-50 hover:text-brand-700 text-gray-600 border border-gray-200 px-3 py-1.5 rounded-full whitespace-nowrap transition-colors flex-shrink-0"
+            className="text-xs bg-[#FFF8F0] hover:bg-brand-50 hover:text-brand-700 text-gray-600 border border-[#F0E8FF] px-3 py-1.5 rounded-full whitespace-nowrap transition-colors flex-shrink-0"
           >
             {q}
           </button>
@@ -141,7 +141,7 @@ function AIChatTab() {
       </div>
 
       {/* Input */}
-      <div className="bg-white border-t border-gray-100 p-3 flex-shrink-0">
+      <div className="bg-white border-t border-[#F0E8FF] p-3 flex-shrink-0">
         <form
           onSubmit={e => { e.preventDefault(); send(input) }}
           className="flex items-center gap-2"
@@ -150,13 +150,13 @@ function AIChatTab() {
             value={input}
             onChange={e => setInput(e.target.value.slice(0, 200))}
             placeholder="اكتب سؤالك هنا..."
-            className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300 text-right"
+            className="flex-1 bg-[#FFF8F0] border border-[#E8DBFF] rounded-2xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-100 focus:border-brand-300 text-right"
             dir="rtl"
           />
           <button
             type="submit"
             disabled={!input.trim() || loading}
-            className="w-10 h-10 bg-brand-600 hover:bg-brand-700 disabled:opacity-40 text-white rounded-xl flex items-center justify-center transition-colors flex-shrink-0"
+            className="w-10 h-10 bg-brand-500 hover:bg-brand-600 disabled:opacity-40 text-white rounded-2xl flex items-center justify-center transition-colors flex-shrink-0"
           >
             <Send className="w-4 h-4" />
           </button>
@@ -239,7 +239,7 @@ function DirectMessagesTab() {
   return (
     <div className="flex flex-col flex-1 min-h-0">
       {/* Header info */}
-      <div className="bg-white border-b border-gray-100 px-5 py-3 flex-shrink-0">
+      <div className="bg-white border-b border-[#F0E8FF] px-5 py-3 flex-shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 bg-brand-100 rounded-full flex items-center justify-center">
             <User className="w-4 h-4 text-brand-600" />
@@ -252,7 +252,7 @@ function DirectMessagesTab() {
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto bg-gray-50 px-4 py-4 space-y-1">
+      <div className="flex-1 overflow-y-auto bg-[#FFF8F0] px-4 py-4 space-y-1">
         {loadingMsgs ? (
           <div className="flex items-center justify-center py-16">
             <div className="w-6 h-6 border-2 border-brand-600 border-t-transparent rounded-full animate-spin" />
@@ -270,9 +270,9 @@ function DirectMessagesTab() {
             <div key={group.date}>
               {/* Date separator */}
               <div className="flex items-center gap-3 my-4">
-                <div className="flex-1 h-px bg-gray-200" />
+                <div className="flex-1 h-px bg-[#F0E8FF]" />
                 <span className="text-xs text-gray-400 whitespace-nowrap px-2">{group.date}</span>
-                <div className="flex-1 h-px bg-gray-200" />
+                <div className="flex-1 h-px bg-[#F0E8FF]" />
               </div>
               {group.msgs.map(msg => (
                 <div
@@ -280,10 +280,10 @@ function DirectMessagesTab() {
                   className={`flex mb-3 ${msg.from === 'parent' ? 'justify-start' : 'justify-end'}`}
                 >
                   <div className={`max-w-[80%]`}>
-                    <div className={`rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+                    <div className={`px-4 py-3 text-sm leading-relaxed ${
                       msg.from === 'parent'
-                        ? 'bg-brand-600 text-white rounded-tr-sm'
-                        : 'bg-white border border-gray-100 text-gray-800 rounded-tl-sm shadow-sm'
+                        ? 'bg-brand-500 text-white rounded-3xl rounded-tr-lg'
+                        : 'bg-white border border-[#F0E8FF] text-gray-700 rounded-3xl rounded-tl-lg shadow-card'
                     }`}>
                       {msg.content}
                     </div>
@@ -303,7 +303,7 @@ function DirectMessagesTab() {
       </div>
 
       {/* Input */}
-      <div className="bg-white border-t border-gray-100 p-3 flex-shrink-0">
+      <div className="bg-white border-t border-[#F0E8FF] p-3 flex-shrink-0">
         <form
           onSubmit={e => { e.preventDefault(); sendMsg() }}
           className="flex items-center gap-2"
@@ -312,13 +312,13 @@ function DirectMessagesTab() {
             value={input}
             onChange={e => setInput(e.target.value.slice(0, 1000))}
             placeholder="اكتب رسالتك للأستاذ..."
-            className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300 text-right"
+            className="flex-1 bg-[#FFF8F0] border border-[#E8DBFF] rounded-2xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-100 focus:border-brand-300 text-right"
             dir="rtl"
           />
           <button
             type="submit"
             disabled={!input.trim() || sending}
-            className="w-10 h-10 bg-brand-600 hover:bg-brand-700 disabled:opacity-40 text-white rounded-xl flex items-center justify-center transition-colors flex-shrink-0"
+            className="w-10 h-10 bg-brand-500 hover:bg-brand-600 disabled:opacity-40 text-white rounded-2xl flex items-center justify-center transition-colors flex-shrink-0"
           >
             {sending ? (
               <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -355,17 +355,20 @@ export default function ChatPage() {
   }, [])
 
   return (
-    <div className="flex flex-col h-[calc(100vh-8rem)] md:h-[calc(100vh-3rem)] max-h-[750px] bg-white rounded-2xl border border-gray-100 overflow-hidden" dir="rtl">
+    <div className="flex flex-col h-[calc(100vh-8rem)] md:h-[calc(100vh-3rem)] max-h-[750px] bg-white rounded-3xl border border-[#F0E8FF] shadow-[0_1px_4px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] overflow-hidden" dir="rtl">
       {/* Page header */}
-      <div className="bg-white border-b border-gray-100 px-5 py-4 flex items-center gap-3 flex-shrink-0">
-        <div className="w-10 h-10 bg-brand-100 rounded-full flex items-center justify-center">
-          <MessageCircle className="w-5 h-5 text-brand-600" />
+      <div className="bg-white border-b border-[#F0E8FF] px-5 py-4 flex items-center gap-3 flex-shrink-0">
+        <div className="w-11 h-11 bg-brand-50 rounded-2xl flex items-center justify-center text-2xl shadow-[0_2px_8px_-2px_rgba(124,92,252,0.15)]">
+          💬
         </div>
-        <h1 className="font-black text-gray-900 text-base">التواصل</h1>
+        <div>
+          <h1 className="font-black text-gray-900 text-xl">التواصل</h1>
+          <p className="text-gray-400 text-sm">المساعد الذكي والرسائل المباشرة</p>
+        </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-gray-100 bg-gray-50 flex-shrink-0">
+      <div className="flex border-b border-[#F0E8FF] bg-[#FFF8F0] flex-shrink-0">
         <button
           onClick={() => setActiveTab('ai')}
           className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-bold transition-colors ${

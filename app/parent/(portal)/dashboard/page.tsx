@@ -62,7 +62,7 @@ export default function ParentDashboardPage() {
 
   if (loading) return (
     <div className="flex items-center justify-center py-20">
-      <div className="text-brand-600 text-4xl animate-pulse">🌟</div>
+      <div className="text-5xl animate-pulse">⭐</div>
     </div>
   )
   if (!data?.parent) return (
@@ -73,12 +73,14 @@ export default function ParentDashboardPage() {
   const planLabel = PLAN_INFO[parent.subscriptionPlan]?.label || 'أساسي'
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5" dir="rtl">
 
       {/* ── Hero ── */}
-      <div className="relative bg-gradient-to-bl from-brand-700 via-brand-600 to-purple-600 rounded-3xl p-6 text-white overflow-hidden">
-        <div className="absolute top-0 left-0 w-32 h-32 bg-white/5 rounded-full -translate-x-10 -translate-y-10 pointer-events-none" />
-        <div className="absolute bottom-0 right-0 w-20 h-20 bg-white/5 rounded-full translate-x-5 translate-y-5 pointer-events-none" />
+      <div className="relative bg-gradient-to-bl from-brand-600 via-brand-500 to-[#9A7BFD] rounded-3xl p-6 text-white overflow-hidden">
+        {/* Decorative blurred circles */}
+        <div className="absolute top-0 left-0 w-48 h-48 bg-white/10 rounded-full -translate-x-16 -translate-y-16 blur-2xl pointer-events-none" />
+        <div className="absolute bottom-0 right-0 w-36 h-36 bg-white/10 rounded-full translate-x-10 translate-y-10 blur-2xl pointer-events-none" />
+        <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full translate-x-6 -translate-y-6 pointer-events-none" />
         <div className="relative">
           <p className="text-white/70 text-sm">{greeting()}،</p>
           <h1 className="font-black text-2xl mt-0.5">{parent.firstName} {parent.lastName}</h1>
@@ -115,9 +117,9 @@ export default function ParentDashboardPage() {
       {/* ── Stats ── */}
       <div className="grid grid-cols-3 gap-3">
         <Link href="/parent/appointments"
-          className="bg-white rounded-2xl p-3.5 border border-gray-100 text-center hover:border-brand-200 transition-colors">
-          <div className="w-9 h-9 rounded-xl bg-green-50 flex items-center justify-center mx-auto mb-1.5">
-            <Calendar className="w-4 h-4 text-green-600" />
+          className="bg-white rounded-3xl p-3.5 border border-[#F0E8FF] shadow-[0_1px_4px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] text-center hover:-translate-y-1 hover:shadow-[0_8px_32px_-4px_rgba(124,92,252,0.16)] transition-all duration-200">
+          <div className="w-9 h-9 rounded-xl bg-[#ECFDF5] flex items-center justify-center mx-auto mb-1.5">
+            <Calendar className="w-4 h-4 text-[#10B981]" />
           </div>
           <div className="font-black text-gray-900 text-sm">
             {upcomingAppointment ? upcomingAppointment.date?.slice(5) : '—'}
@@ -125,29 +127,29 @@ export default function ParentDashboardPage() {
           <div className="text-gray-400 text-[10px]">موعد قادم</div>
         </Link>
         <Link href="/parent/reports"
-          className="bg-white rounded-2xl p-3.5 border border-gray-100 text-center hover:border-brand-200 transition-colors">
-          <div className="w-9 h-9 rounded-xl bg-purple-50 flex items-center justify-center mx-auto mb-1.5">
-            <FileText className="w-4 h-4 text-purple-600" />
+          className="bg-white rounded-3xl p-3.5 border border-[#F0E8FF] shadow-[0_1px_4px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] text-center hover:-translate-y-1 hover:shadow-[0_8px_32px_-4px_rgba(124,92,252,0.16)] transition-all duration-200">
+          <div className="w-9 h-9 rounded-xl bg-brand-50 flex items-center justify-center mx-auto mb-1.5">
+            <FileText className="w-4 h-4 text-brand-500" />
           </div>
-          <div className={`font-black text-sm ${unreadReports > 0 ? 'text-purple-600' : 'text-gray-900'} ltr-num`}>
+          <div className={`font-black text-sm ${unreadReports > 0 ? 'text-brand-500' : 'text-gray-900'} ltr-num`}>
             {unreadReports > 0 ? `${unreadReports} ج` : unreadReports}
           </div>
           <div className="text-gray-400 text-[10px]">تقارير</div>
         </Link>
         <Link href="/parent/exercises"
-          className="bg-white rounded-2xl p-3.5 border border-gray-100 text-center hover:border-brand-200 transition-colors">
-          <div className="w-9 h-9 rounded-xl bg-brand-50 flex items-center justify-center mx-auto mb-1.5">
-            <Dumbbell className="w-4 h-4 text-brand-600" />
+          className="bg-white rounded-3xl p-3.5 border border-[#F0E8FF] shadow-[0_1px_4px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] text-center hover:-translate-y-1 hover:shadow-[0_8px_32px_-4px_rgba(124,92,252,0.16)] transition-all duration-200">
+          <div className="w-9 h-9 rounded-xl bg-[#FFF3E8] flex items-center justify-center mx-auto mb-1.5">
+            <span className="text-lg leading-none">🎮</span>
           </div>
-          <div className="font-black text-gray-900 text-sm">🎮</div>
+          <div className="font-black text-gray-900 text-sm">ألعاب</div>
           <div className="text-gray-400 text-[10px]">تفاعلية</div>
         </Link>
       </div>
 
       {/* ── Upcoming appointment ── */}
       {upcomingAppointment && (
-        <div className="bg-green-50 border border-green-200 rounded-2xl p-4 flex items-center gap-3">
-          <div className="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center flex-shrink-0">
+        <div className="bg-[#ECFDF5] border border-[#6EE7B7] rounded-3xl p-4 flex items-center gap-3">
+          <div className="w-10 h-10 bg-[#10B981] rounded-xl flex items-center justify-center flex-shrink-0">
             <Calendar className="w-5 h-5 text-white" />
           </div>
           <div className="flex-1 min-w-0">
@@ -171,11 +173,11 @@ export default function ParentDashboardPage() {
         </div>
 
         {children.length === 0 ? (
-          <div className="bg-white rounded-2xl border-2 border-dashed border-gray-200 p-8 text-center">
+          <div className="bg-white rounded-3xl border-2 border-dashed border-[#E8DBFF] p-8 text-center">
             <div className="text-4xl mb-3">👶</div>
             <p className="text-gray-500 text-sm mb-4">لم تضف أي طفل بعد</p>
             <Link href="/parent/children"
-              className="inline-flex items-center gap-2 bg-brand-600 text-white font-bold px-5 py-2.5 rounded-xl text-sm hover:bg-brand-700 transition-colors">
+              className="inline-flex items-center gap-2 bg-brand-600 text-white font-bold px-5 py-2.5 rounded-2xl text-sm hover:bg-brand-700 transition-colors">
               إضافة طفل
             </Link>
           </div>
@@ -187,7 +189,7 @@ export default function ParentDashboardPage() {
               const pct = Math.min(100, Math.round((child.totalPoints / 500) * 100))
 
               return (
-                <div key={child.id} className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+                <div key={child.id} className="bg-white rounded-3xl border border-[#F0E8FF] shadow-[0_1px_4px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] overflow-hidden">
                   <div className="p-4 flex items-center gap-3">
                     <div className="w-12 h-12 bg-gradient-to-br from-brand-400 to-brand-600 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0">
                       {DIAG_EMOJI[child.diagnosis] || child.firstName[0]}
@@ -203,15 +205,15 @@ export default function ParentDashboardPage() {
                   </div>
 
                   <div className="px-4 pb-3 grid grid-cols-3 gap-2">
-                    <div className="bg-amber-50 rounded-xl p-2 text-center">
+                    <div className="bg-[#FFF8E8] rounded-2xl p-3 text-center">
                       <div className="font-black text-amber-700 text-base ltr-num">{child.totalPoints}</div>
                       <div className="text-[10px] text-amber-600">نقطة</div>
                     </div>
-                    <div className="bg-orange-50 rounded-xl p-2 text-center">
+                    <div className="bg-[#FFF3E8] rounded-2xl p-3 text-center">
                       <div className="font-black text-orange-700 text-base">🔥 {child.streak}</div>
                       <div className="text-[10px] text-orange-600">متتالي</div>
                     </div>
-                    <div className={`rounded-xl p-2 text-center ${todayExs.length > 0 ? 'bg-green-50' : 'bg-gray-50'}`}>
+                    <div className={`rounded-2xl p-3 text-center ${todayExs.length > 0 ? 'bg-[#F0FFF4]' : 'bg-[#FFF8F0]'}`}>
                       <div className={`font-black text-base ltr-num ${todayExs.length > 0 ? 'text-green-700' : 'text-gray-400'}`}>
                         {todayExs.length}
                       </div>
@@ -225,13 +227,13 @@ export default function ParentDashboardPage() {
                       <span className="font-bold text-brand-600 ltr-num">{pct}٪</span>
                     </div>
                     <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-gradient-to-l from-brand-500 to-purple-500 rounded-full transition-all duration-700"
+                      <div className="h-full bg-gradient-to-l from-brand-500 to-[#9A7BFD] rounded-full transition-all duration-700"
                         style={{ width: `${pct}%` }} />
                     </div>
                   </div>
 
                   {todayExs.length > 0 && (
-                    <div className="border-t border-gray-50 px-4 py-3 bg-green-50/60">
+                    <div className="bg-[#F0FFF4] border-t border-[#D1FAE5] px-4 py-3">
                       <div className="flex items-center justify-between mb-1.5">
                         <span className="text-xs font-black text-green-800">🗓 تمارين {DAYS_AR[TODAY_KEY]}</span>
                         <Link href="/parent/exercises"
@@ -256,13 +258,13 @@ export default function ParentDashboardPage() {
       {/* ── Quick actions ── */}
       <div className="grid grid-cols-2 gap-3">
         <Link href="/parent/exercises"
-          className="bg-gradient-to-bl from-purple-600 to-brand-600 rounded-2xl p-4 text-white hover:opacity-90 transition-opacity">
+          className="bg-gradient-to-bl from-brand-500 to-[#9A7BFD] rounded-3xl p-4 text-white hover:opacity-95 hover:-translate-y-1 transition-all duration-200">
           <div className="text-2xl mb-1">🎮</div>
           <div className="font-black text-sm">ألعاب تفاعلية</div>
           <div className="text-white/70 text-xs mt-0.5">العب مع طفلك الآن</div>
         </Link>
         <Link href="/parent/appointments"
-          className="bg-gradient-to-bl from-green-600 to-teal-600 rounded-2xl p-4 text-white hover:opacity-90 transition-opacity">
+          className="bg-gradient-to-bl from-[#10B981] to-[#2ABFA3] rounded-3xl p-4 text-white hover:opacity-95 hover:-translate-y-1 transition-all duration-200">
           <div className="text-2xl mb-1">📅</div>
           <div className="font-black text-sm">احجز جلسة</div>
           <div className="text-white/70 text-xs mt-0.5">6 أنواع متاحة</div>

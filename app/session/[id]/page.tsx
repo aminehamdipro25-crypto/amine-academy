@@ -438,9 +438,9 @@ export default function SessionPage() {
 
           <button
             onClick={() => setKidMode(m => !m)}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg font-black text-sm transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl font-black text-sm transition-all ${
               kidMode
-                ? 'bg-purple-600 text-white ring-2 ring-purple-400/50'
+                ? 'bg-gradient-to-r from-[#7C5CFC] to-[#9A7BFD] text-white shadow-[0_4px_12px_-2px_rgba(124,92,252,0.4)]'
                 : 'bg-white/10 text-white/60 hover:bg-white/20 hover:text-white'
             }`}
             title="وضع الطفل — شبكة ألعاب كبيرة للطالب"
@@ -450,9 +450,9 @@ export default function SessionPage() {
 
           <button
             onClick={() => setFocusMode(m => !m)}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg font-black text-sm transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl font-black text-sm transition-all ${
               focusMode
-                ? 'bg-amber-600 text-white ring-2 ring-amber-400/50'
+                ? 'bg-gradient-to-r from-[#FF8C65] to-[#FFBA44] text-white shadow-[0_4px_12px_-2px_rgba(255,140,101,0.4)]'
                 : 'bg-white/10 text-white/60 hover:bg-white/20 hover:text-white'
             }`}
             title="وضع التركيز — يخفي عناصر التشتيت"
@@ -651,65 +651,166 @@ export default function SessionPage() {
 
         {/* Kid Mode — full-screen friendly game grid */}
         {kidMode && (
-          <div className="flex-1 overflow-y-auto" style={{ background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 40%, #4c1d95 100%)' }}>
-            <div className="max-w-2xl mx-auto p-6">
-              {/* Greeting header */}
-              <div className="text-center mb-8 pt-4">
-                <div className="text-7xl mb-3" style={{ animation: 'bounce 2s infinite' }}>🌟</div>
-                <h1 className="text-4xl font-black text-white mb-1">
-                  {studentName ? `مرحباً ${studentName.split(' ')[0]}!` : 'مرحباً!'}
+          <div
+            className="flex-1 overflow-y-auto"
+            style={{
+              background: 'linear-gradient(160deg, #FFF0FA 0%, #EEF0FF 35%, #F0FFF8 70%, #FFFBF0 100%)',
+            }}
+          >
+            <div className="max-w-2xl mx-auto px-4 py-6">
+
+              {/* ── Greeting header ── */}
+              <div className="text-center mb-7">
+                <div className="relative inline-block">
+                  <div
+                    className="text-8xl leading-none select-none"
+                    style={{ filter: 'drop-shadow(0 6px 12px rgba(124,92,252,0.25))' }}
+                  >
+                    {studentName ? '😊' : '🌟'}
+                  </div>
+                  {/* Floating sparkles */}
+                  <div className="absolute -top-2 -right-3 text-2xl animate-bounce" style={{animationDelay:'0.1s'}}>✨</div>
+                  <div className="absolute -top-1 -left-4 text-xl animate-bounce" style={{animationDelay:'0.4s'}}>⭐</div>
+                </div>
+                <h1 className="font-black text-4xl text-gray-800 mt-3 leading-tight">
+                  {studentName
+                    ? `مرحباً ${studentName.split(' ')[0]}! 👋`
+                    : 'مرحباً بك! 👋'}
                 </h1>
-                <p className="text-white/50 text-lg">اختر لعبتك اليوم</p>
+                <p className="text-gray-400 text-lg mt-1 font-medium">اختر لعبتك اليوم</p>
+
+                {/* Mini progress strip */}
+                {results.length > 0 && (
+                  <div className="flex items-center justify-center gap-2 mt-3">
+                    {results.map((r, i) => (
+                      <div
+                        key={i}
+                        className={`w-3 h-3 rounded-full shadow-sm ${
+                          r.score >= 80 ? 'bg-emerald-400' :
+                          r.score >= 60 ? 'bg-amber-400' : 'bg-red-300'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
 
-              {/* Top 3 recommended games — large */}
+              {/* ── Top 3 recommended games — large hero cards ── */}
               {topGames.length > 0 && (
-                <div className="mb-6">
-                  <p className="text-white/40 text-xs font-black text-center mb-3 tracking-wider uppercase">⭐ موصى به لك</p>
-                  <div className="grid grid-cols-1 gap-4">
-                    {sortedExercises.slice(0, 3).map(ex => (
-                      <button
-                        key={ex.id}
-                        onClick={() => { if (!running) startSession(); setActiveView({ type: 'exercise', id: ex.id }); setKidMode(false) }}
-                        className={`${ex.color} rounded-3xl p-6 flex items-center gap-5 border-2 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl text-right`}
-                      >
-                        <span className="text-6xl flex-shrink-0">{ex.icon}</span>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-white font-black text-2xl leading-tight">{ex.labelAr}</div>
-                          <div className="text-white/60 text-sm mt-1">{ex.category}</div>
-                        </div>
-                        <div className="bg-white/20 rounded-2xl px-4 py-3 flex-shrink-0">
-                          <span className="text-white font-black text-lg">←</span>
-                        </div>
-                      </button>
-                    ))}
+                <div className="mb-5">
+                  <div className="flex items-center justify-center gap-2 mb-3">
+                    <span className="text-base">⭐</span>
+                    <p className="text-gray-400 text-xs font-black tracking-widest uppercase">الألعاب المناسبة لك</p>
+                    <span className="text-base">⭐</span>
+                  </div>
+                  <div className="grid grid-cols-1 gap-3">
+                    {sortedExercises.slice(0, 3).map((ex, idx) => {
+                      const CARD_GRADIENTS = [
+                        'from-[#7C5CFC] to-[#9A7BFD]',
+                        'from-[#FF8C65] to-[#FFBA44]',
+                        'from-[#2ABFA3] to-[#3B9EFF]',
+                      ]
+                      const CARD_SHADOWS = [
+                        '0 12px 32px -4px rgba(124,92,252,0.35)',
+                        '0 12px 32px -4px rgba(255,140,101,0.35)',
+                        '0 12px 32px -4px rgba(42,191,163,0.35)',
+                      ]
+                      return (
+                        <button
+                          key={ex.id}
+                          onClick={() => {
+                            if (!running) startSession()
+                            setActiveView({ type: 'exercise', id: ex.id })
+                            setKidMode(false)
+                          }}
+                          className={`bg-gradient-to-l ${CARD_GRADIENTS[idx]} rounded-3xl p-5 flex items-center gap-5 text-right
+                            active:scale-[0.97] transition-all duration-200 w-full select-none`}
+                          style={{ boxShadow: CARD_SHADOWS[idx] }}
+                        >
+                          <div
+                            className="w-20 h-20 rounded-2xl bg-white/20 flex items-center justify-center flex-shrink-0"
+                            style={{ fontSize: '3rem' }}
+                          >
+                            {ex.icon}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-white font-black text-2xl leading-tight">{ex.labelAr}</div>
+                            <div className="text-white/70 text-sm mt-1">{ex.category}</div>
+                            {(gameUsageCounts[ex.id] ?? 0) > 0 && (
+                              <div className="text-white/60 text-xs mt-1 font-medium ltr-num">
+                                لعبتها {gameUsageCounts[ex.id]} مرة ✓
+                              </div>
+                            )}
+                          </div>
+                          <div className="w-12 h-12 bg-white/25 rounded-2xl flex items-center justify-center flex-shrink-0">
+                            <span className="text-white text-2xl font-black">←</span>
+                          </div>
+                        </button>
+                      )
+                    })}
                   </div>
                 </div>
               )}
 
-              {/* All other games — 2-column grid */}
-              <div className="mb-3">
-                <p className="text-white/30 text-xs font-black text-center mb-3 tracking-wider">كل الألعاب</p>
+              {/* ── All other games — 2-column colorful grid ── */}
+              <div className="mb-4">
+                <p className="text-gray-400 text-xs font-black text-center mb-3 tracking-widest uppercase">
+                  كل الألعاب
+                </p>
                 <div className="grid grid-cols-2 gap-3">
-                  {sortedExercises.slice(topGames.length > 0 ? 3 : 0).map(ex => (
-                    <button
-                      key={ex.id}
-                      onClick={() => { if (!running) startSession(); setActiveView({ type: 'exercise', id: ex.id }); setKidMode(false) }}
-                      className={`${ex.color} rounded-2xl p-5 text-center border-2 hover:scale-[1.03] active:scale-[0.97] transition-all shadow-lg`}
-                    >
-                      <div className="text-4xl mb-2">{ex.icon}</div>
-                      <div className="text-white font-black text-sm leading-tight">{ex.labelAr}</div>
-                    </button>
-                  ))}
+                  {sortedExercises.slice(topGames.length > 0 ? 3 : 0).map((ex, idx) => {
+                    const GRID_COLORS = [
+                      { bg: '#FFF0FA', border: '#F0BBFF', text: '#7C5CFC' },
+                      { bg: '#FFF5EC', border: '#FFCFAC', text: '#E8702A' },
+                      { bg: '#F0FDFA', border: '#99F0E6', text: '#0EA58A' },
+                      { bg: '#FFFBF0', border: '#FFE5A0', text: '#C47F00' },
+                      { bg: '#F0F4FF', border: '#B5C6FF', text: '#3B5EDB' },
+                      { bg: '#FFF0F0', border: '#FFBBBB', text: '#D03A3A' },
+                      { bg: '#F5FFF0', border: '#BBFFCC', text: '#1D9B3E' },
+                      { bg: '#FFF8F0', border: '#FFD4A8', text: '#C45C00' },
+                      { bg: '#F0FAFF', border: '#A8DEFF', text: '#0070B0' },
+                    ]
+                    const c = GRID_COLORS[idx % GRID_COLORS.length]
+                    return (
+                      <button
+                        key={ex.id}
+                        onClick={() => {
+                          if (!running) startSession()
+                          setActiveView({ type: 'exercise', id: ex.id })
+                          setKidMode(false)
+                        }}
+                        className="rounded-3xl p-4 text-center active:scale-95 transition-all duration-150 select-none w-full"
+                        style={{
+                          background: c.bg,
+                          border: `2px solid ${c.border}`,
+                          boxShadow: `0 4px 16px -4px ${c.border}`,
+                        }}
+                      >
+                        <div className="text-5xl mb-2 leading-none">{ex.icon}</div>
+                        <div className="font-black text-sm leading-tight" style={{ color: c.text }}>
+                          {ex.labelAr}
+                        </div>
+                        {(gameUsageCounts[ex.id] ?? 0) > 0 && (
+                          <div className="text-[10px] mt-1 font-medium opacity-60 ltr-num" style={{ color: c.text }}>
+                            ×{gameUsageCounts[ex.id]}
+                          </div>
+                        )}
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
 
-              {/* Exit kid mode */}
-              <div className="text-center pt-6 pb-4">
-                <button onClick={() => setKidMode(false)} className="text-white/30 text-xs hover:text-white/60 transition-colors">
-                  خروج من وضع الطفل
+              {/* ── Exit button ── */}
+              <div className="text-center py-4">
+                <button
+                  onClick={() => setKidMode(false)}
+                  className="text-gray-400 text-sm font-medium hover:text-gray-600 transition-colors px-4 py-2 rounded-xl hover:bg-white/50"
+                >
+                  ← وضع الأستاذ
                 </button>
               </div>
+
             </div>
           </div>
         )}

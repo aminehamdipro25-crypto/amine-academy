@@ -20,19 +20,20 @@ export default function ParentPortalLayout({ children }: { children: React.React
   const pathname = usePathname()
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#FFF8F0]">
       {/* Mobile bottom nav */}
-      <nav className="fixed bottom-0 right-0 left-0 bg-white border-t border-gray-100 z-50 md:hidden">
+      <nav className="fixed bottom-0 right-0 left-0 bg-white border-t border-[#F0E8FF] z-50 md:hidden">
         <div className="flex items-center justify-around py-2">
           {navItems.slice(0, 5).map(({ href, label, icon: Icon }) => {
             const active = href === '/parent/dashboard' ? pathname === href : pathname.startsWith(href)
             return (
               <Link key={href} href={href}
-                className={`flex flex-col items-center gap-1 px-2 py-1 rounded-xl transition-colors ${
+                className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-xl transition-all duration-200 ${
                   active ? 'text-brand-600' : 'text-gray-400'
                 }`}>
                 <Icon className="w-5 h-5" />
                 <span className="text-[10px] font-medium">{label}</span>
+                {active && <span className="w-1 h-1 rounded-full bg-brand-500 mx-auto mt-0.5" />}
               </Link>
             )
           })}
@@ -40,18 +41,27 @@ export default function ParentPortalLayout({ children }: { children: React.React
       </nav>
 
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex fixed right-0 top-0 bottom-0 w-56 bg-white border-l border-gray-100 flex-col z-40">
-        <div className="p-5 border-b border-gray-100">
-          <div className="text-brand-600 font-black text-lg">أكاديمية أمين</div>
-          <div className="text-gray-400 text-xs mt-0.5">بوابة الأولياء</div>
+      <aside className="hidden md:flex fixed right-0 top-0 bottom-0 w-56 bg-white border-l border-[#F0E8FF] flex-col z-40">
+        <div className="p-5 border-b border-[#F0E8FF]">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center flex-shrink-0">
+              <span className="text-white text-sm font-black">أ</span>
+            </div>
+            <div>
+              <div className="text-brand-600 font-black text-sm leading-tight">أكاديمية أمين</div>
+              <div className="text-gray-400 text-[10px]">بوابة الأولياء</div>
+            </div>
+          </div>
         </div>
         <nav className="flex-1 p-3 space-y-1">
           {navItems.map(({ href, label, icon: Icon }) => {
             const active = href === '/parent/dashboard' ? pathname === href : pathname.startsWith(href)
             return (
               <Link key={href} href={href}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                  active ? 'bg-brand-50 text-brand-700' : 'text-gray-600 hover:bg-gray-50'
+                className={`flex items-center gap-3 px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
+                  active
+                    ? 'bg-brand-500 text-white shadow-brand-sm rounded-2xl'
+                    : 'text-gray-500 hover:bg-[#F3EEFF] hover:text-brand-600 rounded-2xl'
                 }`}>
                 <Icon className="w-4 h-4" />
                 {label}
@@ -59,10 +69,10 @@ export default function ParentPortalLayout({ children }: { children: React.React
             )
           })}
         </nav>
-        <div className="p-3 border-t border-gray-100">
+        <div className="p-3 border-t border-[#F0E8FF]">
           <form action="/api/auth/client/logout" method="POST">
             <button type="submit"
-              className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-colors">
+              className="flex items-center gap-3 w-full px-3 py-2.5 rounded-2xl text-sm font-medium text-gray-500 hover:bg-[#F3EEFF] hover:text-brand-600 transition-all duration-200">
               <LogOut className="w-4 h-4" />
               تسجيل الخروج
             </button>
@@ -72,7 +82,7 @@ export default function ParentPortalLayout({ children }: { children: React.React
 
       {/* Main content */}
       <main className="md:mr-56 pb-20 md:pb-0">
-        <div className="max-w-4xl mx-auto p-4 md:p-6">{children}</div>
+        <div className="max-w-3xl mx-auto p-4 md:p-6">{children}</div>
       </main>
     </div>
   )

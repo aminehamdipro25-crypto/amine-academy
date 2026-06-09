@@ -14,18 +14,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
     }
 
+    // Parse body FIRST before any other async operations
+    const { force } = await req.json().catch(() => ({ force: false }))
+
     const existing = await getAllExercises()
-    if (existing.length > 0) {
-      const { force } = await req.json().catch(() => ({}))
-      if (!force) {
-        return NextResponse.json({
-          ok: false,
-          message: `يوجد ${existing.length} تمرين مسبقاً. استخدم زر "إعادة التحميل الكاملة" لحذف القديم وتحميل ${DEFAULT_EXERCISES.length} تمرين.`,
-          count: existing.length,
-        })
-      }
-      // Delete all existing exercises first to avoid duplicates
-      await deleteAllExercises()
+    if (existing.length > 0 && !force) {
+      return NextResponse.json({
+        ok: false,
+        message: `يوجد ${existing.length} تمرين مسبقاً. استخدم زر "إعادة التحميل الكاملة" لحذف القديم وتحميل ${DEFAULT_EXERCISES.length} تمرين.`,
+        count: existing.length,
+      })
+    }
+
+    if (existing.length > 0 && force) {
+      const deleted = await deleteAllExercises()
+      console.log(`[seed-exercises] deleted ${deleted} exercises`)
     }
 
     const created: string[] = []
@@ -36,7 +39,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       ok: true,
-      message: `تم تحميل ${created.length} تمرين بنجاح`,
+      message: `تم تحميل ${created.length} تمرين بنجاح — تم حذف ${existing.length} تمرين قديم`,
       count: created.length,
       ids: created,
     })

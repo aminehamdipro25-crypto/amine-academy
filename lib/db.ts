@@ -117,7 +117,11 @@ export async function getAllExercises(): Promise<Exercise[]> {
 export async function deleteAllExercises(): Promise<number> {
   const ids = await redis.lrange('exercises:index', 0, -1)
   if (ids.length > 0) {
-    await Promise.all(ids.map(id => redis.del(`exercise:${id}`)))
+    // Delete in batches of 20 to avoid overwhelming the connection
+    for (let i = 0; i < ids.length; i += 20) {
+      const batch = ids.slice(i, i + 20)
+      await Promise.all(batch.map(id => redis.del(`exercise:${id}`)))
+    }
   }
   await redis.del('exercises:index')
   return ids.length

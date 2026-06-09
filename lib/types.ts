@@ -288,3 +288,33 @@ export interface StudentAssessmentProfile {
   clinicalNotes:        string
   lastAssessmentId:     string | null
 }
+
+// ── Game Results (per-game longitudinal tracking) ─────────────
+export interface GameResult {
+  id:              string
+  gameId:          string
+  gameLabelAr:     string
+  sessionId:       string   // appointmentId
+  studentId:       string
+  playedAt:        string   // ISO
+  score:           number   // 0-100
+  accuracy:        number   // 0-100
+  reactionTimeMs:  number   // avg reaction time
+  level:           number   // difficulty level used
+  durationSeconds: number
+  completed:       boolean
+}
+
+// ── Weekly Progress snapshot ───────────────────────────────────
+export interface WeeklyProgress {
+  studentId:    string
+  weekStart:    string   // ISO date of Monday
+  gamesPlayed:  number
+  totalMinutes: number
+  avgAccuracy:  number   // 0-100
+  streakDays:   number
+  sessionCount: number
+  domainScores: Partial<Record<string, number>>  // domain -> avg score 0-100
+  topGames:     string[]
+  createdAt:    string
+}

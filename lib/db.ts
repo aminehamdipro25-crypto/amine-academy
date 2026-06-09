@@ -26,11 +26,15 @@
 //
 //   assessment-profile:{studentId}   → StudentAssessmentProfile (consolidated profile)
 //   assessments:student:{studentId}  → [assessment result IDs]
+//   game-result:{id}              → GameResult JSON (TTL 365 days)
+//   game-results:student:{sid}   → [game result IDs] latest first
+//   game-results:session:{aid}   → [game result IDs] for that appointment
+//   weekly-progress:{sid}:{week} → WeeklyProgress JSON (TTL 180 days)
 // ============================================================
 
 import { redis } from './redis'
 import { generateId } from './auth'
-import type { Parent, Student, Exercise, Program, Appointment, ProgressReport, PendingPayment, Message, Achievement, StudentAssessmentProfile } from './types'
+import type { Parent, Student, Exercise, Program, Appointment, ProgressReport, PendingPayment, Message, Achievement, StudentAssessmentProfile, GameResult, WeeklyProgress } from './types'
 
 // ── Parents ───────────────────────────────────────────────────
 
@@ -600,4 +604,100 @@ export async function saveAssessmentProfile(
   }
   await redis.set(`assessment-profile:${studentId}`, updated)
   return updated
+}
+
+// ── Game Results ──────────────────────────────────────────────
+// Key scheme:
+//   game-result:{id}            → GameResult (TTL 365d)
+//   game-results:student:{sid}  → list of IDs
+//   game-results:session:{aid}  → list of IDs
+
+const GAME_RESULT_TTL = 365 * 24 * 3600
+
+export async function saveGameResult(
+  data: Omit<GameResult, 'id'>
+): Promise<GameResult> {
+  const id = `GR-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`
+  const result: GameResult = { ...data, id }
+  await redis.pipeline([
+    ['SET', `game-result:${id}`, JSON.stringify(result), 'EX', String(GAME_RESULT_TTL)],
+    ['LPUSH', `game-results:student:${data.studentId}`, id],
+    ['EXPIRE', `game-results:student:${data.studentId}`, String(GAME_RESULT_TTL)],
+    ['LPUSH', `game-results:session:${data.sessionId}`, id],
+    ['EXPIRE', `game-results:session:${data.sessionId}`, String(GAME_RESULT_TTL)],
+  ])
+  return result
+}
+
+export async function getStudentGameResults(studentId: string, limit = 100): Promise<GameResult[]> {
+  const ids = await redis.lrange(`game-results:student:${studentId}`, 0, limit - 1)
+  if (ids.length === 0) return []
+  const results = await Promise.all(ids.map(id => redis.get<GameResult>(`game-result:${id}`)))
+  return results.filter(Boolean) as GameResult[]
+}
+
+export async function getSessionGameResults(sessionId: string): Promise<GameResult[]> {
+  const ids = await redis.lrange(`game-results:session:${sessionId}`, 0, -1)
+  if (ids.length === 0) return []
+  const results = await Promise.all(ids.map(id => redis.get<GameResult>(`game-result:${id}`)))
+  return results.filter(Boolean) as GameResult[]
+}
+
+// Compute 8-week rolling game performance per domain
+export async function getStudentGameHistory(studentId: string): Promise<{
+  byGame: Record<string, { plays: number; avgScore: number; avgAccuracy: number; lastPlayed: string }>
+  byWeek: { week: string; gamesPlayed: number; avgScore: number; totalMinutes: number }[]
+  totalPlays: number
+  totalMinutes: number
+}> {
+  const results = await getStudentGameResults(studentId, 500)
+  if (results.length === 0) {
+    return { byGame: {}, byWeek: [], totalPlays: 0, totalMinutes: 0 }
+  }
+
+  // Aggregate by game
+  const gameMap: Record<string, { scores: number[]; accuracies: number[]; lastPlayed: string }> = {}
+  for (const r of results) {
+    if (!gameMap[r.gameId]) gameMap[r.gameId] = { scores: [], accuracies: [], lastPlayed: r.playedAt }
+    gameMap[r.gameId].scores.push(r.score)
+    gameMap[r.gameId].accuracies.push(r.accuracy)
+    if (r.playedAt > gameMap[r.gameId].lastPlayed) gameMap[r.gameId].lastPlayed = r.playedAt
+  }
+
+  const byGame: Record<string, { plays: number; avgScore: number; avgAccuracy: number; lastPlayed: string }> = {}
+  for (const [gameId, data] of Object.entries(gameMap)) {
+    byGame[gameId] = {
+      plays: data.scores.length,
+      avgScore: Math.round(data.scores.reduce((a, b) => a + b, 0) / data.scores.length),
+      avgAccuracy: Math.round(data.accuracies.reduce((a, b) => a + b, 0) / data.accuracies.length),
+      lastPlayed: data.lastPlayed,
+    }
+  }
+
+  // Aggregate by week (Monday-based)
+  const weekMap: Record<string, { scores: number[]; minutes: number }> = {}
+  for (const r of results) {
+    const d = new Date(r.playedAt)
+    const day = d.getDay()
+    const monday = new Date(d)
+    monday.setDate(d.getDate() - ((day + 6) % 7))
+    const weekKey = monday.toISOString().slice(0, 10)
+    if (!weekMap[weekKey]) weekMap[weekKey] = { scores: [], minutes: 0 }
+    weekMap[weekKey].scores.push(r.score)
+    weekMap[weekKey].minutes += Math.round(r.durationSeconds / 60)
+  }
+
+  const byWeek = Object.entries(weekMap)
+    .map(([week, data]) => ({
+      week,
+      gamesPlayed: data.scores.length,
+      avgScore: Math.round(data.scores.reduce((a, b) => a + b, 0) / data.scores.length),
+      totalMinutes: data.minutes,
+    }))
+    .sort((a, b) => a.week.localeCompare(b.week))
+    .slice(-8)
+
+  const totalMinutes = Math.round(results.reduce((s, r) => s + r.durationSeconds, 0) / 60)
+
+  return { byGame, byWeek, totalPlays: results.length, totalMinutes }
 }

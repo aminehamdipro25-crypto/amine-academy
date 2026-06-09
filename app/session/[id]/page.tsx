@@ -66,6 +66,52 @@ function formatTime(s: number) {
   return `${m}:${sec}`
 }
 
+function playSound(type: 'success' | 'complete' | 'start') {
+  if (typeof window === 'undefined') return
+  try {
+    const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)()
+    const g = ctx.createGain()
+    g.connect(ctx.destination)
+
+    if (type === 'success') {
+      // Short happy ding
+      const o = ctx.createOscillator()
+      o.connect(g)
+      o.type = 'sine'
+      g.gain.setValueAtTime(0.3, ctx.currentTime)
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4)
+      o.frequency.setValueAtTime(523, ctx.currentTime)
+      o.frequency.setValueAtTime(659, ctx.currentTime + 0.1)
+      o.frequency.setValueAtTime(784, ctx.currentTime + 0.2)
+      o.start(ctx.currentTime)
+      o.stop(ctx.currentTime + 0.4)
+    } else if (type === 'complete') {
+      // Fanfare for session complete
+      const notes = [523, 659, 784, 1047]
+      notes.forEach((freq, i) => {
+        const o = ctx.createOscillator()
+        o.connect(g)
+        o.type = 'sine'
+        o.frequency.value = freq
+        g.gain.setValueAtTime(0.25, ctx.currentTime + i * 0.12)
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.12 + 0.3)
+        o.start(ctx.currentTime + i * 0.12)
+        o.stop(ctx.currentTime + i * 0.12 + 0.3)
+      })
+    } else if (type === 'start') {
+      // Subtle start beep
+      const o = ctx.createOscillator()
+      o.connect(g)
+      o.type = 'sine'
+      o.frequency.value = 440
+      g.gain.setValueAtTime(0.2, ctx.currentTime)
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2)
+      o.start(ctx.currentTime)
+      o.stop(ctx.currentTime + 0.2)
+    }
+  } catch { /* AudioContext blocked */ }
+}
+
 function ScoreBar({ score, color = 'bg-brand-500' }: { score: number; color?: string }) {
   return (
     <div className="w-full bg-white/10 rounded-full h-1.5 mt-1">
@@ -96,6 +142,8 @@ export default function SessionPage() {
   const [tab, setTab] = useState<'exercises'|'assessments'|'log'>('exercises')
   const [profile, setProfile] = useState<StudentAssessmentProfile | null>(null)
   const [kidMode, setKidMode] = useState(false)
+  const [achievementToast, setAchievementToast] = useState<{ icon: string; message: string } | null>(null)
+  const [focusMode, setFocusMode] = useState(false)
   const [jitsiUrl, setJitsiUrl] = useState<string | null>(null)
   const [currentStudentId, setCurrentStudentId] = useState<string>('')
   const [appointmentType, setAppointmentType] = useState<string>('')
@@ -189,11 +237,45 @@ export default function SessionPage() {
   function startSession() {
     setRunning(true)
     startRef.current = Date.now()
+    playSound('start')
+  }
+
+  function showAchievement(icon: string, message: string) {
+    setAchievementToast({ icon, message })
+    setTimeout(() => setAchievementToast(null), 3500)
   }
 
   function handleExerciseComplete(result: ExerciseResult) {
     setResults(r => [...r, result])
     setActiveView(null)
+    playSound('success')
+
+    // Save game result for longitudinal tracking
+    if (currentStudentId) {
+      fetch('/api/game-results', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          gameId:          result.exerciseType,
+          gameLabelAr:     result.exerciseLabelAr,
+          sessionId:       id,
+          studentId:       currentStudentId,
+          score:           result.score,
+          accuracy:        result.accuracy,
+          reactionTimeMs:  typeof result.metadata?.reactionTimeMs === 'number' ? result.metadata.reactionTimeMs : 0,
+          level:           difficulty,
+          durationSeconds: result.duration,
+          completed:       result.score > 0,
+        }),
+      }).catch(() => {})
+      // Update local usage count
+      setGameUsageCounts(prev => ({ ...prev, [result.exerciseType]: (prev[result.exerciseType] || 0) + 1 }))
+    }
+
+    // Achievement toasts
+    if (result.score >= 95) showAchievement('🏆', `أداء مثالي! ${result.score}%`)
+    else if (result.score >= 80) showAchievement('⭐', `أداء ممتاز! ${result.score}%`)
+    else if (result.score >= 60) showAchievement('👍', `أداء جيد! ${result.score}%`)
   }
 
   function handleAssessmentComplete(result: AssessmentResult) {
@@ -223,6 +305,7 @@ export default function SessionPage() {
         }),
       })
       setSaved(true)
+      playSound('complete')
     } finally {
       setSaving(false)
     }
@@ -365,6 +448,18 @@ export default function SessionPage() {
             🎮 {kidMode ? 'وضع الأستاذ' : 'وضع الطفل'}
           </button>
 
+          <button
+            onClick={() => setFocusMode(m => !m)}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg font-black text-sm transition-all ${
+              focusMode
+                ? 'bg-amber-600 text-white ring-2 ring-amber-400/50'
+                : 'bg-white/10 text-white/60 hover:bg-white/20 hover:text-white'
+            }`}
+            title="وضع التركيز — يخفي عناصر التشتيت"
+          >
+            🎯 {focusMode ? 'تركيز فعّال' : 'تركيز'}
+          </button>
+
           <button onClick={saveSession} disabled={saving}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-sm transition-colors ${
               saved ? 'bg-green-600 text-white' : 'bg-brand-600 hover:bg-brand-700 text-white'
@@ -394,7 +489,7 @@ export default function SessionPage() {
       <div className="flex flex-1 overflow-hidden">
 
         {/* Sidebar */}
-        <aside className="w-72 bg-gray-900 border-l border-white/10 flex flex-col">
+        {!focusMode && <aside className="w-72 bg-gray-900 border-l border-white/10 flex flex-col">
           {/* Tabs */}
           <div className="flex border-b border-white/10">
             {(['exercises','assessments','log'] as const).map(t => (
@@ -552,7 +647,7 @@ export default function SessionPage() {
               dir="rtl"
             />
           </div>
-        </aside>
+        </aside>}
 
         {/* Kid Mode — full-screen friendly game grid */}
         {kidMode && (
@@ -698,6 +793,40 @@ export default function SessionPage() {
           )}
         </main>
       </div>
+
+      {/* Focus Mode floating quick-launch panel */}
+      {focusMode && (
+        <div className="fixed bottom-6 left-6 z-50 flex flex-col gap-2">
+          <div className="bg-gray-900/95 rounded-2xl p-3 border border-white/10 shadow-2xl max-h-64 overflow-y-auto w-56">
+            <p className="text-white/40 text-[10px] font-black mb-2 text-center">اختر لعبة</p>
+            {sortedExercises.slice(0, 6).map(ex => (
+              <button key={ex.id}
+                onClick={() => { if (!running) startSession(); setActiveView({ type: 'exercise', id: ex.id }) }}
+                className="w-full flex items-center gap-2 p-2 rounded-xl hover:bg-white/10 transition-colors text-right">
+                <span className="text-lg">{ex.icon}</span>
+                <span className="text-white text-xs font-bold truncate">{ex.labelAr}</span>
+              </button>
+            ))}
+          </div>
+          <button onClick={() => setFocusMode(false)}
+            className="bg-gray-800 text-white/50 text-xs py-2 rounded-xl hover:bg-gray-700 transition-colors">
+            خروج من وضع التركيز
+          </button>
+        </div>
+      )}
+
+      {/* Achievement Toast */}
+      {achievementToast && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[100] pointer-events-none">
+          <div className="bg-gray-900 border border-white/20 rounded-2xl px-6 py-4 flex items-center gap-3 shadow-2xl animate-[slideInDown_0.3s_ease-out]">
+            <span className="text-3xl animate-bounce">{achievementToast.icon}</span>
+            <div>
+              <p className="text-white font-black text-base">{achievementToast.message}</p>
+              <p className="text-white/50 text-xs">إنجاز رائع!</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

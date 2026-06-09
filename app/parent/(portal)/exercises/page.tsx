@@ -1,14 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { BookOpen, Clock, Star, CheckCircle, Play, X, ChevronRight, ChevronLeft, Zap, Brain, StopCircle, Heart } from 'lucide-react'
-import type { Exercise, Student, ExerciseResult } from '@/lib/types'
-import dynamic from 'next/dynamic'
-
-// Lazy-load interactive games (same components used in the session platform)
-const ReactionGame = dynamic(() => import('@/components/session/exercises/ReactionGame'), { ssr: false })
-const StroopTest   = dynamic(() => import('@/components/session/exercises/StroopTest'),   { ssr: false })
-const StopSignal   = dynamic(() => import('@/components/session/exercises/StopSignal'),   { ssr: false })
-const EmotionCards = dynamic(() => import('@/components/session/exercises/EmotionCards'), { ssr: false })
+import { BookOpen, Clock, Star, CheckCircle, Play, X, ChevronRight, ChevronLeft } from 'lucide-react'
+import type { Exercise, Student } from '@/lib/types'
 
 const CAT_LABELS: Record<string, string> = {
   motor: 'حركي', focus: 'تركيز', balance: 'توازن',
@@ -26,56 +19,6 @@ const DIFF_LABELS: Record<string, string> = {
   beginner: 'مبتدئ', intermediate: 'متوسط', advanced: 'متقدم',
 }
 
-const INTERACTIVE_GAMES = [
-  {
-    id: 'reaction-game',
-    labelAr: 'سرعة رد الفعل',
-    icon: Zap,
-    emoji: '⚡',
-    color: 'from-yellow-400 to-orange-500',
-    bg: 'bg-yellow-50 border-yellow-200',
-    desc: 'اضغط بسرعة عند ظهور الضوء — يقيس زمن الاستجابة ويقوّي التركيز',
-    category: 'تركيز وانتباه',
-    minutes: 3,
-    points: 60,
-  },
-  {
-    id: 'stroop-test',
-    labelAr: 'ستروب — كبح الاستجابة',
-    icon: Brain,
-    emoji: '🎨',
-    color: 'from-rose-400 to-pink-600',
-    bg: 'bg-rose-50 border-rose-200',
-    desc: 'اختر لون الكلمة لا معناها — يدرّب الدماغ على كبح الاستجابات التلقائية',
-    category: 'تنفيذي',
-    minutes: 4,
-    points: 80,
-  },
-  {
-    id: 'stop-signal',
-    labelAr: 'توقف أو أكمل',
-    icon: StopCircle,
-    emoji: '🛑',
-    color: 'from-red-400 to-red-600',
-    bg: 'bg-red-50 border-red-200',
-    desc: 'اضغط على الأخضر، توقف عند الأحمر — يقيس التحكم في الاندفاعية',
-    category: 'ضبط النفس',
-    minutes: 3,
-    points: 70,
-  },
-  {
-    id: 'emotion-cards',
-    labelAr: 'التعرف على المشاعر',
-    icon: Heart,
-    emoji: '🎭',
-    color: 'from-pink-400 to-fuchsia-600',
-    bg: 'bg-pink-50 border-pink-200',
-    desc: 'تعرّف على مشاعر الوجوه — يطوّر الذكاء العاطفي والمهارات الاجتماعية',
-    category: 'اجتماعي',
-    minutes: 5,
-    points: 90,
-  },
-]
 
 export default function ExercisesPage() {
   const [exercises, setExercises] = useState<Exercise[]>([])
@@ -87,11 +30,6 @@ export default function ExercisesPage() {
   const [completed, setCompleted] = useState<Set<string>>(new Set())
   const [timer, setTimer] = useState(0)
   const [timerActive, setTimerActive] = useState(false)
-
-  // Interactive game state
-  const [activeGame, setActiveGame] = useState<string | null>(null)
-  const [gameResult, setGameResult] = useState<ExerciseResult | null>(null)
-  const [gamesCompleted, setGamesCompleted] = useState<Record<string, ExerciseResult>>({})
 
   useEffect(() => {
     fetch('/api/parent/me')
@@ -114,12 +52,6 @@ export default function ExercisesPage() {
     return () => clearInterval(id)
   }, [timerActive])
 
-  function handleGameComplete(result: ExerciseResult) {
-    setGamesCompleted(prev => ({ ...prev, [result.exerciseType]: result }))
-    setGameResult(result)
-    setActiveGame(null)
-  }
-
   function openExercise(ex: Exercise) {
     setSelected(ex)
     setStep(0)
@@ -137,42 +69,12 @@ export default function ExercisesPage() {
   const filtered = filter === 'all' ? exercises : exercises.filter(e => e.category === filter)
   const categories = ['all', ...Object.keys(CAT_LABELS)]
   const fmtTime = (s: number) => `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`
-  const studentAge = child ? parseInt(child.ageGroup.split('-')[0]) : 8
 
   if (loading) return (
     <div className="flex items-center justify-center py-20">
       <div className="text-brand-600 text-4xl animate-pulse">🏃</div>
     </div>
   )
-
-  // Active game — full screen takeover
-  if (activeGame) {
-    const GameProps = {
-      onComplete: handleGameComplete,
-      onCancel: () => setActiveGame(null),
-      studentAge,
-      difficulty: 1 as const,
-    }
-    return (
-      <div className="fixed inset-0 bg-gray-950 z-50 flex flex-col" dir="rtl">
-        <div className="flex items-center justify-between px-4 py-3 bg-gray-900 border-b border-gray-800">
-          <span className="text-white font-black text-sm">
-            {INTERACTIVE_GAMES.find(g => g.id === activeGame)?.labelAr}
-          </span>
-          <button onClick={() => setActiveGame(null)}
-            className="text-gray-400 hover:text-white bg-gray-800 rounded-lg p-1.5 transition-colors">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-        <div className="flex-1 overflow-auto p-4">
-          {activeGame === 'reaction-game' && <ReactionGame {...GameProps} />}
-          {activeGame === 'stroop-test'   && <StroopTest   {...GameProps} />}
-          {activeGame === 'stop-signal'   && <StopSignal   {...GameProps} />}
-          {activeGame === 'emotion-cards' && <EmotionCards {...GameProps} />}
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div className="space-y-6" dir="rtl">
@@ -183,78 +85,6 @@ export default function ExercisesPage() {
           {child ? `برنامج ${child.firstName} • ${child.ageGroup} سنة • ${child.diagnosis}` : 'جميع التمارين'}
         </p>
       </div>
-
-      {/* ── Interactive Games Section ── */}
-      <div className="bg-gradient-to-l from-brand-600 to-purple-700 rounded-2xl p-5 text-white">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="text-xl">🎮</span>
-          <h2 className="font-black text-lg">ألعاب تفاعلية</h2>
-          <span className="bg-white/20 text-white/90 text-xs font-bold px-2 py-0.5 rounded-full">جديد</span>
-        </div>
-        <p className="text-white/75 text-xs mb-4">العب مع طفلك مباشرة على الشاشة — أدوات تشخيصية وعلاجية علمية</p>
-        <div className="grid grid-cols-2 gap-3">
-          {INTERACTIVE_GAMES.map(game => {
-            const done = !!gamesCompleted[game.id]
-            const res  = gamesCompleted[game.id]
-            return (
-              <button
-                key={game.id}
-                onClick={() => done ? setGameResult(res) : setActiveGame(game.id)}
-                className={`relative text-right p-3.5 rounded-2xl border-2 transition-all hover:scale-[1.02] active:scale-[0.98] ${
-                  done ? 'bg-white/20 border-white/30' : 'bg-white/10 border-white/20 hover:bg-white/20'
-                }`}
-              >
-                {done && (
-                  <div className="absolute top-2 left-2 bg-green-400 rounded-full w-5 h-5 flex items-center justify-center">
-                    <CheckCircle className="w-3 h-3 text-white" />
-                  </div>
-                )}
-                <div className="text-2xl mb-1">{game.emoji}</div>
-                <div className="font-black text-white text-xs leading-tight">{game.labelAr}</div>
-                <div className="text-white/60 text-[10px] mt-0.5">{game.category}</div>
-                {done && res && (
-                  <div className="mt-1.5 bg-white/20 rounded-lg px-2 py-0.5 text-xs font-black text-white ltr-num">
-                    {res.score}٪
-                  </div>
-                )}
-                {!done && (
-                  <div className="mt-1.5 flex items-center gap-1">
-                    <Play className="w-3 h-3 text-white/70" />
-                    <span className="text-white/70 text-[10px]">العب الآن</span>
-                  </div>
-                )}
-              </button>
-            )
-          })}
-        </div>
-      </div>
-
-      {/* Game result modal */}
-      {gameResult && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl w-full max-w-sm text-center p-8">
-            <div className="text-6xl mb-4">{gameResult.score >= 80 ? '🌟' : gameResult.score >= 60 ? '👍' : '💪'}</div>
-            <h3 className="font-black text-2xl text-gray-900 mb-1">{gameResult.exerciseLabelAr}</h3>
-            <div className={`text-5xl font-black my-4 ltr-num ${
-              gameResult.score >= 80 ? 'text-green-600' : gameResult.score >= 60 ? 'text-yellow-600' : 'text-red-500'
-            }`}>{gameResult.score}٪</div>
-            <div className="grid grid-cols-2 gap-3 mb-6">
-              <div className="bg-gray-50 rounded-xl p-3">
-                <div className="font-black text-gray-900 ltr-num">{gameResult.accuracy}٪</div>
-                <div className="text-xs text-gray-500">الدقة</div>
-              </div>
-              <div className="bg-gray-50 rounded-xl p-3">
-                <div className="font-black text-gray-900 ltr-num">{Math.round(gameResult.duration / 60)} دقيقة</div>
-                <div className="text-xs text-gray-500">المدة</div>
-              </div>
-            </div>
-            <button onClick={() => setGameResult(null)}
-              className="w-full bg-brand-600 text-white font-black py-3 rounded-2xl hover:bg-brand-700 transition-colors">
-              رائع! 🎉
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* ── Physical exercises library ── */}
       <div>

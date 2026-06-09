@@ -28,14 +28,14 @@ const STATUS_CFG: Record<string, { label: string; color: string; icon: React.Ele
   'no-show':  { label: 'غياب',     color: 'bg-gray-100 text-gray-500',   icon: AlertCircle },
 }
 
-const TIME_SLOTS = [
-  '09:00-09:45', '10:00-10:45', '11:00-11:45',
-  '14:00-14:45', '15:00-15:45', '16:00-16:45', '17:00-17:45',
-]
+const QUICK_TIMES = ['09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00']
 
 function isSessionLive(date: string, timeSlot: string): boolean {
-  const [startH, startM] = timeSlot.split('-')[0].split(':').map(Number)
-  const [endH, endM] = timeSlot.split('-')[1].split(':').map(Number)
+  // timeSlot may be "HH:MM" (new) or "HH:MM-HH:MM" (legacy)
+  const startPart = timeSlot.includes('-') ? timeSlot.split('-')[0] : timeSlot
+  const endPart   = timeSlot.includes('-') ? timeSlot.split('-')[1] : null
+  const [startH, startM] = startPart.split(':').map(Number)
+  const [endH, endM] = endPart ? endPart.split(':').map(Number) : [startH, startM + 45]
   const now = new Date()
   const sessionDate = new Date(date)
   if (
@@ -52,8 +52,9 @@ export default function AppointmentsPage() {
   const [appointments, setAppointments] = useState<Appointment[]>([])
   const [children, setChildren] = useState<Student[]>([])
   const [loading, setLoading] = useState(true)
+  const defaultDate = new Date(Date.now() + 24 * 3600 * 1000).toISOString().split('T')[0]
   const [showBook, setShowBook] = useState(false)
-  const [booking, setBooking] = useState({ studentId: '', date: '', timeSlot: '', type: 'followup', notes: '' })
+  const [booking, setBooking] = useState({ studentId: '', date: defaultDate, timeSlot: '', type: 'followup', notes: '' })
   const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState(false)
 
@@ -275,20 +276,24 @@ export default function AppointmentsPage() {
                 />
               </div>
               <div>
-                <label className="text-xs font-bold text-gray-500 block mb-1">الوقت المفضل</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {TIME_SLOTS.map(slot => (
-                    <button
-                      key={slot}
-                      type="button"
-                      onClick={() => setBooking(b => ({ ...b, timeSlot: slot }))}
-                      className={`py-2 text-xs font-bold rounded-xl border-2 transition-colors ltr-num ${
-                        booking.timeSlot === slot
+                <label className="text-xs font-bold text-gray-500 block mb-1.5">الوقت المفضل</label>
+                <input
+                  type="time"
+                  required
+                  value={booking.timeSlot}
+                  onChange={e => setBooking(b => ({ ...b, timeSlot: e.target.value }))}
+                  className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-400 ltr-num"
+                />
+                <div className="flex gap-1.5 flex-wrap mt-2">
+                  {QUICK_TIMES.map(t => (
+                    <button key={t} type="button"
+                      onClick={() => setBooking(b => ({ ...b, timeSlot: t }))}
+                      className={`text-xs font-bold px-2.5 py-1 rounded-full border transition-colors ltr-num ${
+                        booking.timeSlot === t
                           ? 'bg-brand-600 text-white border-brand-600'
-                          : 'border-gray-200 text-gray-600 hover:border-brand-300'
-                      }`}
-                    >
-                      {slot.split('-')[0]}
+                          : 'border-gray-200 text-gray-500 hover:border-brand-300 hover:text-brand-600'
+                      }`}>
+                      {t}
                     </button>
                   ))}
                 </div>

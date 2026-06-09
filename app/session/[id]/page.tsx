@@ -142,6 +142,7 @@ export default function SessionPage() {
   const [tab, setTab] = useState<'exercises'|'assessments'|'log'>('exercises')
   const [profile, setProfile] = useState<StudentAssessmentProfile | null>(null)
   const [kidMode, setKidMode] = useState(false)
+  const [showCelebration, setShowCelebration] = useState(false)
   const [achievementToast, setAchievementToast] = useState<{ icon: string; message: string } | null>(null)
   const [focusMode, setFocusMode] = useState(false)
   const [jitsiUrl, setJitsiUrl] = useState<string | null>(null)
@@ -246,7 +247,20 @@ export default function SessionPage() {
   }
 
   function handleExerciseComplete(result: ExerciseResult) {
-    setResults(r => [...r, result])
+    setResults(r => {
+      const newResults = [...r, result]
+      // Kid Mode completion check — trigger celebration once all top games are done
+      if (kidMode && topGames.length > 0) {
+        const playedIds = new Set(newResults.map(res => res.exerciseType))
+        if (topGames.every(g => playedIds.has(g))) {
+          setTimeout(() => {
+            setShowCelebration(true)
+            playSound('complete')
+          }, 800)
+        }
+      }
+      return newResults
+    })
     setActiveView(null)
     playSound('success')
 
@@ -461,11 +475,15 @@ export default function SessionPage() {
           </button>
 
           <button onClick={saveSession} disabled={saving}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-sm transition-colors ${
-              saved ? 'bg-green-600 text-white' : 'bg-brand-600 hover:bg-brand-700 text-white'
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-black text-sm transition-all shadow-lg hover:-translate-y-0.5 ${
+              saved
+                ? 'bg-green-600 text-white shadow-green-900/40'
+                : saving
+                ? 'bg-brand-700 text-white/80 cursor-wait'
+                : 'bg-gradient-to-r from-brand-500 to-[#9A7BFD] text-white shadow-brand hover:shadow-[0_6px_20px_-4px_rgba(124,92,252,0.5)]'
             }`}>
             <Save className="w-4 h-4" />
-            {saving ? 'جار الحفظ...' : saved ? 'تم الحفظ ✓' : 'حفظ'}
+            {saving ? 'جار الحفظ...' : saved ? 'تم الحفظ ✓' : 'حفظ الجلسة'}
           </button>
         </div>
       </header>
@@ -595,25 +613,73 @@ export default function SessionPage() {
 
             {tab === 'log' && (
               <div className="space-y-2">
-                {results.length === 0 && (
+                {results.length === 0 && assessments.length === 0 && (
                   <p className="text-white/30 text-sm text-center py-4">لم تبدأ أي تمرين بعد</p>
                 )}
-                {results.map((r, i) => (
-                  <div key={i} className="bg-white/5 rounded-xl p-3">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className={`text-sm font-black ${r.score >= 80 ? 'text-green-400' : r.score >= 60 ? 'text-amber-400' : 'text-red-400'}`}>
-                        {r.score}%
-                      </span>
-                      <span className="text-white/70 text-xs font-bold">{r.exerciseLabelAr}</span>
+
+                {/* Session summary header when results exist */}
+                {results.length > 0 && (
+                  <div className="bg-white/5 rounded-xl p-3 mb-1">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-white/40 text-[10px] font-black uppercase tracking-wider">ملخص الجلسة</span>
+                      <span className="text-white/40 text-[10px]">{results.length} تمارين</span>
                     </div>
-                    <ScoreBar score={r.score}
-                      color={r.score >= 80 ? 'bg-green-500' : r.score >= 60 ? 'bg-amber-500' : 'bg-red-500'} />
-                    <div className="flex justify-between mt-1.5">
-                      <span className="text-white/30 text-xs">{r.duration}ث</span>
-                      <span className="text-white/30 text-xs">دقة: {r.accuracy}%</span>
+                    <div className="flex gap-3">
+                      <div className="flex-1 text-center">
+                        <div className={`font-black text-lg ${avgScore >= 80 ? 'text-emerald-400' : avgScore >= 60 ? 'text-amber-400' : 'text-red-400'}`}>
+                          {avgScore}%
+                        </div>
+                        <div className="text-white/30 text-[10px]">متوسط</div>
+                      </div>
+                      <div className="flex-1 text-center">
+                        <div className="font-black text-lg text-brand-400">
+                          {results.filter(r => r.score >= 80).length}
+                        </div>
+                        <div className="text-white/30 text-[10px]">ممتاز</div>
+                      </div>
+                      <div className="flex-1 text-center">
+                        <div className="font-black text-lg text-amber-400">{formatTime(elapsed)}</div>
+                        <div className="text-white/30 text-[10px]">المدة</div>
+                      </div>
                     </div>
                   </div>
-                ))}
+                )}
+
+                {/* Per-game results — enhanced */}
+                {results.map((r, i) => {
+                  const exInfo = EXERCISES.find(e => e.id === r.exerciseType)
+                  return (
+                    <div key={i} className="bg-white/5 hover:bg-white/8 rounded-xl p-3 transition-colors">
+                      {/* Game name + icon row */}
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="text-base flex-shrink-0">{exInfo?.icon ?? '🎮'}</span>
+                          <span className="text-white/80 text-xs font-bold truncate">{r.exerciseLabelAr}</span>
+                        </div>
+                        {/* Colored score pill */}
+                        <span className={`text-xs font-black px-2 py-0.5 rounded-full flex-shrink-0 ml-1 ${
+                          r.score >= 80
+                            ? 'bg-[#ECFDF5] text-emerald-700'
+                            : r.score >= 60
+                            ? 'bg-[#FFFBEB] text-amber-700'
+                            : 'bg-[#FEF2F2] text-red-600'
+                        }`}>
+                          {r.score}%
+                        </span>
+                      </div>
+                      {/* Score bar */}
+                      <ScoreBar
+                        score={r.score}
+                        color={r.score >= 80 ? 'bg-emerald-500' : r.score >= 60 ? 'bg-amber-500' : 'bg-red-500'}
+                      />
+                      {/* Accuracy + duration */}
+                      <div className="flex justify-between mt-1.5">
+                        <span className="text-white/30 text-[10px]">{r.duration}ث</span>
+                        <span className="text-white/30 text-[10px]">دقة: {r.accuracy}%</span>
+                      </div>
+                    </div>
+                  )
+                })}
 
                 {assessments.map((a, i) => (
                   <div key={i} className="bg-amber-900/20 border border-amber-500/30 rounded-xl p-3">
@@ -804,7 +870,7 @@ export default function SessionPage() {
               {/* ── Exit button ── */}
               <div className="text-center py-4">
                 <button
-                  onClick={() => setKidMode(false)}
+                  onClick={() => { setKidMode(false); setShowCelebration(false) }}
                   className="text-gray-400 text-sm font-medium hover:text-gray-600 transition-colors px-4 py-2 rounded-xl hover:bg-white/50"
                 >
                   ← وضع الأستاذ
@@ -812,10 +878,96 @@ export default function SessionPage() {
               </div>
 
             </div>
+
+            {/* ── Celebration overlay — shown when all top games are completed ── */}
+            {showCelebration && (
+              <div
+                className="fixed inset-0 z-[200] flex flex-col items-center justify-center"
+                style={{ background: 'linear-gradient(160deg, #FFF0FA 0%, #EEF0FF 35%, #F0FFF8 70%, #FFFBF0 100%)' }}
+              >
+                {/* CSS Confetti — 20 colored dots */}
+                <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                  {Array.from({ length: 20 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="absolute rounded-full animate-bounce"
+                      style={{
+                        width: `${8 + (i % 4) * 4}px`,
+                        height: `${8 + (i % 4) * 4}px`,
+                        left: `${(i * 5.3) % 100}%`,
+                        top: `-20px`,
+                        backgroundColor: ['#7C5CFC', '#FF8C65', '#2ABFA3', '#FFBA44', '#FF6B6B', '#3B9EFF'][i % 6],
+                        animationDelay: `${i * 0.15}s`,
+                        animationDuration: `${1.5 + (i % 3) * 0.5}s`,
+                      }}
+                    />
+                  ))}
+                </div>
+
+                {/* Trophy emoji */}
+                <div
+                  className="text-8xl mb-4"
+                  style={{ filter: 'drop-shadow(0 8px 16px rgba(124,92,252,0.3))', animation: 'bounce 1s ease-in-out infinite' }}
+                >
+                  🏆
+                </div>
+
+                {/* Congratulations text */}
+                <h1 className="font-black text-4xl text-gray-800 mb-2">أحسنت! 🎉</h1>
+                <p className="text-gray-500 text-lg mb-8">أنهيت جلسة اليوم بنجاح</p>
+
+                {/* Per-game score cards */}
+                <div className="flex gap-3 mb-8 flex-wrap justify-center px-4">
+                  {results.slice(-topGames.length).map((r, i) => {
+                    const colors = [
+                      { bg: 'from-[#7C5CFC] to-[#9A7BFD]' },
+                      { bg: 'from-[#FF8C65] to-[#FFBA44]' },
+                      { bg: 'from-[#2ABFA3] to-[#3B9EFF]' },
+                    ]
+                    return (
+                      <div
+                        key={i}
+                        className={`bg-gradient-to-br ${colors[i % 3].bg} rounded-2xl p-4 text-white text-center w-28 shadow-lg`}
+                      >
+                        <div className="text-2xl mb-1">
+                          {r.score >= 80 ? '⭐' : r.score >= 60 ? '👍' : '💪'}
+                        </div>
+                        <div className="font-black text-2xl ltr-num">{r.score}%</div>
+                        <div className="text-white/80 text-xs mt-0.5 truncate">{r.exerciseLabelAr}</div>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                {/* Stars earned based on average score */}
+                <div className="flex gap-1 mb-8">
+                  {Array.from({ length: 3 }).map((_, i) => {
+                    const avgScoreCelebration = results.length
+                      ? results.reduce((s, r) => s + r.score, 0) / results.length
+                      : 0
+                    const filled = i < (avgScoreCelebration >= 80 ? 3 : avgScoreCelebration >= 60 ? 2 : 1)
+                    return (
+                      <span key={i} className={`text-4xl transition-all ${filled ? 'text-amber-400' : 'text-gray-200'}`}>
+                        ★
+                      </span>
+                    )
+                  })}
+                </div>
+
+                {/* Exit to professor mode */}
+                <button
+                  onClick={() => { setShowCelebration(false); setKidMode(false) }}
+                  className="bg-brand-500 hover:bg-brand-600 text-white font-black px-8 py-3 rounded-2xl text-lg transition-all hover:-translate-y-1 shadow-brand"
+                >
+                  ← وضع الأستاذ
+                </button>
+              </div>
+            )}
           </div>
         )}
 
         {/* Main exercise area */}
+
         <main className={`flex-1 flex items-center justify-center bg-gray-950 relative overflow-auto ${kidMode ? 'hidden' : ''}`}>
           {!activeView && !running && (
             <div className="text-center">

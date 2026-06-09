@@ -151,7 +151,14 @@ export default function RegisterPage() {
       })
       const data = await res.json()
       if (res.ok) {
-        router.push('/register/success')
+        // Go directly to payment — pass plan + pre-fill contact info
+        const qs = new URLSearchParams({
+          plan,
+          email: p.email,
+          name:  `${p.firstName} ${p.lastName}`,
+          phone: p.phone,
+        }).toString()
+        router.push(`/checkout?${qs}`)
       } else {
         setApiError(data.error || 'حدث خطأ — يرجى المحاولة مجدداً')
       }

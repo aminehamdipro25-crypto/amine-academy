@@ -11,15 +11,15 @@ export default function RegisterSuccessPage() {
 
         <h1 className="text-2xl font-black text-gray-900 mb-3">تم التسجيل بنجاح! 🎉</h1>
         <p className="text-gray-600 leading-relaxed mb-8">
-          شكراً لانضمامك إلى أكاديمية أمين الدولية. سيتواصل معك الأستاذ أمين خلال <strong>24 ساعة</strong> لتأكيد اشتراكك وتحديد موعد الجلسة التقييمية الأولى.
+          شكراً لانضمامك إلى أكاديمية أمين الدولية. أكمل الدفع الآن لتفعيل اشتراكك والحصول على برنامجك المخصص.
         </p>
 
         <div className="bg-white rounded-2xl border border-gray-100 p-6 mb-6 text-right space-y-4">
           <h2 className="font-black text-gray-900 text-center mb-4">الخطوات التالية</h2>
           {[
-            { step: '1', text: 'تحقق من بريدك الإلكتروني — سيصلك رمز تفعيل مكوّن من 6 أرقام', icon: Mail },
-            { step: '2', text: 'سيتواصل معك الأستاذ أمين على واتساب', icon: MessageCircle },
-            { step: '3', text: 'ستُحدد معاً موعد التقييم الأولي للطفل', icon: CheckCircle },
+            { step: '1', text: 'أكمل الدفع عبر الزر أدناه — اختر الخطة وطريقة الدفع المناسبة', icon: CheckCircle },
+            { step: '2', text: 'فعّل حسابك — رمز التفعيل وصلك على بريدك الإلكتروني', icon: Mail },
+            { step: '3', text: 'بعد تأكيد الدفع يبدأ الأستاذ أمين في تحديد موعد الجلسة الأولى', icon: MessageCircle },
           ].map(({ step, text, icon: Icon }) => (
             <div key={step} className="flex items-start gap-3">
               <div className="w-7 h-7 bg-brand-600 text-white rounded-full flex items-center justify-center text-xs font-black flex-shrink-0">
@@ -31,10 +31,15 @@ export default function RegisterSuccessPage() {
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3 mb-4">
-          <Link href="/activate"
+          <Link href="/checkout"
             className="flex-1 bg-brand-600 text-white font-bold py-3 px-4 rounded-xl hover:bg-brand-700 transition-colors text-center text-sm flex items-center justify-center gap-2">
+            <CheckCircle className="w-4 h-4" />
+            أكمل الدفع الآن
+          </Link>
+          <Link href="/activate"
+            className="flex-1 border-2 border-brand-200 text-brand-700 font-bold py-3 px-4 rounded-xl hover:bg-brand-50 transition-colors text-center text-sm flex items-center justify-center gap-2">
             <Mail className="w-4 h-4" />
-            تفعيل الحساب برمز البريد
+            تفعيل الحساب فقط
           </Link>
         </div>
         <div className="flex flex-col sm:flex-row gap-3">

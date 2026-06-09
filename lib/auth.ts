@@ -30,12 +30,33 @@ export async function verifyToken(token: string | undefined): Promise<SessionPay
   try {
     const [data, sig] = token.split('.')
     if (!data || !sig) return null
-    const expected = crypto.createHmac('sha256', SECRET).update(data).digest('base64url')
-    const a = Buffer.from(sig, 'base64url')
-    const b = Buffer.from(expected, 'base64url')
-    if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null
-    const payload: SessionPayload = JSON.parse(Buffer.from(data, 'base64url').toString())
+
+    // Use Web Crypto API — compatible with Edge Runtime (middleware) AND Node.js 18+
+    const enc = new TextEncoder()
+    const key = await globalThis.crypto.subtle.importKey(
+      'raw', enc.encode(SECRET),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false, ['sign']
+    )
+    const rawSig   = await globalThis.crypto.subtle.sign('HMAC', key, enc.encode(data))
+    const sigBytes = new Uint8Array(rawSig)
+    // Manual base64url conversion (no padding, - and _ variants)
+    let binary = ''
+    for (let i = 0; i < sigBytes.length; i++) binary += String.fromCharCode(sigBytes[i])
+    const expected = btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
+
+    // Constant-time comparison
+    if (sig.length !== expected.length) return null
+    let diff = 0
+    for (let i = 0; i < sig.length; i++) diff |= sig.charCodeAt(i) ^ expected.charCodeAt(i)
+    if (diff !== 0) return null
+
+    // Decode base64url payload without Buffer (Edge-compatible)
+    const padded  = data.replace(/-/g, '+').replace(/_/g, '/')
+    const decoded = atob(padded + '='.repeat((4 - padded.length % 4) % 4))
+    const payload: SessionPayload = JSON.parse(decoded)
     if (payload.exp < Date.now()) return null
+
     const storedSession = await redis.get<string>(`sess:${payload.id}`)
     if (storedSession !== payload.sessionId) return null
     return payload

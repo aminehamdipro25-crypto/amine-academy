@@ -77,10 +77,10 @@ function CheckoutForm() {
   const [method, setMethod] = useState<PaymentMethod | null>(null)
   const [step, setStep] = useState<1 | 2 | 3>(1)
 
-  // Form fields
-  const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
-  const [phone, setPhone] = useState('')
+  // Form fields — pre-filled from URL when coming from registration
+  const [name, setName] = useState(searchParams.get('name') ?? '')
+  const [email, setEmail] = useState(searchParams.get('email') ?? '')
+  const [phone, setPhone] = useState(searchParams.get('phone') ?? '')
 
   // State
   const [loading, setLoading] = useState(false)
@@ -191,6 +191,13 @@ function CheckoutForm() {
               أرسل إثبات الدفع عبر واتساب
               <ExternalLink className="w-4 h-4" />
             </a>
+            <Link
+              href="/activate"
+              className="flex items-center justify-center gap-2 bg-brand-600 hover:bg-brand-700 text-white font-bold py-3.5 rounded-xl transition-colors"
+            >
+              <Check className="w-5 h-5" />
+              فعّل حسابك برمز البريد الإلكتروني
+            </Link>
             <Link
               href="/"
               className="flex items-center justify-center gap-2 border-2 border-gray-200 text-gray-600 font-bold py-3 rounded-xl hover:bg-gray-50 transition-colors"

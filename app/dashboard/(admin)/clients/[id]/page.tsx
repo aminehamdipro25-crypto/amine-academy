@@ -7,7 +7,8 @@ import {
   PauseCircle, Trash2, LogIn, RotateCcw, ExternalLink, Eye, EyeOff, Lock,
   ChevronDown, ChevronUp,
 } from 'lucide-react'
-import type { Parent, Student, Appointment, SessionLog } from '@/lib/types'
+import type { Parent, Student, Appointment, SessionLog, StudentAssessmentProfile, DifficultyLevel } from '@/lib/types'
+import { DIFFICULTY_LABELS_AR } from '@/lib/game-mapping'
 
 const STATUS_CONFIG = {
   active:    { label: 'نشط',             color: 'bg-green-100 text-green-700 border-green-200' },
@@ -52,6 +53,10 @@ export default function ClientDetailPage() {
   const [pwdSaving, setPwdSaving] = useState(false)
   const [sessionLogs, setSessionLogs] = useState<Record<string, SessionLog>>({})
   const [expandedSession, setExpandedSession] = useState<string | null>(null)
+  const [profiles, setProfiles] = useState<Record<string, StudentAssessmentProfile>>({})
+  const [editingProfile, setEditingProfile] = useState<string | null>(null)
+  const [profileDraft, setProfileDraft] = useState<Partial<StudentAssessmentProfile['diagnosedDifficulties']>>({})
+  const [profileSaving, setProfileSaving] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -78,6 +83,23 @@ export default function ClientDetailPage() {
       .then(d => setSessionLogs(d.sessions || {}))
       .catch(() => {})
   }, [data, id])
+
+  useEffect(() => {
+    if (!data) return
+    const students = data.students || []
+    Promise.all(
+      students.map(s =>
+        fetch(`/api/admin/assessment-profile/${s.id}`)
+          .then(r => r.ok ? r.json() : null)
+          .then(d => d?.profile ? { id: s.id, profile: d.profile } : null)
+          .catch(() => null)
+      )
+    ).then(results => {
+      const map: Record<string, StudentAssessmentProfile> = {}
+      results.forEach(r => { if (r) map[r.id] = r.profile })
+      setProfiles(map)
+    })
+  }, [data])
 
   async function save() {
     setSaving(true)
@@ -231,6 +253,24 @@ export default function ClientDetailPage() {
         setStudentCodes(prev => ({ ...prev, [studentId]: d.code }))
       }
     } catch { /* ignore */ }
+  }
+
+  async function saveProfile(studentId: string) {
+    setProfileSaving(true)
+    try {
+      const res = await fetch(`/api/admin/assessment-profile/${studentId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ diagnosedDifficulties: profileDraft }),
+      })
+      if (res.ok) {
+        const { profile } = await res.json()
+        setProfiles(prev => ({ ...prev, [studentId]: profile }))
+        setEditingProfile(null)
+      }
+    } finally {
+      setProfileSaving(false)
+    }
   }
 
   if (loading) return (
@@ -588,6 +628,101 @@ export default function ClientDetailPage() {
               </div>
             )}
           </div>
+
+          {/* Assessment Profiles */}
+          {(data.students || []).length > 0 && (
+            <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-50">
+                <h2 className="font-black text-gray-900 flex items-center gap-2">
+                  <Brain className="w-4 h-4 text-purple-500" />
+                  الملف التشخيصي
+                </h2>
+              </div>
+              <div className="divide-y divide-gray-50">
+                {(data.students || []).map(student => {
+                  const prof = profiles[student.id]
+                  const isEditing = editingProfile === student.id
+                  const difficulties = prof?.diagnosedDifficulties
+                  const hasDifficulties = difficulties && Object.values(difficulties).some(v => v !== 'none')
+                  return (
+                    <div key={student.id} className="px-6 py-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="font-black text-gray-800 text-sm">{student.firstName} {student.lastName}</span>
+                        <button
+                          onClick={() => {
+                            if (isEditing) { setEditingProfile(null) }
+                            else {
+                              setEditingProfile(student.id)
+                              setProfileDraft(difficulties ?? {})
+                            }
+                          }}
+                          className="text-xs font-bold text-brand-600 bg-brand-50 px-3 py-1.5 rounded-lg hover:bg-brand-100 transition-colors flex items-center gap-1"
+                        >
+                          <Edit2 className="w-3 h-3" />
+                          {isEditing ? 'إلغاء' : 'تعديل'}
+                        </button>
+                      </div>
+
+                      {!isEditing && (
+                        <div className="flex gap-1.5 flex-wrap">
+                          {hasDifficulties
+                            ? Object.entries(difficulties!).filter(([, v]) => v !== 'none').map(([k, v]) => (
+                                <span key={k} className={`text-xs px-2 py-0.5 rounded-full font-bold border ${
+                                  v === 'severe'   ? 'bg-red-50 text-red-700 border-red-200' :
+                                  v === 'moderate' ? 'bg-orange-50 text-orange-700 border-orange-200' :
+                                                     'bg-yellow-50 text-yellow-700 border-yellow-200'
+                                }`}>
+                                  {DIFFICULTY_LABELS_AR[k as keyof typeof DIFFICULTY_LABELS_AR]}
+                                  {' '}
+                                  {v === 'mild' ? '(خفيف)' : v === 'moderate' ? '(متوسط)' : '(شديد)'}
+                                </span>
+                              ))
+                            : <span className="text-gray-400 text-xs">لم يُحدَّد ملف تشخيصي بعد</span>
+                          }
+                        </div>
+                      )}
+
+                      {isEditing && (
+                        <div className="space-y-2">
+                          {(Object.keys(DIFFICULTY_LABELS_AR) as (keyof typeof DIFFICULTY_LABELS_AR)[]).map(domain => (
+                            <div key={domain} className="flex items-center justify-between">
+                              <span className="text-xs text-gray-600 font-bold">{DIFFICULTY_LABELS_AR[domain]}</span>
+                              <div className="flex gap-1">
+                                {(['none', 'mild', 'moderate', 'severe'] as DifficultyLevel[]).map(level => (
+                                  <button
+                                    key={level}
+                                    onClick={() => setProfileDraft(prev => ({ ...prev, [domain]: level }))}
+                                    className={`text-[10px] px-2 py-1 rounded-lg font-bold transition-colors ${
+                                      (profileDraft[domain] ?? 'none') === level
+                                        ? level === 'none'     ? 'bg-gray-600 text-white'
+                                          : level === 'mild'   ? 'bg-yellow-500 text-white'
+                                          : level === 'moderate' ? 'bg-orange-500 text-white'
+                                          : 'bg-red-500 text-white'
+                                        : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                                    }`}
+                                  >
+                                    {level === 'none' ? 'لا يوجد' : level === 'mild' ? 'خفيف' : level === 'moderate' ? 'متوسط' : 'شديد'}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                          <button
+                            onClick={() => saveProfile(student.id)}
+                            disabled={profileSaving}
+                            className="mt-2 w-full bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white font-black py-2 rounded-xl text-sm transition-colors flex items-center justify-center gap-2"
+                          >
+                            <Save className="w-4 h-4" />
+                            {profileSaving ? 'جاري الحفظ...' : 'حفظ الملف التشخيصي'}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Upcoming appointments */}
           {upcoming.length > 0 && (

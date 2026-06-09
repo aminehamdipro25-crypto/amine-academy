@@ -1,10 +1,10 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import {
-  Clock, X, Save,
-} from 'lucide-react'
+import { Clock, X, Save, Video, Star } from 'lucide-react'
 import type { ExerciseResult, AssessmentResult, SessionObservations } from '@/lib/types'
+import { rankGamesForStudent, getTopGames, DIFFICULTY_LABELS_AR } from '@/lib/game-mapping'
+import type { StudentAssessmentProfile } from '@/lib/types'
 
 import MemoryCards     from '@/components/session/exercises/MemoryCards'
 import SequenceMemory  from '@/components/session/exercises/SequenceMemory'
@@ -80,14 +80,20 @@ export default function SessionPage() {
     attention:3, cooperation:3, energy:3, mood:3, anxiety:3,
   })
   const [tab, setTab] = useState<'exercises'|'assessments'|'log'>('exercises')
+  const [profile, setProfile] = useState<StudentAssessmentProfile | null>(null)
+  const [jitsiUrl, setJitsiUrl] = useState<string | null>(null)
+  const [currentStudentId, setCurrentStudentId] = useState<string>('')
 
-  // Load appointment/student info
+  // Load appointment/student info + assessment profile
   useEffect(() => {
     fetch(`/api/appointments/${id}`)
       .then(r => r.json())
       .then(({ appointment }) => {
+        if (appointment?.meetingUrl) setJitsiUrl(appointment.meetingUrl)
         if (appointment?.studentId) {
-          fetch(`/api/students/${appointment.studentId}`)
+          const sid = appointment.studentId
+          setCurrentStudentId(sid)
+          fetch(`/api/students/${sid}`)
             .then(r => r.json())
             .then(({ student }) => {
               if (student) {
@@ -97,6 +103,10 @@ export default function SessionPage() {
                 setDifficulty(student.severityLevel as 1|2|3)
               }
             }).catch(() => {})
+          fetch(`/api/admin/assessment-profile/${sid}`)
+            .then(r => r.ok ? r.json() : null)
+            .then(d => { if (d?.profile) setProfile(d.profile) })
+            .catch(() => {})
         }
       }).catch(() => {})
   }, [id])
@@ -150,6 +160,18 @@ export default function SessionPage() {
     }
   }
 
+  const topGames = profile ? getTopGames(profile, 3) : []
+  const sortedExercises = profile
+    ? (() => {
+        const ranked = rankGamesForStudent(profile)
+        return [...EXERCISES].sort((a, b) => {
+          const ai = ranked.indexOf(a.id)
+          const bi = ranked.indexOf(b.id)
+          return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi)
+        })
+      })()
+    : EXERCISES
+
   // Avg score
   const avgScore = results.length
     ? Math.round(results.reduce((s, r) => s + r.score, 0) / results.length)
@@ -169,11 +191,25 @@ export default function SessionPage() {
         </button>
 
         <div className="flex-1 flex items-center gap-4">
-          <div>
+          <div className="flex-1 min-w-0">
             <h1 className="font-black text-white text-sm">
               {studentName || 'جلسة تفاعلية'}
             </h1>
-            <p className="text-white/40 text-xs">#{id?.slice(-6)}</p>
+            <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+              <span className="text-white/40 text-xs">#{id?.slice(-6)}</span>
+              {profile && Object.entries(profile.diagnosedDifficulties)
+                .filter(([, v]) => v !== 'none')
+                .map(([k, v]) => (
+                  <span key={k} className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
+                    v === 'severe'   ? 'bg-red-900/60 text-red-300' :
+                    v === 'moderate' ? 'bg-orange-900/60 text-orange-300' :
+                                       'bg-yellow-900/60 text-yellow-300'
+                  }`}>
+                    {DIFFICULTY_LABELS_AR[k as keyof typeof DIFFICULTY_LABELS_AR]}
+                  </span>
+                ))
+              }
+            </div>
           </div>
 
           {/* Timer */}
@@ -184,6 +220,13 @@ export default function SessionPage() {
             <span className="font-black text-lg ltr-num">{formatTime(elapsed)}</span>
           </div>
 
+          {jitsiUrl && (
+            <a href={jitsiUrl} target="_blank" rel="noopener noreferrer"
+              className="flex items-center gap-1.5 bg-green-600 hover:bg-green-500 text-white font-black px-3 py-1.5 rounded-lg text-xs transition-colors flex-shrink-0">
+              <Video className="w-3.5 h-3.5" />
+              Jitsi
+            </a>
+          )}
           {!running && (
             <button onClick={startSession}
               className="bg-green-600 hover:bg-green-500 text-white font-black px-4 py-1.5 rounded-lg text-sm transition-colors">
@@ -240,21 +283,42 @@ export default function SessionPage() {
           </div>
 
           <div className="flex-1 overflow-y-auto p-3 space-y-2">
-            {tab === 'exercises' && EXERCISES.map(ex => (
-              <button key={ex.id}
-                onClick={() => setActiveView({ type: 'exercise', id: ex.id })}
-                disabled={!running}
-                className={`w-full flex items-center gap-3 p-3 rounded-xl border text-right transition-all
-                  ${running ? `${ex.color} hover:scale-[1.02]` : 'bg-white/5 border-white/10 opacity-40 cursor-not-allowed'}
-                  ${activeView?.type === 'exercise' && activeView.id === ex.id ? 'scale-[1.02]' : ''}
-                `}>
-                <span className="text-2xl">{ex.icon}</span>
-                <div className="text-right">
-                  <div className="text-white font-bold text-sm">{ex.labelAr}</div>
-                  <div className="text-white/40 text-xs">{ex.category}</div>
+            {tab === 'exercises' && sortedExercises.map((ex, idx) => {
+              const isTop = topGames.includes(ex.id)
+              const isActive = activeView?.type === 'exercise' && activeView.id === ex.id
+              const isFirst = topGames.length > 0 && idx === 0
+              return (
+                <div key={ex.id}>
+                  {isFirst && (
+                    <div className="text-[10px] font-black text-brand-400 px-1 pb-1 flex items-center gap-1">
+                      <Star className="w-3 h-3" /> موصى بها لهذا الطالب
+                    </div>
+                  )}
+                  {!isTop && idx === topGames.length && topGames.length > 0 && (
+                    <div className="border-t border-white/10 my-1" />
+                  )}
+                  <button
+                    onClick={() => {
+                      if (!running) startSession()
+                      setActiveView({ type: 'exercise', id: ex.id })
+                    }}
+                    className={`w-full flex items-center gap-3 p-3 rounded-xl border text-right transition-all
+                      ${ex.color} hover:scale-[1.02]
+                      ${isActive ? 'scale-[1.02] ring-1 ring-white/30' : ''}
+                      ${isTop ? 'ring-1 ring-brand-400/50' : ''}
+                    `}>
+                    <span className="text-2xl">{ex.icon}</span>
+                    <div className="text-right flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-1">
+                        <div className="text-white font-bold text-sm truncate">{ex.labelAr}</div>
+                        {isTop && <Star className="w-3 h-3 text-brand-400 flex-shrink-0" />}
+                      </div>
+                      <div className="text-white/40 text-xs">{ex.category}</div>
+                    </div>
+                  </button>
                 </div>
-              </button>
-            ))}
+              )
+            })}
 
             {tab === 'assessments' && (
               <div className="space-y-2">

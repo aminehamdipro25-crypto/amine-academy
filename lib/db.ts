@@ -23,11 +23,14 @@
 //   Exercise completion persistence:
 //   completed:{studentId}:{YYYY-MM-DD} → Set of exercise IDs completed that day (TTL 90 days)
 //   exercises:count:{studentId}        → Total exercises ever completed (INCR counter)
+//
+//   assessment-profile:{studentId}   → StudentAssessmentProfile (consolidated profile)
+//   assessments:student:{studentId}  → [assessment result IDs]
 // ============================================================
 
 import { redis } from './redis'
 import { generateId } from './auth'
-import type { Parent, Student, Exercise, Program, Appointment, ProgressReport, PendingPayment, Message, Achievement } from './types'
+import type { Parent, Student, Exercise, Program, Appointment, ProgressReport, PendingPayment, Message, Achievement, StudentAssessmentProfile } from './types'
 
 // ── Parents ───────────────────────────────────────────────────
 
@@ -555,4 +558,46 @@ export async function getAllMessageThreads(): Promise<{
 
   return (results.filter(Boolean) as { parentId: string; lastMessage: Message; unreadForAdmin: number }[])
     .sort((a, b) => new Date(b.lastMessage.createdAt).getTime() - new Date(a.lastMessage.createdAt).getTime())
+}
+
+// ── Assessment Profiles ───────────────────────────────────────
+// Key scheme: assessment-profile:{studentId} → StudentAssessmentProfile
+
+const DEFAULT_DIFFICULTIES = {
+  attentionDeficit: 'none' as const, impulsivity: 'none' as const,
+  workingMemory: 'none' as const, processingSpeed: 'none' as const,
+  dyslexia: 'none' as const, dyscalculia: 'none' as const,
+  socialCognition: 'none' as const, motorCoordination: 'none' as const,
+}
+
+export async function getAssessmentProfile(studentId: string): Promise<StudentAssessmentProfile | null> {
+  return redis.get<StudentAssessmentProfile>(`assessment-profile:${studentId}`)
+}
+
+export async function saveAssessmentProfile(
+  studentId: string,
+  updates: Partial<Omit<StudentAssessmentProfile, 'studentId' | 'updatedAt'>>
+): Promise<StudentAssessmentProfile> {
+  const existing = await getAssessmentProfile(studentId)
+  const base = existing ?? {
+    studentId,
+    diagnosedDifficulties: { ...DEFAULT_DIFFICULTIES },
+    recommendedGames:     [],
+    contraindicatedGames: [],
+    defaultDifficulty:    1 as const,
+    clinicalNotes:        '',
+    lastAssessmentId:     null,
+  }
+  const updated: StudentAssessmentProfile = {
+    ...base,
+    ...updates,
+    diagnosedDifficulties: {
+      ...base.diagnosedDifficulties,
+      ...(updates.diagnosedDifficulties ?? {}),
+    },
+    studentId,
+    updatedAt: new Date().toISOString(),
+  }
+  await redis.set(`assessment-profile:${studentId}`, updated)
+  return updated
 }

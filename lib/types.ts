@@ -263,3 +263,28 @@ export interface PendingPayment {
   createdAt: string
   confirmedAt?: string
 }
+
+// ── Assessment Profile (consolidated diagnostic record) ───────
+export type DifficultyLevel = 'none' | 'mild' | 'moderate' | 'severe'
+
+export interface StudentAssessmentProfile {
+  studentId:    string
+  updatedAt:    string
+
+  diagnosedDifficulties: {
+    attentionDeficit:  DifficultyLevel
+    impulsivity:       DifficultyLevel
+    workingMemory:     DifficultyLevel
+    processingSpeed:   DifficultyLevel
+    dyslexia:          DifficultyLevel
+    dyscalculia:       DifficultyLevel
+    socialCognition:   DifficultyLevel
+    motorCoordination: DifficultyLevel
+  }
+
+  recommendedGames:     string[]
+  contraindicatedGames: string[]
+  defaultDifficulty:    1 | 2 | 3
+  clinicalNotes:        string
+  lastAssessmentId:     string | null
+}

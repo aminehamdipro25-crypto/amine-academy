@@ -95,6 +95,7 @@ export default function SessionPage() {
   })
   const [tab, setTab] = useState<'exercises'|'assessments'|'log'>('exercises')
   const [profile, setProfile] = useState<StudentAssessmentProfile | null>(null)
+  const [kidMode, setKidMode] = useState(false)
   const [jitsiUrl, setJitsiUrl] = useState<string | null>(null)
   const [currentStudentId, setCurrentStudentId] = useState<string>('')
   const [appointmentType, setAppointmentType] = useState<string>('')
@@ -352,6 +353,18 @@ export default function SessionPage() {
             </div>
           )}
 
+          <button
+            onClick={() => setKidMode(m => !m)}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg font-black text-sm transition-all ${
+              kidMode
+                ? 'bg-purple-600 text-white ring-2 ring-purple-400/50'
+                : 'bg-white/10 text-white/60 hover:bg-white/20 hover:text-white'
+            }`}
+            title="وضع الطفل — شبكة ألعاب كبيرة للطالب"
+          >
+            🎮 {kidMode ? 'وضع الأستاذ' : 'وضع الطفل'}
+          </button>
+
           <button onClick={saveSession} disabled={saving}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-sm transition-colors ${
               saved ? 'bg-green-600 text-white' : 'bg-brand-600 hover:bg-brand-700 text-white'
@@ -541,8 +554,73 @@ export default function SessionPage() {
           </div>
         </aside>
 
+        {/* Kid Mode — full-screen friendly game grid */}
+        {kidMode && (
+          <div className="flex-1 overflow-y-auto" style={{ background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 40%, #4c1d95 100%)' }}>
+            <div className="max-w-2xl mx-auto p-6">
+              {/* Greeting header */}
+              <div className="text-center mb-8 pt-4">
+                <div className="text-7xl mb-3" style={{ animation: 'bounce 2s infinite' }}>🌟</div>
+                <h1 className="text-4xl font-black text-white mb-1">
+                  {studentName ? `مرحباً ${studentName.split(' ')[0]}!` : 'مرحباً!'}
+                </h1>
+                <p className="text-white/50 text-lg">اختر لعبتك اليوم</p>
+              </div>
+
+              {/* Top 3 recommended games — large */}
+              {topGames.length > 0 && (
+                <div className="mb-6">
+                  <p className="text-white/40 text-xs font-black text-center mb-3 tracking-wider uppercase">⭐ موصى به لك</p>
+                  <div className="grid grid-cols-1 gap-4">
+                    {sortedExercises.slice(0, 3).map(ex => (
+                      <button
+                        key={ex.id}
+                        onClick={() => { if (!running) startSession(); setActiveView({ type: 'exercise', id: ex.id }); setKidMode(false) }}
+                        className={`${ex.color} rounded-3xl p-6 flex items-center gap-5 border-2 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl text-right`}
+                      >
+                        <span className="text-6xl flex-shrink-0">{ex.icon}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-white font-black text-2xl leading-tight">{ex.labelAr}</div>
+                          <div className="text-white/60 text-sm mt-1">{ex.category}</div>
+                        </div>
+                        <div className="bg-white/20 rounded-2xl px-4 py-3 flex-shrink-0">
+                          <span className="text-white font-black text-lg">←</span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* All other games — 2-column grid */}
+              <div className="mb-3">
+                <p className="text-white/30 text-xs font-black text-center mb-3 tracking-wider">كل الألعاب</p>
+                <div className="grid grid-cols-2 gap-3">
+                  {sortedExercises.slice(topGames.length > 0 ? 3 : 0).map(ex => (
+                    <button
+                      key={ex.id}
+                      onClick={() => { if (!running) startSession(); setActiveView({ type: 'exercise', id: ex.id }); setKidMode(false) }}
+                      className={`${ex.color} rounded-2xl p-5 text-center border-2 hover:scale-[1.03] active:scale-[0.97] transition-all shadow-lg`}
+                    >
+                      <div className="text-4xl mb-2">{ex.icon}</div>
+                      <div className="text-white font-black text-sm leading-tight">{ex.labelAr}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Exit kid mode */}
+              <div className="text-center pt-6 pb-4">
+                <button onClick={() => setKidMode(false)} className="text-white/30 text-xs hover:text-white/60 transition-colors">
+                  خروج من وضع الطفل
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Main exercise area */}
-        <main className="flex-1 flex items-center justify-center bg-gray-950 relative overflow-auto">
+        <main className={`flex-1 flex items-center justify-center bg-gray-950 relative overflow-auto ${kidMode ? 'hidden' : ''}`}>
           {!activeView && !running && (
             <div className="text-center">
               <div className="text-8xl mb-6">🎯</div>

@@ -1,17 +1,19 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { BookOpen, Clock, Star, CheckCircle, Play, X, ChevronRight, ChevronLeft } from 'lucide-react'
-import type { Exercise, Student } from '@/lib/types'
+import { BookOpen, Clock, Star, CheckCircle, Play, X, ChevronRight, ChevronLeft, Zap, Brain, StopCircle, Heart } from 'lucide-react'
+import type { Exercise, Student, ExerciseResult } from '@/lib/types'
+import dynamic from 'next/dynamic'
+
+// Lazy-load interactive games (same components used in the session platform)
+const ReactionGame = dynamic(() => import('@/components/session/exercises/ReactionGame'), { ssr: false })
+const StroopTest   = dynamic(() => import('@/components/session/exercises/StroopTest'),   { ssr: false })
+const StopSignal   = dynamic(() => import('@/components/session/exercises/StopSignal'),   { ssr: false })
+const EmotionCards = dynamic(() => import('@/components/session/exercises/EmotionCards'), { ssr: false })
 
 const CAT_LABELS: Record<string, string> = {
-  motor: 'حركي',
-  focus: 'تركيز',
-  balance: 'توازن',
-  energy: 'طاقة',
-  sensory: 'حسي',
-  social: 'اجتماعي',
+  motor: 'حركي', focus: 'تركيز', balance: 'توازن',
+  energy: 'طاقة', sensory: 'حسي', social: 'اجتماعي',
 }
-
 const CAT_COLORS: Record<string, string> = {
   motor:   'bg-blue-100 text-blue-700',
   focus:   'bg-purple-100 text-purple-700',
@@ -20,12 +22,60 @@ const CAT_COLORS: Record<string, string> = {
   sensory: 'bg-pink-100 text-pink-700',
   social:  'bg-emerald-100 text-emerald-700',
 }
-
 const DIFF_LABELS: Record<string, string> = {
-  beginner:     'مبتدئ',
-  intermediate: 'متوسط',
-  advanced:     'متقدم',
+  beginner: 'مبتدئ', intermediate: 'متوسط', advanced: 'متقدم',
 }
+
+const INTERACTIVE_GAMES = [
+  {
+    id: 'reaction-game',
+    labelAr: 'سرعة رد الفعل',
+    icon: Zap,
+    emoji: '⚡',
+    color: 'from-yellow-400 to-orange-500',
+    bg: 'bg-yellow-50 border-yellow-200',
+    desc: 'اضغط بسرعة عند ظهور الضوء — يقيس زمن الاستجابة ويقوّي التركيز',
+    category: 'تركيز وانتباه',
+    minutes: 3,
+    points: 60,
+  },
+  {
+    id: 'stroop-test',
+    labelAr: 'ستروب — كبح الاستجابة',
+    icon: Brain,
+    emoji: '🎨',
+    color: 'from-rose-400 to-pink-600',
+    bg: 'bg-rose-50 border-rose-200',
+    desc: 'اختر لون الكلمة لا معناها — يدرّب الدماغ على كبح الاستجابات التلقائية',
+    category: 'تنفيذي',
+    minutes: 4,
+    points: 80,
+  },
+  {
+    id: 'stop-signal',
+    labelAr: 'توقف أو أكمل',
+    icon: StopCircle,
+    emoji: '🛑',
+    color: 'from-red-400 to-red-600',
+    bg: 'bg-red-50 border-red-200',
+    desc: 'اضغط على الأخضر، توقف عند الأحمر — يقيس التحكم في الاندفاعية',
+    category: 'ضبط النفس',
+    minutes: 3,
+    points: 70,
+  },
+  {
+    id: 'emotion-cards',
+    labelAr: 'التعرف على المشاعر',
+    icon: Heart,
+    emoji: '🎭',
+    color: 'from-pink-400 to-fuchsia-600',
+    bg: 'bg-pink-50 border-pink-200',
+    desc: 'تعرّف على مشاعر الوجوه — يطوّر الذكاء العاطفي والمهارات الاجتماعية',
+    category: 'اجتماعي',
+    minutes: 5,
+    points: 90,
+  },
+]
 
 export default function ExercisesPage() {
   const [exercises, setExercises] = useState<Exercise[]>([])
@@ -37,6 +87,11 @@ export default function ExercisesPage() {
   const [completed, setCompleted] = useState<Set<string>>(new Set())
   const [timer, setTimer] = useState(0)
   const [timerActive, setTimerActive] = useState(false)
+
+  // Interactive game state
+  const [activeGame, setActiveGame] = useState<string | null>(null)
+  const [gameResult, setGameResult] = useState<ExerciseResult | null>(null)
+  const [gamesCompleted, setGamesCompleted] = useState<Record<string, ExerciseResult>>({})
 
   useEffect(() => {
     fetch('/api/parent/me')
@@ -53,22 +108,23 @@ export default function ExercisesPage() {
       .finally(() => setLoading(false))
   }, [])
 
-  // Timer effect
   useEffect(() => {
     if (!timerActive) return
     const id = setInterval(() => setTimer(t => t + 1), 1000)
     return () => clearInterval(id)
   }, [timerActive])
 
+  function handleGameComplete(result: ExerciseResult) {
+    setGamesCompleted(prev => ({ ...prev, [result.exerciseType]: result }))
+    setGameResult(result)
+    setActiveGame(null)
+  }
+
   function openExercise(ex: Exercise) {
     setSelected(ex)
     setStep(0)
     setTimer(0)
     setTimerActive(false)
-  }
-
-  function startExercise() {
-    setTimerActive(true)
   }
 
   function completeExercise() {
@@ -80,8 +136,8 @@ export default function ExercisesPage() {
 
   const filtered = filter === 'all' ? exercises : exercises.filter(e => e.category === filter)
   const categories = ['all', ...Object.keys(CAT_LABELS)]
-
   const fmtTime = (s: number) => `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`
+  const studentAge = child ? parseInt(child.ageGroup.split('-')[0]) : 8
 
   if (loading) return (
     <div className="flex items-center justify-center py-20">
@@ -89,207 +145,323 @@ export default function ExercisesPage() {
     </div>
   )
 
+  // Active game — full screen takeover
+  if (activeGame) {
+    const GameProps = {
+      onComplete: handleGameComplete,
+      onCancel: () => setActiveGame(null),
+      studentAge,
+      difficulty: 1 as const,
+    }
+    return (
+      <div className="fixed inset-0 bg-gray-950 z-50 flex flex-col" dir="rtl">
+        <div className="flex items-center justify-between px-4 py-3 bg-gray-900 border-b border-gray-800">
+          <span className="text-white font-black text-sm">
+            {INTERACTIVE_GAMES.find(g => g.id === activeGame)?.labelAr}
+          </span>
+          <button onClick={() => setActiveGame(null)}
+            className="text-gray-400 hover:text-white bg-gray-800 rounded-lg p-1.5 transition-colors">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        <div className="flex-1 overflow-auto p-4">
+          {activeGame === 'reaction-game' && <ReactionGame {...GameProps} />}
+          {activeGame === 'stroop-test'   && <StroopTest   {...GameProps} />}
+          {activeGame === 'stop-signal'   && <StopSignal   {...GameProps} />}
+          {activeGame === 'emotion-cards' && <EmotionCards {...GameProps} />}
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" dir="rtl">
       {/* Header */}
       <div>
-        <h1 className="font-black text-2xl text-gray-900">مكتبة التمارين</h1>
+        <h1 className="font-black text-2xl text-gray-900">التمارين</h1>
         <p className="text-gray-500 text-sm mt-0.5">
-          {child ? `تمارين مختارة لـ ${child.firstName} • ${child.ageGroup} سنة • ${child.diagnosis}` : 'جميع التمارين العلمية'}
+          {child ? `برنامج ${child.firstName} • ${child.ageGroup} سنة • ${child.diagnosis}` : 'جميع التمارين'}
         </p>
       </div>
 
-      {/* Stats bar */}
-      <div className="grid grid-cols-3 gap-3">
-        <div className="bg-brand-50 rounded-2xl p-4 text-center">
-          <div className="font-black text-2xl text-brand-700 ltr-num">{exercises.length}</div>
-          <div className="text-xs text-brand-600 mt-0.5">تمرين متاح</div>
+      {/* ── Interactive Games Section ── */}
+      <div className="bg-gradient-to-l from-brand-600 to-purple-700 rounded-2xl p-5 text-white">
+        <div className="flex items-center gap-2 mb-1">
+          <span className="text-xl">🎮</span>
+          <h2 className="font-black text-lg">ألعاب تفاعلية</h2>
+          <span className="bg-white/20 text-white/90 text-xs font-bold px-2 py-0.5 rounded-full">جديد</span>
         </div>
-        <div className="bg-green-50 rounded-2xl p-4 text-center">
-          <div className="font-black text-2xl text-green-700 ltr-num">{completed.size}</div>
-          <div className="text-xs text-green-600 mt-0.5">منجز اليوم</div>
-        </div>
-        <div className="bg-amber-50 rounded-2xl p-4 text-center">
-          <div className="font-black text-2xl text-amber-700 ltr-num">{completed.size * 50}</div>
-          <div className="text-xs text-amber-600 mt-0.5">نقطة مكتسبة</div>
-        </div>
-      </div>
-
-      {/* Category filter */}
-      <div className="flex gap-2 overflow-x-auto pb-1">
-        {categories.map(cat => (
-          <button
-            key={cat}
-            onClick={() => setFilter(cat)}
-            className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-colors flex-shrink-0 ${
-              filter === cat ? 'bg-brand-600 text-white' : 'bg-white text-gray-600 border border-gray-200 hover:border-brand-300'
-            }`}
-          >
-            {cat === 'all' ? 'الكل' : CAT_LABELS[cat]}
-          </button>
-        ))}
-      </div>
-
-      {/* Exercise grid */}
-      {filtered.length === 0 ? (
-        <div className="text-center py-12 text-gray-400">
-          <BookOpen className="w-10 h-10 mx-auto mb-3 opacity-40" />
-          <p className="text-sm">لا توجد تمارين في هذه الفئة بعد</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {filtered.map(ex => {
-            const done = completed.has(ex.id)
+        <p className="text-white/75 text-xs mb-4">العب مع طفلك مباشرة على الشاشة — أدوات تشخيصية وعلاجية علمية</p>
+        <div className="grid grid-cols-2 gap-3">
+          {INTERACTIVE_GAMES.map(game => {
+            const done = !!gamesCompleted[game.id]
+            const res  = gamesCompleted[game.id]
             return (
-              <div
-                key={ex.id}
-                className={`bg-white rounded-2xl border-2 p-5 transition-all cursor-pointer hover:shadow-md ${done ? 'border-green-200 bg-green-50' : 'border-gray-100 hover:border-brand-200'}`}
-                onClick={() => !done && openExercise(ex)}
+              <button
+                key={game.id}
+                onClick={() => done ? setGameResult(res) : setActiveGame(game.id)}
+                className={`relative text-right p-3.5 rounded-2xl border-2 transition-all hover:scale-[1.02] active:scale-[0.98] ${
+                  done ? 'bg-white/20 border-white/30' : 'bg-white/10 border-white/20 hover:bg-white/20'
+                }`}
               >
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className={`text-xs font-black px-2 py-0.5 rounded-full ${CAT_COLORS[ex.category] || 'bg-gray-100 text-gray-600'}`}>
-                      {CAT_LABELS[ex.category] || ex.category}
-                    </span>
-                    <span className="text-xs text-gray-400">{DIFF_LABELS[ex.difficulty]}</span>
+                {done && (
+                  <div className="absolute top-2 left-2 bg-green-400 rounded-full w-5 h-5 flex items-center justify-center">
+                    <CheckCircle className="w-3 h-3 text-white" />
                   </div>
-                  {done ? (
-                    <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
-                  ) : (
-                    <div className="flex items-center gap-1 text-amber-500 text-xs font-bold">
-                      <Star className="w-3.5 h-3.5" />
-                      {ex.points}
-                    </div>
-                  )}
-                </div>
-                <h3 className="font-black text-gray-900 mb-1 text-sm leading-tight">{ex.titleAr || ex.title}</h3>
-                <p className="text-gray-500 text-xs leading-relaxed line-clamp-2">{ex.descriptionAr || ex.description}</p>
-                <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
-                  <span className="flex items-center gap-1 text-xs text-gray-400">
-                    <Clock className="w-3 h-3" />
-                    <span className="ltr-num">{ex.durationMinutes} دقيقة</span>
-                  </span>
-                  {done ? (
-                    <span className="text-xs text-green-600 font-bold">✓ تم إنجازه</span>
-                  ) : (
-                    <span className="text-xs text-brand-600 font-bold flex items-center gap-1">
-                      <Play className="w-3 h-3" />
-                      ابدأ التمرين
-                    </span>
-                  )}
-                </div>
-              </div>
+                )}
+                <div className="text-2xl mb-1">{game.emoji}</div>
+                <div className="font-black text-white text-xs leading-tight">{game.labelAr}</div>
+                <div className="text-white/60 text-[10px] mt-0.5">{game.category}</div>
+                {done && res && (
+                  <div className="mt-1.5 bg-white/20 rounded-lg px-2 py-0.5 text-xs font-black text-white ltr-num">
+                    {res.score}٪
+                  </div>
+                )}
+                {!done && (
+                  <div className="mt-1.5 flex items-center gap-1">
+                    <Play className="w-3 h-3 text-white/70" />
+                    <span className="text-white/70 text-[10px]">العب الآن</span>
+                  </div>
+                )}
+              </button>
             )
           })}
         </div>
+      </div>
+
+      {/* Game result modal */}
+      {gameResult && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-sm text-center p-8">
+            <div className="text-6xl mb-4">{gameResult.score >= 80 ? '🌟' : gameResult.score >= 60 ? '👍' : '💪'}</div>
+            <h3 className="font-black text-2xl text-gray-900 mb-1">{gameResult.exerciseLabelAr}</h3>
+            <div className={`text-5xl font-black my-4 ltr-num ${
+              gameResult.score >= 80 ? 'text-green-600' : gameResult.score >= 60 ? 'text-yellow-600' : 'text-red-500'
+            }`}>{gameResult.score}٪</div>
+            <div className="grid grid-cols-2 gap-3 mb-6">
+              <div className="bg-gray-50 rounded-xl p-3">
+                <div className="font-black text-gray-900 ltr-num">{gameResult.accuracy}٪</div>
+                <div className="text-xs text-gray-500">الدقة</div>
+              </div>
+              <div className="bg-gray-50 rounded-xl p-3">
+                <div className="font-black text-gray-900 ltr-num">{Math.round(gameResult.duration / 60)} دقيقة</div>
+                <div className="text-xs text-gray-500">المدة</div>
+              </div>
+            </div>
+            <button onClick={() => setGameResult(null)}
+              className="w-full bg-brand-600 text-white font-black py-3 rounded-2xl hover:bg-brand-700 transition-colors">
+              رائع! 🎉
+            </button>
+          </div>
+        </div>
       )}
 
-      {/* Exercise player modal */}
-      {selected && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-4">
-          <div className="bg-white rounded-3xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            {/* Header */}
-            <div className="bg-gradient-to-l from-brand-600 to-brand-800 rounded-t-3xl p-5 text-white">
-              <div className="flex items-center justify-between mb-3">
-                <span className={`text-xs font-black px-2 py-0.5 rounded-full bg-white/20`}>
-                  {CAT_LABELS[selected.category]}
-                </span>
-                <button onClick={() => { setSelected(null); setTimerActive(false) }} className="w-7 h-7 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 transition-colors">
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-              <h2 className="font-black text-xl mb-1">{selected.titleAr || selected.title}</h2>
-              <div className="flex items-center gap-4 text-white/70 text-xs">
-                <span className="ltr-num">⏱ {selected.durationMinutes} دقيقة</span>
-                <span>⭐ {selected.points} نقطة</span>
-                <span>{DIFF_LABELS[selected.difficulty]}</span>
-              </div>
-              {/* Timer */}
-              {timerActive && (
-                <div className="mt-3 bg-white/20 rounded-xl px-4 py-2 text-center">
-                  <div className="font-black text-2xl ltr-num">{fmtTime(timer)}</div>
-                  <div className="text-white/70 text-xs">وقت التمرين</div>
-                </div>
-              )}
-            </div>
+      {/* ── Physical exercises library ── */}
+      <div>
+        <h2 className="font-black text-gray-900 mb-1">مكتبة التمارين الجسدية</h2>
+        <p className="text-gray-400 text-xs mb-4">تمارين يومية مع الطفل في المنزل</p>
 
-            <div className="p-5">
-              {/* Scientific objective */}
-              <div className="bg-brand-50 border border-brand-100 rounded-2xl p-4 mb-5">
-                <p className="text-xs font-bold text-brand-700 mb-1">الهدف العلمي</p>
-                <p className="text-gray-700 text-sm leading-relaxed">{selected.psychologyObjectiveAr || selected.psychologyObjective}</p>
-              </div>
+        {/* Stats */}
+        <div className="grid grid-cols-3 gap-3 mb-5">
+          <div className="bg-brand-50 rounded-2xl p-3 text-center">
+            <div className="font-black text-xl text-brand-700 ltr-num">{exercises.length}</div>
+            <div className="text-xs text-brand-600">متاح</div>
+          </div>
+          <div className="bg-green-50 rounded-2xl p-3 text-center">
+            <div className="font-black text-xl text-green-700 ltr-num">{completed.size}</div>
+            <div className="text-xs text-green-600">منجز اليوم</div>
+          </div>
+          <div className="bg-amber-50 rounded-2xl p-3 text-center">
+            <div className="font-black text-xl text-amber-700 ltr-num">{completed.size * 50}</div>
+            <div className="text-xs text-amber-600">نقطة</div>
+          </div>
+        </div>
 
-              {/* Steps */}
-              <div className="mb-5">
-                <div className="flex items-center justify-between mb-3">
-                  <p className="text-xs font-bold text-gray-500">خطوات التمرين</p>
-                  <span className="text-xs text-gray-400 ltr-num">{step + 1} / {selected.instructionsAr?.length || selected.instructions.length}</span>
-                </div>
-                <div className="space-y-2">
-                  {(selected.instructionsAr || selected.instructions).map((inst, i) => (
-                    <div key={i} className={`flex items-start gap-3 p-3 rounded-xl transition-all ${i === step ? 'bg-brand-50 border-2 border-brand-200' : i < step ? 'bg-green-50 opacity-60' : 'bg-gray-50 opacity-50'}`}>
-                      <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-black ${i === step ? 'bg-brand-600 text-white' : i < step ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500'}`}>
-                        {i < step ? '✓' : i + 1}
-                      </div>
-                      <p className={`text-sm leading-relaxed ${i === step ? 'text-gray-900 font-medium' : 'text-gray-500'}`}>{inst}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
+        {/* Category filter */}
+        <div className="flex gap-2 overflow-x-auto pb-1 mb-4">
+          {categories.map(cat => (
+            <button key={cat} onClick={() => setFilter(cat)}
+              className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors flex-shrink-0 ${
+                filter === cat ? 'bg-brand-600 text-white' : 'bg-white text-gray-600 border border-gray-200 hover:border-brand-300'
+              }`}>
+              {cat === 'all' ? 'الكل' : CAT_LABELS[cat]}
+            </button>
+          ))}
+        </div>
 
-              {/* Equipment */}
-              {selected.equipment?.length > 0 && (
-                <div className="mb-5 bg-amber-50 rounded-xl p-3">
-                  <p className="text-xs font-bold text-amber-700 mb-2">الأدوات المطلوبة</p>
-                  <div className="flex flex-wrap gap-2">
-                    {selected.equipment.map(eq => (
-                      <span key={eq} className="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-full">{eq}</span>
-                    ))}
+        {/* Exercise grid */}
+        {filtered.length === 0 ? (
+          <div className="text-center py-10 text-gray-400">
+            <BookOpen className="w-8 h-8 mx-auto mb-3 opacity-40" />
+            <p className="text-sm">لا توجد تمارين في هذه الفئة</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {filtered.map(ex => {
+              const done = completed.has(ex.id)
+              return (
+                <button key={ex.id} onClick={() => !done && openExercise(ex)} disabled={done}
+                  className={`text-right bg-white rounded-2xl border-2 p-4 transition-all ${
+                    done ? 'border-green-200 bg-green-50 cursor-default' : 'border-gray-100 hover:border-brand-200 hover:shadow-sm cursor-pointer'
+                  }`}>
+                  <div className="flex items-start justify-between mb-2">
+                    <span className={`text-xs font-black px-2 py-0.5 rounded-full ${CAT_COLORS[ex.category] || 'bg-gray-100 text-gray-600'}`}>
+                      {CAT_LABELS[ex.category] || ex.category}
+                    </span>
+                    {done
+                      ? <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                      : <span className="text-amber-500 text-xs font-bold flex items-center gap-0.5"><Star className="w-3 h-3" />{ex.points}</span>
+                    }
                   </div>
-                </div>
-              )}
+                  <h3 className="font-black text-gray-900 text-sm leading-tight mb-1">{ex.titleAr || ex.title}</h3>
+                  <p className="text-gray-500 text-xs line-clamp-2">{ex.descriptionAr || ex.description}</p>
+                  <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100">
+                    <span className="text-xs text-gray-400 flex items-center gap-1">
+                      <Clock className="w-3 h-3" /><span className="ltr-num">{ex.durationMinutes}د</span>
+                    </span>
+                    {done
+                      ? <span className="text-xs text-green-600 font-bold">✓ تم</span>
+                      : <span className="text-xs text-brand-600 font-bold flex items-center gap-1"><Play className="w-3 h-3" />ابدأ</span>
+                    }
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+        )}
+      </div>
 
-              {/* Navigation */}
-              <div className="flex gap-3">
+      {/* ── Exercise player modal ── */}
+      {selected && (() => {
+        const steps = selected.instructionsAr || selected.instructions || []
+        const totalSteps = steps.length
+        const isLast = step >= totalSteps - 1
+        const pct = totalSteps > 0 ? Math.round(((step + 1) / totalSteps) * 100) : 0
+
+        return (
+          <div className="fixed inset-0 bg-black/70 z-50 flex items-end sm:items-center justify-center p-2 sm:p-4">
+            <div className="bg-white rounded-3xl w-full max-w-md max-h-[95vh] flex flex-col overflow-hidden">
+              {/* Top bar */}
+              <div className={`bg-gradient-to-l from-brand-600 to-brand-800 p-4 text-white flex-shrink-0`}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className={`text-xs font-black px-2 py-0.5 rounded-full bg-white/20`}>
+                    {CAT_LABELS[selected.category] || selected.category}
+                  </span>
+                  <button onClick={() => { setSelected(null); setTimerActive(false) }}
+                    className="w-7 h-7 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 transition-colors">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+                <h2 className="font-black text-lg leading-tight mb-2">{selected.titleAr || selected.title}</h2>
+
+                {/* Progress bar */}
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 h-2 bg-white/20 rounded-full overflow-hidden">
+                    <div className="h-full bg-white rounded-full transition-all duration-300" style={{ width: `${pct}%` }} />
+                  </div>
+                  <span className="text-white/70 text-xs ltr-num">{step + 1}/{totalSteps}</span>
+                </div>
+
+                {/* Timer */}
+                {timerActive && (
+                  <div className="mt-2 bg-white/15 rounded-xl px-3 py-1.5 flex items-center justify-between">
+                    <span className="text-white/70 text-xs">وقت التمرين</span>
+                    <span className="font-black text-lg ltr-num">{fmtTime(timer)}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Step content — ONE step big and prominent */}
+              <div className="flex-1 overflow-y-auto p-5">
                 {!timerActive ? (
-                  <button onClick={startExercise} className="flex-1 bg-brand-600 hover:bg-brand-700 text-white font-black py-3 rounded-2xl flex items-center justify-center gap-2 transition-colors">
-                    <Play className="w-4 h-4" />
+                  /* Pre-start: show goal + equipment */
+                  <div className="space-y-4">
+                    <div className="bg-brand-50 border border-brand-100 rounded-2xl p-4">
+                      <p className="text-xs font-bold text-brand-700 mb-1">الهدف العلمي</p>
+                      <p className="text-gray-700 text-sm leading-relaxed">{selected.psychologyObjectiveAr || selected.psychologyObjective}</p>
+                    </div>
+                    {selected.equipment?.length > 0 && (
+                      <div className="bg-amber-50 rounded-xl p-3">
+                        <p className="text-xs font-bold text-amber-700 mb-2">📦 الأدوات المطلوبة</p>
+                        <div className="flex flex-wrap gap-2">
+                          {selected.equipment.map(eq => (
+                            <span key={eq} className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">{eq}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    <div className="bg-gray-50 rounded-2xl p-4">
+                      <p className="text-xs font-bold text-gray-500 mb-2">الخطوات ({totalSteps} خطوات)</p>
+                      <div className="space-y-1">
+                        {steps.slice(0, 3).map((s, i) => (
+                          <p key={i} className="text-xs text-gray-500 truncate">
+                            <span className="font-bold text-gray-700">{i + 1}.</span> {s}
+                          </p>
+                        ))}
+                        {totalSteps > 3 && <p className="text-xs text-gray-400">+{totalSteps - 3} خطوات أخرى...</p>}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  /* Active: ONE big step card */
+                  <div className="flex flex-col items-center text-center min-h-[200px] justify-center">
+                    {/* Big step number */}
+                    <div className="w-16 h-16 bg-brand-600 rounded-full flex items-center justify-center text-white font-black text-2xl mb-4 shadow-lg">
+                      {step + 1}
+                    </div>
+                    {/* Step text — large and readable */}
+                    <p className="text-gray-900 font-bold text-xl leading-relaxed max-w-sm">
+                      {steps[step]}
+                    </p>
+                    {/* Dots progress */}
+                    <div className="flex gap-2 mt-6">
+                      {steps.map((_, i) => (
+                        <div key={i} className={`rounded-full transition-all ${
+                          i === step ? 'w-6 h-3 bg-brand-600' : i < step ? 'w-3 h-3 bg-green-400' : 'w-3 h-3 bg-gray-200'
+                        }`} />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Bottom nav */}
+              <div className="p-4 border-t border-gray-100 flex-shrink-0">
+                {!timerActive ? (
+                  <button onClick={() => setTimerActive(true)}
+                    className="w-full bg-brand-600 hover:bg-brand-700 text-white font-black py-4 rounded-2xl flex items-center justify-center gap-2 transition-colors text-lg">
+                    <Play className="w-5 h-5" />
                     ابدأ التمرين
                   </button>
                 ) : (
-                  <>
-                    <button
-                      onClick={() => setStep(s => Math.max(0, s - 1))}
-                      disabled={step === 0}
-                      className="w-12 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-2xl flex items-center justify-center transition-colors disabled:opacity-30"
-                    >
+                  <div className="flex gap-3">
+                    <button onClick={() => setStep(s => Math.max(0, s - 1))} disabled={step === 0}
+                      className="w-14 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-2xl flex items-center justify-center disabled:opacity-30 transition-colors">
                       <ChevronRight className="w-5 h-5" />
                     </button>
-                    {step < (selected.instructionsAr || selected.instructions).length - 1 ? (
-                      <button onClick={() => setStep(s => s + 1)} className="flex-1 bg-brand-600 hover:bg-brand-700 text-white font-black py-3 rounded-2xl transition-colors">
-                        الخطوة التالية
+                    {!isLast ? (
+                      <button onClick={() => setStep(s => s + 1)}
+                        className="flex-1 bg-brand-600 hover:bg-brand-700 text-white font-black py-3.5 rounded-2xl transition-colors text-base">
+                        التالي ←
                       </button>
                     ) : (
-                      <button onClick={completeExercise} className="flex-1 bg-green-600 hover:bg-green-700 text-white font-black py-3 rounded-2xl flex items-center justify-center gap-2 transition-colors">
-                        <CheckCircle className="w-4 h-4" />
-                        إنهاء التمرين (+{selected.points} نقطة)
+                      <button onClick={completeExercise}
+                        className="flex-1 bg-green-600 hover:bg-green-700 text-white font-black py-3.5 rounded-2xl flex items-center justify-center gap-2 transition-colors">
+                        <CheckCircle className="w-5 h-5" />
+                        تم! +{selected.points} نقطة 🎉
                       </button>
                     )}
-                    <button
-                      onClick={() => setStep(s => Math.min((selected.instructionsAr || selected.instructions).length - 1, s + 1))}
-                      disabled={step >= (selected.instructionsAr || selected.instructions).length - 1}
-                      className="w-12 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-2xl flex items-center justify-center transition-colors disabled:opacity-30"
-                    >
+                    <button onClick={() => setStep(s => Math.min(totalSteps - 1, s + 1))} disabled={isLast}
+                      className="w-14 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-2xl flex items-center justify-center disabled:opacity-30 transition-colors">
                       <ChevronLeft className="w-5 h-5" />
                     </button>
-                  </>
+                  </div>
                 )}
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
     </div>
   )
 }

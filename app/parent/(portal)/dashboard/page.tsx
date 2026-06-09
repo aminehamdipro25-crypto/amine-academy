@@ -1,100 +1,171 @@
 'use client'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Users, Calendar, TrendingUp, Bell, ArrowLeft, MessageSquare } from 'lucide-react'
-import type { Parent, Student } from '@/lib/types'
+import { Calendar, Bell, ArrowLeft, MessageSquare, Dumbbell, FileText, ChevronLeft } from 'lucide-react'
+import type { Parent, Student, Program } from '@/lib/types'
 
 interface DashboardData {
   parent: Parent
   children: Student[]
-  upcomingAppointment: { date: string; time: string } | null
+  upcomingAppointment: { date: string; time: string; type?: string } | null
   unreadReports: number
+}
+
+const DIAG_EMOJI: Record<string, string> = {
+  ADHD: '⚡', AUTISM: '🌈', 'ADHD+AUTISM': '🌟', OTHER: '💙',
+}
+
+const DAYS_AR: Record<string, string> = {
+  monday: 'الاثنين', tuesday: 'الثلاثاء', wednesday: 'الأربعاء',
+  thursday: 'الخميس', friday: 'الجمعة', saturday: 'السبت', sunday: 'الأحد',
+}
+const TODAY_KEY = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'][new Date().getDay()]
+
+const PLAN_INFO: Record<string, { label: string }> = {
+  basic: { label: 'أساسي' }, standard: { label: 'متقدم' }, premium: { label: 'مميز' },
+}
+
+function greeting() {
+  const h = new Date().getHours()
+  if (h < 12) return 'صباح الخير'
+  if (h < 17) return 'مساء الخير'
+  return 'مساء النور'
 }
 
 export default function ParentDashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null)
+  const [programs, setPrograms] = useState<Record<string, Program>>({})
   const [loading, setLoading] = useState(true)
   const [unreadMessages, setUnreadMessages] = useState(0)
 
   useEffect(() => {
     fetch('/api/parent/me')
       .then(r => r.json())
-      .then(d => setData(d))
+      .then(async d => {
+        setData(d)
+        const progs: Record<string, Program> = {}
+        await Promise.all((d.children || []).map(async (c: Student) => {
+          try {
+            const r = await fetch(`/api/parent/children/${c.id}/program`)
+            if (r.ok) { const p = await r.json(); if (p.program) progs[c.id] = p.program }
+          } catch { /* no program yet */ }
+        }))
+        setPrograms(progs)
+      })
       .finally(() => setLoading(false))
 
-    // Check for unread messages from admin (without marking them read)
     fetch('/api/messages')
       .then(r => r.ok ? r.json() : null)
       .then(d => { if (d) setUnreadMessages(d.unreadFromAdmin ?? 0) })
-      .catch(() => { /* silent */ })
+      .catch(() => {})
   }, [])
 
   if (loading) return (
     <div className="flex items-center justify-center py-20">
-      <div className="animate-gentle-pulse text-brand-600 text-4xl">🌟</div>
+      <div className="text-brand-600 text-4xl animate-pulse">🌟</div>
     </div>
   )
-
   if (!data?.parent) return (
     <div className="text-center py-20 text-gray-500">حدث خطأ، حاول مجدداً.</div>
   )
 
   const { parent, children, upcomingAppointment, unreadReports } = data
+  const planLabel = PLAN_INFO[parent.subscriptionPlan]?.label || 'أساسي'
 
   return (
-    <div className="space-y-6">
-      {/* Welcome */}
-      <div className="bg-gradient-to-l from-brand-600 to-brand-700 rounded-2xl p-6 text-white">
-        <div className="flex items-start justify-between">
-          <div>
-            <p className="text-white/70 text-sm mb-1">أهلاً بك،</p>
-            <h1 className="font-black text-2xl">{parent.firstName} {parent.lastName}</h1>
-            <p className="text-white/80 text-sm mt-2">
-              {children.length > 0
-                ? `لديك ${children.length} طفل/أطفال مسجلون`
-                : 'أضف طفلك الأول لبدء البرنامج'}
-            </p>
+    <div className="space-y-5">
+
+      {/* ── Hero ── */}
+      <div className="relative bg-gradient-to-bl from-brand-700 via-brand-600 to-purple-600 rounded-3xl p-6 text-white overflow-hidden">
+        <div className="absolute top-0 left-0 w-32 h-32 bg-white/5 rounded-full -translate-x-10 -translate-y-10 pointer-events-none" />
+        <div className="absolute bottom-0 right-0 w-20 h-20 bg-white/5 rounded-full translate-x-5 translate-y-5 pointer-events-none" />
+        <div className="relative">
+          <p className="text-white/70 text-sm">{greeting()}،</p>
+          <h1 className="font-black text-2xl mt-0.5">{parent.firstName} {parent.lastName}</h1>
+          <div className="flex items-center gap-2 mt-2 flex-wrap">
+            <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-white/20">{planLabel}</span>
+            <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${
+              parent.subscriptionStatus === 'active'  ? 'bg-green-400/30 text-green-100' :
+              parent.subscriptionStatus === 'pending' ? 'bg-yellow-400/30 text-yellow-100' :
+              'bg-red-400/30 text-red-100'
+            }`}>
+              {parent.subscriptionStatus === 'active' ? '● نشط' :
+               parent.subscriptionStatus === 'pending' ? '◌ قيد التفعيل' : parent.subscriptionStatus}
+            </span>
           </div>
-          <div className="text-4xl">👪</div>
+          {unreadReports > 0 && (
+            <Link href="/parent/reports"
+              className="mt-3 flex items-center gap-2 bg-white/15 hover:bg-white/25 rounded-xl px-3 py-2 transition-colors">
+              <Bell className="w-4 h-4 flex-shrink-0" />
+              <span className="text-sm font-medium flex-1">{unreadReports} تقرير جديد</span>
+              <ChevronLeft className="w-3.5 h-3.5" />
+            </Link>
+          )}
+          {unreadMessages > 0 && (
+            <Link href="/parent/chat"
+              className="mt-2 flex items-center gap-2 bg-white/15 hover:bg-white/25 rounded-xl px-3 py-2 transition-colors">
+              <MessageSquare className="w-4 h-4 flex-shrink-0" />
+              <span className="text-sm font-medium flex-1">رسالة جديدة من الأستاذ</span>
+              <ChevronLeft className="w-3.5 h-3.5" />
+            </Link>
+          )}
         </div>
-        {unreadReports > 0 && (
-          <div className="mt-4 bg-white/20 rounded-xl px-4 py-2 flex items-center gap-2">
-            <Bell className="w-4 h-4" />
-            <span className="text-sm font-medium">لديك {unreadReports} تقرير جديد غير مقروء</span>
-          </div>
-        )}
-        {unreadMessages > 0 && (
-          <Link href="/parent/chat" className="mt-3 bg-white/20 hover:bg-white/30 rounded-xl px-4 py-2 flex items-center gap-2 transition-colors">
-            <MessageSquare className="w-4 h-4" />
-            <span className="text-sm font-medium">لديك رسالة جديدة من الأستاذ</span>
-            <ArrowLeft className="w-3.5 h-3.5 mr-auto" />
-          </Link>
-        )}
       </div>
 
-      {/* Quick stats */}
+      {/* ── Stats ── */}
       <div className="grid grid-cols-3 gap-3">
-        {[
-          { label: 'الأطفال', value: children.length, icon: Users, href: '/parent/children', color: 'text-brand-600 bg-brand-50' },
-          { label: 'الموعد القادم', value: upcomingAppointment ? upcomingAppointment.date : 'لا يوجد', icon: Calendar, href: '/parent/appointments', color: 'text-green-600 bg-green-50' },
-          { label: 'التقارير', value: unreadReports, icon: TrendingUp, href: '/parent/reports', color: 'text-purple-600 bg-purple-50' },
-        ].map(({ label, value, icon: Icon, href, color }) => (
-          <Link key={label} href={href}
-            className="card-hover bg-white rounded-2xl p-4 border border-gray-100 text-center">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center mx-auto mb-2 ${color}`}>
-              <Icon className="w-5 h-5" />
-            </div>
-            <div className="font-black text-gray-900 text-lg ltr-num">{value}</div>
-            <div className="text-gray-500 text-xs">{label}</div>
-          </Link>
-        ))}
+        <Link href="/parent/appointments"
+          className="bg-white rounded-2xl p-3.5 border border-gray-100 text-center hover:border-brand-200 transition-colors">
+          <div className="w-9 h-9 rounded-xl bg-green-50 flex items-center justify-center mx-auto mb-1.5">
+            <Calendar className="w-4 h-4 text-green-600" />
+          </div>
+          <div className="font-black text-gray-900 text-sm">
+            {upcomingAppointment ? upcomingAppointment.date?.slice(5) : '—'}
+          </div>
+          <div className="text-gray-400 text-[10px]">موعد قادم</div>
+        </Link>
+        <Link href="/parent/reports"
+          className="bg-white rounded-2xl p-3.5 border border-gray-100 text-center hover:border-brand-200 transition-colors">
+          <div className="w-9 h-9 rounded-xl bg-purple-50 flex items-center justify-center mx-auto mb-1.5">
+            <FileText className="w-4 h-4 text-purple-600" />
+          </div>
+          <div className={`font-black text-sm ${unreadReports > 0 ? 'text-purple-600' : 'text-gray-900'} ltr-num`}>
+            {unreadReports > 0 ? `${unreadReports} ج` : unreadReports}
+          </div>
+          <div className="text-gray-400 text-[10px]">تقارير</div>
+        </Link>
+        <Link href="/parent/exercises"
+          className="bg-white rounded-2xl p-3.5 border border-gray-100 text-center hover:border-brand-200 transition-colors">
+          <div className="w-9 h-9 rounded-xl bg-brand-50 flex items-center justify-center mx-auto mb-1.5">
+            <Dumbbell className="w-4 h-4 text-brand-600" />
+          </div>
+          <div className="font-black text-gray-900 text-sm">🎮</div>
+          <div className="text-gray-400 text-[10px]">تفاعلية</div>
+        </Link>
       </div>
 
-      {/* Children cards */}
+      {/* ── Upcoming appointment ── */}
+      {upcomingAppointment && (
+        <div className="bg-green-50 border border-green-200 rounded-2xl p-4 flex items-center gap-3">
+          <div className="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center flex-shrink-0">
+            <Calendar className="w-5 h-5 text-white" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-black text-green-900 text-sm">الجلسة القادمة</p>
+            <p className="text-green-700 text-xs ltr-num">{upcomingAppointment.date} — {upcomingAppointment.time}</p>
+          </div>
+          <Link href="/parent/appointments"
+            className="text-xs text-green-700 font-bold bg-green-100 px-3 py-1.5 rounded-lg hover:bg-green-200 transition-colors flex-shrink-0 whitespace-nowrap">
+            التفاصيل
+          </Link>
+        </div>
+      )}
+
+      {/* ── Children cards ── */}
       <div>
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-3">
           <h2 className="font-black text-gray-900">أطفالي</h2>
-          <Link href="/parent/children" className="text-brand-600 text-sm font-bold flex items-center gap-1 hover:underline">
+          <Link href="/parent/children" className="text-brand-600 text-xs font-bold flex items-center gap-1 hover:underline">
             إدارة <ArrowLeft className="w-3 h-3" />
           </Link>
         </div>
@@ -109,39 +180,93 @@ export default function ParentDashboardPage() {
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {children.map(child => (
-              <div key={child.id} className="card-hover bg-white rounded-2xl border border-gray-100 p-5">
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-brand-400 to-brand-600 rounded-xl flex items-center justify-center text-white font-black text-lg">
-                    {child.firstName[0]}
+          <div className="space-y-4">
+            {children.map(child => {
+              const prog  = programs[child.id]
+              const todayExs: string[] = (prog?.weeklySchedule as unknown as Record<string,string[]>)?.[TODAY_KEY] || []
+              const pct = Math.min(100, Math.round((child.totalPoints / 500) * 100))
+
+              return (
+                <div key={child.id} className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+                  <div className="p-4 flex items-center gap-3">
+                    <div className="w-12 h-12 bg-gradient-to-br from-brand-400 to-brand-600 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0">
+                      {DIAG_EMOJI[child.diagnosis] || child.firstName[0]}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-black text-gray-900">{child.firstName} {child.lastName}</div>
+                      <div className="text-gray-500 text-xs">{child.ageGroup} سنة • {child.diagnosis}</div>
+                    </div>
+                    <Link href={`/parent/children/${child.id}`}
+                      className="text-xs text-brand-600 font-bold bg-brand-50 px-3 py-1.5 rounded-lg hover:bg-brand-100 transition-colors flex-shrink-0">
+                      التفاصيل
+                    </Link>
                   </div>
-                  <div>
-                    <div className="font-black text-gray-900">{child.firstName} {child.lastName}</div>
-                    <div className="text-gray-500 text-xs">{child.ageGroup} سنة • {child.diagnosis}</div>
+
+                  <div className="px-4 pb-3 grid grid-cols-3 gap-2">
+                    <div className="bg-amber-50 rounded-xl p-2 text-center">
+                      <div className="font-black text-amber-700 text-base ltr-num">{child.totalPoints}</div>
+                      <div className="text-[10px] text-amber-600">نقطة</div>
+                    </div>
+                    <div className="bg-orange-50 rounded-xl p-2 text-center">
+                      <div className="font-black text-orange-700 text-base">🔥 {child.streak}</div>
+                      <div className="text-[10px] text-orange-600">متتالي</div>
+                    </div>
+                    <div className={`rounded-xl p-2 text-center ${todayExs.length > 0 ? 'bg-green-50' : 'bg-gray-50'}`}>
+                      <div className={`font-black text-base ltr-num ${todayExs.length > 0 ? 'text-green-700' : 'text-gray-400'}`}>
+                        {todayExs.length}
+                      </div>
+                      <div className={`text-[10px] ${todayExs.length > 0 ? 'text-green-600' : 'text-gray-400'}`}>تمارين اليوم</div>
+                    </div>
                   </div>
+
+                  <div className="px-4 pb-3">
+                    <div className="flex justify-between text-[10px] mb-1">
+                      <span className="text-gray-400">التقدم</span>
+                      <span className="font-bold text-brand-600 ltr-num">{pct}٪</span>
+                    </div>
+                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-gradient-to-l from-brand-500 to-purple-500 rounded-full transition-all duration-700"
+                        style={{ width: `${pct}%` }} />
+                    </div>
+                  </div>
+
+                  {todayExs.length > 0 && (
+                    <div className="border-t border-gray-50 px-4 py-3 bg-green-50/60">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-xs font-black text-green-800">🗓 تمارين {DAYS_AR[TODAY_KEY]}</span>
+                        <Link href="/parent/exercises"
+                          className="text-xs text-green-700 font-bold hover:underline">ابدأ الآن →</Link>
+                      </div>
+                      <div className="flex gap-1.5 flex-wrap">
+                        {todayExs.slice(0, 4).map((_, i) => (
+                          <span key={i} className="text-xs bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded-full ltr-num">
+                            تمرين {i + 1}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
-                {/* Mini progress */}
-                <div className="mb-3">
-                  <div className="flex items-center justify-between text-xs mb-1">
-                    <span className="text-gray-500">تقدم الأسبوع</span>
-                    <span className="font-bold text-brand-600 ltr-num">{child.totalPoints} نقطة</span>
-                  </div>
-                  <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                    <div className="progress-bar h-full" style={{ width: `${Math.min(100, (child.totalPoints / 500) * 100)}%` }} />
-                  </div>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-orange-600 font-bold">🔥 {child.streak} يوم متتالي</span>
-                  <Link href={`/parent/children/${child.id}`}
-                    className="text-xs text-brand-600 font-bold hover:underline">
-                    عرض التفاصيل
-                  </Link>
-                </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
+      </div>
+
+      {/* ── Quick actions ── */}
+      <div className="grid grid-cols-2 gap-3">
+        <Link href="/parent/exercises"
+          className="bg-gradient-to-bl from-purple-600 to-brand-600 rounded-2xl p-4 text-white hover:opacity-90 transition-opacity">
+          <div className="text-2xl mb-1">🎮</div>
+          <div className="font-black text-sm">ألعاب تفاعلية</div>
+          <div className="text-white/70 text-xs mt-0.5">العب مع طفلك الآن</div>
+        </Link>
+        <Link href="/parent/appointments"
+          className="bg-gradient-to-bl from-green-600 to-teal-600 rounded-2xl p-4 text-white hover:opacity-90 transition-opacity">
+          <div className="text-2xl mb-1">📅</div>
+          <div className="font-black text-sm">احجز جلسة</div>
+          <div className="text-white/70 text-xs mt-0.5">6 أنواع متاحة</div>
+        </Link>
       </div>
     </div>
   )

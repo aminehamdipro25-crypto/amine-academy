@@ -4,9 +4,21 @@ import { Calendar, Clock, Video, Plus, CheckCircle, XCircle, AlertCircle } from 
 import type { Appointment, Student } from '@/lib/types'
 
 const TYPE_LABELS: Record<string, string> = {
-  assessment: 'جلسة تقييمية',
-  followup: 'جلسة متابعة',
-  emergency: 'استشارة طارئة',
+  assessment:   'جلسة تقييمية',
+  followup:     'جلسة متابعة',
+  emergency:    'استشارة طارئة',
+  consultation: 'استشارة للوالدين',
+  training:     'جلسة تدريبية مكثفة',
+  review:       'مراجعة البرنامج',
+}
+
+const TYPE_DESCS: Record<string, string> = {
+  assessment:   'تقييم شامل لمستوى الطفل',
+  followup:     'متابعة التقدم الأسبوعي',
+  emergency:    'تواصل عاجل مع الأستاذ',
+  consultation: 'نقاش حول التطور والخطة',
+  training:     'جلسة مكثفة بروتوكول ABA',
+  review:       'مراجعة وتعديل البرنامج',
 }
 
 const STATUS_CFG: Record<string, { label: string; color: string; icon: React.ElementType }> = {
@@ -235,16 +247,21 @@ export default function AppointmentsPage() {
                 </div>
               )}
               <div>
-                <label className="text-xs font-bold text-gray-500 block mb-1">نوع الجلسة</label>
-                <select
-                  value={booking.type}
-                  onChange={e => setBooking(b => ({ ...b, type: e.target.value }))}
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300"
-                >
-                  <option value="assessment">جلسة تقييمية (أول مرة)</option>
-                  <option value="followup">جلسة متابعة أسبوعية</option>
-                  <option value="emergency">استشارة طارئة</option>
-                </select>
+                <label className="text-xs font-bold text-gray-500 block mb-1.5">نوع الجلسة</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {Object.entries(TYPE_LABELS).map(([val, label]) => (
+                    <button key={val} type="button"
+                      onClick={() => setBooking(b => ({ ...b, type: val }))}
+                      className={`text-right p-3 rounded-xl border-2 transition-colors ${
+                        booking.type === val
+                          ? 'border-brand-500 bg-brand-50'
+                          : 'border-gray-200 hover:border-brand-200'
+                      }`}>
+                      <div className="font-bold text-xs text-gray-900">{label}</div>
+                      <div className="text-[10px] text-gray-400 mt-0.5">{TYPE_DESCS[val]}</div>
+                    </button>
+                  ))}
+                </div>
               </div>
               <div>
                 <label className="text-xs font-bold text-gray-500 block mb-1">التاريخ</label>

@@ -214,7 +214,7 @@ export default function SessionPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          studentId: id,
+          studentId: currentStudentId,
           therapistNotes: notes,
           observations,
           exercises: results,
@@ -681,14 +681,14 @@ export default function SessionPage() {
               <div className="bg-gray-900 rounded-2xl overflow-hidden">
                 {activeView.id === 'adhd' && (
                   <ADHDScale
-                    studentId={id || ''}
+                    studentId={currentStudentId || id || ''}
                     onComplete={handleAssessmentComplete}
                     onCancel={() => setActiveView(null)}
                   />
                 )}
                 {activeView.id === 'learning-difficulties' && (
                   <LearningDifficultiesScale
-                    studentId={id || ''}
+                    studentId={currentStudentId || id || ''}
                     onComplete={handleAssessmentComplete}
                     onCancel={() => setActiveView(null)}
                   />

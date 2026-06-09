@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { Clock, X, Save, Video, Star } from 'lucide-react'
+import { Clock, X, Save, Video, Star, ClipboardList } from 'lucide-react'
 import type { ExerciseResult, AssessmentResult, SessionObservations } from '@/lib/types'
 import { rankGamesForStudent, getTopGames, DIFFICULTY_LABELS_AR } from '@/lib/game-mapping'
 import type { StudentAssessmentProfile } from '@/lib/types'
@@ -46,6 +46,20 @@ const ASSESSMENTS = [
   { id:'learning-difficulties', labelAr:'صعوبات التعلم',       icon:'📚', color:'bg-amber-900/40 border-amber-500' },
 ]
 
+const SESSION_TYPE_CFG: Record<string, { label: string; color: string; isAssessment?: boolean }> = {
+  assessment:   { label: 'جلسة تقييمية',       color: 'bg-amber-500/20 text-amber-200 border-amber-500/50',  isAssessment: true },
+  followup:     { label: 'جلسة متابعة',         color: 'bg-blue-500/20 text-blue-200 border-blue-500/50' },
+  emergency:    { label: 'استشارة طارئة',       color: 'bg-red-500/20 text-red-200 border-red-500/50' },
+  consultation: { label: 'استشارة الوالدين',   color: 'bg-purple-500/20 text-purple-200 border-purple-500/50' },
+  training:     { label: 'جلسة تدريبية مكثفة', color: 'bg-green-500/20 text-green-200 border-green-500/50' },
+  review:       { label: 'مراجعة البرنامج',     color: 'bg-cyan-500/20 text-cyan-200 border-cyan-500/50' },
+}
+
+const DIAG_LABELS: Record<string, string> = {
+  ADHD: 'ADHD', AUTISM: 'توحد', 'ADHD+AUTISM': 'ADHD+توحد', OTHER: 'أخرى',
+}
+const SEVERITY_LABELS: Record<number, string> = { 1: 'خفيف', 2: 'متوسط', 3: 'شديد' }
+
 function formatTime(s: number) {
   const m = Math.floor(s / 60).toString().padStart(2, '0')
   const sec = (s % 60).toString().padStart(2, '0')
@@ -83,29 +97,58 @@ export default function SessionPage() {
   const [profile, setProfile] = useState<StudentAssessmentProfile | null>(null)
   const [jitsiUrl, setJitsiUrl] = useState<string | null>(null)
   const [currentStudentId, setCurrentStudentId] = useState<string>('')
+  const [appointmentType, setAppointmentType] = useState<string>('')
+  const [studentDiagnosis, setStudentDiagnosis] = useState<string>('')
+  const [studentSeverity, setStudentSeverity] = useState<number>(1)
+  const [sessionCount, setSessionCount] = useState<number>(0)
+  const [gameUsageCounts, setGameUsageCounts] = useState<Record<string, number>>({})
 
-  // Load appointment/student info + assessment profile
+  // Load appointment/student info + assessment profile + session history
   useEffect(() => {
     fetch(`/api/appointments/${id}`)
       .then(r => r.json())
       .then(({ appointment }) => {
         if (appointment?.meetingUrl) setJitsiUrl(appointment.meetingUrl)
+        if (appointment?.type) {
+          setAppointmentType(appointment.type)
+          if (appointment.type === 'assessment') setTab('assessments')
+        }
         if (appointment?.studentId) {
           const sid = appointment.studentId
           setCurrentStudentId(sid)
+
           fetch(`/api/students/${sid}`)
             .then(r => r.json())
             .then(({ student }) => {
               if (student) {
                 setStudentName(`${student.firstName} ${student.lastName}`)
+                setStudentDiagnosis(student.diagnosis || '')
+                setStudentSeverity(student.severityLevel || 1)
                 const age = Math.floor((Date.now() - new Date(student.birthDate).getTime()) / (365.25 * 24 * 3600000))
                 setStudentAge(age)
                 setDifficulty(student.severityLevel as 1|2|3)
               }
             }).catch(() => {})
+
           fetch(`/api/admin/assessment-profile/${sid}`)
             .then(r => r.ok ? r.json() : null)
             .then(d => { if (d?.profile) setProfile(d.profile) })
+            .catch(() => {})
+
+          // Load session history → compute game usage counts
+          fetch(`/api/admin/sessions/student/${sid}`)
+            .then(r => r.ok ? r.json() : null)
+            .then(d => {
+              if (!d?.sessions?.length) return
+              const counts: Record<string, number> = {}
+              ;(d.sessions as Array<{ exercises?: Array<{ exerciseType: string }> }>).forEach(log => {
+                log.exercises?.forEach(ex => {
+                  counts[ex.exerciseType] = (counts[ex.exerciseType] || 0) + 1
+                })
+              })
+              setGameUsageCounts(counts)
+              setSessionCount(d.count || 0)
+            })
             .catch(() => {})
         }
       }).catch(() => {})
@@ -192,11 +235,33 @@ export default function SessionPage() {
 
         <div className="flex-1 flex items-center gap-4">
           <div className="flex-1 min-w-0">
-            <h1 className="font-black text-white text-sm">
-              {studentName || 'جلسة تفاعلية'}
-            </h1>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="font-black text-white text-sm">
+                {studentName || 'جلسة تفاعلية'}
+              </h1>
+              {studentDiagnosis && (
+                <span className="text-[10px] bg-brand-900/60 text-brand-300 border border-brand-500/40 px-1.5 py-0.5 rounded-full font-bold">
+                  {DIAG_LABELS[studentDiagnosis] || studentDiagnosis}
+                </span>
+              )}
+              {studentSeverity > 0 && (
+                <span className="text-[10px] bg-white/10 text-white/50 px-1.5 py-0.5 rounded-full font-bold">
+                  {SEVERITY_LABELS[studentSeverity]}
+                </span>
+              )}
+              {sessionCount > 0 && (
+                <span className="text-[10px] bg-white/10 text-white/40 px-1.5 py-0.5 rounded-full font-bold">
+                  ج.{sessionCount} سابقة
+                </span>
+              )}
+            </div>
             <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
-              <span className="text-white/40 text-xs">#{id?.slice(-6)}</span>
+              {appointmentType && SESSION_TYPE_CFG[appointmentType] && (
+                <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border flex items-center gap-1 ${SESSION_TYPE_CFG[appointmentType].color}`}>
+                  {SESSION_TYPE_CFG[appointmentType].isAssessment && <ClipboardList className="w-2.5 h-2.5" />}
+                  {SESSION_TYPE_CFG[appointmentType].label}
+                </span>
+              )}
               {profile && Object.entries(profile.diagnosedDifficulties)
                 .filter(([, v]) => v !== 'none')
                 .map(([k, v]) => (
@@ -307,13 +372,20 @@ export default function SessionPage() {
                       ${isActive ? 'scale-[1.02] ring-1 ring-white/30' : ''}
                       ${isTop ? 'ring-1 ring-brand-400/50' : ''}
                     `}>
-                    <span className="text-2xl">{ex.icon}</span>
+                    <span className="text-xl">{ex.icon}</span>
                     <div className="text-right flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-1">
-                        <div className="text-white font-bold text-sm truncate">{ex.labelAr}</div>
+                        <div className="text-white font-bold text-xs truncate">{ex.labelAr}</div>
                         {isTop && <Star className="w-3 h-3 text-brand-400 flex-shrink-0" />}
                       </div>
-                      <div className="text-white/40 text-xs">{ex.category}</div>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className="text-white/40 text-[10px]">{ex.category}</span>
+                        {(gameUsageCounts[ex.id] ?? 0) > 0 && (
+                          <span className="text-[9px] bg-white/10 text-white/40 px-1 py-0.5 rounded-full font-bold ltr-num">
+                            ×{gameUsageCounts[ex.id]} مرة
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </button>
                 </div>
@@ -322,6 +394,16 @@ export default function SessionPage() {
 
             {tab === 'assessments' && (
               <div className="space-y-2">
+                {SESSION_TYPE_CFG[appointmentType]?.isAssessment && (
+                  <div className="bg-amber-900/30 border border-amber-500/40 rounded-xl p-3">
+                    <p className="text-amber-300 text-xs font-black flex items-center gap-1.5">
+                      <ClipboardList className="w-3.5 h-3.5" /> جلسة تقييمية
+                    </p>
+                    <p className="text-amber-300/70 text-[10px] mt-1 leading-relaxed">
+                      ابدأ بتطبيق المقاييس أدناه لتوثيق الحالة، ثم انتقل للتمارين بعد الانتهاء.
+                    </p>
+                  </div>
+                )}
                 {ASSESSMENTS.map(as => (
                   <button key={as.id}
                     onClick={() => setActiveView({ type: 'assessment', id: as.id })}

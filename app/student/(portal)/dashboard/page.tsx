@@ -10,17 +10,29 @@ interface StudentData {
   completedTodayIds: string[]
 }
 
-const DOMAIN_COLORS: Record<string, string> = {
-  motor:   'bg-[#FF8C65]',
-  focus:   'bg-[#3B9EFF]',
-  balance: 'bg-[#2ABFA3]',
-  energy:  'bg-[#FFBA44]',
-  sensory: 'bg-[#FF6B6B]',
-  social:  'bg-[#7C5CFC]',
+// Per-game gradient + icon map
+const GAME_GRADIENTS: Record<string, { gradient: string; icon: string }> = {
+  'memory-cards':    { gradient: 'linear-gradient(135deg,#7C5CFC,#9A7BFD)', icon: '🃏' },
+  'sequence-memory': { gradient: 'linear-gradient(135deg,#3B9EFF,#60B4FF)', icon: '🔢' },
+  'n-back':          { gradient: 'linear-gradient(135deg,#6B46F0,#8B66F0)', icon: '🧩' },
+  'word-recall':     { gradient: 'linear-gradient(135deg,#7C5CFC,#B99AFF)', icon: '📝' },
+  'breathing':       { gradient: 'linear-gradient(135deg,#2ABFA3,#4DD4BD)', icon: '🌬️' },
+  'tap-target':      { gradient: 'linear-gradient(135deg,#FF8C65,#FFAA88)', icon: '🎯' },
+  'simon-says':      { gradient: 'linear-gradient(135deg,#10B981,#34D399)', icon: '🎨' },
+  'letter-match':    { gradient: 'linear-gradient(135deg,#FFBA44,#FFD080)', icon: '🔤' },
+  'reaction-game':   { gradient: 'linear-gradient(135deg,#FF6B6B,#FF9999)', icon: '⚡' },
+  'stroop-test':     { gradient: 'linear-gradient(135deg,#FF6B6B,#FF8C65)', icon: '🎨' },
+  'stop-signal':     { gradient: 'linear-gradient(135deg,#EF4444,#F87171)', icon: '🛑' },
+  'emotion-cards':   { gradient: 'linear-gradient(135deg,#EC4899,#F472B6)', icon: '🎭' },
 }
 
-const CAT_EMOJI: Record<string, string> = {
-  motor: '🏃', focus: '🎯', balance: '🌊', energy: '⚡', sensory: '🌈', social: '🤝',
+const CAT_FALLBACK: Record<string, { gradient: string; icon: string }> = {
+  motor:   { gradient: 'linear-gradient(135deg,#FF8C65,#FFAA88)', icon: '🏃' },
+  focus:   { gradient: 'linear-gradient(135deg,#3B9EFF,#60B4FF)', icon: '🎯' },
+  balance: { gradient: 'linear-gradient(135deg,#2ABFA3,#4DD4BD)', icon: '🌊' },
+  energy:  { gradient: 'linear-gradient(135deg,#FFBA44,#FFD080)', icon: '⚡' },
+  sensory: { gradient: 'linear-gradient(135deg,#FF6B6B,#FF9999)', icon: '🌈' },
+  social:  { gradient: 'linear-gradient(135deg,#7C5CFC,#9A7BFD)', icon: '🤝' },
 }
 
 export default function StudentDashboardPage() {
@@ -32,11 +44,10 @@ export default function StudentDashboardPage() {
       .then(r => r.json())
       .then(d => {
         setData(d)
-        // Cache name & streak for layout header
         if (d?.student) {
           try {
             localStorage.setItem('data-student-name', d.student.firstName)
-            localStorage.setItem('data-student-streak', String(d.student.streak))
+            localStorage.setItem('data-student-streak', String(d.student.streak ?? 0))
           } catch {}
         }
       })
@@ -44,87 +55,105 @@ export default function StudentDashboardPage() {
   }, [])
 
   if (loading) return (
-    <div className="flex flex-col items-center justify-center py-20 gap-4" dir="rtl">
+    <div className="flex flex-col items-center justify-center py-24 gap-4" dir="rtl">
       <div className="text-6xl animate-bounce-soft">⏳</div>
-      <p className="text-brand-600 font-black text-lg">جاري التحميل...</p>
+      <p className="font-black text-lg" style={{ color: '#7C5CFC' }}>جاري التحميل...</p>
     </div>
   )
 
-  const { student, todayExercises, completedTodayIds } = data ?? {
-    student: null, todayExercises: [], completedTodayIds: [],
-  }
-  // Use Redis-backed count (completedTodayIds length) for accurate display
-  const completedToday = completedTodayIds?.length ?? 0
-
-  if (!student) return (
-    <div className="text-center py-20" dir="rtl">
+  if (!data?.student) return (
+    <div className="text-center py-24" dir="rtl">
       <div className="text-5xl mb-4">😕</div>
-      <p className="text-gray-500 font-bold">حدث خطأ، حاول مجدداً</p>
+      <p className="font-bold text-gray-500">حدث خطأ، حاول مجدداً</p>
     </div>
   )
 
+  const { student, todayExercises = [], completedTodayIds = [] } = data
+  const completedToday = completedTodayIds.length
   const progressPct = todayExercises.length > 0
     ? Math.round((completedToday / todayExercises.length) * 100)
     : 0
 
-  // Days until next session (placeholder — just shows streak info)
-  const nextSessionDays = 2
-
   return (
     <div className="space-y-5" dir="rtl">
 
-      {/* Hero greeting */}
-      <div className="bg-gradient-to-l from-brand-600 via-brand-500 to-[#9A7BFD] rounded-3xl p-6 text-white mb-2 relative overflow-hidden shadow-brand">
-        {/* Decorative blurred circles */}
-        <div className="absolute -top-8 -left-8 w-28 h-28 rounded-full bg-white/10 blur-2xl pointer-events-none" />
-        <div className="absolute top-4 right-4 w-16 h-16 rounded-full bg-white/10 blur-xl pointer-events-none" />
-        <div className="absolute -bottom-6 left-1/2 w-24 h-24 rounded-full bg-[#9A7BFD]/30 blur-2xl pointer-events-none" />
+      {/* ── Hero greeting ── */}
+      <div
+        className="rounded-3xl p-6 text-white relative overflow-hidden"
+        style={{
+          background: 'linear-gradient(135deg, #6B46F0 0%, #7C5CFC 50%, #9A7BFD 100%)',
+          boxShadow: '0 8px 24px -4px rgba(124,92,252,0.35)',
+        }}
+      >
+        {/* Decorative blobs */}
+        <div className="absolute -top-6 -left-6 w-28 h-28 rounded-full pointer-events-none" style={{ background: 'rgba(255,255,255,0.12)', filter: 'blur(20px)' }} />
+        <div className="absolute bottom-0 right-8 w-20 h-20 rounded-full pointer-events-none" style={{ background: 'rgba(154,123,253,0.3)', filter: 'blur(16px)' }} />
 
         <div className="relative z-10">
-          <div className="text-4xl mb-2 animate-float inline-block">👋</div>
+          <div className="text-4xl mb-2 inline-block animate-float">👋</div>
           <h1 className="font-black text-2xl leading-tight">مرحباً {student.firstName}!</h1>
           <p className="text-white/80 text-sm mt-1">جاهز للعب اليوم؟ ✨</p>
+
+          {progressPct > 0 && (
+            <div className="mt-4">
+              <div className="flex justify-between text-xs text-white/70 mb-1 font-bold">
+                <span>تقدم اليوم</span>
+                <span className="ltr-num">{completedToday}/{todayExercises.length}</span>
+              </div>
+              <div className="h-2.5 rounded-full" style={{ background: 'rgba(255,255,255,0.2)' }}>
+                <div
+                  className="h-full rounded-full transition-all duration-700"
+                  style={{ width: `${progressPct}%`, background: 'rgba(255,255,255,0.9)' }}
+                />
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Stats strip — 4 mini-cards */}
+      {/* ── Stats strip — 4 mini-cards ── */}
       <div className="grid grid-cols-4 gap-2">
-        <div className="bg-[#FFF3E8] rounded-2xl p-3 text-center border border-orange-100 shadow-card">
-          <div className="text-xl mb-1">🔥</div>
-          <div className="font-black text-base text-orange-600 ltr-num">{student.streak}</div>
-          <div className="text-orange-400 text-[10px] font-bold leading-none mt-0.5">يوم</div>
-        </div>
-        <div className="bg-[#FFF8E8] rounded-2xl p-3 text-center border border-amber-100 shadow-card">
-          <div className="text-xl mb-1">⭐</div>
-          <div className="font-black text-base text-amber-600 ltr-num">{student.totalPoints}</div>
-          <div className="text-amber-400 text-[10px] font-bold leading-none mt-0.5">نقطة</div>
-        </div>
-        <div className="bg-brand-50 rounded-2xl p-3 text-center border border-[#E8DBFF] shadow-card">
-          <div className="text-xl mb-1">🏆</div>
-          <div className="font-black text-base text-brand-600 ltr-num">{student.achievements.length}</div>
-          <div className="text-brand-400 text-[10px] font-bold leading-none mt-0.5">وسام</div>
-        </div>
-        <div className="bg-[#F0FFF9] rounded-2xl p-3 text-center border border-teal-100 shadow-card">
-          <div className="text-xl mb-1">📅</div>
-          <div className="font-black text-base text-teal-600 ltr-num">{nextSessionDays}</div>
-          <div className="text-teal-400 text-[10px] font-bold leading-none mt-0.5">أيام</div>
-        </div>
+        {[
+          { emoji: '🔥', value: student.streak ?? 0,              label: 'يوم',    bg: '#FFF3E8', border: '#FFD5B0', color: '#EA6C0A' },
+          { emoji: '⭐', value: student.totalPoints ?? 0,          label: 'نقطة',   bg: '#FFF8E8', border: '#FFE58A', color: '#D97706' },
+          { emoji: '🏆', value: (student.achievements ?? []).length, label: 'وسام', bg: '#F3EEFF', border: '#D3BBFF', color: '#7C5CFC' },
+          { emoji: '🎯', value: todayExercises.length - completedToday, label: 'باقي', bg: '#F0FFF9', border: '#A7F3D0', color: '#059669' },
+        ].map((stat, i) => (
+          <div
+            key={i}
+            className="rounded-2xl p-3 text-center"
+            style={{ background: stat.bg, border: `1.5px solid ${stat.border}`, boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}
+          >
+            <div className="text-xl mb-0.5">{stat.emoji}</div>
+            <div className="font-black text-base ltr-num" style={{ color: stat.color }}>{stat.value}</div>
+            <div className="text-[10px] font-bold" style={{ color: stat.color, opacity: 0.7 }}>{stat.label}</div>
+          </div>
+        ))}
       </div>
 
-      {/* Today's exercises */}
-      <div className="bg-white rounded-3xl border border-[#F0E8FF] p-5 shadow-card">
+      {/* ── Today's exercises ── */}
+      <div
+        className="rounded-3xl p-5"
+        style={{ background: '#FFFFFF', border: '1.5px solid #F0E8FF', boxShadow: '0 1px 4px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.06)' }}
+      >
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-black text-gray-900 text-base">تمارين اليوم 🎮</h2>
-          <span className="text-sm font-black text-brand-600 bg-brand-50 px-2.5 py-1 rounded-full ltr-num">
-            {completedToday}/{todayExercises.length} مكتمل
+          <span
+            className="text-xs font-black px-3 py-1 rounded-full ltr-num"
+            style={{ background: '#F3EEFF', color: '#7C5CFC' }}
+          >
+            {completedToday}/{todayExercises.length}
           </span>
         </div>
 
         {/* Progress bar */}
-        <div className="h-3 bg-[#F0E8FF] rounded-full overflow-hidden mb-4">
+        <div className="h-3 rounded-full mb-4 overflow-hidden" style={{ background: '#F0E8FF' }}>
           <div
-            className="h-full bg-gradient-to-l from-brand-500 to-[#9A7BFD] rounded-full transition-all duration-700"
-            style={{ width: `${progressPct}%` }}
+            className="h-full rounded-full transition-all duration-700"
+            style={{
+              width: `${progressPct}%`,
+              background: 'linear-gradient(to left, #7C5CFC, #9A7BFD)',
+            }}
           />
         </div>
 
@@ -134,80 +163,98 @@ export default function StudentDashboardPage() {
             <p className="font-black text-green-600 text-lg">أحسنت! أكملت كل تمارين اليوم!</p>
           </div>
         ) : todayExercises.length === 0 ? (
-          <div className="border-2 border-dashed border-[#E8DBFF] rounded-2xl p-8 text-center">
+          <div className="rounded-2xl p-8 text-center" style={{ border: '2px dashed #E8DBFF' }}>
             <div className="text-4xl mb-2">😴</div>
             <p className="font-bold text-gray-500 text-sm">لا توجد تمارين اليوم</p>
             <p className="text-gray-400 text-xs mt-1">استرح جيداً!</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-3">
-            {todayExercises.slice(0, 4).map((ex, idx) => {
-              const isDone = completedTodayIds?.includes(ex.id)
-              const colors = ['from-[#7C5CFC] to-[#9A7BFD]', 'from-[#3B9EFF] to-[#60B4FF]', 'from-[#2ABFA3] to-[#4DD4BD]', 'from-[#FFBA44] to-[#FFD080]']
-              const gradient = colors[idx % colors.length]
+            {todayExercises.slice(0, 4).map((ex) => {
+              const isDone = completedTodayIds.includes(ex.id)
+              const cfg = GAME_GRADIENTS[ex.id] || CAT_FALLBACK[ex.category] || { gradient: 'linear-gradient(135deg,#7C5CFC,#9A7BFD)', icon: '🏋️' }
               return (
                 <Link
                   key={ex.id}
                   href="/student/exercises"
-                  className={`relative rounded-3xl h-28 p-4 flex flex-col justify-between bg-gradient-to-br ${gradient} shadow-card transition-transform active:scale-95 ${isDone ? 'opacity-60' : ''}`}
+                  className="relative rounded-3xl overflow-hidden card-lift"
+                  style={{
+                    height: '112px',
+                    background: cfg.gradient,
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
+                    opacity: isDone ? 0.6 : 1,
+                  }}
                 >
-                  <span className="text-4xl leading-none">{CAT_EMOJI[ex.category] || '🏋️'}</span>
-                  <div>
+                  <div className="p-4 h-full flex flex-col justify-between">
+                    <span className="text-3xl leading-none">{cfg.icon}</span>
                     <p className="text-white font-black text-sm leading-tight line-clamp-2">{ex.titleAr}</p>
                   </div>
                   {isDone && (
-                    <div className="absolute inset-0 flex items-center justify-center rounded-3xl bg-black/10">
-                      <span className="text-3xl">✅</span>
+                    <div className="absolute inset-0 flex items-center justify-center rounded-3xl" style={{ background: 'rgba(0,0,0,0.15)' }}>
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center text-xl" style={{ background: 'rgba(255,255,255,0.9)' }}>✅</div>
                     </div>
                   )}
                 </Link>
               )
             })}
             {todayExercises.length > 4 && (
-              <Link href="/student/exercises"
-                className="rounded-3xl h-28 border-2 border-dashed border-[#E8DBFF] flex flex-col items-center justify-center gap-1 text-brand-400 hover:bg-brand-50 transition-colors">
+              <Link
+                href="/student/exercises"
+                className="rounded-3xl flex flex-col items-center justify-center gap-1 card-lift"
+                style={{ height: '112px', border: '2px dashed #D3BBFF', color: '#7C5CFC' }}
+              >
                 <span className="text-2xl">➕</span>
-                <span className="text-xs font-black">+{todayExercises.length - 4} تمرين</span>
+                <span className="text-xs font-black">+{todayExercises.length - 4}</span>
               </Link>
             )}
           </div>
         )}
       </div>
 
-      {/* Quick actions */}
+      {/* ── Quick actions ── */}
       <div className="grid grid-cols-2 gap-3">
         <Link
           href="/student/exercises"
-          className="bg-gradient-to-l from-brand-500 to-[#9A7BFD] text-white font-black py-4 px-4 rounded-2xl text-center text-sm shadow-brand-sm active:scale-95 transition-transform"
+          className="card-lift text-white font-black py-4 px-4 rounded-2xl text-center text-sm"
+          style={{ background: 'linear-gradient(to left, #7C5CFC, #9A7BFD)', boxShadow: '0 4px 12px rgba(124,92,252,0.3)' }}
         >
           🎮 ابدأ التمارين
         </Link>
         <Link
           href="/student/achievements"
-          className="bg-gradient-to-l from-[#FFBA44] to-[#FF8C65] text-white font-black py-4 px-4 rounded-2xl text-center text-sm shadow-warm-sm active:scale-95 transition-transform"
+          className="card-lift text-white font-black py-4 px-4 rounded-2xl text-center text-sm"
+          style={{ background: 'linear-gradient(to left, #FFBA44, #FF8C65)', boxShadow: '0 4px 12px rgba(255,140,101,0.3)' }}
         >
           🏆 إنجازاتي
         </Link>
       </div>
 
-      {/* Recent achievements preview */}
-      {student.achievements.length > 0 && (
-        <div className="bg-white rounded-3xl border border-[#F0E8FF] p-5 shadow-card">
+      {/* ── Recent achievements preview ── */}
+      {(student.achievements ?? []).length > 0 && (
+        <div
+          className="rounded-3xl p-5"
+          style={{ background: '#FFFFFF', border: '1.5px solid #F0E8FF', boxShadow: '0 1px 4px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.06)' }}
+        >
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-black text-gray-900">آخر جوائزي ✨</h2>
-            <Link href="/student/achievements" className="text-brand-600 text-sm font-black hover:underline">
+            <Link href="/student/achievements" className="text-sm font-black" style={{ color: '#7C5CFC' }}>
               عرض الكل
             </Link>
           </div>
           <div className="flex gap-3 overflow-x-auto pb-1">
-            {student.achievements.slice(-4).map((ach) => (
-              <div key={ach.id}
-                className={`flex-shrink-0 w-16 h-16 rounded-2xl flex items-center justify-center text-2xl shadow-card ${
-                  ach.tier === 'gold'     ? 'bg-gradient-to-br from-[#FBBF24] to-[#F59E0B]' :
-                  ach.tier === 'silver'   ? 'bg-gradient-to-br from-[#94A3B8] to-[#64748B]' :
-                  ach.tier === 'platinum' ? 'bg-gradient-to-br from-brand-400 to-brand-600' :
-                                            'bg-gradient-to-br from-[#D97706] to-[#B45309]'
-                }`}>
+            {(student.achievements ?? []).slice(-4).map((ach) => (
+              <div
+                key={ach.id}
+                className="flex-shrink-0 w-16 h-16 rounded-2xl flex items-center justify-center text-2xl"
+                style={{
+                  background:
+                    ach.tier === 'gold'     ? 'linear-gradient(135deg,#FBBF24,#F59E0B)' :
+                    ach.tier === 'silver'   ? 'linear-gradient(135deg,#94A3B8,#64748B)' :
+                    ach.tier === 'platinum' ? 'linear-gradient(135deg,#9A7BFD,#7C5CFC)' :
+                                              'linear-gradient(135deg,#D97706,#B45309)',
+                  boxShadow: '0 4px 8px rgba(0,0,0,0.15)',
+                }}
+              >
                 {ach.icon}
               </div>
             ))}

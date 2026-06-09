@@ -16,7 +16,6 @@ export default function StudentPortalLayout({ children }: { children: React.Reac
   const [studentName, setStudentName] = useState<string>('أكاديميتي')
   const [streak, setStreak] = useState<number>(0)
 
-  // Load student name and streak from localStorage
   useEffect(() => {
     try {
       const name = localStorage.getItem('data-student-name')
@@ -28,7 +27,7 @@ export default function StudentPortalLayout({ children }: { children: React.Reac
 
   // Heartbeat — report online status every 60s
   useEffect(() => {
-    const ping = () => fetch('/api/student/ping')
+    const ping = () => fetch('/api/student/ping').catch(() => {})
     ping()
     const id = setInterval(ping, 60000)
     return () => clearInterval(id)
@@ -36,21 +35,36 @@ export default function StudentPortalLayout({ children }: { children: React.Reac
 
   return (
     <div className="min-h-screen bg-[#FFF8F0]" dir="rtl">
-      {/* Gradient header */}
-      <header className="bg-gradient-to-l from-brand-600 to-brand-500 px-4 py-3 flex items-center justify-between sticky top-0 z-40 shadow-brand-sm">
-        <div className="text-white font-black text-lg">🌟 {studentName}</div>
-        <div className="flex items-center gap-1.5 bg-amber-400 text-white px-3 py-1.5 rounded-full">
-          <span className="text-base">🔥</span>
-          <span className="font-black text-sm" id="streak-display">{streak}</span>
-        </div>
+
+      {/* ── Sticky gradient header ── */}
+      <header
+        className="sticky top-0 z-40 px-4 py-3 flex items-center justify-between"
+        style={{ background: 'linear-gradient(to left, #6B46F0, #7C5CFC)', boxShadow: '0 2px 12px -2px rgba(124,92,252,0.35)' }}
+      >
+        <div className="text-white font-black text-lg tracking-tight">🌟 {studentName}</div>
+        {streak > 0 && (
+          <div
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full font-black text-sm text-white"
+            style={{ background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(4px)' }}
+          >
+            <span>🔥</span>
+            <span className="ltr-num">{streak}</span>
+            <span className="text-white/80 text-xs">يوم</span>
+          </div>
+        )}
       </header>
 
-      {/* Content */}
-      <main className="max-w-lg mx-auto px-4 py-4 pb-28">{children}</main>
+      {/* ── Page content ── */}
+      <main className="max-w-lg mx-auto px-4 py-5 pb-32">
+        {children}
+      </main>
 
-      {/* Bottom navigation — large hit targets */}
-      <nav className="fixed bottom-0 right-0 left-0 bg-white border-t-2 border-[#F0E8FF] z-50 shadow-card">
-        <div className="max-w-lg mx-auto flex items-center justify-around py-2 px-1">
+      {/* ── Bottom navigation ── */}
+      <nav
+        className="fixed bottom-0 right-0 left-0 z-50"
+        style={{ background: '#FFFFFF', borderTop: '2px solid #F0E8FF', boxShadow: '0 -4px 16px rgba(124,92,252,0.08)' }}
+      >
+        <div className="max-w-lg mx-auto flex items-center justify-around py-2 px-2">
           {navItems.map(({ href, label, emoji }) => {
             const active = href === '/student/dashboard'
               ? pathname === href
@@ -59,14 +73,24 @@ export default function StudentPortalLayout({ children }: { children: React.Reac
               <Link
                 key={href}
                 href={href}
-                className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-2xl transition-all duration-200 ${
-                  active
-                    ? 'bg-brand-500 text-white scale-110 shadow-brand-sm'
-                    : 'text-gray-400 hover:text-gray-600'
-                }`}
+                className="flex flex-col items-center gap-0.5 relative"
+                style={{ minWidth: '52px' }}
               >
-                <span className="text-2xl leading-none">{emoji}</span>
-                <span className="text-[10px] font-black leading-none mt-0.5">{label}</span>
+                <div
+                  className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-2xl transition-all duration-200"
+                  style={active
+                    ? { background: '#7C5CFC', boxShadow: '0 2px 8px -2px rgba(124,92,252,0.4)', transform: 'scale(1.08)' }
+                    : {}
+                  }
+                >
+                  <span className="text-2xl leading-none">{emoji}</span>
+                  <span
+                    className="text-[10px] font-black leading-none"
+                    style={{ color: active ? '#FFFFFF' : '#9CA3AF' }}
+                  >
+                    {label}
+                  </span>
+                </div>
               </Link>
             )
           })}

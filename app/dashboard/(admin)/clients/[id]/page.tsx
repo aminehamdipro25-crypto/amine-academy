@@ -5,8 +5,9 @@ import {
   ArrowRight, Mail, Phone, MapPin, Calendar, CheckCircle, Clock, XCircle,
   AlertCircle, Video, User, Brain, Star, Edit2, Save, X, Key, Copy,
   PauseCircle, Trash2, LogIn, RotateCcw, ExternalLink, Eye, EyeOff, Lock,
+  ChevronDown, ChevronUp,
 } from 'lucide-react'
-import type { Parent, Student, Appointment } from '@/lib/types'
+import type { Parent, Student, Appointment, SessionLog } from '@/lib/types'
 
 const STATUS_CONFIG = {
   active:    { label: 'نشط',             color: 'bg-green-100 text-green-700 border-green-200' },
@@ -49,6 +50,8 @@ export default function ClientDetailPage() {
   const [newPwd, setNewPwd] = useState('')
   const [showNewPwd, setShowNewPwd] = useState(false)
   const [pwdSaving, setPwdSaving] = useState(false)
+  const [sessionLogs, setSessionLogs] = useState<Record<string, SessionLog>>({})
+  const [expandedSession, setExpandedSession] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -67,6 +70,14 @@ export default function ClientDetailPage() {
   }, [id, router])
 
   useEffect(() => { load() }, [load])
+
+  useEffect(() => {
+    if (!data || !id) return
+    fetch(`/api/admin/clients/${id}/sessions`)
+      .then(r => r.json())
+      .then(d => setSessionLogs(d.sessions || {}))
+      .catch(() => {})
+  }, [data, id])
 
   async function save() {
     setSaving(true)
@@ -610,7 +621,7 @@ export default function ClientDetailPage() {
             </div>
           )}
 
-          {/* Past appointments */}
+          {/* Past appointments / session logs */}
           {past.length > 0 && (
             <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
               <div className="px-6 py-4 border-b border-gray-50">
@@ -620,22 +631,164 @@ export default function ClientDetailPage() {
                 </h2>
               </div>
               <div className="divide-y divide-gray-50">
-                {past.slice(0, 10).map(a => {
+                {past.slice(0, 15).map(a => {
+                  const log = sessionLogs[a.id]
                   const isCompleted = a.status === 'completed'
                   const isCancelled = a.status === 'cancelled' || a.status === 'no-show'
+                  const isExpanded = expandedSession === a.id
+                  const avgScore = log?.exercises?.length
+                    ? Math.round(log.exercises.reduce((s, e) => s + e.score, 0) / log.exercises.length)
+                    : null
+
                   return (
-                    <div key={a.id} className="px-6 py-3 flex items-center justify-between">
-                      <div className="text-sm text-gray-700 ltr-num">
-                        {new Date(a.date).toLocaleDateString('ar-SA')} {a.timeSlot}
-                      </div>
-                      <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${
-                        isCompleted ? 'bg-green-100 text-green-700' :
-                        isCancelled ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'
-                      }`}>
-                        {isCompleted ? <span className="flex items-center gap-1"><CheckCircle className="w-3 h-3" />مكتمل</span> :
-                         isCancelled ? <span className="flex items-center gap-1"><XCircle className="w-3 h-3" />{a.status === 'no-show' ? 'لم يحضر' : 'ملغى'}</span> :
-                         a.status}
-                      </span>
+                    <div key={a.id}>
+                      <button
+                        onClick={() => log && setExpandedSession(isExpanded ? null : a.id)}
+                        className={`w-full px-6 py-4 text-right transition-colors ${log ? 'hover:bg-gray-50' : 'cursor-default'}`}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-sm font-bold text-gray-800 ltr-num">
+                                {new Date(a.date).toLocaleDateString('ar-SA', { weekday: 'short', day: 'numeric', month: 'short' })}
+                                {' '}{a.timeSlot}
+                              </span>
+                              {log?.durationSeconds > 0 && (
+                                <span className="text-xs text-gray-400 ltr-num">
+                                  ⏱ {Math.round(log.durationSeconds / 60)} دقيقة
+                                </span>
+                              )}
+                            </div>
+
+                            {log && (log.exercises?.length > 0 || log.therapistNotes) && (
+                              <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                                {log.exercises?.length > 0 && (
+                                  <span className="text-xs bg-brand-100 text-brand-700 font-bold px-2 py-0.5 rounded-full ltr-num">
+                                    {log.exercises.length} تمرين
+                                  </span>
+                                )}
+                                {avgScore !== null && (
+                                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full ltr-num ${
+                                    avgScore >= 80 ? 'bg-green-100 text-green-700' :
+                                    avgScore >= 60 ? 'bg-yellow-100 text-yellow-700' :
+                                    'bg-red-100 text-red-700'
+                                  }`}>
+                                    متوسط {avgScore}٪
+                                  </span>
+                                )}
+                                <div className="flex items-center gap-1.5">
+                                  {(['attention', 'mood', 'energy'] as const).map(obs => (
+                                    <div key={obs} className="flex gap-0.5">
+                                      {[1, 2, 3, 4, 5].map(i => (
+                                        <div key={i} className={`w-1.5 h-1.5 rounded-full ${
+                                          i <= log.observations[obs] ? 'bg-brand-500' : 'bg-gray-200'
+                                        }`} />
+                                      ))}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {log?.therapistNotes && (
+                              <p className="text-xs text-gray-500 mt-1 line-clamp-1">{log.therapistNotes}</p>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${
+                              isCompleted ? 'bg-green-100 text-green-700' :
+                              isCancelled ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'
+                            }`}>
+                              {isCompleted ? 'مكتمل' : isCancelled ? (a.status === 'no-show' ? 'لم يحضر' : 'ملغى') : a.status}
+                            </span>
+                            {log && (isExpanded
+                              ? <ChevronUp className="w-4 h-4 text-gray-400" />
+                              : <ChevronDown className="w-4 h-4 text-gray-400" />
+                            )}
+                          </div>
+                        </div>
+                      </button>
+
+                      {isExpanded && log && (
+                        <div className="px-6 pb-5 space-y-3">
+                          {/* Behavioral observations */}
+                          <div className="bg-gray-50 rounded-xl px-4 py-3">
+                            <p className="text-xs font-bold text-gray-500 mb-2">ملاحظات سلوكية</p>
+                            <div className="grid grid-cols-5 gap-2">
+                              {([
+                                ['attention',   'الانتباه'],
+                                ['cooperation', 'التعاون'],
+                                ['energy',      'الطاقة'],
+                                ['mood',        'المزاج'],
+                                ['anxiety',     'القلق'],
+                              ] as [keyof typeof log.observations, string][]).map(([key, label]) => (
+                                <div key={key} className="text-center">
+                                  <div className="text-[10px] text-gray-400 mb-1">{label}</div>
+                                  <div className="flex justify-center gap-0.5">
+                                    {[1, 2, 3, 4, 5].map(i => (
+                                      <div key={i} className={`w-2 h-2 rounded-full ${
+                                        i <= log.observations[key] ? 'bg-brand-500' : 'bg-gray-200'
+                                      }`} />
+                                    ))}
+                                  </div>
+                                  <div className="text-xs font-bold text-gray-600 mt-1 ltr-num">{log.observations[key]}/5</div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Exercise results */}
+                          {log.exercises?.length > 0 && (
+                            <div className="space-y-2">
+                              <p className="text-xs font-bold text-gray-500">نتائج التمارين</p>
+                              {log.exercises.map((ex, i) => (
+                                <div key={i} className="bg-gray-50 rounded-xl px-4 py-2.5 flex items-center gap-3">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="text-xs font-bold text-gray-800">{ex.exerciseLabelAr}</div>
+                                    <div className="flex items-center gap-2 mt-1">
+                                      <div className="flex-1 bg-gray-200 rounded-full h-1.5">
+                                        <div
+                                          className={`h-1.5 rounded-full transition-all ${
+                                            ex.score >= 80 ? 'bg-green-500' : ex.score >= 60 ? 'bg-yellow-400' : 'bg-red-400'
+                                          }`}
+                                          style={{ width: `${ex.score}%` }}
+                                        />
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div className="text-right flex-shrink-0">
+                                    <div className={`text-sm font-black ltr-num ${
+                                      ex.score >= 80 ? 'text-green-600' : ex.score >= 60 ? 'text-yellow-600' : 'text-red-500'
+                                    }`}>{ex.score}٪</div>
+                                    <div className="text-[10px] text-gray-400 ltr-num">{Math.round(ex.duration / 60)}د</div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Therapist notes */}
+                          {log.therapistNotes && (
+                            <div className="bg-blue-50 rounded-xl px-4 py-3">
+                              <p className="text-xs font-bold text-blue-600 mb-1">ملاحظات المعالج</p>
+                              <p className="text-xs text-gray-700 whitespace-pre-wrap">{log.therapistNotes}</p>
+                            </div>
+                          )}
+
+                          {/* Session highlights */}
+                          {log.highlights?.length > 0 && (
+                            <div className="bg-yellow-50 rounded-xl px-4 py-3">
+                              <p className="text-xs font-bold text-yellow-700 mb-1.5">أبرز اللحظات</p>
+                              <ul className="space-y-0.5">
+                                {log.highlights.map((h, i) => (
+                                  <li key={i} className="text-xs text-gray-700">• {h}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )
                 })}

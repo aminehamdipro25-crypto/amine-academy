@@ -65,11 +65,12 @@ export default function StatsSection() {
   ]
 
   return (
-    <section className="bg-brand-950 py-14">
+    <section className="bg-[#FFF8F0] py-14" dir={isAr ? 'rtl' : 'ltr'}>
       <div className="max-w-7xl mx-auto px-6">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           {stats.map((stat) => (
-            <div key={stat.label} className="text-center">
+            <div key={stat.label}
+              className="bg-white rounded-3xl border border-[#F0E8FF] shadow-card p-6 text-center hover:-translate-y-1 transition-all">
               <div className={`text-4xl font-black mb-1 ${stat.color} flex items-end justify-center gap-1`} dir="ltr">
                 <span className="ltr-num">{stat.value}</span>
                 {'unit' in stat && stat.unit && (
@@ -78,10 +79,10 @@ export default function StatsSection() {
                   </span>
                 )}
               </div>
-              <div className="text-white font-bold text-sm mb-0.5">
+              <div className="text-gray-800 font-bold text-sm mb-0.5">
                 {isAr ? stat.label : stat.labelEn}
               </div>
-              <div className="text-white/40 text-xs">
+              <div className="text-gray-500 text-xs">
                 {isAr ? stat.sub : stat.subEn}
               </div>
             </div>

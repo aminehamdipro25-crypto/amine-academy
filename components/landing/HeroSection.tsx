@@ -46,10 +46,10 @@ function useCountdown(offerDays: number) {
 function CountdownUnit({ value, label }: { value: number; label: string }) {
   return (
     <div className="flex flex-col items-center">
-      <div className="bg-brand-50 border border-brand-200 rounded-xl px-3 py-2 min-w-[3rem] text-center">
-        <span className="text-brand-700 font-black text-2xl ltr-num">{String(value).padStart(2, '0')}</span>
+      <div className="bg-white/10 border border-white/20 rounded-xl px-3 py-2 min-w-[3rem] text-center">
+        <span className="text-white font-black text-2xl ltr-num">{String(value).padStart(2, '0')}</span>
       </div>
-      <span className="text-gray-500 text-xs mt-1">{label}</span>
+      <span className="text-white/60 text-xs mt-1">{label}</span>
     </div>
   )
 }
@@ -61,7 +61,7 @@ function GameVisual() {
       <div className="absolute w-72 h-72 bg-brand-400/20 rounded-full blur-3xl" />
 
       {/* Main game card */}
-      <div className="relative w-72 bg-gradient-to-br from-brand-600 via-brand-700 to-purple-700 rounded-3xl p-6 shadow-2xl shadow-brand-600/40">
+      <div className="relative w-72 bg-white/10 backdrop-blur-sm border border-white/20 rounded-3xl p-6 shadow-2xl shadow-black/30">
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
           <span className="text-white/60 text-xs font-bold">جلسة اليوم</span>
@@ -149,18 +149,18 @@ export default function HeroSection() {
   return (
     <section
       className={`relative min-h-screen overflow-hidden ${isAr ? 'direction-rtl' : 'direction-ltr'}`}
-      style={{ background: 'linear-gradient(150deg, #FEF9F0 0%, #F4F0FF 55%, #EFF6FF 100%)' }}
+      style={{ background: 'linear-gradient(135deg, #2D1B69 0%, #4A2FA3 50%, #7C5CFC 100%)' }}
       dir={isAr ? 'rtl' : 'ltr'}
     >
-      {/* Background decorative blobs */}
+      {/* Decorative blurred circles */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-10 right-10 w-80 h-80 bg-brand-200/25 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 left-10 w-96 h-96 bg-purple-200/25 rounded-full blur-3xl" />
-        <div className="absolute top-1/3 left-1/3 w-64 h-64 bg-amber-100/40 rounded-full blur-3xl" />
+        <div className="absolute top-10 right-10 w-96 h-96 bg-brand-400/30 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 left-10 w-80 h-80 bg-orange-500/30 rounded-full blur-3xl" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 bg-teal-400/30 rounded-full blur-3xl" />
         {/* Dot grid — decorative */}
-        <div className={`absolute top-32 ${isAr ? 'left-24' : 'right-24'} hidden lg:grid grid-cols-5 gap-3 opacity-[0.12]`}>
+        <div className={`absolute top-32 ${isAr ? 'left-24' : 'right-24'} hidden lg:grid grid-cols-5 gap-3 opacity-[0.08]`}>
           {Array.from({ length: 25 }).map((_, i) => (
-            <div key={i} className="w-2 h-2 bg-brand-700 rounded-full" />
+            <div key={i} className="w-2 h-2 bg-white rounded-full" />
           ))}
         </div>
       </div>
@@ -168,31 +168,31 @@ export default function HeroSection() {
       {/* ── Navigation ── */}
       <nav className="relative z-10 flex items-center justify-between px-6 py-5 max-w-7xl mx-auto">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-brand-600 rounded-xl flex items-center justify-center text-white font-black text-lg shadow-lg shadow-brand-600/30">
+          <div className="w-10 h-10 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center text-white font-black text-lg shadow-lg">
             A
           </div>
           <div>
-            <span className="text-brand-900 font-black text-lg block leading-none">
+            <span className="text-white font-black text-lg block leading-none">
               {isAr ? 'أكاديمية أمين' : 'Amine Academy'}
             </span>
-            <span className="text-gray-400 text-xs">ADHD & Autism Academy</span>
+            <span className="text-white/50 text-xs">ADHD & Autism Academy</span>
           </div>
         </div>
         <div className="flex items-center gap-3">
           <Link href="/demo"
-            className="text-gray-500 hover:text-brand-600 text-sm font-medium transition-colors hidden sm:block">
+            className="text-white/70 hover:text-white text-sm font-medium transition-colors hidden sm:block">
             {t.nav.trial}
           </Link>
           <Link href="/parent/login"
-            className="text-gray-500 hover:text-brand-600 text-sm font-medium transition-colors hidden sm:block">
+            className="text-white/70 hover:text-white text-sm font-medium transition-colors hidden sm:block">
             {t.nav.parents}
           </Link>
           <Link href="/register"
-            className="bg-brand-600 text-white hover:bg-brand-700 font-bold text-sm px-5 py-2.5 rounded-xl transition-colors shadow-lg shadow-brand-600/25">
+            className="bg-white text-brand-700 hover:bg-brand-50 font-black text-sm px-5 py-2.5 rounded-xl transition-all shadow-lg">
             {t.nav.register}
           </Link>
           <Link href="/dashboard"
-            className="flex items-center gap-1.5 bg-white border border-gray-200 text-gray-600 hover:border-brand-300 hover:text-brand-600 font-bold text-xs px-3 py-2 rounded-xl transition-all shadow-sm">
+            className="flex items-center gap-1.5 bg-white/10 border border-white/20 text-white hover:bg-white/20 font-bold text-xs px-3 py-2 rounded-xl transition-all">
             <LayoutDashboard className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">لوحة التحكم</span>
           </Link>
@@ -207,37 +207,47 @@ export default function HeroSection() {
           {/* ── Text Column ── */}
           <div className={isAr ? 'order-1' : 'order-2'}>
             {/* Badge */}
-            <div className="inline-flex items-center gap-2 bg-brand-50 border border-brand-200 rounded-full px-4 py-1.5 mb-6">
-              <Sparkles className="w-3.5 h-3.5 text-brand-600" />
-              <span className="text-brand-700 text-sm font-bold">{t.hero.badge}</span>
+            <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-4 py-1.5 mb-6">
+              <Sparkles className="w-3.5 h-3.5 text-brand-300" />
+              <span className="text-white text-sm font-bold">{t.hero.badge}</span>
+            </div>
+
+            {/* Floating info badges */}
+            <div className="flex flex-wrap gap-2 mb-6">
+              {['100+ طفل', 'ADHD & Autism', 'Qatar & Tunisia'].map(badge => (
+                <span key={badge}
+                  className="bg-white/10 backdrop-blur border border-white/20 rounded-2xl px-4 py-2 text-white text-sm font-medium">
+                  {badge}
+                </span>
+              ))}
             </div>
 
             {/* Main heading */}
-            <h1 className="text-4xl md:text-5xl lg:text-[3.5rem] font-black text-gray-900 leading-tight mb-6">
+            <h1 className="text-4xl md:text-6xl font-black text-white leading-tight mb-6">
               {t.hero.h1a}
-              <span className="block text-transparent bg-clip-text bg-gradient-to-l from-brand-600 to-purple-600 mt-1">
+              <span className="block text-white/90 mt-1">
                 {t.hero.h1b}
               </span>
-              <span className="block text-2xl md:text-3xl mt-3 text-gray-500 font-bold">
+              <span className="block text-2xl md:text-3xl mt-3 text-white/60 font-bold">
                 {t.hero.h1c}
               </span>
             </h1>
 
-            <p className="text-gray-600 text-lg leading-relaxed mb-3 max-w-lg">
+            <p className="text-white/80 text-lg leading-relaxed mb-3 max-w-lg">
               {t.hero.desc}
             </p>
-            <p className="text-gray-400 text-sm mb-8">{t.hero.ages}</p>
+            <p className="text-white/50 text-sm mb-8">{t.hero.ages}</p>
 
             {/* CTAs */}
             <div className="flex flex-col sm:flex-row items-start gap-4 mb-10">
               <Link href="/register"
-                className="flex items-center gap-2 bg-brand-600 text-white hover:bg-brand-700 font-black text-lg px-8 py-4 rounded-2xl transition-all hover:scale-[1.03] shadow-xl shadow-brand-600/30 active:scale-95">
+                className="flex items-center gap-2 bg-white text-brand-700 font-black text-lg px-8 py-4 rounded-2xl hover:-translate-y-1 shadow-xl transition-all active:scale-95">
                 {t.hero.cta1}
                 {isAr ? <ArrowLeft className="w-5 h-5" /> : <ArrowRight className="w-5 h-5" />}
               </Link>
               <Link href="#how-it-works"
-                className="flex items-center gap-2 border-2 border-gray-200 bg-white text-gray-700 hover:border-brand-300 hover:text-brand-700 font-bold text-lg px-8 py-4 rounded-2xl transition-colors shadow-sm">
-                <Play className="w-5 h-5 fill-current text-brand-600" />
+                className="flex items-center gap-2 bg-white/10 border border-white/30 text-white hover:bg-white/20 font-bold text-lg px-8 py-4 rounded-2xl transition-all">
+                <Play className="w-5 h-5 fill-current text-white/70" />
                 {t.hero.cta2}
               </Link>
             </div>
@@ -246,7 +256,7 @@ export default function HeroSection() {
             <div className="flex items-center gap-2 flex-wrap mb-8">
               {['APA Certified', 'ABA Protocol', 'CBT for Children', 'PEERS Protocol'].map(b => (
                 <span key={b}
-                  className="text-gray-500 text-xs font-bold border border-gray-200 bg-white px-3 py-1 rounded-full shadow-sm">
+                  className="text-white/60 text-xs font-bold border border-white/20 bg-white/5 px-3 py-1 rounded-full">
                   ✓ {b}
                 </span>
               ))}
@@ -254,31 +264,31 @@ export default function HeroSection() {
 
             {/* Countdown */}
             {time && !time.expired && (
-              <div className="inline-flex flex-col items-center gap-3 bg-white border border-gray-100 rounded-2xl px-8 py-4 shadow-sm mb-8">
-                <p className="text-gray-500 text-sm font-medium">{t.hero.offerLabel}</p>
+              <div className="inline-flex flex-col items-center gap-3 bg-white/10 border border-white/20 rounded-2xl px-8 py-4 mb-8">
+                <p className="text-white/60 text-sm font-medium">{t.hero.offerLabel}</p>
                 <div className="flex items-center gap-3" dir="ltr">
                   <CountdownUnit value={time.d} label={t.hero.units.d} />
-                  <span className="text-gray-300 text-xl font-black mb-4">:</span>
+                  <span className="text-white/30 text-xl font-black mb-4">:</span>
                   <CountdownUnit value={time.h} label={t.hero.units.h} />
-                  <span className="text-gray-300 text-xl font-black mb-4">:</span>
+                  <span className="text-white/30 text-xl font-black mb-4">:</span>
                   <CountdownUnit value={time.m} label={t.hero.units.m} />
-                  <span className="text-gray-300 text-xl font-black mb-4">:</span>
+                  <span className="text-white/30 text-xl font-black mb-4">:</span>
                   <CountdownUnit value={time.s} label={t.hero.units.s} />
                 </div>
               </div>
             )}
 
             {/* Quick stats */}
-            <div className="grid grid-cols-3 gap-4 max-w-sm pt-8 border-t border-gray-100">
+            <div className="grid grid-cols-3 gap-4 max-w-sm pt-8 border-t border-white/10">
               {[
-                { icon: Users, value: '+200', label: t.hero.stats.children, color: 'text-brand-600' },
-                { icon: Award, value: '+5',   label: t.hero.stats.years,    color: 'text-purple-600' },
-                { icon: Star,  value: '98%',  label: t.hero.stats.satisfaction, color: 'text-amber-500' },
+                { icon: Users, value: '+200', label: t.hero.stats.children, color: 'text-brand-300' },
+                { icon: Award, value: '+5',   label: t.hero.stats.years,    color: 'text-purple-300' },
+                { icon: Star,  value: '98%',  label: t.hero.stats.satisfaction, color: 'text-amber-400' },
               ].map(({ icon: Icon, value, label, color }) => (
                 <div key={label} className="text-center">
                   <Icon className={`w-5 h-5 ${color} mx-auto mb-1`} />
-                  <div className="text-gray-900 font-black text-2xl ltr-num">{value}</div>
-                  <div className="text-gray-400 text-xs mt-0.5 leading-tight">{label}</div>
+                  <div className="text-white font-black text-2xl ltr-num">{value}</div>
+                  <div className="text-white/50 text-xs mt-0.5 leading-tight">{label}</div>
                 </div>
               ))}
             </div>

@@ -54,7 +54,7 @@ export default function HowItWorks() {
   const isAr = lang === 'ar'
 
   return (
-    <section className="py-20 bg-white" id="how-it-works" dir={isAr ? 'rtl' : 'ltr'}>
+    <section className="py-20 bg-[#FFF8F0]" id="how-it-works" dir={isAr ? 'rtl' : 'ltr'}>
       <div className="max-w-7xl mx-auto px-6">
         <div className="text-center mb-14">
           <span className="text-brand-600 font-bold text-sm bg-brand-50 px-4 py-1.5 rounded-full">
@@ -69,19 +69,24 @@ export default function HowItWorks() {
         </div>
 
         <div className="relative">
-          {/* Connecting line */}
-          <div className="hidden md:block absolute top-10 right-16 left-16 h-0.5 bg-gradient-to-l from-teal-300 to-brand-300" />
-
           <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
-            {steps.map((step) => (
+            {steps.map((step, index) => (
               <div key={step.num} className="relative flex flex-col items-center text-center">
-                {/* Circle */}
-                <div className={`relative z-10 w-20 h-20 rounded-2xl flex flex-col items-center justify-center mb-4 ${step.color} shadow-sm`}>
-                  <span className="text-2xl">{step.icon}</span>
+                {/* Numbered circle */}
+                <div className="relative z-10 w-14 h-14 rounded-full bg-brand-500 text-white font-black text-xl flex items-center justify-center mb-3 shadow-brand-sm">
+                  {index + 1}
                 </div>
-                <div className="font-black text-gray-300 text-xs mb-1 ltr-num">{step.num}</div>
-                <h3 className="font-black text-gray-900 text-sm mb-2">{isAr ? step.title : step.titleEn}</h3>
-                <p className="text-gray-500 text-xs leading-relaxed">{isAr ? step.desc : step.descEn}</p>
+                {/* Connector line for mobile */}
+                {index < steps.length - 1 && (
+                  <div className="w-0.5 h-12 bg-gradient-to-b from-brand-300 to-brand-100 mx-auto md:hidden" />
+                )}
+                {/* Step card */}
+                <div className="bg-white rounded-3xl border border-[#F0E8FF] shadow-card p-6 w-full mt-2">
+                  <div className="text-2xl mb-2">{step.icon}</div>
+                  <div className="font-black text-brand-400 text-xs mb-1 ltr-num">{step.num}</div>
+                  <h3 className="font-black text-gray-900 text-sm mb-2">{isAr ? step.title : step.titleEn}</h3>
+                  <p className="text-gray-500 text-xs leading-relaxed">{isAr ? step.desc : step.descEn}</p>
+                </div>
               </div>
             ))}
           </div>

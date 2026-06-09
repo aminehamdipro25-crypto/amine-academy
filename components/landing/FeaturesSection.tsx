@@ -93,7 +93,7 @@ export default function FeaturesSection() {
           {PILLARS.map((p) => {
             const Icon = p.icon
             return (
-              <div key={p.id} className="bg-gray-50 rounded-3xl p-7 border border-gray-100 hover:border-gray-200 hover:shadow-lg transition-all">
+              <div key={p.id} className="bg-white rounded-3xl p-7 border border-[#F0E8FF] shadow-card hover:-translate-y-1 hover:shadow-[0_8px_32px_-4px_rgba(124,92,252,0.16)] transition-all">
                 {/* Tag + Icon */}
                 <div className="flex items-center justify-between mb-5">
                   <span className={`${p.tagColor} text-white text-xs font-black px-3 py-1 rounded-full tracking-widest`}>
@@ -142,7 +142,7 @@ export default function FeaturesSection() {
         {/* Extra features grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {EXTRA.map(({ icon: Icon, color, title, titleEn, desc, descEn }) => (
-            <div key={title} className="flex items-start gap-4 p-5 rounded-2xl border border-gray-100 hover:bg-gray-50 transition-colors">
+            <div key={title} className="flex items-start gap-4 p-5 rounded-3xl border border-[#F0E8FF] shadow-card hover:-translate-y-1 hover:shadow-[0_8px_32px_-4px_rgba(124,92,252,0.16)] transition-all bg-white">
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${color}`}>
                 <Icon className="w-5 h-5" />
               </div>

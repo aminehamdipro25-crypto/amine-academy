@@ -148,7 +148,7 @@ export default function PlansSection() {
   }, [userChoseCurrency])
 
   return (
-    <section className="py-20 bg-gray-50" id="plans" dir={isAr ? 'rtl' : 'ltr'}>
+    <section className="py-20 bg-white" id="plans" dir={isAr ? 'rtl' : 'ltr'}>
       <div className="max-w-7xl mx-auto px-6">
         <div className="text-center mb-10">
           <span className="text-brand-600 font-bold text-sm bg-brand-50 px-4 py-1.5 rounded-full">
@@ -209,11 +209,16 @@ export default function PlansSection() {
             const discountPct = settings?.discountPct ?? 0
             const discountedPrice = discountPct > 0 ? Math.round(basePrice * (1 - discountPct / 100)) : null
             const symbol = CURRENCY_SYMBOLS[currency]
+            const isPopular = plan.id === 'standard'
+            const cardClass = isPopular
+              ? 'rounded-3xl border-2 border-brand-500 shadow-brand bg-gradient-to-b from-white to-brand-50 overflow-hidden relative transition-shadow hover:shadow-xl'
+              : 'rounded-3xl border border-[#F0E8FF] shadow-card overflow-hidden bg-white relative transition-shadow hover:shadow-xl'
             return (
-              <div key={plan.id}
-                className={`rounded-2xl border-2 overflow-hidden bg-white relative transition-shadow hover:shadow-xl ${plan.color}`}>
+              <div key={plan.id} className={cardClass}>
                 {plan.badge && (
-                  <div className={`absolute top-4 left-4 text-xs font-black px-3 py-1 rounded-full ${plan.badgeColor}`}>
+                  <div className={`absolute top-4 ${isAr ? 'left-4' : 'right-4'} text-xs font-black px-4 py-1 rounded-full ${
+                    isPopular ? 'bg-brand-500 text-white' : plan.badgeColor
+                  }`}>
                     {isAr ? plan.badge : (('badgeEn' in plan && plan.badgeEn) ? plan.badgeEn : plan.badge)}
                   </div>
                 )}
@@ -258,7 +263,11 @@ export default function PlansSection() {
                     ))}
                   </ul>
                   <Link href={`/checkout?plan=${plan.id}&currency=${currency}`}
-                    className={`block w-full text-center font-bold py-3.5 rounded-xl transition-all ${plan.ctaStyle}`}>
+                    className={`block w-full text-center font-bold py-3.5 rounded-xl transition-all ${
+                      isPopular
+                        ? 'bg-gradient-to-l from-brand-600 to-brand-500 text-white hover:opacity-90 font-black'
+                        : plan.ctaStyle
+                    }`}>
                     {isAr ? `${plan.cta} ←` : `${plan.ctaEn} →`}
                   </Link>
                 </div>

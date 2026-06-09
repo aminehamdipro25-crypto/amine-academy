@@ -79,7 +79,7 @@ export default function ProgramsSection() {
   const isAr = lang === 'ar'
 
   return (
-    <section className="py-24 bg-gray-50" id="programs" dir={isAr ? 'rtl' : 'ltr'}>
+    <section className="py-24 bg-white" id="programs" dir={isAr ? 'rtl' : 'ltr'}>
       <div className="max-w-7xl mx-auto px-6">
 
         {/* Header */}
@@ -101,7 +101,7 @@ export default function ProgramsSection() {
         <div className="space-y-6">
           {PROGRAMS.map((prog) => (
             <div key={prog.age}
-              className={`bg-white rounded-3xl border overflow-hidden ${prog.border} hover:shadow-xl transition-shadow`}>
+              className="bg-white rounded-3xl border border-[#F0E8FF] shadow-card overflow-hidden hover:shadow-[0_8px_32px_-4px_rgba(124,92,252,0.16)] transition-all">
               {/* Top banner */}
               <div className={`bg-gradient-to-l ${prog.gradient} p-6 flex items-center gap-5`}>
                 <div className="text-5xl">{prog.emoji}</div>

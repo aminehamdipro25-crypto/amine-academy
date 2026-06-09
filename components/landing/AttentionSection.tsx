@@ -81,7 +81,7 @@ export default function AttentionSection() {
   const isAr = lang === 'ar'
 
   return (
-    <section className="py-24 bg-white" id="attention" dir={isAr ? 'rtl' : 'ltr'}>
+    <section className="py-24 bg-[#FFF8F0]" id="attention" dir={isAr ? 'rtl' : 'ltr'}>
       <div className="max-w-7xl mx-auto px-6">
 
         <div className="text-center mb-16">
@@ -176,7 +176,7 @@ export default function AttentionSection() {
           ))}
         </div>
 
-        <div className="mt-10 text-center bg-gray-50 rounded-2xl p-6">
+        <div className="mt-10 text-center bg-white rounded-3xl border border-[#F0E8FF] shadow-card p-6">
           <p className="text-gray-600 text-sm leading-relaxed max-w-2xl mx-auto">
             {isAr ? (
               <>

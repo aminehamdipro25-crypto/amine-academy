@@ -78,18 +78,18 @@ export default function InteractiveSessionSection() {
   const timeline = isAr ? SESSION_TIMELINE_AR : SESSION_TIMELINE_EN
 
   return (
-    <section className="py-24 bg-brand-950" id="how-it-works" dir={isAr ? 'rtl' : 'ltr'}>
+    <section className="py-24 bg-[#FFF8F0]" id="how-it-works" dir={isAr ? 'rtl' : 'ltr'}>
       <div className="max-w-7xl mx-auto px-6">
 
         {/* Header */}
         <div className="text-center mb-16">
-          <span className="inline-block text-brand-300 font-bold text-sm bg-brand-800 px-4 py-1.5 rounded-full mb-4">
+          <span className="inline-block text-brand-600 font-bold text-sm bg-brand-50 px-4 py-1.5 rounded-full mb-4">
             {isAr ? 'الجلسة التفاعلية' : 'The Interactive Session'}
           </span>
-          <h2 className="text-3xl md:text-5xl font-black text-white mb-5">
+          <h2 className="text-3xl md:text-5xl font-black text-gray-900 mb-5">
             {isAr ? 'ليست مجرد مكالمة فيديو' : 'More Than Just a Video Call'}
           </h2>
-          <p className="text-white/60 max-w-2xl mx-auto text-lg leading-relaxed">
+          <p className="text-gray-500 max-w-2xl mx-auto text-lg leading-relaxed">
             {isAr
               ? 'كل جلسة هي تجربة تعليمية متكاملة — الطفل يتحرك، يتعلم، ويكسب نقاطاً. الوالد يخرج بخطة يومية واضحة.'
               : 'Every session is a complete learning experience — the child moves, learns, and earns points. The parent leaves with a clear daily plan.'}
@@ -101,27 +101,27 @@ export default function InteractiveSessionSection() {
           {STEPS.map((step) => {
             const Icon = step.icon
             return (
-              <div key={step.num} className="bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-colors">
+              <div key={step.num} className="bg-white rounded-3xl border border-[#F0E8FF] shadow-card p-6 hover:-translate-y-1 transition-all">
                 <div className="flex items-center gap-3 mb-4">
                   <span className={`w-9 h-9 ${step.color} rounded-xl flex items-center justify-center text-white font-black text-sm flex-shrink-0`}>
                     {step.num}
                   </span>
-                  <Icon className="w-5 h-5 text-white/40" />
+                  <Icon className="w-5 h-5 text-brand-400" />
                 </div>
-                <h3 className="text-white font-black text-base mb-2">{isAr ? step.title : step.titleEn}</h3>
-                <p className="text-white/60 text-sm leading-relaxed">{isAr ? step.desc : step.descEn}</p>
+                <h3 className="text-gray-900 font-black text-base mb-2">{isAr ? step.title : step.titleEn}</h3>
+                <p className="text-gray-500 text-sm leading-relaxed">{isAr ? step.desc : step.descEn}</p>
               </div>
             )
           })}
         </div>
 
         {/* Session preview card */}
-        <div className="bg-white/5 border border-white/10 rounded-3xl p-8 md:p-10 mb-10">
+        <div className="bg-white rounded-3xl border border-[#F0E8FF] shadow-card p-8 md:p-10 mb-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
 
             {/* Left: What a session looks like */}
             <div>
-              <h3 className="text-white font-black text-2xl mb-6">
+              <h3 className="text-gray-900 font-black text-2xl mb-6">
                 {isAr ? 'ماذا يحدث في 45 دقيقة؟' : 'What Happens in 45 Minutes?'}
               </h3>
               <div className="space-y-4">
@@ -129,11 +129,11 @@ export default function InteractiveSessionSection() {
                   <div key={time} className="flex items-center gap-4">
                     <div className="flex items-center gap-2 w-20 flex-shrink-0">
                       <div className={`w-2 h-2 rounded-full ${color}`} />
-                      <span className="text-white/50 text-xs ltr-num">{time}</span>
+                      <span className="text-gray-400 text-xs ltr-num">{time}</span>
                     </div>
                     <div className="flex-1">
-                      <span className="text-white font-bold text-sm">{label}</span>
-                      <span className="text-white/40 text-xs mr-2 ml-2">{note}</span>
+                      <span className="text-gray-800 font-bold text-sm">{label}</span>
+                      <span className="text-gray-400 text-xs mr-2 ml-2">{note}</span>
                     </div>
                   </div>
                 ))}
@@ -142,25 +142,25 @@ export default function InteractiveSessionSection() {
 
             {/* Right: Benefits */}
             <div>
-              <h3 className="text-white font-black text-2xl mb-6">
+              <h3 className="text-gray-900 font-black text-2xl mb-6">
                 {isAr ? 'لماذا عن بُعد يعمل أفضل؟' : 'Why Does Remote Work Better?'}
               </h3>
               <div className="grid grid-cols-2 gap-3 mb-8">
                 {benefits.map(b => (
                   <div key={b} className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                    <span className="text-white/70 text-sm">{b}</span>
+                    <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                    <span className="text-gray-600 text-sm">{b}</span>
                   </div>
                 ))}
               </div>
 
-              <div className="bg-white/10 rounded-2xl p-5 flex items-center gap-4">
-                <Clock className="w-8 h-8 text-brand-300 flex-shrink-0" />
+              <div className="bg-brand-50 rounded-2xl p-5 flex items-center gap-4 border border-brand-100">
+                <Clock className="w-8 h-8 text-brand-500 flex-shrink-0" />
                 <div>
-                  <p className="text-white font-black text-sm">
+                  <p className="text-gray-900 font-black text-sm">
                     {isAr ? 'جلسة تقييمية مجانية للتعارف' : 'Free Assessment Session'}
                   </p>
-                  <p className="text-white/60 text-xs mt-0.5">
+                  <p className="text-gray-500 text-xs mt-0.5">
                     {isAr
                       ? '30 دقيقة مع الأستاذ أمين — بدون أي التزام'
                       : '30 minutes with Prof. Amine — no commitment required'}
@@ -175,11 +175,11 @@ export default function InteractiveSessionSection() {
         {/* CTA */}
         <div className="text-center">
           <Link href="/register"
-            className="inline-flex items-center gap-3 bg-white text-brand-900 font-black text-lg px-10 py-4 rounded-2xl hover:bg-brand-50 transition-all hover:scale-105 shadow-2xl shadow-black/30">
+            className="inline-flex items-center gap-3 bg-gradient-to-l from-brand-600 to-brand-500 text-white font-black text-lg px-10 py-4 rounded-2xl hover:-translate-y-1 transition-all shadow-brand">
             <Video className="w-5 h-5" />
             {isAr ? 'احجز الجلسة التقييمية المجانية' : 'Book Your Free Assessment Session'}
           </Link>
-          <p className="text-white/40 text-sm mt-4">
+          <p className="text-gray-400 text-sm mt-4">
             {isAr ? 'بدون بطاقة ائتمانية • متاح لجميع الدول' : 'No credit card required • Available worldwide'}
           </p>
         </div>

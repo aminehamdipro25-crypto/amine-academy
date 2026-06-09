@@ -40,7 +40,7 @@ export default function TestimonialsSection() {
   const isAr = lang === 'ar'
 
   return (
-    <section className="py-20 bg-white" dir={isAr ? 'rtl' : 'ltr'}>
+    <section className="py-20 bg-[#FFF8F0]" dir={isAr ? 'rtl' : 'ltr'}>
       <div className="max-w-7xl mx-auto px-6">
         <div className="text-center mb-14">
           <span className="text-brand-600 font-bold text-sm bg-brand-50 px-4 py-1.5 rounded-full">
@@ -54,15 +54,17 @@ export default function TestimonialsSection() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {testimonials.map(({ name, nameEn, role, roleEn, text, textEn, stars, country }) => (
             <div key={name}
-              className="card-hover bg-gray-50 hover:bg-white rounded-2xl p-6 border border-gray-100 hover:border-brand-100">
+              className="bg-white rounded-3xl border border-[#F0E8FF] shadow-card p-6 hover:-translate-y-1 transition-all">
+              {/* Large quote mark */}
+              <div className="text-brand-200 font-black text-6xl leading-none mb-2 select-none">&ldquo;</div>
               <div className="flex items-center gap-1 mb-4">
                 {Array.from({ length: stars }).map((_, i) => (
                   <Star key={i} className="w-4 h-4 text-gold-400 fill-gold-400" />
                 ))}
               </div>
-              <p className="text-gray-700 text-sm leading-relaxed mb-5">&ldquo;{isAr ? text : textEn}&rdquo;</p>
+              <p className="text-gray-700 text-sm leading-relaxed mb-5">{isAr ? text : textEn}</p>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-brand-100 rounded-full flex items-center justify-center text-brand-600 font-black">
+                <div className="w-12 h-12 rounded-full bg-brand-100 text-2xl flex items-center justify-center flex-shrink-0">
                   {(isAr ? name : nameEn)[0]}
                 </div>
                 <div>

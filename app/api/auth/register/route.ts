@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createParent, getParentByEmail, createStudent, updateParent, createActivationCode } from '@/lib/db'
 import { hashPassword } from '@/lib/password'
 import { sendEmail, welcomeParentEmail } from '@/lib/mailer'
+import { tg } from '@/lib/telegram'
 import type { AgeGroup, Diagnosis } from '@/lib/types'
 
 export const runtime = 'nodejs'
@@ -91,6 +92,18 @@ export async function POST(req: NextRequest) {
     } catch (mailErr) {
       console.warn('[register] email skipped:', (mailErr as Error).message)
     }
+
+    // Telegram notification (non-blocking)
+    tg(
+      `🆕 <b>تسجيل جديد!</b>\n\n` +
+      `👤 ${newParent.firstName} ${newParent.lastName}\n` +
+      `📧 ${newParent.email}\n` +
+      `📱 ${newParent.phone || 'لم يُذكر'}\n` +
+      `🧒 الطفل: ${student.firstName} ${student.lastName}\n` +
+      `🏷 التشخيص: ${student.diagnosis} | العمر: ${student.ageGroup}\n` +
+      `📦 الخطة: ${newParent.subscriptionPlan}\n` +
+      `🕐 ${new Date().toLocaleString('ar-SA', { timeZone: 'Asia/Qatar' })}`
+    ).catch(() => {})
 
     return NextResponse.json({ ok: true, parentId: newParent.id })
   } catch (err) {

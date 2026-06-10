@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import { verifyToken } from '@/lib/auth'
 import { createAppointment, updateAppointment, getParentAppointments, getParent } from '@/lib/db'
 import { sendEmail, appointmentConfirmEmail } from '@/lib/mailer'
+import { tg } from '@/lib/telegram'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -60,6 +61,16 @@ export async function POST(req: Request) {
           subject: 'تأكيد الموعد — أكاديمية أمين',
           html:    appointmentConfirmEmail(`${parent.firstName} ${parent.lastName}`, date, timeSlot),
         })
+        tg(
+          `📅 <b>موعد جديد!</b>\n\n` +
+          `👤 ${parent.firstName} ${parent.lastName}\n` +
+          `📧 ${parent.email}\n` +
+          `📌 النوع: ${type}\n` +
+          `📆 التاريخ: ${date}\n` +
+          `⏰ الوقت: ${timeSlot}\n` +
+          (appt.notes ? `📝 ملاحظات: ${appt.notes}\n` : '') +
+          `🕐 ${new Date().toLocaleString('ar-SA', { timeZone: 'Asia/Qatar' })}`
+        ).catch(() => {})
       }
     } catch { /* email failure non-critical */ }
 

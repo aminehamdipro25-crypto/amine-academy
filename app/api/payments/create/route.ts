@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createPendingPayment } from '@/lib/db'
 import { getSiteSettings } from '@/lib/site-settings'
 import { sendEmail } from '@/lib/mailer'
+import { tg } from '@/lib/telegram'
 import type { PaymentMethod } from '@/lib/types'
 
 const METHOD_LABELS: Record<PaymentMethod, string> = {
@@ -150,6 +151,19 @@ export async function POST(req: NextRequest) {
     } catch (e) {
       console.warn('[payments/create] admin email failed:', (e as Error).message)
     }
+
+    // Telegram notification (non-blocking)
+    tg(
+      `💳 <b>طلب دفع جديد!</b>\n\n` +
+      `👤 ${guestName}\n` +
+      `📧 ${guestEmail}\n` +
+      `📱 ${guestPhone}\n` +
+      `📦 الخطة: ${planLabel}\n` +
+      `💰 المبلغ: ${amount} ${currencyLabel}\n` +
+      `🏦 طريقة الدفع: ${methodLabel}\n` +
+      `🔑 المرجع: <code>${payment.referenceCode}</code>\n` +
+      `🕐 ${new Date().toLocaleString('ar-SA', { timeZone: 'Asia/Qatar' })}`
+    ).catch(() => {})
 
     return NextResponse.json({
       ok: true,

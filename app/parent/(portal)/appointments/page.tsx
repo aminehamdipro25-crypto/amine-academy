@@ -21,17 +21,16 @@ const TYPE_DESCS: Record<string, string> = {
   review:       'مراجعة وتعديل البرنامج',
 }
 
-const STATUS_CFG: Record<string, { label: string; color: string; icon: React.ElementType }> = {
-  scheduled:  { label: 'مُجدولة',  color: 'bg-blue-100 text-blue-700',   icon: Clock },
-  completed:  { label: 'منتهية',   color: 'bg-green-100 text-green-700', icon: CheckCircle },
-  cancelled:  { label: 'ملغاة',    color: 'bg-red-100 text-red-700',     icon: XCircle },
-  'no-show':  { label: 'غياب',     color: 'bg-gray-100 text-gray-500',   icon: AlertCircle },
+const STATUS_CFG: Record<string, { label: string; bg: string; color: string; icon: React.ElementType }> = {
+  scheduled: { label: 'مُجدولة', bg: '#EFF6FF', color: '#1D4ED8', icon: Clock },
+  completed: { label: 'منتهية',  bg: '#F0FFF4', color: '#15803D', icon: CheckCircle },
+  cancelled: { label: 'ملغاة',   bg: '#FEF2F2', color: '#B91C1C', icon: XCircle },
+  'no-show': { label: 'غياب',    bg: '#F9FAFB', color: '#6B7280', icon: AlertCircle },
 }
 
 const QUICK_TIMES = ['09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00']
 
 function isSessionLive(date: string, timeSlot: string): boolean {
-  // timeSlot may be "HH:MM" (new) or "HH:MM-HH:MM" (legacy)
   const startPart = timeSlot.includes('-') ? timeSlot.split('-')[0] : timeSlot
   const endPart   = timeSlot.includes('-') ? timeSlot.split('-')[1] : null
   const [startH, startM] = startPart.split(':').map(Number)
@@ -94,14 +93,15 @@ export default function AppointmentsPage() {
   const past = appointments.filter(a => a.status !== 'scheduled')
 
   if (loading) return (
-    <div className="flex items-center justify-center py-20">
-      <div className="text-brand-600 text-4xl animate-pulse">📅</div>
+    <div className="flex items-center justify-center py-20" dir="rtl">
+      <div className="text-4xl animate-pulse">📅</div>
     </div>
   )
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <div className="space-y-6" dir="rtl">
+
+      {/* ── Header ── */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-black text-2xl text-gray-900">مواعيدي</h1>
@@ -109,16 +109,19 @@ export default function AppointmentsPage() {
         </div>
         <button
           onClick={() => setShowBook(true)}
-          className="flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white font-bold px-4 py-2.5 rounded-xl text-sm transition-colors"
+          className="flex items-center gap-2 text-white font-bold px-4 py-2.5 rounded-xl text-sm transition-all"
+          style={{ background: '#6B46F0' }}
+          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#5A32D9' }}
+          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '#6B46F0' }}
         >
-          <Plus className="w-4 h-4" />
-          حجز جلسة
+          <Plus className="w-4 h-4" /> حجز جلسة
         </button>
       </div>
 
+      {/* ── Success banner ── */}
       {success && (
-        <div className="bg-green-50 border border-green-200 rounded-2xl p-4 flex items-center gap-3">
-          <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
+        <div className="rounded-2xl p-4 flex items-center gap-3" style={{ background: '#F0FFF4', border: '1.5px solid #A7F3D0' }}>
+          <CheckCircle className="w-5 h-5 flex-shrink-0" style={{ color: '#16A34A' }} />
           <div>
             <p className="font-bold text-green-800 text-sm">تم تأكيد حجزك بنجاح!</p>
             <p className="text-green-700 text-xs mt-0.5">ستجد رابط الجلسة في تفاصيل الموعد. ستصلك أيضاً رسالة تأكيد على بريدك.</p>
@@ -126,23 +129,33 @@ export default function AppointmentsPage() {
         </div>
       )}
 
-      {/* Upcoming */}
+      {/* ── Upcoming ── */}
       <div>
         <h2 className="font-black text-gray-900 mb-3 flex items-center gap-2">
-          <Calendar className="w-5 h-5 text-brand-600" />
+          <Calendar className="w-5 h-5" style={{ color: '#6B46F0' }} />
           الجلسات القادمة
           {upcoming.length > 0 && (
-            <span className="bg-brand-100 text-brand-700 text-xs font-bold px-2 py-0.5 rounded-full">{upcoming.length}</span>
+            <span className="text-xs font-bold px-2 py-0.5 rounded-full ltr-num" style={{ background: '#F3EEFF', color: '#5A32D9' }}>
+              {upcoming.length}
+            </span>
           )}
         </h2>
 
         {upcoming.length === 0 ? (
-          <div className="bg-white rounded-2xl border-2 border-dashed border-gray-200 p-8 text-center">
+          <div
+            className="rounded-2xl p-8 text-center"
+            style={{ background: '#FFFFFF', border: '2px dashed #E5E7EB' }}
+          >
             <Calendar className="w-10 h-10 text-gray-300 mx-auto mb-3" />
             <p className="text-gray-500 text-sm mb-4">لا توجد جلسات مجدولة</p>
-            <button onClick={() => setShowBook(true)} className="inline-flex items-center gap-2 bg-brand-600 text-white font-bold px-5 py-2.5 rounded-xl text-sm hover:bg-brand-700 transition-colors">
-              <Plus className="w-4 h-4" />
-              احجز جلسة الآن
+            <button
+              onClick={() => setShowBook(true)}
+              className="inline-flex items-center gap-2 text-white font-bold px-5 py-2.5 rounded-xl text-sm transition-all"
+              style={{ background: '#6B46F0' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#5A32D9' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '#6B46F0' }}
+            >
+              <Plus className="w-4 h-4" /> احجز جلسة الآن
             </button>
           </div>
         ) : (
@@ -150,18 +163,29 @@ export default function AppointmentsPage() {
             {upcoming.map(appt => {
               const live = isSessionLive(appt.date, appt.timeSlot)
               return (
-                <div key={appt.id} className={`bg-white rounded-2xl border-2 p-5 transition-all ${live ? 'border-green-400 shadow-lg shadow-green-100' : 'border-gray-100'}`}>
+                <div
+                  key={appt.id}
+                  className="rounded-2xl p-5 transition-all"
+                  style={{
+                    background: '#FFFFFF',
+                    border: live ? '2px solid #4ADE80' : '1.5px solid #F0E8FF',
+                    boxShadow: live ? '0 4px 24px rgba(74,222,128,0.2)' : '0 1px 4px rgba(0,0,0,0.04)',
+                  }}
+                >
                   {live && (
-                    <div className="flex items-center gap-2 mb-3 bg-green-50 rounded-xl px-3 py-2">
-                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                      <span className="text-green-700 font-black text-sm">الجلسة جارية الآن!</span>
+                    <div className="flex items-center gap-2 mb-3 rounded-xl px-3 py-2" style={{ background: '#F0FFF4' }}>
+                      <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: '#22C55E' }} />
+                      <span className="font-black text-sm" style={{ color: '#15803D' }}>الجلسة جارية الآن!</span>
                     </div>
                   )}
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 flex-wrap mb-2">
                         <span className="font-black text-gray-900">{TYPE_LABELS[appt.type] || appt.type}</span>
-                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${STATUS_CFG[appt.status]?.color}`}>
+                        <span
+                          className="text-xs font-bold px-2 py-0.5 rounded-full"
+                          style={{ background: STATUS_CFG[appt.status]?.bg || '#F9FAFB', color: STATUS_CFG[appt.status]?.color || '#6B7280' }}
+                        >
                           {STATUS_CFG[appt.status]?.label}
                         </span>
                       </div>
@@ -182,11 +206,20 @@ export default function AppointmentsPage() {
                         href={appt.meetingUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className={`flex items-center gap-2 font-black px-4 py-2.5 rounded-xl text-sm transition-all flex-shrink-0 ${
+                        className="flex items-center gap-2 font-black px-4 py-2.5 rounded-xl text-sm transition-all flex-shrink-0"
+                        style={
                           live
-                            ? 'bg-green-600 hover:bg-green-700 text-white shadow-lg animate-pulse'
-                            : 'bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200'
-                        }`}
+                            ? { background: '#16A34A', color: '#FFFFFF', boxShadow: '0 4px 12px rgba(22,163,74,0.4)' }
+                            : { background: '#F3EEFF', color: '#5A32D9', border: '1.5px solid #E8DBFF' }
+                        }
+                        onMouseEnter={e => {
+                          if (live) (e.currentTarget as HTMLAnchorElement).style.background = '#15803D'
+                          else { (e.currentTarget as HTMLAnchorElement).style.background = '#E8DBFF' }
+                        }}
+                        onMouseLeave={e => {
+                          if (live) (e.currentTarget as HTMLAnchorElement).style.background = '#16A34A'
+                          else { (e.currentTarget as HTMLAnchorElement).style.background = '#F3EEFF' }
+                        }}
                       >
                         <Video className="w-4 h-4" />
                         {live ? 'انضم الآن' : 'رابط الجلسة'}
@@ -194,7 +227,7 @@ export default function AppointmentsPage() {
                     )}
                   </div>
                   {appt.meetingUrl && (
-                    <div className="mt-3 pt-3 border-t border-gray-100">
+                    <div className="mt-3 pt-3" style={{ borderTop: '1px solid #F0E8FF' }}>
                       <p className="text-xs text-gray-400">
                         <span className="font-bold">أداة الجلسة:</span> Jitsi Meet — تعمل مباشرة في المتصفح، لا حاجة لتنزيل أي برنامج
                       </p>
@@ -207,18 +240,25 @@ export default function AppointmentsPage() {
         )}
       </div>
 
-      {/* Past appointments */}
+      {/* ── Past appointments ── */}
       {past.length > 0 && (
         <div>
-          <h2 className="font-black text-gray-900 mb-3 text-sm text-gray-600">الجلسات السابقة</h2>
+          <h2 className="font-black text-gray-600 mb-3 text-sm">الجلسات السابقة</h2>
           <div className="space-y-2">
             {past.map(appt => (
-              <div key={appt.id} className="bg-white rounded-xl border border-gray-100 p-4 flex items-center justify-between">
+              <div
+                key={appt.id}
+                className="rounded-xl p-4 flex items-center justify-between"
+                style={{ background: '#FFFFFF', border: '1px solid #F3F4F6' }}
+              >
                 <div>
                   <span className="font-bold text-gray-700 text-sm">{TYPE_LABELS[appt.type]}</span>
                   <div className="text-gray-400 text-xs mt-0.5 ltr-num">{appt.date} • {appt.timeSlot}</div>
                 </div>
-                <span className={`text-xs font-bold px-2 py-1 rounded-full ${STATUS_CFG[appt.status]?.color}`}>
+                <span
+                  className="text-xs font-bold px-2 py-1 rounded-full"
+                  style={{ background: STATUS_CFG[appt.status]?.bg || '#F9FAFB', color: STATUS_CFG[appt.status]?.color || '#6B7280' }}
+                >
                   {STATUS_CFG[appt.status]?.label}
                 </span>
               </div>
@@ -227,10 +267,14 @@ export default function AppointmentsPage() {
         </div>
       )}
 
-      {/* Booking modal */}
+      {/* ── Booking modal ── */}
       {showBook && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4" onClick={e => e.target === e.currentTarget && setShowBook(false)}>
-          <div className="bg-white rounded-3xl w-full max-w-md p-6">
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.5)' }}
+          onClick={e => e.target === e.currentTarget && setShowBook(false)}
+        >
+          <div className="rounded-3xl w-full max-w-md p-6" style={{ background: '#FFFFFF' }}>
             <h3 className="font-black text-xl text-gray-900 mb-5">حجز جلسة جديدة</h3>
             <form onSubmit={handleBook} className="space-y-4">
               {children.length > 1 && (
@@ -239,7 +283,10 @@ export default function AppointmentsPage() {
                   <select
                     value={booking.studentId}
                     onChange={e => setBooking(b => ({ ...b, studentId: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300"
+                    className="w-full rounded-xl px-4 py-3 text-sm focus:outline-none"
+                    style={{ border: '1.5px solid #E5E7EB' }}
+                    onFocus={e => { e.target.style.border = '1.5px solid #7C5CFC'; e.target.style.boxShadow = '0 0 0 3px rgba(124,92,252,0.1)' }}
+                    onBlur={e => { e.target.style.border = '1.5px solid #E5E7EB'; e.target.style.boxShadow = 'none' }}
                   >
                     {children.map(c => (
                       <option key={c.id} value={c.id}>{c.firstName} {c.lastName}</option>
@@ -247,23 +294,31 @@ export default function AppointmentsPage() {
                   </select>
                 </div>
               )}
+
               <div>
                 <label className="text-xs font-bold text-gray-500 block mb-1.5">نوع الجلسة</label>
                 <div className="grid grid-cols-2 gap-2">
                   {Object.entries(TYPE_LABELS).map(([val, label]) => (
-                    <button key={val} type="button"
+                    <button
+                      key={val}
+                      type="button"
                       onClick={() => setBooking(b => ({ ...b, type: val }))}
-                      className={`text-right p-3 rounded-xl border-2 transition-colors ${
+                      className="text-right p-3 rounded-xl transition-all"
+                      style={
                         booking.type === val
-                          ? 'border-brand-500 bg-brand-50'
-                          : 'border-gray-200 hover:border-brand-200'
-                      }`}>
+                          ? { border: '2px solid #7C5CFC', background: '#F3EEFF' }
+                          : { border: '2px solid #E5E7EB', background: '#FFFFFF' }
+                      }
+                      onMouseEnter={e => { if (booking.type !== val) (e.currentTarget as HTMLButtonElement).style.borderColor = '#D3BBFF' }}
+                      onMouseLeave={e => { if (booking.type !== val) (e.currentTarget as HTMLButtonElement).style.borderColor = '#E5E7EB' }}
+                    >
                       <div className="font-bold text-xs text-gray-900">{label}</div>
                       <div className="text-[10px] text-gray-400 mt-0.5">{TYPE_DESCS[val]}</div>
                     </button>
                   ))}
                 </div>
               </div>
+
               <div>
                 <label className="text-xs font-bold text-gray-500 block mb-1">التاريخ</label>
                 <input
@@ -272,9 +327,13 @@ export default function AppointmentsPage() {
                   min={new Date().toISOString().split('T')[0]}
                   value={booking.date}
                   onChange={e => setBooking(b => ({ ...b, date: e.target.value }))}
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300"
+                  className="w-full rounded-xl px-4 py-3 text-sm focus:outline-none"
+                  style={{ border: '1.5px solid #E5E7EB' }}
+                  onFocus={e => { e.target.style.border = '1.5px solid #7C5CFC'; e.target.style.boxShadow = '0 0 0 3px rgba(124,92,252,0.1)' }}
+                  onBlur={e => { e.target.style.border = '1.5px solid #E5E7EB'; e.target.style.boxShadow = 'none' }}
                 />
               </div>
+
               <div>
                 <label className="text-xs font-bold text-gray-500 block mb-1.5">الوقت المفضل</label>
                 <input
@@ -282,22 +341,32 @@ export default function AppointmentsPage() {
                   required
                   value={booking.timeSlot}
                   onChange={e => setBooking(b => ({ ...b, timeSlot: e.target.value }))}
-                  className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-400 ltr-num"
+                  className="w-full rounded-xl px-4 py-3 text-sm focus:outline-none ltr-num"
+                  style={{ border: '1.5px solid #E5E7EB' }}
+                  onFocus={e => { e.target.style.border = '1.5px solid #7C5CFC'; e.target.style.boxShadow = '0 0 0 3px rgba(124,92,252,0.1)' }}
+                  onBlur={e => { e.target.style.border = '1.5px solid #E5E7EB'; e.target.style.boxShadow = 'none' }}
                 />
                 <div className="flex gap-1.5 flex-wrap mt-2">
                   {QUICK_TIMES.map(t => (
-                    <button key={t} type="button"
+                    <button
+                      key={t}
+                      type="button"
                       onClick={() => setBooking(b => ({ ...b, timeSlot: t }))}
-                      className={`text-xs font-bold px-2.5 py-1 rounded-full border transition-colors ltr-num ${
+                      className="text-xs font-bold px-2.5 py-1 rounded-full transition-all ltr-num"
+                      style={
                         booking.timeSlot === t
-                          ? 'bg-brand-600 text-white border-brand-600'
-                          : 'border-gray-200 text-gray-500 hover:border-brand-300 hover:text-brand-600'
-                      }`}>
+                          ? { background: '#6B46F0', color: '#FFFFFF', border: '1px solid #6B46F0' }
+                          : { background: '#FFFFFF', color: '#6B7280', border: '1px solid #E5E7EB' }
+                      }
+                      onMouseEnter={e => { if (booking.timeSlot !== t) { (e.currentTarget as HTMLButtonElement).style.borderColor = '#D3BBFF'; (e.currentTarget as HTMLButtonElement).style.color = '#6B46F0' } }}
+                      onMouseLeave={e => { if (booking.timeSlot !== t) { (e.currentTarget as HTMLButtonElement).style.borderColor = '#E5E7EB'; (e.currentTarget as HTMLButtonElement).style.color = '#6B7280' } }}
+                    >
                       {t}
                     </button>
                   ))}
                 </div>
               </div>
+
               <div>
                 <label className="text-xs font-bold text-gray-500 block mb-1">ملاحظات (اختياري)</label>
                 <textarea
@@ -305,17 +374,31 @@ export default function AppointmentsPage() {
                   value={booking.notes}
                   onChange={e => setBooking(b => ({ ...b, notes: e.target.value }))}
                   placeholder="أي معلومات مهمة تريد إبلاغ الأستاذ بها..."
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-brand-300"
+                  className="w-full rounded-xl px-4 py-3 text-sm resize-none focus:outline-none"
+                  style={{ border: '1.5px solid #E5E7EB' }}
+                  onFocus={e => { e.target.style.border = '1.5px solid #7C5CFC'; e.target.style.boxShadow = '0 0 0 3px rgba(124,92,252,0.1)' }}
+                  onBlur={e => { e.target.style.border = '1.5px solid #E5E7EB'; e.target.style.boxShadow = 'none' }}
                 />
               </div>
+
               <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setShowBook(false)} className="flex-1 border-2 border-gray-200 text-gray-600 font-bold py-3 rounded-xl text-sm hover:bg-gray-50 transition-colors">
+                <button
+                  type="button"
+                  onClick={() => setShowBook(false)}
+                  className="flex-1 font-bold py-3 rounded-xl text-sm text-gray-600 transition-all"
+                  style={{ border: '2px solid #E5E7EB', background: '#FFFFFF' }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#F9FAFB' }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '#FFFFFF' }}
+                >
                   إلغاء
                 </button>
                 <button
                   type="submit"
                   disabled={submitting || !booking.date || !booking.timeSlot || !booking.studentId}
-                  className="flex-1 bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white font-black py-3 rounded-xl text-sm transition-colors"
+                  className="flex-1 font-black py-3 rounded-xl text-sm text-white transition-all disabled:opacity-50"
+                  style={{ background: '#6B46F0' }}
+                  onMouseEnter={e => { if (!submitting) (e.currentTarget as HTMLButtonElement).style.background = '#5A32D9' }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '#6B46F0' }}
                 >
                   {submitting ? 'جاري الحجز...' : 'تأكيد الحجز'}
                 </button>

@@ -3,7 +3,6 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { Send, MessageCircle, Phone, Mail, Bot, User } from 'lucide-react'
 import type { Message } from '@/lib/types'
 
-// ── AI Chatbot types ─────────────────────────────────────────
 interface AIMsg { role: 'user' | 'assistant'; text: string; time: string }
 
 const QUICK = [
@@ -18,18 +17,14 @@ function nowTime() {
 }
 
 function formatMsgTime(iso: string) {
-  try {
-    return new Date(iso).toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit' })
-  } catch { return '' }
+  try { return new Date(iso).toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit' }) } catch { return '' }
 }
 
 function formatMsgDate(iso: string) {
-  try {
-    return new Date(iso).toLocaleDateString('ar', { year: 'numeric', month: 'short', day: 'numeric' })
-  } catch { return '' }
+  try { return new Date(iso).toLocaleDateString('ar', { year: 'numeric', month: 'short', day: 'numeric' }) } catch { return '' }
 }
 
-// ── AI Chat Tab ───────────────────────────────────────────────
+// ── AI Chat Tab ──────────────────────────────────────────────────
 function AIChatTab() {
   const [msgs, setMsgs] = useState<AIMsg[]>([
     { role: 'assistant', text: 'أهلاً! أنا المساعد الذكي لأكاديمية أمين. كيف يمكنني مساعدتك اليوم؟', time: nowTime() },
@@ -38,9 +33,7 @@ function AIChatTab() {
   const [loading, setLoading] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [msgs])
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [msgs])
 
   async function send(text: string) {
     if (!text.trim() || loading) return
@@ -49,10 +42,7 @@ function AIChatTab() {
     setInput('')
     setLoading(true)
     try {
-      const history = [...msgs, userMsg].slice(-6).map(m => ({
-        role: m.role,
-        content: m.text,
-      }))
+      const history = [...msgs, userMsg].slice(-6).map(m => ({ role: m.role, content: m.text }))
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -69,10 +59,10 @@ function AIChatTab() {
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
-      {/* Contact links */}
-      <div className="bg-white border-b border-[#F0E8FF] px-5 py-3 flex items-center justify-between flex-shrink-0">
+      {/* Contact links bar */}
+      <div className="px-5 py-3 flex items-center justify-between flex-shrink-0" style={{ background: '#FFFFFF', borderBottom: '1.5px solid #F0E8FF' }}>
         <div className="flex items-center gap-2">
-          <div className="w-2 h-2 bg-green-500 rounded-full" />
+          <div className="w-2 h-2 rounded-full" style={{ background: '#22C55E' }} />
           <span className="text-xs text-gray-500">المساعد الذكي متاح الآن</span>
         </div>
         <div className="flex items-center gap-2">
@@ -80,31 +70,38 @@ function AIChatTab() {
             href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '97430653759'}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 bg-green-50 text-green-700 font-bold text-xs px-3 py-1.5 rounded-2xl hover:bg-green-100 transition-colors"
+            className="flex items-center gap-1.5 font-bold text-xs px-3 py-1.5 rounded-2xl transition-all"
+            style={{ background: '#ECFDF5', color: '#15803D' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = '#D1FAE5' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = '#ECFDF5' }}
           >
-            <Phone className="w-3.5 h-3.5" />
-            واتساب
+            <Phone className="w-3.5 h-3.5" /> واتساب
           </a>
           <a
             href="mailto:amine.hamdi.pro25@gmail.com"
-            className="flex items-center gap-1.5 bg-brand-50 text-brand-700 font-bold text-xs px-3 py-1.5 rounded-2xl hover:bg-brand-100 transition-colors"
+            className="flex items-center gap-1.5 font-bold text-xs px-3 py-1.5 rounded-2xl transition-all"
+            style={{ background: '#F3EEFF', color: '#5A32D9' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = '#E8DBFF' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = '#F3EEFF' }}
           >
-            <Mail className="w-3.5 h-3.5" />
-            بريد
+            <Mail className="w-3.5 h-3.5" /> بريد
           </a>
         </div>
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto bg-[#FFF8F0] px-4 py-4 space-y-4">
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4" style={{ background: '#FFF8F0' }}>
         {msgs.map((m, i) => (
           <div key={i} className={`flex ${m.role === 'user' ? 'justify-start' : 'justify-end'}`}>
             <div className={`max-w-[80%] ${m.role === 'user' ? 'order-2' : 'order-1'}`}>
-              <div className={`px-4 py-3 text-sm leading-relaxed ${
-                m.role === 'user'
-                  ? 'bg-brand-500 text-white rounded-3xl rounded-tr-lg'
-                  : 'bg-white border border-[#F0E8FF] text-gray-700 rounded-3xl rounded-tl-lg shadow-card'
-              }`}>
+              <div
+                className="px-4 py-3 text-sm leading-relaxed"
+                style={
+                  m.role === 'user'
+                    ? { background: '#7C5CFC', color: '#FFFFFF', borderRadius: '24px 24px 8px 24px' }
+                    : { background: '#FFFFFF', color: '#374151', border: '1.5px solid #F0E8FF', borderRadius: '24px 24px 24px 8px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }
+                }
+              >
                 {m.text}
               </div>
               <div className={`text-xs text-gray-400 mt-1 ltr-num ${m.role === 'user' ? 'text-right' : 'text-left'}`}>
@@ -115,10 +112,13 @@ function AIChatTab() {
         ))}
         {loading && (
           <div className="flex justify-end">
-            <div className="bg-white border border-[#F0E8FF] rounded-3xl rounded-tl-lg px-4 py-3 shadow-card">
+            <div
+              className="px-4 py-3"
+              style={{ background: '#FFFFFF', border: '1.5px solid #F0E8FF', borderRadius: '24px 24px 24px 8px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}
+            >
               <div className="flex gap-1">
                 {[0, 0.15, 0.3].map((d, i) => (
-                  <div key={i} className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: `${d}s` }} />
+                  <div key={i} className="w-2 h-2 rounded-full animate-bounce" style={{ background: '#9CA3AF', animationDelay: `${d}s` }} />
                 ))}
               </div>
             </div>
@@ -128,12 +128,15 @@ function AIChatTab() {
       </div>
 
       {/* Quick replies */}
-      <div className="bg-white border-t border-[#F0E8FF] px-4 py-2 flex gap-2 overflow-x-auto flex-shrink-0">
+      <div className="px-4 py-2 flex gap-2 overflow-x-auto flex-shrink-0" style={{ background: '#FFFFFF', borderTop: '1.5px solid #F0E8FF' }}>
         {QUICK.map(q => (
           <button
             key={q}
             onClick={() => send(q)}
-            className="text-xs bg-[#FFF8F0] hover:bg-brand-50 hover:text-brand-700 text-gray-600 border border-[#F0E8FF] px-3 py-1.5 rounded-full whitespace-nowrap transition-colors flex-shrink-0"
+            className="text-xs font-medium px-3 py-1.5 rounded-full whitespace-nowrap flex-shrink-0 transition-all"
+            style={{ background: '#FFF8F0', color: '#6B7280', border: '1px solid #F0E8FF' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#F3EEFF'; (e.currentTarget as HTMLButtonElement).style.color = '#5A32D9'; (e.currentTarget as HTMLButtonElement).style.borderColor = '#D3BBFF' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '#FFF8F0'; (e.currentTarget as HTMLButtonElement).style.color = '#6B7280'; (e.currentTarget as HTMLButtonElement).style.borderColor = '#F0E8FF' }}
           >
             {q}
           </button>
@@ -141,35 +144,39 @@ function AIChatTab() {
       </div>
 
       {/* Input */}
-      <div className="bg-white border-t border-[#F0E8FF] p-3 flex-shrink-0">
-        <form
-          onSubmit={e => { e.preventDefault(); send(input) }}
-          className="flex items-center gap-2"
-        >
+      <div className="p-3 flex-shrink-0" style={{ background: '#FFFFFF', borderTop: '1.5px solid #F0E8FF' }}>
+        <form onSubmit={e => { e.preventDefault(); send(input) }} className="flex items-center gap-2">
           <input
             value={input}
             onChange={e => setInput(e.target.value.slice(0, 200))}
             placeholder="اكتب سؤالك هنا..."
-            className="flex-1 bg-[#FFF8F0] border border-[#E8DBFF] rounded-2xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-100 focus:border-brand-300 text-right"
+            className="flex-1 rounded-2xl px-4 py-2.5 text-sm focus:outline-none text-right"
+            style={{ background: '#FFF8F0', border: '1.5px solid #E8DBFF', color: '#1F2937' }}
+            onFocus={e => { e.target.style.border = '1.5px solid #7C5CFC'; e.target.style.boxShadow = '0 0 0 3px rgba(124,92,252,0.1)' }}
+            onBlur={e => { e.target.style.border = '1.5px solid #E8DBFF'; e.target.style.boxShadow = 'none' }}
             dir="rtl"
           />
           <button
             type="submit"
             disabled={!input.trim() || loading}
-            className="w-10 h-10 bg-brand-500 hover:bg-brand-600 disabled:opacity-40 text-white rounded-2xl flex items-center justify-center transition-colors flex-shrink-0"
+            className="w-10 h-10 text-white rounded-2xl flex items-center justify-center flex-shrink-0 transition-all disabled:opacity-40"
+            style={{ background: '#7C5CFC' }}
+            onMouseEnter={e => { if (!(!input.trim() || loading)) (e.currentTarget as HTMLButtonElement).style.background = '#6B46F0' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '#7C5CFC' }}
           >
             <Send className="w-4 h-4" />
           </button>
         </form>
         <p className="text-xs text-gray-400 text-center mt-2">
-          للتواصل الفوري مع الأستاذ أمين: <a href="https://wa.me/97430653759" className="text-green-600 font-bold">واتساب</a>
+          للتواصل الفوري مع الأستاذ أمين:{' '}
+          <a href="https://wa.me/97430653759" className="font-bold" style={{ color: '#16A34A' }}>واتساب</a>
         </p>
       </div>
     </div>
   )
 }
 
-// ── Direct Messages Tab ───────────────────────────────────────
+// ── Direct Messages Tab ──────────────────────────────────────────
 function DirectMessagesTab() {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
@@ -193,14 +200,11 @@ function DirectMessagesTab() {
 
   useEffect(() => {
     fetchMessages()
-    // Auto-refresh every 30 seconds
     const interval = setInterval(fetchMessages, 30000)
     return () => clearInterval(interval)
   }, [fetchMessages])
 
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages])
 
   async function sendMsg() {
     const content = input.trim()
@@ -224,25 +228,24 @@ function DirectMessagesTab() {
     }
   }
 
-  // Group messages by date
   const grouped: { date: string; msgs: Message[] }[] = []
   for (const msg of messages) {
     const d = formatMsgDate(msg.createdAt)
     const last = grouped[grouped.length - 1]
-    if (last && last.date === d) {
-      last.msgs.push(msg)
-    } else {
-      grouped.push({ date: d, msgs: [msg] })
-    }
+    if (last && last.date === d) { last.msgs.push(msg) }
+    else { grouped.push({ date: d, msgs: [msg] }) }
   }
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
-      {/* Header info */}
-      <div className="bg-white border-b border-[#F0E8FF] px-5 py-3 flex-shrink-0">
+      {/* Header */}
+      <div className="px-5 py-3 flex-shrink-0" style={{ background: '#FFFFFF', borderBottom: '1.5px solid #F0E8FF' }}>
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-brand-100 rounded-full flex items-center justify-center">
-            <User className="w-4 h-4 text-brand-600" />
+          <div
+            className="w-9 h-9 rounded-full flex items-center justify-center"
+            style={{ background: '#F3EEFF' }}
+          >
+            <User className="w-4 h-4" style={{ color: '#6B46F0' }} />
           </div>
           <div>
             <div className="font-bold text-gray-900 text-sm">الأستاذ أمين</div>
@@ -252,15 +255,15 @@ function DirectMessagesTab() {
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto bg-[#FFF8F0] px-4 py-4 space-y-1">
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-1" style={{ background: '#FFF8F0' }}>
         {loadingMsgs ? (
           <div className="flex items-center justify-center py-16">
-            <div className="w-6 h-6 border-2 border-brand-600 border-t-transparent rounded-full animate-spin" />
+            <div className="w-6 h-6 rounded-full animate-spin" style={{ border: '2px solid #7C5CFC', borderTopColor: 'transparent' }} />
           </div>
         ) : messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="w-14 h-14 bg-brand-50 rounded-full flex items-center justify-center mb-3">
-              <MessageCircle className="w-7 h-7 text-brand-400" />
+            <div className="w-14 h-14 rounded-full flex items-center justify-center mb-3" style={{ background: '#F3EEFF' }}>
+              <MessageCircle className="w-7 h-7" style={{ color: '#9A7BFD' }} />
             </div>
             <p className="text-gray-500 text-sm font-medium">لا توجد رسائل بعد</p>
             <p className="text-gray-400 text-xs mt-1">أرسل رسالتك الأولى للأستاذ أمين</p>
@@ -268,29 +271,28 @@ function DirectMessagesTab() {
         ) : (
           grouped.map(group => (
             <div key={group.date}>
-              {/* Date separator */}
               <div className="flex items-center gap-3 my-4">
-                <div className="flex-1 h-px bg-[#F0E8FF]" />
+                <div className="flex-1 h-px" style={{ background: '#F0E8FF' }} />
                 <span className="text-xs text-gray-400 whitespace-nowrap px-2">{group.date}</span>
-                <div className="flex-1 h-px bg-[#F0E8FF]" />
+                <div className="flex-1 h-px" style={{ background: '#F0E8FF' }} />
               </div>
               {group.msgs.map(msg => (
-                <div
-                  key={msg.id}
-                  className={`flex mb-3 ${msg.from === 'parent' ? 'justify-start' : 'justify-end'}`}
-                >
-                  <div className={`max-w-[80%]`}>
-                    <div className={`px-4 py-3 text-sm leading-relaxed ${
-                      msg.from === 'parent'
-                        ? 'bg-brand-500 text-white rounded-3xl rounded-tr-lg'
-                        : 'bg-white border border-[#F0E8FF] text-gray-700 rounded-3xl rounded-tl-lg shadow-card'
-                    }`}>
+                <div key={msg.id} className={`flex mb-3 ${msg.from === 'parent' ? 'justify-start' : 'justify-end'}`}>
+                  <div className="max-w-[80%]">
+                    <div
+                      className="px-4 py-3 text-sm leading-relaxed"
+                      style={
+                        msg.from === 'parent'
+                          ? { background: '#7C5CFC', color: '#FFFFFF', borderRadius: '24px 24px 8px 24px' }
+                          : { background: '#FFFFFF', color: '#374151', border: '1.5px solid #F0E8FF', borderRadius: '24px 24px 24px 8px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }
+                      }
+                    >
                       {msg.content}
                     </div>
                     <div className={`text-xs text-gray-400 mt-1 ltr-num ${msg.from === 'parent' ? 'text-right' : 'text-left'}`}>
                       {formatMsgTime(msg.createdAt)}
                       {msg.from === 'admin' && (
-                        <span className="mr-1 text-brand-500 font-medium"> · الأستاذ</span>
+                        <span className="mr-1 font-medium" style={{ color: '#7C5CFC' }}> · الأستاذ</span>
                       )}
                     </div>
                   </div>
@@ -303,62 +305,63 @@ function DirectMessagesTab() {
       </div>
 
       {/* Input */}
-      <div className="bg-white border-t border-[#F0E8FF] p-3 flex-shrink-0">
-        <form
-          onSubmit={e => { e.preventDefault(); sendMsg() }}
-          className="flex items-center gap-2"
-        >
+      <div className="p-3 flex-shrink-0" style={{ background: '#FFFFFF', borderTop: '1.5px solid #F0E8FF' }}>
+        <form onSubmit={e => { e.preventDefault(); sendMsg() }} className="flex items-center gap-2">
           <input
             value={input}
             onChange={e => setInput(e.target.value.slice(0, 1000))}
             placeholder="اكتب رسالتك للأستاذ..."
-            className="flex-1 bg-[#FFF8F0] border border-[#E8DBFF] rounded-2xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-100 focus:border-brand-300 text-right"
+            className="flex-1 rounded-2xl px-4 py-2.5 text-sm focus:outline-none text-right"
+            style={{ background: '#FFF8F0', border: '1.5px solid #E8DBFF', color: '#1F2937' }}
+            onFocus={e => { e.target.style.border = '1.5px solid #7C5CFC'; e.target.style.boxShadow = '0 0 0 3px rgba(124,92,252,0.1)' }}
+            onBlur={e => { e.target.style.border = '1.5px solid #E8DBFF'; e.target.style.boxShadow = 'none' }}
             dir="rtl"
           />
           <button
             type="submit"
             disabled={!input.trim() || sending}
-            className="w-10 h-10 bg-brand-500 hover:bg-brand-600 disabled:opacity-40 text-white rounded-2xl flex items-center justify-center transition-colors flex-shrink-0"
+            className="w-10 h-10 text-white rounded-2xl flex items-center justify-center flex-shrink-0 transition-all disabled:opacity-40"
+            style={{ background: '#7C5CFC' }}
+            onMouseEnter={e => { if (!(!input.trim() || sending)) (e.currentTarget as HTMLButtonElement).style.background = '#6B46F0' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '#7C5CFC' }}
           >
             {sending ? (
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              <div className="w-4 h-4 rounded-full animate-spin" style={{ border: '2px solid #FFFFFF', borderTopColor: 'transparent' }} />
             ) : (
               <Send className="w-4 h-4" />
             )}
           </button>
         </form>
-        <p className="text-xs text-gray-400 text-center mt-2">
-          يتم تحديث المحادثة تلقائياً كل 30 ثانية
-        </p>
+        <p className="text-xs text-gray-400 text-center mt-2">يتم تحديث المحادثة تلقائياً كل 30 ثانية</p>
       </div>
     </div>
   )
 }
 
-// ── Main Page ─────────────────────────────────────────────────
+// ── Main Page ────────────────────────────────────────────────────
 export default function ChatPage() {
   const [activeTab, setActiveTab] = useState<'ai' | 'direct'>('ai')
   const [unreadFromAdmin, setUnreadFromAdmin] = useState(0)
 
-  // Check unread count for badge on tab
   useEffect(() => {
-    async function checkUnread() {
-      try {
-        const res = await fetch('/api/messages')
-        if (res.ok) {
-          const data = await res.json()
-          setUnreadFromAdmin(data.unreadFromAdmin ?? 0)
-        }
-      } catch { /* silent */ }
-    }
-    checkUnread()
+    fetch('/api/messages')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d) setUnreadFromAdmin(d.unreadFromAdmin ?? 0) })
+      .catch(() => {})
   }, [])
 
   return (
-    <div className="flex flex-col h-[calc(100vh-8rem)] md:h-[calc(100vh-3rem)] max-h-[750px] bg-white rounded-3xl border border-[#F0E8FF] shadow-[0_1px_4px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.06)] overflow-hidden" dir="rtl">
+    <div
+      className="flex flex-col h-[calc(100vh-8rem)] md:h-[calc(100vh-3rem)] max-h-[750px] rounded-3xl overflow-hidden"
+      style={{ background: '#FFFFFF', border: '1.5px solid #F0E8FF', boxShadow: '0 1px 4px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.06)' }}
+      dir="rtl"
+    >
       {/* Page header */}
-      <div className="bg-white border-b border-[#F0E8FF] px-5 py-4 flex items-center gap-3 flex-shrink-0">
-        <div className="w-11 h-11 bg-brand-50 rounded-2xl flex items-center justify-center text-2xl shadow-[0_2px_8px_-2px_rgba(124,92,252,0.15)]">
+      <div className="px-5 py-4 flex items-center gap-3 flex-shrink-0" style={{ background: '#FFFFFF', borderBottom: '1.5px solid #F0E8FF' }}>
+        <div
+          className="w-11 h-11 rounded-2xl flex items-center justify-center text-2xl"
+          style={{ background: '#F3EEFF', boxShadow: '0 2px 8px -2px rgba(124,92,252,0.15)' }}
+        >
           💬
         </div>
         <div>
@@ -368,30 +371,37 @@ export default function ChatPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-[#F0E8FF] bg-[#FFF8F0] flex-shrink-0">
+      <div className="flex flex-shrink-0" style={{ background: '#FFF8F0', borderBottom: '1.5px solid #F0E8FF' }}>
         <button
           onClick={() => setActiveTab('ai')}
-          className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-bold transition-colors ${
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-bold transition-all"
+          style={
             activeTab === 'ai'
-              ? 'bg-white text-brand-700 border-b-2 border-brand-600'
-              : 'text-gray-500 hover:text-gray-700'
-          }`}
+              ? { background: '#FFFFFF', color: '#5A32D9', borderBottom: '2px solid #6B46F0' }
+              : { color: '#9CA3AF' }
+          }
+          onMouseEnter={e => { if (activeTab !== 'ai') (e.currentTarget as HTMLButtonElement).style.color = '#6B7280' }}
+          onMouseLeave={e => { if (activeTab !== 'ai') (e.currentTarget as HTMLButtonElement).style.color = '#9CA3AF' }}
         >
-          <Bot className="w-4 h-4" />
-          المساعد الذكي
+          <Bot className="w-4 h-4" /> المساعد الذكي
         </button>
         <button
           onClick={() => { setActiveTab('direct'); setUnreadFromAdmin(0) }}
-          className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-bold transition-colors relative ${
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-bold transition-all relative"
+          style={
             activeTab === 'direct'
-              ? 'bg-white text-brand-700 border-b-2 border-brand-600'
-              : 'text-gray-500 hover:text-gray-700'
-          }`}
+              ? { background: '#FFFFFF', color: '#5A32D9', borderBottom: '2px solid #6B46F0' }
+              : { color: '#9CA3AF' }
+          }
+          onMouseEnter={e => { if (activeTab !== 'direct') (e.currentTarget as HTMLButtonElement).style.color = '#6B7280' }}
+          onMouseLeave={e => { if (activeTab !== 'direct') (e.currentTarget as HTMLButtonElement).style.color = '#9CA3AF' }}
         >
-          <MessageCircle className="w-4 h-4" />
-          رسائل الأستاذ
+          <MessageCircle className="w-4 h-4" /> رسائل الأستاذ
           {unreadFromAdmin > 0 && (
-            <span className="absolute top-2 left-4 w-4 h-4 bg-red-500 text-white text-[10px] font-black rounded-full flex items-center justify-center">
+            <span
+              className="absolute top-2 left-4 w-4 h-4 text-white text-[10px] font-black rounded-full flex items-center justify-center"
+              style={{ background: '#EF4444' }}
+            >
               {unreadFromAdmin > 9 ? '9+' : unreadFromAdmin}
             </span>
           )}

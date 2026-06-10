@@ -30,7 +30,7 @@ export default function ParentPortalLayout({ children }: { children: React.React
 
       {/* ── Top header bar ── */}
       <header
-        className="fixed top-0 right-0 left-0 z-40 flex items-center justify-between px-4"
+        className="fixed top-0 right-0 left-0 z-50 flex items-center justify-between px-4"
         style={{ height: 56, background: '#FFFFFF', borderBottom: '1.5px solid #F0E8FF', boxShadow: '0 2px 8px rgba(124,92,252,0.06)' }}
         dir="rtl"
       >

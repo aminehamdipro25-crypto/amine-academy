@@ -3,7 +3,7 @@ import { cookies } from 'next/headers'
 import { verifyToken } from '@/lib/auth'
 import { createAppointment, updateAppointment, getParentAppointments, getParent } from '@/lib/db'
 import { sendEmail, appointmentConfirmEmail } from '@/lib/mailer'
-import { tg } from '@/lib/telegram'
+import { tg, tgEsc } from '@/lib/telegram'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -63,12 +63,12 @@ export async function POST(req: Request) {
         })
         tg(
           `📅 <b>موعد جديد!</b>\n\n` +
-          `👤 ${parent.firstName} ${parent.lastName}\n` +
-          `📧 ${parent.email}\n` +
-          `📌 النوع: ${type}\n` +
-          `📆 التاريخ: ${date}\n` +
-          `⏰ الوقت: ${timeSlot}\n` +
-          (appt.notes ? `📝 ملاحظات: ${appt.notes}\n` : '') +
+          `👤 ${tgEsc(parent.firstName)} ${tgEsc(parent.lastName)}\n` +
+          `📧 ${tgEsc(parent.email)}\n` +
+          `📌 النوع: ${tgEsc(type)}\n` +
+          `📆 التاريخ: ${tgEsc(date)}\n` +
+          `⏰ الوقت: ${tgEsc(timeSlot)}\n` +
+          (notes?.trim() ? `📝 ملاحظات: ${tgEsc(notes)}\n` : '') +
           `🕐 ${new Date().toLocaleString('ar-SA', { timeZone: 'Asia/Qatar' })}`
         ).catch(() => {})
       }

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createParent, getParentByEmail, createStudent, updateParent, createActivationCode } from '@/lib/db'
 import { hashPassword } from '@/lib/password'
 import { sendEmail, welcomeParentEmail } from '@/lib/mailer'
-import { tg } from '@/lib/telegram'
+import { tg, tgEsc } from '@/lib/telegram'
 import type { AgeGroup, Diagnosis } from '@/lib/types'
 
 export const runtime = 'nodejs'
@@ -96,12 +96,12 @@ export async function POST(req: NextRequest) {
     // Telegram notification (non-blocking)
     tg(
       `🆕 <b>تسجيل جديد!</b>\n\n` +
-      `👤 ${newParent.firstName} ${newParent.lastName}\n` +
-      `📧 ${newParent.email}\n` +
-      `📱 ${newParent.phone || 'لم يُذكر'}\n` +
-      `🧒 الطفل: ${student.firstName} ${student.lastName}\n` +
-      `🏷 التشخيص: ${student.diagnosis} | العمر: ${student.ageGroup}\n` +
-      `📦 الخطة: ${newParent.subscriptionPlan}\n` +
+      `👤 ${tgEsc(newParent.firstName)} ${tgEsc(newParent.lastName)}\n` +
+      `📧 ${tgEsc(newParent.email)}\n` +
+      `📱 ${tgEsc(newParent.phone || 'لم يُذكر')}\n` +
+      `🧒 الطفل: ${tgEsc(student.firstName)} ${tgEsc(student.lastName)}\n` +
+      `🏷 التشخيص: ${tgEsc(student.diagnosis)} | العمر: ${tgEsc(student.ageGroup)}\n` +
+      `📦 الخطة: ${tgEsc(newParent.subscriptionPlan)}\n` +
       `🕐 ${new Date().toLocaleString('ar-SA', { timeZone: 'Asia/Qatar' })}`
     ).catch(() => {})
 

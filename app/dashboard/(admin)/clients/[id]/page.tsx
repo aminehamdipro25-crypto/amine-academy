@@ -7,7 +7,7 @@ import {
   PauseCircle, Trash2, LogIn, RotateCcw, ExternalLink, Eye, EyeOff, Lock,
   ChevronDown, ChevronUp,
 } from 'lucide-react'
-import type { Parent, Student, Appointment, SessionLog, StudentAssessmentProfile, DifficultyLevel } from '@/lib/types'
+import type { Parent, Student, Appointment, SessionLog, StudentAssessmentProfile, DifficultyLevel, Program } from '@/lib/types'
 import { DIFFICULTY_LABELS_AR } from '@/lib/game-mapping'
 
 const STATUS_CONFIG = {
@@ -57,6 +57,7 @@ export default function ClientDetailPage() {
   const [editingProfile, setEditingProfile] = useState<string | null>(null)
   const [profileDraft, setProfileDraft] = useState<Partial<StudentAssessmentProfile['diagnosedDifficulties']>>({})
   const [profileSaving, setProfileSaving] = useState(false)
+  const [programs, setPrograms] = useState<Record<string, Program | null>>({})
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -98,6 +99,20 @@ export default function ClientDetailPage() {
       const map: Record<string, StudentAssessmentProfile> = {}
       results.forEach(r => { if (r) map[r.id] = r.profile })
       setProfiles(map)
+    })
+
+    // Fetch current program for each student
+    Promise.all(
+      students.map(s =>
+        fetch(`/api/admin/students/${s.id}/program`)
+          .then(r => r.ok ? r.json() : null)
+          .then(d => ({ id: s.id, program: d?.program ?? null }))
+          .catch(() => ({ id: s.id, program: null }))
+      )
+    ).then(results => {
+      const map: Record<string, Program | null> = {}
+      results.forEach(r => { map[r.id] = r.program })
+      setPrograms(map)
     })
   }, [data])
 
@@ -628,6 +643,90 @@ export default function ClientDetailPage() {
               </div>
             )}
           </div>
+
+          {/* Current Programs */}
+          {(data.students || []).some(s => programs[s.id]) && (
+            <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-50 flex items-center justify-between">
+                <h2 className="font-black text-gray-900 flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-brand-500" />
+                  البرنامج الأسبوعي الحالي
+                </h2>
+                <a
+                  href="/dashboard/programs"
+                  className="text-xs font-bold text-brand-600 bg-brand-50 px-3 py-1.5 rounded-lg hover:bg-brand-100 transition-colors"
+                >
+                  + إنشاء / تعديل برنامج
+                </a>
+              </div>
+              <div className="divide-y divide-gray-50">
+                {(data.students || []).map(s => {
+                  const prog = programs[s.id]
+                  if (!prog) return null
+                  const DAYS_AR: Record<string, string> = {
+                    monday: 'الإثنين', tuesday: 'الثلاثاء', wednesday: 'الأربعاء',
+                    thursday: 'الخميس', friday: 'الجمعة', saturday: 'السبت', sunday: 'الأحد',
+                  }
+                  return (
+                    <div key={s.id} className="px-6 py-4">
+                      <div className="flex items-start justify-between mb-3">
+                        <div>
+                          <p className="font-black text-gray-900 text-sm">{prog.title}</p>
+                          <p className="text-xs text-gray-400 mt-0.5">
+                            {s.firstName} {s.lastName} • {prog.startDate} → {prog.endDate}
+                          </p>
+                        </div>
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${
+                          prog.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                        }`}>
+                          {prog.status === 'active' ? 'نشط' : prog.status}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-7 gap-1">
+                        {Object.entries(DAYS_AR).map(([key, label]) => {
+                          const exercises = prog.weeklySchedule?.[key as keyof typeof prog.weeklySchedule] || []
+                          const count = exercises.length
+                          return (
+                            <div key={key} className="text-center">
+                              <div
+                                className="rounded-lg py-1.5 text-xs font-black mb-1"
+                                style={count > 0
+                                  ? { background: '#F3EEFF', color: '#6B46F0' }
+                                  : { background: '#F9FAFB', color: '#D1D5DB' }
+                                }
+                              >
+                                {count > 0 ? count : '—'}
+                              </div>
+                              <div className="text-[9px] text-gray-400 leading-none">{label.slice(0, 4)}</div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                      <p className="text-xs text-gray-400 mt-2">
+                        إجمالي التمارين الأسبوعية: <strong className="text-gray-700">{Object.values(prog.weeklySchedule || {}).flat().length}</strong> تمرين
+                      </p>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* No program banner */}
+          {(data.students || []).length > 0 && (data.students || []).every(s => !programs[s.id]) && (
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl px-6 py-4 flex items-center justify-between">
+              <div>
+                <p className="font-black text-amber-800 text-sm">⚠️ لا يوجد برنامج مخصص لهذا المشترك بعد</p>
+                <p className="text-xs text-amber-600 mt-0.5">أنشئ برنامجاً أسبوعياً لتبدأ الجلسات</p>
+              </div>
+              <a
+                href="/dashboard/programs"
+                className="flex-shrink-0 text-sm font-black bg-amber-600 text-white px-4 py-2 rounded-xl hover:bg-amber-700 transition-colors"
+              >
+                إنشاء برنامج
+              </a>
+            </div>
+          )}
 
           {/* Assessment Profiles */}
           {(data.students || []).length > 0 && (

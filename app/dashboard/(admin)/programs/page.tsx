@@ -124,8 +124,9 @@ export default function ProgramsPage() {
         body: JSON.stringify({ studentId, title, startDate, endDate, weeklySchedule: schedule }),
       })
       if (res.ok) {
-        setSuccess('تم إنشاء البرنامج بنجاح! الطالب سيرى تمارينه اليوم على الفور.')
-        setTimeout(() => router.push('/dashboard/clients'), 3000)
+        setSuccess('✅ تم إنشاء البرنامج بنجاح! يمكنك الآن رؤيته في صفحة المشترك.')
+        const clientPage = selectedParent ? `/dashboard/clients/${selectedParent.id}` : '/dashboard/clients'
+        setTimeout(() => router.push(clientPage), 2000)
       } else {
         const d = await res.json()
         setError(d.error || 'حدث خطأ')

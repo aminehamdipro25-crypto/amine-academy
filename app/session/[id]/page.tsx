@@ -20,6 +20,7 @@ import StopSignal      from '@/components/session/exercises/StopSignal'
 import EmotionCards    from '@/components/session/exercises/EmotionCards'
 import ADHDScale       from '@/components/session/assessments/ADHDScale'
 import LearningDifficultiesScale from '@/components/session/assessments/LearningDifficultiesScale'
+import AttentionDomainsScale from '@/components/session/assessments/AttentionDomainsScale'
 
 type ActiveView =
   | { type: 'exercise'; id: string }
@@ -42,8 +43,9 @@ const EXERCISES = [
 ]
 
 const ASSESSMENTS = [
-  { id:'adhd',                labelAr:'مقياس ADHD',             icon:'⚡', color:'bg-blue-900/40 border-blue-500' },
-  { id:'learning-difficulties', labelAr:'صعوبات التعلم',       icon:'📚', color:'bg-amber-900/40 border-amber-500' },
+  { id:'adhd',               labelAr:'مقياس ADHD',              icon:'⚡', color:'bg-blue-900/40 border-blue-500'    },
+  { id:'attention-domains',  labelAr:'أنماط الانتباه — SNAP-IV', icon:'🧠', color:'bg-purple-900/40 border-purple-500' },
+  { id:'learning-difficulties', labelAr:'صعوبات التعلم',        icon:'📚', color:'bg-amber-900/40 border-amber-500'  },
 ]
 
 const SESSION_TYPE_CFG: Record<string, { label: string; color: string; isAssessment?: boolean }> = {
@@ -1029,6 +1031,13 @@ export default function SessionPage() {
               <div className="bg-gray-900 rounded-2xl overflow-hidden">
                 {activeView.id === 'adhd' && (
                   <ADHDScale
+                    studentId={currentStudentId || id || ''}
+                    onComplete={handleAssessmentComplete}
+                    onCancel={() => setActiveView(null)}
+                  />
+                )}
+                {activeView.id === 'attention-domains' && (
+                  <AttentionDomainsScale
                     studentId={currentStudentId || id || ''}
                     onComplete={handleAssessmentComplete}
                     onCancel={() => setActiveView(null)}

@@ -17,6 +17,46 @@ const CAT_CFG: Record<string, { bg: string; color: string }> = {
   social:  { bg: '#ECFDF5', color: '#065F46' },
 }
 
+const CAT_EMOJI: Record<string, string> = {
+  motor: '🏃', focus: '🎯', balance: '⚖️', energy: '⚡', sensory: '🌈', social: '🤝',
+}
+
+function getStepEmoji(text: string, category: string): string {
+  if (text.includes('دب')) return '🐻'
+  if (text.includes('ضفدع') || text.includes('اقفز') || text.includes('قفزات')) return '🐸'
+  if (text.includes('أفعى') || text.includes('ازحف')) return '🐍'
+  if (text.includes('حصان') || text.includes('ركض') || text.includes('اركض')) return '🐴'
+  if (text.includes('فقاعة') || text.includes('نفخ')) return '🫧'
+  if (text.includes('تنفس') || text.includes('نفساً') || text.includes('زفير') || text.includes('شهيق')) return '💨'
+  if (text.includes('اجلس') || text.includes('جلوس') || text.includes('يوغا')) return '🧘'
+  if (text.includes('امشِ') || text.includes('مشي') || text.includes('المشي')) return '🚶'
+  if (text.includes('ارفع') || text.includes('ذراع') || text.includes('يد')) return '💪'
+  if (text.includes('بالون')) return '🎈'
+  if (text.includes('موسيقى') || text.includes('إيقاع') || text.includes('ميترونوم')) return '🎵'
+  if (text.includes('استمع') || text.includes('اسمع') || text.includes('صوت')) return '👂'
+  if (text.includes('انظر') || text.includes('عين') || text.includes('بصر')) return '👁️'
+  if (text.includes('ارمِ') || text.includes('رمي') || text.includes('قذف') || text.includes('ارم')) return '🎯'
+  if (text.includes('خط') || text.includes('شريط') || text.includes('توازن')) return '⚖️'
+  if (text.includes('كرر') || text.includes('تكرار') || text.includes('مرات')) return '🔄'
+  if (text.includes('استرح') || text.includes('راحة')) return '😮‍💨'
+  if (text.includes('ابدأ') || text.includes('استعد') || text.includes('جهّز')) return '🚀'
+  if (text.includes('قف') || text.includes('تجمّد') || text.includes('اثبت') || text.includes('ابق')) return '🧍'
+  if (text.includes('سيمون') || text.includes('Simon')) return '🎮'
+  if (text.includes('هدف') || text.includes('رقم') || text.includes('أرقام')) return '🎯'
+  const catMap: Record<string, string> = {
+    motor: '🏃', focus: '🎯', balance: '⚖️', energy: '⚡', sensory: '🌈', social: '🤝',
+  }
+  return catMap[category] || '⭐'
+}
+
+function getShortTitle(ar: string): string {
+  const clean = ar.replace(/\([^)]*\)/g, '').trim()
+  const parts  = clean.split(/[،,;:—\-]/)
+  const first  = parts[0].trim()
+  if (first.length <= 32) return first
+  return first.split(' ').slice(0, 5).join(' ') + '…'
+}
+
 const DIFF_LABELS: Record<string, string> = {
   beginner: 'مبتدئ', intermediate: 'متوسط', advanced: 'متقدم',
 }
@@ -142,7 +182,7 @@ export default function ExercisesPage() {
                 key={ex.id}
                 onClick={() => !done && openExercise(ex)}
                 disabled={done}
-                className="text-right rounded-2xl p-4 transition-all"
+                className="text-right rounded-2xl overflow-hidden transition-all"
                 style={
                   done
                     ? { background: '#F0FFF4', border: '2px solid #BBF7D0', cursor: 'default' }
@@ -151,25 +191,34 @@ export default function ExercisesPage() {
                 onMouseEnter={e => { if (!done) { (e.currentTarget as HTMLButtonElement).style.borderColor = '#D3BBFF'; (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 4px 12px rgba(124,92,252,0.1)' } }}
                 onMouseLeave={e => { if (!done) { (e.currentTarget as HTMLButtonElement).style.borderColor = '#F0E8FF'; (e.currentTarget as HTMLButtonElement).style.boxShadow = 'none' } }}
               >
-                <div className="flex items-start justify-between mb-2">
-                  <span className="text-xs font-black px-2 py-0.5 rounded-full" style={{ background: catCfg.bg, color: catCfg.color }}>
-                    {CAT_LABELS[ex.category] || ex.category}
-                  </span>
-                  {done
-                    ? <CheckCircle className="w-4 h-4 flex-shrink-0" style={{ color: '#22C55E' }} />
-                    : <span className="text-amber-500 text-xs font-bold flex items-center gap-0.5"><Star className="w-3 h-3" />{ex.points}</span>
-                  }
+                {/* Visual thumbnail */}
+                <div
+                  className="w-full flex items-center justify-center"
+                  style={{ height: 72, background: catCfg.bg, fontSize: 40 }}
+                >
+                  {done ? '✅' : (CAT_EMOJI[ex.category] || '⭐')}
                 </div>
-                <h3 className="font-black text-gray-900 text-sm leading-tight mb-1">{ex.titleAr || ex.title}</h3>
-                <p className="text-gray-500 text-xs line-clamp-2">{ex.descriptionAr || ex.description}</p>
-                <div className="flex items-center justify-between mt-2 pt-2" style={{ borderTop: '1px solid #F3F4F6' }}>
-                  <span className="text-xs text-gray-400 flex items-center gap-1">
-                    <Clock className="w-3 h-3" /><span className="ltr-num">{ex.durationMinutes}د</span>
-                  </span>
-                  {done
-                    ? <span className="text-xs font-bold" style={{ color: '#16A34A' }}>✓ تم</span>
-                    : <span className="text-xs font-bold flex items-center gap-1" style={{ color: '#6B46F0' }}><Play className="w-3 h-3" />ابدأ</span>
-                  }
+                <div className="p-3">
+                  <div className="flex items-start justify-between mb-1.5">
+                    <span className="text-xs font-black px-2 py-0.5 rounded-full" style={{ background: catCfg.bg, color: catCfg.color }}>
+                      {CAT_LABELS[ex.category] || ex.category}
+                    </span>
+                    {done
+                      ? <CheckCircle className="w-4 h-4 flex-shrink-0" style={{ color: '#22C55E' }} />
+                      : <span className="text-amber-500 text-xs font-bold flex items-center gap-0.5"><Star className="w-3 h-3" />{ex.points}</span>
+                    }
+                  </div>
+                  <h3 className="font-black text-gray-900 text-sm leading-tight mb-1">{ex.titleAr || ex.title}</h3>
+                  <p className="text-gray-500 text-xs line-clamp-2">{ex.descriptionAr || ex.description}</p>
+                  <div className="flex items-center justify-between mt-2 pt-2" style={{ borderTop: '1px solid #F3F4F6' }}>
+                    <span className="text-xs text-gray-400 flex items-center gap-1">
+                      <Clock className="w-3 h-3" /><span className="ltr-num">{ex.durationMinutes}د</span>
+                    </span>
+                    {done
+                      ? <span className="text-xs font-bold" style={{ color: '#16A34A' }}>✓ تم</span>
+                      : <span className="text-xs font-bold flex items-center gap-1" style={{ color: '#6B46F0' }}><Play className="w-3 h-3" />ابدأ</span>
+                    }
+                  </div>
                 </div>
               </button>
             )
@@ -255,22 +304,46 @@ export default function ExercisesPage() {
                     </div>
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center text-center min-h-[200px] justify-center">
-                    <div
-                      className="w-16 h-16 rounded-full flex items-center justify-center text-white font-black text-2xl mb-4"
-                      style={{ background: '#6B46F0', boxShadow: '0 8px 24px -4px rgba(107,70,240,0.4)' }}
-                    >
-                      {step + 1}
+                  <div className="flex flex-col items-center text-center" style={{ padding: '20px 16px', minHeight: 280 }}>
+                    {/* Big visual emoji — instantly recognisable for the child */}
+                    <div style={{ fontSize: 90, lineHeight: 1, marginBottom: 16, filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.1))' }}>
+                      {getStepEmoji(steps[step], selected.category)}
                     </div>
-                    <p className="text-gray-900 font-bold text-xl leading-relaxed max-w-sm">{steps[step]}</p>
-                    <div className="flex gap-2 mt-6">
+
+                    {/* Short instruction — large + bold, readable by child */}
+                    <p
+                      className="font-black leading-snug"
+                      style={{ fontSize: 22, color: '#1e293b', maxWidth: 280, marginBottom: 12 }}
+                    >
+                      {getShortTitle(steps[step])}
+                    </p>
+
+                    {/* Full instruction — labeled "for parents/supervisor" */}
+                    <div
+                      style={{
+                        borderTop: '1.5px dashed #E8DBFF',
+                        paddingTop: 12,
+                        maxWidth: 300,
+                        width: '100%',
+                      }}
+                    >
+                      <p style={{ fontSize: 10, color: '#a78bfa', fontWeight: 700, marginBottom: 4, textAlign: 'center' }}>
+                        💡 للأهل والمشرف
+                      </p>
+                      <p style={{ fontSize: 13, color: '#94a3b8', lineHeight: 1.7, textAlign: 'center' }}>
+                        {steps[step]}
+                      </p>
+                    </div>
+
+                    {/* Visual step dots */}
+                    <div className="flex gap-2 mt-5">
                       {steps.map((_, i) => (
                         <div
                           key={i}
-                          className="rounded-full transition-all"
+                          className="rounded-full transition-all duration-300"
                           style={{
-                            width: i === step ? 24 : 12,
-                            height: 12,
+                            width: i === step ? 28 : 10,
+                            height: 10,
                             background: i === step ? '#6B46F0' : i < step ? '#4ADE80' : '#E5E7EB',
                           }}
                         />

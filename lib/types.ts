@@ -191,7 +191,7 @@ export interface SessionLog {
   createdAt:       string
 }
 
-export type AssessmentType = 'adhd' | 'autism' | 'learning-difficulties' | 'motor' | 'cognitive'
+export type AssessmentType = 'adhd' | 'autism' | 'learning-difficulties' | 'motor' | 'cognitive' | 'attention-domains'
 
 export interface AssessmentAnswer {
   itemId:  string

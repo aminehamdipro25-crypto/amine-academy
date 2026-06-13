@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyToken } from '@/lib/auth'
-import { createAppointment, updateAppointment, getParentAppointments, getParent } from '@/lib/db'
+import { createAppointment, updateAppointment, getParentAppointments, getParent, getStudentsByParent } from '@/lib/db'
 import { sendEmail, appointmentConfirmEmail } from '@/lib/mailer'
 
 export const dynamic = 'force-dynamic'
@@ -36,6 +36,12 @@ export async function POST(req: Request) {
 
     if (!studentId || !date || !timeSlot || !type) {
       return NextResponse.json({ error: 'بيانات غير مكتملة' }, { status: 400 })
+    }
+
+    // IDOR guard: verify studentId belongs to the authenticated parent
+    const parentStudents = await getStudentsByParent(payload.id)
+    if (!parentStudents.some(s => s.id === studentId)) {
+      return NextResponse.json({ error: 'غير مصرح' }, { status: 403 })
     }
 
     const appt = await createAppointment({

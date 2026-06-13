@@ -25,6 +25,7 @@
 //   exercises:count:{studentId}        → Total exercises ever completed (INCR counter)
 // ============================================================
 
+import crypto from 'crypto'
 import { redis } from './redis'
 import { generateId } from './auth'
 import type { Parent, Student, Exercise, Program, Appointment, ProgressReport, PendingPayment, Message, Achievement } from './types'
@@ -245,7 +246,7 @@ export async function createPendingPayment(
 ): Promise<PendingPayment> {
   const id = generateId('AP')
   const year = new Date().getFullYear()
-  const rand = Math.floor(1000 + Math.random() * 9000).toString()
+  const rand = (crypto.randomBytes(3).readUIntBE(0, 3) % 900000 + 100000).toString()
   const referenceCode = `AA-${year}-${rand}`
   const payment: PendingPayment = {
     ...data,

@@ -13,6 +13,10 @@ const TYPE_CFG: Record<string, { label: string; bg: string; color: string; icon:
   review:       { label: 'مراجعة',   bg: '#F3EEFF', color: '#7C5CFC', icon: '📋' },
 }
 
+function jitsiUrl(url: string, name = 'الطالب'): string {
+  return `${url}#config.prejoinPageEnabled=false&config.startWithAudioMuted=false&userInfo.displayName=${encodeURIComponent(name)}`
+}
+
 function daysUntil(dateStr: string): number {
   const today = new Date(); today.setHours(0, 0, 0, 0)
   const target = new Date(dateStr); target.setHours(0, 0, 0, 0)
@@ -120,7 +124,7 @@ export default function StudentSchedulePage() {
 
                   {nextAppt.meetingUrl && (
                     <a
-                      href={nextAppt.meetingUrl}
+                      href={jitsiUrl(nextAppt.meetingUrl)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="block text-center font-black py-3 rounded-2xl text-sm transition-all active:scale-95 hover:opacity-90"
@@ -189,7 +193,7 @@ export default function StudentSchedulePage() {
 
                     {appt.meetingUrl && (
                       <a
-                        href={appt.meetingUrl}
+                        href={jitsiUrl(appt.meetingUrl)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="mt-4 block text-center font-black py-3 rounded-2xl text-sm transition-all active:scale-95 hover:opacity-90"

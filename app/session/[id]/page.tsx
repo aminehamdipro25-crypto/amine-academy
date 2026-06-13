@@ -206,37 +206,12 @@ export default function SessionPage() {
       }).catch(() => {})
   }, [id])
 
-  const [jitsiOpen, setJitsiOpen] = useState(false)
-  const jitsiWindowRef = useRef<Window | null>(null)
-  const jitsiCheckRef  = useRef<ReturnType<typeof setInterval> | null>(null)
+  const [jitsiEmbedded, setJitsiEmbedded] = useState(false)
 
-  useEffect(() => {
-    return () => { if (jitsiCheckRef.current) clearInterval(jitsiCheckRef.current) }
-  }, [])
-
-  function openJitsiPopup() {
-    if (jitsiWindowRef.current && !jitsiWindowRef.current.closed) {
-      jitsiWindowRef.current.focus()
-      return
-    }
-    const w = 480, h = 380
-    const left = window.screenX + window.outerWidth - w - 20
-    const top  = window.screenY + 60
-    const popup = window.open(
-      jitsiUrl!,
-      'jitsi-meeting',
-      `width=${w},height=${h},left=${left},top=${top},resizable=yes,toolbar=no,menubar=no,location=no`
-    )
-    jitsiWindowRef.current = popup
-    setJitsiOpen(true)
-    if (jitsiCheckRef.current) clearInterval(jitsiCheckRef.current)
-    jitsiCheckRef.current = setInterval(() => {
-      if (popup?.closed) {
-        setJitsiOpen(false)
-        if (jitsiCheckRef.current) { clearInterval(jitsiCheckRef.current); jitsiCheckRef.current = null }
-      }
-    }, 1000)
-  }
+  // Jitsi embed URL — disables prejoin screen and sets display name automatically
+  const jitsiEmbedUrl = jitsiUrl
+    ? `${jitsiUrl}#config.prejoinPageEnabled=false&config.startWithAudioMuted=false&config.disableDeepLinking=true&userInfo.displayName=${encodeURIComponent('الأستاذ أمين')}`
+    : null
 
 
   // Timer
@@ -420,16 +395,16 @@ export default function SessionPage() {
 
           {jitsiUrl && (
             <button
-              onClick={openJitsiPopup}
+              onClick={() => setJitsiEmbedded(e => !e)}
               className={`flex items-center gap-1.5 font-black px-3 py-1.5 rounded-lg text-xs transition-all flex-shrink-0 ${
-                jitsiOpen
-                  ? 'bg-green-500 text-white ring-2 ring-green-400/50 animate-pulse'
+                jitsiEmbedded
+                  ? 'bg-green-500 text-white ring-2 ring-green-400/50'
                   : 'bg-green-700 hover:bg-green-600 text-white'
               }`}
-              title="فتح نافذة المقابلة — ضعها في زاوية الشاشة وشارك نافذة الجلسة"
+              title="تضمين كاميرا الطالب في الصفحة"
             >
               <Video className="w-3.5 h-3.5" />
-              {jitsiOpen ? 'المقابلة مفتوحة ●' : 'فتح المقابلة'}
+              {jitsiEmbedded ? 'المقابلة مفتوحة ●' : 'فتح المقابلة'}
             </button>
           )}
           {!running && (
@@ -499,18 +474,16 @@ export default function SessionPage() {
         </div>
       </header>
 
-      {/* Screen-share tip — shown only when Jitsi popup is open */}
-      {jitsiOpen && (
-        <div className="bg-green-900/40 border-b border-green-500/30 px-4 py-2 flex items-center justify-between gap-4">
+      {/* Jitsi active indicator */}
+      {jitsiEmbedded && (
+        <div className="bg-green-900/30 border-b border-green-500/20 px-4 py-1.5 flex items-center justify-between gap-4">
           <p className="text-green-300 text-xs font-bold flex items-center gap-2">
-            <Video className="w-3.5 h-3.5 flex-shrink-0" />
-            نافذة المقابلة مفتوحة — لمشاركة شاشتك مع الطالب: في Jitsi اختر
-            <span className="bg-green-800/60 rounded px-1.5 py-0.5 font-black">Share Screen</span>
-            ثم اختر نافذة المتصفح هذه (الجلسة) وليس النافذة الصغيرة
+            <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse inline-block" />
+            المقابلة المرئية مفعّلة — الطالب يظهر في المنطقة الرئيسية، وعند اختيار تمرين يتقلص إلى الزاوية
           </p>
-          <button onClick={() => { jitsiWindowRef.current?.focus() }}
-            className="text-green-400 text-xs font-bold hover:text-green-300 whitespace-nowrap">
-            إظهار النافذة ↗
+          <button onClick={() => setJitsiEmbedded(false)}
+            className="text-green-400/60 text-xs hover:text-green-300 transition-colors">
+            إغلاق
           </button>
         </div>
       )}
@@ -980,7 +953,51 @@ export default function SessionPage() {
         {/* Main exercise area */}
 
         <main className={`flex-1 flex items-center justify-center bg-gray-950 relative overflow-auto ${kidMode ? 'hidden' : ''}`}>
-          {!activeView && !running && (
+
+          {/* ── Embedded Jitsi iframe ── */}
+          {jitsiEmbedded && jitsiEmbedUrl && (
+            <div
+              className="rounded-2xl overflow-hidden"
+              style={
+                activeView
+                  ? {
+                      position: 'fixed',
+                      bottom: 20,
+                      left: 20,
+                      width: 280,
+                      height: 210,
+                      zIndex: 60,
+                      boxShadow: '0 8px 40px rgba(0,0,0,0.8)',
+                      border: '2px solid rgba(255,255,255,0.15)',
+                      borderRadius: 16,
+                    }
+                  : {
+                      position: 'absolute',
+                      inset: 0,
+                      zIndex: 10,
+                      borderRadius: 0,
+                    }
+              }
+            >
+              <iframe
+                src={jitsiEmbedUrl}
+                style={{ width: '100%', height: '100%', border: 'none', display: 'block' }}
+                allow="camera *; microphone *; display-capture *; fullscreen *"
+                allowFullScreen
+              />
+              {activeView && (
+                <button
+                  onClick={() => setJitsiEmbedded(false)}
+                  className="absolute top-2 right-2 bg-black/70 hover:bg-black/90 text-white font-bold text-xs px-2 py-1 rounded-lg transition-colors"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Start screen — hidden when Jitsi is embedded */}
+          {!jitsiEmbedded && !activeView && !running && (
             <div className="text-center">
               <div className="text-8xl mb-6">🎯</div>
               <h2 className="text-2xl font-black text-white mb-3">جاهز للجلسة؟</h2>
@@ -992,7 +1009,8 @@ export default function SessionPage() {
             </div>
           )}
 
-          {!activeView && running && (
+          {/* Idle screen — hidden when Jitsi is embedded */}
+          {!jitsiEmbedded && !activeView && running && (
             <div className="text-center">
               <div className="text-6xl mb-4">✨</div>
               <p className="text-white/40">اختر تمريناً من القائمة الجانبية</p>

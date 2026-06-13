@@ -167,7 +167,7 @@ export interface ExerciseResult {
   accuracy:        number   // 0-100
   duration:        number   // seconds
   errors:          number
-  metadata:        Record<string, number | string>
+  metadata:        Record<string, unknown>
   completedAt:     string
 }
 

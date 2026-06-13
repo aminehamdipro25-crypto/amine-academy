@@ -23,6 +23,9 @@ import SelfRating      from '@/components/session/exercises/SelfRating'
 import VerbalFluency   from '@/components/session/exercises/VerbalFluency'
 import SocialScenarios from '@/components/session/exercises/SocialScenarios'
 import BehaviorContract from '@/components/session/exercises/BehaviorContract'
+import ColorGrid        from '@/components/session/exercises/ColorGrid'
+import PatternMatch     from '@/components/session/exercises/PatternMatch'
+import WordBuilder      from '@/components/session/exercises/WordBuilder'
 import ADHDScale       from '@/components/session/assessments/ADHDScale'
 import LearningDifficultiesScale from '@/components/session/assessments/LearningDifficultiesScale'
 import AttentionDomainsScale from '@/components/session/assessments/AttentionDomainsScale'
@@ -50,6 +53,9 @@ const EXERCISES = [
   { id:'verbal-fluency',    labelAr:'الطلاقة اللفظية',          icon:'🗣️', category:'معرفي',          color:'bg-sky-900/40 border-sky-500',         ageMin:5,  ageMax:22 },
   { id:'social-scenarios',  labelAr:'المواقف الاجتماعية',       icon:'🤝', category:'اجتماعي',        color:'bg-fuchsia-900/40 border-fuchsia-500', ageMin:5,  ageMax:22 },
   { id:'behavior-contract', labelAr:'عقد الجلسة',               icon:'📋', category:'تعديل السلوك',   color:'bg-lime-900/40 border-lime-500',       ageMin:7,  ageMax:22 },
+  { id:'color-grid',        labelAr:'لوحة الألوان',             icon:'🎨', category:'إدراكي',          color:'bg-pink-900/40 border-pink-500',       ageMin:5,  ageMax:14 },
+  { id:'pattern-match',     labelAr:'مطابقة الأنماط',           icon:'🔍', category:'إدراكي',          color:'bg-violet-900/40 border-violet-500',   ageMin:5,  ageMax:16 },
+  { id:'word-builder',      labelAr:'بناء الكلمة',              icon:'🔤', category:'تعلّم',            color:'bg-emerald-900/40 border-emerald-400', ageMin:5,  ageMax:14 },
 ]
 
 const ASSESSMENTS = [
@@ -1095,6 +1101,9 @@ export default function SessionPage() {
               {activeView.id === 'verbal-fluency'    && <VerbalFluency     onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
               {activeView.id === 'social-scenarios'  && <SocialScenarios   onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
               {activeView.id === 'behavior-contract' && <BehaviorContract  onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'color-grid'       && <ColorGrid         onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'pattern-match'    && <PatternMatch      onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'word-builder'     && <WordBuilder       onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
             </div>
           )}
 

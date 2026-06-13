@@ -3,6 +3,10 @@ import { useEffect, useState } from 'react'
 import { Calendar, Clock, Video, Plus, CheckCircle, XCircle, AlertCircle } from 'lucide-react'
 import type { Appointment, Student } from '@/lib/types'
 
+function jitsiUrl(url: string, name = 'ولي الأمر'): string {
+  return `${url}#config.prejoinPageEnabled=false&config.startWithAudioMuted=false&userInfo.displayName=${encodeURIComponent(name)}`
+}
+
 const TYPE_LABELS: Record<string, string> = {
   assessment:   'جلسة تقييمية',
   followup:     'جلسة متابعة',
@@ -203,7 +207,7 @@ export default function AppointmentsPage() {
                     </div>
                     {appt.meetingUrl && (
                       <a
-                        href={appt.meetingUrl}
+                        href={jitsiUrl(appt.meetingUrl)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center gap-2 font-black px-4 py-2.5 rounded-xl text-sm transition-all flex-shrink-0"

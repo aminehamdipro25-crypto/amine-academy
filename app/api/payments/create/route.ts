@@ -20,6 +20,10 @@ const PLAN_LABELS: Record<string, string> = {
   premium:  'المتميز',
 }
 
+function esc(s: string): string {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
@@ -78,7 +82,7 @@ export async function POST(req: NextRequest) {
     <p style="color:rgba(255,255,255,0.85);margin:8px 0 0;font-size:14px">للرياضة المعدلة وعلم النفس • ADHD & Autism</p>
   </div>
   <div style="padding:32px 24px">
-    <h2 style="color:#1e293b;font-size:20px;margin:0 0 16px">مرحباً ${guestName}! 🎉</h2>
+    <h2 style="color:#1e293b;font-size:20px;margin:0 0 16px">مرحباً ${esc(guestName)}! 🎉</h2>
     <p style="color:#475569;line-height:1.8">شكراً لاهتمامك بالاشتراك في أكاديمية أمين الدولية. تم استلام طلبك بنجاح وسيتم مراجعته من قِبل فريقنا.</p>
     <div style="background:#f0f4ff;border-radius:12px;padding:24px;text-align:center;margin:24px 0">
       <p style="color:#64748b;margin:0 0 8px;font-size:14px">رمز المرجع الخاص بك</p>
@@ -132,9 +136,9 @@ export async function POST(req: NextRequest) {
   </div>
   <div style="padding:24px">
     <table style="width:100%;border-collapse:collapse">
-      <tr style="border-bottom:1px solid #f1f5f9"><td style="padding:8px 0;color:#64748b;font-size:14px">الاسم</td><td style="padding:8px 0;color:#1e293b;font-weight:700">${guestName}</td></tr>
-      <tr style="border-bottom:1px solid #f1f5f9"><td style="padding:8px 0;color:#64748b;font-size:14px">البريد</td><td style="padding:8px 0;color:#1e293b;font-weight:700">${guestEmail}</td></tr>
-      <tr style="border-bottom:1px solid #f1f5f9"><td style="padding:8px 0;color:#64748b;font-size:14px">الهاتف</td><td style="padding:8px 0;color:#1e293b;font-weight:700">${guestPhone}</td></tr>
+      <tr style="border-bottom:1px solid #f1f5f9"><td style="padding:8px 0;color:#64748b;font-size:14px">الاسم</td><td style="padding:8px 0;color:#1e293b;font-weight:700">${esc(guestName)}</td></tr>
+      <tr style="border-bottom:1px solid #f1f5f9"><td style="padding:8px 0;color:#64748b;font-size:14px">البريد</td><td style="padding:8px 0;color:#1e293b;font-weight:700">${esc(guestEmail)}</td></tr>
+      <tr style="border-bottom:1px solid #f1f5f9"><td style="padding:8px 0;color:#64748b;font-size:14px">الهاتف</td><td style="padding:8px 0;color:#1e293b;font-weight:700">${esc(guestPhone)}</td></tr>
       <tr style="border-bottom:1px solid #f1f5f9"><td style="padding:8px 0;color:#64748b;font-size:14px">الخطة</td><td style="padding:8px 0;color:#1e293b;font-weight:700">${planLabel}</td></tr>
       <tr style="border-bottom:1px solid #f1f5f9"><td style="padding:8px 0;color:#64748b;font-size:14px">المبلغ</td><td style="padding:8px 0;color:#1e293b;font-weight:700">${amount} ${currencyLabel}</td></tr>
       <tr style="border-bottom:1px solid #f1f5f9"><td style="padding:8px 0;color:#64748b;font-size:14px">طريقة الدفع</td><td style="padding:8px 0;color:#1e293b;font-weight:700">${methodLabel}</td></tr>

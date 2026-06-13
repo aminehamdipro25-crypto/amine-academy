@@ -1,6 +1,6 @@
 'use client'
-import { useState } from 'react'
-import { ChevronRight, ChevronLeft, RotateCcw, CheckCircle } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { ChevronRight, ChevronLeft, RotateCcw, CheckCircle, Save, Loader2 } from 'lucide-react'
 import {
   QUESTIONS, DOMAINS, DOMAIN_ORDER, ANSWER_LABELS, ANSWER_COLORS, ANSWER_BG,
   getScoreLevel, getDomainScores,
@@ -9,10 +9,29 @@ import {
 
 type Phase = 'intro' | 'questions' | 'results'
 
+interface Child { id: string; firstName: string; lastName: string }
+
 export default function AssessmentPage() {
   const [phase, setPhase]     = useState<Phase>('intro')
   const [current, setCurrent] = useState(0)
   const [answers, setAnswers] = useState<Record<number, number>>({})
+  const [children, setChildren]     = useState<Child[]>([])
+  const [selectedChild, setSelectedChild] = useState('')
+  const [saving, setSaving]         = useState(false)
+  const [saved, setSaved]           = useState(false)
+  const [saveError, setSaveError]   = useState('')
+
+  useEffect(() => {
+    fetch('/api/parent/me')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        if (d?.children?.length) {
+          setChildren(d.children)
+          setSelectedChild(d.children[0].id)
+        }
+      })
+      .catch(() => {})
+  }, [])
 
   const question = QUESTIONS[current]
   const progress = Math.round(((current) / QUESTIONS.length) * 100)
@@ -32,6 +51,36 @@ export default function AssessmentPage() {
     setAnswers({})
     setCurrent(0)
     setPhase('intro')
+    setSaved(false)
+    setSaveError('')
+  }
+
+  async function saveResults() {
+    if (!selectedChild || saving || saved) return
+    setSaving(true)
+    setSaveError('')
+    try {
+      const totalScore = Object.values(domainScores).reduce((a, b) => a + b, 0)
+      const res = await fetch('/api/parent/assessment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          studentId: selectedChild,
+          type: 'attention-domains',
+          domainScores,
+          totalScore,
+          severity: totalScore >= 45 ? 'severe' : totalScore >= 30 ? 'moderate' : totalScore >= 15 ? 'mild' : 'none',
+          recommendations: DOMAIN_ORDER.filter(k => domainScores[k] >= 5).flatMap(k => DOMAINS[k].exerciseTips),
+          answers: Object.entries(answers).map(([id, rating]) => ({ itemId: id, rating })),
+        }),
+      })
+      if (res.ok) setSaved(true)
+      else setSaveError('تعذر الحفظ، حاول مرة أخرى')
+    } catch {
+      setSaveError('حدث خطأ في الاتصال')
+    } finally {
+      setSaving(false)
+    }
   }
 
   const domainScores = getDomainScores(answers)
@@ -348,6 +397,40 @@ export default function AssessmentPage() {
           </div>
         </div>
       </div>
+
+      {/* Save to server */}
+      {children.length > 0 && (
+        <div className="rounded-2xl p-4 space-y-3" style={{ background: '#F9FAFB', border: '1.5px solid #F0E8FF' }}>
+          <p className="font-black text-sm text-gray-700">💾 حفظ النتائج لملف طفلك</p>
+          {children.length > 1 && (
+            <select
+              value={selectedChild}
+              onChange={e => setSelectedChild(e.target.value)}
+              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-brand-300 focus:outline-none"
+            >
+              {children.map(c => (
+                <option key={c.id} value={c.id}>{c.firstName} {c.lastName}</option>
+              ))}
+            </select>
+          )}
+          {saved ? (
+            <div className="flex items-center gap-2 text-green-700 text-sm font-bold">
+              <CheckCircle className="w-4 h-4" /> تم حفظ النتائج بنجاح
+            </div>
+          ) : (
+            <button
+              onClick={saveResults}
+              disabled={saving}
+              className="flex items-center justify-center gap-2 w-full font-black text-sm py-3 rounded-xl transition-all"
+              style={{ background: '#7C5CFC', color: '#FFFFFF' }}
+            >
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              {saving ? 'جارٍ الحفظ...' : 'حفظ النتائج'}
+            </button>
+          )}
+          {saveError && <p className="text-xs text-red-600 font-bold">{saveError}</p>}
+        </div>
+      )}
 
       {/* Navigation links */}
       <div className="grid grid-cols-2 gap-3">

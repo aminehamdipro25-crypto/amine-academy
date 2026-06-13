@@ -167,7 +167,7 @@ export interface ExerciseResult {
   accuracy:        number   // 0-100
   duration:        number   // seconds
   errors:          number
-  metadata:        Record<string, number | string>
+  metadata:        Record<string, unknown>
   completedAt:     string
 }
 
@@ -191,7 +191,7 @@ export interface SessionLog {
   createdAt:       string
 }
 
-export type AssessmentType = 'adhd' | 'autism' | 'learning-difficulties' | 'motor' | 'cognitive'
+export type AssessmentType = 'adhd' | 'autism' | 'learning-difficulties' | 'motor' | 'cognitive' | 'attention-domains'
 
 export interface AssessmentAnswer {
   itemId:  string

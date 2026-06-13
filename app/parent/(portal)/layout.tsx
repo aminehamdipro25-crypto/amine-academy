@@ -1,10 +1,10 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, Users, LineChart,
-  Calendar, MessageSquare, FileText, LogOut, Dumbbell, Menu, X, ClipboardCheck,
+  Calendar, MessageSquare, FileText, LogOut, Dumbbell, Bell, ClipboardCheck, ChevronLeft,
 } from 'lucide-react'
 
 const navItems = [
@@ -18,173 +18,170 @@ const navItems = [
   { href: '/parent/chat',         label: 'التواصل',  icon: MessageSquare },
 ]
 
+const bottomItems = navItems.slice(0, 5)
+
 export default function ParentPortalLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const [open, setOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
 
   function isActive(href: string) {
     return href === '/parent/dashboard' ? pathname === href : pathname.startsWith(href)
   }
 
+  const activeItem = navItems.find(n => isActive(n.href))
+
   return (
-    <div style={{ minHeight: '100vh', background: '#FFF8F0' }}>
+    <div dir="rtl" style={{ minHeight: '100vh', background: '#FFF8F0' }}>
 
-      {/* ── Top header bar ── */}
+      {/* ══ Header ══ */}
       <header
-        className="fixed top-0 right-0 left-0 z-50 flex items-center justify-between px-4"
-        style={{ height: 56, background: '#FFFFFF', borderBottom: '1.5px solid #F0E8FF', boxShadow: '0 2px 8px rgba(124,92,252,0.06)' }}
-        dir="rtl"
-      >
-        {/* Logo */}
-        <div className="flex items-center gap-2.5">
-          <div
-            className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
-            style={{ background: 'linear-gradient(135deg,#7C5CFC,#5A32D9)' }}
-          >
-            <span className="text-white text-sm font-black">أ</span>
-          </div>
-          <div>
-            <div className="font-black text-sm leading-tight" style={{ color: '#7C5CFC' }}>أكاديمية أمين</div>
-            <div className="text-[10px] text-gray-400">بوابة الأولياء</div>
-          </div>
-        </div>
-
-        {/* Hamburger */}
-        <button
-          onClick={() => setOpen(o => !o)}
-          className="w-10 h-10 rounded-xl flex items-center justify-center transition-all"
-          style={{ background: open ? '#F3EEFF' : '#F9FAFB' }}
-          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#F3EEFF' }}
-          onMouseLeave={e => { if (!open) (e.currentTarget as HTMLButtonElement).style.background = '#F9FAFB' }}
-          aria-label="القائمة"
-        >
-          {open
-            ? <X className="w-5 h-5" style={{ color: '#7C5CFC' }} />
-            : <Menu className="w-5 h-5 text-gray-500" />
-          }
-        </button>
-      </header>
-
-      {/* ── Backdrop ── */}
-      {open && (
-        <div
-          className="fixed inset-0 z-40"
-          style={{ background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(2px)' }}
-          onClick={() => setOpen(false)}
-        />
-      )}
-
-      {/* ── Sidebar — slides in from right ── */}
-      <aside
-        className="fixed right-0 top-0 bottom-0 flex flex-col z-50"
+        className="fixed top-0 right-0 left-0 z-40 transition-all duration-300"
         style={{
-          width: 260,
-          background: '#FFFFFF',
-          borderLeft: '1.5px solid #F0E8FF',
-          boxShadow: open ? '-8px 0 40px rgba(124,92,252,0.14)' : 'none',
-          transform: open ? 'translateX(0)' : 'translateX(100%)',
-          transition: 'transform 0.28s cubic-bezier(0.4,0,0.2,1), box-shadow 0.28s',
+          height: 60,
+          background: scrolled ? 'rgba(255,255,255,0.95)' : '#FFFFFF',
+          borderBottom: scrolled ? '1.5px solid #F0E8FF' : '1.5px solid #F3EEFF',
+          boxShadow: scrolled ? '0 4px 20px rgba(124,92,252,0.08)' : 'none',
+          backdropFilter: scrolled ? 'blur(12px)' : 'none',
         }}
-        dir="rtl"
       >
-        {/* Sidebar header */}
-        <div className="flex items-center justify-between p-5" style={{ borderBottom: '1.5px solid #F0E8FF' }}>
-          <div className="flex items-center gap-2.5">
+        <div className="h-full max-w-4xl mx-auto px-4 flex items-center justify-between">
+          {/* Brand */}
+          <Link href="/parent/dashboard" className="flex items-center gap-2.5 flex-shrink-0">
             <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-              style={{ background: 'linear-gradient(135deg,#7C5CFC,#5A32D9)' }}
+              className="w-9 h-9 rounded-2xl flex items-center justify-center shadow-md"
+              style={{ background: 'linear-gradient(135deg,#6B46F0,#9A7BFD)' }}
             >
               <span className="text-white text-base font-black">أ</span>
             </div>
-            <div>
-              <div className="font-black text-sm leading-tight" style={{ color: '#7C5CFC' }}>أكاديمية أمين</div>
-              <div className="text-[10px] text-gray-400">بوابة الأولياء</div>
+            <div className="hidden sm:block">
+              <div className="font-black text-sm leading-tight" style={{ color: '#6B46F0' }}>أكاديمية أمين</div>
+              <div className="text-[10px] text-gray-400 leading-tight">بوابة الأولياء</div>
             </div>
-          </div>
-          <button
-            onClick={() => setOpen(false)}
-            className="w-8 h-8 rounded-xl flex items-center justify-center transition-all"
-            style={{ background: '#F3EEFF' }}
-            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#E8DBFF' }}
-            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '#F3EEFF' }}
-          >
-            <X className="w-4 h-4" style={{ color: '#6B46F0' }} />
-          </button>
-        </div>
+          </Link>
 
-        {/* Nav items */}
-        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-          {navItems.map(({ href, label, icon: Icon }) => {
-            const active = isActive(href)
-            return (
-              <Link
-                key={href}
-                href={href}
-                onClick={() => setOpen(false)}
-                className="flex items-center gap-3 px-3 py-2.5 text-sm font-bold rounded-2xl transition-all duration-200"
-                style={active
-                  ? { background: '#7C5CFC', color: '#FFFFFF', boxShadow: '0 2px 8px -2px rgba(124,92,252,0.4)' }
-                  : { color: '#6B7280' }
-                }
-                onMouseEnter={e => { if (!active) { (e.currentTarget as HTMLAnchorElement).style.background = '#F3EEFF'; (e.currentTarget as HTMLAnchorElement).style.color = '#7C5CFC' } }}
-                onMouseLeave={e => { if (!active) { (e.currentTarget as HTMLAnchorElement).style.background = ''; (e.currentTarget as HTMLAnchorElement).style.color = '#6B7280' } }}
-              >
-                <Icon className="w-4 h-4 flex-shrink-0" />
-                {label}
-              </Link>
-            )
-          })}
-        </nav>
+          {/* Desktop nav — hidden on mobile */}
+          <nav className="hidden md:flex items-center gap-1 flex-1 justify-center px-6">
+            {navItems.map(({ href, label, icon: Icon }) => {
+              const active = isActive(href)
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all duration-200 whitespace-nowrap"
+                  style={active
+                    ? { background: '#F3EEFF', color: '#6B46F0' }
+                    : { color: '#9CA3AF' }
+                  }
+                  onMouseEnter={e => { if (!active) { (e.currentTarget as HTMLAnchorElement).style.background = '#FAFAFA'; (e.currentTarget as HTMLAnchorElement).style.color = '#6B46F0' } }}
+                  onMouseLeave={e => { if (!active) { (e.currentTarget as HTMLAnchorElement).style.background = ''; (e.currentTarget as HTMLAnchorElement).style.color = '#9CA3AF' } }}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  {label}
+                  {active && <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#7C5CFC' }} />}
+                </Link>
+              )
+            })}
+          </nav>
 
-        {/* Logout */}
-        <div className="p-3" style={{ borderTop: '1.5px solid #F0E8FF' }}>
-          <form action="/api/auth/client/logout" method="POST">
+          {/* Right side: page title (mobile) + actions */}
+          <div className="flex items-center gap-2">
+            {/* Mobile: current page name */}
+            {activeItem && (
+              <span className="md:hidden text-xs font-black" style={{ color: '#7C5CFC' }}>
+                {activeItem.label}
+              </span>
+            )}
+
+            {/* Notifications placeholder */}
             <button
-              type="submit"
-              className="flex items-center gap-3 w-full px-3 py-2.5 rounded-2xl text-sm font-bold transition-all duration-200"
-              style={{ color: '#9CA3AF' }}
-              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#FEF2F2'; (e.currentTarget as HTMLButtonElement).style.color = '#EF4444' }}
-              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = ''; (e.currentTarget as HTMLButtonElement).style.color = '#9CA3AF' }}
+              className="w-9 h-9 rounded-xl flex items-center justify-center transition-all"
+              style={{ background: '#F3EEFF' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#E8DBFF' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '#F3EEFF' }}
             >
-              <LogOut className="w-4 h-4" />
-              تسجيل الخروج
+              <Bell className="w-4 h-4" style={{ color: '#7C5CFC' }} />
             </button>
-          </form>
-        </div>
-      </aside>
 
-      {/* ── Mobile bottom nav ── */}
-      <nav
-        className="fixed bottom-0 right-0 left-0 z-30 md:hidden"
-        style={{ background: '#FFFFFF', borderTop: '2px solid #F0E8FF', boxShadow: '0 -4px 16px rgba(124,92,252,0.06)' }}
-      >
-        <div className="flex items-center justify-around py-1.5 px-2">
-          {navItems.slice(0, 5).map(({ href, label, icon: Icon }) => {
-            const active = isActive(href)
-            return (
-              <Link
-                key={href}
-                href={href}
-                className="flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-xl transition-all duration-200 min-w-[44px]"
-                style={active ? { color: '#7C5CFC' } : { color: '#9CA3AF' }}
+            {/* Logout (desktop only) */}
+            <form action="/api/auth/client/logout" method="POST" className="hidden md:block">
+              <button
+                type="submit"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all"
+                style={{ color: '#9CA3AF', background: '#F9FAFB' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#FEF2F2'; (e.currentTarget as HTMLButtonElement).style.color = '#EF4444' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '#F9FAFB'; (e.currentTarget as HTMLButtonElement).style.color = '#9CA3AF' }}
               >
-                <Icon className="w-5 h-5" />
-                <span className="text-[9px] font-black leading-none">{label}</span>
-                {active && (
-                  <span className="w-1.5 h-1.5 rounded-full mt-0.5" style={{ background: '#7C5CFC' }} />
-                )}
-              </Link>
-            )
-          })}
+                <LogOut className="w-3.5 h-3.5" />
+                خروج
+              </button>
+            </form>
+          </div>
         </div>
-      </nav>
+      </header>
 
-      {/* ── Main content — full width always ── */}
-      <main className="pb-20 md:pb-6" style={{ paddingTop: 56 }}>
-        <div className="max-w-3xl mx-auto p-4 md:p-6" dir="rtl">
+      {/* ══ Main content ══ */}
+      <main className="pb-24 md:pb-8" style={{ paddingTop: 60 }}>
+        <div className="max-w-3xl mx-auto px-4 py-5 md:py-7">
           {children}
         </div>
       </main>
+
+      {/* ══ Mobile bottom navigation ══ */}
+      <nav
+        className="fixed bottom-0 right-0 left-0 z-40 md:hidden"
+        style={{
+          background: 'rgba(255,255,255,0.97)',
+          borderTop: '1.5px solid #F0E8FF',
+          boxShadow: '0 -4px 24px rgba(124,92,252,0.08)',
+          backdropFilter: 'blur(16px)',
+          paddingBottom: 'env(safe-area-inset-bottom)',
+        }}
+      >
+        <div className="flex items-stretch justify-around px-2 pt-2 pb-1">
+          {bottomItems.map(({ href, label, icon: Icon }) => {
+            const active = isActive(href)
+            return (
+              <Link
+                key={href}
+                href={href}
+                className="flex flex-col items-center gap-1 px-3 py-1.5 rounded-2xl flex-1 transition-all duration-200 relative"
+                style={active
+                  ? { color: '#6B46F0' }
+                  : { color: '#C4C9D4' }
+                }
+              >
+                {active && (
+                  <span
+                    className="absolute inset-0 rounded-2xl"
+                    style={{ background: '#F3EEFF' }}
+                  />
+                )}
+                <Icon className="w-5 h-5 relative z-10" />
+                <span className="text-[10px] font-black leading-none relative z-10">{label}</span>
+              </Link>
+            )
+          })}
+          {/* More button leading to more pages */}
+          <Link
+            href="/parent/reports"
+            className="flex flex-col items-center gap-1 px-3 py-1.5 rounded-2xl flex-1 transition-all duration-200"
+            style={
+              ['/parent/reports','/parent/chat','/parent/appointments'].some(p => pathname.startsWith(p))
+                ? { color: '#6B46F0' }
+                : { color: '#C4C9D4' }
+            }
+          >
+            <ChevronLeft className="w-5 h-5 rotate-180" />
+            <span className="text-[10px] font-black leading-none">المزيد</span>
+          </Link>
+        </div>
+      </nav>
     </div>
   )
 }

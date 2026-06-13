@@ -11,7 +11,7 @@ export async function POST(
 ) {
   const cookieStore = await cookies()
   const token = cookieStore.get('admin_token')?.value
-  if (!token || !verifyAdminSession(token)) {
+  if (!token || !await verifyAdminSession(token)) {
     return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
   }
 

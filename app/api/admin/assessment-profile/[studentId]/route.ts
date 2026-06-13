@@ -8,7 +8,7 @@ export const runtime = 'nodejs'
 
 async function checkAdmin() {
   const cookieStore = await cookies()
-  const token = cookieStore.get('admin_session')?.value
+  const token = cookieStore.get('admin_token')?.value
   return verifyAdminSession(token || '')
 }
 

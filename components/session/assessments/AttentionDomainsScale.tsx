@@ -89,7 +89,7 @@ export default function AttentionDomainsScale({ studentId, onComplete, onCancel 
     const result: AssessmentResult = {
       id: `AR-${Date.now().toString(36)}`,
       studentId,
-      type: 'adhd',
+      type: 'attention-domains',
       domainScores,
       totalScore,
       severity: severity(totalScore),

@@ -58,6 +58,7 @@ export default function ClientDetailPage() {
   const [profileDraft, setProfileDraft] = useState<Partial<StudentAssessmentProfile['diagnosedDifficulties']>>({})
   const [profileSaving, setProfileSaving] = useState(false)
   const [programs, setPrograms] = useState<Record<string, Program | null>>({})
+  const [programsLoading, setProgramsLoading] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -102,6 +103,7 @@ export default function ClientDetailPage() {
     })
 
     // Fetch current program for each student
+    setProgramsLoading(true)
     Promise.all(
       students.map(s =>
         fetch(`/api/admin/students/${s.id}/program`)
@@ -113,7 +115,7 @@ export default function ClientDetailPage() {
       const map: Record<string, Program | null> = {}
       results.forEach(r => { map[r.id] = r.program })
       setPrograms(map)
-    })
+    }).finally(() => setProgramsLoading(false))
   }, [data])
 
   async function save() {
@@ -713,7 +715,7 @@ export default function ClientDetailPage() {
           )}
 
           {/* No program banner */}
-          {(data.students || []).length > 0 && (data.students || []).every(s => !programs[s.id]) && (
+          {!programsLoading && (data.students || []).length > 0 && (data.students || []).every(s => !programs[s.id]) && (
             <div className="bg-amber-50 border border-amber-200 rounded-2xl px-6 py-4 flex items-center justify-between">
               <div>
                 <p className="font-black text-amber-800 text-sm">⚠️ لا يوجد برنامج مخصص لهذا المشترك بعد</p>

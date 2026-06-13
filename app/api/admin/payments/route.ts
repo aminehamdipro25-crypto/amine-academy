@@ -47,6 +47,11 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: 'الدفع غير موجود' }, { status: 404 })
     }
 
+    // Idempotency: already confirmed → skip reprocessing
+    if (payment.status === 'confirmed' && status === 'confirmed') {
+      return NextResponse.json({ ok: true, skipped: true })
+    }
+
     const updates: Record<string, unknown> = { status }
     if (adminNotes !== undefined) updates.adminNotes = adminNotes
     if (status === 'confirmed') updates.confirmedAt = new Date().toISOString()
@@ -55,15 +60,11 @@ export async function PATCH(req: NextRequest) {
 
     // If confirming and payment has a parentId, activate the parent's subscription
     if (status === 'confirmed' && payment.parentId) {
-      try {
-        await updateParent(payment.parentId, {
-          subscriptionStatus: 'active',
-          subscriptionPlan: payment.plan,
-          subscriptionExpiry: new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString(),
-        })
-      } catch (e) {
-        console.warn('[admin/payments PATCH] failed to update parent subscription:', (e as Error).message)
-      }
+      await updateParent(payment.parentId, {
+        subscriptionStatus: 'active',
+        subscriptionPlan: payment.plan,
+        subscriptionExpiry: new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString(),
+      })
     }
 
     return NextResponse.json({ ok: true })

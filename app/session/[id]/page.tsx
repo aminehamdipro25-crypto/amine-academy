@@ -18,6 +18,14 @@ import ReactionGame    from '@/components/session/exercises/ReactionGame'
 import StroopTest      from '@/components/session/exercises/StroopTest'
 import StopSignal      from '@/components/session/exercises/StopSignal'
 import EmotionCards    from '@/components/session/exercises/EmotionCards'
+import TokenBoard      from '@/components/session/exercises/TokenBoard'
+import SelfRating      from '@/components/session/exercises/SelfRating'
+import VerbalFluency   from '@/components/session/exercises/VerbalFluency'
+import SocialScenarios from '@/components/session/exercises/SocialScenarios'
+import BehaviorContract from '@/components/session/exercises/BehaviorContract'
+import ColorGrid        from '@/components/session/exercises/ColorGrid'
+import PatternMatch     from '@/components/session/exercises/PatternMatch'
+import WordBuilder      from '@/components/session/exercises/WordBuilder'
 import ADHDScale       from '@/components/session/assessments/ADHDScale'
 import LearningDifficultiesScale from '@/components/session/assessments/LearningDifficultiesScale'
 import AttentionDomainsScale from '@/components/session/assessments/AttentionDomainsScale'
@@ -28,18 +36,26 @@ type ActiveView =
   | null
 
 const EXERCISES = [
-  { id:'memory-cards',    labelAr:'مطابقة البطاقات',         icon:'🃏', category:'ذاكرة',      color:'bg-purple-900/40 border-purple-500' },
-  { id:'sequence-memory', labelAr:'تذكر التسلسل',            icon:'🔢', category:'ذاكرة',      color:'bg-blue-900/40 border-blue-500' },
-  { id:'n-back',          labelAr:'ذاكرة N-Back',             icon:'🧩', category:'ذاكرة',      color:'bg-indigo-900/40 border-indigo-500' },
-  { id:'word-recall',     labelAr:'تذكر الكلمات',             icon:'📝', category:'ذاكرة',      color:'bg-violet-900/40 border-violet-500' },
-  { id:'breathing',       labelAr:'تمارين التنفس',            icon:'🌬️', category:'تنفس',       color:'bg-cyan-900/40 border-cyan-500' },
-  { id:'tap-target',      labelAr:'التناسق الحركي',           icon:'🎯', category:'حركي',       color:'bg-orange-900/40 border-orange-500' },
-  { id:'simon-says',      labelAr:'سايمون يقول',              icon:'🎨', category:'إدراكي',     color:'bg-green-900/40 border-green-500' },
-  { id:'letter-match',    labelAr:'مطابقة الحروف',            icon:'🔤', category:'صعوبات التعلم', color:'bg-amber-900/40 border-amber-500'  },
-  { id:'reaction-game',   labelAr:'سرعة رد الفعل',            icon:'⚡', category:'حركي',          color:'bg-yellow-900/40 border-yellow-500' },
-  { id:'stroop-test',     labelAr:'ستروب — كبح الاستجابة',    icon:'🎨', category:'انتباه',         color:'bg-rose-900/40 border-rose-500'     },
-  { id:'stop-signal',     labelAr:'توقف أو اكمل',             icon:'🛑', category:'اندفاعية',       color:'bg-red-900/40 border-red-500'       },
-  { id:'emotion-cards',   labelAr:'التعرف على المشاعر',       icon:'🎭', category:'اجتماعي',        color:'bg-pink-900/40 border-pink-500'     },
+  { id:'memory-cards',      labelAr:'مطابقة البطاقات',         icon:'🃏', category:'ذاكرة',          color:'bg-purple-900/40 border-purple-500',  ageMin:5,  ageMax:22 },
+  { id:'sequence-memory',   labelAr:'تذكر التسلسل',            icon:'🔢', category:'ذاكرة',          color:'bg-blue-900/40 border-blue-500',       ageMin:6,  ageMax:17 },
+  { id:'n-back',            labelAr:'ذاكرة N-Back',             icon:'🧩', category:'ذاكرة',          color:'bg-indigo-900/40 border-indigo-500',   ageMin:8,  ageMax:22 },
+  { id:'word-recall',       labelAr:'تذكر الكلمات',             icon:'📝', category:'ذاكرة',          color:'bg-violet-900/40 border-violet-500',   ageMin:6,  ageMax:17 },
+  { id:'breathing',         labelAr:'تمارين التنفس',            icon:'🌬️', category:'تنظيم',          color:'bg-cyan-900/40 border-cyan-500',        ageMin:5,  ageMax:22 },
+  { id:'tap-target',        labelAr:'التناسق الحركي',           icon:'🎯', category:'حركي',           color:'bg-orange-900/40 border-orange-500',   ageMin:5,  ageMax:22 },
+  { id:'simon-says',        labelAr:'سايمون يقول',              icon:'🎨', category:'إدراكي',         color:'bg-green-900/40 border-green-500',     ageMin:5,  ageMax:17 },
+  { id:'letter-match',      labelAr:'مطابقة الحروف',            icon:'🔤', category:'تعلّم',           color:'bg-amber-900/40 border-amber-500',     ageMin:5,  ageMax:11 },
+  { id:'reaction-game',     labelAr:'سرعة رد الفعل',            icon:'⚡', category:'حركي',           color:'bg-yellow-900/40 border-yellow-500',   ageMin:5,  ageMax:22 },
+  { id:'stroop-test',       labelAr:'ستروب — كبح الاستجابة',   icon:'🔵', category:'انتباه',          color:'bg-rose-900/40 border-rose-500',       ageMin:10, ageMax:22 },
+  { id:'stop-signal',       labelAr:'توقف أو اكمل',             icon:'🛑', category:'اندفاعية',       color:'bg-red-900/40 border-red-500',         ageMin:8,  ageMax:22 },
+  { id:'emotion-cards',     labelAr:'التعرف على المشاعر',       icon:'🎭', category:'اجتماعي',        color:'bg-pink-900/40 border-pink-500',       ageMin:5,  ageMax:17 },
+  { id:'token-board',       labelAr:'لوح التعزيز',              icon:'🏅', category:'تعديل السلوك',   color:'bg-emerald-900/40 border-emerald-500', ageMin:5,  ageMax:22 },
+  { id:'self-rating',       labelAr:'تقييم الذات',              icon:'🪞', category:'تعديل السلوك',   color:'bg-teal-900/40 border-teal-500',       ageMin:7,  ageMax:22 },
+  { id:'verbal-fluency',    labelAr:'الطلاقة اللفظية',          icon:'🗣️', category:'معرفي',          color:'bg-sky-900/40 border-sky-500',         ageMin:5,  ageMax:22 },
+  { id:'social-scenarios',  labelAr:'المواقف الاجتماعية',       icon:'🤝', category:'اجتماعي',        color:'bg-fuchsia-900/40 border-fuchsia-500', ageMin:5,  ageMax:22 },
+  { id:'behavior-contract', labelAr:'عقد الجلسة',               icon:'📋', category:'تعديل السلوك',   color:'bg-lime-900/40 border-lime-500',       ageMin:7,  ageMax:22 },
+  { id:'color-grid',        labelAr:'لوحة الألوان',             icon:'🎨', category:'إدراكي',          color:'bg-pink-900/40 border-pink-500',       ageMin:5,  ageMax:14 },
+  { id:'pattern-match',     labelAr:'مطابقة الأنماط',           icon:'🔍', category:'إدراكي',          color:'bg-violet-900/40 border-violet-500',   ageMin:5,  ageMax:16 },
+  { id:'word-builder',      labelAr:'بناء الكلمة',              icon:'🔤', category:'تعلّم',            color:'bg-emerald-900/40 border-emerald-400', ageMin:5,  ageMax:14 },
 ]
 
 const ASSESSMENTS = [
@@ -142,6 +158,7 @@ export default function SessionPage() {
     attention:3, cooperation:3, energy:3, mood:3, anxiety:3,
   })
   const [tab, setTab] = useState<'exercises'|'assessments'|'log'>('exercises')
+  const [categoryFilter, setCategoryFilter] = useState<string>('الكل')
   const [profile, setProfile] = useState<StudentAssessmentProfile | null>(null)
   const [kidMode, setKidMode] = useState(false)
   const [showCelebration, setShowCelebration] = useState(false)
@@ -206,28 +223,12 @@ export default function SessionPage() {
       }).catch(() => {})
   }, [id])
 
-  const [jitsiOpen, setJitsiOpen] = useState(false)
-  const jitsiWindowRef = useRef<Window | null>(null)
+  const [jitsiEmbedded, setJitsiEmbedded] = useState(false)
 
-  function openJitsiPopup() {
-    if (jitsiWindowRef.current && !jitsiWindowRef.current.closed) {
-      jitsiWindowRef.current.focus()
-      return
-    }
-    const w = 480, h = 380
-    const left = window.screenX + window.outerWidth - w - 20
-    const top  = window.screenY + 60
-    const popup = window.open(
-      jitsiUrl!,
-      'jitsi-meeting',
-      `width=${w},height=${h},left=${left},top=${top},resizable=yes,toolbar=no,menubar=no,location=no`
-    )
-    jitsiWindowRef.current = popup
-    setJitsiOpen(true)
-    const check = setInterval(() => {
-      if (popup?.closed) { setJitsiOpen(false); clearInterval(check) }
-    }, 1000)
-  }
+  // Jitsi embed URL — disables prejoin screen and sets display name automatically
+  const jitsiEmbedUrl = jitsiUrl
+    ? `${jitsiUrl}#config.prejoinPageEnabled=false&config.startWithAudioMuted=false&config.disableDeepLinking=true&userInfo.displayName=${encodeURIComponent('الأستاذ أمين')}`
+    : null
 
 
   // Timer
@@ -411,16 +412,16 @@ export default function SessionPage() {
 
           {jitsiUrl && (
             <button
-              onClick={openJitsiPopup}
+              onClick={() => setJitsiEmbedded(e => !e)}
               className={`flex items-center gap-1.5 font-black px-3 py-1.5 rounded-lg text-xs transition-all flex-shrink-0 ${
-                jitsiOpen
-                  ? 'bg-green-500 text-white ring-2 ring-green-400/50 animate-pulse'
+                jitsiEmbedded
+                  ? 'bg-green-500 text-white ring-2 ring-green-400/50'
                   : 'bg-green-700 hover:bg-green-600 text-white'
               }`}
-              title="فتح نافذة المقابلة — ضعها في زاوية الشاشة وشارك نافذة الجلسة"
+              title="تضمين كاميرا الطالب في الصفحة"
             >
               <Video className="w-3.5 h-3.5" />
-              {jitsiOpen ? 'المقابلة مفتوحة ●' : 'فتح المقابلة'}
+              {jitsiEmbedded ? 'المقابلة مفتوحة ●' : 'فتح المقابلة'}
             </button>
           )}
           {!running && (
@@ -490,18 +491,16 @@ export default function SessionPage() {
         </div>
       </header>
 
-      {/* Screen-share tip — shown only when Jitsi popup is open */}
-      {jitsiOpen && (
-        <div className="bg-green-900/40 border-b border-green-500/30 px-4 py-2 flex items-center justify-between gap-4">
+      {/* Jitsi active indicator */}
+      {jitsiEmbedded && (
+        <div className="bg-green-900/30 border-b border-green-500/20 px-4 py-1.5 flex items-center justify-between gap-4">
           <p className="text-green-300 text-xs font-bold flex items-center gap-2">
-            <Video className="w-3.5 h-3.5 flex-shrink-0" />
-            نافذة المقابلة مفتوحة — لمشاركة شاشتك مع الطالب: في Jitsi اختر
-            <span className="bg-green-800/60 rounded px-1.5 py-0.5 font-black">Share Screen</span>
-            ثم اختر نافذة المتصفح هذه (الجلسة) وليس النافذة الصغيرة
+            <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse inline-block" />
+            المقابلة المرئية مفعّلة — الطالب يظهر في المنطقة الرئيسية، وعند اختيار تمرين يتقلص إلى الزاوية
           </p>
-          <button onClick={() => { jitsiWindowRef.current?.focus() }}
-            className="text-green-400 text-xs font-bold hover:text-green-300 whitespace-nowrap">
-            إظهار النافذة ↗
+          <button onClick={() => setJitsiEmbedded(false)}
+            className="text-green-400/60 text-xs hover:text-green-300 transition-colors">
+            إغلاق
           </button>
         </div>
       )}
@@ -523,49 +522,78 @@ export default function SessionPage() {
           </div>
 
           <div className="flex-1 overflow-y-auto p-3 space-y-2">
-            {tab === 'exercises' && sortedExercises.map((ex, idx) => {
-              const isTop = topGames.includes(ex.id)
-              const isActive = activeView?.type === 'exercise' && activeView.id === ex.id
-              const isFirst = topGames.length > 0 && idx === 0
+            {tab === 'exercises' && (() => {
+              const allCategories = ['الكل', ...Array.from(new Set(EXERCISES.map(e => e.category)))]
+              const filtered = categoryFilter === 'الكل'
+                ? sortedExercises
+                : sortedExercises.filter(e => e.category === categoryFilter)
               return (
-                <div key={ex.id}>
-                  {isFirst && (
-                    <div className="text-[10px] font-black text-brand-400 px-1 pb-1 flex items-center gap-1">
-                      <Star className="w-3 h-3" /> موصى بها لهذا الطالب
-                    </div>
-                  )}
-                  {!isTop && idx === topGames.length && topGames.length > 0 && (
-                    <div className="border-t border-white/10 my-1" />
-                  )}
-                  <button
-                    onClick={() => {
-                      if (!running) startSession()
-                      setActiveView({ type: 'exercise', id: ex.id })
-                    }}
-                    className={`w-full flex items-center gap-3 p-3 rounded-xl border text-right transition-all
-                      ${ex.color} hover:scale-[1.02]
-                      ${isActive ? 'scale-[1.02] ring-1 ring-white/30' : ''}
-                      ${isTop ? 'ring-1 ring-brand-400/50' : ''}
-                    `}>
-                    <span className="text-xl">{ex.icon}</span>
-                    <div className="text-right flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-1">
-                        <div className="text-white font-bold text-xs truncate">{ex.labelAr}</div>
-                        {isTop && <Star className="w-3 h-3 text-brand-400 flex-shrink-0" />}
-                      </div>
-                      <div className="flex items-center gap-1.5 mt-0.5">
-                        <span className="text-white/40 text-[10px]">{ex.category}</span>
-                        {(gameUsageCounts[ex.id] ?? 0) > 0 && (
-                          <span className="text-[9px] bg-white/10 text-white/40 px-1 py-0.5 rounded-full font-bold ltr-num">
-                            ×{gameUsageCounts[ex.id]} مرة
-                          </span>
+                <>
+                  {/* Category filter chips */}
+                  <div className="flex flex-wrap gap-1 pb-1">
+                    {allCategories.map(cat => (
+                      <button
+                        key={cat}
+                        onClick={() => setCategoryFilter(cat)}
+                        className={`text-[10px] font-black px-2 py-0.5 rounded-full transition-colors ${
+                          categoryFilter === cat
+                            ? 'bg-brand-600 text-white'
+                            : 'bg-white/10 text-white/50 hover:bg-white/20'
+                        }`}
+                      >
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
+                  {filtered.map((ex, idx) => {
+                    const isTop = topGames.includes(ex.id)
+                    const isActive = activeView?.type === 'exercise' && activeView.id === ex.id
+                    const isFirst = categoryFilter === 'الكل' && topGames.length > 0 && idx === 0
+                    const ageOk = studentAge >= (ex.ageMin ?? 5) && studentAge <= (ex.ageMax ?? 22)
+                    return (
+                      <div key={ex.id}>
+                        {isFirst && (
+                          <div className="text-[10px] font-black text-brand-400 px-1 pb-1 flex items-center gap-1">
+                            <Star className="w-3 h-3" /> موصى بها لهذا الطالب
+                          </div>
                         )}
+                        {categoryFilter === 'الكل' && !isTop && idx === topGames.length && topGames.length > 0 && (
+                          <div className="border-t border-white/10 my-1" />
+                        )}
+                        <button
+                          onClick={() => {
+                            if (!running) startSession()
+                            setActiveView({ type: 'exercise', id: ex.id })
+                          }}
+                          className={`w-full flex items-center gap-3 p-3 rounded-xl border text-right transition-all
+                            ${ex.color} hover:scale-[1.02]
+                            ${isActive ? 'scale-[1.02] ring-1 ring-white/30' : ''}
+                            ${isTop ? 'ring-1 ring-brand-400/50' : ''}
+                            ${!ageOk ? 'opacity-40' : ''}
+                          `}>
+                          <span className="text-xl">{ex.icon}</span>
+                          <div className="text-right flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-1">
+                              <div className="text-white font-bold text-xs truncate">{ex.labelAr}</div>
+                              {isTop && <Star className="w-3 h-3 text-brand-400 flex-shrink-0" />}
+                            </div>
+                            <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                              <span className="text-white/40 text-[10px]">{ex.category}</span>
+                              <span className="text-white/25 text-[9px] ltr-num">{ex.ageMin}-{ex.ageMax}س</span>
+                              {(gameUsageCounts[ex.id] ?? 0) > 0 && (
+                                <span className="text-[9px] bg-white/10 text-white/40 px-1 py-0.5 rounded-full font-bold ltr-num">
+                                  ×{gameUsageCounts[ex.id]} مرة
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </button>
                       </div>
-                    </div>
-                  </button>
-                </div>
+                    )
+                  })}
+                </>
               )
-            })}
+            })()}
 
             {tab === 'assessments' && (
               <div className="space-y-2">
@@ -971,7 +999,51 @@ export default function SessionPage() {
         {/* Main exercise area */}
 
         <main className={`flex-1 flex items-center justify-center bg-gray-950 relative overflow-auto ${kidMode ? 'hidden' : ''}`}>
-          {!activeView && !running && (
+
+          {/* ── Embedded Jitsi iframe ── */}
+          {jitsiEmbedded && jitsiEmbedUrl && (
+            <div
+              className="rounded-2xl overflow-hidden"
+              style={
+                activeView
+                  ? {
+                      position: 'fixed',
+                      bottom: 20,
+                      left: 20,
+                      width: 280,
+                      height: 210,
+                      zIndex: 60,
+                      boxShadow: '0 8px 40px rgba(0,0,0,0.8)',
+                      border: '2px solid rgba(255,255,255,0.15)',
+                      borderRadius: 16,
+                    }
+                  : {
+                      position: 'absolute',
+                      inset: 0,
+                      zIndex: 10,
+                      borderRadius: 0,
+                    }
+              }
+            >
+              <iframe
+                src={jitsiEmbedUrl}
+                style={{ width: '100%', height: '100%', border: 'none', display: 'block' }}
+                allow="camera *; microphone *; display-capture *; fullscreen *"
+                allowFullScreen
+              />
+              {activeView && (
+                <button
+                  onClick={() => setJitsiEmbedded(false)}
+                  className="absolute top-2 right-2 bg-black/70 hover:bg-black/90 text-white font-bold text-xs px-2 py-1 rounded-lg transition-colors"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Start screen — hidden when Jitsi is embedded */}
+          {!jitsiEmbedded && !activeView && !running && (
             <div className="text-center">
               <div className="text-8xl mb-6">🎯</div>
               <h2 className="text-2xl font-black text-white mb-3">جاهز للجلسة؟</h2>
@@ -983,7 +1055,8 @@ export default function SessionPage() {
             </div>
           )}
 
-          {!activeView && running && (
+          {/* Idle screen — hidden when Jitsi is embedded */}
+          {!jitsiEmbedded && !activeView && running && (
             <div className="text-center">
               <div className="text-6xl mb-4">✨</div>
               <p className="text-white/40">اختر تمريناً من القائمة الجانبية</p>
@@ -1022,7 +1095,15 @@ export default function SessionPage() {
               {activeView.id === 'reaction-game'  && <ReactionGame   onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
               {activeView.id === 'stroop-test'    && <StroopTest     onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
               {activeView.id === 'stop-signal'    && <StopSignal     onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'emotion-cards'  && <EmotionCards   onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'emotion-cards'     && <EmotionCards      onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'token-board'       && <TokenBoard        onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'self-rating'       && <SelfRating        onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'verbal-fluency'    && <VerbalFluency     onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'social-scenarios'  && <SocialScenarios   onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'behavior-contract' && <BehaviorContract  onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'color-grid'       && <ColorGrid         onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'pattern-match'    && <PatternMatch      onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'word-builder'     && <WordBuilder       onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
             </div>
           )}
 

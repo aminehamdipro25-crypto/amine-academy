@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── Base — Sensory-friendly defaults ─────────────────────── */
+/* ── Base defaults ─────────────────────────────────────────── */
 * { font-family: var(--font-cairo), 'Cairo', sans-serif; box-sizing: border-box; }
 
 html {
@@ -13,81 +13,144 @@ html {
 
 body {
   direction: rtl;
-  background: #f8fafc;
+  background: #FFF8F0;
   width: 100%;
   overflow-x: hidden;
-  /* Reduce motion for ADHD/Autism users */
-  @media (prefers-reduced-motion: reduce) {
-    scroll-behavior: auto;
-  }
 }
 
-/* ── Scrollbar ──────────────────────────────────────────────── */
+/* ── Scrollbar ─────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 5px; }
-::-webkit-scrollbar-track { background: #f1f5f9; }
-::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9px; }
-::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+::-webkit-scrollbar-track { background: #F3EEFF; }
+::-webkit-scrollbar-thumb { background: #B99AFF; border-radius: 9px; }
+::-webkit-scrollbar-thumb:hover { background: #7C5CFC; }
 
-/* ── Gradient text ──────────────────────────────────────────── */
+/* ── Gradient text ─────────────────────────────────────────── */
 .gradient-text {
-  background: linear-gradient(135deg, #5b6ef2 0%, #2dd4bf 100%);
+  background: linear-gradient(135deg, #7C5CFC 0%, #2ABFA3 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.gradient-text-warm {
+  background: linear-gradient(135deg, #7C5CFC 0%, #FF8C65 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-/* ── Card hover — gentle, no jarring jumps ──────────────────── */
+/* ── Card lift — consistent hover across the platform ──────── */
+.card-lift {
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+              box-shadow 0.25s ease,
+              border-color 0.2s ease;
+}
+.card-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 40px -6px rgba(124, 92, 252, 0.18);
+}
+.card-lift:active {
+  transform: translateY(-1px) scale(0.98);
+}
+
+/* ── Legacy alias ──────────────────────────────────────────── */
 .card-hover {
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 .card-hover:hover {
   transform: translateY(-3px);
-  box-shadow: 0 16px 32px -8px rgba(91, 110, 242, 0.12);
+  box-shadow: 0 16px 32px -8px rgba(124, 92, 252, 0.14);
 }
 
-/* ── Sensory badge pop ──────────────────────────────────────── */
-.badge-pop {
-  animation: badge-pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+/* ── Button press effect ───────────────────────────────────── */
+.btn-press {
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.btn-press:hover  { transform: translateY(-2px); }
+.btn-press:active { transform: translateY(0) scale(0.97); }
+
+/* ── Shimmer loading skeleton ──────────────────────────────── */
+.shimmer-bg {
+  background: linear-gradient(
+    90deg,
+    #F3EEFF 25%,
+    #E8DBFF 50%,
+    #F3EEFF 75%
+  );
+  background-size: 200% auto;
+  animation: shimmer 1.8s ease-in-out infinite;
 }
 
-/* ── Numbers in RTL context ─────────────────────────────────── */
+/* ── Numbers in RTL context ───────────────────────────────── */
 .ltr-num {
   direction: ltr;
   unicode-bidi: embed;
   display: inline-block;
 }
 
-/* ── Gamification progress bars ─────────────────────────────── */
+/* ── Gamification progress bar ────────────────────────────── */
 .progress-bar {
-  background: linear-gradient(90deg, #5b6ef2, #2dd4bf);
+  background: linear-gradient(90deg, #7C5CFC, #2ABFA3);
   border-radius: 9999px;
   transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* ── Achievement tiers ──────────────────────────────────────── */
-.tier-bronze  { background: linear-gradient(135deg, #d97706, #b45309); }
-.tier-silver  { background: linear-gradient(135deg, #94a3b8, #64748b); }
-.tier-gold    { background: linear-gradient(135deg, #fbbf24, #f59e0b); }
-.tier-platinum { background: linear-gradient(135deg, #e2e8f0, #7c3aed); }
+/* ── Achievement tiers ─────────────────────────────────────── */
+.tier-bronze   { background: linear-gradient(135deg, #D97706, #B45309); }
+.tier-silver   { background: linear-gradient(135deg, #94A3B8, #64748B); }
+.tier-gold     { background: linear-gradient(135deg, #FBBF24, #F59E0B); }
+.tier-platinum { background: linear-gradient(135deg, #E2E8F0, #7C3AED); }
 
-/* ── Print — PDF ─────────────────────────────────────────────── */
-@media print {
-  .no-print { display: none !important; }
-  body > * { display: none !important; }
-  .print-visible { display: block !important; }
-  .print-visible {
-    position: fixed !important;
-    inset: 0 !important;
-    background: white !important;
-  }
-  @page { margin: 0; size: A4 portrait; }
+/* ── Badge pop ─────────────────────────────────────────────── */
+.badge-pop {
+  animation: badge-pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+.animate-pop {
+  animation: pop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
+}
+.animate-fade-in {
+  animation: fade-in 0.25s ease-out;
+}
+
+/* ── Domain color dots / pills ─────────────────────────────── */
+.domain-memory   { background-color: #7C5CFC; }
+.domain-attention{ background-color: #3B9EFF; }
+.domain-impulse  { background-color: #FF6B6B; }
+.domain-motor    { background-color: #FF8C65; }
+.domain-social   { background-color: #2ABFA3; }
+.domain-learning { background-color: #FFBA44; }
+
+/* ── Warm card border-left accent (parent portal) ──────────── */
+.card-accent-left {
+  border-right: 4px solid var(--accent-color, #7C5CFC);
+}
+
+/* ── Section fade-in on scroll (progressive enhancement) ───── */
+.section-reveal {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.section-reveal.revealed {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 /* ── Focus indicators — accessible ──────────────────────────── */
 :focus-visible {
-  outline: 3px solid #5b6ef2;
+  outline: 3px solid #7C5CFC;
   outline-offset: 2px;
-  border-radius: 4px;
+  border-radius: 6px;
+}
+
+/* ── Print ───────────────────────────────────────────────────── */
+@media print {
+  .no-print { display: none !important; }
+  body > * { display: none !important; }
+  .print-visible { display: block !important; position: fixed !important; inset: 0 !important; background: white !important; }
+  @page { margin: 0; size: A4 portrait; }
 }
 
 /* ── Reduced motion ──────────────────────────────────────────── */
@@ -97,4 +160,5 @@ body {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+  html { scroll-behavior: auto; }
 }

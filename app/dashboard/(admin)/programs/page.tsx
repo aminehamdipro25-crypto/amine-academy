@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Calendar, Save, ChevronDown, ChevronUp, Plus, X, Sparkles } from 'lucide-react'
+import { Calendar, Dumbbell, Save, ChevronDown, ChevronUp, Plus, X, Sparkles, Loader2 } from 'lucide-react'
 import type { Parent, Student, Exercise } from '@/lib/types'
 
 interface ParentWithStudents extends Parent { students: Student[] }
@@ -22,10 +22,9 @@ export default function ProgramsPage() {
   const [clients, setClients] = useState<ParentWithStudents[]>([])
   const [exercises, setExercises] = useState<Exercise[]>([])
   const [loading, setLoading] = useState(true)
-  const [saving, setSaving]         = useState(false)
-  const [generating, setGenerating] = useState(false)
-  const [error, setError]           = useState('')
-  const [success, setSuccess]       = useState('')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
 
   const [parentId, setParentId] = useState('')
   const [studentId, setStudentId] = useState('')
@@ -37,6 +36,35 @@ export default function ProgramsPage() {
   )
   const [expandedDay, setExpandedDay] = useState<string | null>('monday')
   const [filterCat, setFilterCat] = useState('all')
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiRationale, setAiRationale] = useState('')
+
+  async function generateWithAI() {
+    if (!studentId) { setError('اختر الطالب أولاً'); return }
+    setAiLoading(true)
+    setError('')
+    setAiRationale('')
+    try {
+      const res = await fetch('/api/admin/ai-generate-program', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ studentId }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setSchedule(data.schedule)
+        setTitle(data.title)
+        setAiRationale(data.rationale)
+        setSuccess('✓ تم توليد البرنامج بالذكاء الاصطناعي — راجعه وعدّله ثم احفظه')
+      } else {
+        setError(data.error || 'فشل التوليد')
+      }
+    } catch {
+      setError('حدث خطأ في الاتصال')
+    } finally {
+      setAiLoading(false)
+    }
+  }
 
   useEffect(() => {
     Promise.all([
@@ -84,30 +112,6 @@ export default function ProgramsPage() {
     energy: 'طاقة', sensory: 'حسي', social: 'اجتماعي',
   }
 
-  async function generateWithAI() {
-    if (!studentId) { setError('اختر الطالب أولاً'); return }
-    setGenerating(true)
-    setError('')
-    try {
-      const res = await fetch('/api/admin/ai-generate-program', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ studentId }),
-      })
-      const data = await res.json()
-      if (data.ok) {
-        setSchedule(data.schedule)
-        setSuccess(`✨ تم توليد برنامج لـ ${data.studentName} — ${data.totalExercises} تمرين موزع على الأسبوع`)
-      } else {
-        setError(data.error || 'فشل التوليد')
-      }
-    } catch {
-      setError('تعذر الاتصال بالذكاء الاصطناعي')
-    } finally {
-      setGenerating(false)
-    }
-  }
-
   async function submit() {
     if (!studentId) { setError('اختر الطالب'); return }
     if (totalAssigned === 0) { setError('أضف تمريناً واحداً على الأقل'); return }
@@ -120,8 +124,9 @@ export default function ProgramsPage() {
         body: JSON.stringify({ studentId, title, startDate, endDate, weeklySchedule: schedule }),
       })
       if (res.ok) {
-        setSuccess('تم إنشاء البرنامج بنجاح! الطالب سيرى تمارينه اليوم على الفور.')
-        setTimeout(() => router.push('/dashboard/clients'), 3000)
+        setSuccess('✅ تم إنشاء البرنامج بنجاح! يمكنك الآن رؤيته في صفحة المشترك.')
+        const clientPage = selectedParent ? `/dashboard/clients/${selectedParent.id}` : '/dashboard/clients'
+        setTimeout(() => router.push(clientPage), 2000)
       } else {
         const d = await res.json()
         setError(d.error || 'حدث خطأ')
@@ -189,6 +194,28 @@ export default function ProgramsPage() {
             <span className="font-bold">{selectedStudent.firstName}</span> — {selectedStudent.ageGroup} سنة • {selectedStudent.diagnosis} • المستوى {selectedStudent.severityLevel}
           </div>
         )}
+
+        {/* AI Generator */}
+        <div className="border-t border-gray-100 pt-4">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-xs font-bold text-gray-700">توليد ذكي بالـ AI</p>
+              <p className="text-xs text-gray-400 mt-0.5">يحلل Claude حالة الطفل ويختار التمارين المناسبة تلقائياً</p>
+            </div>
+            <button
+              onClick={generateWithAI}
+              disabled={!studentId || aiLoading}
+              className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-brand-600 text-white font-black px-5 py-2.5 rounded-xl text-sm hover:opacity-90 disabled:opacity-40 transition-all shadow-md whitespace-nowrap">
+              {aiLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+              {aiLoading ? 'جارٍ التوليد...' : 'توليد بالذكاء الاصطناعي'}
+            </button>
+          </div>
+          {aiRationale && (
+            <div className="mt-3 bg-purple-50 border border-purple-200 rounded-xl px-4 py-3 text-xs text-purple-800 font-medium">
+              🧠 {aiRationale}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Weekly schedule builder */}
@@ -284,28 +311,13 @@ export default function ProgramsPage() {
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3">
-        <button
-          onClick={generateWithAI}
-          disabled={generating || !studentId}
-          className="flex-1 bg-purple-600 text-white font-black py-4 rounded-2xl flex items-center justify-center gap-2 hover:bg-purple-700 disabled:opacity-50 transition-colors"
-        >
-          {generating
-            ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            : <><Sparkles className="w-5 h-5" /> توليد تلقائي بالذكاء الاصطناعي</>
-          }
-        </button>
-        <button
-          onClick={submit}
-          disabled={saving || !studentId}
-          className="flex-1 bg-brand-600 text-white font-black py-4 rounded-2xl flex items-center justify-center gap-2 hover:bg-brand-700 disabled:opacity-50 transition-colors text-lg"
-        >
-          {saving
-            ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            : <><Save className="w-5 h-5" /> حفظ البرنامج</>
-          }
-        </button>
-      </div>
+      <button onClick={submit} disabled={saving || !studentId}
+        className="w-full bg-brand-600 text-white font-black py-4 rounded-2xl flex items-center justify-center gap-2 hover:bg-brand-700 disabled:opacity-50 transition-colors text-lg">
+        {saving
+          ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+          : <><Save className="w-5 h-5" />{' '}حفظ البرنامج</>
+        }
+      </button>
     </div>
   )
 }

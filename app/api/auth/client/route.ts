@@ -10,7 +10,7 @@ export async function POST(req: Request) {
   try {
     const ip = getClientIp(req)
 
-    if (await isRateLimited(`client_auth:${ip}`, 10, 3600)) {
+    if (await isRateLimited(`client_auth:${ip}`, 20, 3600)) {
       return NextResponse.json({ error: 'حاول مجدداً بعد ساعة' }, { status: 429 })
     }
 
@@ -51,7 +51,8 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ error: 'طلب غير صالح' }, { status: 400 })
   } catch (err) {
-    console.error('[client-auth]', err)
-    return NextResponse.json({ error: 'خطأ في الخادم، حاول مجدداً' }, { status: 500 })
+    const msg = (err as Error).message || 'unknown'
+    console.error('[client-auth]', msg)
+    return NextResponse.json({ error: `خطأ في الخادم: ${msg}` }, { status: 500 })
   }
 }

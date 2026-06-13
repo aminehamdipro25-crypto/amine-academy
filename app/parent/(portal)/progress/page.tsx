@@ -1,69 +1,109 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { TrendingUp, Award, Zap } from 'lucide-react'
+import { TrendingUp, Award, Zap, Target, Clock, Brain } from 'lucide-react'
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
+  LineChart, Line, CartesianGrid,
+} from 'recharts'
 import type { Student, ProgressReport } from '@/lib/types'
 
-interface ChildReports { child: Student; reports: ProgressReport[] }
-
-function ScoreBar({ label, score, max, color }: { label: string; score: number; max: number; color: string }) {
-  const pct = Math.round((score / max) * 100)
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-1.5">
-        <span className="text-sm text-gray-700 font-medium">{label}</span>
-        <span className="text-sm font-black text-gray-900 ltr-num">{pct}%</span>
-      </div>
-      <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
-        <div className={`h-full rounded-full ${color} transition-all duration-700`} style={{ width: `${pct}%` }} />
-      </div>
-    </div>
-  )
+interface GameHistory {
+  totalPlays: number
+  totalMinutes: number
+  byGame: Record<string, { plays: number; avgScore: number; avgAccuracy: number; lastPlayed: string }>
+  byWeek: { week: string; gamesPlayed: number; avgScore: number; totalMinutes: number }[]
 }
 
-const RATING_COLORS: Record<string, string> = {
-  'الانتباه':         'bg-brand-500',
-  'السلوك':           'bg-emerald-500',
-  'المهارات الاجتماعية': 'bg-purple-500',
-  'الضبط الذاتي':    'bg-amber-500',
-  'attention':        'bg-brand-500',
-  'behavior':         'bg-emerald-500',
-  'social':           'bg-purple-500',
-  'selfControl':      'bg-amber-500',
+interface ChildData { student: Student; history: GameHistory }
+interface ChildReports { child: Student; reports: ProgressReport[] }
+
+const DOMAIN_LABELS: Record<string, string> = {
+  'memory-cards':    'مطابقة البطاقات',
+  'sequence-memory': 'تذكر التسلسل',
+  'n-back':          'ذاكرة N-Back',
+  'word-recall':     'تذكر الكلمات',
+  'letter-match':    'مطابقة الحروف',
+  'breathing':       'تمارين التنفس',
+  'tap-target':      'التناسق الحركي',
+  'simon-says':      'سايمون يقول',
+  'reaction-game':   'سرعة رد الفعل',
+  'stroop-test':     'ستروب',
+  'stop-signal':     'توقف أو اكمل',
+  'emotion-cards':   'التعرف على المشاعر',
+}
+
+const METRIC_LABELS: Record<string, string> = {
+  attention:            'الانتباه والتركيز',
+  impulse_control:      'كبح الاندفاعية',
+  social_interaction:   'المهارات الاجتماعية',
+  motor_coordination:   'التنسيق الحركي',
+  emotional_regulation: 'الضبط الانفعالي',
+}
+
+function weekLabel(iso: string): string {
+  const d = new Date(iso)
+  return `${d.getDate()}/${d.getMonth() + 1}`
 }
 
 export default function ProgressPage() {
-  const [data, setData] = useState<ChildReports[]>([])
+  const [gameData, setGameData] = useState<ChildData[]>([])
+  const [reportData, setReportData] = useState<ChildReports[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedChild, setSelectedChild] = useState<string>('')
+  const [activeTab, setActiveTab] = useState<'games' | 'reports'>('games')
 
   useEffect(() => {
-    fetch('/api/parent/reports')
-      .then(r => r.json())
-      .then(d => {
-        setData(d.reportsPerChild || [])
-        if (d.reportsPerChild?.[0]) setSelectedChild(d.reportsPerChild[0].child.id)
-      })
-      .finally(() => setLoading(false))
+    Promise.all([
+      fetch('/api/parent/game-progress').then(r => r.json()).catch(() => ({ progressData: [] })),
+      fetch('/api/parent/reports').then(r => r.json()).catch(() => ({ reportsPerChild: [] })),
+    ]).then(([gameResp, reportResp]) => {
+      const gd: ChildData[] = gameResp.progressData || []
+      const rd: ChildReports[] = reportResp.reportsPerChild || []
+      setGameData(gd)
+      setReportData(rd)
+      setSelectedChild(gd[0]?.student.id || rd[0]?.child.id || '')
+    }).finally(() => setLoading(false))
   }, [])
 
   if (loading) return (
-    <div className="flex items-center justify-center py-20">
-      <div className="text-brand-600 text-4xl animate-pulse">📈</div>
+    <div className="flex items-center justify-center py-20" dir="rtl">
+      <div className="text-4xl animate-pulse">📈</div>
     </div>
   )
 
-  const current = data.find(d => d.child.id === selectedChild)
-  const reports = current?.reports || []
-  const latest = reports[0]
+  const allChildren = Array.from(
+    new Map([
+      ...gameData.map(d => [d.student.id, d.student] as [string, Student]),
+      ...reportData.map(d => [d.child.id, d.child] as [string, Student]),
+    ]).entries()
+  ).map(([, s]) => s)
 
-  const METRIC_LABELS: Record<string, string> = {
-    attention: 'الانتباه والتركيز',
-    impulse_control: 'كبح الاندفاعية',
-    social_interaction: 'المهارات الاجتماعية',
-    motor_coordination: 'التنسيق الحركي',
-    emotional_regulation: 'الضبط الانفعالي',
-  }
-  // Aggregate average scores across all reports
+  const currentGame = gameData.find(d => d.student.id === selectedChild)
+  const currentReport = reportData.find(d => d.child.id === selectedChild)
+  const student = allChildren.find(s => s.id === selectedChild)
+  const reports = currentReport?.reports || []
+  const latest = reports[0]
+  const history = currentGame?.history
+
+  const topGames = history
+    ? Object.entries(history.byGame)
+        .map(([gameId, data]) => ({ gameId, ...data, label: DOMAIN_LABELS[gameId] || gameId }))
+        .sort((a, b) => b.plays - a.plays)
+        .slice(0, 6)
+    : []
+
+  const weekChartData = history?.byWeek.map(w => ({
+    name: weekLabel(w.week),
+    ألعاب: w.gamesPlayed,
+    'متوسط الأداء': w.avgScore,
+    دقائق: w.totalMinutes,
+  })) || []
+
+  const scoreChartData = history?.byWeek.map(w => ({
+    name: weekLabel(w.week),
+    الأداء: w.avgScore,
+  })) || []
+
   const avgScores: Record<string, { total: number; count: number }> = {}
   reports.forEach(r => {
     r.behaviorRatings?.forEach(({ metric, score }) => {
@@ -73,26 +113,33 @@ export default function ProgressPage() {
     })
   })
 
-  const totalPoints = current?.child.totalPoints || 0
-  const streak = current?.child.streak || 0
+  const hasGameData = history && history.totalPlays > 0
+  const hasReportData = reports.length > 0
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" dir="rtl">
+
+      {/* ── Header ── */}
       <div>
-        <h1 className="font-black text-2xl text-gray-900">تقدم طفلك</h1>
-        <p className="text-gray-500 text-sm mt-0.5">تطور مُقاس بمعايير علمية موضوعية</p>
+        <h1 className="font-black text-2xl text-gray-900">تطور طفلك</h1>
+        <p className="text-gray-500 text-sm mt-0.5">بيانات حقيقية من الجلسات • محدّث تلقائياً</p>
       </div>
 
-      {/* Child selector */}
-      {data.length > 1 && (
-        <div className="flex gap-2">
-          {data.map(({ child }) => (
+      {/* ── Child selector ── */}
+      {allChildren.length > 1 && (
+        <div className="flex gap-2 flex-wrap">
+          {allChildren.map(child => (
             <button
               key={child.id}
               onClick={() => setSelectedChild(child.id)}
-              className={`px-4 py-2 rounded-full text-sm font-bold transition-colors ${
-                selectedChild === child.id ? 'bg-brand-600 text-white' : 'bg-white text-gray-600 border border-gray-200'
-              }`}
+              className="px-4 py-2 rounded-full text-sm font-bold transition-all"
+              style={
+                selectedChild === child.id
+                  ? { background: '#6B46F0', color: '#FFFFFF' }
+                  : { background: '#FFFFFF', color: '#6B7280', border: '1.5px solid #E5E7EB' }
+              }
+              onMouseEnter={e => { if (selectedChild !== child.id) (e.currentTarget as HTMLButtonElement).style.borderColor = '#D3BBFF' }}
+              onMouseLeave={e => { if (selectedChild !== child.id) (e.currentTarget as HTMLButtonElement).style.borderColor = '#E5E7EB' }}
             >
               {child.firstName}
             </button>
@@ -100,118 +147,219 @@ export default function ProgressPage() {
         </div>
       )}
 
-      {data.length === 0 || !current ? (
-        <div className="bg-white rounded-3xl border-2 border-dashed border-gray-200 p-12 text-center">
+      {/* ── Empty state ── */}
+      {!hasGameData && !hasReportData && (
+        <div
+          className="rounded-3xl p-12 text-center"
+          style={{ background: '#FFFFFF', border: '2px dashed #E5E7EB' }}
+        >
           <TrendingUp className="w-12 h-12 text-gray-300 mx-auto mb-4" />
           <h3 className="font-bold text-gray-600 mb-2">لم تبدأ الجلسات بعد</h3>
-          <p className="text-gray-400 text-sm">بعد إجراء جلسات والحصول على تقارير التقدم، ستظهر هنا الرسوم البيانية لتطور طفلك.</p>
+          <p className="text-gray-400 text-sm max-w-xs mx-auto">بعد إجراء جلسات مع الأستاذ أمين، ستظهر هنا مؤشرات تطور طفلك بشكل تفصيلي.</p>
         </div>
-      ) : (
+      )}
+
+      {(hasGameData || hasReportData) && (
         <>
-          {/* Quick stats */}
-          <div className="grid grid-cols-3 gap-3">
-            <div className="bg-brand-50 rounded-2xl p-4 text-center">
-              <Award className="w-5 h-5 text-brand-600 mx-auto mb-1" />
-              <div className="font-black text-xl text-brand-700 ltr-num">{totalPoints}</div>
-              <div className="text-xs text-brand-600">نقطة إجمالية</div>
-            </div>
-            <div className="bg-orange-50 rounded-2xl p-4 text-center">
-              <Zap className="w-5 h-5 text-orange-600 mx-auto mb-1" />
-              <div className="font-black text-xl text-orange-700 ltr-num">{streak}</div>
-              <div className="text-xs text-orange-600">يوم متتالي 🔥</div>
-            </div>
-            <div className="bg-emerald-50 rounded-2xl p-4 text-center">
-              <TrendingUp className="w-5 h-5 text-emerald-600 mx-auto mb-1" />
-              <div className="font-black text-xl text-emerald-700 ltr-num">{reports.length}</div>
-              <div className="text-xs text-emerald-600">تقرير مكتمل</div>
-            </div>
+          {/* ── Quick stats ── */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {[
+              { icon: <Brain className="w-5 h-5" style={{ color: '#6B46F0' }} />, bg: '#F3EEFF', value: history?.totalPlays ?? 0, label: 'لعبة مكتملة', color: '#5A32D9' },
+              { icon: <Clock className="w-5 h-5" style={{ color: '#D97706' }} />, bg: '#FFFBEB', value: history?.totalMinutes ?? 0, label: 'دقيقة تدريب', color: '#B45309' },
+              { icon: <Zap className="w-5 h-5" style={{ color: '#EA580C' }} />, bg: '#FFF7ED', value: student?.streak ?? 0, label: 'يوم متتالي 🔥', color: '#C2410C' },
+              { icon: <Award className="w-5 h-5" style={{ color: '#7C3AED' }} />, bg: '#F5F3FF', value: student?.totalPoints ?? 0, label: 'نقطة إجمالية', color: '#6D28D9' },
+            ].map((s, i) => (
+              <div key={i} className="rounded-2xl p-4 text-center" style={{ background: s.bg }}>
+                <div className="flex justify-center mb-1">{s.icon}</div>
+                <div className="font-black text-xl ltr-num" style={{ color: s.color }}>{s.value}</div>
+                <div className="text-xs" style={{ color: s.color, opacity: 0.8 }}>{s.label}</div>
+              </div>
+            ))}
           </div>
 
-          {/* Average scores */}
-          {Object.keys(avgScores).length > 0 && (
-            <div className="bg-white rounded-2xl border border-gray-100 p-5">
-              <h2 className="font-black text-gray-900 mb-4">متوسط الأداء — كل التقارير</h2>
-              <div className="space-y-4">
-                {Object.entries(avgScores).map(([metric, { total, count }]) => (
-                  <ScoreBar
-                    key={metric}
-                    label={METRIC_LABELS[metric] || metric}
-                    score={total / count}
-                    max={5}
-                    color={RATING_COLORS[metric] || 'bg-brand-400'}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
+          {/* ── Tabs ── */}
+          <div className="flex gap-1 rounded-2xl p-1" style={{ background: '#F3F4F6' }}>
+            {([['games', '🎮 أداء الألعاب'], ['reports', '📊 تقارير الأستاذ']] as const).map(([key, label]) => (
+              <button
+                key={key}
+                onClick={() => setActiveTab(key)}
+                className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all"
+                style={
+                  activeTab === key
+                    ? { background: '#FFFFFF', color: '#5A32D9', boxShadow: '0 1px 4px rgba(0,0,0,0.08)' }
+                    : { color: '#6B7280' }
+                }
+                onMouseEnter={e => { if (activeTab !== key) (e.currentTarget as HTMLButtonElement).style.color = '#374151' }}
+                onMouseLeave={e => { if (activeTab !== key) (e.currentTarget as HTMLButtonElement).style.color = '#6B7280' }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
 
-          {/* Monthly chart (CSS bar chart) */}
-          {reports.length > 1 && (
-            <div className="bg-white rounded-2xl border border-gray-100 p-5">
-              <h2 className="font-black text-gray-900 mb-4">تطور النقاط عبر الزمن</h2>
-              <div className="flex items-end gap-3 h-32">
-                {[...reports].reverse().slice(-6).map((r, i) => {
-                  const pct = Math.min(100, (r.pointsEarned / 300) * 100)
-                  return (
-                    <div key={r.id} className="flex-1 flex flex-col items-center gap-1">
-                      <span className="text-xs text-gray-500 ltr-num">{r.pointsEarned}</span>
-                      <div className="w-full bg-gray-100 rounded-t-lg overflow-hidden flex-1 flex flex-col justify-end">
-                        <div
-                          className="w-full bg-brand-500 rounded-t-lg transition-all duration-700"
-                          style={{ height: `${pct}%` }}
-                        />
-                      </div>
-                      <span className="text-xs text-gray-400 ltr-num">
-                        {new Date(r.periodEnd).toLocaleDateString('ar', { month: 'short' })}
-                      </span>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Latest report highlight */}
-          {latest && (
-            <div className="bg-gradient-to-l from-brand-600 to-brand-800 rounded-2xl p-5 text-white">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="font-black text-lg">آخر تقرير</h2>
-                <span className="text-white/70 text-xs">
-                  {new Date(latest.periodEnd).toLocaleDateString('ar-SA')}
-                </span>
-              </div>
-              {latest.aiSummary && (
-                <p className="text-white/90 text-sm leading-relaxed mb-4">{latest.aiSummary}</p>
-              )}
-              {latest.professorNotes && (
-                <div className="bg-white/10 rounded-xl p-3">
-                  <p className="text-white/70 text-xs mb-1 font-bold">ملاحظات الأستاذ أمين</p>
-                  <p className="text-white text-sm leading-relaxed">{latest.professorNotes}</p>
+          {/* ── Games tab ── */}
+          {activeTab === 'games' && (
+            <div className="space-y-5">
+              {!hasGameData ? (
+                <div className="rounded-2xl p-8 text-center" style={{ background: '#FFFFFF', border: '1px solid #F3F4F6' }}>
+                  <Target className="w-8 h-8 text-gray-300 mx-auto mb-3" />
+                  <p className="text-gray-500 text-sm">سيتم عرض بيانات الألعاب هنا بعد أول جلسة تفاعلية</p>
                 </div>
+              ) : (
+                <>
+                  {scoreChartData.length > 1 && (
+                    <div className="rounded-2xl p-5" style={{ background: '#FFFFFF', border: '1px solid #F0E8FF' }}>
+                      <h2 className="font-black text-gray-900 mb-1 text-sm">منحنى الأداء الأسبوعي</h2>
+                      <p className="text-gray-400 text-xs mb-4">متوسط الدرجة في كل أسبوع (0-100)</p>
+                      <ResponsiveContainer width="100%" height={180}>
+                        <LineChart data={scoreChartData}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#F0E8FF" />
+                          <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#94a3b8' }} />
+                          <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: '#94a3b8' }} />
+                          <Tooltip
+                            contentStyle={{ borderRadius: 12, border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}
+                            formatter={(v: number) => [`${v}%`, 'الأداء']}
+                          />
+                          <Line type="monotone" dataKey="الأداء" stroke="#7C5CFC" strokeWidth={2.5} dot={{ fill: '#7C5CFC', r: 4 }} />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
+
+                  {weekChartData.length > 0 && (
+                    <div className="rounded-2xl p-5" style={{ background: '#FFFFFF', border: '1px solid #F0E8FF' }}>
+                      <h2 className="font-black text-gray-900 mb-1 text-sm">النشاط الأسبوعي</h2>
+                      <p className="text-gray-400 text-xs mb-4">عدد الألعاب ودقائق التدريب أسبوعياً</p>
+                      <ResponsiveContainer width="100%" height={160}>
+                        <BarChart data={weekChartData} barGap={4}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#F0E8FF" />
+                          <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#94a3b8' }} />
+                          <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} />
+                          <Tooltip contentStyle={{ borderRadius: 12, border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }} />
+                          <Bar dataKey="ألعاب" fill="#7C5CFC" radius={[4, 4, 0, 0]} />
+                          <Bar dataKey="دقائق" fill="#FFBA44" radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
+
+                  {topGames.length > 0 && (
+                    <div className="rounded-2xl p-5" style={{ background: '#FFFFFF', border: '1px solid #F0E8FF' }}>
+                      <h2 className="font-black text-gray-900 mb-4 text-sm">أداء كل لعبة</h2>
+                      <div className="space-y-3">
+                        {topGames.map(game => (
+                          <div key={game.gameId}>
+                            <div className="flex items-center justify-between mb-1.5">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm text-gray-700 font-medium">{game.label}</span>
+                                <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold ltr-num" style={{ background: '#F3F4F6', color: '#6B7280' }}>×{game.plays}</span>
+                              </div>
+                              <span className="text-sm font-black text-gray-900 ltr-num">{game.avgScore}%</span>
+                            </div>
+                            <div className="h-2.5 rounded-full overflow-hidden" style={{ background: '#F3F4F6' }}>
+                              <div
+                                className="h-full rounded-full transition-all duration-700"
+                                style={{
+                                  width: `${game.avgScore}%`,
+                                  background: game.avgScore >= 80 ? '#22C55E' : game.avgScore >= 60 ? '#F59E0B' : '#F87171',
+                                }}
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
-              <div className="flex items-center gap-4 mt-4 text-white/70 text-xs">
-                <span>✅ {latest.completedExercises}/{latest.totalExercises} تمرين</span>
-                <span>⭐ {latest.pointsEarned} نقطة</span>
-              </div>
             </div>
           )}
 
-          {/* Exercise completion */}
-          {latest && latest.totalExercises > 0 && (
-            <div className="bg-white rounded-2xl border border-gray-100 p-5">
-              <h2 className="font-black text-gray-900 mb-3 text-sm">معدل إنجاز التمارين</h2>
-              <div className="h-4 bg-gray-100 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-emerald-500 rounded-full transition-all duration-700"
-                  style={{ width: `${Math.round((latest.completedExercises / latest.totalExercises) * 100)}%` }}
-                />
-              </div>
-              <div className="flex items-center justify-between mt-2 text-xs text-gray-500">
-                <span className="ltr-num">{latest.completedExercises} من {latest.totalExercises}</span>
-                <span className="font-bold text-emerald-600 ltr-num">
-                  {Math.round((latest.completedExercises / latest.totalExercises) * 100)}%
-                </span>
-              </div>
+          {/* ── Reports tab ── */}
+          {activeTab === 'reports' && (
+            <div className="space-y-5">
+              {!hasReportData ? (
+                <div className="rounded-2xl p-8 text-center" style={{ background: '#FFFFFF', border: '1px solid #F3F4F6' }}>
+                  <TrendingUp className="w-8 h-8 text-gray-300 mx-auto mb-3" />
+                  <p className="text-gray-500 text-sm">سيتم عرض تقارير الأستاذ أمين هنا بعد كل دورة</p>
+                </div>
+              ) : (
+                <>
+                  {Object.keys(avgScores).length > 0 && (
+                    <div className="rounded-2xl p-5" style={{ background: '#FFFFFF', border: '1px solid #F0E8FF' }}>
+                      <h2 className="font-black text-gray-900 mb-4 text-sm">متوسط التقييم السلوكي</h2>
+                      <div className="space-y-3.5">
+                        {Object.entries(avgScores).map(([metric, { total, count }]) => {
+                          const pct = Math.round(((total / count) / 5) * 100)
+                          return (
+                            <div key={metric}>
+                              <div className="flex items-center justify-between mb-1.5">
+                                <span className="text-sm text-gray-700 font-medium">{METRIC_LABELS[metric] || metric}</span>
+                                <span className="text-sm font-black text-gray-900 ltr-num">{pct}%</span>
+                              </div>
+                              <div className="h-2.5 rounded-full overflow-hidden" style={{ background: '#F3F4F6' }}>
+                                <div
+                                  className="h-full rounded-full transition-all duration-700"
+                                  style={{ width: `${pct}%`, background: '#7C5CFC' }}
+                                />
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {reports.length > 1 && (
+                    <div className="rounded-2xl p-5" style={{ background: '#FFFFFF', border: '1px solid #F0E8FF' }}>
+                      <h2 className="font-black text-gray-900 mb-4 text-sm">تطور النقاط</h2>
+                      <div className="flex items-end gap-3 h-28">
+                        {[...reports].reverse().slice(-6).map(r => {
+                          const pct = Math.min(100, (r.pointsEarned / 300) * 100)
+                          return (
+                            <div key={r.id} className="flex-1 flex flex-col items-center gap-1">
+                              <span className="text-xs text-gray-500 ltr-num">{r.pointsEarned}</span>
+                              <div className="w-full rounded-t-lg overflow-hidden flex-1 flex flex-col justify-end" style={{ background: '#F3F4F6' }}>
+                                <div className="w-full rounded-t-lg" style={{ height: `${pct}%`, background: '#7C5CFC' }} />
+                              </div>
+                              <span className="text-xs text-gray-400 ltr-num">
+                                {new Date(r.periodEnd).toLocaleDateString('ar', { month: 'short' })}
+                              </span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {latest && (
+                    <div
+                      className="rounded-2xl p-5 text-white"
+                      style={{ background: 'linear-gradient(to left, #6B46F0, #4A20C8)' }}
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <h2 className="font-black text-lg">آخر تقرير</h2>
+                        <span className="text-white/70 text-xs">
+                          {new Date(latest.periodEnd).toLocaleDateString('ar-SA')}
+                        </span>
+                      </div>
+                      {latest.aiSummary && (
+                        <p className="text-white/90 text-sm leading-relaxed mb-4">{latest.aiSummary}</p>
+                      )}
+                      {latest.professorNotes && (
+                        <div className="rounded-xl p-3 mb-3" style={{ background: 'rgba(255,255,255,0.1)' }}>
+                          <p className="text-white/70 text-xs mb-1 font-bold">ملاحظات الأستاذ أمين</p>
+                          <p className="text-white text-sm leading-relaxed">{latest.professorNotes}</p>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-4 text-white/70 text-xs">
+                        <span>✅ {latest.completedExercises}/{latest.totalExercises} تمرين</span>
+                        <span>⭐ {latest.pointsEarned} نقطة</span>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           )}
         </>

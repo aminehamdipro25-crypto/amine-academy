@@ -15,6 +15,9 @@ export async function GET() {
       REDIS_URL_LEN:    process.env.UPSTASH_REDIS_REST_URL?.trim().replace(/^["']|["']$/g, '').length ?? 0,
       REDIS_TOKEN_LEN:  process.env.UPSTASH_REDIS_REST_TOKEN?.trim().replace(/^["']|["']$/g, '').length ?? 0,
       REDIS_CONFIGURED: redis.isConfigured(),
+      GMAIL_USER:       !!process.env.GMAIL_USER,
+      GMAIL_PASSWORD:   !!process.env.GMAIL_APP_PASSWORD,
+      ANTHROPIC_KEY:    !!process.env.ANTHROPIC_API_KEY,
     },
     redis: { ok: false, error: null as string | null },
   }

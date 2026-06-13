@@ -15,22 +15,29 @@ export default function ParentLoginPage() {
     e.preventDefault()
     setLoading(true)
     setError('')
+    const ctrl = new AbortController()
+    const tid = setTimeout(() => ctrl.abort(), 15000)
     try {
       const res = await fetch('/api/auth/client', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...form, role: 'parent' }),
+        signal: ctrl.signal,
       })
       const data = await res.json()
       if (res.ok) {
         router.push('/parent/dashboard')
-        router.refresh()
       } else {
         setError(data.error || 'بيانات غير صحيحة')
       }
-    } catch {
-      setError('حدث خطأ في الاتصال')
+    } catch (e) {
+      if ((e as Error).name === 'AbortError') {
+        setError('انتهت مهلة الاتصال — تحقق من اتصالك وحاول مجدداً')
+      } else {
+        setError('حدث خطأ في الاتصال')
+      }
     } finally {
+      clearTimeout(tid)
       setLoading(false)
     }
   }
@@ -76,17 +83,15 @@ export default function ParentLoginPage() {
               </button>
             </div>
           </div>
+          <div className="flex justify-end">
+            <Link href="/parent/forgot-password" className="text-sm text-brand-600 hover:underline">
+              نسيت كلمة المرور؟
+            </Link>
+          </div>
 
           {error && (
             <div className="bg-red-50 text-red-600 text-sm font-medium px-4 py-3 rounded-xl">{error}</div>
           )}
-
-          <div className="text-left">
-            <Link href="/parent/forgot-password"
-              className="text-brand-600 text-sm font-medium hover:underline">
-              نسيت كلمة المرور؟
-            </Link>
-          </div>
 
           <button
             type="submit" disabled={loading}

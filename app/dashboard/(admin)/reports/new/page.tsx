@@ -92,6 +92,25 @@ export default function NewReportPage() {
 
   const completionPct = total > 0 ? Math.round((completed / total) * 100) : 0
 
+  function generateLocalTemplate() {
+    const name = selectedStudent ? selectedStudent.firstName : 'الطفل'
+    const typeLabel = type === 'session' ? 'الجلسة' : type === 'weekly' ? 'هذا الأسبوع' : 'هذا الشهر'
+    const perfLevel = completionPct >= 80 ? 'ممتازاً' : completionPct >= 60 ? 'جيداً' : completionPct >= 40 ? 'متوسطاً' : 'يحتاج دعماً'
+    const lowestMetric = METRICS.reduce((a, b) => (ratings[a.key] ?? 3) <= (ratings[b.key] ?? 3) ? a : b)
+    const highestMetric = METRICS.reduce((a, b) => (ratings[a.key] ?? 3) >= (ratings[b.key] ?? 3) ? a : b)
+    const avg = (Object.values(ratings).reduce((a, b) => a + b, 0) / METRICS.length)
+    const tip = completionPct >= 70
+      ? 'تشجيعه على الاستمرار والمواظبة على روتين التمارين اليومية'
+      : 'دعمه في المنزل من خلال تخصيص وقت منتظم للتمرين والمراجعة'
+    setProfessorNotes(
+      `أظهر ${name} أداءً ${perfLevel} خلال ${typeLabel}، حيث أكمل ${completed} تمريناً من أصل ${total} (${completionPct}%) واكتسب ${points} نقطة. ` +
+      `تميّز في مجال ${highestMetric.label}، ` +
+      (avg < 4 ? `في حين يحتاج مزيداً من التطوير في ${lowestMetric.label}. ` : `وأظهر مستوى سلوكياً عاماً مُرضياً. `) +
+      `توصية للأسرة هذا الأسبوع: ${tip}.`
+    )
+    toast('تم توليد نموذج محلي — يمكنك تعديله', 'info')
+  }
+
   async function generateAISummary() {
     if (!selectedStudentId || generatingAI) return
     setGeneratingAI(true)
@@ -443,9 +462,18 @@ export default function NewReportPage() {
         </button>
 
         {aiError && (
-          <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3 mb-4">
-            <AlertCircle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
-            <p className="text-amber-700 text-xs font-medium">{aiError}</p>
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3 mb-4 space-y-2">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+              <p className="text-amber-700 text-xs font-medium">{aiError}</p>
+            </div>
+            <button
+              type="button"
+              onClick={generateLocalTemplate}
+              className="w-full text-center text-xs font-black text-amber-700 bg-amber-100 hover:bg-amber-200 py-2 rounded-xl transition-colors"
+            >
+              📝 توليد نموذج محلي بدلاً من ذلك
+            </button>
           </div>
         )}
 

@@ -117,6 +117,7 @@ ${ratingsText || '- لم تحدد تقييمات بعد'}
     return NextResponse.json({ summary })
   } catch (err) {
     console.error('[ai-generate-report-summary]', err)
-    return NextResponse.json({ error: 'حدث خطأ أثناء توليد الملخص' }, { status: 500 })
+    const msg = err instanceof Error ? err.message : String(err)
+    return NextResponse.json({ error: msg || 'حدث خطأ أثناء توليد الملخص' }, { status: 500 })
   }
 }

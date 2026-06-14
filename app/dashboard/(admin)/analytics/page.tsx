@@ -8,11 +8,11 @@ function Bar({ label, value, max, color }: { label: string; value: number; max: 
   const pct = max > 0 ? Math.round((value / max) * 100) : 0
   return (
     <div className="flex items-center gap-3">
-      <span className="text-sm text-gray-600 w-28 text-right shrink-0">{label}</span>
-      <div className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden">
+      <span className="text-xs text-gray-500 font-medium w-28 text-right shrink-0">{label}</span>
+      <div className="flex-1 h-2.5 bg-gray-100 rounded-full overflow-hidden">
         <div className={`h-full rounded-full transition-all ${color}`} style={{ width: `${pct}%` }} />
       </div>
-      <span className="text-sm font-black text-gray-700 ltr-num w-8 text-left">{value}</span>
+      <span className="text-sm font-black text-gray-800 ltr-num w-8 text-left">{value}</span>
     </div>
   )
 }
@@ -95,93 +95,101 @@ export default async function AnalyticsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" dir="rtl">
+
+      {/* ── Header ── */}
       <div>
-        <h1 className="text-2xl font-black text-gray-900">الإحصائيات والتحليلات</h1>
-        <p className="text-gray-500 text-sm mt-1">نظرة شاملة على أداء المنصة</p>
+        <h1 className="text-2xl font-black text-gray-900 flex items-center gap-2">
+          <BarChart3 className="w-6 h-6 text-brand-500" />
+          الإحصائيات والتحليلات
+        </h1>
+        <p className="text-gray-400 text-sm mt-1">نظرة شاملة على أداء المنصة</p>
       </div>
 
       {error && (
-        <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-2xl p-4">
-          <AlertCircle className="w-5 h-5 text-amber-500 mt-0.5 shrink-0" />
-          <p className="text-amber-800 text-sm font-medium">تعذّر الاتصال بقاعدة البيانات</p>
+        <div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-2xl p-4">
+          <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
+          <p className="text-red-700 text-sm font-medium">تعذّر الاتصال بقاعدة البيانات</p>
         </div>
       )}
 
-      {/* Top KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* ── KPI Strip ── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: 'إجمالي المشتركين',  value: parents.length,           icon: Users,      color: 'bg-brand-50 text-brand-600' },
-          { label: 'اشتراكات نشطة',     value: statusCounts.active,       icon: TrendingUp, color: 'bg-green-50 text-green-600' },
-          { label: 'إجمالي التمارين',   value: exercises.length,          icon: Dumbbell,   color: 'bg-purple-50 text-purple-600' },
-          { label: 'جلسات مكتملة',      value: apptStats.completed,       icon: Calendar,   color: 'bg-orange-50 text-orange-600' },
-        ].map(({ label, value, icon: Icon, color }) => (
-          <div key={label} className="bg-white rounded-2xl p-5 border border-gray-100">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${color}`}>
-              <Icon className="w-5 h-5" />
+          { label: 'إجمالي المشتركين', value: parents.length,      bg: 'bg-brand-600',   glow: 'shadow-brand-500/20',   icon: Users },
+          { label: 'اشتراكات نشطة',    value: statusCounts.active, bg: 'bg-emerald-600', glow: 'shadow-emerald-500/20', icon: TrendingUp },
+          { label: 'إجمالي التمارين',  value: exercises.length,    bg: 'bg-violet-600',  glow: 'shadow-violet-500/20',  icon: Dumbbell },
+          { label: 'جلسات مكتملة',     value: apptStats.completed, bg: 'bg-orange-500',  glow: 'shadow-orange-500/20',  icon: Calendar },
+        ].map(({ label, value, bg, glow, icon: Icon }) => (
+          <div key={label} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+            <div className={`w-10 h-10 ${bg} rounded-xl flex items-center justify-center shadow-lg ${glow} mb-3`}>
+              <Icon className="w-5 h-5 text-white" />
             </div>
             <div className="text-3xl font-black text-gray-900 ltr-num">{value}</div>
-            <div className="text-gray-500 text-sm mt-1">{label}</div>
+            <div className="text-gray-400 text-xs mt-0.5 font-medium">{label}</div>
           </div>
         ))}
       </div>
 
-      {/* Row: Subscriptions + Plans */}
+      {/* ── Subscriptions + Plans ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Subscription status */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-6">
-          <h2 className="font-black text-gray-900 mb-5 flex items-center gap-2">
+        <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
+          <h2 className="font-black text-gray-900 mb-5 flex items-center gap-2 text-sm">
             <TrendingUp className="w-4 h-4 text-brand-500" />
             حالة الاشتراكات
           </h2>
-          <div className="space-y-3">
-            <Bar label="نشط"            value={statusCounts.active}    max={parents.length} color="bg-green-500" />
-            <Bar label="في الانتظار"    value={statusCounts.pending}   max={parents.length} color="bg-orange-400" />
+          <div className="space-y-3.5">
+            <Bar label="نشط"            value={statusCounts.active}    max={parents.length} color="bg-emerald-500" />
+            <Bar label="في الانتظار"    value={statusCounts.pending}   max={parents.length} color="bg-amber-400" />
             <Bar label="موقوف"          value={statusCounts.suspended} max={parents.length} color="bg-red-400" />
-            <Bar label="منتهي الصلاحية" value={statusCounts.expired}   max={parents.length} color="bg-yellow-400" />
+            <Bar label="منتهي الصلاحية" value={statusCounts.expired}   max={parents.length} color="bg-orange-400" />
             <Bar label="ملغى"           value={statusCounts.cancelled} max={parents.length} color="bg-gray-300" />
           </div>
         </div>
 
-        {/* Plan distribution */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-6">
-          <h2 className="font-black text-gray-900 mb-5 flex items-center gap-2">
-            <BarChart3 className="w-4 h-4 text-purple-500" />
+        <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
+          <h2 className="font-black text-gray-900 mb-5 flex items-center gap-2 text-sm">
+            <BarChart3 className="w-4 h-4 text-violet-500" />
             توزيع الباقات
           </h2>
           <div className="space-y-4">
             {[
-              { key: 'basic',    label: 'الأساسي',  color: 'bg-gray-400',    value: planCounts.basic },
-              { key: 'standard', label: 'المتقدم',  color: 'bg-brand-500',   value: planCounts.standard },
-              { key: 'premium',  label: 'المتميز',  color: 'bg-purple-500',  value: planCounts.premium },
-            ].map(({ label, color, value }) => (
+              { key: 'basic',    label: 'الأساسي',    color: 'bg-gray-400',    value: planCounts.basic },
+              { key: 'standard', label: 'القياسي',    color: 'bg-brand-500',   value: planCounts.standard },
+              { key: 'premium',  label: 'المتميز',    color: 'bg-violet-500',  value: planCounts.premium },
+              { key: 'session',  label: 'حصة مفردة',  color: 'bg-teal-500',    value: parents.filter(p => (p.subscriptionPlan as string) === 'session').length },
+              { key: 'weekly',   label: 'أسبوعي',     color: 'bg-blue-400',    value: parents.filter(p => (p.subscriptionPlan as string) === 'weekly').length },
+              { key: 'monthly',  label: 'شهري',       color: 'bg-emerald-500', value: parents.filter(p => (p.subscriptionPlan as string) === 'monthly').length },
+            ].filter(x => x.value > 0).map(({ label, color, value }) => (
               <div key={label}>
-                <div className="flex justify-between text-sm mb-1.5">
+                <div className="flex justify-between text-xs mb-1.5">
                   <span className="font-bold text-gray-700">{label}</span>
-                  <span className="text-gray-500 ltr-num">{value} مشترك ({parents.length > 0 ? Math.round(value/parents.length*100) : 0}%)</span>
+                  <span className="text-gray-400 ltr-num">{value} ({parents.length > 0 ? Math.round(value/parents.length*100) : 0}%)</span>
                 </div>
-                <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
-                  <div className={`h-full rounded-full ${color}`}
+                <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+                  <div className={`h-full rounded-full ${color} transition-all`}
                     style={{ width: `${parents.length > 0 ? (value/parents.length)*100 : 0}%` }} />
                 </div>
               </div>
             ))}
+            {parents.length === 0 && (
+              <p className="text-gray-300 text-sm text-center py-4">لا توجد بيانات بعد</p>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Row: Countries + Registration trend */}
+      {/* ── Countries + Monthly trend ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Countries */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-6">
-          <h2 className="font-black text-gray-900 mb-5 flex items-center gap-2">
-            <Globe className="w-4 h-4 text-green-500" />
+        <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
+          <h2 className="font-black text-gray-900 mb-5 flex items-center gap-2 text-sm">
+            <Globe className="w-4 h-4 text-emerald-500" />
             التوزيع الجغرافي
           </h2>
           {topCountries.length === 0 ? (
             <p className="text-gray-300 text-sm text-center py-8">لا توجد بيانات بعد</p>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-3.5">
               {topCountries.map(([country, count]) => (
                 <Bar key={country} label={country} value={count} max={parents.length} color="bg-brand-400" />
               ))}
@@ -189,20 +197,19 @@ export default async function AnalyticsPage() {
           )}
         </div>
 
-        {/* Monthly registration trend */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-6">
-          <h2 className="font-black text-gray-900 mb-5 flex items-center gap-2">
+        <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
+          <h2 className="font-black text-gray-900 mb-5 flex items-center gap-2 text-sm">
             <Users className="w-4 h-4 text-orange-500" />
             التسجيلات الشهرية (6 أشهر)
           </h2>
-          <div className="flex items-end gap-2 h-32">
+          <div className="flex items-end gap-2 h-36">
             {months.map(({ label, count }) => (
               <div key={label} className="flex-1 flex flex-col items-center gap-1">
-                <span className="text-xs font-bold text-gray-700 ltr-num">{count || ''}</span>
-                <div className="w-full relative">
+                <span className="text-xs font-black text-gray-700 ltr-num">{count || ''}</span>
+                <div className="w-full">
                   <div
-                    className="bg-brand-500 rounded-t-md w-full transition-all"
-                    style={{ height: `${Math.max((count / maxMonthCount) * 80, count > 0 ? 8 : 0)}px` }}
+                    className="bg-gradient-to-t from-brand-600 to-brand-400 rounded-t-lg w-full transition-all"
+                    style={{ height: `${Math.max((count / maxMonthCount) * 90, count > 0 ? 8 : 2)}px` }}
                   />
                 </div>
                 <span className="text-[10px] text-gray-400 text-center leading-tight">{label}</span>
@@ -212,29 +219,29 @@ export default async function AnalyticsPage() {
         </div>
       </div>
 
-      {/* Exercise library breakdown */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-6">
-        <h2 className="font-black text-gray-900 mb-5 flex items-center gap-2">
-          <Brain className="w-4 h-4 text-purple-500" />
-          مكتبة التمارين حسب الفئة ({exercises.length} تمرين)
+      {/* ── Exercise breakdown ── */}
+      <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
+        <h2 className="font-black text-gray-900 mb-5 flex items-center gap-2 text-sm">
+          <Brain className="w-4 h-4 text-violet-500" />
+          مكتبة التمارين ({exercises.length} تمرين)
         </h2>
         {exercises.length === 0 ? (
           <div className="text-center py-8">
             <p className="text-gray-300 text-sm">لم يتم تحميل التمارين بعد</p>
             <a href="/dashboard/exercises" className="text-brand-600 text-sm font-bold hover:underline mt-2 inline-block">
-              اذهب إلى إدارة التمارين ←
+              اذهب إلى إدارة التمارين →
             </a>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
             {Object.entries(CAT_LABELS).map(([key, label]) => {
               const count = catCounts[key] ?? 0
               const pct = exercises.length > 0 ? Math.round(count/exercises.length*100) : 0
               return (
-                <div key={key} className="text-center bg-gray-50 rounded-xl p-4">
+                <div key={key} className="text-center bg-gray-50 rounded-2xl p-4 hover:bg-brand-50 transition-colors">
                   <div className="text-2xl font-black text-gray-900 ltr-num">{count}</div>
-                  <div className="text-xs text-gray-500 mt-0.5">{label}</div>
-                  <div className="text-xs text-gray-300 mt-0.5 ltr-num">{pct}%</div>
+                  <div className="text-xs text-gray-500 mt-0.5 font-medium">{label}</div>
+                  <div className="text-[10px] text-gray-300 mt-0.5 ltr-num">{pct}%</div>
                 </div>
               )
             })}
@@ -242,21 +249,24 @@ export default async function AnalyticsPage() {
         )}
       </div>
 
-      {/* Appointment insights */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-6">
-        <h2 className="font-black text-gray-900 mb-5 flex items-center gap-2">
+      {/* ── Sessions ── */}
+      <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
+        <h2 className="font-black text-gray-900 mb-5 flex items-center gap-2 text-sm">
           <Calendar className="w-4 h-4 text-blue-500" />
-          إحصائيات الجلسات ({appointments.length} إجمالي)
+          الجلسات ({appointments.length} إجمالي)
         </h2>
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-3 gap-3">
           {[
-            { label: 'مجدولة',  value: apptStats.scheduled, color: 'text-blue-600',  bg: 'bg-blue-50' },
-            { label: 'مكتملة', value: apptStats.completed,  color: 'text-green-600', bg: 'bg-green-50' },
-            { label: 'ملغاة',   value: apptStats.cancelled,  color: 'text-red-600',   bg: 'bg-red-50' },
-          ].map(({ label, value, color, bg }) => (
-            <div key={label} className={`rounded-xl p-5 text-center ${bg}`}>
-              <div className={`text-3xl font-black ltr-num ${color}`}>{value}</div>
-              <div className="text-gray-600 text-sm mt-1">{label}</div>
+            { label: 'مجدولة',  value: apptStats.scheduled, bg: 'bg-blue-600',    glow: 'shadow-blue-500/20' },
+            { label: 'مكتملة',  value: apptStats.completed, bg: 'bg-emerald-600', glow: 'shadow-emerald-500/20' },
+            { label: 'ملغاة',   value: apptStats.cancelled, bg: 'bg-red-500',     glow: 'shadow-red-500/20' },
+          ].map(({ label, value, bg, glow }) => (
+            <div key={label} className="bg-gray-50 rounded-2xl p-5 text-center hover:shadow-md transition-shadow">
+              <div className={`w-8 h-8 ${bg} rounded-xl flex items-center justify-center shadow-lg ${glow} mb-3 mx-auto`}>
+                <Calendar className="w-4 h-4 text-white" />
+              </div>
+              <div className="text-3xl font-black text-gray-900 ltr-num">{value}</div>
+              <div className="text-gray-400 text-xs mt-0.5 font-medium">{label}</div>
             </div>
           ))}
         </div>

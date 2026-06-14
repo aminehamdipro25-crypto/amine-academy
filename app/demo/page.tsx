@@ -1,10 +1,9 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
-import { Play, Pause, Volume2, VolumeX, BarChart2, Calendar, BookOpen, Users, Star, Clock, Award, Brain } from 'lucide-react'
+import { Play, Pause, Volume2, VolumeX, SkipForward, SkipBack, Maximize2, Minimize2, BarChart2, Calendar, BookOpen, Brain } from 'lucide-react'
 
 const SLIDE_DURATION = 7000
-const FADE_MS = 450
 
 // ─── Ambient music ────────────────────────────────────────────────────────────
 function createAmbientMusic(ctx: AudioContext): () => void {
@@ -64,58 +63,53 @@ function createAmbientMusic(ctx: AudioContext): () => void {
   }
 }
 
-// ─── Browser chrome frame ─────────────────────────────────────────────────────
-function BrowserFrame({ url, children }: { url: string; children: React.ReactNode }) {
+// ─── Browser chrome ───────────────────────────────────────────────────────────
+function BrowserFrame({ url, glow, children }: { url: string; glow: string; children: React.ReactNode }) {
   return (
-    <div style={{ borderRadius: 16, overflow: 'hidden', boxShadow: '0 40px 100px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.08)' }}>
-      <div style={{ background: '#1c1c2e', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
-        <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-          {['#FF5F57', '#FEBC2E', '#28C840'].map(c => (
-            <div key={c} style={{ width: 12, height: 12, borderRadius: 6, background: c }} />
-          ))}
+    <div style={{ borderRadius: 14, overflow: 'hidden', boxShadow: `0 32px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.07), 0 0 60px ${glow}` }}>
+      <div style={{ background: '#18182a', padding: '9px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ display: 'flex', gap: 5, flexShrink: 0 }}>
+          {['#FF5F57', '#FEBC2E', '#28C840'].map(c => <div key={c} style={{ width: 11, height: 11, borderRadius: 6, background: c }} />)}
         </div>
-        <div style={{ flex: 1, background: '#2a2a3e', borderRadius: 8, padding: '5px 12px', fontSize: 11, fontFamily: 'monospace', color: '#9CA3AF', textAlign: 'center', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+        <div style={{ flex: 1, background: '#26263a', borderRadius: 7, padding: '4px 10px', fontSize: 10, fontFamily: 'monospace', color: '#6B7280', textAlign: 'center', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
           🔒 {url}
         </div>
+        <div style={{ display: 'flex', gap: 5, opacity: 0.3 }}>
+          {[0, 1, 2].map(i => <div key={i} style={{ width: 18, height: 18, borderRadius: 5, background: '#fff3' }} />)}
+        </div>
       </div>
-      <div style={{ maxHeight: 420, overflow: 'hidden' }}>{children}</div>
+      <div style={{ maxHeight: '52vh', overflow: 'hidden' }}>{children}</div>
     </div>
   )
 }
 
-// ─── Slide mockups ────────────────────────────────────────────────────────────
-
+// ─── Mockup components ────────────────────────────────────────────────────────
 function RegisterMockup() {
   return (
-    <div style={{ background: '#F8F5FF', padding: '24px 20px' }}>
-      <div style={{ textAlign: 'center', marginBottom: 18 }}>
-        <div style={{ width: 50, height: 50, borderRadius: 16, background: 'linear-gradient(135deg,#6B46F0,#9A7BFD)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 10px', boxShadow: '0 8px 24px rgba(107,70,240,.35)' }}>
-          <span style={{ color: 'white', fontWeight: 900, fontSize: 22 }}>أ</span>
+    <div style={{ background: '#F8F5FF', padding: '20px 18px' }}>
+      <div style={{ textAlign: 'center', marginBottom: 16 }}>
+        <div style={{ width: 46, height: 46, borderRadius: 15, background: 'linear-gradient(135deg,#6B46F0,#9A7BFD)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 8px', boxShadow: '0 8px 20px rgba(107,70,240,.35)' }}>
+          <span style={{ color: 'white', fontWeight: 900, fontSize: 20 }}>أ</span>
         </div>
-        <div style={{ fontWeight: 900, fontSize: 16, color: '#1a1a2e', marginBottom: 3 }}>إنشاء حساب الولي</div>
-        <div style={{ fontSize: 12, color: '#9CA3AF' }}>خطوتان فقط للبدء</div>
+        <div style={{ fontWeight: 900, fontSize: 15, color: '#1a1a2e', marginBottom: 2 }}>إنشاء حساب الولي</div>
+        <div style={{ fontSize: 11, color: '#9CA3AF' }}>خطوتان فقط للبدء — مجاناً</div>
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 18 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, marginBottom: 14 }}>
         {['معلوماتك', 'طفلك', 'تأكيد'].map((s, i) => (
-          <div key={s} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-            <div style={{ width: 22, height: 22, borderRadius: 11, background: i === 0 ? '#6B46F0' : '#E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 900, color: i === 0 ? 'white' : '#9CA3AF' }}>{i + 1}</div>
-            <span style={{ fontSize: 11, color: i === 0 ? '#6B46F0' : '#9CA3AF', fontWeight: i === 0 ? 700 : 400 }}>{s}</span>
-            {i < 2 && <div style={{ width: 14, height: 1, background: '#E5E7EB' }} />}
+          <div key={s} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <div style={{ width: 20, height: 20, borderRadius: 10, background: i === 0 ? '#6B46F0' : '#E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 900, color: i === 0 ? 'white' : '#9CA3AF' }}>{i + 1}</div>
+            <span style={{ fontSize: 10, color: i === 0 ? '#6B46F0' : '#9CA3AF', fontWeight: i === 0 ? 700 : 400 }}>{s}</span>
+            {i < 2 && <div style={{ width: 12, height: 1, background: '#E5E7EB' }} />}
           </div>
         ))}
       </div>
-      {[
-        { label: 'الاسم الكامل', ph: 'مثال: محمد العمري' },
-        { label: 'البريد الإلكتروني', ph: 'email@example.com' },
-        { label: 'كلمة المرور', ph: '••••••••' },
-        { label: 'رقم الهاتف (واتساب)', ph: '+966 5X XXX XXXX' },
-      ].map(({ label, ph }) => (
-        <div key={label} style={{ marginBottom: 10 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: '#374151', marginBottom: 4 }}>{label}</div>
-          <div style={{ background: 'white', border: '1.5px solid #E5E7EB', borderRadius: 10, padding: '9px 12px', fontSize: 12, color: '#9CA3AF' }}>{ph}</div>
+      {[{ l: 'الاسم الكامل', p: 'محمد العمري' }, { l: 'البريد الإلكتروني', p: 'email@example.com' }, { l: 'كلمة المرور', p: '••••••••' }, { l: 'رقم الهاتف (واتساب)', p: '+966 5X XXX XXXX' }].map(({ l, p }) => (
+        <div key={l} style={{ marginBottom: 8 }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: '#374151', marginBottom: 3 }}>{l}</div>
+          <div style={{ background: 'white', border: '1.5px solid #E5E7EB', borderRadius: 9, padding: '8px 11px', fontSize: 11, color: '#9CA3AF' }}>{p}</div>
         </div>
       ))}
-      <div style={{ background: 'linear-gradient(135deg,#6B46F0,#9A7BFD)', color: 'white', textAlign: 'center', padding: '12px 24px', borderRadius: 12, fontWeight: 900, fontSize: 13, marginTop: 10, boxShadow: '0 8px 24px rgba(107,70,240,.3)' }}>
+      <div style={{ background: 'linear-gradient(135deg,#6B46F0,#9A7BFD)', color: 'white', textAlign: 'center', padding: '11px 20px', borderRadius: 11, fontWeight: 900, fontSize: 12, marginTop: 8, boxShadow: '0 8px 20px rgba(107,70,240,.3)' }}>
         التالي — معلومات طفلك ←
       </div>
     </div>
@@ -125,56 +119,46 @@ function RegisterMockup() {
 function DashboardMockup() {
   return (
     <div className="bg-gray-50">
-      <div className="bg-brand-900 px-5 py-3 flex items-center justify-between">
+      <div className="bg-brand-900 px-4 py-2.5 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 bg-white/20 rounded-lg flex items-center justify-center text-white font-black text-sm">أ</div>
-          <span className="text-white font-bold text-xs">أكاديمية أمين — بوابة الأولياء</span>
+          <div className="w-6 h-6 bg-white/20 rounded-lg flex items-center justify-center text-white font-black text-xs">أ</div>
+          <span className="text-white font-bold text-xs">أكاديمية أمين</span>
         </div>
-        <div className="w-7 h-7 bg-white/10 rounded-full flex items-center justify-center">
-          <span className="text-white text-xs font-bold">م.ع</span>
+        <div className="w-6 h-6 bg-white/10 rounded-full flex items-center justify-center">
+          <span className="text-white text-[9px] font-bold">م.ع</span>
         </div>
       </div>
       <div className="flex">
-        <div className="w-40 bg-white border-l border-gray-100 p-3 hidden md:block">
-          {[
-            { icon: BarChart2, label: 'نظرة عامة', active: true },
-            { icon: Calendar, label: 'جلساتي' },
-            { icon: BookOpen, label: 'تمارين اليوم' },
-          ].map(({ icon: Icon, label, active }) => (
-            <div key={label} className={`flex items-center gap-2 px-2.5 py-2 rounded-xl mb-1 ${active ? 'bg-brand-50 text-brand-700' : 'text-gray-400'}`}>
-              <Icon className="w-3.5 h-3.5" /><span className="text-xs font-medium">{label}</span>
+        <div className="w-36 bg-white border-l border-gray-100 p-2.5 hidden md:block">
+          {[{ icon: BarChart2, label: 'نظرة عامة', a: true }, { icon: Calendar, label: 'جلساتي' }, { icon: BookOpen, label: 'تمارين اليوم' }].map(({ icon: Icon, label, a }) => (
+            <div key={label} className={`flex items-center gap-1.5 px-2 py-1.5 rounded-xl mb-1 ${a ? 'bg-brand-50 text-brand-700' : 'text-gray-400'}`}>
+              <Icon className="w-3 h-3" /><span className="text-[10px] font-medium">{label}</span>
             </div>
           ))}
         </div>
-        <div className="flex-1 p-4">
-          <div className="mb-4">
-            <h2 className="font-black text-gray-900 text-base mb-0.5">مرحباً، محمد 👋</h2>
-            <p className="text-gray-400 text-xs">الجلسة القادمة لأمير: اليوم الساعة 5:00 مساءً</p>
+        <div className="flex-1 p-3.5">
+          <div className="mb-3">
+            <h2 className="font-black text-gray-900 text-sm mb-0.5">مرحباً، محمد 👋</h2>
+            <p className="text-gray-400 text-[10px]">الجلسة القادمة لأمير: اليوم 5:00 م</p>
           </div>
-          <div className="grid grid-cols-3 gap-2 mb-4">
-            {[
-              { label: 'جلسات الشهر', value: '8', cls: 'bg-brand-50 text-brand-700' },
-              { label: 'مستوى التركيز', value: '+64%', cls: 'bg-emerald-50 text-emerald-700' },
-              { label: 'نقاط أمير', value: '1,240', cls: 'bg-amber-50 text-amber-700' },
-            ].map(({ label, value, cls }) => (
-              <div key={label} className={`${cls} rounded-xl p-2.5 text-center`}>
-                <div className="font-black text-lg">{value}</div>
-                <div className="text-[10px] mt-0.5 opacity-80">{label}</div>
+          <div className="grid grid-cols-3 gap-1.5 mb-3">
+            {[{ l: 'جلسات الشهر', v: '8', c: 'bg-brand-50 text-brand-700' }, { l: 'مستوى التركيز', v: '+64%', c: 'bg-emerald-50 text-emerald-700' }, { l: 'نقاط أمير', v: '1,240', c: 'bg-amber-50 text-amber-700' }].map(({ l, v, c }) => (
+              <div key={l} className={`${c} rounded-xl p-2 text-center`}>
+                <div className="font-black text-base">{v}</div>
+                <div className="text-[9px] mt-0.5 opacity-80">{l}</div>
               </div>
             ))}
           </div>
-          <div className="bg-brand-900 text-white rounded-2xl p-3.5 mb-3">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-white/70 text-[10px]">الجلسة القادمة</span>
-              <span className="bg-green-400 text-green-900 text-[10px] font-bold px-2 py-0.5 rounded-full">مُؤكَّدة</span>
+          <div className="bg-brand-900 text-white rounded-xl p-3">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-white/60 text-[9px]">الجلسة القادمة</span>
+              <span className="bg-green-400 text-green-900 text-[9px] font-bold px-1.5 py-0.5 rounded-full">مُؤكَّدة</span>
             </div>
-            <p className="font-black text-sm mb-1.5">جلسة الانتباه المستمر + تمارين APA</p>
-            <div className="flex items-center gap-3 text-white/60 text-[10px]">
+            <p className="font-black text-xs mb-1">جلسة الانتباه المستمر + تمارين APA</p>
+            <div className="flex items-center gap-2 text-white/50 text-[9px] mb-2">
               <span>📅 اليوم 5:00 م</span><span>⏱️ 45 دقيقة</span>
             </div>
-            <div className="mt-2.5 bg-white/20 rounded-xl py-1.5 px-3 text-center text-xs font-bold">
-              ▶ انضم للجلسة الآن
-            </div>
+            <div className="bg-white/20 rounded-lg py-1.5 text-center text-[10px] font-bold">▶ انضم للجلسة الآن</div>
           </div>
         </div>
       </div>
@@ -185,38 +169,32 @@ function DashboardMockup() {
 function BookingMockup() {
   return (
     <div className="bg-white">
-      <div className="bg-emerald-700 px-5 py-3.5">
-        <h3 className="text-white font-black text-base">حجز جلسة جديدة</h3>
-        <p className="text-white/70 text-xs">اختر الوقت المناسب لك</p>
+      <div className="bg-emerald-700 px-4 py-3">
+        <h3 className="text-white font-black text-sm">حجز جلسة جديدة</h3>
+        <p className="text-white/70 text-[10px]">اختر الوقت المناسب لك</p>
       </div>
-      <div className="p-5">
-        <div className="flex items-center gap-2 mb-5">
+      <div className="p-4">
+        <div className="flex items-center gap-1.5 mb-4">
           {['اختر النوع', 'اختر الوقت', 'تأكيد'].map((s, i) => (
-            <div key={s} className="flex items-center gap-1.5">
-              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black ${i === 1 ? 'bg-emerald-600 text-white' : i === 0 ? 'bg-gray-200 text-gray-500' : 'border-2 border-gray-200 text-gray-300'}`}>{i + 1}</div>
-              <span className={`text-xs ${i === 1 ? 'text-emerald-700 font-bold' : 'text-gray-400'}`}>{s}</span>
-              {i < 2 && <div className="w-6 h-px bg-gray-200" />}
+            <div key={s} className="flex items-center gap-1">
+              <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black ${i === 1 ? 'bg-emerald-600 text-white' : i === 0 ? 'bg-gray-200 text-gray-500' : 'border border-gray-200 text-gray-300'}`}>{i + 1}</div>
+              <span className={`text-[10px] ${i === 1 ? 'text-emerald-700 font-bold' : 'text-gray-400'}`}>{s}</span>
+              {i < 2 && <div className="w-4 h-px bg-gray-200" />}
             </div>
           ))}
         </div>
-        <p className="text-xs font-bold text-gray-500 mb-2">يونيو 2026</p>
-        <div className="grid grid-cols-7 gap-1 mb-3 text-center">
-          {['أح','إث','ثل','أر','خم','جم','سب'].map(d => (
-            <div key={d} className="text-[10px] text-gray-400 font-bold py-1">{d}</div>
-          ))}
-          {Array.from({ length: 7 }, (_, i) => i + 1).map(d => (
-            <div key={d} className={`text-xs py-1.5 rounded-lg cursor-pointer font-medium ${d === 4 ? 'bg-emerald-600 text-white font-black' : d === 5 || d === 6 ? 'text-gray-300' : 'text-gray-700'}`}>{d}</div>
-          ))}
-          {Array.from({ length: 7 }, (_, i) => i + 8).map(d => (
-            <div key={d} className={`text-xs py-1.5 rounded-lg cursor-pointer font-medium ${d === 9 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'text-gray-700'}`}>{d}</div>
+        <div className="grid grid-cols-7 gap-0.5 mb-2 text-center">
+          {['أح', 'إث', 'ثل', 'أر', 'خم', 'جم', 'سب'].map(d => <div key={d} className="text-[9px] text-gray-400 font-bold py-0.5">{d}</div>)}
+          {Array.from({ length: 14 }, (_, i) => i + 1).map(d => (
+            <div key={d} className={`text-[10px] py-1 rounded-md ${d === 4 ? 'bg-emerald-600 text-white font-black' : d === 5 || d === 6 || d === 12 || d === 13 ? 'text-gray-300' : 'text-gray-700'}`}>{d}</div>
           ))}
         </div>
-        <div className="grid grid-cols-3 gap-1.5 mb-4">
-          {['10:00 ص','11:00 ص','02:00 م','03:00 م','05:00 م','06:00 م'].map((t, i) => (
-            <div key={t} className={`text-center py-2 rounded-xl text-xs font-bold border-2 ${i === 4 ? 'bg-emerald-600 text-white border-emerald-600' : 'border-gray-200 text-gray-600'}`}>{t}</div>
+        <div className="grid grid-cols-3 gap-1 mb-3">
+          {['10:00 ص', '11:00 ص', '02:00 م', '03:00 م', '05:00 م', '06:00 م'].map((t, i) => (
+            <div key={t} className={`text-center py-1.5 rounded-lg text-[10px] font-bold border ${i === 4 ? 'bg-emerald-600 text-white border-emerald-600' : 'border-gray-200 text-gray-600'}`}>{t}</div>
           ))}
         </div>
-        <div className="bg-emerald-600 text-white text-center py-2.5 rounded-2xl font-black text-sm">تأكيد الحجز ←</div>
+        <div className="bg-emerald-600 text-white text-center py-2 rounded-xl font-black text-xs">تأكيد الحجز ←</div>
       </div>
     </div>
   )
@@ -225,54 +203,40 @@ function BookingMockup() {
 function SessionMockup() {
   return (
     <div className="bg-gray-900">
-      <div className="bg-gray-800 px-4 py-2.5 flex items-center justify-between">
-        <div className="flex items-center gap-1.5">
-          <div className="w-2 h-2 bg-red-500 rounded-full" />
-          <div className="w-2 h-2 bg-yellow-500 rounded-full" />
-          <div className="w-2 h-2 bg-green-500 rounded-full" />
+      <div className="bg-gray-800 px-4 py-2 flex items-center justify-between">
+        <div className="flex gap-1.5">
+          {['bg-red-500', 'bg-yellow-500', 'bg-green-500'].map(c => <div key={c} className={`w-2 h-2 rounded-full ${c}`} />)}
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
-          <span className="text-white/60 text-xs font-mono">مباشر — 23:14</span>
+          <span className="text-white/60 text-[10px] font-mono">مباشر — 23:14</span>
         </div>
-        <div className="bg-red-600/20 text-red-400 text-[10px] font-bold px-2 py-0.5 rounded">● LIVE</div>
+        <div className="bg-red-600/20 text-red-400 text-[9px] font-bold px-1.5 py-0.5 rounded">● LIVE</div>
       </div>
       <div className="relative bg-gradient-to-br from-brand-900 to-brand-950 flex items-center justify-center" style={{ aspectRatio: '16/9' }}>
         <div className="text-center">
-          <div className="w-16 h-16 bg-white/10 rounded-full mx-auto mb-2 flex items-center justify-center">
-            <span className="text-3xl">👨‍⚕️</span>
-          </div>
-          <p className="text-white font-bold text-sm">الأستاذ أمين</p>
-          <p className="text-white/50 text-xs">يشرح تمرين التسلسل العكسي</p>
+          <div className="w-14 h-14 bg-white/10 rounded-full mx-auto mb-2 flex items-center justify-center"><span className="text-2xl">👨‍⚕️</span></div>
+          <p className="text-white font-bold text-xs">الأستاذ أمين</p>
+          <p className="text-white/50 text-[10px]">يشرح تمرين التسلسل العكسي</p>
         </div>
-        <div className="absolute top-2 right-2 bg-white/10 backdrop-blur rounded-xl p-2.5 max-w-[140px]">
-          <p className="text-white/70 text-[10px] mb-1 font-bold">التمرين الحالي</p>
-          <p className="text-white text-[10px] font-black leading-tight">تحدي التسلسل المعكوس</p>
-          <div className="flex gap-1 mt-1.5">
-            {[1,2,3,4,5].map(n => (
-              <div key={n} className={`w-4 h-4 rounded flex items-center justify-center text-[9px] font-black ${n <= 3 ? 'bg-green-400 text-green-900' : 'bg-white/20 text-white'}`}>{n}</div>
-            ))}
+        <div className="absolute top-2 right-2 bg-white/10 backdrop-blur rounded-xl p-2 max-w-[130px]">
+          <p className="text-white/70 text-[9px] mb-1 font-bold">التمرين الحالي</p>
+          <p className="text-white text-[9px] font-black">تحدي التسلسل المعكوس</p>
+          <div className="flex gap-0.5 mt-1">
+            {[1,2,3,4,5].map(n => <div key={n} className={`w-4 h-4 rounded flex items-center justify-center text-[8px] font-black ${n <= 3 ? 'bg-green-400 text-green-900' : 'bg-white/20 text-white'}`}>{n}</div>)}
           </div>
         </div>
-        <div className="absolute bottom-2 left-2 w-20 h-14 bg-gray-700 rounded-xl flex items-center justify-center border border-white/20">
-          <span className="text-2xl">👦</span>
-        </div>
-        <div className="absolute top-2 left-2 bg-amber-400 text-amber-900 rounded-xl px-2.5 py-1.5 text-center">
-          <div className="font-black text-base">+50</div>
-          <div className="text-[10px] font-bold">نقطة 🌟</div>
+        <div className="absolute bottom-2 left-2 w-16 h-11 bg-gray-700 rounded-lg flex items-center justify-center border border-white/20"><span className="text-xl">👦</span></div>
+        <div className="absolute top-2 left-2 bg-amber-400 text-amber-900 rounded-lg px-2 py-1 text-center">
+          <div className="font-black text-sm">+50</div><div className="text-[9px] font-bold">نقطة 🌟</div>
         </div>
       </div>
-      <div className="bg-gray-800 px-4 py-2.5 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          {['🎤','📷','🖥️','💬'].map(icon => (
-            <div key={icon} className="w-8 h-8 bg-white/10 rounded-xl flex items-center justify-center text-sm">{icon}</div>
-          ))}
+      <div className="bg-gray-800 px-4 py-2 flex items-center justify-between">
+        <div className="flex gap-1.5">
+          {['🎤','📷','🖥️','💬'].map(icon => <div key={icon} className="w-7 h-7 bg-white/10 rounded-lg flex items-center justify-center text-xs">{icon}</div>)}
         </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full" />
-          <span className="text-white/60 text-xs">جلسة تفاعلية</span>
-        </div>
-        <div className="bg-red-600 text-white text-xs font-bold px-3 py-1.5 rounded-xl">إنهاء</div>
+        <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 bg-emerald-400 rounded-full" /><span className="text-white/60 text-[10px]">جلسة تفاعلية</span></div>
+        <div className="bg-red-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-lg">إنهاء</div>
       </div>
     </div>
   )
@@ -281,36 +245,34 @@ function SessionMockup() {
 function ExercisesMockup() {
   return (
     <div className="bg-white">
-      <div className="bg-purple-700 px-5 py-3.5">
-        <h3 className="text-white font-black text-base">مكتبة التمارين العلمية</h3>
-        <p className="text-white/70 text-xs">+32 تمريناً مُعتمداً — APA / ABA / CBT</p>
+      <div className="bg-purple-700 px-4 py-3">
+        <h3 className="text-white font-black text-sm">مكتبة التمارين العلمية</h3>
+        <p className="text-white/70 text-[10px]">+32 تمريناً مُعتمداً — APA / ABA / CBT</p>
       </div>
-      <div className="p-4">
-        <div className="flex gap-1.5 mb-4">
-          {[{ l:'الكل', a:true },{ l:'APA', a:false },{ l:'ABA', a:false },{ l:'CBT', a:false }].map(({ l, a }) => (
-            <span key={l} className={`px-2.5 py-1 rounded-full text-xs font-bold ${a ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-500'}`}>{l}</span>
+      <div className="p-3.5">
+        <div className="flex gap-1.5 mb-3">
+          {[{ l:'الكل', a:true },{ l:'APA' },{ l:'ABA' },{ l:'CBT' }].map(({ l, a }) => (
+            <span key={l} className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${a ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-500'}`}>{l}</span>
           ))}
         </div>
-        <div className="space-y-2.5">
+        <div className="space-y-2">
           {[
-            { name:'بروتوكول Zone of Regulation', type:'ABA', dur:'10 د', cls:'border-emerald-200 bg-emerald-50', tag:'bg-emerald-600' },
-            { name:'تحدي التسلسل المعكوس', type:'CBT', dur:'15 د', cls:'border-purple-200 bg-purple-50', tag:'bg-purple-600' },
-            { name:'تمرين Go/No-Go', type:'APA', dur:'8 د', cls:'border-blue-200 bg-blue-50', tag:'bg-blue-600' },
-            { name:'تتبع الاتجاهات', type:'APA', dur:'10 د', cls:'border-sky-200 bg-sky-50', tag:'bg-sky-600' },
-          ].map(({ name, type, dur, cls, tag }) => (
-            <div key={name} className={`rounded-xl border-2 p-2.5 ${cls}`}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5">
-                  <span className={`text-white text-[10px] font-black px-1.5 py-0.5 rounded-full ${tag}`}>{type}</span>
-                  <span className="text-gray-700 font-bold text-xs">{name}</span>
-                </div>
-                <span className="text-gray-400 text-[10px]">⏱ {dur}</span>
+            { n:'بروتوكول Zone of Regulation', t:'ABA', d:'10 د', c:'border-emerald-200 bg-emerald-50', g:'bg-emerald-600' },
+            { n:'تحدي التسلسل المعكوس', t:'CBT', d:'15 د', c:'border-purple-200 bg-purple-50', g:'bg-purple-600' },
+            { n:'تمرين Go/No-Go', t:'APA', d:'8 د', c:'border-blue-200 bg-blue-50', g:'bg-blue-600' },
+            { n:'مرآة المشاعر', t:'ABA', d:'12 د', c:'border-pink-200 bg-pink-50', g:'bg-pink-600' },
+          ].map(({ n, t, d, c, g }) => (
+            <div key={n} className={`rounded-lg border ${c} px-2.5 py-2 flex items-center justify-between`}>
+              <div className="flex items-center gap-1.5">
+                <span className={`text-white text-[9px] font-black px-1.5 py-0.5 rounded-full ${g}`}>{t}</span>
+                <span className="text-gray-700 font-bold text-[10px]">{n}</span>
               </div>
+              <span className="text-gray-400 text-[9px]">⏱ {d}</span>
             </div>
           ))}
         </div>
-        <div className="mt-3 text-center">
-          <span className="text-purple-600 text-xs font-bold">عرض جميع التمارين (32+) ←</span>
+        <div className="mt-2.5 text-center">
+          <span className="text-purple-600 text-[10px] font-bold">عرض جميع التمارين (32+) ←</span>
         </div>
       </div>
     </div>
@@ -318,58 +280,44 @@ function ExercisesMockup() {
 }
 
 function ProgressMockup() {
-  const bars = [
-    { label:'الانتباه المستمر', value:78, color:'#6B46F0' },
-    { label:'كبح التشتت', value:62, color:'#8B5CF6' },
-    { label:'الضبط الذاتي', value:55, color:'#10B981' },
-    { label:'المهارات الاجتماعية', value:70, color:'#3B82F6' },
-  ]
   return (
     <div className="bg-white">
-      <div className="bg-amber-600 px-5 py-3.5 flex items-center justify-between">
+      <div className="bg-amber-600 px-4 py-3 flex items-center justify-between">
         <div>
-          <h3 className="text-white font-black text-sm">تقرير التقدم — أمير (9 سنوات)</h3>
-          <p className="text-white/70 text-xs">الشهر الثالث من البرنامج</p>
+          <h3 className="text-white font-black text-xs">تقرير التقدم — أمير (9 سنوات)</h3>
+          <p className="text-white/70 text-[10px]">الشهر الثالث من البرنامج</p>
         </div>
         <div className="text-center">
-          <div className="text-white font-black text-2xl">A+</div>
-          <div className="text-white/70 text-[10px]">التقييم العام</div>
+          <div className="text-white font-black text-xl">A+</div>
+          <div className="text-white/70 text-[9px]">التقييم العام</div>
         </div>
       </div>
-      <div className="p-4">
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4">
-          <div className="flex items-center gap-1.5 mb-1.5">
-            <Brain className="w-3.5 h-3.5 text-amber-600" />
-            <span className="text-amber-700 font-bold text-xs">ملخص الأستاذ أمين</span>
+      <div className="p-3.5">
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-2.5 mb-3">
+          <div className="flex items-center gap-1.5 mb-1">
+            <Brain className="w-3 h-3 text-amber-600" />
+            <span className="text-amber-700 font-bold text-[10px]">ملخص الأستاذ أمين</span>
           </div>
-          <p className="text-gray-700 text-xs leading-relaxed">
-            أمير يُظهر تحسناً ملحوظاً في الانتباه — ارتفع من 3 دقائق إلى 8 دقائق دون انقطاع.
-            <strong className="text-amber-700"> أنصح بالتركيز على Zone of Regulation هذا الشهر.</strong>
-          </p>
+          <p className="text-gray-700 text-[10px] leading-relaxed">أمير يُظهر تحسناً ملحوظاً في الانتباه — من 3 إلى 8 دقائق. <strong className="text-amber-700">أنصح بالتركيز على Zone of Regulation.</strong></p>
         </div>
-        <div className="space-y-3 mb-4">
-          {bars.map(({ label, value, color }) => (
-            <div key={label}>
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-xs text-gray-700">{label}</span>
-                <span className="text-xs font-black text-gray-900">{value}%</span>
+        <div className="space-y-2.5 mb-3">
+          {[{ l:'الانتباه المستمر', v:78, c:'#6B46F0' },{ l:'كبح التشتت', v:62, c:'#8B5CF6' },{ l:'الضبط الذاتي', v:55, c:'#10B981' },{ l:'المهارات الاجتماعية', v:70, c:'#3B82F6' }].map(({ l, v, c }) => (
+            <div key={l}>
+              <div className="flex justify-between mb-0.5">
+                <span className="text-[10px] text-gray-700">{l}</span>
+                <span className="text-[10px] font-black text-gray-900">{v}%</span>
               </div>
-              <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
-                <div className="h-full rounded-full" style={{ width: `${value}%`, background: color }} />
+              <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                <div className="h-full rounded-full" style={{ width: `${v}%`, background: c }} />
               </div>
             </div>
           ))}
         </div>
-        <div className="grid grid-cols-3 gap-2">
-          {[
-            { l:'الجلسات', v:'12', sub:'هذا الشهر', cls:'bg-brand-50 text-brand-700' },
-            { l:'الإنجازات', v:'+8', sub:'شارة جديدة', cls:'bg-amber-50 text-amber-700' },
-            { l:'نقاط', v:'3,240', sub:'إجمالي', cls:'bg-emerald-50 text-emerald-700' },
-          ].map(({ l, v, sub, cls }) => (
-            <div key={l} className={`${cls} rounded-xl p-2.5 text-center`}>
-              <div className="font-black text-lg">{v}</div>
-              <div className="text-[10px] font-bold">{l}</div>
-              <div className="text-[9px] opacity-60">{sub}</div>
+        <div className="grid grid-cols-3 gap-1.5">
+          {[{ l:'الجلسات', v:'12', c:'bg-brand-50 text-brand-700' },{ l:'الإنجازات', v:'+8', c:'bg-amber-50 text-amber-700' },{ l:'نقاط', v:'3,240', c:'bg-emerald-50 text-emerald-700' }].map(({ l, v, c }) => (
+            <div key={l} className={`${c} rounded-lg p-2 text-center`}>
+              <div className="font-black text-base">{v}</div>
+              <div className="text-[9px] font-bold">{l}</div>
             </div>
           ))}
         </div>
@@ -378,166 +326,138 @@ function ProgressMockup() {
   )
 }
 
-// ─── Hero visual ──────────────────────────────────────────────────────────────
+// ─── Hero visual for slide 0 ──────────────────────────────────────────────────
 function HeroVisual() {
-  const items = ['🧠','⭐','🎯','🏆','💡','🌈','🎨','🔬']
+  const emojis = ['🧠', '⭐', '🎯', '🏆', '💡', '🌈', '🎨', '🔬']
   return (
-    <div style={{ position: 'relative', width: 280, height: 280, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: 'radial-gradient(circle, rgba(124,92,252,0.25) 0%, transparent 65%)' }} />
-      <div style={{ position: 'absolute', width: 210, height: 210, borderRadius: '50%', border: '1px solid rgba(124,92,252,0.2)', animation: 'demo-spin 22s linear infinite' }} />
-      <div style={{ position: 'absolute', width: 260, height: 260, borderRadius: '50%', border: '1px dashed rgba(192,132,252,0.12)', animation: 'demo-spin 35s linear infinite reverse' }} />
-      {items.map((emoji, i) => {
-        const angle = (i / items.length) * Math.PI * 2 - Math.PI / 2
-        const r = 118
+    <div style={{ position: 'relative', width: 240, height: 240, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: 'radial-gradient(circle, rgba(124,92,252,0.3) 0%, transparent 65%)' }} />
+      <div style={{ position: 'absolute', width: 200, height: 200, borderRadius: '50%', border: '1px solid rgba(124,92,252,0.18)', animation: 'demo-spin 22s linear infinite' }} />
+      <div style={{ position: 'absolute', width: 234, height: 234, borderRadius: '50%', border: '1px dashed rgba(192,132,252,0.1)', animation: 'demo-spin 35s linear infinite reverse' }} />
+      {emojis.map((emoji, i) => {
+        const angle = (i / emojis.length) * Math.PI * 2 - Math.PI / 2
+        const r = 105
         const x = Math.cos(angle) * r
         const y = Math.sin(angle) * r
         return (
-          <div key={i} style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', marginLeft: x, marginTop: y }}>
-            <div style={{ fontSize: 22, animation: `demo-float ${2.5 + (i % 3) * 0.4}s ease-in-out ${i * 0.25}s infinite` }}>
-              {emoji}
-            </div>
+          <div key={i} style={{ position: 'absolute', left: '50%', top: '50%', marginLeft: x - 12, marginTop: y - 12 }}>
+            <div style={{ fontSize: 20, animation: `demo-float ${2.5 + (i % 3) * 0.4}s ease-in-out ${i * 0.28}s infinite` }}>{emoji}</div>
           </div>
         )
       })}
-      <div style={{ width: 108, height: 108, borderRadius: 36, background: 'linear-gradient(135deg,#6B46F0,#9A7BFD)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 20px 60px rgba(107,70,240,0.55)', animation: 'demo-float 4s ease-in-out infinite', position: 'relative', zIndex: 1 }}>
-        <span style={{ color: 'white', fontWeight: 900, fontSize: 52, lineHeight: 1 }}>أ</span>
+      <div style={{ width: 92, height: 92, borderRadius: 30, background: 'linear-gradient(135deg,#6B46F0,#9A7BFD)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 16px 50px rgba(107,70,240,0.6)', animation: 'demo-float 4s ease-in-out infinite', position: 'relative', zIndex: 1 }}>
+        <span style={{ color: 'white', fontWeight: 900, fontSize: 44, lineHeight: 1 }}>أ</span>
       </div>
     </div>
   )
 }
 
-// ─── Slide definitions ────────────────────────────────────────────────────────
+// ─── Slides ───────────────────────────────────────────────────────────────────
 interface SlideData {
   tag: string
   title: string
-  accentText: string
+  caption: string
   accent: string
-  subtitle: string
+  glow: string
   url?: string
   mockup?: React.ReactNode
   isHero?: boolean
 }
 
 const SLIDES: SlideData[] = [
-  {
-    isHero: true,
-    tag: '🌟 المنصة العلاجية الأولى في العالم العربي',
-    title: 'أكاديمية أمين',
-    accentText: 'APA • ABA • CBT',
-    accent: '#C084FC',
-    subtitle: 'برنامج علمي متكامل لأطفال ADHD والتوحد — جلسات تفاعلية مباشرة تُحسّن التركيز والسلوك والمهارات الاجتماعية',
-  },
-  {
-    tag: '① التسجيل',
-    title: 'ابدأ في دقيقتين',
-    accentText: 'مجاني تماماً — بدون بطاقة بنكية',
-    accent: '#34D399',
-    subtitle: 'سجّل حساب الولي، أضف معلومات طفلك، واختر البرنامج المناسب — ثم انتظر تأكيد الأستاذ أمين',
-    url: 'amine-academy.com/register',
-    mockup: <RegisterMockup />,
-  },
-  {
-    tag: '② بوابة الولي',
-    title: 'كل شيء في مكان واحد',
-    accentText: 'لوحة تحكم ذكية وسهلة الاستخدام',
-    accent: '#818CF8',
-    subtitle: 'تابع الجلسات القادمة، تمارين طفلك اليومية، ونقاطه — وانضم للجلسة بنقرة واحدة',
-    url: 'amine-academy.com/parent/dashboard',
-    mockup: <DashboardMockup />,
-  },
-  {
-    tag: '③ حجز الجلسات',
-    title: 'احجز بسهولة تامة',
-    accentText: 'تأكيد فوري • تذكير تلقائي • إلغاء مجاني',
-    accent: '#34D399',
-    subtitle: 'تقويم متزامن لحظياً مع جدول الأستاذ أمين — اختر الوقت الأنسب لطفلك وأكّد في ثوانٍ',
-    url: 'amine-academy.com/parent/appointments',
-    mockup: <BookingMockup />,
-  },
-  {
-    tag: '④ داخل الجلسة',
-    title: 'جلسة تفاعلية مباشرة',
-    accentText: 'تمارين APA + ABA + CBT • نقاط تحفيزية لحظية',
-    accent: '#F87171',
-    subtitle: 'ليست مجرد مكالمة فيديو — تجربة حركية ومعرفية متكاملة مع تتبع مستوى تركيز طفلك في الوقت الفعلي',
-    url: 'amine-academy.com/session/live',
-    mockup: <SessionMockup />,
-  },
-  {
-    tag: '⑤ مكتبة التمارين',
-    title: '+32 تمرين علمي',
-    accentText: 'الانتباه • الاندفاعية • الذاكرة • الإدراك • التفكير',
-    accent: '#C084FC',
-    subtitle: 'تمارين منزلية مُصمَّمة وفق أحدث أبحاث ADHD والتوحد — مناسبة للأعمار 5-22 ومُحدَّثة شهرياً',
-    url: 'amine-academy.com/parent/exercises',
-    mockup: <ExercisesMockup />,
-  },
-  {
-    tag: '⑥ تقارير التقدم',
-    title: 'نتائج حقيقية بأرقام',
-    accentText: 'تقرير شهري مفصّل + توصيات الأستاذ + مقارنة بالمعدلات المرجعية',
-    accent: '#FBBF24',
-    subtitle: 'قيّم التحسن في الانتباه والسلوك والمهارات الاجتماعية بمعايير علمية موضوعية — وشارك التقرير مع المدرسة أو الطبيب',
-    url: 'amine-academy.com/parent/progress',
-    mockup: <ProgressMockup />,
-  },
+  { isHero: true, tag: '🌟 المنصة العلاجية الأولى عربياً', title: 'أكاديمية أمين', caption: 'برنامج علمي لأطفال ADHD والتوحد — APA • ABA • CBT', accent: '#C084FC', glow: 'rgba(124,92,252,0.2)' },
+  { tag: '① التسجيل', title: 'ابدأ في دقيقتين', caption: 'سجّل بياناتك وبيانات طفلك — مجاني بدون بطاقة بنكية', accent: '#34D399', glow: 'rgba(52,211,153,0.2)', url: 'amine-academy.com/register', mockup: <RegisterMockup /> },
+  { tag: '② لوحة التحكم', title: 'كل شيء في مكان واحد', caption: 'جلساتك القادمة، تمارين طفلك، ونقاطه — وانضم للجلسة بنقرة', accent: '#818CF8', glow: 'rgba(129,140,248,0.2)', url: 'amine-academy.com/parent/dashboard', mockup: <DashboardMockup /> },
+  { tag: '③ حجز الجلسات', title: 'احجز بسهولة تامة', caption: 'تقويم متزامن لحظياً — تأكيد فوري وتذكير تلقائي', accent: '#34D399', glow: 'rgba(52,211,153,0.2)', url: 'amine-academy.com/parent/appointments', mockup: <BookingMockup /> },
+  { tag: '④ داخل الجلسة', title: 'تجربة تفاعلية مباشرة', caption: 'تمارين APA+ABA+CBT مع نقاط تحفيزية — تتبع التركيز لحظياً', accent: '#F87171', glow: 'rgba(248,113,113,0.2)', url: 'amine-academy.com/session/live', mockup: <SessionMockup /> },
+  { tag: '⑤ مكتبة التمارين', title: '+32 تمرين علمي', caption: 'للانتباه والاندفاعية والذاكرة والإدراك والتفكير — أعمار 5-22', accent: '#C084FC', glow: 'rgba(192,132,252,0.2)', url: 'amine-academy.com/parent/exercises', mockup: <ExercisesMockup /> },
+  { tag: '⑥ تقارير التقدم', title: 'نتائج بأرقام حقيقية', caption: 'تقرير شهري مفصّل + توصيات الأستاذ + مقارنة بالمعدلات المرجعية', accent: '#FBBF24', glow: 'rgba(251,191,36,0.2)', url: 'amine-academy.com/parent/progress', mockup: <ProgressMockup /> },
 ]
 
+const TOTAL_SEC = Math.round(SLIDES.length * SLIDE_DURATION / 1000)
+const fmt = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
+
 // ─── Main page ────────────────────────────────────────────────────────────────
+type Stage = 'splash' | 'playing'
+
 export default function DemoPage() {
+  const [stage, setStage] = useState<Stage>('splash')
   const [idx, setIdx] = useState(0)
-  const [playing, setPlaying] = useState(true)
+  const [playing, setPlaying] = useState(false)
   const [muted, setMuted] = useState(true)
   const [progress, setProgress] = useState(0)
-  const [visible, setVisible] = useState(true)
+  const [direction, setDirection] = useState<'next' | 'prev'>('next')
+  const [animKey, setAnimKey] = useState(0)
+  const [fullscreen, setFullscreen] = useState(false)
 
   const idxRef = useRef(0)
   idxRef.current = idx
+  const containerRef = useRef<HTMLDivElement>(null)
   const audioCtxRef = useRef<AudioContext | null>(null)
   const stopMusicRef = useRef<(() => void) | null>(null)
 
+  const navigate = useCallback((dir: 'next' | 'prev') => {
+    setDirection(dir)
+    setProgress(0)
+    setAnimKey(k => k + 1)
+    setIdx(i => dir === 'next' ? (i + 1) % SLIDES.length : (i - 1 + SLIDES.length) % SLIDES.length)
+  }, [])
+
+  const goNext = useCallback(() => navigate('next'), [navigate])
+  const goPrev = useCallback(() => navigate('prev'), [navigate])
+
   const goTo = useCallback((target: number) => {
-    setVisible(false)
+    const dir = target > idxRef.current ? 'next' : 'prev'
+    setDirection(dir)
     setProgress(0)
-    setTimeout(() => {
-      setIdx(target)
-      setVisible(true)
-    }, FADE_MS)
+    setAnimKey(k => k + 1)
+    setIdx(target)
   }, [])
 
-  const goNext = useCallback(() => {
-    const next = (idxRef.current + 1) % SLIDES.length
-    setVisible(false)
+  // Start tour
+  const startTour = useCallback(() => {
+    setStage('playing')
+    setPlaying(true)
+    setIdx(0)
     setProgress(0)
-    setTimeout(() => { setIdx(next); setVisible(true) }, FADE_MS)
-  }, [])
-
-  const goPrev = useCallback(() => {
-    const prev = (idxRef.current - 1 + SLIDES.length) % SLIDES.length
-    setVisible(false)
-    setProgress(0)
-    setTimeout(() => { setIdx(prev); setVisible(true) }, FADE_MS)
   }, [])
 
   // Auto-advance + progress bar
   useEffect(() => {
-    if (!playing) return
+    if (stage !== 'playing' || !playing) return
     const start = Date.now()
     const tick = setInterval(() => {
       setProgress(Math.min(((Date.now() - start) / SLIDE_DURATION) * 100, 100))
     }, 30)
     const timer = setTimeout(goNext, SLIDE_DURATION)
     return () => { clearInterval(tick); clearTimeout(timer) }
-  }, [playing, idx, goNext])
+  }, [stage, playing, idx, goNext])
 
-  // Cleanup music on unmount
+  // Keyboard controls
   useEffect(() => {
-    return () => {
-      stopMusicRef.current?.()
-      setTimeout(() => audioCtxRef.current?.close(), 2000)
+    if (stage !== 'playing') return
+    const handler = (e: KeyboardEvent) => {
+      if (e.code === 'Space') { e.preventDefault(); setPlaying(p => !p) }
+      if (e.code === 'ArrowRight') goPrev()
+      if (e.code === 'ArrowLeft') goNext()
     }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [stage, goNext, goPrev])
+
+  // Fullscreen
+  useEffect(() => {
+    const onChange = () => setFullscreen(!!document.fullscreenElement)
+    document.addEventListener('fullscreenchange', onChange)
+    return () => document.removeEventListener('fullscreenchange', onChange)
   }, [])
 
+  const toggleFullscreen = useCallback(() => {
+    if (!document.fullscreenElement) containerRef.current?.requestFullscreen()
+    else document.exitFullscreen()
+  }, [])
+
+  // Music
   const toggleMusic = useCallback(async () => {
     if (muted) {
       try {
@@ -546,7 +466,7 @@ export default function DemoPage() {
         audioCtxRef.current = ctx
         stopMusicRef.current = createAmbientMusic(ctx)
         setMuted(false)
-      } catch (_) { /* audio not supported */ }
+      } catch (_) { /* ignore */ }
     } else {
       stopMusicRef.current?.()
       stopMusicRef.current = null
@@ -555,205 +475,187 @@ export default function DemoPage() {
     }
   }, [muted])
 
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      stopMusicRef.current?.()
+      setTimeout(() => audioCtxRef.current?.close(), 2000)
+    }
+  }, [])
+
   const slide = SLIDES[idx]
+  const currentSec = Math.round(idx * SLIDE_DURATION / 1000 + progress / 100 * SLIDE_DURATION / 1000)
 
-  return (
-    <div dir="rtl" style={{ minHeight: '100vh', background: 'linear-gradient(160deg, #0d0820 0%, #1a0f3a 50%, #0a1628 100%)', color: 'white', fontFamily: 'inherit' }}>
-      <style>{`
-        @keyframes demo-float {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-11px); }
-        }
-        @keyframes demo-spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        @keyframes demo-pulse-ring {
-          0%, 100% { opacity: 0.4; transform: scale(1); }
-          50% { opacity: 0.8; transform: scale(1.04); }
-        }
-      `}</style>
+  // ── Splash screen ────────────────────────────────────────────────────────────
+  if (stage === 'splash') {
+    return (
+      <div dir="rtl" style={{ minHeight: '100vh', background: 'linear-gradient(160deg,#0d0820 0%,#1a0f3a 55%,#0a1628 100%)', color: 'white', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 24px', position: 'relative', overflow: 'hidden' }}>
+        <style>{`
+          @keyframes demo-float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-11px)} }
+          @keyframes demo-spin  { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+          @keyframes demo-fade-up { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+          @keyframes demo-slide-next { from{opacity:0;transform:translateX(-28px)} to{opacity:1;transform:translateX(0)} }
+          @keyframes demo-slide-prev { from{opacity:0;transform:translateX(28px)} to{opacity:1;transform:translateX(0)} }
+        `}</style>
 
-      {/* ── Progress bar ── */}
-      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, height: 3, zIndex: 100, background: 'rgba(255,255,255,0.08)' }}>
-        <div style={{ height: '100%', width: `${progress}%`, background: 'linear-gradient(90deg, #7C5CFC, #C084FC)', transition: 'width 0.03s linear', borderRadius: '0 2px 2px 0' }} />
-      </div>
+        {/* Bg particles */}
+        {[...Array(12)].map((_, i) => (
+          <div key={i} style={{ position: 'absolute', width: 4 + (i % 3) * 3, height: 4 + (i % 3) * 3, borderRadius: '50%', background: i % 2 === 0 ? 'rgba(124,92,252,0.35)' : 'rgba(192,132,252,0.25)', left: `${8 + (i * 7.5) % 85}%`, top: `${10 + (i * 11) % 75}%`, animation: `demo-float ${3 + i * 0.4}s ease-in-out ${i * 0.3}s infinite` }} />
+        ))}
 
-      {/* ── Top bar ── */}
-      <div style={{ position: 'fixed', top: 10, left: 0, right: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 20px', pointerEvents: 'none' }}>
-        <button
-          onClick={toggleMusic}
-          style={{ pointerEvents: 'all', display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '7px 13px', color: 'rgba(255,255,255,0.7)', fontSize: 12, fontWeight: 700, cursor: 'pointer', backdropFilter: 'blur(8px)' }}
-        >
-          {muted ? <VolumeX size={14} /> : <Volume2 size={14} />}
-          {muted ? 'تشغيل الموسيقى' : 'كتم الصوت'}
-        </button>
-
-        <Link
-          href="/"
-          style={{ pointerEvents: 'all', color: 'rgba(255,255,255,0.5)', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}
-        >
-          ← الرئيسية
-        </Link>
-      </div>
-
-      {/* ── Main slide area ── */}
-      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px 20px 130px', transition: `opacity ${FADE_MS}ms ease`, opacity: visible ? 1 : 0 }}>
-
-        {/* Tag */}
-        <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.45)', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 18, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', padding: '5px 16px', borderRadius: 20 }}>
-          {slide.tag}
-        </div>
-
-        {/* Title */}
-        <h1 style={{ fontSize: 'clamp(30px, 5vw, 58px)', fontWeight: 900, color: 'white', textAlign: 'center', lineHeight: 1.15, marginBottom: 14, maxWidth: 700 }}>
-          {slide.title}
-        </h1>
-
-        {/* Accent text */}
-        <p style={{ fontSize: 'clamp(13px, 1.8vw, 17px)', fontWeight: 700, color: slide.accent, textAlign: 'center', marginBottom: 14, letterSpacing: 0.5 }}>
-          {slide.accentText}
-        </p>
-
-        {/* Subtitle */}
-        <p style={{ fontSize: 'clamp(13px, 1.5vw, 16px)', color: 'rgba(255,255,255,0.55)', textAlign: 'center', maxWidth: 560, lineHeight: 1.75, marginBottom: 48 }}>
-          {slide.subtitle}
-        </p>
-
-        {/* Visual */}
-        {slide.isHero ? (
+        <div style={{ textAlign: 'center', maxWidth: 640, position: 'relative', zIndex: 1 }}>
           <HeroVisual />
-        ) : slide.mockup && slide.url ? (
-          <div style={{ width: '100%', maxWidth: 700 }}>
-            <BrowserFrame url={slide.url}>{slide.mockup}</BrowserFrame>
-          </div>
-        ) : null}
-      </div>
 
-      {/* ── Bottom controls ── */}
-      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, padding: '20px 24px 32px', background: 'linear-gradient(to top, rgba(13,8,32,0.98) 0%, rgba(13,8,32,0.7) 60%, transparent 100%)' }}>
-        {/* Controls row */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 16 }}>
-          {/* Prev */}
-          <button
-            onClick={goPrev}
-            style={{ width: 38, height: 38, borderRadius: 12, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}
-          >
-            ›
-          </button>
-
-          {/* Dots */}
-          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-            {SLIDES.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => goTo(i)}
-                style={{ height: 8, width: i === idx ? 24 : 8, borderRadius: 4, background: i === idx ? '#7C5CFC' : 'rgba(255,255,255,0.2)', border: 'none', cursor: 'pointer', transition: 'all 0.3s ease', padding: 0 }}
-              />
-            ))}
-          </div>
-
-          {/* Play / Pause */}
-          <button
-            onClick={() => setPlaying(p => !p)}
-            style={{ width: 44, height: 44, borderRadius: 14, background: 'rgba(124,92,252,0.25)', border: '1px solid rgba(124,92,252,0.4)', color: '#C084FC', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-          >
-            {playing ? <Pause size={16} /> : <Play size={16} />}
-          </button>
-
-          {/* Next */}
-          <button
-            onClick={goNext}
-            style={{ width: 38, height: 38, borderRadius: 12, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}
-          >
-            ‹
-          </button>
-        </div>
-
-        {/* CTA */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
-          <Link
-            href="/register"
-            style={{ background: 'linear-gradient(135deg,#6B46F0,#9A7BFD)', color: 'white', fontWeight: 900, fontSize: 14, padding: '10px 28px', borderRadius: 14, textDecoration: 'none', boxShadow: '0 8px 32px rgba(107,70,240,0.45)', display: 'inline-block' }}
-          >
-            ابدأ التسجيل المجاني ←
-          </Link>
-          <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 12 }}>
-            {idx + 1} / {SLIDES.length}
-          </span>
-        </div>
-      </div>
-
-      {/* ── Below-fold: stats + timeline + CTA ── */}
-      <div style={{ background: 'rgba(0,0,0,0.3)', borderTop: '1px solid rgba(255,255,255,0.07)', padding: '80px 24px' }}>
-        <div style={{ maxWidth: 960, margin: '0 auto' }}>
-
-          {/* Stats */}
-          <h2 style={{ textAlign: 'center', fontWeight: 900, fontSize: 28, marginBottom: 12 }}>نتائج حقيقية من عائلات حقيقية</h2>
-          <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.5)', marginBottom: 48, fontSize: 15 }}>أرقام مُعتمدة من برامجنا منذ 2019</p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 24, marginBottom: 80 }}>
-            {[
-              { value: '+200', label: 'طفل في البرنامج', icon: <Users size={22} /> },
-              { value: '98%', label: 'رضا أولياء الأمور', icon: <Star size={22} /> },
-              { value: '45 د', label: 'مدة الجلسة الواحدة', icon: <Clock size={22} /> },
-              { value: '+5', label: 'سنوات خبرة', icon: <Award size={22} /> },
-            ].map(({ value, label, icon }) => (
-              <div key={label} style={{ textAlign: 'center', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 20, padding: '28px 20px' }}>
-                <div style={{ color: '#C084FC', display: 'flex', justifyContent: 'center', marginBottom: 12 }}>{icon}</div>
-                <div style={{ fontWeight: 900, fontSize: 34, marginBottom: 6 }}>{value}</div>
-                <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13 }}>{label}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* Session timeline */}
-          <h2 style={{ textAlign: 'center', fontWeight: 900, fontSize: 24, marginBottom: 8 }}>كيف تسير الجلسة؟</h2>
-          <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.45)', marginBottom: 40, fontSize: 14 }}>45 دقيقة مُهيكَلة بدقة لتحقيق أقصى تأثير</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 80 }}>
-            {[
-              { time:'0 — 5 د', title:'التحقق الحسي', desc:'الأستاذ يقيّم مستوى طاقة الطفل ويختار البروتوكول الأنسب لليوم.', emoji:'🔍', color:'rgba(59,130,246,0.12)', border:'rgba(59,130,246,0.2)' },
-              { time:'5 — 20 د', title:'التمارين الحركية APA', desc:'تمارين جسدية مُصممة لرفع الدوبامين وتحضير الدماغ للتعلم.', emoji:'🏃', color:'rgba(107,70,240,0.12)', border:'rgba(107,70,240,0.25)' },
-              { time:'20 — 35 د', title:'التدريب المعرفي والسلوكي', desc:'تطبيق بروتوكولات ABA / CBT — Zone of Regulation، Token Economy، تمارين الانتباه.', emoji:'🧠', color:'rgba(139,92,246,0.12)', border:'rgba(139,92,246,0.25)' },
-              { time:'35 — 40 د', title:'الاسترخاء والتعزيز', desc:'تمارين تنفس هادئة، حساب النقاط، وشارة الإنجاز للطفل.', emoji:'⭐', color:'rgba(245,158,11,0.1)', border:'rgba(245,158,11,0.2)' },
-              { time:'40 — 45 د', title:'إحاطة الولي', desc:'الأستاذ يشرح ما تحقق ويُعطي توصيات للمنزل حتى الجلسة القادمة.', emoji:'💬', color:'rgba(16,185,129,0.1)', border:'rgba(16,185,129,0.2)' },
-            ].map(({ time, title, desc, emoji, color, border }) => (
-              <div key={time} style={{ display: 'flex', alignItems: 'flex-start', gap: 16, background: color, border: `1px solid ${border}`, borderRadius: 16, padding: '18px 20px' }}>
-                <div style={{ fontSize: 28, flexShrink: 0 }}>{emoji}</div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 6 }}>
-                    <span style={{ fontSize: 11, fontFamily: 'monospace', color: 'rgba(255,255,255,0.4)', background: 'rgba(255,255,255,0.06)', padding: '2px 10px', borderRadius: 12 }}>{time}</span>
-                    <span style={{ fontWeight: 900, fontSize: 15 }}>{title}</span>
-                  </div>
-                  <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: 13, lineHeight: 1.7, margin: 0 }}>{desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Final CTA */}
-          <div style={{ textAlign: 'center', background: 'linear-gradient(135deg, rgba(107,70,240,0.2), rgba(192,132,252,0.1))', border: '1px solid rgba(124,92,252,0.25)', borderRadius: 28, padding: '56px 32px' }}>
-            <div style={{ fontSize: 42, marginBottom: 16 }}>🌟</div>
-            <h2 style={{ fontWeight: 900, fontSize: 'clamp(22px, 4vw, 36px)', marginBottom: 12 }}>هل أنت مستعد للبدء؟</h2>
-            <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: 15, maxWidth: 440, margin: '0 auto 36px', lineHeight: 1.7 }}>
-              الجلسة التقييمية الأولى مجانية — يحدد فيها الأستاذ أمين نوع البرنامج المناسب لطفلك.
+          <div style={{ animation: 'demo-fade-up 0.8s ease 0.2s both' }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.4)', letterSpacing: 3, marginBottom: 14, marginTop: 28 }}>
+              🌟 المنصة العلاجية الأولى في العالم العربي
+            </div>
+            <h1 style={{ fontSize: 'clamp(36px,6vw,68px)', fontWeight: 900, lineHeight: 1.1, marginBottom: 12 }}>
+              أكاديمية{' '}
+              <span style={{ background: 'linear-gradient(135deg,#7C5CFC,#C084FC)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>أمين</span>
+            </h1>
+            <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.55)', marginBottom: 36, lineHeight: 1.7 }}>
+              برنامج علمي متكامل لأطفال ADHD والتوحد — جلسات تفاعلية مباشرة تُحسّن التركيز والسلوك والمهارات الاجتماعية
             </p>
-            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: 14 }}>
-              <Link
-                href="/register"
-                style={{ background: 'linear-gradient(135deg,#6B46F0,#9A7BFD)', color: 'white', fontWeight: 900, fontSize: 16, padding: '14px 36px', borderRadius: 16, textDecoration: 'none', boxShadow: '0 12px 40px rgba(107,70,240,0.5)' }}
-              >
-                احجز الجلسة التقييمية المجانية ←
-              </Link>
-              <Link
-                href="/"
-                style={{ color: 'rgba(255,255,255,0.45)', fontWeight: 600, fontSize: 14, textDecoration: 'none' }}
-              >
-                العودة للرئيسية ↑
+          </div>
+
+          <div style={{ animation: 'demo-fade-up 0.8s ease 0.5s both' }}>
+            <button
+              onClick={startTour}
+              style={{ background: 'linear-gradient(135deg,#6B46F0,#9A7BFD)', color: 'white', fontWeight: 900, fontSize: 18, padding: '16px 48px', borderRadius: 18, border: 'none', cursor: 'pointer', boxShadow: '0 16px 48px rgba(107,70,240,0.5)', display: 'inline-flex', alignItems: 'center', gap: 12, marginBottom: 20 }}
+            >
+              <Play size={22} fill="white" />
+              شاهد الجولة التفاعلية
+            </button>
+
+            <div>
+              <Link href="/" style={{ color: 'rgba(255,255,255,0.35)', fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
+                ← العودة للرئيسية
               </Link>
             </div>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 32, marginTop: 48, animation: 'demo-fade-up 0.8s ease 0.7s both' }}>
+            {[{ v: '+200', l: 'طفل في البرنامج' }, { v: '98%', l: 'رضا الأولياء' }, { v: '+32', l: 'تمرين علمي' }].map(({ v, l }) => (
+              <div key={l} style={{ textAlign: 'center' }}>
+                <div style={{ fontWeight: 900, fontSize: 28, color: '#C084FC' }}>{v}</div>
+                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>{l}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Playing view ─────────────────────────────────────────────────────────────
+  return (
+    <div ref={containerRef} dir="rtl" style={{ height: '100vh', background: 'linear-gradient(160deg,#0d0820 0%,#1a0f3a 55%,#0a1628 100%)', color: 'white', display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
+      <style>{`
+        @keyframes demo-float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-11px)} }
+        @keyframes demo-spin  { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+        @keyframes demo-slide-next { from{opacity:0;transform:translateX(-28px)} to{opacity:1;transform:translateX(0)} }
+        @keyframes demo-slide-prev { from{opacity:0;transform:translateX(28px)} to{opacity:1;transform:translateX(0)} }
+      `}</style>
+
+      {/* ── Top bar ── */}
+      <div style={{ flexShrink: 0, height: 52, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 20px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+        <button onClick={() => setStage('splash')} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.45)', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+          ← الرئيسية
+        </button>
+        <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
+          {SLIDES.map((_, i) => (
+            <button key={i} onClick={() => goTo(i)} style={{ width: i === idx ? 20 : 6, height: 6, borderRadius: 3, background: i === idx ? '#7C5CFC' : 'rgba(255,255,255,0.18)', border: 'none', cursor: 'pointer', transition: 'all 0.3s', padding: 0 }} />
+          ))}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.4)', letterSpacing: 1 }}>{slide.tag}</div>
+          <Link href="/register" style={{ background: 'rgba(107,70,240,0.3)', border: '1px solid rgba(107,70,240,0.5)', color: '#C084FC', fontWeight: 900, fontSize: 12, padding: '5px 14px', borderRadius: 8, textDecoration: 'none' }}>
+            سجّل مجاناً
+          </Link>
+        </div>
+      </div>
+
+      {/* ── Slide content ── */}
+      <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '16px 20px 8px' }}>
+        <div
+          key={animKey}
+          style={{ width: '100%', maxWidth: 720, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, animation: `${direction === 'next' ? 'demo-slide-next' : 'demo-slide-prev'} 0.4s ease both` }}
+        >
+          <h2 style={{ fontSize: 'clamp(22px,4vw,42px)', fontWeight: 900, textAlign: 'center', margin: 0, lineHeight: 1.15 }}>
+            {slide.title}
+          </h2>
+
+          <p style={{ fontSize: 'clamp(12px,1.5vw,15px)', color: slide.accent, fontWeight: 700, textAlign: 'center', margin: 0, letterSpacing: 0.3 }}>
+            {slide.caption}
+          </p>
+
+          {slide.isHero ? (
+            <HeroVisual />
+          ) : slide.mockup && slide.url ? (
+            <div style={{ width: '100%' }}>
+              <BrowserFrame url={slide.url} glow={slide.glow}>{slide.mockup}</BrowserFrame>
+            </div>
+          ) : null}
+        </div>
+      </div>
+
+      {/* ── Video player controls ── */}
+      <div style={{ flexShrink: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(12px)', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+        {/* Progress bar */}
+        <div
+          style={{ height: 4, background: 'rgba(255,255,255,0.08)', cursor: 'pointer', position: 'relative' }}
+          onClick={e => {
+            const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect()
+            const pct = (e.clientX - rect.left) / rect.width
+            const targetIdx = Math.min(Math.floor(pct * SLIDES.length), SLIDES.length - 1)
+            goTo(targetIdx)
+          }}
+        >
+          <div style={{ height: '100%', width: `${(idx * 100 / SLIDES.length) + progress / SLIDES.length}%`, background: 'linear-gradient(90deg,#7C5CFC,#C084FC)', transition: 'width 0.03s linear' }} />
+          <div style={{ position: 'absolute', top: -3, left: `${(idx * 100 / SLIDES.length) + progress / SLIDES.length}%`, width: 10, height: 10, borderRadius: 5, background: '#C084FC', transform: 'translateX(-50%)', marginTop: -3 }} />
+        </div>
+
+        {/* Controls row */}
+        <div style={{ display: 'flex', alignItems: 'center', padding: '10px 16px', gap: 8 }}>
+          {/* Left controls */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <button onClick={goPrev} style={btnStyle} title="السابق"><SkipBack size={16} /></button>
+            <button onClick={() => setPlaying(p => !p)} style={{ ...btnStyle, width: 40, height: 40, background: 'rgba(124,92,252,0.25)', border: '1px solid rgba(124,92,252,0.4)' }}>
+              {playing ? <Pause size={18} /> : <Play size={18} fill="white" />}
+            </button>
+            <button onClick={goNext} style={btnStyle} title="التالي"><SkipForward size={16} /></button>
+          </div>
+
+          {/* Time */}
+          <div style={{ fontSize: 12, fontFamily: 'monospace', color: 'rgba(255,255,255,0.45)', flexShrink: 0 }}>
+            {fmt(currentSec)} / {fmt(TOTAL_SEC)}
+          </div>
+
+          {/* Spacer */}
+          <div style={{ flex: 1 }} />
+
+          {/* Right controls */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <button onClick={toggleMusic} style={btnStyle} title={muted ? 'تشغيل الموسيقى' : 'كتم الصوت'}>
+              {muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+            </button>
+            <button onClick={toggleFullscreen} style={btnStyle} title="ملء الشاشة">
+              {fullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
+            </button>
           </div>
         </div>
       </div>
     </div>
   )
+}
+
+const btnStyle: React.CSSProperties = {
+  width: 34, height: 34, borderRadius: 9,
+  background: 'rgba(255,255,255,0.07)',
+  border: '1px solid rgba(255,255,255,0.1)',
+  color: 'rgba(255,255,255,0.75)',
+  cursor: 'pointer',
+  display: 'flex', alignItems: 'center', justifyContent: 'center',
+  flexShrink: 0,
 }

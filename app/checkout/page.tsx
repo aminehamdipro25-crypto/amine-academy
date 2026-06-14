@@ -5,10 +5,10 @@ import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import {
   Check, ChevronRight, CreditCard, Building2, Smartphone, MessageCircle,
-  User, Mail, Phone, CheckCircle2, Copy, ExternalLink,
+  User, Mail, Phone, CheckCircle2, Copy, ExternalLink, Clock, Calendar, Zap,
 } from 'lucide-react'
 
-type Plan = 'basic' | 'standard' | 'premium'
+type Plan = 'session' | 'weekly' | 'monthly'
 type Currency = 'QAR' | 'TND'
 type PaymentMethod = 'fawran' | 'bank_transfer_qa' | 'bank_transfer_tn' | 'whatsapp'
 
@@ -16,60 +16,82 @@ interface PlanInfo {
   id: Plan
   name: string
   prices: { QAR: number; TND: number }
-  color: string
+  period: string
   badge?: string
+  badgeColor: string
+  icon: typeof Clock
   features: string[]
 }
 
 const PLANS: Record<Plan, PlanInfo> = {
-  basic: {
-    id: 'basic',
-    name: 'الأساسي',
-    prices: { QAR: 179, TND: 49 },
-    color: 'border-gray-200',
+  session: {
+    id: 'session',
+    name: 'الحصة المفردة',
+    prices: { QAR: 49, TND: 15 },
+    period: 'حصة',
+    badge: undefined,
+    badgeColor: '',
+    icon: Clock,
     features: [
-      'برنامج تمارين أسبوعي مخصص',
-      'مكتبة 25+ تمرين علمي',
-      'تقرير شهري بالتقدم',
-      'دعم عبر البريد الإلكتروني',
+      'جلسة تفاعلية مباشرة بالفيديو مع الأستاذ أمين',
+      'برنامج تمارين مخصص لهذه الحصة',
+      'مكتبة 60+ تمرين علمي',
+      'لا اشتراك — ادفع فقط عند الحجز',
     ],
   },
-  standard: {
-    id: 'standard',
-    name: 'المتقدم',
-    prices: { QAR: 369, TND: 99 },
-    color: 'border-brand-400',
+  weekly: {
+    id: 'weekly',
+    name: 'الباقة الأسبوعية',
+    prices: { QAR: 169, TND: 49 },
+    period: 'أسبوع',
     badge: '⭐ الأكثر طلباً',
+    badgeColor: 'bg-brand-600',
+    icon: Calendar,
     features: [
-      'كل مزايا الأساسي',
-      'جلسة فيديو شهرية مع الأستاذ',
-      'تقارير أسبوعية لولي الأمر',
-      'واتساب مباشر مع الأستاذ',
-      'تعديل البرنامج حسب التطور',
+      'جلسات تفاعلية مباشرة أسبوعياً مع الأستاذ',
+      'برنامج تمارين يتكيّف مع تطور الطفل',
+      'مكتبة 60+ تمرين علمي (APA + ABA + CBT)',
+      'تقارير تقدم مفصّلة لولي الأمر',
+      'يُجدَّد أسبوعياً • إلغاء في أي وقت',
     ],
   },
-  premium: {
-    id: 'premium',
-    name: 'المتميز',
-    prices: { QAR: 659, TND: 179 },
-    color: 'border-amber-300',
-    badge: '👑 VIP',
+  monthly: {
+    id: 'monthly',
+    name: 'الباقة الشهرية',
+    prices: { QAR: 549, TND: 149 },
+    period: 'شهر',
+    badge: '💎 الأفضل قيمة',
+    badgeColor: 'bg-amber-500',
+    icon: Zap,
     features: [
-      'كل مزايا المتقدم',
-      '2 جلسات فيديو شهرياً',
-      'بروتوكول ABA + PEERS كامل',
-      'مراسلة غير محدودة 24/7',
-      'خطة تغذية مكملة للتركيز',
-      'تقرير ذكاء اصطناعي فصلياً',
+      'جلسات تفاعلية مباشرة شهرياً مع الأستاذ',
+      'برنامج تمارين يتكيّف مع تطور الطفل',
+      'مكتبة 60+ تمرين علمي (APA + ABA + CBT)',
+      'تقارير تقدم مفصّلة لولي الأمر بعد كل حصة',
+      'واتساب مباشر مع الأستاذ للمتابعة اليومية',
+      'يُجدَّد تلقائياً • إلغاء في أي وقت',
     ],
   },
 }
 
 const CURRENCY_SYMBOL: Record<Currency, string> = { QAR: 'ر.ق', TND: 'د.ت' }
 
+interface PublicSettings {
+  prices: Record<Plan, Record<Currency, number>>
+  discountPct: number
+  discountLabel: string
+  sessionsPerWeek: number
+  sessionsPerMonth: number
+}
+
 function CheckoutForm() {
   const searchParams = useSearchParams()
-  const planParam = (searchParams.get('plan') ?? 'basic') as Plan
+  const rawPlan = searchParams.get('plan') ?? 'weekly'
+  // Accept both old (basic/standard/premium) and new (session/weekly/monthly) keys
+  const planParam: Plan = rawPlan === 'basic' ? 'session'
+    : rawPlan === 'standard' ? 'weekly'
+    : rawPlan === 'premium'  ? 'monthly'
+    : (['session','weekly','monthly'].includes(rawPlan) ? rawPlan as Plan : 'weekly')
   const currencyParam = (searchParams.get('currency') ?? 'QAR') as Currency
 
   const [plan, setPlan] = useState<Plan>(planParam)
@@ -77,23 +99,16 @@ function CheckoutForm() {
   const [method, setMethod] = useState<PaymentMethod | null>(null)
   const [step, setStep] = useState<1 | 2 | 3>(1)
 
-  // Form fields — pre-filled from URL when coming from registration
   const [name, setName] = useState(searchParams.get('name') ?? '')
   const [email, setEmail] = useState(searchParams.get('email') ?? '')
   const [phone, setPhone] = useState(searchParams.get('phone') ?? '')
 
-  // State
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState<{ referenceCode: string; paymentId: string } | null>(null)
   const [copied, setCopied] = useState(false)
 
-  // Dynamic settings / prices
-  const [settings, setSettings] = useState<{
-    prices: Record<Plan, Record<Currency, number>>
-    discountPct: number
-    discountLabel: string
-  } | null>(null)
+  const [settings, setSettings] = useState<PublicSettings | null>(null)
 
   useEffect(() => {
     fetch('/api/public/settings')
@@ -103,10 +118,28 @@ function CheckoutForm() {
   }, [])
 
   const planInfo = PLANS[plan]
-  const basePrice = settings?.prices[plan]?.[currency] ?? planInfo.prices[currency]
+  const basePrice = settings?.prices?.[plan]?.[currency] ?? planInfo.prices[currency]
   const discountPct = settings?.discountPct ?? 0
   const finalPrice = discountPct > 0 ? Math.round(basePrice * (1 - discountPct / 100)) : basePrice
   const symbol = CURRENCY_SYMBOL[currency]
+
+  const sessionsPerWeek  = settings?.sessionsPerWeek  ?? 4
+  const sessionsPerMonth = settings?.sessionsPerMonth ?? 16
+
+  function sessionCountLabel(p: Plan): string | null {
+    if (p === 'weekly')  return `${sessionsPerWeek} حصص / أسبوع`
+    if (p === 'monthly') return `${sessionsPerMonth} حصة / شهر`
+    return null
+  }
+
+  function perSessionPrice(p: Plan, ccy: Currency): string {
+    const price = settings?.prices?.[p]?.[ccy] ?? PLANS[p].prices[ccy]
+    const disc  = discountPct > 0 ? Math.round(price * (1 - discountPct / 100)) : price
+    const sym   = CURRENCY_SYMBOL[ccy]
+    if (p === 'weekly')  { const pps = Math.round(disc / sessionsPerWeek);  return `≈ ${pps} ${sym} / حصة` }
+    if (p === 'monthly') { const pps = Math.round(disc / sessionsPerMonth); return `≈ ${pps} ${sym} / حصة` }
+    return `${disc} ${sym} / حصة`
+  }
 
   const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? '+97430653759'
 
@@ -210,7 +243,7 @@ function CheckoutForm() {
     )
   }
 
-  // ── Method instructions for display ─────────────────────────
+  // ── Payment method instructions ─────────────────────────────
   function MethodInstructions({ m, refCode }: { m: PaymentMethod; refCode?: string }) {
     if (m === 'fawran') return (
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-800 leading-relaxed">
@@ -294,7 +327,7 @@ function CheckoutForm() {
               <div className="flex items-center justify-between mb-4">
                 <h2 className="font-black text-gray-900 text-lg flex items-center gap-2">
                   <span className="w-7 h-7 bg-brand-600 text-white rounded-lg flex items-center justify-center text-sm font-bold">١</span>
-                  اختر خطتك
+                  اختر خيارك
                 </h2>
                 {step > 1 && (
                   <button onClick={() => setStep(1)} className="text-xs text-brand-600 font-bold hover:underline">تعديل</button>
@@ -321,8 +354,11 @@ function CheckoutForm() {
                   {/* Plan cards */}
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {(Object.values(PLANS) as PlanInfo[]).map(p => {
-                      const price = settings?.prices[p.id]?.[currency] ?? p.prices[currency]
+                      const price = settings?.prices?.[p.id]?.[currency] ?? p.prices[currency]
                       const disc = discountPct > 0 ? Math.round(price * (1 - discountPct / 100)) : null
+                      const displayPrice = disc ?? price
+                      const sessLabel = sessionCountLabel(p.id)
+                      const PlanIcon = p.icon
                       return (
                         <button
                           key={p.id}
@@ -332,25 +368,40 @@ function CheckoutForm() {
                           }`}
                         >
                           {p.badge && (
-                            <span className="absolute -top-2 right-3 text-xs bg-brand-600 text-white px-2 py-0.5 rounded-full font-bold">
+                            <span className={`absolute -top-2 right-3 text-xs text-white px-2 py-0.5 rounded-full font-bold ${p.badgeColor}`}>
                               {p.badge}
                             </span>
                           )}
-                          <p className="font-black text-gray-900 text-sm mb-1">{p.name}</p>
+                          <div className="flex items-center gap-2 mb-2">
+                            <PlanIcon className="w-4 h-4 text-brand-500 flex-shrink-0" />
+                            <p className="font-black text-gray-900 text-sm">{p.name}</p>
+                          </div>
+                          {/* Session count badge */}
+                          {sessLabel && (
+                            <div className="mb-2">
+                              <span className="text-[11px] font-black bg-brand-100 text-brand-700 px-2 py-0.5 rounded-full">
+                                {sessLabel}
+                              </span>
+                            </div>
+                          )}
                           <div>
                             {disc !== null ? (
                               <div>
                                 <span className="text-lg font-black text-brand-700">{disc}</span>
                                 <span className="text-xs text-gray-400 line-through mr-1">{price}</span>
-                                <span className="text-xs text-gray-500"> {symbol}</span>
+                                <span className="text-xs text-gray-500"> {symbol}/{p.period}</span>
                               </div>
                             ) : (
                               <div>
                                 <span className="text-lg font-black text-gray-800">{price}</span>
-                                <span className="text-xs text-gray-500"> {symbol}/شهر</span>
+                                <span className="text-xs text-gray-500"> {symbol}/{p.period}</span>
                               </div>
                             )}
                           </div>
+                          {/* Per-session equivalent */}
+                          {p.id !== 'session' && (
+                            <p className="text-[10px] text-gray-400 mt-1">{perSessionPrice(p.id, currency)}</p>
+                          )}
                           {plan === p.id && (
                             <div className="absolute top-2 left-2 w-5 h-5 bg-brand-600 rounded-full flex items-center justify-center">
                               <Check className="w-3 h-3 text-white" />
@@ -365,14 +416,20 @@ function CheckoutForm() {
                     onClick={() => setStep(2)}
                     className="mt-4 w-full bg-brand-600 hover:bg-brand-700 text-white font-black py-3.5 rounded-xl transition-colors"
                   >
-                    التالي — إدخال بياناتك
+                    التالي — إدخال بياناتك ←
                   </button>
                 </>
               )}
 
               {step > 1 && (
-                <div className="flex items-center gap-3 text-sm">
+                <div className="flex items-center gap-3 text-sm flex-wrap">
                   <span className="font-bold text-gray-700">{planInfo.name}</span>
+                  {sessionCountLabel(plan) && (
+                    <>
+                      <span className="text-gray-400">·</span>
+                      <span className="text-xs font-black bg-brand-100 text-brand-700 px-2 py-0.5 rounded-full">{sessionCountLabel(plan)}</span>
+                    </>
+                  )}
                   <span className="text-gray-400">·</span>
                   <span className="font-black text-brand-600">{finalPrice} {symbol}</span>
                   <span className="text-gray-400">·</span>
@@ -446,7 +503,7 @@ function CheckoutForm() {
                       type="submit"
                       className="mt-5 w-full bg-brand-600 hover:bg-brand-700 text-white font-black py-3.5 rounded-xl transition-colors"
                     >
-                      التالي — اختر طريقة الدفع
+                      التالي — اختر طريقة الدفع ←
                     </button>
                   </form>
                 )}
@@ -470,7 +527,6 @@ function CheckoutForm() {
                 </h2>
 
                 <div className="space-y-3 mb-5">
-                  {/* FAWRAN — only show for QAR */}
                   {currency === 'QAR' && (
                     <button
                       type="button"
@@ -490,7 +546,6 @@ function CheckoutForm() {
                     </button>
                   )}
 
-                  {/* Bank transfer Qatar — only for QAR */}
                   {currency === 'QAR' && (
                     <button
                       type="button"
@@ -504,13 +559,12 @@ function CheckoutForm() {
                       </div>
                       <div className="flex-1">
                         <p className="font-bold text-gray-900 text-sm">تحويل بنكي — قطر</p>
-                        <p className="text-xs text-gray-400">بنك قطر الوطني (QNB)</p>
+                        <p className="text-xs text-gray-400">Commercial Bank of Qatar</p>
                       </div>
                       {method === 'bank_transfer_qa' && <Check className="w-5 h-5 text-brand-600 flex-shrink-0" />}
                     </button>
                   )}
 
-                  {/* Bank transfer Tunisia — only for TND */}
                   {currency === 'TND' && (
                     <button
                       type="button"
@@ -524,13 +578,12 @@ function CheckoutForm() {
                       </div>
                       <div className="flex-1">
                         <p className="font-bold text-gray-900 text-sm">تحويل بنكي — تونس</p>
-                        <p className="text-xs text-gray-400">بنك UIB</p>
+                        <p className="text-xs text-gray-400">La Poste / CCP</p>
                       </div>
                       {method === 'bank_transfer_tn' && <Check className="w-5 h-5 text-brand-600 flex-shrink-0" />}
                     </button>
                   )}
 
-                  {/* WhatsApp — always available */}
                   <button
                     type="button"
                     onClick={() => setMethod('whatsapp')}
@@ -549,7 +602,6 @@ function CheckoutForm() {
                   </button>
                 </div>
 
-                {/* Payment instructions preview */}
                 {method && <MethodInstructions m={method} />}
 
                 {error && (
@@ -577,7 +629,7 @@ function CheckoutForm() {
                         جارٍ إرسال الطلب...
                       </span>
                     ) : (
-                      `تأكيد الطلب — ${finalPrice} ${symbol}`
+                      `تأكيد الطلب — ${finalPrice} ${symbol} ✓`
                     )}
                   </button>
                 </form>
@@ -592,13 +644,21 @@ function CheckoutForm() {
 
               <div className="space-y-3 pb-4 border-b border-gray-100">
                 <div className="flex justify-between items-center text-sm">
-                  <span className="text-gray-500">الخطة</span>
+                  <span className="text-gray-500">الخيار</span>
                   <span className="font-bold text-gray-900">{planInfo.name}</span>
                 </div>
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-gray-500">المدة</span>
-                  <span className="font-bold text-gray-900">شهر واحد</span>
-                </div>
+                {sessionCountLabel(plan) && (
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-500">عدد الحصص</span>
+                    <span className="font-black text-brand-600">{sessionCountLabel(plan)}</span>
+                  </div>
+                )}
+                {plan !== 'session' && (
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-500">سعر الحصة</span>
+                    <span className="font-bold text-gray-500">{perSessionPrice(plan, currency)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-gray-500">العملة</span>
                   <span className="font-bold text-gray-900">{currency === 'QAR' ? '🇶🇦 ريال قطري' : '🇹🇳 دينار تونسي'}</span>

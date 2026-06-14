@@ -17,6 +17,8 @@ interface PublicSettings {
   discountPct: number
   discountLabel: string
   offerDurationDays: number
+  sessionsPerWeek?: number
+  sessionsPerMonth?: number
 }
 
 // Unified feature list — same across all billing cycles
@@ -217,8 +219,22 @@ export default function PlansSection() {
             const basePrice = settings?.prices?.[cycleKey]?.[currency] ?? plan.prices[currency]
             const discountPct = settings?.discountPct ?? 0
             const discountedPrice = discountPct > 0 ? Math.round(basePrice * (1 - discountPct / 100)) : null
+            const displayPrice = discountedPrice ?? basePrice
             const symbol = CURRENCY_SYMBOLS[currency]
             const isPopular = plan.id === 'weekly'
+
+            const spw = settings?.sessionsPerWeek ?? 4
+            const spm = settings?.sessionsPerMonth ?? 16
+            const sessionCountLabel = plan.id === 'weekly'
+              ? (isAr ? `${spw} حصص / أسبوع` : `${spw} sessions / week`)
+              : plan.id === 'monthly'
+              ? (isAr ? `${spm} حصة / شهر` : `${spm} sessions / month`)
+              : null
+            const perSessionStr = plan.id === 'weekly'
+              ? `≈ ${Math.round(displayPrice / spw)} ${symbol} / ${isAr ? 'حصة' : 'session'}`
+              : plan.id === 'monthly'
+              ? `≈ ${Math.round(displayPrice / spm)} ${symbol} / ${isAr ? 'حصة' : 'session'}`
+              : plan.perSession[currency]
 
             return (
               <div key={plan.id} className={`rounded-3xl overflow-hidden relative transition-all duration-200 ${plan.cardStyle}`}>
@@ -239,6 +255,13 @@ export default function PlansSection() {
                   </div>
                   <h3 className={`font-black text-xl ${plan.headerText}`}>{isAr ? plan.name : plan.nameEn}</h3>
                   <p className={`text-xs mt-1 ${plan.headerText} opacity-70`}>{isAr ? plan.subtitle : plan.subtitleEn}</p>
+                  {sessionCountLabel && !settingsLoading && (
+                    <span className={`inline-block mt-2 text-xs font-black px-3 py-1 rounded-full ${
+                      isPopular ? 'bg-white/25 text-white' : 'bg-white/20 text-white'
+                    }`}>
+                      📅 {sessionCountLabel}
+                    </span>
+                  )}
 
                   {/* Price */}
                   {settingsLoading ? (
@@ -260,7 +283,7 @@ export default function PlansSection() {
                       {/* Per-session equivalent */}
                       <div className={`mt-2 flex items-center gap-2 flex-wrap`}>
                         <span className={`text-xs ${plan.priceText} opacity-60`}>
-                          {isAr ? plan.perSession[currency] : plan.perSession[currency]}
+                          {perSessionStr}
                         </span>
                         {plan.savingsPct && (
                           <span className={`text-xs font-black px-2 py-0.5 rounded-full ${

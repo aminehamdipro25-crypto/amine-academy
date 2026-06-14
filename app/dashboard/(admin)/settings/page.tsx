@@ -481,6 +481,67 @@ export default function AdminSettingsPage() {
         </div>
       </div>
 
+      {/* Sessions per package */}
+      <div className="bg-white rounded-2xl border border-gray-100 p-6">
+        <h2 className="font-black text-gray-900 mb-1 flex items-center gap-2 text-lg">
+          <Clock className="w-5 h-5 text-brand-500" />
+          عدد الحصص في كل حزمة
+        </h2>
+        <p className="text-xs text-gray-400 mb-5">يظهر على بطاقات الأسعار — يُحدَّد السعر لكل حصة تلقائياً بناءً على هذه الأرقام</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-md">
+          <Field label="حصص / أسبوع (الباقة الأسبوعية)">
+            <div className="space-y-2">
+              <Input
+                type="number"
+                value={settings.sessionsPerWeek ?? 4}
+                onChange={v => {
+                  const n = Math.min(10, Math.max(1, parseInt(v, 10) || 1))
+                  setSettings(prev => prev ? { ...prev, sessionsPerWeek: n } : prev)
+                }}
+                min={1}
+                max={10}
+                step={1}
+                suffix="حصة"
+              />
+              <p className="text-xs text-gray-400">
+                سعر الحصة الواحدة:{' '}
+                <span className="font-black text-brand-600 ltr-num">
+                  {Math.round((settings.prices as Record<PlanKey, { QAR: number; TND: number }>).weekly?.QAR / (settings.sessionsPerWeek ?? 4))} ر.ق
+                </span>{' / '}
+                <span className="font-black text-brand-600 ltr-num">
+                  {Math.round((settings.prices as Record<PlanKey, { QAR: number; TND: number }>).weekly?.TND / (settings.sessionsPerWeek ?? 4))} د.ت
+                </span>
+              </p>
+            </div>
+          </Field>
+          <Field label="حصص / شهر (الباقة الشهرية)">
+            <div className="space-y-2">
+              <Input
+                type="number"
+                value={settings.sessionsPerMonth ?? 16}
+                onChange={v => {
+                  const n = Math.min(50, Math.max(1, parseInt(v, 10) || 1))
+                  setSettings(prev => prev ? { ...prev, sessionsPerMonth: n } : prev)
+                }}
+                min={1}
+                max={50}
+                step={1}
+                suffix="حصة"
+              />
+              <p className="text-xs text-gray-400">
+                سعر الحصة الواحدة:{' '}
+                <span className="font-black text-brand-600 ltr-num">
+                  {Math.round((settings.prices as Record<PlanKey, { QAR: number; TND: number }>).monthly?.QAR / (settings.sessionsPerMonth ?? 16))} ر.ق
+                </span>{' / '}
+                <span className="font-black text-brand-600 ltr-num">
+                  {Math.round((settings.prices as Record<PlanKey, { QAR: number; TND: number }>).monthly?.TND / (settings.sessionsPerMonth ?? 16))} د.ت
+                </span>
+              </p>
+            </div>
+          </Field>
+        </div>
+      </div>
+
       {/* Landing page stats */}
       <div className="bg-white rounded-2xl border border-gray-100 p-6">
         <h2 className="font-black text-gray-900 mb-2 flex items-center gap-2 text-lg">

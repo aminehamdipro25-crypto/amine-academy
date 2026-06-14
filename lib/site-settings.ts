@@ -10,6 +10,8 @@ export interface SiteSettings {
   discountLabel: string
   offerDurationDays: number
   whatsappNumber: string
+  sessionsPerWeek: number
+  sessionsPerMonth: number
   stats: {
     childrenCount:   string
     satisfactionPct: string
@@ -31,6 +33,8 @@ const DEFAULT_SETTINGS: SiteSettings = {
   discountLabel: 'عرض التسجيل المبكر',
   offerDurationDays: 5,
   whatsappNumber: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '',
+  sessionsPerWeek: 4,
+  sessionsPerMonth: 16,
   stats: {
     childrenCount:   '12',
     satisfactionPct: '97%',

@@ -1,0 +1,171 @@
+'use client'
+import { useState, useRef, useCallback, useEffect } from 'react'
+import type { ExerciseResult } from '@/lib/types'
+
+interface Props {
+  onComplete: (r: ExerciseResult) => void
+  onCancel:   () => void
+  studentAge: number
+  difficulty?: 1|2|3
+}
+
+const ANIMALS = [
+  { emoji: '🐶', name: 'كلب'  },
+  { emoji: '🐱', name: 'قطة'  },
+  { emoji: '🐄', name: 'بقرة' },
+  { emoji: '🐑', name: 'خروف' },
+  { emoji: '🐸', name: 'ضفدع' },
+  { emoji: '🐥', name: 'كتكوت'},
+  { emoji: '🦆', name: 'بطة'  },
+  { emoji: '🐴', name: 'حصان' },
+]
+
+function shuffle<T>(arr: T[]): T[] { return [...arr].sort(() => Math.random() - 0.5) }
+
+export default function AudioSequenceRepeat({ onComplete, onCancel, difficulty = 1 }: Props) {
+  const SEQ_LEN = difficulty === 1 ? 2 : difficulty === 2 ? 3 : 4
+  const ROUNDS  = 4
+
+  const [round,     setRound]     = useState(0)
+  const [sequence,  setSequence]  = useState<number[]>([]) // indices into ANIMALS
+  const [tapped,    setTapped]    = useState<number[]>([])
+  const [phase,     setPhase]     = useState<'listening' | 'recall' | 'feedback'>('listening')
+  const [feedback,  setFeedback]  = useState<'correct'|'wrong'|null>(null)
+  const [totalScore,setTotalScore]= useState(0)
+  const [errors,    setErrors]    = useState(0)
+  const [startMs]                 = useState(Date.now())
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const speak = useCallback((text: string) => {
+    window.speechSynthesis.cancel()
+    const u = new SpeechSynthesisUtterance(text)
+    u.lang = 'ar-SA'; u.rate = 0.85
+    window.speechSynthesis.speak(u)
+  }, [])
+
+  const playSequence = useCallback((seq: number[]) => {
+    setPhase('listening')
+    seq.forEach((animalIdx, i) => {
+      timerRef.current = setTimeout(() => {
+        speak(ANIMALS[animalIdx].name)
+        if (i === seq.length - 1) {
+          timerRef.current = setTimeout(() => {
+            setPhase('recall')
+          }, 800)
+        }
+      }, i * 900)
+    })
+  }, [speak])
+
+  const startRound = useCallback(() => {
+    const used = shuffle(Array.from({length: ANIMALS.length}, (_, i) => i)).slice(0, SEQ_LEN)
+    setSequence(used)
+    setTapped([])
+    playSequence(used)
+  }, [SEQ_LEN, playSequence])
+
+  useEffect(() => {
+    startRound()
+    return () => { window.speechSynthesis.cancel(); if (timerRef.current) clearTimeout(timerRef.current) }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  function handleTap(animalIdx: number) {
+    if (phase !== 'recall') return
+    const pos      = tapped.length
+    const expected = sequence[pos]
+    const newTapped = [...tapped, animalIdx]
+    setTapped(newTapped)
+
+    if (animalIdx !== expected) {
+      // Wrong — end recall
+      setErrors(e => e + 1)
+      setFeedback('wrong')
+      setPhase('feedback')
+      speak('خطأ')
+      timerRef.current = setTimeout(() => advanceRound(0), 1400)
+    } else if (newTapped.length === sequence.length) {
+      // All correct
+      setFeedback('correct')
+      setPhase('feedback')
+      setTotalScore(s => s + 100)
+      speak('ممتاز')
+      timerRef.current = setTimeout(() => advanceRound(100), 1400)
+    }
+    // else: partial match, keep going
+  }
+
+  function advanceRound(roundScore: number) {
+    setFeedback(null)
+    const next = round + 1
+    if (next >= ROUNDS) {
+      const finalScore = Math.round((totalScore + roundScore) / ROUNDS)
+      onComplete({
+        exerciseType:    'audio-sequence',
+        exerciseLabelAr: 'تسلسل الأصوات',
+        score:     finalScore,
+        accuracy:  finalScore,
+        duration:  Math.round((Date.now() - startMs) / 1000),
+        errors,
+        metadata:  { rounds: ROUNDS, seqLength: SEQ_LEN },
+        completedAt: new Date().toISOString(),
+      })
+    } else {
+      setRound(next)
+      setTapped([])
+      const used = shuffle(Array.from({length: ANIMALS.length}, (_, i) => i)).slice(0, SEQ_LEN)
+      setSequence(used)
+      playSequence(used)
+    }
+  }
+
+  return (
+    <div className="flex flex-col items-center gap-6 p-6 select-none" dir="rtl">
+      <div className="flex items-center justify-between w-full max-w-md">
+        <div className="text-center">
+          <div className="text-2xl font-black text-brand-400">{round + 1}/{ROUNDS}</div>
+          <div className="text-xs text-white/50">جولة</div>
+        </div>
+        <h2 className="text-xl font-black text-white">تسلسل الأصوات</h2>
+        <div className="text-center">
+          <div className="text-2xl font-black text-green-400">{Math.round(totalScore / Math.max(round, 1))}%</div>
+          <div className="text-xs text-white/50">دقة</div>
+        </div>
+      </div>
+
+      {/* Status */}
+      <div className={`text-lg font-black px-5 py-2.5 rounded-xl ${
+        phase === 'listening' ? 'text-amber-400 bg-amber-400/10' : 'text-brand-400 bg-brand-400/10'
+      }`}>
+        {phase === 'listening' ? '🎧 استمع جيداً...' : phase === 'recall' ? '🔁 كرر الترتيب' : ''}
+        {feedback === 'correct' && '✅ ممتاز!'}
+        {feedback === 'wrong'   && '❌ حاول مرة أخرى'}
+      </div>
+
+      {/* Progress dots */}
+      <div className="flex gap-2">
+        {sequence.map((_, i) => (
+          <div key={i} className="w-3 h-3 rounded-full transition-all"
+            style={{ background: i < tapped.length ? '#22C55E' : 'rgba(255,255,255,0.2)' }} />
+        ))}
+      </div>
+
+      {/* Animal buttons */}
+      <div className="grid grid-cols-4 gap-3">
+        {ANIMALS.map((a, i) => (
+          <button key={i} onClick={() => handleTap(i)}
+            disabled={phase !== 'recall'}
+            className="flex flex-col items-center gap-1 p-3 rounded-2xl border-2 transition-all
+              disabled:opacity-40 disabled:cursor-not-allowed
+              bg-white/10 border-white/20 hover:bg-white/20 active:scale-95">
+            <span className="text-3xl">{a.emoji}</span>
+            <span className="text-[10px] text-white/70 font-bold">{a.name}</span>
+          </button>
+        ))}
+      </div>
+
+      <button onClick={onCancel} className="text-white/40 hover:text-white/70 text-sm transition-colors">
+        ← إنهاء التمرين
+      </button>
+    </div>
+  )
+}

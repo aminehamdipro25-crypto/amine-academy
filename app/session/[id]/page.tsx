@@ -34,6 +34,24 @@ import ShadowMatch            from '@/components/session/exercises/ShadowMatch'
 import StorySequencing        from '@/components/session/exercises/StorySequencing'
 import WaitingGame            from '@/components/session/exercises/WaitingGame'
 import SocialProblemSolving   from '@/components/session/exercises/SocialProblemSolving'
+import VisualSearch          from '@/components/session/exercises/VisualSearch'
+import OddOneOut             from '@/components/session/exercises/OddOneOut'
+import SustainedAttention    from '@/components/session/exercises/SustainedAttention'
+import FlashCount            from '@/components/session/exercises/FlashCount'
+import GoNoGo                from '@/components/session/exercises/GoNoGo'
+import BalloonControl        from '@/components/session/exercises/BalloonControl'
+import TrafficLight          from '@/components/session/exercises/TrafficLight'
+import EmotionMirror         from '@/components/session/exercises/EmotionMirror'
+import ConversationStarter   from '@/components/session/exercises/ConversationStarter'
+import SoundDiscrimination   from '@/components/session/exercises/SoundDiscrimination'
+import RhymeDetection        from '@/components/session/exercises/RhymeDetection'
+import AudioSequenceRepeat   from '@/components/session/exercises/AudioSequenceRepeat'
+import SequenceTap           from '@/components/session/exercises/SequenceTap'
+import TargetTracking        from '@/components/session/exercises/TargetTracking'
+import FingerGym             from '@/components/session/exercises/FingerGym'
+import CategorySort          from '@/components/session/exercises/CategorySort'
+import MathFlash             from '@/components/session/exercises/MathFlash'
+import AnalogiesGame         from '@/components/session/exercises/AnalogiesGame'
 import Whiteboard      from '@/components/session/Whiteboard'
 import ADHDScale       from '@/components/session/assessments/ADHDScale'
 import LearningDifficultiesScale from '@/components/session/assessments/LearningDifficultiesScale'
@@ -157,6 +175,30 @@ const EXERCISES = [
   { id:'story-sequencing',       labelAr:'ترتيب القصة',             icon:'📖', category:'تفكير',          color:'bg-amber-900/40 border-amber-300',     ageMin:5,  ageMax:14 },
   { id:'waiting-game',           labelAr:'لعبة الانتظار',           icon:'⏳', category:'اندفاعية',      color:'bg-red-900/40 border-red-300',         ageMin:5,  ageMax:14 },
   { id:'social-problem-solving', labelAr:'كيف أتعامل؟',            icon:'😤', category:'اجتماعي',        color:'bg-pink-900/40 border-pink-300',       ageMin:6,  ageMax:18 },
+  // ── انتباه ───────────────────────────────────────
+  { id:'visual-search',         labelAr:'البحث البصري',            icon:'🔎', category:'انتباه',           color:'bg-cyan-900/40 border-cyan-400',       ageMin:5,  ageMax:22 },
+  { id:'odd-one-out',           labelAr:'الغريب في المجموعة',      icon:'🤔', category:'انتباه',           color:'bg-indigo-900/40 border-indigo-400',   ageMin:5,  ageMax:17 },
+  { id:'sustained-attention',   labelAr:'الانتباه المستمر',        icon:'👁️', category:'انتباه',           color:'bg-blue-900/40 border-blue-400',       ageMin:6,  ageMax:22 },
+  { id:'flash-count',           labelAr:'عدّ السريع',              icon:'⚡', category:'انتباه',           color:'bg-yellow-900/40 border-yellow-400',   ageMin:5,  ageMax:22 },
+  // ── اندفاعية ─────────────────────────────────────
+  { id:'go-no-go',              labelAr:'اضغط / لا تضغط',         icon:'🚦', category:'اندفاعية',         color:'bg-orange-900/40 border-orange-400',   ageMin:6,  ageMax:22 },
+  { id:'balloon-control',       labelAr:'البالون الهادئ',          icon:'🎈', category:'اندفاعية',         color:'bg-red-900/40 border-red-400',         ageMin:5,  ageMax:14 },
+  { id:'traffic-light',         labelAr:'إشارة المرور',            icon:'🚦', category:'اندفاعية',         color:'bg-green-900/40 border-green-400',     ageMin:5,  ageMax:22 },
+  // ── اجتماعي ──────────────────────────────────────
+  { id:'emotion-mirror',        labelAr:'مرآة المشاعر',            icon:'🪞', category:'اجتماعي',          color:'bg-fuchsia-900/40 border-fuchsia-400', ageMin:5,  ageMax:18 },
+  { id:'conversation-starter',  labelAr:'كيف أبدأ الحديث؟',       icon:'💬', category:'اجتماعي',          color:'bg-teal-900/40 border-teal-400',       ageMin:6,  ageMax:22 },
+  // ── سمعي ─────────────────────────────────────────
+  { id:'sound-discrimination',  labelAr:'تمييز الأصوات',           icon:'👂', category:'سمعي',             color:'bg-violet-900/40 border-violet-400',   ageMin:5,  ageMax:22 },
+  { id:'rhyme-detection',       labelAr:'اكتشاف القافية',          icon:'🎵', category:'سمعي',             color:'bg-pink-900/40 border-pink-400',       ageMin:5,  ageMax:14 },
+  { id:'audio-sequence',        labelAr:'تسلسل الأصوات',           icon:'🔁', category:'سمعي',             color:'bg-indigo-900/40 border-indigo-300',   ageMin:5,  ageMax:17 },
+  // ── حركي ─────────────────────────────────────────
+  { id:'sequence-tap',          labelAr:'النقر بالتسلسل',          icon:'🟣', category:'حركي',             color:'bg-purple-900/40 border-purple-300',   ageMin:5,  ageMax:22 },
+  { id:'target-tracking',       labelAr:'تتبع الهدف',              icon:'🎯', category:'حركي',             color:'bg-emerald-900/40 border-emerald-400', ageMin:5,  ageMax:17 },
+  { id:'finger-gym',            labelAr:'جمباز الأصابع',           icon:'🥁', category:'حركي',             color:'bg-amber-900/40 border-amber-400',     ageMin:5,  ageMax:22 },
+  // ── معرفي ────────────────────────────────────────
+  { id:'category-sort',         labelAr:'تصنيف الأشياء',           icon:'🗂️', category:'معرفي',            color:'bg-sky-900/40 border-sky-400',         ageMin:4,  ageMax:14 },
+  { id:'math-flash',            labelAr:'الحساب السريع',           icon:'🔢', category:'معرفي',            color:'bg-blue-900/40 border-blue-300',       ageMin:6,  ageMax:22 },
+  { id:'analogies',             labelAr:'العلاقات والقياسات',      icon:'🧩', category:'معرفي',            color:'bg-teal-900/40 border-teal-300',       ageMin:7,  ageMax:22 },
 ]
 
 const ASSESSMENTS = [
@@ -1004,7 +1046,7 @@ ${notes ? `
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white flex flex-col">
+    <div className="h-screen bg-gray-950 text-white flex flex-col overflow-hidden">
 
       {/* ── Student Timer Large Display (#9) ── */}
       {showStudentTimer && (
@@ -2235,6 +2277,24 @@ ${notes ? `
               {activeView.id === 'story-sequencing'       && <StorySequencing        onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
               {activeView.id === 'waiting-game'           && <WaitingGame            onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
               {activeView.id === 'social-problem-solving' && <SocialProblemSolving   onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'visual-search'         && <VisualSearch          onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'odd-one-out'           && <OddOneOut             onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'sustained-attention'   && <SustainedAttention    onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'flash-count'           && <FlashCount            onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'go-no-go'              && <GoNoGo                onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'balloon-control'       && <BalloonControl        onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'traffic-light'         && <TrafficLight          onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'emotion-mirror'        && <EmotionMirror         onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'conversation-starter'  && <ConversationStarter   onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'sound-discrimination'  && <SoundDiscrimination   onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'rhyme-detection'       && <RhymeDetection        onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'audio-sequence'        && <AudioSequenceRepeat   onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'sequence-tap'          && <SequenceTap           onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'target-tracking'       && <TargetTracking        onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'finger-gym'            && <FingerGym             onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'category-sort'         && <CategorySort          onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'math-flash'            && <MathFlash             onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'analogies'             && <AnalogiesGame         onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
             </div>
           )}
 

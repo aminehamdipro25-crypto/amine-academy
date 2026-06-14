@@ -2420,7 +2420,8 @@ ${notes ? `
                     value={abcForm.antecedent}
                     onChange={e => setAbcForm(f => ({ ...f, antecedent: e.target.value }))}
                     placeholder="ما الذي سبق السلوك؟"
-                    className="w-full bg-white/8 border border-white/15 rounded-xl px-3 py-2 text-white text-xs placeholder-white/30 focus:outline-none focus:border-blue-400"
+                    className="w-full rounded-xl px-3 py-2 text-xs focus:outline-none"
+                    style={{ background: 'rgba(255,255,255,0.1)', color: '#FFFFFF', border: '1px solid rgba(96,165,250,0.4)' }}
                     dir="rtl"
                   />
                 </div>
@@ -2430,7 +2431,8 @@ ${notes ? `
                     value={abcForm.behavior}
                     onChange={e => setAbcForm(f => ({ ...f, behavior: e.target.value }))}
                     placeholder="صِف السلوك بدقة..."
-                    className="w-full bg-white/8 border border-white/15 rounded-xl px-3 py-2 text-white text-xs placeholder-white/30 focus:outline-none focus:border-amber-400"
+                    className="w-full rounded-xl px-3 py-2 text-xs focus:outline-none"
+                    style={{ background: 'rgba(255,255,255,0.1)', color: '#FFFFFF', border: '1px solid rgba(245,158,11,0.4)' }}
                     dir="rtl"
                   />
                 </div>
@@ -2440,7 +2442,8 @@ ${notes ? `
                     value={abcForm.consequence}
                     onChange={e => setAbcForm(f => ({ ...f, consequence: e.target.value }))}
                     placeholder="ما الذي تلا السلوك؟"
-                    className="w-full bg-white/8 border border-white/15 rounded-xl px-3 py-2 text-white text-xs placeholder-white/30 focus:outline-none focus:border-green-400"
+                    className="w-full rounded-xl px-3 py-2 text-xs focus:outline-none"
+                    style={{ background: 'rgba(255,255,255,0.1)', color: '#FFFFFF', border: '1px solid rgba(74,222,128,0.4)' }}
                     dir="rtl"
                   />
                 </div>

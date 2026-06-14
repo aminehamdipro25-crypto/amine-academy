@@ -35,6 +35,57 @@ type ActiveView =
   | { type: 'assessment'; id: string }
   | null
 
+interface ObsEntry {
+  text: string
+  category: string
+  color: string
+  elapsed: number   // seconds since session start
+  ts: string        // HH:MM
+}
+
+const QUICK_OBS: { category: string; color: string; bg: string; items: { text: string; icon: string }[] }[] = [
+  {
+    category: 'انتباه',
+    color: '#3B82F6',
+    bg: 'rgba(59,130,246,0.15)',
+    items: [
+      { text: 'فقد التركيز',        icon: '😵' },
+      { text: 'عاد للتركيز',        icon: '🎯' },
+      { text: 'تشتت متكرر',         icon: '🌀' },
+    ],
+  },
+  {
+    category: 'سلوك',
+    color: '#F59E0B',
+    bg: 'rgba(245,158,11,0.15)',
+    items: [
+      { text: 'أكمل بدون مساعدة',   icon: '✅' },
+      { text: 'طلب مساعدة',         icon: '🙋' },
+      { text: 'رفض النشاط',         icon: '🚫' },
+    ],
+  },
+  {
+    category: 'مزاج',
+    color: '#EC4899',
+    bg: 'rgba(236,72,153,0.15)',
+    items: [
+      { text: 'مزاج ممتاز',          icon: '😄' },
+      { text: 'توتر / قلق',          icon: '😟' },
+      { text: 'طلب استراحة',         icon: '⏸️' },
+    ],
+  },
+  {
+    category: 'أداء',
+    color: '#22C55E',
+    bg: 'rgba(34,197,94,0.15)',
+    items: [
+      { text: 'تحسن ملحوظ',          icon: '📈' },
+      { text: 'صعوبة واضحة',         icon: '⚠️' },
+      { text: 'أداء استثنائي',        icon: '🏆' },
+    ],
+  },
+]
+
 const EXERCISES = [
   { id:'memory-cards',      labelAr:'مطابقة البطاقات',         icon:'🃏', category:'ذاكرة',          color:'bg-purple-900/40 border-purple-500',  ageMin:5,  ageMax:22 },
   { id:'sequence-memory',   labelAr:'تذكر التسلسل',            icon:'🔢', category:'ذاكرة',          color:'bg-blue-900/40 border-blue-500',       ageMin:6,  ageMax:17 },
@@ -159,6 +210,9 @@ export default function SessionPage() {
   })
   const [tab, setTab] = useState<'exercises'|'assessments'|'log'>('exercises')
   const [categoryFilter, setCategoryFilter] = useState<string>('الكل')
+  const [obsLog, setObsLog] = useState<ObsEntry[]>([])
+  const [obsOpen, setObsOpen] = useState(false)
+  const [obsToast, setObsToast] = useState<ObsEntry | null>(null)
   const [profile, setProfile] = useState<StudentAssessmentProfile | null>(null)
   const [kidMode, setKidMode] = useState(false)
   const [showCelebration, setShowCelebration] = useState(false)
@@ -249,6 +303,16 @@ export default function SessionPage() {
     setTimeout(() => setAchievementToast(null), 3500)
   }
 
+  function logObs(text: string, category: string, color: string) {
+    const now = new Date()
+    const ts = now.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })
+    const entry: ObsEntry = { text, category, color, elapsed, ts }
+    setObsLog(prev => [...prev, entry])
+    setObsOpen(false)
+    setObsToast(entry)
+    setTimeout(() => setObsToast(null), 2500)
+  }
+
   function handleExerciseComplete(result: ExerciseResult) {
     setResults(r => {
       const newResults = [...r, result]
@@ -319,6 +383,7 @@ export default function SessionPage() {
           exercises: results,
           durationSeconds: elapsed,
           highlights: results.filter(r => r.score >= 80).map(r => `${r.exerciseLabelAr}: ${r.score}%`),
+          observationLog: obsLog,
         }),
       })
       setSaved(true)
@@ -643,8 +708,27 @@ export default function SessionPage() {
 
             {tab === 'log' && (
               <div className="space-y-2">
-                {results.length === 0 && assessments.length === 0 && (
-                  <p className="text-white/30 text-sm text-center py-4">لم تبدأ أي تمرين بعد</p>
+                {results.length === 0 && assessments.length === 0 && obsLog.length === 0 && (
+                  <p className="text-white/30 text-sm text-center py-4">لم تبدأ أي نشاط بعد</p>
+                )}
+
+                {/* Observation log entries */}
+                {obsLog.length > 0 && (
+                  <div className="bg-white/5 rounded-xl p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-white/40 text-[10px] font-black uppercase tracking-wider">ملاحظات فورية</span>
+                      <span className="text-white/30 text-[10px]">{obsLog.length} ملاحظة</span>
+                    </div>
+                    <div className="space-y-1.5">
+                      {obsLog.map((e, i) => (
+                        <div key={i} className="flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: e.color }} />
+                          <span className="text-white/80 text-xs flex-1">{e.text}</span>
+                          <span className="text-white/30 text-[10px] font-mono ltr-num flex-shrink-0">{e.ts}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 )}
 
                 {/* Session summary header when results exist */}
@@ -1155,6 +1239,102 @@ export default function SessionPage() {
             className="bg-gray-800 text-white/50 text-xs py-2 rounded-xl hover:bg-gray-700 transition-colors">
             خروج من وضع التركيز
           </button>
+        </div>
+      )}
+
+      {/* ── Quick Observation Panel ── */}
+      {running && (
+        <div
+          className="fixed z-[80]"
+          style={{ bottom: 24, right: focusMode ? 24 : 288, transition: 'right 0.3s' }}
+          dir="rtl"
+        >
+          {/* Expanded panel */}
+          {obsOpen && (
+            <div
+              className="mb-2 rounded-2xl p-3 w-72"
+              style={{
+                background: '#111827',
+                border: '1.5px solid rgba(255,255,255,0.12)',
+                boxShadow: '0 16px 48px rgba(0,0,0,0.6)',
+              }}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-white font-black text-xs">📝 ملاحظة فورية</span>
+                <button
+                  onClick={() => setObsOpen(false)}
+                  className="text-white/40 hover:text-white text-lg leading-none"
+                >×</button>
+              </div>
+              <div className="space-y-2">
+                {QUICK_OBS.map(cat => (
+                  <div key={cat.category}>
+                    <div className="text-[10px] font-black mb-1.5 px-1" style={{ color: cat.color }}>
+                      {cat.category}
+                    </div>
+                    <div className="grid grid-cols-3 gap-1">
+                      {cat.items.map(item => (
+                        <button
+                          key={item.text}
+                          onClick={() => logObs(item.text, cat.category, cat.color)}
+                          className="flex flex-col items-center gap-0.5 py-2 px-1 rounded-xl text-center transition-all active:scale-95 hover:ring-1"
+                          style={{
+                            background: cat.bg,
+                            border: `1px solid ${cat.color}33`,
+                          }}
+                        >
+                          <span className="text-lg leading-none">{item.icon}</span>
+                          <span className="text-[9px] font-bold text-white/70 leading-tight text-center">{item.text}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-3 pt-2 border-t border-white/10 text-center">
+                <span className="text-white/25 text-[9px]">الوقت الحالي في الجلسة: {formatTime(elapsed)}</span>
+              </div>
+            </div>
+          )}
+
+          {/* Toggle button */}
+          <button
+            onClick={() => setObsOpen(o => !o)}
+            className="flex items-center gap-2 font-black text-xs px-4 py-2.5 rounded-2xl transition-all active:scale-95 shadow-lg"
+            style={obsOpen
+              ? { background: '#374151', color: '#FFFFFF', boxShadow: '0 4px 16px rgba(0,0,0,0.4)' }
+              : { background: 'linear-gradient(135deg,#1F2937,#374151)', color: '#FFFFFF', boxShadow: '0 4px 16px rgba(0,0,0,0.4)', border: '1.5px solid rgba(255,255,255,0.1)' }
+            }
+          >
+            📝
+            <span>ملاحظة</span>
+            {obsLog.length > 0 && (
+              <span
+                className="font-black text-[10px] px-1.5 py-0.5 rounded-full ltr-num"
+                style={{ background: '#7C5CFC', color: '#FFFFFF' }}
+              >
+                {obsLog.length}
+              </span>
+            )}
+          </button>
+        </div>
+      )}
+
+      {/* Observation Toast */}
+      {obsToast && (
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-[90] pointer-events-none" dir="rtl">
+          <div
+            className="flex items-center gap-3 px-5 py-3 rounded-2xl shadow-2xl"
+            style={{
+              background: '#1F2937',
+              border: `1.5px solid ${obsToast.color}44`,
+              boxShadow: `0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px ${obsToast.color}22`,
+            }}
+          >
+            <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: obsToast.color }} />
+            <span className="text-white font-bold text-sm">{obsToast.text}</span>
+            <span className="text-white/40 text-xs font-mono ltr-num">{obsToast.ts}</span>
+          </div>
         </div>
       )}
 

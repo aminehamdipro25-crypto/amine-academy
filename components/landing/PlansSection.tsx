@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Check, Video, MessageCircle, FileText, Brain, Calendar, Clock } from 'lucide-react'
+import { Check, Video, MessageCircle, FileText, Brain, Zap, Calendar, Clock } from 'lucide-react'
 import { useLang } from '@/lib/i18n'
 
 type Currency = 'QAR' | 'TND'
@@ -26,7 +26,7 @@ const FEATURES = [
   { text: 'مكتبة 60+ تمرين علمي (APA + ABA + CBT)',              textEn: '60+ scientific exercises (APA + ABA + CBT)' },
   { text: 'تقارير تقدم مفصّلة لولي الأمر بعد كل حصة',           textEn: 'Detailed progress reports for parents after each session' },
   { text: 'واتساب مباشر مع الأستاذ للمتابعة اليومية',            textEn: 'Direct WhatsApp with Prof. Amine for daily follow-up' },
-  { text: 'تعديل البرنامج المستمر حسب استجابة الطفل',            textEn: "Continuous program adjustments based on child's response" },
+  { text: 'تعديل البرنامج المستمر حسب استجابة الطفل',            textEn: 'Continuous program adjustments based on child\'s response' },
   { text: 'تقييم دوري بالذكاء الاصطناعي لرصد التطور',           textEn: 'Periodic AI-powered assessment to track progress' },
   { text: 'إرشادات يومية للوالدين لتطبيق البرنامج في المنزل',    textEn: 'Daily parent guidance for home program implementation' },
 ]
@@ -194,10 +194,10 @@ export default function PlansSection() {
           </div>
         </div>
 
-        {/* What’s always included — unified features */}
+        {/* What's always included — unified features */}
         <div className="max-w-3xl mx-auto mb-12 bg-gray-50 border border-gray-100 rounded-3xl p-6">
           <p className="text-center text-sm font-black text-gray-500 uppercase tracking-wider mb-5">
-            {isAr ? '❆ ما يشمله كل خيار بدون استثناء' : '❆ Included in every option, no exceptions'}
+            {isAr ? '✦ ما يشمله كل خيار بدون استثناء' : '✦ Included in every option, no exceptions'}
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {FEATURES.map((f) => (
@@ -213,7 +213,7 @@ export default function PlansSection() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
           {PLANS.map((plan) => {
             const PlanIcon = plan.icon
-            const cycleKey = plan.id as keyof NonNullable<PublicSettings['prices']>
+            const cycleKey = plan.id as keyof PublicSettings['prices']
             const basePrice = settings?.prices?.[cycleKey]?.[currency] ?? plan.prices[currency]
             const discountPct = settings?.discountPct ?? 0
             const discountedPrice = discountPct > 0 ? Math.round(basePrice * (1 - discountPct / 100)) : null
@@ -233,7 +233,7 @@ export default function PlansSection() {
                 {/* Header */}
                 <div className={`${plan.headerBg} p-6 pt-10`}>
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${
-                    isPopular || plan.id === 'monthly' ? 'bg-white/20' : 'bg-brand-100'
+                    isPopular ? 'bg-white/20' : plan.id === 'monthly' ? 'bg-white/20' : 'bg-brand-100'
                   }`}>
                     <PlanIcon className={`w-5 h-5 ${isPopular || plan.id === 'monthly' ? 'text-white' : 'text-brand-600'}`} />
                   </div>
@@ -258,9 +258,9 @@ export default function PlansSection() {
                         </div>
                       )}
                       {/* Per-session equivalent */}
-                      <div className="mt-2 flex items-center gap-2 flex-wrap">
+                      <div className={`mt-2 flex items-center gap-2 flex-wrap`}>
                         <span className={`text-xs ${plan.priceText} opacity-60`}>
-                          {plan.perSession[currency]}
+                          {isAr ? plan.perSession[currency] : plan.perSession[currency]}
                         </span>
                         {plan.savingsPct && (
                           <span className={`text-xs font-black px-2 py-0.5 rounded-full ${
@@ -292,11 +292,21 @@ export default function PlansSection() {
                     {isAr ? `${plan.ctaText} ←` : `${plan.ctaTextEn} →`}
                   </Link>
 
-                  <p className="text-center text-xs text-gray-400 mt-3">
-                    {plan.id === 'monthly' && (isAr ? 'يُجدّد تلقائياً • إلغاء في أي وقت' : 'Auto-renews • Cancel anytime')}
-                    {plan.id === 'weekly' && (isAr ? 'يُجدّد أسبوعياً • إلغاء في أي وقت' : 'Auto-renews weekly • Cancel anytime')}
-                    {plan.id === 'session' && (isAr ? 'لا اشتراك — ادفع فقط عند الحجز' : 'No subscription — pay only when you book')}
-                  </p>
+                  {plan.id === 'monthly' && (
+                    <p className="text-center text-xs text-gray-400 mt-3">
+                      {isAr ? 'يُجدَّد تلقائياً • إلغاء في أي وقت' : 'Auto-renews • Cancel anytime'}
+                    </p>
+                  )}
+                  {plan.id === 'weekly' && (
+                    <p className="text-center text-xs text-gray-400 mt-3">
+                      {isAr ? 'يُجدَّد أسبوعياً • إلغاء في أي وقت' : 'Auto-renews weekly • Cancel anytime'}
+                    </p>
+                  )}
+                  {plan.id === 'session' && (
+                    <p className="text-center text-xs text-gray-400 mt-3">
+                      {isAr ? 'لا اشتراك — ادفع فقط عند الحجز' : 'No subscription — pay only when you book'}
+                    </p>
+                  )}
                 </div>
               </div>
             )

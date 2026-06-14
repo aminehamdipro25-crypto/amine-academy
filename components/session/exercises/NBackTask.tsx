@@ -140,6 +140,7 @@ export default function NBackTask({ onComplete, onCancel, difficulty = 1 }: Prop
 
   return (
     <div className="flex flex-col items-center gap-4 p-4 select-none" dir="rtl">
+      {/* Header */}
       <div className="flex items-center justify-between w-full max-w-sm">
         <div className="bg-white/10 rounded-xl px-3 py-1 text-center">
           <div className="text-sm font-black text-white">{trial + 1}/{totalTrials}</div>
@@ -157,6 +158,7 @@ export default function NBackTask({ onComplete, onCancel, difficulty = 1 }: Prop
         <span className="text-brand-300 font-black">{n}</span> خطوة؟
       </p>
 
+      {/* History trail */}
       <div className="flex gap-1.5 items-center h-8">
         {history.slice(-Math.min(n + 2, history.length)).map((pos, i, arr) => {
           const isNBack = i === arr.length - 1 - n
@@ -179,6 +181,7 @@ export default function NBackTask({ onComplete, onCancel, difficulty = 1 }: Prop
         )}
       </div>
 
+      {/* 3×3 Grid */}
       <div className="grid grid-cols-3 gap-2.5 my-1">
         {Array.from({ length: 9 }, (_, i) => {
           const isActive  = current === i && phase === 'show'
@@ -197,6 +200,7 @@ export default function NBackTask({ onComplete, onCancel, difficulty = 1 }: Prop
         })}
       </div>
 
+      {/* Feedback */}
       {feedback && (
         <div className={`text-xl font-black ${
           feedback === 'hit' ? 'text-green-400' :
@@ -211,6 +215,7 @@ export default function NBackTask({ onComplete, onCancel, difficulty = 1 }: Prop
         </div>
       )}
 
+      {/* Buttons */}
       <div className="flex gap-4">
         <button onClick={() => respond(true)} disabled={phase !== 'show'}
           className="px-8 py-4 bg-green-500/20 border-2 border-green-400 text-green-400 font-black text-xl rounded-2xl hover:bg-green-500/40 disabled:opacity-30 transition-all active:scale-90">

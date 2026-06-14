@@ -122,6 +122,7 @@ export default function MemoryCards({ onComplete, onCancel, difficulty = 1 }: Pr
         .mc-back{transform:rotateY(180deg)}
       `}</style>
 
+      {/* Header */}
       <div className="flex items-center justify-between w-full max-w-lg">
         <div className="bg-white/10 rounded-xl px-3 py-1.5 text-center min-w-[56px]">
           <div className="text-base font-black text-blue-400 font-mono">{fmt(elapsed)}</div>
@@ -140,10 +141,12 @@ export default function MemoryCards({ onComplete, onCancel, difficulty = 1 }: Pr
         </div>
       </div>
 
+      {/* Progress */}
       <div className="w-full max-w-lg bg-white/10 rounded-full h-1.5">
         <div className="bg-brand-500 h-1.5 rounded-full transition-all" style={{ width: `${(matches / pairCount) * 100}%` }} />
       </div>
 
+      {/* Card grid */}
       <div className="grid gap-2.5" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0,1fr))`, maxWidth: 440 }}>
         {cards.map(card => (
           <div key={card.id}
@@ -151,9 +154,11 @@ export default function MemoryCards({ onComplete, onCancel, difficulty = 1 }: Pr
             style={{ width: 76, height: 76, perspective: '600px', cursor: card.matched || card.flipped ? 'default' : 'pointer' }}
           >
             <div className={`mc-inner ${card.flipped || card.matched ? 'mc-flipped' : ''}`}>
+              {/* Front */}
               <div className="mc-front bg-white/10 border-2 border-white/20 hover:bg-white/20 hover:border-white/40 transition-colors">
                 <span className="text-3xl">❓</span>
               </div>
+              {/* Back */}
               <div
                 className={`mc-back border-2 text-4xl ${card.matched ? 'bg-green-500/30 border-green-400' : 'bg-brand-700 border-brand-400'}`}
                 style={card.matched ? { boxShadow: '0 0 22px rgba(74,222,128,0.45)' } : {}}

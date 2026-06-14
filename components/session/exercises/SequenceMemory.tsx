@@ -100,6 +100,7 @@ export default function SequenceMemory({ onComplete, onCancel, difficulty = 1 }:
 
   return (
     <div className="flex flex-col items-center gap-4 p-5 select-none" dir="rtl">
+      {/* Header */}
       <div className="flex items-center justify-between w-full max-w-sm">
         <div className="bg-white/10 rounded-xl px-3 py-1.5 text-center">
           <div className="text-lg font-black text-brand-400">{level}</div>
@@ -120,10 +121,12 @@ export default function SequenceMemory({ onComplete, onCancel, difficulty = 1 }:
         </div>
       </div>
 
+      {/* Level progress */}
       <div className="w-full max-w-sm bg-white/10 rounded-full h-1.5">
         <div className="bg-brand-500 h-1.5 rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
       </div>
 
+      {/* Sequence indicator */}
       <div className="flex gap-1.5 h-5 items-center">
         {sequence.map((_, i) => (
           <div key={i}
@@ -136,6 +139,7 @@ export default function SequenceMemory({ onComplete, onCancel, difficulty = 1 }:
         ))}
       </div>
 
+      {/* 3×3 Grid */}
       <div className="grid grid-cols-3 gap-3">
         {Array.from({ length: 9 }, (_, i) => {
           const isActive  = active === i

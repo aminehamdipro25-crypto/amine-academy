@@ -126,6 +126,7 @@ export default function ExercisesPage() {
 
   return (
     <div className="space-y-6" dir="rtl">
+      {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-black text-gray-900">إدارة التمارين</h1>
@@ -156,6 +157,7 @@ export default function ExercisesPage() {
         <div className="bg-brand-50 border border-brand-200 text-brand-700 rounded-xl px-4 py-3 text-sm font-medium">{seedMsg}</div>
       )}
 
+      {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         {categoryStats.map(({ key, label, count, color, icon: Icon }) => (
           <button key={key}
@@ -170,6 +172,7 @@ export default function ExercisesPage() {
         ))}
       </div>
 
+      {/* Search + filter */}
       <div className="flex items-center gap-3 flex-wrap">
         <input
           value={search}
@@ -192,6 +195,7 @@ export default function ExercisesPage() {
         </div>
       </div>
 
+      {/* Grid */}
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[...Array(6)].map((_, i) => (
@@ -240,6 +244,7 @@ export default function ExercisesPage() {
                 </div>
                 <h3 className="font-black text-gray-900 text-sm mb-1">{ex.titleAr}</h3>
                 <p className="text-gray-500 text-xs line-clamp-2 mb-3">{ex.descriptionAr}</p>
+                {/* Inline editable stats */}
                 <div className="flex items-center gap-3 text-xs text-gray-400 mb-3">
                   <span className="flex items-center gap-1"><Clock className="w-3 h-3" /><span className="font-bold text-gray-700">{ex.durationMinutes}</span> دقيقة</span>
                   <span className="flex items-center gap-1"><Star className="w-3 h-3 text-yellow-400" /><span className="font-bold text-gray-700">{ex.points}</span> نقطة</span>
@@ -258,12 +263,14 @@ export default function ExercisesPage() {
         </div>
       )}
 
+      {/* Edit Modal */}
       {editEx && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-start justify-center p-4 overflow-y-auto" onClick={() => setEditEx(null)}>
           <div
             className="bg-white rounded-2xl w-full max-w-xl my-8 shadow-2xl"
             onClick={e => e.stopPropagation()}
           >
+            {/* Modal header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-100">
               <div>
                 <h2 className="font-black text-lg text-gray-900">تعديل التمرين</h2>
@@ -275,6 +282,8 @@ export default function ExercisesPage() {
             </div>
 
             <div className="p-6 space-y-5">
+
+              {/* Arabic title */}
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-1.5">الاسم بالعربية</label>
                 <input
@@ -284,6 +293,7 @@ export default function ExercisesPage() {
                 />
               </div>
 
+              {/* Description Arabic */}
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-1.5">الوصف</label>
                 <textarea
@@ -294,6 +304,7 @@ export default function ExercisesPage() {
                 />
               </div>
 
+              {/* Key numbers: duration + points */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-1.5">
@@ -321,6 +332,7 @@ export default function ExercisesPage() {
                 </div>
               </div>
 
+              {/* Category + Difficulty */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-1.5">الفئة</label>
@@ -354,6 +366,7 @@ export default function ExercisesPage() {
                 </div>
               </div>
 
+              {/* Age groups */}
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">الفئات العمرية</label>
                 <div className="flex gap-2">
@@ -374,6 +387,7 @@ export default function ExercisesPage() {
                 </div>
               </div>
 
+              {/* Diagnoses */}
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">مناسب لـ</label>
                 <div className="flex gap-2 flex-wrap">
@@ -394,6 +408,7 @@ export default function ExercisesPage() {
                 </div>
               </div>
 
+              {/* Psychology objective */}
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-1.5">الهدف النفسي</label>
                 <textarea
@@ -405,6 +420,7 @@ export default function ExercisesPage() {
               </div>
             </div>
 
+            {/* Footer */}
             <div className="flex items-center justify-between p-6 border-t border-gray-100">
               {saveMsg && (
                 <span className={`text-sm font-bold ${saveMsg.startsWith('✓') ? 'text-green-600' : 'text-red-500'}`}>{saveMsg}</span>

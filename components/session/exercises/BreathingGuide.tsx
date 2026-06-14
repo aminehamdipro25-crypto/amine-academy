@@ -94,6 +94,7 @@ export default function BreathingGuide({ onComplete, onCancel, studentAge }: Pro
     startRef.current = Date.now()
   }
 
+  // Mode selection screen
   if (!mode) return (
     <div className="flex flex-col items-center gap-5 p-6" dir="rtl">
       <div className="text-5xl">🌬️</div>
@@ -115,6 +116,7 @@ export default function BreathingGuide({ onComplete, onCancel, studentAge }: Pro
     </div>
   )
 
+  // Done screen
   if (done) return (
     <div className="flex flex-col items-center justify-center h-full gap-6" dir="rtl">
       <div className="text-8xl">🌟</div>
@@ -132,6 +134,7 @@ export default function BreathingGuide({ onComplete, onCancel, studentAge }: Pro
 
   return (
     <div className="flex flex-col items-center gap-5 p-6 select-none" dir="rtl">
+      {/* Header */}
       <div className="flex items-center justify-between w-full max-w-sm">
         <div className="bg-white/10 rounded-xl px-3 py-1.5 text-center">
           <div className="text-base font-black text-white">{cycles}/{targetCycles}</div>
@@ -141,12 +144,15 @@ export default function BreathingGuide({ onComplete, onCancel, studentAge }: Pro
         <div className="w-16" />
       </div>
 
+      {/* Overall progress */}
       <div className="w-full max-w-xs bg-white/10 rounded-full h-1.5">
         <div className="h-1.5 rounded-full transition-all duration-500"
           style={{ width: `${progress * 100}%`, background: currentPhase.color }} />
       </div>
 
+      {/* Breathing animation — 3 concentric rings */}
       <div className="relative flex items-center justify-center" style={{ width: 260, height: 260 }}>
+        {/* Outer glow ring */}
         <div className="absolute rounded-full"
           style={{
             width: 260, height: 260,
@@ -155,6 +161,7 @@ export default function BreathingGuide({ onComplete, onCancel, studentAge }: Pro
             transform: `scale(${running && currentPhase.expand ? 0.95 : 0.60})`,
             transition: `transform ${currentPhase.dur}s ease-in-out`,
           }} />
+        {/* Middle ring */}
         <div className="absolute rounded-full"
           style={{
             width: 200, height: 200,
@@ -163,6 +170,7 @@ export default function BreathingGuide({ onComplete, onCancel, studentAge }: Pro
             transform: `scale(${running && currentPhase.expand ? 1.05 : 0.65})`,
             transition: `transform ${currentPhase.dur}s ease-in-out`,
           }} />
+        {/* Core circle */}
         <div className="relative rounded-full flex items-center justify-center"
           style={{
             width: 148, height: 148,
@@ -178,6 +186,7 @@ export default function BreathingGuide({ onComplete, onCancel, studentAge }: Pro
         </div>
       </div>
 
+      {/* Phase indicators */}
       <div className="flex gap-2 flex-wrap justify-center">
         {MODES[mode].phases.map((p, i) => (
           <div key={i}

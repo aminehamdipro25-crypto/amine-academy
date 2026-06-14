@@ -127,6 +127,7 @@ export default function GoNoGo({ onComplete, onCancel, difficulty = 1 }: Props) 
     }
   }
 
+  // Ready screen
   if (phase === 'ready') return (
     <div dir="rtl" className="flex flex-col items-center justify-center h-full gap-6 px-6">
       <div className="text-7xl">🎯</div>
@@ -151,6 +152,7 @@ export default function GoNoGo({ onComplete, onCancel, difficulty = 1 }: Props) 
     </div>
   )
 
+  // Result screen
   if (phase === 'result' && result) {
     const avgRtMs = (result.metadata as { avgReactionMs?: number })?.avgReactionMs ?? 0
     return (
@@ -189,8 +191,10 @@ export default function GoNoGo({ onComplete, onCancel, difficulty = 1 }: Props) 
     )
   }
 
+  // Active game
   return (
     <div dir="rtl" className="flex flex-col h-full select-none">
+      {/* Progress */}
       <div className="px-6 pt-4 pb-2">
         <div className="flex justify-between mb-1.5">
           <span className="text-white/40 text-xs">{trial + 1} / {totalTrials}</span>
@@ -202,7 +206,9 @@ export default function GoNoGo({ onComplete, onCancel, difficulty = 1 }: Props) 
         </div>
       </div>
 
+      {/* Arena */}
       <div className="flex-1 flex flex-col items-center justify-center gap-8 px-6">
+        {/* Stimulus */}
         <div className="w-52 h-52 flex items-center justify-center">
           {phase === 'show' && (
             <span className="text-[120px] select-none animate-[pulse_0.3s_ease-in-out]">
@@ -224,6 +230,7 @@ export default function GoNoGo({ onComplete, onCancel, difficulty = 1 }: Props) 
           )}
         </div>
 
+        {/* Big press button */}
         <button
           onClick={handlePress}
           disabled={phase !== 'show' || !isGo}

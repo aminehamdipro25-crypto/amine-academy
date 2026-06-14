@@ -83,6 +83,7 @@ export default function StroopTest({ onComplete, onCancel, difficulty = 1 }: Pro
     }, difficulty === 3 ? 350 : 550)
   }
 
+  // Intro
   if (!started) return (
     <div className="flex flex-col items-center justify-center h-full gap-6 px-6" dir="rtl">
       <div className="text-7xl">🧠</div>
@@ -112,6 +113,7 @@ export default function StroopTest({ onComplete, onCancel, difficulty = 1 }: Pro
     </div>
   )
 
+  // Result
   if (result) return (
     <div className="flex flex-col items-center justify-center h-full gap-5 px-6" dir="rtl">
       <div className="text-7xl">{result.score >= 80 ? '🏆' : result.score >= 60 ? '⭐' : '💪'}</div>
@@ -151,14 +153,17 @@ export default function StroopTest({ onComplete, onCancel, difficulty = 1 }: Pro
 
   return (
     <div className="flex flex-col h-full select-none" dir="rtl">
+      {/* Progress */}
       <div className="px-5 pt-4 pb-2 space-y-2">
         <div className="flex justify-between">
           <span className="text-white/40 text-xs">{trial + 1} / {TOTAL}</span>
           <span className="text-white/40 text-xs">صحيح: {correct}</span>
         </div>
+        {/* Overall progress */}
         <div className="w-full bg-white/10 rounded-full h-1.5">
           <div className="bg-brand-500 h-1.5 rounded-full transition-all" style={{ width: `${(trial / TOTAL) * 100}%` }} />
         </div>
+        {/* Per-trial timer bar */}
         <div className="w-full bg-white/5 rounded-full h-1 overflow-hidden">
           <div
             className={`h-1 rounded-full transition-none ${timerPct > 80 ? 'bg-red-500' : timerPct > 50 ? 'bg-yellow-500' : 'bg-green-500'}`}
@@ -167,6 +172,7 @@ export default function StroopTest({ onComplete, onCancel, difficulty = 1 }: Pro
         </div>
       </div>
 
+      {/* Word display */}
       <div className={`flex-1 flex flex-col items-center justify-center transition-colors duration-200 ${
         feedback === 'correct' ? 'bg-green-900/20' : feedback === 'wrong' ? 'bg-red-900/20' : ''
       }`}>
@@ -178,6 +184,7 @@ export default function StroopTest({ onComplete, onCancel, difficulty = 1 }: Pro
         </div>
       </div>
 
+      {/* Color buttons */}
       <div className="grid grid-cols-2 gap-3 px-5 pb-3">
         {COLORS.map((c, i) => (
           <button key={c.nameAr} onClick={() => answer(i)} disabled={feedback !== null}

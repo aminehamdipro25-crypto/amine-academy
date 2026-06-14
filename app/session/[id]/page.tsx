@@ -26,6 +26,9 @@ import BehaviorContract from '@/components/session/exercises/BehaviorContract'
 import ColorGrid        from '@/components/session/exercises/ColorGrid'
 import PatternMatch     from '@/components/session/exercises/PatternMatch'
 import WordBuilder      from '@/components/session/exercises/WordBuilder'
+import AuditoryMemory        from '@/components/session/exercises/AuditoryMemory'
+import ListeningComprehension from '@/components/session/exercises/ListeningComprehension'
+import PictureWordCards       from '@/components/session/exercises/PictureWordCards'
 import Whiteboard      from '@/components/session/Whiteboard'
 import ADHDScale       from '@/components/session/assessments/ADHDScale'
 import LearningDifficultiesScale from '@/components/session/assessments/LearningDifficultiesScale'
@@ -138,9 +141,12 @@ const EXERCISES = [
   { id:'verbal-fluency',    labelAr:'الطلاقة اللفظية',          icon:'🗣️', category:'معرفي',          color:'bg-sky-900/40 border-sky-500',         ageMin:5,  ageMax:22 },
   { id:'social-scenarios',  labelAr:'المواقف الاجتماعية',       icon:'🤝', category:'اجتماعي',        color:'bg-fuchsia-900/40 border-fuchsia-500', ageMin:5,  ageMax:22 },
   { id:'behavior-contract', labelAr:'عقد الجلسة',               icon:'📋', category:'تعديل السلوك',   color:'bg-lime-900/40 border-lime-500',       ageMin:7,  ageMax:22 },
-  { id:'color-grid',        labelAr:'لوحة الألوان',             icon:'🎨', category:'إدراكي',          color:'bg-pink-900/40 border-pink-500',       ageMin:5,  ageMax:14 },
-  { id:'pattern-match',     labelAr:'مطابقة الأنماط',           icon:'🔍', category:'إدراكي',          color:'bg-violet-900/40 border-violet-500',   ageMin:5,  ageMax:16 },
-  { id:'word-builder',      labelAr:'بناء الكلمة',              icon:'🔤', category:'تعلّم',            color:'bg-emerald-900/40 border-emerald-400', ageMin:5,  ageMax:14 },
+  { id:'color-grid',             labelAr:'لوحة الألوان',            icon:'🎨', category:'إدراكي',       color:'bg-pink-900/40 border-pink-500',       ageMin:5,  ageMax:14 },
+  { id:'pattern-match',          labelAr:'مطابقة الأنماط',          icon:'🔍', category:'إدراكي',       color:'bg-violet-900/40 border-violet-500',   ageMin:5,  ageMax:16 },
+  { id:'word-builder',           labelAr:'بناء الكلمة',             icon:'🔤', category:'تعلّم',         color:'bg-emerald-900/40 border-emerald-400', ageMin:5,  ageMax:14 },
+  { id:'auditory-memory',        labelAr:'الذاكرة السمعية',         icon:'🎧', category:'سمعي',          color:'bg-purple-900/40 border-purple-400',   ageMin:5,  ageMax:22 },
+  { id:'listening-comprehension',labelAr:'فهم الاستماع',            icon:'🔊', category:'سمعي',          color:'bg-blue-900/40 border-blue-400',       ageMin:5,  ageMax:18 },
+  { id:'picture-word-cards',     labelAr:'بطاقات الصورة والكلمة',  icon:'🖼️', category:'تعلّم',         color:'bg-teal-900/40 border-teal-400',       ageMin:4,  ageMax:14 },
 ]
 
 const ASSESSMENTS = [
@@ -343,6 +349,45 @@ export default function SessionPage() {
   // Session Report (#8)
   const [showReport, setShowReport] = useState(false)
 
+  // ── Session draft persistence — restore on refresh ──────────
+  const draftRestoredRef = useRef(false)
+
+  useEffect(() => {
+    const key = `session_draft_${id}`
+    try {
+      const raw = sessionStorage.getItem(key)
+      if (!raw) return
+      const d = JSON.parse(raw) as {
+        savedAt: number; elapsed: number; running: boolean
+        results: ExerciseResult[]; assessments: AssessmentResult[]
+        notes: string; difficulty: 1|2|3; obsLog: ObsEntry[]
+        abcLog: ABCEntry[]; phaseIdx: number; phaseDurations: number[]
+      }
+      if (Date.now() - d.savedAt > 3 * 3600 * 1000) { sessionStorage.removeItem(key); return }
+      draftRestoredRef.current = true
+      // If the session was running when the page closed, add the elapsed gap
+      const extra = d.running ? Math.floor((Date.now() - d.savedAt) / 1000) : 0
+      setElapsed((d.elapsed || 0) + extra)
+      setRunning(d.running || false)
+      setResults(d.results || [])
+      setAssessments(d.assessments || [])
+      setNotes(d.notes || '')
+      setDifficulty(d.difficulty || 1)
+      setObsLog(d.obsLog || [])
+      setAbcLog(d.abcLog || [])
+      setPhaseIdx(d.phaseIdx || 0)
+      if (Array.isArray(d.phaseDurations)) setPhaseDurations(d.phaseDurations)
+    } catch { /* ignore */ }
+  }, [id])
+
+  // Auto-save draft to sessionStorage on every meaningful change
+  useEffect(() => {
+    if (elapsed === 0 && results.length === 0 && notes === '' && obsLog.length === 0 && abcLog.length === 0) return
+    const key = `session_draft_${id}`
+    const draft = { elapsed, running, results, assessments, notes, difficulty, obsLog, abcLog, phaseIdx, phaseDurations, savedAt: Date.now() }
+    try { sessionStorage.setItem(key, JSON.stringify(draft)) } catch { /* storage full */ }
+  }, [elapsed, running, results, assessments, notes, difficulty, obsLog, abcLog, phaseIdx, phaseDurations, id])
+
   // Load appointment/student info + assessment profile + session history
   useEffect(() => {
     fetch(`/api/appointments/${id}`)
@@ -351,7 +396,7 @@ export default function SessionPage() {
         if (appointment?.meetingUrl) setJitsiUrl(appointment.meetingUrl)
         if (appointment?.type) {
           setAppointmentType(appointment.type)
-          if (appointment.type === 'assessment') setTab('assessments')
+          if (appointment.type === 'assessment' && !draftRestoredRef.current) setTab('assessments')
         }
         if (appointment?.studentId) {
           const sid = appointment.studentId
@@ -366,7 +411,7 @@ export default function SessionPage() {
                 setStudentSeverity(student.severityLevel || 1)
                 const age = Math.floor((Date.now() - new Date(student.birthDate).getTime()) / (365.25 * 24 * 3600000))
                 setStudentAge(age)
-                setDifficulty(student.severityLevel as 1|2|3)
+                if (!draftRestoredRef.current) setDifficulty(student.severityLevel as 1|2|3)
               }
             }).catch(() => {})
 
@@ -493,83 +538,292 @@ export default function SessionPage() {
 
   function printSessionReport() {
     const date = new Date().toLocaleDateString('ar-SA', { year: 'numeric', month: 'long', day: 'numeric' })
+    const time = new Date().toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })
     const avgScoreVal = results.length
       ? Math.round(results.reduce((s, r) => s + r.score, 0) / results.length) : 0
-    const phasesInfo = SESSION_PHASES.map((ph, i) => `${ph.icon} ${ph.label}: ${phaseDurations[i]} دقيقة`).join(' | ')
-    const exerciseRows = results.map(r =>
-      `<tr><td>${r.exerciseLabelAr}</td><td style="text-align:center;font-weight:900;color:${r.score>=80?'#16a34a':r.score>=60?'#d97706':'#dc2626'}">${r.score}%</td><td style="text-align:center">${r.accuracy}%</td><td style="text-align:center">${r.duration}ث</td></tr>`
-    ).join('')
-    const abcRows = abcLog.map(e =>
-      `<tr><td>${e.ts}</td><td>${e.antecedent||'—'}</td><td>${e.behavior||'—'}</td><td>${e.consequence||'—'}</td><td style="text-align:center">${e.intensity===1?'خفيف':e.intensity===2?'متوسط':'شديد'}</td></tr>`
-    ).join('')
-    const obsRows = obsLog.map(e => `<li><strong>${e.ts}</strong> — ${e.category}: ${e.text}</li>`).join('')
-    const recText = avgScoreVal >= 80
-      ? 'أداء ممتاز. يُوصى بالاستمرار على نفس المستوى مع زيادة الصعوبة تدريجياً.'
-      : avgScoreVal >= 60
-      ? 'أداء جيد. يُوصى بمواصلة التدريب مع التركيز على التمارين التي سجّل فيها أقل من 70%.'
-      : 'يحتاج لمزيد من الدعم. يُوصى بتكثيف التمارين الأساسية وخفض مستوى الصعوبة.'
 
-    const html = `<!DOCTYPE html><html dir="rtl" lang="ar">
-<head><meta charset="UTF-8"><title>تقرير جلسة — ${studentName}</title>
+    // ── Category-level analysis ──
+    type CategoryData = { label: string; scores: number[]; color: string }
+    const catMap: Record<string, CategoryData> = {
+      memory:    { label: 'الذاكرة العاملة',       scores: [], color: '#7C5CFC' },
+      attention: { label: 'الانتباه والتنفيذ',      scores: [], color: '#3B82F6' },
+      language:  { label: 'اللغة والتواصل',         scores: [], color: '#10B981' },
+      social:    { label: 'المهارات الاجتماعية',    scores: [], color: '#F59E0B' },
+      motor:     { label: 'التنظيم الحركي',          scores: [], color: '#EF4444' },
+      auditory:  { label: 'المعالجة السمعية',        scores: [], color: '#8B5CF6' },
+      behavior:  { label: 'التنظيم السلوكي',         scores: [], color: '#EC4899' },
+    }
+    const exCat: Record<string, keyof typeof catMap> = {
+      'memory-cards':'memory','sequence-memory':'memory','n-back':'memory','word-recall':'memory','auditory-memory':'auditory',
+      'stroop-test':'attention','stop-signal':'attention','tap-target':'motor','reaction-game':'motor','n-back-2':'attention',
+      'breathing':'behavior','token-board':'behavior','self-rating':'behavior','behavior-contract':'behavior',
+      'emotion-cards':'social','social-scenarios':'social',
+      'verbal-fluency':'language','word-builder':'language','letter-match':'language','picture-word-cards':'language',
+      'listening-comprehension':'auditory','sound-discrimination':'auditory',
+      'simon-says':'attention','color-grid':'attention','pattern-match':'attention',
+    }
+    results.forEach(r => {
+      const cat = exCat[r.exerciseType]
+      if (cat && catMap[cat]) catMap[cat].scores.push(r.score)
+    })
+    const activeCats = Object.entries(catMap).filter(([, v]) => v.scores.length > 0)
+    const catBars = activeCats.map(([, v]) => {
+      const avg = Math.round(v.scores.reduce((a,b)=>a+b,0)/v.scores.length)
+      const barColor = avg>=80?'#16a34a':avg>=60?'#d97706':'#dc2626'
+      return `
+        <div style="margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+            <span style="font-size:12px;font-weight:700;color:#1a1a2e">${v.label}</span>
+            <span style="font-size:12px;font-weight:900;color:${barColor}">${avg}%</span>
+          </div>
+          <div style="height:8px;background:#f0f0f0;border-radius:4px;overflow:hidden">
+            <div style="height:100%;width:${avg}%;background:${barColor};border-radius:4px;transition:width 0.5s"></div>
+          </div>
+          <div style="font-size:10px;color:#999;margin-top:2px">${v.scores.length} تمرين</div>
+        </div>`
+    }).join('')
+
+    // ── Clinical recommendations ──
+    const recs: string[] = []
+    const memExs    = results.filter(r => ['memory-cards','sequence-memory','n-back','word-recall','auditory-memory'].includes(r.exerciseType))
+    const attExs    = results.filter(r => ['stroop-test','stop-signal','simon-says','color-grid','pattern-match'].includes(r.exerciseType))
+    const langExs   = results.filter(r => ['verbal-fluency','word-builder','letter-match','picture-word-cards','listening-comprehension'].includes(r.exerciseType))
+    const socialExs = results.filter(r => ['emotion-cards','social-scenarios'].includes(r.exerciseType))
+    const motorExs  = results.filter(r => ['tap-target','reaction-game'].includes(r.exerciseType))
+    const avgOf = (arr: ExerciseResult[]) => arr.length ? Math.round(arr.reduce((s,r)=>s+r.score,0)/arr.length) : -1
+
+    const memAvg = avgOf(memExs)
+    if (memAvg >= 0) {
+      if (memAvg >= 80) recs.push('الذاكرة العاملة: أداء ضمن المعدل الطبيعي أو أعلى. يُنصح بالانتقال إلى تمارين N-Back من المستوى 3 لتعزيز ظرفية التخزين phonological loop.')
+      else if (memAvg >= 60) recs.push('الذاكرة العاملة: مستوى دون المتوسط. يُنصح بتكثيف تمارين التسلسل اللفظي والبصري بتردد 3 جلسات أسبوعياً، مع تقليل المشتتات البيئية.')
+      else recs.push('الذاكرة العاملة: عجز ملحوظ (< 60%). يُقترح إجراء تقييم معمّق لوظائف الفص الجبهي، ومراجعة احتمالية وجود صعوبة تعلم مصاحبة لاضطراب ADHD.')
+    }
+    const attAvg = avgOf(attExs)
+    if (attAvg >= 0) {
+      if (attAvg >= 80) recs.push('الكبح المعرفي والانتباه: أداء مناسب. يُوصى بتحديات Stroop متزايدة الصعوبة والتدريب على Task-Switching.')
+      else if (attAvg >= 60) recs.push('الكبح المعرفي: يحتاج تعزيزاً. يُوصى باستراتيجية التوقف والتفكير (Stop-Think-Act) واستخدام أجهزة ضبط الزمن المرئية خلال المهام.')
+      else recs.push('الكبح المعرفي: اضطراب جوهري. يُقترح إعادة النظر في البروتوكول العلاجي وإشراك الأسرة في برامج parent-training لإدارة الاندفاعية.')
+    }
+    const langAvg = avgOf(langExs)
+    if (langAvg >= 0) {
+      if (langAvg >= 80) recs.push('اللغة والوعي الصوتي: مستوى مناسب. يُوصى بدمج القراءة الموجّهة والتدريب على الطلاقة اللفظية بوتيرة أسرع.')
+      else if (langAvg >= 60) recs.push('اللغة: يستدعي تدخلاً. يُوصى باستخدام بطاقات الصورة والكلمة يومياً، وتقنية التكرار التباعدي (Spaced Repetition) لتحسين المفردات.')
+      else recs.push('اللغة: تأخر ملحوظ. يُنصح بإحالة الحالة لتقييم نطق وتخاطب متخصص، وبدء برنامج AAC إن كان ذا صلة.')
+    }
+    const socialAvg = avgOf(socialExs)
+    if (socialAvg >= 0) {
+      if (socialAvg < 70) recs.push('المهارات الاجتماعية: تحتاج دعماً. يُوصى بتمارين التعرف على المشاعر، ومحاكاة المواقف الاجتماعية عبر لعب الأدوار (Role-play).')
+    }
+    const motorAvg = avgOf(motorExs)
+    if (motorAvg >= 0 && motorAvg < 70) {
+      recs.push('التناسق الحركي: دون المتوسط. يُقترح استشارة معالج وظيفي، وإدراج تمارين التناسق اليدوي ضمن الخطة العلاجية.')
+    }
+    if (abcLog.filter(e=>e.intensity===3).length > 0) {
+      recs.push(`تحليل ABC: سُجِّل ${abcLog.filter(e=>e.intensity===3).length} حادث(ة) بحدة شديدة. يُقترح وضع خطة تدخل سلوكي وقائي (Proactive BIP) واستعراضها مع الفريق متعدد التخصصات.`)
+    }
+    if (recs.length === 0) {
+      recs.push(avgScoreVal >= 80
+        ? 'الأداء العام ممتاز. يُوصى بالاستمرار في البرنامج الحالي مع رفع مستوى الصعوبة تدريجياً.'
+        : avgScoreVal >= 60
+        ? 'الأداء العام مقبول. يُوصى بمواصلة التدريب مع التركيز على المجالات التي سجّل فيها الطالب أقل من 70%.'
+        : 'يُوصى بمراجعة شاملة للبروتوكول العلاجي وتكثيف التدخل.')
+    }
+    const recsHtml = recs.map((r,i) => `<li style="margin-bottom:8px;padding:8px 12px;background:#f8fafc;border-right:3px solid #7C5CFC;border-radius:4px;font-size:12px;line-height:1.7">${i+1}. ${r}</li>`).join('')
+
+    // ── Exercise rows ──
+    const exerciseRows = results.map(r => {
+      const grade = r.score>=80?'ممتاز':r.score>=60?'جيد':r.score>=40?'متوسط':'يحتاج دعم'
+      const gradeColor = r.score>=80?'#16a34a':r.score>=60?'#d97706':r.score>=40?'#ea580c':'#dc2626'
+      return `<tr>
+        <td style="font-weight:700">${r.exerciseLabelAr}</td>
+        <td style="text-align:center;font-weight:900;font-size:15px;color:${gradeColor}">${r.score}%</td>
+        <td style="text-align:center;color:#666">${r.accuracy}%</td>
+        <td style="text-align:center;color:#666">${r.duration}ث</td>
+        <td style="text-align:center"><span style="background:${gradeColor}20;color:${gradeColor};padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700">${grade}</span></td>
+      </tr>`
+    }).join('')
+
+    const abcRows = abcLog.map(e => {
+      const lvlColor = e.intensity===3?'#dc2626':e.intensity===2?'#d97706':'#16a34a'
+      return `<tr>
+        <td style="color:#666;font-size:11px">${e.ts}</td>
+        <td>${e.antecedent||'—'}</td>
+        <td style="font-weight:700">${e.behavior||'—'}</td>
+        <td>${e.consequence||'—'}</td>
+        <td style="text-align:center"><span style="background:${lvlColor}20;color:${lvlColor};padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700">${e.intensity===1?'خفيف':e.intensity===2?'متوسط':'شديد'}</span></td>
+      </tr>`
+    }).join('')
+
+    const obsRows = obsLog.map(e =>
+      `<li style="margin-bottom:4px;padding:4px 8px;border-right:2px solid ${e.color};border-radius:2px"><strong style="color:#444">${e.ts}</strong> <span style="color:#888;font-size:11px">${e.category}</span> — ${e.text}</li>`
+    ).join('')
+
+    const phasesInfo = SESSION_PHASES.map((ph, i) => `<span style="margin-left:16px">${ph.icon} ${ph.label}: <strong>${phaseDurations[i]} د</strong></span>`).join('')
+
+    const diagLabel = DIAG_LABELS[studentDiagnosis] || studentDiagnosis || 'غير محدد'
+    const sevLabel  = SEVERITY_LABELS[studentSeverity] || '—'
+    const diffLabel = difficulty===1?'سهل (مستوى 1)':difficulty===2?'متوسط (مستوى 2)':'صعب (مستوى 3)'
+
+    const html = `<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+<meta charset="UTF-8">
+<title>تقرير جلسة علاجية — ${studentName || 'الطالب'}</title>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Arial', sans-serif; font-size: 13px; color: #1a1a2e; padding: 32px; direction: rtl; }
-  h1 { font-size: 22px; font-weight: 900; color: #4c1d95; margin-bottom: 4px; }
-  .meta { color: #666; font-size: 12px; margin-bottom: 20px; }
-  .badge { display: inline-block; background: #ede9fe; color: #4c1d95; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; margin-left: 6px; }
-  h2 { font-size: 14px; font-weight: 900; color: #4c1d95; border-bottom: 2px solid #ede9fe; padding-bottom: 4px; margin: 20px 0 10px; }
-  table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
-  th { background: #4c1d95; color: white; padding: 7px 10px; font-size: 12px; text-align: right; }
-  td { padding: 6px 10px; border-bottom: 1px solid #f0f0f0; }
-  tr:nth-child(even) td { background: #f9f5ff; }
-  .stats { display: flex; gap: 16px; margin-bottom: 20px; }
-  .stat { flex: 1; background: #f9f5ff; border-radius: 12px; padding: 12px; text-align: center; border: 1px solid #ede9fe; }
-  .stat .val { font-size: 28px; font-weight: 900; color: #4c1d95; }
-  .stat .lbl { font-size: 11px; color: #888; }
-  .phases { font-size: 11px; color: #666; background: #f9f5ff; padding: 8px 12px; border-radius: 8px; margin-bottom: 16px; }
-  .notes { background: #fafafa; border: 1px solid #eee; border-radius: 8px; padding: 12px; font-size: 12px; line-height: 1.6; }
-  .rec { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px; font-size: 12px; line-height: 1.6; }
-  ul { padding-right: 16px; }
-  li { margin-bottom: 4px; }
-  @media print { body { padding: 16px; } button { display: none; } }
-</style></head>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;700;900&display=swap');
+  * { box-sizing:border-box; margin:0; padding:0 }
+  body { font-family:'Noto Sans Arabic','Arial',sans-serif; font-size:13px; color:#1a1a2e; background:#fff; direction:rtl }
+  .page { max-width:820px; margin:0 auto; padding:32px }
+  /* Header */
+  .report-header { background:linear-gradient(135deg,#4c1d95,#7C5CFC); color:white; border-radius:16px; padding:24px 28px; margin-bottom:24px; display:flex; justify-content:space-between; align-items:flex-start }
+  .report-header h1 { font-size:20px; font-weight:900; margin-bottom:6px }
+  .report-header .sub { font-size:12px; opacity:0.8; line-height:1.8 }
+  .header-badge { background:rgba(255,255,255,0.2); border-radius:8px; padding:8px 16px; text-align:center; min-width:90px }
+  .header-badge .val { font-size:28px; font-weight:900 }
+  .header-badge .lbl { font-size:10px; opacity:0.8 }
+  /* Stats row */
+  .stats { display:flex; gap:12px; margin-bottom:24px }
+  .stat { flex:1; background:#faf5ff; border-radius:12px; padding:14px; text-align:center; border:1.5px solid #ede9fe }
+  .stat .val { font-size:26px; font-weight:900; color:#4c1d95 }
+  .stat .lbl { font-size:10px; color:#888; margin-top:2px }
+  /* Sections */
+  .section { margin-bottom:24px }
+  h2 { font-size:13px; font-weight:900; color:#4c1d95; border-bottom:2px solid #ede9fe; padding-bottom:6px; margin-bottom:12px; display:flex; align-items:center; gap:8px }
+  /* Table */
+  table { width:100%; border-collapse:collapse; margin-bottom:8px }
+  th { background:#4c1d95; color:white; padding:8px 10px; font-size:11px; text-align:right; font-weight:700 }
+  td { padding:7px 10px; border-bottom:1px solid #f0f0f0; font-size:12px }
+  tr:nth-child(even) td { background:#fdfbff }
+  /* Info grid */
+  .info-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:20px }
+  .info-item { background:#faf5ff; border-radius:10px; padding:10px 14px; border:1px solid #ede9fe }
+  .info-item .key { font-size:10px; color:#888; margin-bottom:2px }
+  .info-item .val { font-size:13px; font-weight:700; color:#1a1a2e }
+  /* Phases bar */
+  .phases { background:#faf5ff; border-radius:10px; padding:10px 14px; font-size:11px; color:#555; margin-bottom:20px; border:1px solid #ede9fe }
+  /* Notes */
+  .notes-box { background:#fffbf0; border:1px solid #fde68a; border-radius:10px; padding:12px 16px; font-size:12px; line-height:1.7; color:#44372b }
+  /* Recs */
+  .recs { list-style:none; padding:0 }
+  /* Print */
+  .print-btn { background:#4c1d95; color:white; border:none; padding:10px 24px; border-radius:10px; font-size:13px; font-weight:700; cursor:pointer; display:block; margin:0 auto 24px }
+  @media print { .print-btn { display:none } body { font-size:11px } .page { padding:16px } }
+  .watermark { text-align:center; color:#ccc; font-size:10px; margin-top:32px; padding-top:16px; border-top:1px solid #eee }
+</style>
+</head>
 <body>
-<div style="display:flex;align-items:start;justify-content:space-between;margin-bottom:16px">
+<div class="page">
+
+<button class="print-btn" onclick="window.print()">🖨 طباعة / حفظ PDF</button>
+
+<!-- Header -->
+<div class="report-header">
   <div>
-    <h1>تقرير جلسة — ${studentName || 'الطالب'}</h1>
-    <div class="meta">${date} • مدة الجلسة: ${formatTime(elapsed)} • ${results.length} تمارين
-      <span class="badge">${DIAG_LABELS[studentDiagnosis] || studentDiagnosis || 'لا يوجد تشخيص'}</span>
-      <span class="badge">${SEVERITY_LABELS[studentSeverity]}</span>
+    <h1>تقرير الجلسة العلاجية</h1>
+    <div class="sub">
+      الطالب: <strong>${studentName || 'غير محدد'}</strong><br>
+      التشخيص: ${diagLabel} • الشدة: ${sevLabel}<br>
+      التاريخ: ${date} • الوقت: ${time}<br>
+      مدة الجلسة: <strong>${formatTime(elapsed)}</strong> • المستوى: ${diffLabel}
     </div>
   </div>
-  <button onclick="window.print()" style="background:#4c1d95;color:white;border:none;padding:8px 20px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">🖨 طباعة PDF</button>
+  <div class="header-badge">
+    <div class="val">${avgScoreVal}%</div>
+    <div class="lbl">الأداء العام</div>
+  </div>
 </div>
 
+<!-- Key stats -->
 <div class="stats">
-  <div class="stat"><div class="val">${avgScoreVal}%</div><div class="lbl">متوسط الأداء</div></div>
-  <div class="stat"><div class="val">${results.filter(r=>r.score>=80).length}</div><div class="lbl">تمارين ممتازة</div></div>
-  <div class="stat"><div class="val">${results.length}</div><div class="lbl">إجمالي التمارين</div></div>
-  <div class="stat"><div class="val">${abcLog.length}</div><div class="lbl">حوادث سلوكية</div></div>
+  <div class="stat">
+    <div class="val">${results.length}</div>
+    <div class="lbl">تمارين مُنجزة</div>
+  </div>
+  <div class="stat">
+    <div class="val" style="color:${avgScoreVal>=80?'#16a34a':avgScoreVal>=60?'#d97706':'#dc2626'}">${avgScoreVal>=80?'ممتاز':avgScoreVal>=60?'جيد':avgScoreVal>=40?'متوسط':'يحتاج دعم'}</div>
+    <div class="lbl">مستوى الأداء</div>
+  </div>
+  <div class="stat">
+    <div class="val">${results.filter(r=>r.score>=80).length}</div>
+    <div class="lbl">تمارين ممتازة</div>
+  </div>
+  <div class="stat">
+    <div class="val" style="color:${abcLog.some(e=>e.intensity===3)?'#dc2626':'#16a34a'}">${abcLog.length}</div>
+    <div class="lbl">حوادث سلوكية</div>
+  </div>
 </div>
 
-<div class="phases">${phasesInfo}</div>
+<!-- Phases timeline -->
+<div class="phases">⏱ مراحل الجلسة: ${phasesInfo}</div>
 
-${results.length > 0 ? `<h2>نتائج التمارين</h2>
-<table><thead><tr><th>التمرين</th><th style="text-align:center">الدرجة</th><th style="text-align:center">الدقة</th><th style="text-align:center">المدة</th></tr></thead>
-<tbody>${exerciseRows}</tbody></table>` : ''}
+${activeCats.length > 0 ? `
+<!-- Domain performance -->
+<div class="section">
+  <h2>📊 الأداء حسب المجال المعرفي</h2>
+  ${catBars}
+</div>` : ''}
 
-${abcLog.length > 0 ? `<h2>🔗 سجل ABC السلوكي</h2>
-<table><thead><tr><th>الوقت</th><th>السابق (A)</th><th>السلوك (B)</th><th>النتيجة (C)</th><th style="text-align:center">الحدة</th></tr></thead>
-<tbody>${abcRows}</tbody></table>` : ''}
+${results.length > 0 ? `
+<!-- Exercise table -->
+<div class="section">
+  <h2>🎮 نتائج التمارين التفصيلية</h2>
+  <table>
+    <thead><tr>
+      <th>التمرين</th>
+      <th style="text-align:center;width:70px">الدرجة</th>
+      <th style="text-align:center;width:70px">الدقة</th>
+      <th style="text-align:center;width:60px">المدة</th>
+      <th style="text-align:center;width:90px">التقدير</th>
+    </tr></thead>
+    <tbody>${exerciseRows}</tbody>
+  </table>
+</div>` : ''}
 
-${obsLog.length > 0 ? `<h2>📝 الملاحظات الفورية</h2><ul>${obsRows}</ul>` : ''}
+${abcLog.length > 0 ? `
+<!-- ABC log -->
+<div class="section">
+  <h2>🔗 تحليل السلوك (نموذج ABC)</h2>
+  <table>
+    <thead><tr>
+      <th style="width:50px">الوقت</th>
+      <th>المثير السابق (Antecedent)</th>
+      <th>السلوك (Behavior)</th>
+      <th>النتيجة (Consequence)</th>
+      <th style="text-align:center;width:70px">حدة السلوك</th>
+    </tr></thead>
+    <tbody>${abcRows}</tbody>
+  </table>
+</div>` : ''}
 
-${notes ? `<h2>ملاحظات المعالج</h2><div class="notes">${notes.replace(/\n/g, '<br>')}</div>` : ''}
+${obsLog.length > 0 ? `
+<!-- Observations -->
+<div class="section">
+  <h2>📝 الملاحظات الفورية</h2>
+  <ul style="padding-right:8px">${obsRows}</ul>
+</div>` : ''}
 
-<h2>التوصيات</h2><div class="rec">${recText}</div>
+${notes ? `
+<!-- Therapist notes -->
+<div class="section">
+  <h2>💬 ملاحظات المعالج</h2>
+  <div class="notes-box">${notes.replace(/\n/g,'<br>')}</div>
+</div>` : ''}
+
+<!-- Recommendations -->
+<div class="section">
+  <h2>✅ التوصيات العلاجية المبنية على الأدلة</h2>
+  <ul class="recs">${recsHtml}</ul>
+</div>
+
+<div class="watermark">
+  أُعِدَّ هذا التقرير بواسطة نظام أمين أكاديمي للإدارة العلاجية المتكاملة •
+  هذا المستند سري وموجّه حصراً للمعالج المختص
+</div>
+
+</div>
 </body></html>`
 
-    const w = window.open('', '_blank', 'width=900,height=700')
+    const w = window.open('', '_blank', 'width=960,height=800')
     if (w) { w.document.write(html); w.document.close() }
   }
 
@@ -688,6 +942,7 @@ ${notes ? `<h2>ملاحظات المعالج</h2><div class="notes">${notes.repl
         }),
       })
       setSaved(true)
+      sessionStorage.removeItem(`session_draft_${id}`)
       playSound('complete')
     } finally {
       setSaving(false)
@@ -1901,7 +2156,10 @@ ${notes ? `<h2>ملاحظات المعالج</h2><div class="notes">${notes.repl
               {activeView.id === 'behavior-contract' && <BehaviorContract  onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
               {activeView.id === 'color-grid'       && <ColorGrid         onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
               {activeView.id === 'pattern-match'    && <PatternMatch      onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'word-builder'     && <WordBuilder       onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'word-builder'            && <WordBuilder            onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'auditory-memory'        && <AuditoryMemory        onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'listening-comprehension'&& <ListeningComprehension onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'picture-word-cards'     && <PictureWordCards       onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
             </div>
           )}
 

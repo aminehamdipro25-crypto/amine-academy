@@ -1,0 +1,464 @@
+'use client'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import type { ExerciseResult } from '@/lib/types'
+
+interface Props {
+  onComplete: (r: ExerciseResult) => void
+  onCancel: () => void
+  studentAge: number
+  difficulty?: 1 | 2 | 3
+}
+
+interface Card {
+  emoji: string
+  word: string
+  category: string
+}
+
+type Rating = 'knows' | 'approx' | 'unknown'
+
+interface RatedCard {
+  card: Card
+  rating: Rating
+}
+
+const ALL_CARDS: Card[] = [
+  // حيوانات
+  { emoji: '🐱', word: 'قِطَّة', category: 'حيوانات' },
+  { emoji: '🐶', word: 'كَلْب', category: 'حيوانات' },
+  { emoji: '🐘', word: 'فِيل', category: 'حيوانات' },
+  { emoji: '🦁', word: 'أَسَد', category: 'حيوانات' },
+  { emoji: '🐟', word: 'سَمَكَة', category: 'حيوانات' },
+  { emoji: '🦋', word: 'فَرَاشَة', category: 'حيوانات' },
+  { emoji: '🐦', word: 'عُصْفُور', category: 'حيوانات' },
+  { emoji: '🐢', word: 'سُلَحْفَاة', category: 'حيوانات' },
+  // فواكه
+  { emoji: '🍎', word: 'تُفَّاحَة', category: 'فواكه' },
+  { emoji: '🍌', word: 'مَوْزَة', category: 'فواكه' },
+  { emoji: '🍊', word: 'بُرْتُقَالَة', category: 'فواكه' },
+  { emoji: '🍇', word: 'عِنَب', category: 'فواكه' },
+  { emoji: '🍓', word: 'فَرَاوْلَة', category: 'فواكه' },
+  { emoji: '🍉', word: 'بِطِّيخ', category: 'فواكه' },
+  // ألوان
+  { emoji: '🔴', word: 'أَحْمَر', category: 'ألوان' },
+  { emoji: '🔵', word: 'أَزْرَق', category: 'ألوان' },
+  { emoji: '🟢', word: 'أَخْضَر', category: 'ألوان' },
+  { emoji: '🟡', word: 'أَصْفَر', category: 'ألوان' },
+  { emoji: '🟠', word: 'بُرْتُقَالِي', category: 'ألوان' },
+  { emoji: '⚫', word: 'أَسْوَد', category: 'ألوان' },
+  { emoji: '⚪', word: 'أَبْيَض', category: 'ألوان' },
+  // أعضاء الجسم
+  { emoji: '👁️', word: 'عَيْن', category: 'أعضاء' },
+  { emoji: '👂', word: 'أُذُن', category: 'أعضاء' },
+  { emoji: '👃', word: 'أَنْف', category: 'أعضاء' },
+  { emoji: '👄', word: 'فَم', category: 'أعضاء' },
+  { emoji: '🖐️', word: 'يَد', category: 'أعضاء' },
+  { emoji: '🦶', word: 'قَدَم', category: 'أعضاء' },
+  // مشاعر
+  { emoji: '😊', word: 'سَعِيد', category: 'مشاعر' },
+  { emoji: '😢', word: 'حَزِين', category: 'مشاعر' },
+  { emoji: '😠', word: 'غَاضِب', category: 'مشاعر' },
+  { emoji: '😨', word: 'خَائِف', category: 'مشاعر' },
+  { emoji: '😴', word: 'نَعْسَان', category: 'مشاعر' },
+  { emoji: '🤩', word: 'مُتَحَمِّس', category: 'مشاعر' },
+  // أشياء
+  { emoji: '📚', word: 'كُتُب', category: 'أشياء' },
+  { emoji: '🖊️', word: 'قَلَم', category: 'أشياء' },
+  { emoji: '🎒', word: 'حَقِيبَة', category: 'أشياء' },
+  { emoji: '🏠', word: 'بَيْت', category: 'أشياء' },
+  { emoji: '🚗', word: 'سَيَّارَة', category: 'أشياء' },
+  { emoji: '📱', word: 'هَاتِف', category: 'أشياء' },
+]
+
+const CATEGORIES = ['كل الفئات', 'حيوانات', 'فواكه', 'ألوان', 'أعضاء', 'مشاعر', 'أشياء']
+
+const CATEGORY_EMOJI: Record<string, string> = {
+  'كل الفئات': '🌟',
+  'حيوانات': '🐾',
+  'فواكه': '🍓',
+  'ألوان': '🎨',
+  'أعضاء': '🖐️',
+  'مشاعر': '😊',
+  'أشياء': '🎒',
+}
+
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr]
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[a[i], a[j]] = [a[j], a[i]]
+  }
+  return a
+}
+
+function speakWord(word: string): void {
+  if (typeof window === 'undefined' || !window.speechSynthesis) return
+  try {
+    window.speechSynthesis.cancel()
+    const u = new SpeechSynthesisUtterance(word)
+    u.lang = 'ar-SA'
+    u.rate = 0.75
+    window.speechSynthesis.speak(u)
+  } catch {
+    // TTS not supported — silent fail
+  }
+}
+
+function getRatingScore(r: Rating): number {
+  if (r === 'knows') return 100
+  if (r === 'approx') return 50
+  return 0
+}
+
+type Phase = 'category' | 'cards' | 'results'
+
+export default function PictureWordCards({
+  onComplete,
+  onCancel,
+  studentAge: _studentAge,
+  difficulty = 1,
+}: Props) {
+  const startRef = useRef(Date.now())
+  const [phase, setPhase] = useState<Phase>('category')
+  const [deck, setDeck] = useState<Card[]>([])
+  const [cardIdx, setCardIdx] = useState(0)
+  const [ratings, setRatings] = useState<RatedCard[]>([])
+  const [animating, setAnimating] = useState(false)
+  const [selectedCategory, setSelectedCategory] = useState<string>('')
+  const [ttsSupported, setTtsSupported] = useState(true)
+
+  const maxCards = difficulty === 1 ? 8 : difficulty === 2 ? 16 : ALL_CARDS.length
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !window.speechSynthesis) {
+      setTtsSupported(false)
+    }
+  }, [])
+
+  function startWithCategory(cat: string) {
+    setSelectedCategory(cat)
+    const pool = cat === 'كل الفئات' ? ALL_CARDS : ALL_CARDS.filter(c => c.category === cat)
+    const shuffled = shuffle(pool).slice(0, maxCards)
+    setDeck(shuffled)
+    setCardIdx(0)
+    setRatings([])
+    setAnimating(false)
+    startRef.current = Date.now()
+    setPhase('cards')
+  }
+
+  // Auto-play TTS when card changes
+  useEffect(() => {
+    if (phase !== 'cards' || animating || !deck[cardIdx]) return
+    speakWord(deck[cardIdx].word)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, cardIdx, deck])
+
+  const handleRating = useCallback((rating: Rating) => {
+    if (animating || !deck[cardIdx]) return
+    const card = deck[cardIdx]
+    const newRatings = [...ratings, { card, rating }]
+    setRatings(newRatings)
+    setAnimating(true)
+
+    setTimeout(() => {
+      setAnimating(false)
+      const nextIdx = cardIdx + 1
+      if (nextIdx >= deck.length) {
+        // compute results
+        const dur = Math.round((Date.now() - startRef.current) / 1000)
+        const knows = newRatings.filter(r => r.rating === 'knows').length
+        const approx = newRatings.filter(r => r.rating === 'approx').length
+        const unknown = newRatings.filter(r => r.rating === 'unknown').length
+        const totalScore = Math.round(
+          newRatings.reduce((sum, r) => sum + getRatingScore(r.rating), 0) / newRatings.length
+        )
+        const accuracy = Math.round((knows / newRatings.length) * 100)
+
+        setPhase('results')
+
+        onComplete({
+          exerciseType: 'picture-word-cards',
+          exerciseLabelAr: 'بطاقات الصورة والكلمة',
+          score: totalScore,
+          accuracy,
+          duration: dur,
+          errors: unknown,
+          metadata: {
+            total: newRatings.length,
+            knows,
+            approx,
+            unknown,
+            category: selectedCategory,
+          },
+          completedAt: new Date().toISOString(),
+        })
+      } else {
+        setCardIdx(nextIdx)
+      }
+    }, 350)
+  }, [animating, deck, cardIdx, ratings, selectedCategory, onComplete])
+
+  // ─── CATEGORY PICKER ──────────────────────────────────────────
+  if (phase === 'category') {
+    return (
+      <div dir="rtl" className="flex flex-col gap-5 p-6 select-none max-w-lg mx-auto w-full">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-black text-white">بطاقات الصورة والكلمة</h2>
+          <button onClick={onCancel} className="text-white/40 hover:text-white/70 text-sm transition-colors">
+            ← إلغاء
+          </button>
+        </div>
+
+        <p className="text-white/60 text-sm">اختر فئة البطاقات:</p>
+
+        {!ttsSupported && (
+          <div className="bg-amber-500/20 border border-amber-400/40 rounded-2xl px-4 py-2 text-amber-300 text-sm text-center">
+            ⚠️ التحدث الصوتي غير مدعوم في هذا المتصفح
+          </div>
+        )}
+
+        <div className="grid grid-cols-2 gap-3">
+          {CATEGORIES.map(cat => {
+            const count = cat === 'كل الفئات'
+              ? Math.min(ALL_CARDS.length, maxCards)
+              : Math.min(ALL_CARDS.filter(c => c.category === cat).length, maxCards)
+            return (
+              <button
+                key={cat}
+                onClick={() => startWithCategory(cat)}
+                className="flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all duration-200 hover:scale-105"
+                style={{
+                  background: 'rgba(255,255,255,0.06)',
+                  borderColor: 'rgba(124,92,252,0.4)',
+                }}
+              >
+                <span className="text-3xl">{CATEGORY_EMOJI[cat] ?? '📦'}</span>
+                <span className="text-white font-bold text-sm">{cat}</span>
+                <span className="text-white/40 text-xs">{count} بطاقة</span>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+    )
+  }
+
+  // ─── RESULTS ──────────────────────────────────────────────────
+  if (phase === 'results') {
+    const knows = ratings.filter(r => r.rating === 'knows').length
+    const approx = ratings.filter(r => r.rating === 'approx').length
+    const unknown = ratings.filter(r => r.rating === 'unknown').length
+    const total = ratings.length
+    const pct = Math.round((knows / total) * 100)
+
+    // Per-category breakdown
+    const categoryGroups: Record<string, RatedCard[]> = {}
+    for (const r of ratings) {
+      if (!categoryGroups[r.card.category]) categoryGroups[r.card.category] = []
+      categoryGroups[r.card.category].push(r)
+    }
+
+    return (
+      <div dir="rtl" className="flex flex-col gap-5 p-6 select-none max-w-lg mx-auto w-full">
+        <h2 className="text-xl font-black text-white text-center">نتائج الجلسة</h2>
+
+        {/* Overall score */}
+        <div className="bg-gray-900 rounded-3xl p-5 border border-white/10 flex items-center justify-between">
+          <div className="text-center flex-1">
+            <div className="text-4xl font-black" style={{ color: '#7C5CFC' }}>{pct}%</div>
+            <div className="text-white/50 text-xs mt-1">نسبة المعرفة</div>
+          </div>
+          <div className="w-px h-12 bg-white/10" />
+          <div className="flex flex-col gap-2 flex-1 pr-4">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-green-400 font-bold">✅ يعرف</span>
+              <span className="text-white font-black">{knows}</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-amber-400 font-bold">⚡ تقريباً</span>
+              <span className="text-white font-black">{approx}</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-red-400 font-bold">❌ لا يعرف</span>
+              <span className="text-white font-black">{unknown}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Per-category breakdown */}
+        {Object.keys(categoryGroups).length > 1 && (
+          <div className="flex flex-col gap-2">
+            <p className="text-white/50 text-xs">تفصيل حسب الفئة:</p>
+            {Object.entries(categoryGroups).map(([cat, items]) => {
+              const catKnows = items.filter(r => r.rating === 'knows').length
+              const catPct = Math.round((catKnows / items.length) * 100)
+              return (
+                <div key={cat} className="flex items-center gap-3 bg-gray-900 rounded-xl px-4 py-2 border border-white/10">
+                  <span className="text-lg">{CATEGORY_EMOJI[cat] ?? '📦'}</span>
+                  <span className="text-white text-sm font-bold flex-1">{cat}</span>
+                  <div className="flex items-center gap-2">
+                    <div className="w-16 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full"
+                        style={{ width: `${catPct}%`, background: catPct >= 70 ? '#22c55e' : catPct >= 40 ? '#f59e0b' : '#ef4444' }}
+                      />
+                    </div>
+                    <span className="text-white/60 text-xs w-8 text-left">{catPct}%</span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+
+        {/* Words the child didn't know */}
+        {unknown > 0 && (
+          <div className="bg-red-500/10 border border-red-400/20 rounded-2xl p-4">
+            <p className="text-red-300 text-xs font-bold mb-2">كلمات تحتاج تدريباً إضافياً:</p>
+            <div className="flex flex-wrap gap-2">
+              {ratings.filter(r => r.rating === 'unknown').map((r, i) => (
+                <span key={i} className="flex items-center gap-1 bg-red-500/20 rounded-xl px-3 py-1 text-white text-sm">
+                  {r.card.emoji} {r.card.word}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="flex gap-3">
+          <button
+            onClick={() => setPhase('category')}
+            className="flex-1 py-3 rounded-2xl font-bold text-base border-2 transition-all duration-200"
+            style={{ background: 'rgba(124,92,252,0.15)', borderColor: 'rgba(124,92,252,0.4)', color: '#c4b5fd' }}
+          >
+            جلسة جديدة
+          </button>
+          <button
+            onClick={onCancel}
+            className="flex-1 py-3 rounded-2xl font-bold text-base border-2 transition-all duration-200"
+            style={{ background: 'rgba(255,255,255,0.06)', borderColor: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.6)' }}
+          >
+            إنهاء
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // ─── CARD SCREEN ──────────────────────────────────────────────
+  const currentCard = deck[cardIdx]
+  if (!currentCard) return null
+
+  const total = deck.length
+  const progressPct = Math.round((cardIdx / total) * 100)
+
+  // Rating dots so far
+  const recentRatings = ratings.slice(-10)
+
+  return (
+    <div dir="rtl" className="flex flex-col gap-4 p-5 select-none max-w-lg mx-auto w-full">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-base font-black text-white">بطاقات الصورة والكلمة</h2>
+        <span className="text-white/50 text-sm">{cardIdx + 1} من {total}</span>
+      </div>
+
+      {/* Progress bar */}
+      <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+        <div
+          className="h-full rounded-full transition-all duration-500"
+          style={{ width: `${progressPct}%`, background: '#7C5CFC' }}
+        />
+      </div>
+
+      {/* Recent rating dots */}
+      {recentRatings.length > 0 && (
+        <div className="flex gap-1.5 justify-center">
+          {recentRatings.map((r, i) => (
+            <div
+              key={i}
+              className="w-3 h-3 rounded-full"
+              style={{
+                background: r.rating === 'knows' ? '#22c55e' : r.rating === 'approx' ? '#f59e0b' : '#ef4444',
+              }}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Card */}
+      <div
+        className="flex flex-col items-center justify-center gap-4 bg-gray-900 rounded-3xl border border-white/10 transition-all duration-300"
+        style={{
+          minHeight: 280,
+          transform: animating ? 'translateX(-100%)' : 'translateX(0)',
+          opacity: animating ? 0 : 1,
+        }}
+      >
+        {/* Emoji */}
+        <div style={{ fontSize: '10rem', lineHeight: 1 }}>{currentCard.emoji}</div>
+
+        {/* Word */}
+        <p
+          className="font-black text-white text-center"
+          style={{ fontSize: '3rem', lineHeight: 1.1 }}
+        >
+          {currentCard.word}
+        </p>
+
+        {/* Category badge */}
+        <span
+          className="text-xs px-3 py-1 rounded-full"
+          style={{ background: 'rgba(124,92,252,0.2)', color: '#c4b5fd' }}
+        >
+          {currentCard.category}
+        </span>
+
+        {/* Replay TTS */}
+        <button
+          onClick={() => speakWord(currentCard.word)}
+          className="flex items-center gap-2 px-4 py-2 rounded-2xl border transition-all duration-200 text-sm"
+          style={{ borderColor: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.6)', background: 'rgba(255,255,255,0.05)' }}
+        >
+          🔊 استمع
+        </button>
+      </div>
+
+      {/* Rating buttons */}
+      <div className="grid grid-cols-3 gap-3 mt-1">
+        <button
+          onClick={() => handleRating('knows')}
+          disabled={animating}
+          className="flex flex-col items-center gap-1 py-4 rounded-2xl font-bold text-white transition-all duration-200 active:scale-95"
+          style={{ background: animating ? 'rgba(22,163,74,0.4)' : '#16a34a', fontSize: 14 }}
+        >
+          <span className="text-2xl">✅</span>
+          <span>يَعْرِف</span>
+        </button>
+        <button
+          onClick={() => handleRating('approx')}
+          disabled={animating}
+          className="flex flex-col items-center gap-1 py-4 rounded-2xl font-bold text-white transition-all duration-200 active:scale-95"
+          style={{ background: animating ? 'rgba(217,119,6,0.4)' : '#d97706', fontSize: 14 }}
+        >
+          <span className="text-2xl">⚡</span>
+          <span>تَقْرِيباً</span>
+        </button>
+        <button
+          onClick={() => handleRating('unknown')}
+          disabled={animating}
+          className="flex flex-col items-center gap-1 py-4 rounded-2xl font-bold text-white transition-all duration-200 active:scale-95"
+          style={{ background: animating ? 'rgba(220,38,38,0.4)' : '#dc2626', fontSize: 14 }}
+        >
+          <span className="text-2xl">❌</span>
+          <span>لا يَعْرِف</span>
+        </button>
+      </div>
+
+      <button onClick={onCancel} className="text-white/40 hover:text-white/70 text-sm transition-colors text-center mt-1">
+        ← إنهاء التمرين
+      </button>
+    </div>
+  )
+}

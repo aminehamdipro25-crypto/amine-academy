@@ -394,6 +394,8 @@ export default function SessionPage() {
   const [phaseToast, setPhaseToast]     = useState<SessionPhase | null>(null)
   const [phaseDurations, setPhaseDurations] = useState<number[]>(SESSION_PHASES.map(p => p.defaultMin))
   const [showPhaseEdit, setShowPhaseEdit] = useState(false)
+  const [exerciseConfigId, setExerciseConfigId] = useState<string | null>(null)
+  const [exerciseDiffOverrides, setExerciseDiffOverrides] = useState<Partial<Record<string, 1|2|3>>>({})
 
   // Profile card
   const [profileOpen, setProfileOpen]   = useState(false)
@@ -1057,6 +1059,9 @@ ${notes ? `
   }
 
   const topGames = profile ? getTopGames(profile, 3) : []
+  const activeDifficulty: 1|2|3 = (activeView?.type === 'exercise' && exerciseDiffOverrides[activeView.id])
+    ? exerciseDiffOverrides[activeView.id]!
+    : difficulty
   const sortedExercises = profile
     ? (() => {
         const ranked = rankGamesForStudent(profile)
@@ -1610,32 +1615,6 @@ ${notes ? `
           >
             ⚙
           </button>
-          {showPhaseEdit && (
-            <div
-              className="absolute top-full left-0 right-0 z-[60] flex items-center gap-2 px-4 py-2 flex-wrap"
-              style={{ background: '#0F172A', borderBottom: '1px solid rgba(255,255,255,0.08)' }}
-              dir="rtl"
-            >
-              {SESSION_PHASES.map((ph, i) => (
-                <label key={ph.id} className="flex items-center gap-1.5 text-[10px] text-white/50">
-                  <span>{ph.icon} {ph.label}</span>
-                  <input
-                    type="number"
-                    min={1}
-                    max={60}
-                    value={phaseDurations[i]}
-                    onChange={e => {
-                      const v = Math.max(1, Math.min(60, Number(e.target.value)))
-                      setPhaseDurations(prev => prev.map((d, idx) => idx === i ? v : d))
-                    }}
-                    className="w-12 bg-white/10 border border-white/15 rounded-lg px-1.5 py-0.5 text-white text-center text-[10px] font-bold"
-                  />
-                  <span className="text-white/30">د</span>
-                </label>
-              ))}
-              <button onClick={() => setShowPhaseEdit(false)} className="text-white/30 hover:text-white/60 text-[10px] mr-auto">✕ إغلاق</button>
-            </div>
-          )}
         </div>
       )}
 
@@ -1694,34 +1673,50 @@ ${notes ? `
                         {categoryFilter === 'الكل' && !isTop && idx === topGames.length && topGames.length > 0 && (
                           <div className="border-t border-white/10 my-1" />
                         )}
-                        <button
-                          onClick={() => {
-                            if (!running) startSession()
-                            setActiveView({ type: 'exercise', id: ex.id })
-                          }}
-                          className={`w-full flex items-center gap-3 p-3 rounded-xl border text-right transition-all
-                            ${ex.color} hover:scale-[1.02]
-                            ${isActive ? 'scale-[1.02] ring-1 ring-white/30' : ''}
-                            ${isTop ? 'ring-1 ring-brand-400/50' : ''}
-                            ${!ageOk ? 'opacity-40' : ''}
-                          `}>
-                          <span className="text-xl">{ex.icon}</span>
-                          <div className="text-right flex-1 min-w-0">
-                            <div className="flex items-center justify-between gap-1">
-                              <div className="text-white font-bold text-xs truncate">{ex.labelAr}</div>
-                              {isTop && <Star className="w-3 h-3 text-brand-400 flex-shrink-0" />}
+                        <div className="relative group">
+                          <button
+                            onClick={() => {
+                              if (!running) startSession()
+                              setActiveView({ type: 'exercise', id: ex.id })
+                            }}
+                            className={`w-full flex items-center gap-3 p-3 rounded-xl border text-right transition-all
+                              ${ex.color} hover:scale-[1.02]
+                              ${isActive ? 'scale-[1.02] ring-1 ring-white/30' : ''}
+                              ${isTop ? 'ring-1 ring-brand-400/50' : ''}
+                              ${!ageOk ? 'opacity-40' : ''}
+                            `}>
+                            <span className="text-xl">{ex.icon}</span>
+                            <div className="text-right flex-1 min-w-0">
+                              <div className="flex items-center justify-between gap-1">
+                                <div className="text-white font-bold text-xs truncate">{ex.labelAr}</div>
+                                <div className="flex items-center gap-1 flex-shrink-0">
+                                  {exerciseDiffOverrides[ex.id] && exerciseDiffOverrides[ex.id] !== difficulty && (
+                                    <span className="text-[9px] font-black px-1 py-0.5 rounded bg-brand-600/70 text-brand-200">
+                                      {exerciseDiffOverrides[ex.id] === 1 ? 'سهل' : exerciseDiffOverrides[ex.id] === 2 ? 'وسط' : 'صعب'}
+                                    </span>
+                                  )}
+                                  {isTop && <Star className="w-3 h-3 text-brand-400 flex-shrink-0" />}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                                <span className="text-white/40 text-[10px]">{ex.category}</span>
+                                <span className="text-white/25 text-[9px] ltr-num">{ex.ageMin}-{ex.ageMax}س</span>
+                                {(gameUsageCounts[ex.id] ?? 0) > 0 && (
+                                  <span className="text-[9px] bg-white/10 text-white/40 px-1 py-0.5 rounded-full font-bold ltr-num">
+                                    ×{gameUsageCounts[ex.id]} مرة
+                                  </span>
+                                )}
+                              </div>
                             </div>
-                            <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                              <span className="text-white/40 text-[10px]">{ex.category}</span>
-                              <span className="text-white/25 text-[9px] ltr-num">{ex.ageMin}-{ex.ageMax}س</span>
-                              {(gameUsageCounts[ex.id] ?? 0) > 0 && (
-                                <span className="text-[9px] bg-white/10 text-white/40 px-1 py-0.5 rounded-full font-bold ltr-num">
-                                  ×{gameUsageCounts[ex.id]} مرة
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </button>
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setExerciseConfigId(ex.id) }}
+                            className="absolute top-1 left-1 w-6 h-6 flex items-center justify-center rounded-lg text-white/30 hover:text-white hover:bg-black/50 transition-all opacity-0 group-hover:opacity-100 text-[11px] z-10"
+                            title={`إعدادات ${ex.labelAr}`}
+                          >
+                            ⚙
+                          </button>
+                        </div>
                       </div>
                     )
                   })}
@@ -2281,66 +2276,66 @@ ${notes ? `
 
           {activeView?.type === 'exercise' && (
             <div className="w-full max-w-2xl mx-auto py-6">
-              {activeView.id === 'memory-cards'    && <MemoryCards onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'sequence-memory' && <SequenceMemory onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'n-back'          && <NBackTask onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'word-recall'     && <WordRecall onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'breathing'       && <BreathingGuide onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'tap-target'      && <TapTarget onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'simon-says'      && <SimonSays onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'letter-match'    && <LetterMatch    onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'reaction-game'  && <ReactionGame   onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'stroop-test'    && <StroopTest     onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'stop-signal'    && <StopSignal     onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'emotion-cards'     && <EmotionCards      onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'token-board'       && <TokenBoard        onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'self-rating'       && <SelfRating        onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'verbal-fluency'    && <VerbalFluency     onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'social-scenarios'  && <SocialScenarios   onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'behavior-contract' && <BehaviorContract  onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'color-grid'       && <ColorGrid         onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'pattern-match'    && <PatternMatch      onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'word-builder'            && <WordBuilder            onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'auditory-memory'        && <AuditoryMemory        onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'listening-comprehension'&& <ListeningComprehension onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'picture-word-cards'     && <PictureWordCards       onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'number-sequence'        && <NumberSequence         onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'shadow-match'           && <ShadowMatch            onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'story-sequencing'       && <StorySequencing        onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'waiting-game'           && <WaitingGame            onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'social-problem-solving' && <SocialProblemSolving   onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'visual-search'         && <VisualSearch          onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'odd-one-out'           && <OddOneOut             onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'sustained-attention'   && <SustainedAttention    onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'flash-count'           && <FlashCount            onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'go-no-go'              && <GoNoGo                onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'balloon-control'       && <BalloonControl        onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'traffic-light'         && <TrafficLight          onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'emotion-mirror'        && <EmotionMirror         onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'conversation-starter'  && <ConversationStarter   onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'sound-discrimination'  && <SoundDiscrimination   onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'rhyme-detection'       && <RhymeDetection        onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'audio-sequence'        && <AudioSequenceRepeat   onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'sequence-tap'          && <SequenceTap           onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'target-tracking'       && <TargetTracking        onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'finger-gym'            && <FingerGym             onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'category-sort'         && <CategorySort          onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'math-flash'            && <MathFlash             onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'analogies'             && <AnalogiesGame         onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'body-scan'             && <BodyScan              onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'mood-meter'            && <MoodMeter             onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'calm-corner'           && <CalmCorner            onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'emotion-volume'        && <EmotionVolume         onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'daily-goals'           && <DailyGoals            onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'choice-board'          && <ChoiceBoard           onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'pattern-puzzle'        && <PatternPuzzle         onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'if-then'               && <IfThen                onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'problem-solver'        && <ProblemSolver         onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'spelling-bee'          && <SpellingBee           onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'reading-cards'         && <ReadingCards          onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'span-extension'        && <SpanExtension         onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'direction-follow'      && <DirectionFollow       onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'logic-sort'            && <LogicSort             onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'memory-cards'    && <MemoryCards onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'sequence-memory' && <SequenceMemory onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'n-back'          && <NBackTask onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'word-recall'     && <WordRecall onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'breathing'       && <BreathingGuide onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'tap-target'      && <TapTarget onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'simon-says'      && <SimonSays onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'letter-match'    && <LetterMatch    onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'reaction-game'  && <ReactionGame   onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'stroop-test'    && <StroopTest     onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'stop-signal'    && <StopSignal     onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'emotion-cards'     && <EmotionCards      onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'token-board'       && <TokenBoard        onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'self-rating'       && <SelfRating        onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'verbal-fluency'    && <VerbalFluency     onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'social-scenarios'  && <SocialScenarios   onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'behavior-contract' && <BehaviorContract  onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'color-grid'       && <ColorGrid         onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'pattern-match'    && <PatternMatch      onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'word-builder'            && <WordBuilder            onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'auditory-memory'        && <AuditoryMemory        onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'listening-comprehension'&& <ListeningComprehension onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'picture-word-cards'     && <PictureWordCards       onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'number-sequence'        && <NumberSequence         onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'shadow-match'           && <ShadowMatch            onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'story-sequencing'       && <StorySequencing        onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'waiting-game'           && <WaitingGame            onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'social-problem-solving' && <SocialProblemSolving   onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'visual-search'         && <VisualSearch          onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'odd-one-out'           && <OddOneOut             onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'sustained-attention'   && <SustainedAttention    onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'flash-count'           && <FlashCount            onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'go-no-go'              && <GoNoGo                onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'balloon-control'       && <BalloonControl        onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'traffic-light'         && <TrafficLight          onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'emotion-mirror'        && <EmotionMirror         onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'conversation-starter'  && <ConversationStarter   onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'sound-discrimination'  && <SoundDiscrimination   onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'rhyme-detection'       && <RhymeDetection        onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'audio-sequence'        && <AudioSequenceRepeat   onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'sequence-tap'          && <SequenceTap           onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'target-tracking'       && <TargetTracking        onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'finger-gym'            && <FingerGym             onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'category-sort'         && <CategorySort          onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'math-flash'            && <MathFlash             onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'analogies'             && <AnalogiesGame         onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'body-scan'             && <BodyScan              onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'mood-meter'            && <MoodMeter             onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'calm-corner'           && <CalmCorner            onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'emotion-volume'        && <EmotionVolume         onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'daily-goals'           && <DailyGoals            onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'choice-board'          && <ChoiceBoard           onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'pattern-puzzle'        && <PatternPuzzle         onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'if-then'               && <IfThen                onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'problem-solver'        && <ProblemSolver         onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'spelling-bee'          && <SpellingBee           onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'reading-cards'         && <ReadingCards          onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'span-extension'        && <SpanExtension         onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'direction-follow'      && <DirectionFollow       onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'logic-sort'            && <LogicSort             onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
             </div>
           )}
 
@@ -2762,6 +2757,185 @@ ${notes ? `
           </div>
         </div>
       )}
+
+      {/* ── Phase Duration Edit Modal ── */}
+      {showPhaseEdit && (
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center"
+          onClick={() => setShowPhaseEdit(false)}
+        >
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+          <div
+            className="relative rounded-2xl p-6 w-full max-w-sm mx-4 shadow-2xl"
+            style={{ background: '#0F172A', border: '1.5px solid rgba(255,255,255,0.12)' }}
+            onClick={e => e.stopPropagation()}
+            dir="rtl"
+          >
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-white font-black text-base">⚙ ضبط مراحل الجلسة</h3>
+              <button onClick={() => setShowPhaseEdit(false)} className="text-white/40 hover:text-white text-2xl leading-none">×</button>
+            </div>
+            <div className="space-y-3">
+              {SESSION_PHASES.map((ph, i) => (
+                <div
+                  key={ph.id}
+                  className="flex items-center gap-4 rounded-2xl px-4 py-3"
+                  style={{ background: `${ph.color}14`, border: `1px solid ${ph.color}35` }}
+                >
+                  <span className="text-2xl flex-shrink-0">{ph.icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-black text-sm mb-2" style={{ color: ph.color }}>{ph.label}</div>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => setPhaseDurations(prev => prev.map((d, idx) => idx === i ? Math.max(1, d - 1) : d))}
+                        className="w-9 h-9 rounded-xl font-black text-xl flex items-center justify-center transition-all active:scale-90 select-none"
+                        style={{ background: `${ph.color}25`, color: ph.color }}
+                      >−</button>
+                      <div className="flex-1 text-center">
+                        <span className="font-black text-3xl text-white ltr-num">{phaseDurations[i]}</span>
+                        <span className="text-white/40 text-sm mr-1.5">د</span>
+                      </div>
+                      <button
+                        onClick={() => setPhaseDurations(prev => prev.map((d, idx) => idx === i ? Math.min(60, d + 1) : d))}
+                        className="w-9 h-9 rounded-xl font-black text-xl flex items-center justify-center transition-all active:scale-90 select-none"
+                        style={{ background: `${ph.color}25`, color: ph.color }}
+                      >+</button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-5 pt-4 border-t border-white/10 flex items-center justify-between">
+              <div className="text-white/40 text-sm">
+                المجموع: <span className="text-white font-black ltr-num">{phaseDurations.reduce((a, b) => a + b, 0)}</span> دقيقة
+              </div>
+              <button
+                onClick={() => setShowPhaseEdit(false)}
+                className="bg-brand-600 hover:bg-brand-500 text-white font-black px-6 py-2.5 rounded-xl text-sm transition-colors"
+              >
+                تأكيد ✓
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Exercise Config Modal ── */}
+      {exerciseConfigId && (() => {
+        const ex = EXERCISES.find(e => e.id === exerciseConfigId)
+        if (!ex) return null
+        const overrideDiff = exerciseDiffOverrides[exerciseConfigId] ?? difficulty
+        const sessionResults = results.filter(r => r.exerciseType === exerciseConfigId)
+        const avgSessionScore = sessionResults.length
+          ? Math.round(sessionResults.reduce((s, r) => s + r.score, 0) / sessionResults.length)
+          : null
+        return (
+          <div
+            className="fixed inset-0 z-[200] flex items-center justify-center"
+            onClick={() => setExerciseConfigId(null)}
+          >
+            <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+            <div
+              className="relative rounded-2xl p-5 w-full max-w-sm mx-4 shadow-2xl"
+              style={{ background: '#0F172A', border: '1.5px solid rgba(255,255,255,0.12)' }}
+              onClick={e => e.stopPropagation()}
+              dir="rtl"
+            >
+              {/* Header */}
+              <div className="flex items-center gap-3 mb-5">
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0 border ${ex.color}`}>
+                  {ex.icon}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-white font-black text-sm">{ex.labelAr}</div>
+                  <div className="text-white/40 text-xs mt-0.5">{ex.category} • {ex.ageMin}–{ex.ageMax} سنة</div>
+                </div>
+                <button onClick={() => setExerciseConfigId(null)} className="text-white/40 hover:text-white text-2xl leading-none flex-shrink-0">×</button>
+              </div>
+
+              {/* Difficulty override */}
+              <div className="mb-4">
+                <div className="text-white/40 text-[10px] font-black mb-2 uppercase tracking-wider">الصعوبة لهذا التمرين</div>
+                <div className="grid grid-cols-3 gap-2">
+                  {([1,2,3] as const).map(d => (
+                    <button
+                      key={d}
+                      onClick={() => setExerciseDiffOverrides(prev => ({ ...prev, [exerciseConfigId]: d }))}
+                      className="py-2.5 rounded-xl text-xs font-black transition-all"
+                      style={{
+                        background: overrideDiff === d
+                          ? d === 1 ? 'rgba(22,163,74,0.25)' : d === 2 ? 'rgba(217,119,6,0.25)' : 'rgba(220,38,38,0.25)'
+                          : 'rgba(255,255,255,0.07)',
+                        color: overrideDiff === d
+                          ? d === 1 ? '#4ade80' : d === 2 ? '#fbbf24' : '#f87171'
+                          : 'rgba(255,255,255,0.35)',
+                        border: overrideDiff === d
+                          ? `1px solid ${d === 1 ? '#16a34a55' : d === 2 ? '#d9770655' : '#dc262655'}`
+                          : '1px solid transparent',
+                      }}
+                    >
+                      {d === 1 ? '🟢 سهل' : d === 2 ? '🟡 متوسط' : '🔴 صعب'}
+                    </button>
+                  ))}
+                </div>
+                {overrideDiff !== difficulty && (
+                  <button
+                    onClick={() => setExerciseDiffOverrides(prev => {
+                      const next = { ...prev }
+                      delete next[exerciseConfigId]
+                      return next
+                    })}
+                    className="mt-2 text-white/30 hover:text-white/60 text-[10px] font-bold transition-colors"
+                  >
+                    ← العودة للمستوى العام ({difficulty === 1 ? 'سهل' : difficulty === 2 ? 'متوسط' : 'صعب'})
+                  </button>
+                )}
+              </div>
+
+              {/* Stats from this session + history */}
+              {(sessionResults.length > 0 || (gameUsageCounts[exerciseConfigId] ?? 0) > 0) && (
+                <div className="grid grid-cols-2 gap-2 mb-4">
+                  {sessionResults.length > 0 && (
+                    <>
+                      <div className="bg-white/5 rounded-xl p-3 text-center">
+                        <div className="font-black text-xl text-brand-400 ltr-num">{sessionResults.length}</div>
+                        <div className="text-white/35 text-[10px] mt-0.5">مرة الجلسة الحالية</div>
+                      </div>
+                      {avgSessionScore !== null && (
+                        <div className="bg-white/5 rounded-xl p-3 text-center">
+                          <div className={`font-black text-xl ltr-num ${avgSessionScore >= 80 ? 'text-emerald-400' : avgSessionScore >= 60 ? 'text-amber-400' : 'text-red-400'}`}>
+                            {avgSessionScore}%
+                          </div>
+                          <div className="text-white/35 text-[10px] mt-0.5">متوسط الدرجات</div>
+                        </div>
+                      )}
+                    </>
+                  )}
+                  {(gameUsageCounts[exerciseConfigId] ?? 0) > 0 && sessionResults.length === 0 && (
+                    <div className="col-span-2 bg-white/5 rounded-xl p-3 flex items-center justify-between">
+                      <span className="text-white/40 text-xs">الجلسات السابقة</span>
+                      <span className="text-brand-400 font-black text-sm ltr-num">{gameUsageCounts[exerciseConfigId]} مرة</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Launch button */}
+              <button
+                onClick={() => {
+                  if (!running) startSession()
+                  setActiveView({ type: 'exercise', id: exerciseConfigId })
+                  setExerciseConfigId(null)
+                }}
+                className="w-full py-3 rounded-xl font-black text-sm text-white transition-all hover:-translate-y-0.5"
+                style={{ background: 'linear-gradient(135deg,#7C5CFC,#9A7BFD)', boxShadow: '0 4px 20px rgba(124,92,252,0.35)' }}
+              >
+                {ex.icon} تشغيل التمرين الآن →
+              </button>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Achievement Toast */}
       {achievementToast && (

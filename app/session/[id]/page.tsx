@@ -815,363 +815,344 @@ ${notes ? `<h2>ملاحظات المعالج</h2><div class="notes">${notes.repl
         </div>
       )}
 
-      {/* Header */}
-      <header className="bg-gray-900 border-b border-white/10 px-4 py-3 flex items-center gap-4">
-        <button onClick={() => router.back()} className="text-white/50 hover:text-white transition-colors">
+      {/* ── Header row ── */}
+      <header className="bg-gray-900 border-b border-white/10 px-4 py-2.5 flex items-center gap-3">
+        {/* Close */}
+        <button onClick={() => router.back()} className="text-white/50 hover:text-white transition-colors flex-shrink-0">
           <X className="w-5 h-5" />
         </button>
 
-        <div className="flex-1 flex items-center gap-4">
-          <div className="flex-1 min-w-0 relative">
-            <div className="flex items-center gap-2 flex-wrap">
-              <button
-                onClick={() => setProfileOpen(o => !o)}
-                className="flex items-center gap-1.5 font-black text-white text-sm hover:text-brand-300 transition-colors"
-              >
-                <h1>{studentName || 'جلسة تفاعلية'}</h1>
-                <ChevronDown className={`w-3 h-3 transition-transform ${profileOpen ? 'rotate-180' : ''}`} />
-              </button>
-              {studentDiagnosis && (
-                <span className="text-[10px] bg-brand-900/60 text-brand-300 border border-brand-500/40 px-1.5 py-0.5 rounded-full font-bold">
-                  {DIAG_LABELS[studentDiagnosis] || studentDiagnosis}
-                </span>
-              )}
-              {studentSeverity > 0 && (
-                <span className="text-[10px] bg-white/10 text-white/50 px-1.5 py-0.5 rounded-full font-bold">
-                  {SEVERITY_LABELS[studentSeverity]}
-                </span>
-              )}
-              {sessionCount > 0 && (
-                <span className="text-[10px] bg-white/10 text-white/40 px-1.5 py-0.5 rounded-full font-bold">
-                  ج.{sessionCount} سابقة
-                </span>
-              )}
-            </div>
-            <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
-              {appointmentType && SESSION_TYPE_CFG[appointmentType] && (
-                <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border flex items-center gap-1 ${SESSION_TYPE_CFG[appointmentType].color}`}>
-                  {SESSION_TYPE_CFG[appointmentType].isAssessment && <ClipboardList className="w-2.5 h-2.5" />}
-                  {SESSION_TYPE_CFG[appointmentType].label}
-                </span>
-              )}
-              {profile && Object.entries(profile.diagnosedDifficulties)
-                .filter(([, v]) => v !== 'none')
-                .map(([k, v]) => (
-                  <span key={k} className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
-                    v === 'severe'   ? 'bg-red-900/60 text-red-300' :
-                    v === 'moderate' ? 'bg-orange-900/60 text-orange-300' :
-                                       'bg-yellow-900/60 text-yellow-300'
-                  }`}>
-                    {DIFFICULTY_LABELS_AR[k as keyof typeof DIFFICULTY_LABELS_AR]}
-                  </span>
-                ))
-              }
-            </div>
-
-            {/* ── Quick Profile Card ── */}
-            {profileOpen && (
-              <div
-                className="absolute top-full mt-2 right-0 z-[70] rounded-2xl p-4 w-72 shadow-2xl"
-                style={{
-                  background: '#111827',
-                  border: '1.5px solid rgba(255,255,255,0.12)',
-                  boxShadow: '0 16px 48px rgba(0,0,0,0.7)',
-                }}
-                dir="rtl"
-              >
-                {/* Identity row */}
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 rounded-2xl bg-brand-900/60 border border-brand-500/30 flex items-center justify-center flex-shrink-0">
-                    <User className="w-6 h-6 text-brand-400" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-white font-black text-sm truncate">{studentName || '—'}</div>
-                    <div className="text-white/50 text-xs mt-0.5">
-                      {studentAge} سنة • {DIAG_LABELS[studentDiagnosis] || studentDiagnosis || 'لا يوجد تشخيص'}
-                    </div>
-                    <div className="flex items-center gap-1.5 mt-1">
-                      {studentSeverity > 0 && (
-                        <span className="text-[10px] bg-brand-900/60 text-brand-300 border border-brand-500/30 px-1.5 py-0.5 rounded-full font-bold">
-                          {SEVERITY_LABELS[studentSeverity]}
-                        </span>
-                      )}
-                      {sessionCount > 0 && (
-                        <span className="text-[10px] text-white/35 font-medium">{sessionCount} جلسة سابقة</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Past 3 sessions */}
-                {pastSessions.length > 0 && (
-                  <div className="mb-3">
-                    <div className="text-white/35 text-[10px] font-black mb-2 uppercase tracking-wider">آخر 3 جلسات</div>
-                    <div className="space-y-1.5">
-                      {pastSessions.map((s, i) => (
-                        <div key={i} className="flex items-center gap-2">
-                          <div className="flex-1 bg-white/10 rounded-full h-1.5 overflow-hidden">
-                            <div
-                              className="h-full rounded-full"
-                              style={{
-                                width: `${s.score}%`,
-                                background: s.score >= 80 ? '#22C55E' : s.score >= 60 ? '#F59E0B' : '#EF4444',
-                              }}
-                            />
-                          </div>
-                          <span className="text-white/60 text-[10px] font-black ltr-num w-8 text-left">{s.score}%</span>
-                          <span className="text-white/25 text-[9px] ltr-num flex-shrink-0">{s.date}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Assessment difficulties */}
-                {profile && Object.entries(profile.diagnosedDifficulties).some(([, v]) => v !== 'none') && (
-                  <div className="border-t border-white/10 pt-3 mb-3">
-                    <div className="text-white/35 text-[10px] font-black mb-2 uppercase tracking-wider">صعوبات موثقة</div>
-                    <div className="flex flex-wrap gap-1">
-                      {Object.entries(profile.diagnosedDifficulties)
-                        .filter(([, v]) => v !== 'none')
-                        .map(([k, v]) => (
-                          <span key={k} className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${
-                            v === 'severe'   ? 'bg-red-900/50 text-red-300 border-red-500/30' :
-                            v === 'moderate' ? 'bg-orange-900/50 text-orange-300 border-orange-500/30' :
-                                               'bg-yellow-900/50 text-yellow-300 border-yellow-500/30'
-                          }`}>
-                            {DIFFICULTY_LABELS_AR[k as keyof typeof DIFFICULTY_LABELS_AR]}
-                          </span>
-                        ))
-                      }
-                    </div>
-                  </div>
-                )}
-
-                {/* Pinned notes placeholder */}
-                <div className={`${(profile && Object.entries(profile.diagnosedDifficulties).some(([, v]) => v !== 'none')) || pastSessions.length > 0 ? 'border-t border-white/10 pt-3' : ''}`}>
-                  <div className="text-white/35 text-[10px] font-black mb-1 uppercase tracking-wider">ملاحظات</div>
-                  {notes ? (
-                    <p className="text-white/50 text-[10px] leading-relaxed line-clamp-3">{notes}</p>
-                  ) : (
-                    <p className="text-white/25 text-[10px] italic">لا توجد ملاحظات بعد</p>
-                  )}
-                </div>
-
-                <button
-                  onClick={() => setProfileOpen(false)}
-                  className="mt-3 w-full text-white/30 hover:text-white/60 text-[10px] font-bold transition-colors pt-2 border-t border-white/10"
-                >
-                  إغلاق ✕
-                </button>
-              </div>
+        {/* Student name + profile dropdown */}
+        <div className="flex-1 min-w-0 relative">
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={() => setProfileOpen(o => !o)}
+              className="flex items-center gap-1.5 font-black text-white text-sm hover:text-brand-300 transition-colors"
+            >
+              <h1>{studentName || 'جلسة تفاعلية'}</h1>
+              <ChevronDown className={`w-3 h-3 transition-transform ${profileOpen ? 'rotate-180' : ''}`} />
+            </button>
+            {studentDiagnosis && (
+              <span className="text-[10px] bg-brand-900/60 text-brand-300 border border-brand-500/40 px-1.5 py-0.5 rounded-full font-bold">
+                {DIAG_LABELS[studentDiagnosis] || studentDiagnosis}
+              </span>
+            )}
+            {studentSeverity > 0 && (
+              <span className="text-[10px] bg-white/10 text-white/50 px-1.5 py-0.5 rounded-full font-bold">
+                {SEVERITY_LABELS[studentSeverity]}
+              </span>
+            )}
+            {sessionCount > 0 && (
+              <span className="text-[10px] bg-white/10 text-white/40 px-1.5 py-0.5 rounded-full font-bold">
+                ج.{sessionCount} سابقة
+              </span>
+            )}
+            {appointmentType && SESSION_TYPE_CFG[appointmentType] && (
+              <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full border flex items-center gap-1 ${SESSION_TYPE_CFG[appointmentType].color}`}>
+                {SESSION_TYPE_CFG[appointmentType].isAssessment && <ClipboardList className="w-2.5 h-2.5" />}
+                {SESSION_TYPE_CFG[appointmentType].label}
+              </span>
             )}
           </div>
 
-          {/* Timer */}
-          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg ${
-            running ? 'bg-green-900/40 border border-green-500/40' : 'bg-white/5 border border-white/10'
-          }`}>
-            <Clock className="w-4 h-4 text-green-400" />
-            <span className="font-black text-lg ltr-num">{formatTime(elapsed)}</span>
-          </div>
-
-          {/* Prompt Cards button */}
-          <div className="relative flex-shrink-0">
-            <button
-              onClick={() => setPromptPickerOpen(p => !p)}
-              className={`flex items-center gap-1.5 font-black px-3 py-1.5 rounded-lg text-xs transition-all ${
-                promptPickerOpen
-                  ? 'bg-purple-500 text-white ring-2 ring-purple-400/50'
-                  : 'bg-white/10 hover:bg-white/20 text-white/70'
-              }`}
-              title="بطاقات التحفيز"
+          {/* ── Quick Profile Card ── */}
+          {profileOpen && (
+            <div
+              className="absolute top-full mt-2 left-0 z-[70] rounded-2xl p-4 w-72 shadow-2xl"
+              style={{
+                background: '#111827',
+                border: '1.5px solid rgba(255,255,255,0.12)',
+                boxShadow: '0 16px 48px rgba(0,0,0,0.7)',
+              }}
+              dir="rtl"
             >
-              🃏 بطاقة
-            </button>
-            {promptPickerOpen && (
-              <div
-                className="absolute top-full mt-2 left-0 z-[70] rounded-2xl overflow-hidden shadow-2xl"
-                style={{ background: '#111827', border: '1.5px solid rgba(255,255,255,0.12)', minWidth: 200 }}
-                dir="rtl"
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 rounded-2xl bg-brand-900/60 border border-brand-500/30 flex items-center justify-center flex-shrink-0">
+                  <User className="w-6 h-6 text-brand-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-white font-black text-sm truncate">{studentName || '—'}</div>
+                  <div className="text-white/50 text-xs mt-0.5">
+                    {studentAge} سنة • {DIAG_LABELS[studentDiagnosis] || studentDiagnosis || 'لا يوجد تشخيص'}
+                  </div>
+                  <div className="flex items-center gap-1.5 mt-1">
+                    {studentSeverity > 0 && (
+                      <span className="text-[10px] bg-brand-900/60 text-brand-300 border border-brand-500/30 px-1.5 py-0.5 rounded-full font-bold">
+                        {SEVERITY_LABELS[studentSeverity]}
+                      </span>
+                    )}
+                    {sessionCount > 0 && (
+                      <span className="text-[10px] text-white/35 font-medium">{sessionCount} جلسة سابقة</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {pastSessions.length > 0 && (
+                <div className="mb-3">
+                  <div className="text-white/35 text-[10px] font-black mb-2 uppercase tracking-wider">آخر 3 جلسات</div>
+                  <div className="space-y-1.5">
+                    {pastSessions.map((s, i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <div className="flex-1 bg-white/10 rounded-full h-1.5 overflow-hidden">
+                          <div
+                            className="h-full rounded-full"
+                            style={{
+                              width: `${s.score}%`,
+                              background: s.score >= 80 ? '#22C55E' : s.score >= 60 ? '#F59E0B' : '#EF4444',
+                            }}
+                          />
+                        </div>
+                        <span className="text-white/60 text-[10px] font-black ltr-num w-8 text-left">{s.score}%</span>
+                        <span className="text-white/25 text-[9px] ltr-num flex-shrink-0">{s.date}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {profile && Object.entries(profile.diagnosedDifficulties).some(([, v]) => v !== 'none') && (
+                <div className="border-t border-white/10 pt-3 mb-3">
+                  <div className="text-white/35 text-[10px] font-black mb-2 uppercase tracking-wider">صعوبات موثقة</div>
+                  <div className="flex flex-wrap gap-1">
+                    {Object.entries(profile.diagnosedDifficulties)
+                      .filter(([, v]) => v !== 'none')
+                      .map(([k, v]) => (
+                        <span key={k} className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${
+                          v === 'severe'   ? 'bg-red-900/50 text-red-300 border-red-500/30' :
+                          v === 'moderate' ? 'bg-orange-900/50 text-orange-300 border-orange-500/30' :
+                                             'bg-yellow-900/50 text-yellow-300 border-yellow-500/30'
+                        }`}>
+                          {DIFFICULTY_LABELS_AR[k as keyof typeof DIFFICULTY_LABELS_AR]}
+                        </span>
+                      ))
+                    }
+                  </div>
+                </div>
+              )}
+
+              <div className={`${(profile && Object.entries(profile.diagnosedDifficulties).some(([, v]) => v !== 'none')) || pastSessions.length > 0 ? 'border-t border-white/10 pt-3' : ''}`}>
+                <div className="text-white/35 text-[10px] font-black mb-1 uppercase tracking-wider">ملاحظات</div>
+                {notes ? (
+                  <p className="text-white/50 text-[10px] leading-relaxed line-clamp-3">{notes}</p>
+                ) : (
+                  <p className="text-white/25 text-[10px] italic">لا توجد ملاحظات بعد</p>
+                )}
+              </div>
+
+              <button
+                onClick={() => setProfileOpen(false)}
+                className="mt-3 w-full text-white/30 hover:text-white/60 text-[10px] font-bold transition-colors pt-2 border-t border-white/10"
               >
-                {PROMPT_CARDS.map(card => (
+                إغلاق ✕
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Session Timer */}
+        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg flex-shrink-0 ${
+          running ? 'bg-green-900/40 border border-green-500/40' : 'bg-white/5 border border-white/10'
+        }`}>
+          <Clock className="w-4 h-4 text-green-400" />
+          <span className="font-black text-lg ltr-num">{formatTime(elapsed)}</span>
+        </div>
+
+        {/* Average score */}
+        {results.length > 0 && (
+          <div className="text-center flex-shrink-0">
+            <div className="font-black text-brand-400 text-lg ltr-num">{avgScore}%</div>
+            <div className="text-white/40 text-[10px]">متوسط</div>
+          </div>
+        )}
+
+        {/* Start */}
+        {!running && (
+          <button onClick={startSession}
+            className="bg-green-600 hover:bg-green-500 text-white font-black px-4 py-1.5 rounded-lg text-sm transition-colors flex-shrink-0">
+            ▶ ابدأ
+          </button>
+        )}
+
+        {/* Save */}
+        <button onClick={saveSession} disabled={saving}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl font-black text-sm transition-all shadow-lg hover:-translate-y-0.5 flex-shrink-0 ${
+            saved
+              ? 'bg-green-600 text-white shadow-green-900/40'
+              : saving
+              ? 'bg-brand-700 text-white/80 cursor-wait'
+              : 'bg-gradient-to-r from-brand-500 to-[#9A7BFD] text-white shadow-brand hover:shadow-[0_6px_20px_-4px_rgba(124,92,252,0.5)]'
+          }`}>
+          <Save className="w-4 h-4" />
+          {saving ? '...' : saved ? '✓ محفوظ' : 'حفظ'}
+        </button>
+      </header>
+
+      {/* ── Toolbar strip ── */}
+      <div className="bg-gray-900/95 border-b border-white/[0.08] px-3 py-1.5 flex items-center gap-1.5 flex-wrap">
+
+        {/* Group 1 — Camera */}
+        {jitsiUrl && (
+          <button
+            onClick={() => setJitsiEmbedded(e => !e)}
+            className={`flex items-center gap-1.5 font-black px-2.5 py-1.5 rounded-lg text-xs transition-all flex-shrink-0 ${
+              jitsiEmbedded
+                ? 'bg-green-600 text-white ring-1 ring-green-400/50'
+                : 'bg-white/10 hover:bg-white/20 text-white/60'
+            }`}
+            title="المقابلة المرئية"
+          >
+            <Video className="w-3.5 h-3.5" />
+            {jitsiEmbedded ? '● مقابلة' : 'مقابلة'}
+          </button>
+        )}
+
+        <div className="w-px h-5 bg-white/15 flex-shrink-0" />
+
+        {/* Group 2 — Drawing & Cards & Timer */}
+        <button
+          onClick={() => setShowWhiteboard(w => !w)}
+          className={`flex items-center gap-1.5 font-black px-2.5 py-1.5 rounded-lg text-xs transition-all flex-shrink-0 ${
+            showWhiteboard
+              ? 'bg-amber-500 text-white ring-1 ring-amber-400/50'
+              : 'bg-white/10 hover:bg-white/20 text-white/60'
+          }`}
+          title="السبورة التفاعلية"
+        >
+          <PenLine className="w-3.5 h-3.5" />
+          سبورة
+        </button>
+
+        <div className="relative flex-shrink-0">
+          <button
+            onClick={() => setPromptPickerOpen(p => !p)}
+            className={`flex items-center gap-1.5 font-black px-2.5 py-1.5 rounded-lg text-xs transition-all ${
+              promptPickerOpen
+                ? 'bg-purple-500 text-white ring-1 ring-purple-400/50'
+                : 'bg-white/10 hover:bg-white/20 text-white/60'
+            }`}
+            title="بطاقات التحفيز"
+          >
+            🃏 بطاقة
+          </button>
+          {promptPickerOpen && (
+            <div
+              className="absolute top-full mt-2 left-0 z-[70] rounded-2xl overflow-hidden shadow-2xl"
+              style={{ background: '#111827', border: '1.5px solid rgba(255,255,255,0.12)', minWidth: 200 }}
+              dir="rtl"
+            >
+              {PROMPT_CARDS.map(card => (
+                <button
+                  key={card.id}
+                  onClick={() => { setPromptCard(card); setPromptPickerOpen(false) }}
+                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/10 transition-colors text-right"
+                >
+                  <span className="text-2xl">{card.emoji}</span>
+                  <span className="text-white font-black text-sm">{card.text}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="relative flex-shrink-0">
+          <button
+            onClick={() => setTimerPickerOpen(p => !p)}
+            className={`flex items-center gap-1.5 font-black px-2.5 py-1.5 rounded-lg text-xs transition-all ${
+              showStudentTimer
+                ? 'bg-orange-500 text-white ring-1 ring-orange-400/50'
+                : 'bg-white/10 hover:bg-white/20 text-white/60'
+            }`}
+            title="مؤقت الطالب"
+          >
+            ⏱ {showStudentTimer ? formatTime(studentTimerLeft) : 'مؤقت'}
+          </button>
+          {timerPickerOpen && (
+            <div
+              className="absolute top-full mt-2 left-0 z-[70] rounded-2xl p-3 shadow-2xl"
+              style={{ background: '#111827', border: '1.5px solid rgba(255,255,255,0.12)', minWidth: 180 }}
+              dir="rtl"
+            >
+              <p className="text-white/40 text-[10px] font-black mb-2">اختر مدة المؤقت</p>
+              <div className="grid grid-cols-2 gap-1.5 mb-2">
+                {[[60,'1 دقيقة'],[120,'2 دقيقة'],[180,'3 دقائق'],[300,'5 دقائق']].map(([s,l]) => (
                   <button
-                    key={card.id}
-                    onClick={() => { setPromptCard(card); setPromptPickerOpen(false) }}
-                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/10 transition-colors text-right"
+                    key={s}
+                    onClick={() => startStudentTimer(s as number)}
+                    className="py-2 rounded-xl text-xs font-black text-white transition-all hover:ring-1 hover:ring-orange-400"
+                    style={{ background: 'rgba(255,255,255,0.08)' }}
                   >
-                    <span className="text-2xl">{card.emoji}</span>
-                    <span className="text-white font-black text-sm">{card.text}</span>
+                    {l as string}
                   </button>
                 ))}
               </div>
-            )}
-          </div>
-
-          {/* Whiteboard button */}
-          <button
-            onClick={() => setShowWhiteboard(w => !w)}
-            className={`flex items-center gap-1.5 font-black px-3 py-1.5 rounded-lg text-xs transition-all flex-shrink-0 ${
-              showWhiteboard
-                ? 'bg-amber-500 text-white ring-2 ring-amber-400/50'
-                : 'bg-white/10 hover:bg-white/20 text-white/70'
-            }`}
-            title="السبورة التفاعلية"
-          >
-            <PenLine className="w-3.5 h-3.5" />
-            سبورة
-          </button>
-
-          {jitsiUrl && (
-            <button
-              onClick={() => setJitsiEmbedded(e => !e)}
-              className={`flex items-center gap-1.5 font-black px-3 py-1.5 rounded-lg text-xs transition-all flex-shrink-0 ${
-                jitsiEmbedded
-                  ? 'bg-green-500 text-white ring-2 ring-green-400/50'
-                  : 'bg-green-700 hover:bg-green-600 text-white'
-              }`}
-              title="تضمين كاميرا الطالب في الصفحة"
-            >
-              <Video className="w-3.5 h-3.5" />
-              {jitsiEmbedded ? 'المقابلة مفتوحة ●' : 'فتح المقابلة'}
-            </button>
-          )}
-          {!running && (
-            <button onClick={startSession}
-              className="bg-green-600 hover:bg-green-500 text-white font-black px-4 py-1.5 rounded-lg text-sm transition-colors">
-              ▶ ابدأ الجلسة
-            </button>
-          )}
-        </div>
-
-        <div className="flex items-center gap-3">
-          {/* Difficulty */}
-          <div className="flex items-center gap-1">
-            {([1,2,3] as const).map(d => (
-              <button key={d} onClick={() => setDifficulty(d)}
-                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-colors ${
-                  difficulty === d ? 'bg-brand-600 text-white' : 'bg-white/10 text-white/50'
-                }`}>
-                {d === 1 ? 'سهل' : d === 2 ? 'متوسط' : 'صعب'}
-              </button>
-            ))}
-          </div>
-
-          {/* Score */}
-          {results.length > 0 && (
-            <div className="text-center">
-              <div className="font-black text-brand-400 text-lg">{avgScore}%</div>
-              <div className="text-white/40 text-xs">متوسط</div>
+              {showStudentTimer && (
+                <button
+                  onClick={() => { setShowStudentTimer(false); setStudentTimerRunning(false); setTimerPickerOpen(false) }}
+                  className="w-full py-1.5 rounded-xl text-[10px] font-black text-red-400 transition-all"
+                  style={{ background: 'rgba(239,68,68,0.1)' }}
+                >
+                  إيقاف المؤقت
+                </button>
+              )}
             </div>
           )}
-
-          <button
-            onClick={() => setKidMode(m => !m)}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl font-black text-sm transition-all ${
-              kidMode
-                ? 'bg-gradient-to-r from-[#7C5CFC] to-[#9A7BFD] text-white shadow-[0_4px_12px_-2px_rgba(124,92,252,0.4)]'
-                : 'bg-white/10 text-white/60 hover:bg-white/20 hover:text-white'
-            }`}
-            title="وضع الطفل — شبكة ألعاب كبيرة للطالب"
-          >
-            🎮 {kidMode ? 'وضع الأستاذ' : 'وضع الطفل'}
-          </button>
-
-          <button
-            onClick={() => setFocusMode(m => !m)}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl font-black text-sm transition-all ${
-              focusMode
-                ? 'bg-gradient-to-r from-[#FF8C65] to-[#FFBA44] text-white shadow-[0_4px_12px_-2px_rgba(255,140,101,0.4)]'
-                : 'bg-white/10 text-white/60 hover:bg-white/20 hover:text-white'
-            }`}
-            title="وضع التركيز — يخفي عناصر التشتيت"
-          >
-            🎯 {focusMode ? 'تركيز فعّال' : 'تركيز'}
-          </button>
-
-          {/* Student Timer button (#9) */}
-          <div className="relative flex-shrink-0">
-            <button
-              onClick={() => setTimerPickerOpen(p => !p)}
-              className={`flex items-center gap-1.5 font-black px-3 py-2 rounded-xl text-sm transition-all ${
-                showStudentTimer
-                  ? 'bg-orange-500 text-white ring-2 ring-orange-400/50'
-                  : 'bg-white/10 text-white/60 hover:bg-white/20 hover:text-white'
-              }`}
-              title="مؤقت الطالب"
-            >
-              ⏱ {showStudentTimer ? formatTime(studentTimerLeft) : 'مؤقت'}
-            </button>
-            {timerPickerOpen && (
-              <div
-                className="absolute top-full mt-2 left-0 z-[70] rounded-2xl p-3 shadow-2xl"
-                style={{ background: '#111827', border: '1.5px solid rgba(255,255,255,0.12)', minWidth: 180 }}
-                dir="rtl"
-              >
-                <p className="text-white/40 text-[10px] font-black mb-2">اختر مدة المؤقت</p>
-                <div className="grid grid-cols-2 gap-1.5 mb-2">
-                  {[[60,'1 دقيقة'],[120,'2 دقيقة'],[180,'3 دقائق'],[300,'5 دقائق']].map(([s,l]) => (
-                    <button
-                      key={s}
-                      onClick={() => startStudentTimer(s as number)}
-                      className="py-2 rounded-xl text-xs font-black text-white transition-all hover:ring-1 hover:ring-orange-400"
-                      style={{ background: 'rgba(255,255,255,0.08)' }}
-                    >
-                      {l as string}
-                    </button>
-                  ))}
-                </div>
-                {showStudentTimer && (
-                  <button
-                    onClick={() => { setShowStudentTimer(false); setStudentTimerRunning(false); setTimerPickerOpen(false) }}
-                    className="w-full py-1.5 rounded-xl text-[10px] font-black text-red-400 transition-all"
-                    style={{ background: 'rgba(239,68,68,0.1)' }}
-                  >
-                    إيقاف المؤقت
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Session Report button (#8) */}
-          {results.length > 0 && (
-            <button
-              onClick={printSessionReport}
-              className="flex items-center gap-1.5 font-black px-3 py-2 rounded-xl text-sm transition-all bg-white/10 text-white/60 hover:bg-white/20 hover:text-white flex-shrink-0"
-              title="طباعة تقرير الجلسة"
-            >
-              📄 تقرير
-            </button>
-          )}
-
-          <button onClick={saveSession} disabled={saving}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-black text-sm transition-all shadow-lg hover:-translate-y-0.5 ${
-              saved
-                ? 'bg-green-600 text-white shadow-green-900/40'
-                : saving
-                ? 'bg-brand-700 text-white/80 cursor-wait'
-                : 'bg-gradient-to-r from-brand-500 to-[#9A7BFD] text-white shadow-brand hover:shadow-[0_6px_20px_-4px_rgba(124,92,252,0.5)]'
-            }`}>
-            <Save className="w-4 h-4" />
-            {saving ? 'جار الحفظ...' : saved ? 'تم الحفظ ✓' : 'حفظ الجلسة'}
-          </button>
         </div>
-      </header>
 
-      {/* Jitsi active indicator */}
-      {jitsiEmbedded && (
-        <div className="bg-green-900/30 border-b border-green-500/20 px-4 py-1.5 flex items-center justify-between gap-4">
-          <p className="text-green-300 text-xs font-bold flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse inline-block" />
-            المقابلة المرئية مفعّلة — الطالب يظهر في المنطقة الرئيسية، وعند اختيار تمرين يتقلص إلى الزاوية
-          </p>
-          <button onClick={() => setJitsiEmbedded(false)}
-            className="text-green-400/60 text-xs hover:text-green-300 transition-colors">
-            إغلاق
-          </button>
+        <div className="w-px h-5 bg-white/15 flex-shrink-0" />
+
+        {/* Group 3 — Modes */}
+        <button
+          onClick={() => setKidMode(m => !m)}
+          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg font-black text-xs transition-all flex-shrink-0 ${
+            kidMode
+              ? 'bg-gradient-to-r from-[#7C5CFC] to-[#9A7BFD] text-white shadow-[0_4px_12px_-2px_rgba(124,92,252,0.4)]'
+              : 'bg-white/10 text-white/60 hover:bg-white/20'
+          }`}
+          title="وضع الطفل"
+        >
+          🎮 {kidMode ? 'وضع الأستاذ' : 'وضع الطفل'}
+        </button>
+
+        <button
+          onClick={() => setFocusMode(m => !m)}
+          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg font-black text-xs transition-all flex-shrink-0 ${
+            focusMode
+              ? 'bg-gradient-to-r from-[#FF8C65] to-[#FFBA44] text-white shadow-[0_4px_12px_-2px_rgba(255,140,101,0.4)]'
+              : 'bg-white/10 text-white/60 hover:bg-white/20'
+          }`}
+          title="وضع التركيز"
+        >
+          🎯 {focusMode ? 'تركيز ●' : 'تركيز'}
+        </button>
+
+        <div className="w-px h-5 bg-white/15 flex-shrink-0" />
+
+        {/* Group 4 — Difficulty */}
+        <div className="flex items-center gap-1 flex-shrink-0">
+          {([1,2,3] as const).map(d => (
+            <button key={d} onClick={() => setDifficulty(d)}
+              className={`px-2 py-1 rounded-lg text-xs font-bold transition-colors ${
+                difficulty === d ? 'bg-brand-600 text-white' : 'bg-white/10 text-white/50 hover:bg-white/20'
+              }`}>
+              {d === 1 ? 'سهل' : d === 2 ? 'متوسط' : 'صعب'}
+            </button>
+          ))}
         </div>
-      )}
+
+        <div className="flex-1" />
+
+        {/* Report */}
+        {results.length > 0 && (
+          <button
+            onClick={printSessionReport}
+            className="flex items-center gap-1.5 font-black px-2.5 py-1.5 rounded-lg text-xs transition-all bg-white/10 text-white/60 hover:bg-white/20 flex-shrink-0"
+            title="طباعة تقرير الجلسة"
+          >
+            📄 تقرير
+          </button>
+        )}
+      </div>
 
       {/* ── Session Phase Progress Bar ── */}
       {running && (
@@ -1822,14 +1803,14 @@ ${notes ? `<h2>ملاحظات المعالج</h2><div class="notes">${notes.repl
             <div
               className="rounded-2xl overflow-hidden"
               style={
-                activeView
+                (activeView || showWhiteboard || promptCard)
                   ? {
                       position: 'fixed',
                       bottom: 20,
                       left: 20,
                       width: 280,
                       height: 210,
-                      zIndex: 60,
+                      zIndex: promptCard ? 320 : 60,
                       boxShadow: '0 8px 40px rgba(0,0,0,0.8)',
                       border: '2px solid rgba(255,255,255,0.15)',
                       borderRadius: 16,
@@ -1848,7 +1829,7 @@ ${notes ? `<h2>ملاحظات المعالج</h2><div class="notes">${notes.repl
                 allow="camera *; microphone *; display-capture *; fullscreen *"
                 allowFullScreen
               />
-              {activeView && (
+              {(activeView || showWhiteboard || promptCard) && (
                 <button
                   onClick={() => setJitsiEmbedded(false)}
                   className="absolute top-2 right-2 bg-black/70 hover:bg-black/90 text-white font-bold text-xs px-2 py-1 rounded-lg transition-colors"

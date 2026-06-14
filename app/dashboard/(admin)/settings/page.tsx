@@ -349,8 +349,10 @@ export default function AdminSettingsPage() {
                 type="number"
                 value={settings.discountPct}
                 onChange={v => {
-                  const n = Math.min(50, Math.max(0, parseInt(v, 10) || 0))
-                  setSettings(prev => prev ? { ...prev, discountPct: n } : prev)
+                  if (v === '') return
+                  const n = parseInt(v, 10)
+                  if (isNaN(n)) return
+                  setSettings(prev => prev ? { ...prev, discountPct: Math.min(50, Math.max(0, n)) } : prev)
                 }}
                 min={0}
                 max={50}
@@ -432,8 +434,10 @@ export default function AdminSettingsPage() {
               type="number"
               value={settings.offerDurationDays}
               onChange={v => {
-                const n = Math.min(30, Math.max(1, parseInt(v, 10) || 1))
-                setSettings(prev => prev ? { ...prev, offerDurationDays: n } : prev)
+                if (v === '') return
+                const n = parseInt(v, 10)
+                if (isNaN(n)) return
+                setSettings(prev => prev ? { ...prev, offerDurationDays: Math.min(30, Math.max(1, n)) } : prev)
               }}
               min={1}
               max={30}
@@ -495,8 +499,10 @@ export default function AdminSettingsPage() {
                 type="number"
                 value={settings.sessionsPerWeek ?? 4}
                 onChange={v => {
-                  const n = Math.min(10, Math.max(1, parseInt(v, 10) || 1))
-                  setSettings(prev => prev ? { ...prev, sessionsPerWeek: n } : prev)
+                  if (v === '') return
+                  const n = parseInt(v, 10)
+                  if (isNaN(n)) return
+                  setSettings(prev => prev ? { ...prev, sessionsPerWeek: Math.min(10, Math.max(1, n)) } : prev)
                 }}
                 min={1}
                 max={10}
@@ -520,8 +526,10 @@ export default function AdminSettingsPage() {
                 type="number"
                 value={settings.sessionsPerMonth ?? 16}
                 onChange={v => {
-                  const n = Math.min(50, Math.max(1, parseInt(v, 10) || 1))
-                  setSettings(prev => prev ? { ...prev, sessionsPerMonth: n } : prev)
+                  if (v === '') return
+                  const n = parseInt(v, 10)
+                  if (isNaN(n)) return
+                  setSettings(prev => prev ? { ...prev, sessionsPerMonth: Math.min(50, Math.max(1, n)) } : prev)
                 }}
                 min={1}
                 max={50}

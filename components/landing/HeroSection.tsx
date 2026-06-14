@@ -245,7 +245,7 @@ export default function HeroSection() {
                 {t.hero.cta1}
                 {isAr ? <ArrowLeft className="w-5 h-5" /> : <ArrowRight className="w-5 h-5" />}
               </Link>
-              <Link href="#how-it-works"
+              <Link href="/demo"
                 className="flex items-center gap-2 bg-white/10 border border-white/30 text-white hover:bg-white/20 font-bold text-lg px-8 py-4 rounded-2xl transition-all">
                 <Play className="w-5 h-5 fill-current text-white/70" />
                 {t.hero.cta2}

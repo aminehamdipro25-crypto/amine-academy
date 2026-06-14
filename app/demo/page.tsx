@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { Play, Pause, Volume2, VolumeX, ChevronLeft, ChevronRight, BarChart2, Calendar, BookOpen, Brain } from 'lucide-react'
 
-const SLIDE_DURATION = 6500
+const SLIDE_DURATION = 4500
 
 // ─── Ambient music ─────────────────────────────────────────────────────────────
 function createAmbientMusic(ctx: AudioContext): () => void {
@@ -200,7 +200,7 @@ function SessionMockup() {
         </div>
       </div>
       <div className="bg-gray-800 px-4 py-2 flex items-center justify-between">
-        <div className="flex gap-1.5">{['🍤','📷','🖥️','💬'].map(icon=><div key={icon} className="w-7 h-7 bg-white/10 rounded-lg flex items-center justify-center text-xs">{icon}</div>)}</div>
+        <div className="flex gap-1.5">{['🎤','📷','🖥️','💬'].map(icon=><div key={icon} className="w-7 h-7 bg-white/10 rounded-lg flex items-center justify-center text-xs">{icon}</div>)}</div>
         <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 bg-emerald-400 rounded-full"/><span className="text-white/60 text-[10px]">جلسة تفاعلية</span></div>
         <div className="bg-red-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-lg">إنهاء</div>
       </div>
@@ -301,7 +301,7 @@ const SLIDES: Slide[] = [
   { isHero:true, tag:'🌟 قطر • تونس • العالم العربي', title:'أكاديمية أمين', sub:'طفلك يفكّر بطريقة مختلفة — ونحن نتحدّث لغته', accent:'#C084FC', color:'#7C5CFC' },
   { tag:'① التسجيل', title:'ابدأ في دقيقتين', sub:'سجّل حسابك وبيانات طفلك — مجاني تماماً بدون بطاقة بنكية', accent:'#34D399', color:'#10B981', url:'amine-academy.com/register', mockup:<RegisterMockup/> },
   { tag:'② بوابة الولي', title:'كل شيء في مكان واحد', sub:'جلساتك القادمة، تمارين طفلك اليومية، ونقاطه — انضم بنقرة واحدة', accent:'#818CF8', color:'#6366F1', url:'amine-academy.com/parent/dashboard', mockup:<DashboardMockup/> },
-  { tag:'③ حجز الجلسات', title:'احجز بثوانـ', sub:'تقويم متزامن مع الأستاذ أمين — تأكيد فوري وتذكير تلقائي قبل الجلسة', accent:'#34D399', color:'#10B981', url:'amine-academy.com/parent/appointments', mockup:<BookingMockup/> },
+  { tag:'③ حجز الجلسات', title:'احجز بثوانٍ', sub:'تقويم متزامن مع الأستاذ أمين — تأكيد فوري وتذكير تلقائي قبل الجلسة', accent:'#34D399', color:'#10B981', url:'amine-academy.com/parent/appointments', mockup:<BookingMockup/> },
   { tag:'④ الجلسة المباشرة', title:'ليست مجرد مكالمة', sub:'جلسة حركية ومعرفية تفاعلية — مع تتبع مستوى تركيز طفلك لحظياً', accent:'#F87171', color:'#EF4444', url:'amine-academy.com/session/live', mockup:<SessionMockup/> },
   { tag:'⑤ مكتبة التمارين', title:'+32 تمرين تفاعلي', sub:'للتركيز والذاكرة والمهارات الاجتماعية والحركة — أعمار 5 إلى 22 سنة', accent:'#C084FC', color:'#9333EA', url:'amine-academy.com/parent/exercises', mockup:<ExercisesMockup/> },
   { tag:'⑥ تقارير التقدم', title:'شاهد تطور طفلك بأرقام', sub:'تقرير شهري مفصّل مع توصيات الأستاذ ومقارنة بالمستويات المرجعية', accent:'#FBBF24', color:'#F59E0B', url:'amine-academy.com/parent/progress', mockup:<ProgressMockup/> },

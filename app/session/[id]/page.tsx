@@ -63,6 +63,9 @@ import IfThen               from '@/components/session/exercises/IfThen'
 import ProblemSolver        from '@/components/session/exercises/ProblemSolver'
 import SpellingBee          from '@/components/session/exercises/SpellingBee'
 import ReadingCards         from '@/components/session/exercises/ReadingCards'
+import SpanExtension        from '@/components/session/exercises/SpanExtension'
+import DirectionFollow      from '@/components/session/exercises/DirectionFollow'
+import LogicSort            from '@/components/session/exercises/LogicSort'
 import Whiteboard      from '@/components/session/Whiteboard'
 import ADHDScale       from '@/components/session/assessments/ADHDScale'
 import LearningDifficultiesScale from '@/components/session/assessments/LearningDifficultiesScale'
@@ -225,6 +228,9 @@ const EXERCISES = [
   // ── تعلّم ─────────────────────────────────────────
   { id:'spelling-bee',          labelAr:'الإملاء',                 icon:'🐝', category:'تعلّم',            color:'bg-rose-900/40 border-rose-400',       ageMin:5,  ageMax:14 },
   { id:'reading-cards',         labelAr:'بطاقات القراءة',          icon:'📖', category:'تعلّم',            color:'bg-blue-900/40 border-blue-300',       ageMin:5,  ageMax:14 },
+  { id:'span-extension',        labelAr:'امتداد الذاكرة',           icon:'🔢', category:'ذاكرة',            color:'bg-indigo-900/40 border-indigo-300',   ageMin:6,  ageMax:22 },
+  { id:'direction-follow',      labelAr:'اتباع الاتجاهات',         icon:'🧭', category:'إدراكي',           color:'bg-cyan-900/40 border-cyan-300',       ageMin:5,  ageMax:17 },
+  { id:'logic-sort',            labelAr:'الترتيب المنطقي',         icon:'📊', category:'تفكير',            color:'bg-emerald-900/40 border-emerald-300', ageMin:5,  ageMax:17 },
 ]
 
 const ASSESSMENTS = [
@@ -2332,6 +2338,9 @@ ${notes ? `
               {activeView.id === 'problem-solver'        && <ProblemSolver         onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
               {activeView.id === 'spelling-bee'          && <SpellingBee           onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
               {activeView.id === 'reading-cards'         && <ReadingCards          onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'span-extension'        && <SpanExtension         onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'direction-follow'      && <DirectionFollow       onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'logic-sort'            && <LogicSort             onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
             </div>
           )}
 

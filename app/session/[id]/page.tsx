@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { Clock, X, Save, Video, Star, ClipboardList } from 'lucide-react'
+import { Clock, X, Save, Video, Star, ClipboardList, PenLine, ChevronDown, User } from 'lucide-react'
 import type { ExerciseResult, AssessmentResult, SessionObservations } from '@/lib/types'
 import { rankGamesForStudent, getTopGames, DIFFICULTY_LABELS_AR } from '@/lib/game-mapping'
 import type { StudentAssessmentProfile } from '@/lib/types'
@@ -26,6 +26,7 @@ import BehaviorContract from '@/components/session/exercises/BehaviorContract'
 import ColorGrid        from '@/components/session/exercises/ColorGrid'
 import PatternMatch     from '@/components/session/exercises/PatternMatch'
 import WordBuilder      from '@/components/session/exercises/WordBuilder'
+import Whiteboard      from '@/components/session/Whiteboard'
 import ADHDScale       from '@/components/session/assessments/ADHDScale'
 import LearningDifficultiesScale from '@/components/session/assessments/LearningDifficultiesScale'
 import AttentionDomainsScale from '@/components/session/assessments/AttentionDomainsScale'
@@ -84,6 +85,21 @@ const QUICK_OBS: { category: string; color: string; bg: string; items: { text: s
       { text: 'أداء استثنائي',        icon: '🏆' },
     ],
   },
+]
+
+interface SessionPhase {
+  id: string
+  label: string
+  icon: string
+  defaultMin: number
+  color: string
+}
+
+const SESSION_PHASES: SessionPhase[] = [
+  { id: 'warmup',   label: 'تحية ودفء',    icon: '👋', defaultMin: 5,  color: '#3B82F6' },
+  { id: 'main',     label: 'نشاط رئيسي',   icon: '🎯', defaultMin: 30, color: '#7C5CFC' },
+  { id: 'assess',   label: 'تقييم',         icon: '📊', defaultMin: 15, color: '#F59E0B' },
+  { id: 'wrap',     label: 'تلخيص',         icon: '✅', defaultMin: 5,  color: '#22C55E' },
 ]
 
 const EXERCISES = [
@@ -226,6 +242,19 @@ export default function SessionPage() {
   const [sessionCount, setSessionCount] = useState<number>(0)
   const [gameUsageCounts, setGameUsageCounts] = useState<Record<string, number>>({})
 
+  // Session phases
+  const [phaseIdx, setPhaseIdx]         = useState(0)
+  const [phaseToast, setPhaseToast]     = useState<SessionPhase | null>(null)
+  const [phaseDurations, setPhaseDurations] = useState<number[]>(SESSION_PHASES.map(p => p.defaultMin))
+  const [showPhaseEdit, setShowPhaseEdit] = useState(false)
+
+  // Profile card
+  const [profileOpen, setProfileOpen]   = useState(false)
+  const [pastSessions, setPastSessions] = useState<{ score: number; date: string; count: number }[]>([])
+
+  // Whiteboard
+  const [showWhiteboard, setShowWhiteboard] = useState(false)
+
   // Load appointment/student info + assessment profile + session history
   useEffect(() => {
     fetch(`/api/appointments/${id}`)
@@ -291,6 +320,44 @@ export default function SessionPage() {
     const t = setInterval(() => setElapsed(e => e + 1), 1000)
     return () => clearInterval(t)
   }, [running])
+
+  // Phase auto-advance based on elapsed seconds
+  useEffect(() => {
+    if (!running) return
+    const thresholds = phaseDurations.reduce<number[]>((acc, d, i) => {
+      acc.push((acc[i - 1] ?? 0) + d * 60)
+      return acc
+    }, [])
+    const newPhase = thresholds.findIndex(t => elapsed < t)
+    const clamped  = newPhase === -1 ? SESSION_PHASES.length - 1 : newPhase
+    if (clamped !== phaseIdx) {
+      setPhaseIdx(clamped)
+      const phase = SESSION_PHASES[clamped]
+      setPhaseToast(phase)
+      setTimeout(() => setPhaseToast(null), 3000)
+    }
+  }, [elapsed, running, phaseDurations, phaseIdx])
+
+  // Load past sessions for profile card
+  useEffect(() => {
+    if (!currentStudentId) return
+    fetch(`/api/admin/sessions/student/${currentStudentId}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        if (!d?.sessions?.length) return
+        const recent = (d.sessions as Array<{ exercises?: Array<{ score: number }>; createdAt?: string }>)
+          .slice(0, 3)
+          .map(s => ({
+            score: s.exercises?.length
+              ? Math.round(s.exercises.reduce((sum, e) => sum + e.score, 0) / s.exercises.length)
+              : 0,
+            date: s.createdAt?.slice(0, 10) ?? '',
+            count: s.exercises?.length ?? 0,
+          }))
+        setPastSessions(recent)
+      })
+      .catch(() => {})
+  }, [currentStudentId])
 
   function startSession() {
     setRunning(true)
@@ -424,11 +491,15 @@ export default function SessionPage() {
         </button>
 
         <div className="flex-1 flex items-center gap-4">
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 relative">
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="font-black text-white text-sm">
-                {studentName || 'جلسة تفاعلية'}
-              </h1>
+              <button
+                onClick={() => setProfileOpen(o => !o)}
+                className="flex items-center gap-1.5 font-black text-white text-sm hover:text-brand-300 transition-colors"
+              >
+                <h1>{studentName || 'جلسة تفاعلية'}</h1>
+                <ChevronDown className={`w-3 h-3 transition-transform ${profileOpen ? 'rotate-180' : ''}`} />
+              </button>
               {studentDiagnosis && (
                 <span className="text-[10px] bg-brand-900/60 text-brand-300 border border-brand-500/40 px-1.5 py-0.5 rounded-full font-bold">
                   {DIAG_LABELS[studentDiagnosis] || studentDiagnosis}
@@ -465,6 +536,104 @@ export default function SessionPage() {
                 ))
               }
             </div>
+
+            {/* ── Quick Profile Card ── */}
+            {profileOpen && (
+              <div
+                className="absolute top-full mt-2 right-0 z-[70] rounded-2xl p-4 w-72 shadow-2xl"
+                style={{
+                  background: '#111827',
+                  border: '1.5px solid rgba(255,255,255,0.12)',
+                  boxShadow: '0 16px 48px rgba(0,0,0,0.7)',
+                }}
+                dir="rtl"
+              >
+                {/* Identity row */}
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 rounded-2xl bg-brand-900/60 border border-brand-500/30 flex items-center justify-center flex-shrink-0">
+                    <User className="w-6 h-6 text-brand-400" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-white font-black text-sm truncate">{studentName || '—'}</div>
+                    <div className="text-white/50 text-xs mt-0.5">
+                      {studentAge} سنة • {DIAG_LABELS[studentDiagnosis] || studentDiagnosis || 'لا يوجد تشخيص'}
+                    </div>
+                    <div className="flex items-center gap-1.5 mt-1">
+                      {studentSeverity > 0 && (
+                        <span className="text-[10px] bg-brand-900/60 text-brand-300 border border-brand-500/30 px-1.5 py-0.5 rounded-full font-bold">
+                          {SEVERITY_LABELS[studentSeverity]}
+                        </span>
+                      )}
+                      {sessionCount > 0 && (
+                        <span className="text-[10px] text-white/35 font-medium">{sessionCount} جلسة سابقة</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Past 3 sessions */}
+                {pastSessions.length > 0 && (
+                  <div className="mb-3">
+                    <div className="text-white/35 text-[10px] font-black mb-2 uppercase tracking-wider">آخر 3 جلسات</div>
+                    <div className="space-y-1.5">
+                      {pastSessions.map((s, i) => (
+                        <div key={i} className="flex items-center gap-2">
+                          <div className="flex-1 bg-white/10 rounded-full h-1.5 overflow-hidden">
+                            <div
+                              className="h-full rounded-full"
+                              style={{
+                                width: `${s.score}%`,
+                                background: s.score >= 80 ? '#22C55E' : s.score >= 60 ? '#F59E0B' : '#EF4444',
+                              }}
+                            />
+                          </div>
+                          <span className="text-white/60 text-[10px] font-black ltr-num w-8 text-left">{s.score}%</span>
+                          <span className="text-white/25 text-[9px] ltr-num flex-shrink-0">{s.date}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Assessment difficulties */}
+                {profile && Object.entries(profile.diagnosedDifficulties).some(([, v]) => v !== 'none') && (
+                  <div className="border-t border-white/10 pt-3 mb-3">
+                    <div className="text-white/35 text-[10px] font-black mb-2 uppercase tracking-wider">صعوبات موثقة</div>
+                    <div className="flex flex-wrap gap-1">
+                      {Object.entries(profile.diagnosedDifficulties)
+                        .filter(([, v]) => v !== 'none')
+                        .map(([k, v]) => (
+                          <span key={k} className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${
+                            v === 'severe'   ? 'bg-red-900/50 text-red-300 border-red-500/30' :
+                            v === 'moderate' ? 'bg-orange-900/50 text-orange-300 border-orange-500/30' :
+                                               'bg-yellow-900/50 text-yellow-300 border-yellow-500/30'
+                          }`}>
+                            {DIFFICULTY_LABELS_AR[k as keyof typeof DIFFICULTY_LABELS_AR]}
+                          </span>
+                        ))
+                      }
+                    </div>
+                  </div>
+                )}
+
+                {/* Pinned notes placeholder */}
+                <div className={`${(profile && Object.entries(profile.diagnosedDifficulties).some(([, v]) => v !== 'none')) || pastSessions.length > 0 ? 'border-t border-white/10 pt-3' : ''}`}>
+                  <div className="text-white/35 text-[10px] font-black mb-1 uppercase tracking-wider">ملاحظات</div>
+                  {notes ? (
+                    <p className="text-white/50 text-[10px] leading-relaxed line-clamp-3">{notes}</p>
+                  ) : (
+                    <p className="text-white/25 text-[10px] italic">لا توجد ملاحظات بعد</p>
+                  )}
+                </div>
+
+                <button
+                  onClick={() => setProfileOpen(false)}
+                  className="mt-3 w-full text-white/30 hover:text-white/60 text-[10px] font-bold transition-colors pt-2 border-t border-white/10"
+                >
+                  إغلاق ✕
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Timer */}
@@ -474,6 +643,20 @@ export default function SessionPage() {
             <Clock className="w-4 h-4 text-green-400" />
             <span className="font-black text-lg ltr-num">{formatTime(elapsed)}</span>
           </div>
+
+          {/* Whiteboard button */}
+          <button
+            onClick={() => setShowWhiteboard(w => !w)}
+            className={`flex items-center gap-1.5 font-black px-3 py-1.5 rounded-lg text-xs transition-all flex-shrink-0 ${
+              showWhiteboard
+                ? 'bg-amber-500 text-white ring-2 ring-amber-400/50'
+                : 'bg-white/10 hover:bg-white/20 text-white/70'
+            }`}
+            title="السبورة التفاعلية"
+          >
+            <PenLine className="w-3.5 h-3.5" />
+            سبورة
+          </button>
 
           {jitsiUrl && (
             <button
@@ -570,7 +753,93 @@ export default function SessionPage() {
         </div>
       )}
 
-      <div className="flex flex-1 overflow-hidden">
+      {/* ── Session Phase Progress Bar ── */}
+      {running && (
+        <div className="bg-gray-900 border-b border-white/10 px-4 py-2 flex items-center gap-3" dir="rtl">
+          <span className="text-white/30 text-[10px] font-black flex-shrink-0">مراحل</span>
+          <div className="flex items-center gap-2 flex-1">
+            {SESSION_PHASES.map((ph, i) => {
+              const isActive = i === phaseIdx
+              const isDone   = i < phaseIdx
+              const phaseStartSec = phaseDurations.slice(0, i).reduce((a, b) => a + b, 0) * 60
+              const phaseTotalSec = phaseDurations[i] * 60
+              const phaseElapsed  = isActive ? Math.max(0, elapsed - phaseStartSec) : 0
+              const progress = isActive
+                ? Math.min(100, (phaseElapsed / phaseTotalSec) * 100)
+                : isDone ? 100 : 0
+              return (
+                <button
+                  key={ph.id}
+                  onClick={() => { setPhaseIdx(i); setPhaseToast(null) }}
+                  className="flex-1 flex flex-col items-center gap-1 rounded-xl px-2 py-1 transition-all"
+                  style={{
+                    background: isActive ? `${ph.color}18` : 'transparent',
+                    border: isActive ? `1px solid ${ph.color}40` : '1px solid transparent',
+                  }}
+                >
+                  <div className="flex items-center gap-1 w-full">
+                    <span className="text-[11px]">{ph.icon}</span>
+                    <span
+                      className="text-[10px] font-black truncate"
+                      style={{ color: isActive ? ph.color : isDone ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.2)' }}
+                    >
+                      {ph.label}
+                    </span>
+                    {isActive && (
+                      <span className="text-[9px] mr-auto ltr-num" style={{ color: `${ph.color}99` }}>
+                        {formatTime(phaseElapsed)}/{phaseDurations[i]}د
+                      </span>
+                    )}
+                    {isDone && <span className="text-[9px] mr-auto" style={{ color: 'rgba(255,255,255,0.25)' }}>✓</span>}
+                  </div>
+                  <div className="w-full h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                    <div
+                      className="h-full rounded-full transition-all duration-1000"
+                      style={{ width: `${progress}%`, background: ph.color, opacity: isDone ? 0.4 : 1 }}
+                    />
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+          {/* Phase duration edit — simple inline inputs */}
+          <button
+            onClick={() => setShowPhaseEdit(e => !e)}
+            className="text-white/25 hover:text-white/50 text-[10px] font-bold flex-shrink-0 transition-colors px-1"
+            title="تعديل مدة المراحل"
+          >
+            ⚙
+          </button>
+          {showPhaseEdit && (
+            <div
+              className="absolute top-full left-0 right-0 z-[60] flex items-center gap-2 px-4 py-2 flex-wrap"
+              style={{ background: '#0F172A', borderBottom: '1px solid rgba(255,255,255,0.08)' }}
+              dir="rtl"
+            >
+              {SESSION_PHASES.map((ph, i) => (
+                <label key={ph.id} className="flex items-center gap-1.5 text-[10px] text-white/50">
+                  <span>{ph.icon} {ph.label}</span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={60}
+                    value={phaseDurations[i]}
+                    onChange={e => {
+                      const v = Math.max(1, Math.min(60, Number(e.target.value)))
+                      setPhaseDurations(prev => prev.map((d, idx) => idx === i ? v : d))
+                    }}
+                    className="w-12 bg-white/10 border border-white/15 rounded-lg px-1.5 py-0.5 text-white text-center text-[10px] font-bold"
+                  />
+                  <span className="text-white/30">د</span>
+                </label>
+              ))}
+              <button onClick={() => setShowPhaseEdit(false)} className="text-white/30 hover:text-white/60 text-[10px] mr-auto">✕ إغلاق</button>
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="flex flex-1 overflow-hidden" style={{ position: 'relative' }}>
 
         {/* Sidebar */}
         {!focusMode && <aside className="w-72 bg-gray-900 border-l border-white/10 flex flex-col">
@@ -1191,6 +1460,13 @@ export default function SessionPage() {
             </div>
           )}
 
+          {/* ── Whiteboard ── */}
+          {showWhiteboard && !activeView && (
+            <div className="absolute inset-0 z-20 flex flex-col">
+              <Whiteboard onClose={() => setShowWhiteboard(false)} />
+            </div>
+          )}
+
           {activeView?.type === 'assessment' && (
             <div className="w-full max-w-2xl mx-auto py-6 px-4">
               <div className="bg-gray-900 rounded-2xl overflow-hidden">
@@ -1334,6 +1610,26 @@ export default function SessionPage() {
             <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: obsToast.color }} />
             <span className="text-white font-bold text-sm">{obsToast.text}</span>
             <span className="text-white/40 text-xs font-mono ltr-num">{obsToast.ts}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Phase Transition Toast */}
+      {phaseToast && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[100] pointer-events-none" dir="rtl">
+          <div
+            className="flex items-center gap-3 px-5 py-3 rounded-2xl shadow-2xl"
+            style={{
+              background: '#1F2937',
+              border: `1.5px solid ${phaseToast.color}50`,
+              boxShadow: `0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px ${phaseToast.color}20`,
+            }}
+          >
+            <span className="text-2xl">{phaseToast.icon}</span>
+            <div>
+              <div className="text-white font-black text-sm">مرحلة جديدة: {phaseToast.label}</div>
+              <div className="text-white/50 text-xs ltr-num">{phaseDurations[phaseIdx]} دقيقة</div>
+            </div>
           </div>
         </div>
       )}

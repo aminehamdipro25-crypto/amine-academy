@@ -49,7 +49,7 @@ export function ConfirmDialog({
             إلغاء
           </button>
           <button
-            onClick={() => { onConfirm(); onCancel() }}
+            onClick={onConfirm}
             className={`flex-1 py-2.5 rounded-2xl text-white text-sm font-black transition-colors ${confirmClass}`}
           >
             {confirmLabel}

@@ -316,7 +316,7 @@ export default function AdminPaymentsPage() {
         title="رفض الدفعة"
         message={`هل أنت متأكد من رفض دفعة ${confirm?.name ?? ''}؟ لا يمكن التراجع عن هذا القرار.`}
         confirmLabel="نعم، رفض الدفعة"
-        onConfirm={() => confirm && updateStatus(confirm.id, 'rejected')}
+        onConfirm={() => { const id = confirm?.id; setConfirm(null); if (id) updateStatus(id, 'rejected') }}
         onCancel={() => setConfirm(null)}
       />
     </div>

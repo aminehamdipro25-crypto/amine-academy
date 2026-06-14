@@ -1,7 +1,6 @@
 'use client'
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, Users, Dumbbell, Calendar,
   BarChart3, FileText, LogOut, Brain,
@@ -23,25 +22,8 @@ const NAV = [
   { href: '/dashboard/settings',               label: 'الإعدادات',     icon: Settings },
 ]
 
-export default function AdminSidebar({ onClose }: { onClose?: () => void }) {
+export default function AdminSidebar({ onClose, unreadMessages = 0 }: { onClose?: () => void; unreadMessages?: number }) {
   const pathname = usePathname()
-  const router   = useRouter()
-  const [unread, setUnread] = useState(0)
-
-  useEffect(() => {
-    async function fetchUnread() {
-      try {
-        const res = await fetch('/api/admin/messages', { credentials: 'include' })
-        if (res.ok) {
-          const data = await res.json()
-          setUnread(data.totalUnread ?? 0)
-        }
-      } catch { /* silent */ }
-    }
-    fetchUnread()
-    const id = setInterval(fetchUnread, 30_000)
-    return () => clearInterval(id)
-  }, [])
 
   return (
     <aside className="w-64 h-full flex flex-col bg-[#0B1120] select-none overflow-hidden">
@@ -105,9 +87,9 @@ export default function AdminSidebar({ onClose }: { onClose?: () => void }) {
               <span className="flex-1 truncate">{label}</span>
 
               {/* Unread badge on messages */}
-              {href === '/dashboard/messages' && unread > 0 && (
+              {href === '/dashboard/messages' && unreadMessages > 0 && (
                 <span className="min-w-[18px] h-[18px] bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center px-1 shadow-md">
-                  {unread > 99 ? '99+' : unread}
+                  {unreadMessages > 99 ? '99+' : unreadMessages}
                 </span>
               )}
 

@@ -27,7 +27,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/dashboard/analytics':         'الإحصائيات',
 }
 
-export default function AdminHeader({ onMenuToggle }: { onMenuToggle?: () => void }) {
+export default function AdminHeader({ onMenuToggle, onUnreadChange }: { onMenuToggle?: () => void; onUnreadChange?: (n: number) => void }) {
   const pathname = usePathname()
   const router   = useRouter()
   const [totalUnread, setTotalUnread] = useState(0)
@@ -45,7 +45,9 @@ export default function AdminHeader({ onMenuToggle }: { onMenuToggle?: () => voi
       const res = await fetch('/api/admin/messages', { credentials: 'include' })
       if (!res.ok) return
       const data = await res.json()
-      setTotalUnread(data.totalUnread ?? 0)
+      const count = data.totalUnread ?? 0
+      setTotalUnread(count)
+      onUnreadChange?.(count)
       setThreads((data.threads ?? []).filter((t: Thread) => t.unreadForAdmin > 0).slice(0, 5))
     } catch { /* silent */ }
   }, [])

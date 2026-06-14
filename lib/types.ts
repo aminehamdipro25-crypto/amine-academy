@@ -21,7 +21,7 @@ export interface Parent {
   phone: string
   country: string
   subscriptionStatus: SubscriptionStatus
-  subscriptionPlan: 'basic' | 'standard' | 'premium'
+  subscriptionPlan: 'basic' | 'standard' | 'premium' | 'session' | 'weekly' | 'monthly'
   subscriptionExpiry: string | null
   childrenIds: string[]
   createdAt: string
@@ -253,7 +253,7 @@ export interface PendingPayment {
   guestName: string
   guestEmail: string
   guestPhone: string
-  plan: 'basic' | 'standard' | 'premium'
+  plan: 'basic' | 'standard' | 'premium' | 'session' | 'weekly' | 'monthly'
   currency: 'QAR' | 'TND'
   amount: number
   method: PaymentMethod

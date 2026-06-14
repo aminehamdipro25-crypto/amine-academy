@@ -7,6 +7,7 @@ import { CommandPalette }  from '@/components/ui/CommandPalette'
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [unreadMessages, setUnreadMessages] = useState(0)
 
   return (
     <ToastProvider>
@@ -24,17 +25,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <aside
           className={`
             fixed top-0 right-0 bottom-0 z-50 w-64 flex-shrink-0
-            lg:static lg:z-auto lg:translate-x-0
+            lg:static lg:z-auto lg:translate-x-0 lg:self-stretch
             transition-transform duration-300 ease-in-out
             ${mobileOpen ? 'translate-x-0' : 'translate-x-full'}
           `}
         >
-          <AdminSidebar onClose={() => setMobileOpen(false)} />
+          <AdminSidebar onClose={() => setMobileOpen(false)} unreadMessages={unreadMessages} />
         </aside>
 
         {/* Main area */}
         <div className="flex-1 flex flex-col min-w-0 min-h-screen">
-          <AdminHeader onMenuToggle={() => setMobileOpen(o => !o)} />
+          <AdminHeader onMenuToggle={() => setMobileOpen(o => !o)} onUnreadChange={setUnreadMessages} />
           <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-auto">
             {children}
           </main>

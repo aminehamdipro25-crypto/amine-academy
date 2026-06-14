@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import {
   Settings, Save, RefreshCw, CheckCircle, AlertCircle,
   DollarSign, Tag, Clock, Phone, TrendingDown, BarChart2,
@@ -89,6 +89,70 @@ function Input({
         max={max}
         step={step}
         placeholder={placeholder}
+        className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-400 focus:border-transparent transition-all"
+        style={suffix ? { paddingLeft: '3rem' } : {}}
+        dir="ltr"
+      />
+      {suffix && (
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-bold">
+          {suffix}
+        </span>
+      )}
+    </div>
+  )
+}
+
+function NumberField({
+  value,
+  onChange,
+  min = 0,
+  max = 9999,
+  step = 1,
+  suffix,
+}: {
+  value: number
+  onChange: (n: number) => void
+  min?: number
+  max?: number
+  step?: number
+  suffix?: string
+}) {
+  const [str, setStr] = useState(String(value))
+  const focused = useRef(false)
+
+  useEffect(() => {
+    if (!focused.current) setStr(String(value))
+  }, [value])
+
+  function handleChange(raw: string) {
+    setStr(raw)
+    const n = parseInt(raw, 10)
+    if (!isNaN(n) && n >= min && n <= max) onChange(n)
+  }
+
+  function handleBlur() {
+    focused.current = false
+    const n = parseInt(str, 10)
+    if (isNaN(n) || str.trim() === '') {
+      setStr(String(value))
+    } else {
+      const clamped = Math.min(max, Math.max(min, n))
+      setStr(String(clamped))
+      onChange(clamped)
+    }
+  }
+
+  return (
+    <div className="relative">
+      <input
+        type="number"
+        value={str}
+        onChange={e => handleChange(e.target.value)}
+        onFocus={() => { focused.current = true }}
+        onBlur={handleBlur}
+        min={min}
+        max={max}
+        step={step}
         className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-400 focus:border-transparent transition-all"
         style={suffix ? { paddingLeft: '3rem' } : {}}
         dir="ltr"
@@ -345,15 +409,9 @@ export default function AdminSettingsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Field label="نسبة الخصم (%)">
             <div className="space-y-2">
-              <Input
-                type="number"
+              <NumberField
                 value={settings.discountPct}
-                onChange={v => {
-                  if (v === '') return
-                  const n = parseInt(v, 10)
-                  if (isNaN(n)) return
-                  setSettings(prev => prev ? { ...prev, discountPct: Math.min(50, Math.max(0, n)) } : prev)
-                }}
+                onChange={n => setSettings(prev => prev ? { ...prev, discountPct: n } : prev)}
                 min={0}
                 max={50}
                 step={1}
@@ -430,15 +488,9 @@ export default function AdminSettingsPage() {
         </h2>
         <div className="max-w-sm space-y-2">
           <Field label="المدة بالأيام">
-            <Input
-              type="number"
+            <NumberField
               value={settings.offerDurationDays}
-              onChange={v => {
-                if (v === '') return
-                const n = parseInt(v, 10)
-                if (isNaN(n)) return
-                setSettings(prev => prev ? { ...prev, offerDurationDays: Math.min(30, Math.max(1, n)) } : prev)
-              }}
+              onChange={n => setSettings(prev => prev ? { ...prev, offerDurationDays: n } : prev)}
               min={1}
               max={30}
               step={1}
@@ -495,17 +547,11 @@ export default function AdminSettingsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-md">
           <Field label="حصص / أسبوع (الباقة الأسبوعية)">
             <div className="space-y-2">
-              <Input
-                type="number"
+              <NumberField
                 value={settings.sessionsPerWeek ?? 4}
-                onChange={v => {
-                  if (v === '') return
-                  const n = parseInt(v, 10)
-                  if (isNaN(n)) return
-                  setSettings(prev => prev ? { ...prev, sessionsPerWeek: Math.min(10, Math.max(1, n)) } : prev)
-                }}
+                onChange={n => setSettings(prev => prev ? { ...prev, sessionsPerWeek: n } : prev)}
                 min={1}
-                max={10}
+                max={20}
                 step={1}
                 suffix="حصة"
               />
@@ -522,17 +568,11 @@ export default function AdminSettingsPage() {
           </Field>
           <Field label="حصص / شهر (الباقة الشهرية)">
             <div className="space-y-2">
-              <Input
-                type="number"
+              <NumberField
                 value={settings.sessionsPerMonth ?? 16}
-                onChange={v => {
-                  if (v === '') return
-                  const n = parseInt(v, 10)
-                  if (isNaN(n)) return
-                  setSettings(prev => prev ? { ...prev, sessionsPerMonth: Math.min(50, Math.max(1, n)) } : prev)
-                }}
+                onChange={n => setSettings(prev => prev ? { ...prev, sessionsPerMonth: n } : prev)}
                 min={1}
-                max={50}
+                max={100}
                 step={1}
                 suffix="حصة"
               />

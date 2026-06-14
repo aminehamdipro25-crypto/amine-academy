@@ -15,6 +15,9 @@ const METHOD_LABELS: Record<PaymentMethod, string> = {
 }
 
 const PLAN_LABELS: Record<string, string> = {
+  session: 'حصة مفردة',
+  weekly:  'الباقة الأسبوعية',
+  monthly: 'الباقة الشهرية',
   basic:    'الأساسي',
   standard: 'المتقدم',
   premium:  'المتميز',
@@ -33,7 +36,7 @@ export async function POST(req: NextRequest) {
     if (!plan || !currency || !guestName || !guestEmail || !guestPhone || !method) {
       return NextResponse.json({ error: 'جميع الحقول مطلوبة' }, { status: 400 })
     }
-    if (!['basic', 'standard', 'premium'].includes(plan)) {
+    if (!['session', 'weekly', 'monthly', 'basic', 'standard', 'premium'].includes(plan)) {
       return NextResponse.json({ error: 'الخطة غير صالحة' }, { status: 400 })
     }
     if (!['QAR', 'TND'].includes(currency)) {
@@ -45,7 +48,15 @@ export async function POST(req: NextRequest) {
 
     // Fetch current prices and apply discount
     const settings = await getSiteSettings()
-    const basePrice = settings.prices[plan as 'basic' | 'standard' | 'premium'][currency as 'QAR' | 'TND']
+    const priceMap: Record<string, { QAR: number; TND: number }> = {
+      session: settings.prices.session,
+      weekly:  settings.prices.weekly,
+      monthly: settings.prices.monthly,
+      basic:   settings.prices.session,
+      standard:settings.prices.weekly,
+      premium: settings.prices.monthly,
+    }
+    const basePrice = (priceMap[plan] ?? settings.prices.session)[currency as 'QAR' | 'TND']
     const discountPct = settings.discountPct ?? 0
     const amount = discountPct > 0 ? Math.round(basePrice * (1 - discountPct / 100)) : basePrice
 

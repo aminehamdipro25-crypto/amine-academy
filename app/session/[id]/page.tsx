@@ -52,6 +52,17 @@ import FingerGym             from '@/components/session/exercises/FingerGym'
 import CategorySort          from '@/components/session/exercises/CategorySort'
 import MathFlash             from '@/components/session/exercises/MathFlash'
 import AnalogiesGame         from '@/components/session/exercises/AnalogiesGame'
+import BodyScan             from '@/components/session/exercises/BodyScan'
+import MoodMeter            from '@/components/session/exercises/MoodMeter'
+import CalmCorner           from '@/components/session/exercises/CalmCorner'
+import EmotionVolume        from '@/components/session/exercises/EmotionVolume'
+import DailyGoals           from '@/components/session/exercises/DailyGoals'
+import ChoiceBoard          from '@/components/session/exercises/ChoiceBoard'
+import PatternPuzzle        from '@/components/session/exercises/PatternPuzzle'
+import IfThen               from '@/components/session/exercises/IfThen'
+import ProblemSolver        from '@/components/session/exercises/ProblemSolver'
+import SpellingBee          from '@/components/session/exercises/SpellingBee'
+import ReadingCards         from '@/components/session/exercises/ReadingCards'
 import Whiteboard      from '@/components/session/Whiteboard'
 import ADHDScale       from '@/components/session/assessments/ADHDScale'
 import LearningDifficultiesScale from '@/components/session/assessments/LearningDifficultiesScale'
@@ -199,6 +210,21 @@ const EXERCISES = [
   { id:'category-sort',         labelAr:'تصنيف الأشياء',           icon:'🗂️', category:'معرفي',            color:'bg-sky-900/40 border-sky-400',         ageMin:4,  ageMax:14 },
   { id:'math-flash',            labelAr:'الحساب السريع',           icon:'🔢', category:'معرفي',            color:'bg-blue-900/40 border-blue-300',       ageMin:6,  ageMax:22 },
   { id:'analogies',             labelAr:'العلاقات والقياسات',      icon:'🧩', category:'معرفي',            color:'bg-teal-900/40 border-teal-300',       ageMin:7,  ageMax:22 },
+  // ── تنظيم ────────────────────────────────────────
+  { id:'body-scan',             labelAr:'فحص الجسم',               icon:'🫁', category:'تنظيم',            color:'bg-cyan-900/40 border-cyan-400',       ageMin:6,  ageMax:22 },
+  { id:'mood-meter',            labelAr:'مقياس المزاج',            icon:'🌡️', category:'تنظيم',            color:'bg-amber-900/40 border-amber-400',     ageMin:5,  ageMax:22 },
+  { id:'calm-corner',           labelAr:'ركن الهدوء',              icon:'🧘', category:'تنظيم',            color:'bg-teal-900/40 border-teal-400',       ageMin:5,  ageMax:22 },
+  { id:'emotion-volume',        labelAr:'حجم الانفعال',            icon:'📊', category:'تنظيم',            color:'bg-orange-900/40 border-orange-400',   ageMin:6,  ageMax:22 },
+  // ── تعديل السلوك ──────────────────────────────────
+  { id:'daily-goals',           labelAr:'أهدافي اليوم',            icon:'🎯', category:'تعديل السلوك',    color:'bg-green-900/40 border-green-400',     ageMin:5,  ageMax:22 },
+  { id:'choice-board',          labelAr:'لوح الاختيارات',          icon:'🗳️', category:'تعديل السلوك',    color:'bg-violet-900/40 border-violet-400',   ageMin:4,  ageMax:14 },
+  // ── تفكير ────────────────────────────────────────
+  { id:'pattern-puzzle',        labelAr:'أكمل النمط',              icon:'🔮', category:'تفكير',            color:'bg-indigo-900/40 border-indigo-400',   ageMin:4,  ageMax:14 },
+  { id:'if-then',               labelAr:'ماذا سيحدث؟',            icon:'🔗', category:'تفكير',            color:'bg-sky-900/40 border-sky-400',         ageMin:5,  ageMax:17 },
+  { id:'problem-solver',        labelAr:'حل المشكلة',              icon:'💡', category:'تفكير',            color:'bg-yellow-900/40 border-yellow-400',   ageMin:6,  ageMax:22 },
+  // ── تعلّم ─────────────────────────────────────────
+  { id:'spelling-bee',          labelAr:'الإملاء',                 icon:'🐝', category:'تعلّم',            color:'bg-rose-900/40 border-rose-400',       ageMin:5,  ageMax:14 },
+  { id:'reading-cards',         labelAr:'بطاقات القراءة',          icon:'📖', category:'تعلّم',            color:'bg-blue-900/40 border-blue-300',       ageMin:5,  ageMax:14 },
 ]
 
 const ASSESSMENTS = [
@@ -2295,6 +2321,17 @@ ${notes ? `
               {activeView.id === 'category-sort'         && <CategorySort          onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
               {activeView.id === 'math-flash'            && <MathFlash             onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
               {activeView.id === 'analogies'             && <AnalogiesGame         onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'body-scan'             && <BodyScan              onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'mood-meter'            && <MoodMeter             onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'calm-corner'           && <CalmCorner            onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'emotion-volume'        && <EmotionVolume         onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'daily-goals'           && <DailyGoals            onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'choice-board'          && <ChoiceBoard           onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'pattern-puzzle'        && <PatternPuzzle         onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'if-then'               && <IfThen                onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'problem-solver'        && <ProblemSolver         onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'spelling-bee'          && <SpellingBee           onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'reading-cards'         && <ReadingCards          onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
             </div>
           )}
 

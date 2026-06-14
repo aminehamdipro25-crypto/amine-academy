@@ -114,10 +114,10 @@ interface SessionPhase {
 }
 
 const SESSION_PHASES: SessionPhase[] = [
-  { id: 'warmup',   label: 'تحية ودفء',    icon: '👋', defaultMin: 5,  color: '#3B82F6' },
-  { id: 'main',     label: 'نشاط رئيسي',   icon: '🎯', defaultMin: 30, color: '#7C5CFC' },
-  { id: 'assess',   label: 'تقييم',         icon: '📊', defaultMin: 15, color: '#F59E0B' },
-  { id: 'wrap',     label: 'تلخيص',         icon: '✅', defaultMin: 5,  color: '#22C55E' },
+  { id: 'warmup',  label: 'تحية ودفء',   icon: '👋', defaultMin: 5,  color: '#3B82F6' },
+  { id: 'main',    label: 'نشاط رئيسي',  icon: '🎯', defaultMin: 25, color: '#7C5CFC' },
+  { id: 'assess',  label: 'تقييم',        icon: '📊', defaultMin: 10, color: '#F59E0B' },
+  { id: 'wrap',    label: 'تلخيص',        icon: '✅', defaultMin: 5,  color: '#22C55E' },
 ]
 
 const EXERCISES = [
@@ -169,7 +169,9 @@ function formatTime(s: number) {
   return `${m}:${sec}`
 }
 
-function playSound(type: 'success' | 'complete' | 'start') {
+type SoundType = 'success' | 'complete' | 'start' | 'phase' | 'tick' | 'ding' | 'compare' | 'abc'
+
+function playSound(type: SoundType) {
   if (typeof window === 'undefined') return
   try {
     const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)()
@@ -177,40 +179,77 @@ function playSound(type: 'success' | 'complete' | 'start') {
     g.connect(ctx.destination)
 
     if (type === 'success') {
-      // Short happy ding
-      const o = ctx.createOscillator()
-      o.connect(g)
-      o.type = 'sine'
+      const o = ctx.createOscillator(); o.connect(g); o.type = 'sine'
       g.gain.setValueAtTime(0.3, ctx.currentTime)
       g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4)
       o.frequency.setValueAtTime(523, ctx.currentTime)
       o.frequency.setValueAtTime(659, ctx.currentTime + 0.1)
       o.frequency.setValueAtTime(784, ctx.currentTime + 0.2)
-      o.start(ctx.currentTime)
-      o.stop(ctx.currentTime + 0.4)
+      o.start(ctx.currentTime); o.stop(ctx.currentTime + 0.4)
+
     } else if (type === 'complete') {
-      // Fanfare for session complete
       const notes = [523, 659, 784, 1047]
       notes.forEach((freq, i) => {
-        const o = ctx.createOscillator()
-        o.connect(g)
-        o.type = 'sine'
+        const o = ctx.createOscillator(); o.connect(g); o.type = 'sine'
         o.frequency.value = freq
         g.gain.setValueAtTime(0.25, ctx.currentTime + i * 0.12)
         g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.12 + 0.3)
-        o.start(ctx.currentTime + i * 0.12)
-        o.stop(ctx.currentTime + i * 0.12 + 0.3)
+        o.start(ctx.currentTime + i * 0.12); o.stop(ctx.currentTime + i * 0.12 + 0.3)
       })
+
     } else if (type === 'start') {
-      // Subtle start beep
-      const o = ctx.createOscillator()
-      o.connect(g)
-      o.type = 'sine'
+      const o = ctx.createOscillator(); o.connect(g); o.type = 'sine'
       o.frequency.value = 440
       g.gain.setValueAtTime(0.2, ctx.currentTime)
       g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2)
-      o.start(ctx.currentTime)
-      o.stop(ctx.currentTime + 0.2)
+      o.start(ctx.currentTime); o.stop(ctx.currentTime + 0.2)
+
+    } else if (type === 'phase') {
+      // Gong-like tone for phase transition
+      const o = ctx.createOscillator(); o.connect(g); o.type = 'sine'
+      o.frequency.setValueAtTime(660, ctx.currentTime)
+      o.frequency.exponentialRampToValueAtTime(330, ctx.currentTime + 0.6)
+      g.gain.setValueAtTime(0.35, ctx.currentTime)
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8)
+      o.start(ctx.currentTime); o.stop(ctx.currentTime + 0.8)
+
+    } else if (type === 'tick') {
+      // Countdown tick
+      const o = ctx.createOscillator(); o.connect(g); o.type = 'square'
+      o.frequency.value = 880
+      g.gain.setValueAtTime(0.08, ctx.currentTime)
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05)
+      o.start(ctx.currentTime); o.stop(ctx.currentTime + 0.05)
+
+    } else if (type === 'ding') {
+      // Timer done — rising bell
+      const notes = [659, 784, 988, 1319]
+      notes.forEach((freq, i) => {
+        const o = ctx.createOscillator(); o.connect(g); o.type = 'sine'
+        o.frequency.value = freq
+        g.gain.setValueAtTime(0.2, ctx.currentTime + i * 0.08)
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.08 + 0.25)
+        o.start(ctx.currentTime + i * 0.08); o.stop(ctx.currentTime + i * 0.08 + 0.3)
+      })
+
+    } else if (type === 'compare') {
+      // Improvement fanfare — major chord
+      const chord = [523, 659, 784]
+      chord.forEach(freq => {
+        const o = ctx.createOscillator(); o.connect(g); o.type = 'triangle'
+        o.frequency.value = freq
+        g.gain.setValueAtTime(0.15, ctx.currentTime)
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6)
+        o.start(ctx.currentTime); o.stop(ctx.currentTime + 0.7)
+      })
+
+    } else if (type === 'abc') {
+      // Soft click — ABC entry saved
+      const o = ctx.createOscillator(); o.connect(g); o.type = 'sine'
+      o.frequency.value = 300
+      g.gain.setValueAtTime(0.12, ctx.currentTime)
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1)
+      o.start(ctx.currentTime); o.stop(ctx.currentTime + 0.1)
     }
   } catch { /* AudioContext blocked */ }
 }
@@ -291,6 +330,19 @@ export default function SessionPage() {
   const [hwSent, setHwSent]       = useState(false)
   const [hwSending, setHwSending] = useState(false)
 
+  // Student Timer (#9)
+  const [studentTimerTotal, setStudentTimerTotal]     = useState(120)
+  const [studentTimerLeft, setStudentTimerLeft]       = useState(120)
+  const [studentTimerRunning, setStudentTimerRunning] = useState(false)
+  const [showStudentTimer, setShowStudentTimer]       = useState(false)
+  const [timerPickerOpen, setTimerPickerOpen]         = useState(false)
+
+  // Before/After comparison (#10)
+  const [compareToast, setCompareToast] = useState<{ prev: ExerciseResult; curr: ExerciseResult } | null>(null)
+
+  // Session Report (#8)
+  const [showReport, setShowReport] = useState(false)
+
   // Load appointment/student info + assessment profile + session history
   useEffect(() => {
     fetch(`/api/appointments/${id}`)
@@ -370,6 +422,7 @@ export default function SessionPage() {
       setPhaseIdx(clamped)
       const phase = SESSION_PHASES[clamped]
       setPhaseToast(phase)
+      playSound('phase')
       setTimeout(() => setPhaseToast(null), 3000)
     }
   }, [elapsed, running, phaseDurations, phaseIdx])
@@ -395,6 +448,20 @@ export default function SessionPage() {
       .catch(() => {})
   }, [currentStudentId])
 
+  // Student Timer countdown with audio ticks
+  useEffect(() => {
+    if (!studentTimerRunning || studentTimerLeft <= 0) return
+    const t = setTimeout(() => {
+      setStudentTimerLeft(l => {
+        const next = l - 1
+        if (next > 0 && next <= 5) playSound('tick')
+        if (next === 0) { playSound('ding'); setStudentTimerRunning(false) }
+        return next
+      })
+    }, 1000)
+    return () => clearTimeout(t)
+  }, [studentTimerRunning, studentTimerLeft])
+
   function startSession() {
     setRunning(true)
     startRef.current = Date.now()
@@ -416,6 +483,96 @@ export default function SessionPage() {
     setTimeout(() => setObsToast(null), 2500)
   }
 
+  function startStudentTimer(seconds: number) {
+    setStudentTimerTotal(seconds)
+    setStudentTimerLeft(seconds)
+    setStudentTimerRunning(true)
+    setShowStudentTimer(true)
+    setTimerPickerOpen(false)
+  }
+
+  function printSessionReport() {
+    const date = new Date().toLocaleDateString('ar-SA', { year: 'numeric', month: 'long', day: 'numeric' })
+    const avgScoreVal = results.length
+      ? Math.round(results.reduce((s, r) => s + r.score, 0) / results.length) : 0
+    const phasesInfo = SESSION_PHASES.map((ph, i) => `${ph.icon} ${ph.label}: ${phaseDurations[i]} دقيقة`).join(' | ')
+    const exerciseRows = results.map(r =>
+      `<tr><td>${r.exerciseLabelAr}</td><td style="text-align:center;font-weight:900;color:${r.score>=80?'#16a34a':r.score>=60?'#d97706':'#dc2626'}">${r.score}%</td><td style="text-align:center">${r.accuracy}%</td><td style="text-align:center">${r.duration}ث</td></tr>`
+    ).join('')
+    const abcRows = abcLog.map(e =>
+      `<tr><td>${e.ts}</td><td>${e.antecedent||'—'}</td><td>${e.behavior||'—'}</td><td>${e.consequence||'—'}</td><td style="text-align:center">${e.intensity===1?'خفيف':e.intensity===2?'متوسط':'شديد'}</td></tr>`
+    ).join('')
+    const obsRows = obsLog.map(e => `<li><strong>${e.ts}</strong> — ${e.category}: ${e.text}</li>`).join('')
+    const recText = avgScoreVal >= 80
+      ? 'أداء ممتاز. يُوصى بالاستمرار على نفس المستوى مع زيادة الصعوبة تدريجياً.'
+      : avgScoreVal >= 60
+      ? 'أداء جيد. يُوصى بمواصلة التدريب مع التركيز على التمارين التي سجّل فيها أقل من 70%.'
+      : 'يحتاج لمزيد من الدعم. يُوصى بتكثيف التمارين الأساسية وخفض مستوى الصعوبة.'
+
+    const html = `<!DOCTYPE html><html dir="rtl" lang="ar">
+<head><meta charset="UTF-8"><title>تقرير جلسة — ${studentName}</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Arial', sans-serif; font-size: 13px; color: #1a1a2e; padding: 32px; direction: rtl; }
+  h1 { font-size: 22px; font-weight: 900; color: #4c1d95; margin-bottom: 4px; }
+  .meta { color: #666; font-size: 12px; margin-bottom: 20px; }
+  .badge { display: inline-block; background: #ede9fe; color: #4c1d95; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; margin-left: 6px; }
+  h2 { font-size: 14px; font-weight: 900; color: #4c1d95; border-bottom: 2px solid #ede9fe; padding-bottom: 4px; margin: 20px 0 10px; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+  th { background: #4c1d95; color: white; padding: 7px 10px; font-size: 12px; text-align: right; }
+  td { padding: 6px 10px; border-bottom: 1px solid #f0f0f0; }
+  tr:nth-child(even) td { background: #f9f5ff; }
+  .stats { display: flex; gap: 16px; margin-bottom: 20px; }
+  .stat { flex: 1; background: #f9f5ff; border-radius: 12px; padding: 12px; text-align: center; border: 1px solid #ede9fe; }
+  .stat .val { font-size: 28px; font-weight: 900; color: #4c1d95; }
+  .stat .lbl { font-size: 11px; color: #888; }
+  .phases { font-size: 11px; color: #666; background: #f9f5ff; padding: 8px 12px; border-radius: 8px; margin-bottom: 16px; }
+  .notes { background: #fafafa; border: 1px solid #eee; border-radius: 8px; padding: 12px; font-size: 12px; line-height: 1.6; }
+  .rec { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px; font-size: 12px; line-height: 1.6; }
+  ul { padding-right: 16px; }
+  li { margin-bottom: 4px; }
+  @media print { body { padding: 16px; } button { display: none; } }
+</style></head>
+<body>
+<div style="display:flex;align-items:start;justify-content:space-between;margin-bottom:16px">
+  <div>
+    <h1>تقرير جلسة — ${studentName || 'الطالب'}</h1>
+    <div class="meta">${date} • مدة الجلسة: ${formatTime(elapsed)} • ${results.length} تمارين
+      <span class="badge">${DIAG_LABELS[studentDiagnosis] || studentDiagnosis || 'لا يوجد تشخيص'}</span>
+      <span class="badge">${SEVERITY_LABELS[studentSeverity]}</span>
+    </div>
+  </div>
+  <button onclick="window.print()" style="background:#4c1d95;color:white;border:none;padding:8px 20px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">🖨 طباعة PDF</button>
+</div>
+
+<div class="stats">
+  <div class="stat"><div class="val">${avgScoreVal}%</div><div class="lbl">متوسط الأداء</div></div>
+  <div class="stat"><div class="val">${results.filter(r=>r.score>=80).length}</div><div class="lbl">تمارين ممتازة</div></div>
+  <div class="stat"><div class="val">${results.length}</div><div class="lbl">إجمالي التمارين</div></div>
+  <div class="stat"><div class="val">${abcLog.length}</div><div class="lbl">حوادث سلوكية</div></div>
+</div>
+
+<div class="phases">${phasesInfo}</div>
+
+${results.length > 0 ? `<h2>نتائج التمارين</h2>
+<table><thead><tr><th>التمرين</th><th style="text-align:center">الدرجة</th><th style="text-align:center">الدقة</th><th style="text-align:center">المدة</th></tr></thead>
+<tbody>${exerciseRows}</tbody></table>` : ''}
+
+${abcLog.length > 0 ? `<h2>🔗 سجل ABC السلوكي</h2>
+<table><thead><tr><th>الوقت</th><th>السابق (A)</th><th>السلوك (B)</th><th>النتيجة (C)</th><th style="text-align:center">الحدة</th></tr></thead>
+<tbody>${abcRows}</tbody></table>` : ''}
+
+${obsLog.length > 0 ? `<h2>📝 الملاحظات الفورية</h2><ul>${obsRows}</ul>` : ''}
+
+${notes ? `<h2>ملاحظات المعالج</h2><div class="notes">${notes.replace(/\n/g, '<br>')}</div>` : ''}
+
+<h2>التوصيات</h2><div class="rec">${recText}</div>
+</body></html>`
+
+    const w = window.open('', '_blank', 'width=900,height=700')
+    if (w) { w.document.write(html); w.document.close() }
+  }
+
   function logABC() {
     if (!abcForm.antecedent && !abcForm.behavior) return
     const now = new Date()
@@ -423,6 +580,7 @@ export default function SessionPage() {
     setAbcLog(prev => [...prev, { ...abcForm, ts, elapsed }])
     setAbcForm({ antecedent: '', behavior: '', consequence: '', intensity: 2 })
     setAbcOpen(false)
+    playSound('abc')
   }
 
   async function sendHomework() {
@@ -447,6 +605,16 @@ export default function SessionPage() {
 
   function handleExerciseComplete(result: ExerciseResult) {
     setResults(r => {
+      // Before/After comparison: detect if same exercise was played before in this session
+      const prev = r.find(x => x.exerciseType === result.exerciseType)
+      if (prev) {
+        setTimeout(() => {
+          setCompareToast({ prev, curr: result })
+          if (result.score > prev.score) playSound('compare')
+          setTimeout(() => setCompareToast(null), 5000)
+        }, 500)
+      }
+
       const newResults = [...r, result]
       // Kid Mode completion check — trigger celebration once all top games are done
       if (kidMode && topGames.length > 0) {
@@ -549,6 +717,75 @@ export default function SessionPage() {
 
   return (
     <div className="min-h-screen bg-gray-950 text-white flex flex-col">
+
+      {/* ── Student Timer Large Display (#9) ── */}
+      {showStudentTimer && (
+        <div
+          className="fixed z-[150] flex flex-col items-center justify-center pointer-events-none select-none"
+          style={{
+            bottom: 80, left: '50%', transform: 'translateX(-50%)',
+            background: 'rgba(0,0,0,0.85)',
+            borderRadius: 24,
+            padding: '16px 32px',
+            backdropFilter: 'blur(12px)',
+            border: `2px solid ${studentTimerLeft <= studentTimerTotal * 0.1 ? '#EF4444' : studentTimerLeft <= studentTimerTotal * 0.25 ? '#F59E0B' : '#22C55E'}55`,
+            boxShadow: `0 0 40px ${studentTimerLeft <= studentTimerTotal * 0.1 ? '#EF444420' : studentTimerLeft <= studentTimerTotal * 0.25 ? '#F59E0B20' : '#22C55E20'}`,
+            minWidth: 200,
+          }}
+        >
+          <div
+            className="font-black ltr-num"
+            style={{
+              fontSize: '3.5rem',
+              color: studentTimerLeft <= studentTimerTotal * 0.1 ? '#EF4444'
+                   : studentTimerLeft <= studentTimerTotal * 0.25 ? '#F59E0B'
+                   : '#22C55E',
+              fontVariantNumeric: 'tabular-nums',
+              letterSpacing: '0.05em',
+            }}
+          >
+            {formatTime(studentTimerLeft)}
+          </div>
+          {/* Progress bar */}
+          <div className="w-full h-1.5 rounded-full mt-2 overflow-hidden" style={{ background: 'rgba(255,255,255,0.1)' }}>
+            <div
+              className="h-full rounded-full transition-all duration-1000"
+              style={{
+                width: `${(studentTimerLeft / studentTimerTotal) * 100}%`,
+                background: studentTimerLeft <= studentTimerTotal * 0.1 ? '#EF4444'
+                           : studentTimerLeft <= studentTimerTotal * 0.25 ? '#F59E0B'
+                           : '#22C55E',
+              }}
+            />
+          </div>
+          {studentTimerLeft === 0 && (
+            <div className="text-white font-black text-sm mt-1">انتهى الوقت! ⏰</div>
+          )}
+          {/* Clickable to pause/resume */}
+          <div className="pointer-events-auto mt-2 flex gap-2">
+            <button
+              onClick={() => setStudentTimerRunning(r => !r)}
+              className="text-white/50 hover:text-white text-xs font-bold px-3 py-1 rounded-lg transition-colors"
+              style={{ background: 'rgba(255,255,255,0.08)' }}
+            >
+              {studentTimerRunning ? '⏸ إيقاف مؤقت' : '▶ استئناف'}
+            </button>
+            <button
+              onClick={() => { setStudentTimerLeft(studentTimerTotal); setStudentTimerRunning(true) }}
+              className="text-white/50 hover:text-white text-xs font-bold px-3 py-1 rounded-lg transition-colors"
+              style={{ background: 'rgba(255,255,255,0.08)' }}
+            >
+              ↺ إعادة
+            </button>
+            <button
+              onClick={() => { setShowStudentTimer(false); setStudentTimerRunning(false) }}
+              className="text-white/30 hover:text-white text-xs px-2 rounded-lg transition-colors"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── Prompt Card Full-Screen Overlay ── */}
       {promptCard && (
@@ -851,6 +1088,62 @@ export default function SessionPage() {
           >
             🎯 {focusMode ? 'تركيز فعّال' : 'تركيز'}
           </button>
+
+          {/* Student Timer button (#9) */}
+          <div className="relative flex-shrink-0">
+            <button
+              onClick={() => setTimerPickerOpen(p => !p)}
+              className={`flex items-center gap-1.5 font-black px-3 py-2 rounded-xl text-sm transition-all ${
+                showStudentTimer
+                  ? 'bg-orange-500 text-white ring-2 ring-orange-400/50'
+                  : 'bg-white/10 text-white/60 hover:bg-white/20 hover:text-white'
+              }`}
+              title="مؤقت الطالب"
+            >
+              ⏱ {showStudentTimer ? formatTime(studentTimerLeft) : 'مؤقت'}
+            </button>
+            {timerPickerOpen && (
+              <div
+                className="absolute top-full mt-2 left-0 z-[70] rounded-2xl p-3 shadow-2xl"
+                style={{ background: '#111827', border: '1.5px solid rgba(255,255,255,0.12)', minWidth: 180 }}
+                dir="rtl"
+              >
+                <p className="text-white/40 text-[10px] font-black mb-2">اختر مدة المؤقت</p>
+                <div className="grid grid-cols-2 gap-1.5 mb-2">
+                  {[[60,'1 دقيقة'],[120,'2 دقيقة'],[180,'3 دقائق'],[300,'5 دقائق']].map(([s,l]) => (
+                    <button
+                      key={s}
+                      onClick={() => startStudentTimer(s as number)}
+                      className="py-2 rounded-xl text-xs font-black text-white transition-all hover:ring-1 hover:ring-orange-400"
+                      style={{ background: 'rgba(255,255,255,0.08)' }}
+                    >
+                      {l as string}
+                    </button>
+                  ))}
+                </div>
+                {showStudentTimer && (
+                  <button
+                    onClick={() => { setShowStudentTimer(false); setStudentTimerRunning(false); setTimerPickerOpen(false) }}
+                    className="w-full py-1.5 rounded-xl text-[10px] font-black text-red-400 transition-all"
+                    style={{ background: 'rgba(239,68,68,0.1)' }}
+                  >
+                    إيقاف المؤقت
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Session Report button (#8) */}
+          {results.length > 0 && (
+            <button
+              onClick={printSessionReport}
+              className="flex items-center gap-1.5 font-black px-3 py-2 rounded-xl text-sm transition-all bg-white/10 text-white/60 hover:bg-white/20 hover:text-white flex-shrink-0"
+              title="طباعة تقرير الجلسة"
+            >
+              📄 تقرير
+            </button>
+          )}
 
           <button onClick={saveSession} disabled={saving}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-black text-sm transition-all shadow-lg hover:-translate-y-0.5 ${
@@ -1968,6 +2261,64 @@ export default function SessionPage() {
             <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: obsToast.color }} />
             <span className="text-white font-bold text-sm">{obsToast.text}</span>
             <span className="text-white/40 text-xs font-mono ltr-num">{obsToast.ts}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Before/After Comparison Toast (#10) */}
+      {compareToast && (
+        <div className="fixed bottom-32 left-1/2 -translate-x-1/2 z-[95] pointer-events-none" dir="rtl">
+          <div
+            className="rounded-2xl px-5 py-4 shadow-2xl"
+            style={{ background: '#1F2937', border: '1.5px solid rgba(255,255,255,0.12)', minWidth: 280 }}
+          >
+            <div className="text-white/50 text-[10px] font-black mb-2 uppercase tracking-wider">
+              📊 مقارنة قبل/بعد — {compareToast.curr.exerciseLabelAr}
+            </div>
+            <div className="flex items-center gap-4 justify-center">
+              <div className="text-center">
+                <div className="text-white/40 text-[10px] mb-1">قبل</div>
+                <div
+                  className="font-black text-2xl ltr-num"
+                  style={{ color: compareToast.prev.score >= 80 ? '#22C55E' : compareToast.prev.score >= 60 ? '#F59E0B' : '#EF4444' }}
+                >
+                  {compareToast.prev.score}%
+                </div>
+              </div>
+              <div className="flex flex-col items-center gap-1">
+                <div
+                  className="font-black text-lg"
+                  style={{ color: compareToast.curr.score > compareToast.prev.score ? '#22C55E' : compareToast.curr.score < compareToast.prev.score ? '#EF4444' : '#9CA3AF' }}
+                >
+                  {compareToast.curr.score > compareToast.prev.score ? '↑' : compareToast.curr.score < compareToast.prev.score ? '↓' : '='}
+                </div>
+                <div
+                  className="text-[10px] font-black px-2 py-0.5 rounded-full"
+                  style={{
+                    background: compareToast.curr.score > compareToast.prev.score ? 'rgba(34,197,94,0.15)' : compareToast.curr.score < compareToast.prev.score ? 'rgba(239,68,68,0.15)' : 'rgba(156,163,175,0.15)',
+                    color: compareToast.curr.score > compareToast.prev.score ? '#22C55E' : compareToast.curr.score < compareToast.prev.score ? '#EF4444' : '#9CA3AF',
+                  }}
+                >
+                  {compareToast.curr.score > compareToast.prev.score
+                    ? `+${compareToast.curr.score - compareToast.prev.score}%`
+                    : compareToast.curr.score < compareToast.prev.score
+                    ? `${compareToast.curr.score - compareToast.prev.score}%`
+                    : 'نفس الأداء'}
+                </div>
+              </div>
+              <div className="text-center">
+                <div className="text-white/40 text-[10px] mb-1">بعد</div>
+                <div
+                  className="font-black text-2xl ltr-num"
+                  style={{ color: compareToast.curr.score >= 80 ? '#22C55E' : compareToast.curr.score >= 60 ? '#F59E0B' : '#EF4444' }}
+                >
+                  {compareToast.curr.score}%
+                </div>
+              </div>
+            </div>
+            {compareToast.curr.score > compareToast.prev.score && (
+              <div className="text-center text-green-400 font-black text-sm mt-2">تحسّن رائع! 🎉</div>
+            )}
           </div>
         </div>
       )}

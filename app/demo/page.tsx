@@ -298,13 +298,13 @@ function HeroVisual() {
 interface Slide { tag:string; title:string; sub:string; accent:string; color:string; url?:string; mockup?:React.ReactNode; isHero?:boolean }
 
 const SLIDES: Slide[] = [
-  { isHero:true, tag:'المنصة العلاجية الأولى عربياً', title:'أكاديمية أمين', sub:'برنامج علمي لأطفال ADHD والتوحد — APA • ABA • CBT', accent:'#C084FC', color:'#7C5CFC' },
-  { tag:'① التسجيل', title:'ابدأ في دقيقتين', sub:'سجّل حسابك وبيانات طفلك — مجاني بدون بطاقة بنكية', accent:'#34D399', color:'#10B981', url:'amine-academy.com/register', mockup:<RegisterMockup/> },
-  { tag:'② لوحة التحكم', title:'كل شيء في مكان واحد', sub:'جلساتك، تمارين طفلك، ونقاطه — انضم للجلسة بنقرة واحدة', accent:'#818CF8', color:'#6366F1', url:'amine-academy.com/parent/dashboard', mockup:<DashboardMockup/> },
-  { tag:'③ الحجز', title:'احجز بثوانٍ', sub:'تقويم متزامن مع الأستاذ أمين — تأكيد فوري وتذكير تلقائي', accent:'#34D399', color:'#10B981', url:'amine-academy.com/parent/appointments', mockup:<BookingMockup/> },
-  { tag:'④ الجلسة المباشرة', title:'تجربة تفاعلية لا مثيل لها', sub:'تمارين APA+ABA+CBT مع نقاط تحفيزية وتتبع التركيز لحظياً', accent:'#F87171', color:'#EF4444', url:'amine-academy.com/session/live', mockup:<SessionMockup/> },
-  { tag:'⑤ مكتبة التمارين', title:'+32 تمرين علمي', sub:'للانتباه والاندفاعية والذاكرة والتفكير — أعمار 5 إلى 22 سنة', accent:'#C084FC', color:'#9333EA', url:'amine-academy.com/parent/exercises', mockup:<ExercisesMockup/> },
-  { tag:'⑥ تقارير التقدم', title:'نتائج بأرقام حقيقية', sub:'تقرير شهري مفصّل + توصيات الأستاذ + مقارنة بالمعدلات العلمية', accent:'#FBBF24', color:'#F59E0B', url:'amine-academy.com/parent/progress', mockup:<ProgressMockup/> },
+  { isHero:true, tag:'🌟 قطر • تونس • العالم العربي', title:'أكاديمية أمين', sub:'طفلك يفكّر بطريقة مختلفة — ونحن نتحدّث لغته', accent:'#C084FC', color:'#7C5CFC' },
+  { tag:'① التسجيل', title:'ابدأ في دقيقتين', sub:'سجّل حسابك وبيانات طفلك — مجاني تماماً بدون بطاقة بنكية', accent:'#34D399', color:'#10B981', url:'amine-academy.com/register', mockup:<RegisterMockup/> },
+  { tag:'② بوابة الولي', title:'كل شيء في مكان واحد', sub:'جلساتك القادمة، تمارين طفلك اليومية، ونقاطه — انضم بنقرة واحدة', accent:'#818CF8', color:'#6366F1', url:'amine-academy.com/parent/dashboard', mockup:<DashboardMockup/> },
+  { tag:'③ حجز الجلسات', title:'احجز بثوانٍ', sub:'تقويم متزامن مع الأستاذ أمين — تأكيد فوري وتذكير تلقائي قبل الجلسة', accent:'#34D399', color:'#10B981', url:'amine-academy.com/parent/appointments', mockup:<BookingMockup/> },
+  { tag:'④ الجلسة المباشرة', title:'ليست مجرد مكالمة', sub:'جلسة حركية ومعرفية تفاعلية — مع تتبع مستوى تركيز طفلك لحظياً', accent:'#F87171', color:'#EF4444', url:'amine-academy.com/session/live', mockup:<SessionMockup/> },
+  { tag:'⑤ مكتبة التمارين', title:'+32 تمرين تفاعلي', sub:'للتركيز والذاكرة والمهارات الاجتماعية والحركة — أعمار 5 إلى 22 سنة', accent:'#C084FC', color:'#9333EA', url:'amine-academy.com/parent/exercises', mockup:<ExercisesMockup/> },
+  { tag:'⑥ تقارير التقدم', title:'شاهد تطور طفلك بأرقام', sub:'تقرير شهري مفصّل مع توصيات الأستاذ ومقارنة بالمستويات المرجعية', accent:'#FBBF24', color:'#F59E0B', url:'amine-academy.com/parent/progress', mockup:<ProgressMockup/> },
 ]
 
 // ─── Demo page ─────────────────────────────────────────────────────────────────
@@ -458,7 +458,7 @@ export default function DemoPage() {
             {muted ? <VolumeX size={15}/> : <Volume2 size={15}/>}
           </button>
 
-          <div style={{color:'rgba(255,255,255,0.3)',fontSize:11,fontWeight:700,fontFamily:'monospace',minWidth:32,textAlign:'center'}}>
+          <div dir="ltr" style={{color:'rgba(255,255,255,0.3)',fontSize:11,fontWeight:700,fontFamily:'monospace',minWidth:32,textAlign:'center'}}>
             {idx+1}/{SLIDES.length}
           </div>
         </div>

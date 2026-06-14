@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { Play, Pause, Volume2, VolumeX, ChevronLeft, ChevronRight, BarChart2, Calendar, BookOpen, Brain } from 'lucide-react'
 
-const SLIDE_DURATION = 6500
+const SLIDE_DURATION = 4500
 
 // ─── Ambient music ─────────────────────────────────────────────────────────────
 function createAmbientMusic(ctx: AudioContext): () => void {

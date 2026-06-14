@@ -1,5 +1,5 @@
 import { getAllParents } from '@/lib/db'
-import { Users, CheckCircle, Clock, XCircle, AlertCircle, Phone, Mail, MapPin, UserPlus, ChevronLeft } from 'lucide-react'
+import { Users, CheckCircle, Clock, XCircle, AlertCircle, Phone, Mail, MapPin, UserPlus, ChevronLeft, AlertTriangle } from 'lucide-react'
 import Link from 'next/link'
 
 export const dynamic = 'force-dynamic'
@@ -108,6 +108,10 @@ export default async function ClientsPage() {
             const plan = PLAN_LABELS[parent.subscriptionPlan] || parent.subscriptionPlan
             const joinDate = new Date(parent.createdAt).toLocaleDateString('ar-SA', { year: 'numeric', month: 'short', day: 'numeric' })
             const childCount = parent.childrenIds?.length ?? 0
+            const expiringIn7 = parent.subscriptionExpiry
+              ? (new Date(parent.subscriptionExpiry).getTime() - Date.now()) / (1000 * 60 * 60 * 24) <= 7
+                && parent.subscriptionStatus === 'active'
+              : false
 
             return (
               <Link
@@ -133,10 +137,18 @@ export default async function ClientsPage() {
                       </p>
                     </div>
                   </div>
-                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-black ${status.badge}`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
-                    {status.label}
-                  </span>
+                  <div className="flex items-center gap-1.5 flex-col items-end">
+                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-black ${status.badge}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
+                      {status.label}
+                    </span>
+                    {expiringIn7 && (
+                      <span className="inline-flex items-center gap-1 bg-amber-100 text-amber-700 ring-1 ring-amber-200 px-2 py-0.5 rounded-full text-[10px] font-black">
+                        <AlertTriangle className="w-2.5 h-2.5" />
+                        ينتهي قريباً
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 {/* Info */}

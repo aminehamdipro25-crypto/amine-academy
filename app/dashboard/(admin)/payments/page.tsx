@@ -1,8 +1,10 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { CheckCircle2, XCircle, Clock, RefreshCw, CreditCard, TrendingUp, AlertTriangle, BadgeCheck } from 'lucide-react'
+import { CheckCircle2, XCircle, Clock, RefreshCw, CreditCard, AlertTriangle, BadgeCheck } from 'lucide-react'
 import type { PendingPayment, PaymentStatus } from '@/lib/types'
+import { useToast } from '@/components/ui/Toast'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 
 const METHOD_LABELS: Record<string, string> = {
   fawran:           'فوران',
@@ -30,10 +32,12 @@ const PLAN_COLORS: Record<string, string> = {
 }
 
 export default function AdminPaymentsPage() {
+  const { toast } = useToast()
   const [payments, setPayments] = useState<PendingPayment[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<PaymentStatus | 'all'>('all')
   const [processingId, setProcessingId] = useState<string | null>(null)
+  const [confirm, setConfirm] = useState<{ id: string; name: string } | null>(null)
 
   const fetchPayments = useCallback(async () => {
     setLoading(true)
@@ -62,9 +66,15 @@ export default function AdminPaymentsPage() {
       })
       if (res.ok) {
         setPayments(prev => prev.map(p => p.id === id ? { ...p, status } : p))
+        toast(
+          status === 'confirmed' ? '✓ تم تأكيد الدفعة بنجاح' : 'تم رفض الدفعة',
+          status === 'confirmed' ? 'success' : 'error'
+        )
+      } else {
+        toast('حدث خطأ، حاول مجدداً', 'error')
       }
-    } catch (e) {
-      console.error(e)
+    } catch {
+      toast('تعذّر الاتصال بالخادم', 'error')
     } finally {
       setProcessingId(null)
     }
@@ -270,7 +280,7 @@ export default function AdminPaymentsPage() {
                         تأكيد
                       </button>
                       <button
-                        onClick={() => updateStatus(payment.id, 'rejected')}
+                        onClick={() => setConfirm({ id: payment.id, name: payment.guestName ?? '' })}
                         disabled={isProcessing}
                         className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-black rounded-xl transition-colors disabled:opacity-50"
                       >
@@ -300,6 +310,15 @@ export default function AdminPaymentsPage() {
           })}
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!confirm}
+        title="رفض الدفعة"
+        message={`هل أنت متأكد من رفض دفعة ${confirm?.name ?? ''}؟ لا يمكن التراجع عن هذا القرار.`}
+        confirmLabel="نعم، رفض الدفعة"
+        onConfirm={() => confirm && updateStatus(confirm.id, 'rejected')}
+        onCancel={() => setConfirm(null)}
+      />
     </div>
   )
 }

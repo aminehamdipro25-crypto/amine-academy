@@ -107,6 +107,15 @@ export default function AdminHeader({ onMenuToggle }: { onMenuToggle?: () => voi
       {/* Left side */}
       <div className="flex items-center gap-1.5">
 
+        {/* Ctrl+K hint */}
+        <button
+          onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true }))}
+          className="hidden md:flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 font-medium transition-colors border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50"
+        >
+          <span>بحث</span>
+          <kbd className="bg-gray-100 text-gray-500 px-1 py-0.5 rounded text-[9px] font-mono">⌘K</kbd>
+        </button>
+
         {/* View site */}
         <Link href="/" target="_blank"
           className="hidden sm:flex items-center gap-1.5 text-xs text-gray-500 hover:text-brand-600 font-medium transition-colors border border-gray-200 px-3 py-1.5 rounded-lg hover:border-brand-300 hover:bg-brand-50">

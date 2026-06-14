@@ -44,6 +44,24 @@ interface ObsEntry {
   ts: string        // HH:MM
 }
 
+interface ABCEntry {
+  antecedent: string
+  behavior: string
+  consequence: string
+  intensity: 1|2|3
+  ts: string
+  elapsed: number
+}
+
+const PROMPT_CARDS = [
+  { id: 'stop',    text: 'توقف وفكّر',     emoji: '🛑', bg: 'linear-gradient(135deg,#DC2626,#EF4444)', glow: '#EF4444' },
+  { id: 'breathe', text: 'تنفس معي',       emoji: '🌬️', bg: 'linear-gradient(135deg,#1D4ED8,#3B82F6)', glow: '#3B82F6' },
+  { id: 'great',   text: 'أنت رائع!',      emoji: '⭐', bg: 'linear-gradient(135deg,#D97706,#F59E0B)', glow: '#F59E0B' },
+  { id: 'listen',  text: 'استمع جيداً',    emoji: '👂', bg: 'linear-gradient(135deg,#7C3AED,#8B5CF6)', glow: '#8B5CF6' },
+  { id: 'calm',    text: 'هدّئ نفسك',      emoji: '😌', bg: 'linear-gradient(135deg,#059669,#10B981)', glow: '#10B981' },
+  { id: 'try',     text: 'حاول مرة أخرى', emoji: '💪', bg: 'linear-gradient(135deg,#EA580C,#F97316)', glow: '#F97316' },
+]
+
 const QUICK_OBS: { category: string; color: string; bg: string; items: { text: string; icon: string }[] }[] = [
   {
     category: 'انتباه',
@@ -255,6 +273,24 @@ export default function SessionPage() {
   // Whiteboard
   const [showWhiteboard, setShowWhiteboard] = useState(false)
 
+  // ABC Behavior Log
+  const [abcLog, setAbcLog]   = useState<ABCEntry[]>([])
+  const [abcOpen, setAbcOpen] = useState(false)
+  const [abcForm, setAbcForm] = useState<{ antecedent: string; behavior: string; consequence: string; intensity: 1|2|3 }>({
+    antecedent: '', behavior: '', consequence: '', intensity: 2,
+  })
+
+  // Prompt Cards
+  const [promptCard, setPromptCard]               = useState<typeof PROMPT_CARDS[0] | null>(null)
+  const [promptPickerOpen, setPromptPickerOpen]   = useState(false)
+
+  // Homework Builder
+  const [hwOpen, setHwOpen]       = useState(false)
+  const [hwSelected, setHwSelected] = useState<string[]>([])
+  const [hwNote, setHwNote]       = useState('')
+  const [hwSent, setHwSent]       = useState(false)
+  const [hwSending, setHwSending] = useState(false)
+
   // Load appointment/student info + assessment profile + session history
   useEffect(() => {
     fetch(`/api/appointments/${id}`)
@@ -380,6 +416,35 @@ export default function SessionPage() {
     setTimeout(() => setObsToast(null), 2500)
   }
 
+  function logABC() {
+    if (!abcForm.antecedent && !abcForm.behavior) return
+    const now = new Date()
+    const ts = now.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })
+    setAbcLog(prev => [...prev, { ...abcForm, ts, elapsed }])
+    setAbcForm({ antecedent: '', behavior: '', consequence: '', intensity: 2 })
+    setAbcOpen(false)
+  }
+
+  async function sendHomework() {
+    if (!currentStudentId || hwSelected.length === 0) return
+    setHwSending(true)
+    const exercises = hwSelected
+      .map(eid => EXERCISES.find(e => e.id === eid))
+      .filter(Boolean)
+      .map(e => ({ id: e!.id, labelAr: e!.labelAr, icon: e!.icon, category: e!.category }))
+    try {
+      await fetch(`/api/students/${currentStudentId}/homework`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ exercises, note: hwNote, sessionId: id, difficulty }),
+      })
+      setHwSent(true)
+      setTimeout(() => { setHwOpen(false); setHwSent(false); setHwSelected([]); setHwNote('') }, 1800)
+    } finally {
+      setHwSending(false)
+    }
+  }
+
   function handleExerciseComplete(result: ExerciseResult) {
     setResults(r => {
       const newResults = [...r, result]
@@ -451,6 +516,7 @@ export default function SessionPage() {
           durationSeconds: elapsed,
           highlights: results.filter(r => r.score >= 80).map(r => `${r.exerciseLabelAr}: ${r.score}%`),
           observationLog: obsLog,
+          abcLog,
         }),
       })
       setSaved(true)
@@ -483,6 +549,34 @@ export default function SessionPage() {
 
   return (
     <div className="min-h-screen bg-gray-950 text-white flex flex-col">
+
+      {/* ── Prompt Card Full-Screen Overlay ── */}
+      {promptCard && (
+        <div
+          className="fixed inset-0 z-[300] flex flex-col items-center justify-center cursor-pointer select-none"
+          style={{ background: promptCard.bg }}
+          onClick={() => setPromptCard(null)}
+          dir="rtl"
+        >
+          <div className="text-center">
+            <div
+              className="leading-none mb-8"
+              style={{ fontSize: '10rem', filter: `drop-shadow(0 0 40px ${promptCard.glow}88)` }}
+            >
+              {promptCard.emoji}
+            </div>
+            <div
+              className="text-white font-black"
+              style={{ fontSize: '4.5rem', textShadow: `0 4px 30px rgba(0,0,0,0.4), 0 0 60px ${promptCard.glow}66` }}
+            >
+              {promptCard.text}
+            </div>
+          </div>
+          <div className="absolute bottom-10 text-white/40 font-bold text-sm">
+            اضغط في أي مكان للإغلاق
+          </div>
+        </div>
+      )}
 
       {/* Header */}
       <header className="bg-gray-900 border-b border-white/10 px-4 py-3 flex items-center gap-4">
@@ -642,6 +736,39 @@ export default function SessionPage() {
           }`}>
             <Clock className="w-4 h-4 text-green-400" />
             <span className="font-black text-lg ltr-num">{formatTime(elapsed)}</span>
+          </div>
+
+          {/* Prompt Cards button */}
+          <div className="relative flex-shrink-0">
+            <button
+              onClick={() => setPromptPickerOpen(p => !p)}
+              className={`flex items-center gap-1.5 font-black px-3 py-1.5 rounded-lg text-xs transition-all ${
+                promptPickerOpen
+                  ? 'bg-purple-500 text-white ring-2 ring-purple-400/50'
+                  : 'bg-white/10 hover:bg-white/20 text-white/70'
+              }`}
+              title="بطاقات التحفيز"
+            >
+              🃏 بطاقة
+            </button>
+            {promptPickerOpen && (
+              <div
+                className="absolute top-full mt-2 left-0 z-[70] rounded-2xl overflow-hidden shadow-2xl"
+                style={{ background: '#111827', border: '1.5px solid rgba(255,255,255,0.12)', minWidth: 200 }}
+                dir="rtl"
+              >
+                {PROMPT_CARDS.map(card => (
+                  <button
+                    key={card.id}
+                    onClick={() => { setPromptCard(card); setPromptPickerOpen(false) }}
+                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/10 transition-colors text-right"
+                  >
+                    <span className="text-2xl">{card.emoji}</span>
+                    <span className="text-white font-black text-sm">{card.text}</span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Whiteboard button */}
@@ -994,6 +1121,50 @@ export default function SessionPage() {
                           <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: e.color }} />
                           <span className="text-white/80 text-xs flex-1">{e.text}</span>
                           <span className="text-white/30 text-[10px] font-mono ltr-num flex-shrink-0">{e.ts}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* ABC Behavior Log entries */}
+                {abcLog.length > 0 && (
+                  <div className="bg-amber-900/20 border border-amber-500/20 rounded-xl p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-amber-400 text-[10px] font-black uppercase tracking-wider">🔗 سجل ABC</span>
+                      <span className="text-amber-400/50 text-[10px]">{abcLog.length} حوادث</span>
+                    </div>
+                    <div className="space-y-3">
+                      {abcLog.map((e, i) => (
+                        <div key={i} className="bg-white/5 rounded-xl p-2.5">
+                          <div className="flex items-center justify-between mb-1.5">
+                            <span className="text-white/30 text-[9px] ltr-num font-mono">{e.ts}</span>
+                            <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full ${
+                              e.intensity === 1 ? 'bg-green-900/60 text-green-400' :
+                              e.intensity === 2 ? 'bg-amber-900/60 text-amber-400' :
+                              'bg-red-900/60 text-red-400'
+                            }`}>
+                              {e.intensity === 1 ? 'خفيف' : e.intensity === 2 ? 'متوسط' : 'شديد'}
+                            </span>
+                          </div>
+                          {e.antecedent && (
+                            <div className="flex gap-1.5 mb-1">
+                              <span className="text-blue-400 text-[9px] font-black flex-shrink-0">A:</span>
+                              <span className="text-white/70 text-[10px]">{e.antecedent}</span>
+                            </div>
+                          )}
+                          {e.behavior && (
+                            <div className="flex gap-1.5 mb-1">
+                              <span className="text-amber-400 text-[9px] font-black flex-shrink-0">B:</span>
+                              <span className="text-white/70 text-[10px]">{e.behavior}</span>
+                            </div>
+                          )}
+                          {e.consequence && (
+                            <div className="flex gap-1.5">
+                              <span className="text-green-400 text-[9px] font-black flex-shrink-0">C:</span>
+                              <span className="text-white/70 text-[10px]">{e.consequence}</span>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -1514,6 +1685,193 @@ export default function SessionPage() {
           <button onClick={() => setFocusMode(false)}
             className="bg-gray-800 text-white/50 text-xs py-2 rounded-xl hover:bg-gray-700 transition-colors">
             خروج من وضع التركيز
+          </button>
+        </div>
+      )}
+
+      {/* ── ABC Behavior Log Panel ── */}
+      {running && (
+        <div
+          className="fixed z-[80]"
+          style={{ bottom: 24, right: focusMode ? 24 : 288, marginRight: 190, transition: 'right 0.3s' }}
+          dir="rtl"
+        >
+          {abcOpen && (
+            <div
+              className="mb-2 rounded-2xl p-4 w-80"
+              style={{ background: '#111827', border: '1.5px solid rgba(245,158,11,0.3)', boxShadow: '0 16px 48px rgba(0,0,0,0.6)' }}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-amber-400 font-black text-xs">🔗 تحليل ABC</span>
+                <button onClick={() => setAbcOpen(false)} className="text-white/40 hover:text-white text-lg leading-none">×</button>
+              </div>
+              <div className="space-y-2.5">
+                <div>
+                  <label className="text-[10px] font-black text-blue-400 mb-1 block">A — السابق (ما حدث قبل)</label>
+                  <input
+                    value={abcForm.antecedent}
+                    onChange={e => setAbcForm(f => ({ ...f, antecedent: e.target.value }))}
+                    placeholder="ما الذي سبق السلوك؟"
+                    className="w-full bg-white/8 border border-white/15 rounded-xl px-3 py-2 text-white text-xs placeholder-white/30 focus:outline-none focus:border-blue-400"
+                    dir="rtl"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-amber-400 mb-1 block">B — السلوك (ما حدث)</label>
+                  <input
+                    value={abcForm.behavior}
+                    onChange={e => setAbcForm(f => ({ ...f, behavior: e.target.value }))}
+                    placeholder="صِف السلوك بدقة..."
+                    className="w-full bg-white/8 border border-white/15 rounded-xl px-3 py-2 text-white text-xs placeholder-white/30 focus:outline-none focus:border-amber-400"
+                    dir="rtl"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-green-400 mb-1 block">C — النتيجة (ردة الفعل)</label>
+                  <input
+                    value={abcForm.consequence}
+                    onChange={e => setAbcForm(f => ({ ...f, consequence: e.target.value }))}
+                    placeholder="ما الذي تلا السلوك؟"
+                    className="w-full bg-white/8 border border-white/15 rounded-xl px-3 py-2 text-white text-xs placeholder-white/30 focus:outline-none focus:border-green-400"
+                    dir="rtl"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-white/40 mb-1 block">الحدة</label>
+                  <div className="flex gap-1.5">
+                    {([1,2,3] as const).map(v => (
+                      <button
+                        key={v}
+                        onClick={() => setAbcForm(f => ({ ...f, intensity: v }))}
+                        className="flex-1 py-1.5 rounded-xl text-xs font-black transition-all"
+                        style={{
+                          background: abcForm.intensity === v
+                            ? v === 1 ? '#22C55E' : v === 2 ? '#F59E0B' : '#EF4444'
+                            : 'rgba(255,255,255,0.08)',
+                          color: abcForm.intensity === v ? '#FFFFFF' : 'rgba(255,255,255,0.4)',
+                        }}
+                      >
+                        {v === 1 ? 'خفيف' : v === 2 ? 'متوسط' : 'شديد'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={logABC}
+                disabled={!abcForm.antecedent && !abcForm.behavior}
+                className="mt-3 w-full py-2.5 rounded-xl font-black text-sm transition-all"
+                style={{
+                  background: (abcForm.antecedent || abcForm.behavior) ? '#F59E0B' : 'rgba(255,255,255,0.06)',
+                  color: (abcForm.antecedent || abcForm.behavior) ? '#000000' : 'rgba(255,255,255,0.2)',
+                }}
+              >
+                حفظ السجل ✓
+              </button>
+            </div>
+          )}
+          <button
+            onClick={() => { setAbcOpen(o => !o); setObsOpen(false); setHwOpen(false) }}
+            className="flex items-center gap-2 font-black text-xs px-4 py-2.5 rounded-2xl transition-all active:scale-95 shadow-lg"
+            style={abcOpen
+              ? { background: '#F59E0B', color: '#000000', boxShadow: '0 4px 16px rgba(245,158,11,0.4)' }
+              : { background: 'linear-gradient(135deg,#1F2937,#374151)', color: '#FFFFFF', boxShadow: '0 4px 16px rgba(0,0,0,0.4)', border: '1.5px solid rgba(255,255,255,0.1)' }
+            }
+          >
+            🔗 ABC
+            {abcLog.length > 0 && (
+              <span className="font-black text-[10px] px-1.5 py-0.5 rounded-full ltr-num bg-amber-500 text-black">
+                {abcLog.length}
+              </span>
+            )}
+          </button>
+        </div>
+      )}
+
+      {/* ── Homework Builder Panel ── */}
+      {running && currentStudentId && (
+        <div
+          className="fixed z-[80]"
+          style={{ bottom: 24, right: focusMode ? 24 : 288, marginRight: 96, transition: 'right 0.3s' }}
+          dir="rtl"
+        >
+          {hwOpen && (
+            <div
+              className="mb-2 rounded-2xl p-4 w-80"
+              style={{ background: '#111827', border: '1.5px solid rgba(34,197,94,0.3)', boxShadow: '0 16px 48px rgba(0,0,0,0.6)' }}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-green-400 font-black text-xs">🏠 الواجب المنزلي</span>
+                <button onClick={() => setHwOpen(false)} className="text-white/40 hover:text-white text-lg leading-none">×</button>
+              </div>
+              {hwSent ? (
+                <div className="text-center py-6">
+                  <div className="text-4xl mb-2">✅</div>
+                  <p className="text-green-400 font-black">تم الإرسال للطالب!</p>
+                </div>
+              ) : (
+                <>
+                  <p className="text-white/40 text-[10px] mb-3">اختر حتى 3 تمارين للواجب المنزلي</p>
+                  <div className="space-y-1 max-h-52 overflow-y-auto mb-3">
+                    {EXERCISES.filter(e => studentAge >= (e.ageMin ?? 5) && studentAge <= (e.ageMax ?? 22)).map(ex => {
+                      const sel = hwSelected.includes(ex.id)
+                      return (
+                        <button
+                          key={ex.id}
+                          onClick={() => {
+                            if (sel) {
+                              setHwSelected(prev => prev.filter(id => id !== ex.id))
+                            } else if (hwSelected.length < 3) {
+                              setHwSelected(prev => [...prev, ex.id])
+                            }
+                          }}
+                          className="w-full flex items-center gap-2 p-2 rounded-xl transition-all text-right"
+                          style={{
+                            background: sel ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.05)',
+                            border: sel ? '1px solid rgba(34,197,94,0.4)' : '1px solid transparent',
+                            opacity: !sel && hwSelected.length >= 3 ? 0.4 : 1,
+                          }}
+                        >
+                          <span className="text-lg">{ex.icon}</span>
+                          <span className="text-white text-xs font-bold flex-1 text-right">{ex.labelAr}</span>
+                          {sel && <span className="text-green-400 text-xs">✓</span>}
+                        </button>
+                      )
+                    })}
+                  </div>
+                  <textarea
+                    value={hwNote}
+                    onChange={e => setHwNote(e.target.value)}
+                    placeholder="ملاحظة للطالب (اختياري)..."
+                    className="w-full bg-white/8 border border-white/15 rounded-xl px-3 py-2 text-white text-xs placeholder-white/30 focus:outline-none focus:border-green-400 mb-3 resize-none"
+                    rows={2}
+                    dir="rtl"
+                  />
+                  <button
+                    onClick={sendHomework}
+                    disabled={hwSelected.length === 0 || hwSending}
+                    className="w-full py-2.5 rounded-xl font-black text-sm transition-all"
+                    style={{
+                      background: hwSelected.length > 0 ? '#22C55E' : 'rgba(255,255,255,0.06)',
+                      color: hwSelected.length > 0 ? '#000000' : 'rgba(255,255,255,0.2)',
+                    }}
+                  >
+                    {hwSending ? '...' : `إرسال (${hwSelected.length}/3) →`}
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+          <button
+            onClick={() => { setHwOpen(o => !o); setAbcOpen(false); setObsOpen(false) }}
+            className="flex items-center gap-2 font-black text-xs px-4 py-2.5 rounded-2xl transition-all active:scale-95 shadow-lg"
+            style={hwOpen
+              ? { background: '#22C55E', color: '#000000', boxShadow: '0 4px 16px rgba(34,197,94,0.4)' }
+              : { background: 'linear-gradient(135deg,#1F2937,#374151)', color: '#FFFFFF', boxShadow: '0 4px 16px rgba(0,0,0,0.4)', border: '1.5px solid rgba(255,255,255,0.1)' }
+            }
+          >
+            🏠 واجب
+            {hwSent && <span className="text-green-400 text-[10px]">✓</span>}
           </button>
         </div>
       )}

@@ -122,6 +122,14 @@ export async function getAllExercises(): Promise<Exercise[]> {
   return exercises.filter(Boolean) as Exercise[]
 }
 
+export async function updateExercise(id: string, updates: Partial<Omit<Exercise, 'id' | 'createdAt'>>): Promise<Exercise | null> {
+  const existing = await getExercise(id)
+  if (!existing) return null
+  const updated: Exercise = { ...existing, ...updates }
+  await redis.set(`exercise:${id}`, JSON.stringify(updated))
+  return updated
+}
+
 export async function deleteAllExercises(): Promise<number> {
   const ids = await redis.lrange('exercises:index', 0, -1)
   if (ids.length > 0) {

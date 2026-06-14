@@ -29,6 +29,11 @@ import WordBuilder      from '@/components/session/exercises/WordBuilder'
 import AuditoryMemory        from '@/components/session/exercises/AuditoryMemory'
 import ListeningComprehension from '@/components/session/exercises/ListeningComprehension'
 import PictureWordCards       from '@/components/session/exercises/PictureWordCards'
+import NumberSequence         from '@/components/session/exercises/NumberSequence'
+import ShadowMatch            from '@/components/session/exercises/ShadowMatch'
+import StorySequencing        from '@/components/session/exercises/StorySequencing'
+import WaitingGame            from '@/components/session/exercises/WaitingGame'
+import SocialProblemSolving   from '@/components/session/exercises/SocialProblemSolving'
 import Whiteboard      from '@/components/session/Whiteboard'
 import ADHDScale       from '@/components/session/assessments/ADHDScale'
 import LearningDifficultiesScale from '@/components/session/assessments/LearningDifficultiesScale'
@@ -147,6 +152,11 @@ const EXERCISES = [
   { id:'auditory-memory',        labelAr:'الذاكرة السمعية',         icon:'🎧', category:'سمعي',          color:'bg-purple-900/40 border-purple-400',   ageMin:5,  ageMax:22 },
   { id:'listening-comprehension',labelAr:'فهم الاستماع',            icon:'🔊', category:'سمعي',          color:'bg-blue-900/40 border-blue-400',       ageMin:5,  ageMax:18 },
   { id:'picture-word-cards',     labelAr:'بطاقات الصورة والكلمة',  icon:'🖼️', category:'تعلّم',         color:'bg-teal-900/40 border-teal-400',       ageMin:4,  ageMax:14 },
+  { id:'number-sequence',        labelAr:'تسلسل الأرقام',           icon:'🔢', category:'معرفي',          color:'bg-blue-900/40 border-blue-300',       ageMin:4,  ageMax:22 },
+  { id:'shadow-match',           labelAr:'مطابقة الظلال',           icon:'🌑', category:'إدراكي',         color:'bg-gray-800/60 border-gray-400',       ageMin:4,  ageMax:12 },
+  { id:'story-sequencing',       labelAr:'ترتيب القصة',             icon:'📖', category:'تفكير',          color:'bg-amber-900/40 border-amber-300',     ageMin:5,  ageMax:14 },
+  { id:'waiting-game',           labelAr:'لعبة الانتظار',           icon:'⏳', category:'اندفاعية',      color:'bg-red-900/40 border-red-300',         ageMin:5,  ageMax:14 },
+  { id:'social-problem-solving', labelAr:'كيف أتعامل؟',            icon:'😤', category:'اجتماعي',        color:'bg-pink-900/40 border-pink-300',       ageMin:6,  ageMax:18 },
 ]
 
 const ASSESSMENTS = [
@@ -348,6 +358,11 @@ export default function SessionPage() {
 
   // Session Report (#8)
   const [showReport, setShowReport] = useState(false)
+
+  // Child session lock — hides all chrome, keeps exercise + Jitsi PiP intact
+  const [sessionLocked, setSessionLocked] = useState(false)
+  const [unlockTaps, setUnlockTaps]       = useState(0)
+  const unlockTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // ── Session draft persistence — restore on refresh ──────────
   const draftRestoredRef = useRef(false)
@@ -837,6 +852,24 @@ ${notes ? `
     playSound('abc')
   }
 
+  // Cancel exercise — blocked when session is locked (child can't exit)
+  function handleCancel() { if (!sessionLocked) setActiveView(null) }
+
+  // Unlock: requires 3 quick taps within 2 s
+  function handleUnlockTap() {
+    const next = unlockTaps + 1
+    setUnlockTaps(next)
+    if (unlockTimerRef.current) clearTimeout(unlockTimerRef.current)
+    if (next >= 3) {
+      setSessionLocked(false)
+      setUnlockTaps(0)
+    } else {
+      unlockTimerRef.current = setTimeout(() => setUnlockTaps(0), 2000)
+    }
+  }
+
+  function lockSession() { setSessionLocked(true); setUnlockTaps(0) }
+
   async function sendHomework() {
     if (!currentStudentId || hwSelected.length === 0) return
     setHwSending(true)
@@ -1070,8 +1103,36 @@ ${notes ? `
         </div>
       )}
 
+      {/* ── Child Lock Overlay — floating indicator when session is locked ── */}
+      {sessionLocked && (
+        <div
+          className="fixed top-3 left-1/2 -translate-x-1/2 z-[490] flex items-center gap-3 rounded-full px-4 py-2 shadow-2xl select-none"
+          style={{ background: 'rgba(10,10,20,0.88)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.12)' }}
+          dir="rtl"
+        >
+          <span className="text-white/70 text-xs font-black">{studentName || 'الجلسة مفعّلة'}</span>
+          <div className="flex gap-1">
+            {[0,1,2].map(i => (
+              <div
+                key={i}
+                className="w-2 h-2 rounded-full transition-all duration-200"
+                style={{ background: i < unlockTaps ? '#7C5CFC' : 'rgba(255,255,255,0.2)' }}
+              />
+            ))}
+          </div>
+          <button
+            onClick={handleUnlockTap}
+            className="text-white/40 hover:text-white/80 text-xs font-black transition-colors px-2 py-0.5 rounded-lg"
+            style={{ background: 'rgba(255,255,255,0.08)' }}
+            title="اضغط 3 مرات لفتح القفل"
+          >
+            🔒 {unlockTaps > 0 ? `${3 - unlockTaps}...` : 'فتح'}
+          </button>
+        </div>
+      )}
+
       {/* ── Header row ── */}
-      <header className="bg-gray-900 border-b border-white/10 px-4 py-2.5 flex items-center gap-3">
+      <header className={`bg-gray-900 border-b border-white/10 px-4 py-2.5 flex items-center gap-3 ${sessionLocked ? 'hidden' : ''}`}>
         {/* Close */}
         <button onClick={() => router.back()} className="text-white/50 hover:text-white transition-colors flex-shrink-0">
           <X className="w-5 h-5" />
@@ -1244,7 +1305,7 @@ ${notes ? `
       </header>
 
       {/* ── Toolbar strip ── */}
-      <div className="bg-gray-900/95 border-b border-white/[0.08] px-3 py-1.5 flex items-center gap-1.5 flex-wrap">
+      <div className={`bg-gray-900/95 border-b border-white/[0.08] px-3 py-1.5 flex items-center gap-1.5 flex-wrap ${sessionLocked ? 'hidden' : ''}`}>
 
         {/* Group 1 — Camera */}
         {jitsiUrl && (
@@ -1407,10 +1468,19 @@ ${notes ? `
             📄 تقرير
           </button>
         )}
+
+        {/* Lock session button */}
+        <button
+          onClick={lockSession}
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg font-black text-xs transition-all flex-shrink-0 bg-white/10 text-white/60 hover:bg-amber-500/20 hover:text-amber-400"
+          title="قفل الجلسة — يخفي أدوات المعالج حتى لا يتشتت الطفل"
+        >
+          🔒 قفل
+        </button>
       </div>
 
       {/* ── Session Phase Progress Bar ── */}
-      {running && (
+      {running && !sessionLocked && (
         <div className="bg-gray-900 border-b border-white/10 px-4 py-2 flex items-center gap-3" dir="rtl">
           <span className="text-white/30 text-[10px] font-black flex-shrink-0">مراحل</span>
           <div className="flex items-center gap-2 flex-1">
@@ -1498,7 +1568,7 @@ ${notes ? `
       <div className="flex flex-1 overflow-hidden" style={{ position: 'relative' }}>
 
         {/* Sidebar */}
-        {!focusMode && <aside className="w-72 bg-gray-900 border-l border-white/10 flex flex-col">
+        {!focusMode && !sessionLocked && <aside className="w-72 bg-gray-900 border-l border-white/10 flex flex-col">
           {/* Tabs */}
           <div className="flex border-b border-white/10">
             {(['exercises','assessments','log'] as const).map(t => (
@@ -2137,29 +2207,34 @@ ${notes ? `
 
           {activeView?.type === 'exercise' && (
             <div className="w-full max-w-2xl mx-auto py-6">
-              {activeView.id === 'memory-cards'    && <MemoryCards onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'sequence-memory' && <SequenceMemory onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'n-back'          && <NBackTask onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'word-recall'     && <WordRecall onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'breathing'       && <BreathingGuide onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'tap-target'      && <TapTarget onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'simon-says'      && <SimonSays onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'letter-match'    && <LetterMatch    onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'reaction-game'  && <ReactionGame   onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'stroop-test'    && <StroopTest     onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'stop-signal'    && <StopSignal     onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'emotion-cards'     && <EmotionCards      onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'token-board'       && <TokenBoard        onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'self-rating'       && <SelfRating        onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'verbal-fluency'    && <VerbalFluency     onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'social-scenarios'  && <SocialScenarios   onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'behavior-contract' && <BehaviorContract  onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'color-grid'       && <ColorGrid         onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'pattern-match'    && <PatternMatch      onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'word-builder'            && <WordBuilder            onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'auditory-memory'        && <AuditoryMemory        onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'listening-comprehension'&& <ListeningComprehension onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
-              {activeView.id === 'picture-word-cards'     && <PictureWordCards       onComplete={handleExerciseComplete} onCancel={() => setActiveView(null)} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'memory-cards'    && <MemoryCards onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'sequence-memory' && <SequenceMemory onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'n-back'          && <NBackTask onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'word-recall'     && <WordRecall onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'breathing'       && <BreathingGuide onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'tap-target'      && <TapTarget onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'simon-says'      && <SimonSays onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'letter-match'    && <LetterMatch    onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'reaction-game'  && <ReactionGame   onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'stroop-test'    && <StroopTest     onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'stop-signal'    && <StopSignal     onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'emotion-cards'     && <EmotionCards      onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'token-board'       && <TokenBoard        onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'self-rating'       && <SelfRating        onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'verbal-fluency'    && <VerbalFluency     onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'social-scenarios'  && <SocialScenarios   onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'behavior-contract' && <BehaviorContract  onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'color-grid'       && <ColorGrid         onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'pattern-match'    && <PatternMatch      onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'word-builder'            && <WordBuilder            onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'auditory-memory'        && <AuditoryMemory        onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'listening-comprehension'&& <ListeningComprehension onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'picture-word-cards'     && <PictureWordCards       onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'number-sequence'        && <NumberSequence         onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'shadow-match'           && <ShadowMatch            onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'story-sequencing'       && <StorySequencing        onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'waiting-game'           && <WaitingGame            onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
+              {activeView.id === 'social-problem-solving' && <SocialProblemSolving   onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={difficulty} />}
             </div>
           )}
 
@@ -2177,21 +2252,21 @@ ${notes ? `
                   <ADHDScale
                     studentId={currentStudentId || id || ''}
                     onComplete={handleAssessmentComplete}
-                    onCancel={() => setActiveView(null)}
+                    onCancel={handleCancel}
                   />
                 )}
                 {activeView.id === 'attention-domains' && (
                   <AttentionDomainsScale
                     studentId={currentStudentId || id || ''}
                     onComplete={handleAssessmentComplete}
-                    onCancel={() => setActiveView(null)}
+                    onCancel={handleCancel}
                   />
                 )}
                 {activeView.id === 'learning-difficulties' && (
                   <LearningDifficultiesScale
                     studentId={currentStudentId || id || ''}
                     onComplete={handleAssessmentComplete}
-                    onCancel={() => setActiveView(null)}
+                    onCancel={handleCancel}
                   />
                 )}
               </div>

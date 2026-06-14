@@ -1004,7 +1004,7 @@ ${notes ? `
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white flex flex-col">
+    <div className="h-screen bg-gray-950 text-white flex flex-col overflow-hidden">
 
       {/* ── Student Timer Large Display (#9) ── */}
       {showStudentTimer && (

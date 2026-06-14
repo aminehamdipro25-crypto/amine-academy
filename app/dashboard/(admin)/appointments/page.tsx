@@ -1,22 +1,31 @@
 import { getAllAppointments, getAllParents } from '@/lib/db'
-import { Calendar, Clock, Video, AlertCircle, CheckCircle2, XCircle, User, Plus, MonitorPlay } from 'lucide-react'
+import { Calendar, Clock, Video, AlertCircle, CheckCircle2, XCircle, User, Plus, MonitorPlay, ChevronLeft } from 'lucide-react'
 import Link from 'next/link'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
-const STATUS_CFG: Record<string, { label: string; color: string; icon: React.ComponentType<{className?: string}> }> = {
-  scheduled:  { label: 'مجدول',    color: 'bg-blue-100 text-blue-700',   icon: Clock },
-  completed:  { label: 'مكتمل',   color: 'bg-green-100 text-green-700', icon: CheckCircle2 },
-  cancelled:  { label: 'ملغى',    color: 'bg-red-100 text-red-700',     icon: XCircle },
-  'no-show':  { label: 'لم يحضر', color: 'bg-gray-100 text-gray-600',   icon: AlertCircle },
+const STATUS_CFG: Record<string, { label: string; dot: string; badge: string; icon: React.ComponentType<{className?: string}> }> = {
+  scheduled: { label: 'مجدول',    dot: 'bg-blue-500',    badge: 'bg-blue-100 text-blue-700 ring-1 ring-blue-200',     icon: Clock },
+  completed: { label: 'مكتمل',   dot: 'bg-emerald-500', badge: 'bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200', icon: CheckCircle2 },
+  cancelled: { label: 'ملغى',    dot: 'bg-red-500',     badge: 'bg-red-100 text-red-700 ring-1 ring-red-200',         icon: XCircle },
+  'no-show': { label: 'لم يحضر', dot: 'bg-gray-400',    badge: 'bg-gray-100 text-gray-600 ring-1 ring-gray-200',      icon: AlertCircle },
 }
 
 const TYPE_CFG: Record<string, { label: string; color: string }> = {
-  assessment: { label: 'تقييم أولي',   color: 'bg-purple-100 text-purple-700' },
-  followup:   { label: 'متابعة',       color: 'bg-brand-100 text-brand-700' },
+  assessment: { label: 'تقييم أولي',    color: 'bg-violet-100 text-violet-700' },
+  followup:   { label: 'متابعة',        color: 'bg-brand-100 text-brand-700' },
   emergency:  { label: 'استشارة عاجلة', color: 'bg-red-100 text-red-700' },
 }
+
+const AVATAR_GRADIENTS = [
+  'from-violet-500 to-purple-600',
+  'from-blue-500 to-cyan-600',
+  'from-emerald-500 to-teal-600',
+  'from-rose-500 to-pink-600',
+  'from-amber-500 to-orange-600',
+  'from-indigo-500 to-blue-600',
+]
 
 export default async function AppointmentsPage() {
   let appointments: Awaited<ReturnType<typeof getAllAppointments>> = []
@@ -31,11 +40,10 @@ export default async function AppointmentsPage() {
 
   const parentMap = Object.fromEntries(parents.map(p => [p.id, p]))
 
-  const upcoming   = appointments.filter(a => a.status === 'scheduled')
-  const completed  = appointments.filter(a => a.status === 'completed')
-  const cancelled  = appointments.filter(a => ['cancelled', 'no-show'].includes(a.status))
+  const upcoming  = appointments.filter(a => a.status === 'scheduled')
+  const completed = appointments.filter(a => a.status === 'completed')
+  const cancelled = appointments.filter(a => ['cancelled', 'no-show'].includes(a.status))
 
-  // Sort upcoming by date
   upcoming.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
 
   const allSorted = [
@@ -46,82 +54,91 @@ export default async function AppointmentsPage() {
   ]
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6" dir="rtl">
+
+      {/* ── Header ── */}
+      <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-gray-900">جدول المواعيد</h1>
-          <p className="text-gray-500 text-sm mt-1">إدارة جلسات المتابعة والتقييم</p>
+          <h1 className="text-2xl font-black text-gray-900 flex items-center gap-2">
+            <Calendar className="w-6 h-6 text-brand-500" />
+            المواعيد
+          </h1>
+          <p className="text-gray-400 text-sm mt-1">إدارة جلسات المتابعة والتقييم</p>
         </div>
-        <Link href="/dashboard/appointments/new"
-          className="flex items-center gap-2 bg-brand-600 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-brand-700 transition-colors">
+        <Link
+          href="/dashboard/appointments/new"
+          className="flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm shadow-brand-500/20 hover:shadow-md hover:shadow-brand-500/30"
+        >
           <Plus className="w-4 h-4" />
           موعد جديد
         </Link>
       </div>
 
       {error && (
-        <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-2xl p-4">
-          <AlertCircle className="w-5 h-5 text-amber-500 mt-0.5 shrink-0" />
-          <p className="text-amber-800 text-sm font-medium">تعذّر الاتصال بقاعدة البيانات</p>
+        <div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-2xl p-4">
+          <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
+          <p className="text-red-700 text-sm font-medium">تعذّر الاتصال بقاعدة البيانات</p>
         </div>
       )}
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+      {/* ── Stats Strip ── */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { label: 'الإجمالي',     value: appointments.length, color: 'bg-brand-50 text-brand-700',   icon: Calendar },
-          { label: 'قادمة',        value: upcoming.length,    color: 'bg-blue-50 text-blue-700',     icon: Clock },
-          { label: 'مكتملة',       value: completed.length,   color: 'bg-green-50 text-green-700',   icon: CheckCircle2 },
-          { label: 'ملغاة / غائب', value: cancelled.length,   color: 'bg-red-50 text-red-700',       icon: XCircle },
-        ].map(({ label, value, color, icon: Icon }) => (
-          <div key={label} className="bg-white rounded-2xl p-4 border border-gray-100 flex items-center gap-4">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${color}`}>
-              <Icon className="w-5 h-5" />
+          { label: 'الإجمالي',     value: appointments.length, bg: 'bg-brand-600',   glow: 'shadow-brand-500/20',   icon: Calendar },
+          { label: 'قادمة',        value: upcoming.length,     bg: 'bg-blue-600',    glow: 'shadow-blue-500/20',    icon: Clock },
+          { label: 'مكتملة',       value: completed.length,    bg: 'bg-emerald-600', glow: 'shadow-emerald-500/20', icon: CheckCircle2 },
+          { label: 'ملغاة / غائب', value: cancelled.length,    bg: 'bg-gray-500',    glow: 'shadow-gray-500/20',    icon: XCircle },
+        ].map(({ label, value, bg, glow, icon: Icon }) => (
+          <div key={label} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+            <div className={`w-10 h-10 ${bg} rounded-xl flex items-center justify-center shadow-lg ${glow} mb-3`}>
+              <Icon className="w-5 h-5 text-white" />
             </div>
-            <div>
-              <div className="text-2xl font-black text-gray-900 ltr-num">{value}</div>
-              <div className="text-gray-500 text-xs">{label}</div>
-            </div>
+            <div className="text-3xl font-black text-gray-900 ltr-num">{value}</div>
+            <div className="text-gray-400 text-xs mt-0.5 font-medium">{label}</div>
           </div>
         ))}
       </div>
 
-      {/* Upcoming spotlight */}
+      {/* ── Upcoming spotlight ── */}
       {upcoming.length > 0 && (
-        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-50">
-            <h2 className="font-black text-gray-900 flex items-center gap-2">
-              <Clock className="w-4 h-4 text-blue-500" />
-              المواعيد القادمة ({upcoming.length})
+        <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl p-5 text-white">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-black flex items-center gap-2">
+              <Clock className="w-4 h-4 text-blue-200" />
+              المواعيد القادمة
             </h2>
+            <span className="bg-white/20 text-white text-xs font-black px-2.5 py-1 rounded-full">{upcoming.length}</span>
           </div>
-          <div className="divide-y divide-gray-50">
-            {upcoming.slice(0, 5).map((appt) => {
+          <div className="space-y-2">
+            {upcoming.slice(0, 3).map((appt, idx) => {
               const parent = parentMap[appt.parentId]
               const type = TYPE_CFG[appt.type]
+              const gradient = AVATAR_GRADIENTS[idx % AVATAR_GRADIENTS.length]
               return (
-                <div key={appt.id} className="px-6 py-4 flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-                      <Calendar className="w-5 h-5 text-blue-600" />
+                <div key={appt.id} className="bg-white/10 backdrop-blur-sm rounded-2xl px-4 py-3 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center text-white font-black text-sm shadow-md flex-shrink-0`}>
+                      {parent ? parent.firstName[0] : <User className="w-4 h-4" />}
                     </div>
                     <div>
-                      <div className="font-bold text-gray-900 text-sm">
-                        {parent ? `${parent.firstName} ${parent.lastName}` : appt.parentId}
-                      </div>
-                      <div className="text-gray-500 text-xs ltr-num mt-0.5">
-                        {new Date(appt.date).toLocaleDateString('ar-SA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                        {' • '}{appt.timeSlot}
-                      </div>
+                      <p className="font-black text-sm text-white">
+                        {parent ? `${parent.firstName} ${parent.lastName}` : '—'}
+                      </p>
+                      <p className="text-blue-200 text-[11px] ltr-num">
+                        {new Date(appt.date).toLocaleDateString('ar-SA', { weekday: 'short', month: 'short', day: 'numeric' })}
+                        {' · '}{appt.timeSlot}
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${type?.color}`}>
-                      {type?.label}
-                    </span>
+                    {type && (
+                      <span className="bg-white/20 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                        {type.label}
+                      </span>
+                    )}
                     {appt.meetingUrl && (
                       <a href={appt.meetingUrl} target="_blank" rel="noopener noreferrer"
-                        className="flex items-center gap-1 text-xs font-bold text-green-600 bg-green-50 px-2.5 py-1 rounded-full hover:bg-green-100 transition-colors">
+                        className="flex items-center gap-1 bg-green-400/20 text-green-200 hover:bg-green-400/30 text-[11px] font-bold px-2.5 py-1 rounded-xl transition-colors">
                         <Video className="w-3 h-3" />
                         انضمام
                       </a>
@@ -134,96 +151,109 @@ export default async function AppointmentsPage() {
         </div>
       )}
 
-      {/* All appointments table */}
-      <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-50">
-          <h2 className="font-black text-gray-900">كل المواعيد ({appointments.length})</h2>
+      {/* ── All appointments cards ── */}
+      {appointments.length === 0 && !error ? (
+        <div className="bg-white rounded-3xl border border-gray-100 py-24 text-center shadow-sm">
+          <div className="text-6xl mb-4">📅</div>
+          <p className="text-gray-900 font-black text-lg">لا توجد مواعيد بعد</p>
+          <p className="text-gray-400 text-sm mt-1 mb-6">ستظهر هنا عند حجز أولياء الأمور لمواعيدهم</p>
+          <Link href="/dashboard/appointments/new"
+            className="inline-flex items-center gap-2 bg-brand-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-brand-700 transition-colors">
+            <Plus className="w-4 h-4" />
+            إضافة موعد الآن
+          </Link>
         </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {allSorted.map((appt, idx) => {
+            const parent = parentMap[appt.parentId]
+            const status = STATUS_CFG[appt.status] ?? { label: appt.status, dot: 'bg-gray-400', badge: 'bg-gray-100 text-gray-600 ring-1 ring-gray-200', icon: Clock }
+            const type = TYPE_CFG[appt.type]
+            const StatusIcon = status.icon
+            const gradient = AVATAR_GRADIENTS[idx % AVATAR_GRADIENTS.length]
+            const dateStr = new Date(appt.date).toLocaleDateString('ar-SA', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })
 
-        {appointments.length === 0 && !error ? (
-          <div className="py-16 text-center">
-            <div className="text-5xl mb-3">📅</div>
-            <p className="text-gray-400 font-bold">لا توجد مواعيد بعد</p>
-            <p className="text-gray-300 text-sm mt-1">ستظهر هنا عند حجز أولياء الأمور لمواعيدهم</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-gray-50 text-right">
-                  <th className="px-6 py-3 text-xs font-bold text-gray-500">ولي الأمر</th>
-                  <th className="px-4 py-3 text-xs font-bold text-gray-500">التاريخ والوقت</th>
-                  <th className="px-4 py-3 text-xs font-bold text-gray-500">النوع</th>
-                  <th className="px-4 py-3 text-xs font-bold text-gray-500">الحالة</th>
-                  <th className="px-4 py-3 text-xs font-bold text-gray-500">الملاحظات</th>
-                  <th className="px-4 py-3 text-xs font-bold text-gray-500">الجلسة</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {allSorted.map((appt) => {
-                  const parent = parentMap[appt.parentId]
-                  const status = STATUS_CFG[appt.status]
-                  const type = TYPE_CFG[appt.type]
-                  const StatusIcon = status?.icon ?? Clock
-                  return (
-                    <tr key={appt.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 bg-brand-100 rounded-full flex items-center justify-center text-brand-600 font-bold text-xs flex-shrink-0">
-                            {parent ? parent.firstName[0] : <User className="w-4 h-4" />}
-                          </div>
-                          <div>
-                            <div className="font-bold text-gray-900 text-sm">
-                              {parent ? `${parent.firstName} ${parent.lastName}` : '—'}
-                            </div>
-                            <div className="text-gray-400 text-xs">{parent?.email}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="text-sm text-gray-700 font-medium ltr-num">
-                          {new Date(appt.date).toLocaleDateString('ar-SA')}
-                        </div>
-                        <div className="text-xs text-gray-400 ltr-num">{appt.timeSlot}</div>
-                      </td>
-                      <td className="px-4 py-4">
-                        <span className={`text-xs font-bold px-2 py-1 rounded-full ${type?.color}`}>
-                          {type?.label}
-                        </span>
-                      </td>
-                      <td className="px-4 py-4">
-                        <span className={`inline-flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full ${status?.color}`}>
-                          <StatusIcon className="w-3 h-3" />
-                          {status?.label}
-                        </span>
-                      </td>
-                      <td className="px-4 py-4 max-w-[200px]">
-                        <p className="text-xs text-gray-500 truncate">{appt.notes || '—'}</p>
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="flex flex-col gap-1">
-                          <Link href={`/session/${appt.id}`}
-                            className="inline-flex items-center gap-1 text-xs font-bold text-brand-600 bg-brand-50 hover:bg-brand-100 px-2 py-1 rounded-lg transition-colors">
-                            <MonitorPlay className="w-3 h-3" />
-                            بدء الجلسة
-                          </Link>
-                          {appt.meetingUrl && (
-                            <a href={appt.meetingUrl} target="_blank" rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 text-xs font-bold text-green-600 hover:underline">
-                              <Video className="w-3 h-3" />
-                              رابط الاجتماع
-                            </a>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+            return (
+              <div
+                key={appt.id}
+                className="group bg-white rounded-3xl border border-gray-100 p-5 shadow-sm hover:shadow-xl hover:border-brand-200 hover:-translate-y-0.5 transition-all duration-200"
+              >
+                {/* Top row */}
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className={`relative w-12 h-12 rounded-2xl bg-gradient-to-br ${gradient} flex items-center justify-center text-white font-black text-lg shadow-md flex-shrink-0`}>
+                      {parent ? parent.firstName[0].toUpperCase() : <User className="w-5 h-5" />}
+                      <span className={`absolute -bottom-0.5 -left-0.5 w-3 h-3 ${status.dot} rounded-full border-2 border-white`} />
+                    </div>
+                    <div>
+                      <p className="font-black text-gray-900 text-sm group-hover:text-brand-600 transition-colors">
+                        {parent ? `${parent.firstName} ${parent.lastName}` : '—'}
+                      </p>
+                      <p className="text-gray-400 text-[11px] mt-0.5 truncate max-w-[140px]">
+                        {parent?.email ?? appt.parentId.slice(0, 20)}
+                      </p>
+                    </div>
+                  </div>
+                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-black ${status.badge}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
+                    {status.label}
+                  </span>
+                </div>
+
+                {/* Date + time block */}
+                <div className="bg-gray-50 rounded-2xl px-4 py-3 mb-4 flex items-center gap-3">
+                  <div className="w-9 h-9 bg-brand-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <Calendar className="w-4 h-4 text-brand-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-black text-gray-800">{dateStr}</p>
+                    <p className="text-[11px] text-gray-400 ltr-num mt-0.5">{appt.timeSlot}</p>
+                  </div>
+                </div>
+
+                {/* Type + notes */}
+                <div className="space-y-2 mb-4">
+                  {type && (
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-gray-400 font-medium">النوع</span>
+                      <span className={`font-bold px-2 py-0.5 rounded-lg ${type.color}`}>{type.label}</span>
+                    </div>
+                  )}
+                  {appt.notes && (
+                    <p className="text-[11px] text-gray-500 line-clamp-2 bg-amber-50 rounded-xl px-3 py-2">
+                      {appt.notes}
+                    </p>
+                  )}
+                </div>
+
+                {/* Footer */}
+                <div className="flex items-center justify-between pt-3 border-t border-gray-50">
+                  <Link
+                    href={`/session/${appt.id}`}
+                    className="inline-flex items-center gap-1.5 text-xs font-black text-brand-600 bg-brand-50 hover:bg-brand-100 px-3 py-1.5 rounded-xl transition-colors"
+                  >
+                    <MonitorPlay className="w-3.5 h-3.5" />
+                    بدء الجلسة
+                  </Link>
+                  <div className="flex items-center gap-2">
+                    {appt.meetingUrl && (
+                      <a href={appt.meetingUrl} target="_blank" rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 text-xs font-black text-green-600 bg-green-50 hover:bg-green-100 px-3 py-1.5 rounded-xl transition-colors">
+                        <Video className="w-3.5 h-3.5" />
+                        الاجتماع
+                      </a>
+                    )}
+                    <div className="w-7 h-7 rounded-xl bg-gray-50 group-hover:bg-brand-50 flex items-center justify-center transition-colors">
+                      <ChevronLeft className="w-4 h-4 text-gray-300 group-hover:text-brand-500 transition-colors" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
     </div>
   )
 }

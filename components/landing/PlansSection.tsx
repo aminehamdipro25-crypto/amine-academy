@@ -234,7 +234,7 @@ export default function PlansSection() {
               ? `≈ ${Math.round(displayPrice / spw)} ${symbol} / ${isAr ? 'حصة' : 'session'}`
               : plan.id === 'monthly'
               ? `≈ ${Math.round(displayPrice / spm)} ${symbol} / ${isAr ? 'حصة' : 'session'}`
-              : plan.perSession[currency]
+              : null
 
             return (
               <div key={plan.id} className={`rounded-3xl overflow-hidden relative transition-all duration-200 ${plan.cardStyle}`}>
@@ -280,19 +280,23 @@ export default function PlansSection() {
                           <span className={`text-sm ${plan.priceText} opacity-70`}>{symbol} / {isAr ? plan.period : plan.periodEn}</span>
                         </div>
                       )}
-                      {/* Per-session equivalent */}
-                      <div className={`mt-2 flex items-center gap-2 flex-wrap`}>
-                        <span className={`text-xs ${plan.priceText} opacity-60`}>
-                          {perSessionStr}
-                        </span>
-                        {plan.savingsPct && (
-                          <span className={`text-xs font-black px-2 py-0.5 rounded-full ${
-                            isPopular ? 'bg-white/25 text-white' : 'bg-amber-100 text-amber-700'
-                          }`}>
-                            {isAr ? `وفّر ${plan.savingsPct}%` : `Save ${plan.savingsPct}%`}
-                          </span>
-                        )}
-                      </div>
+                      {/* Per-session equivalent — only for weekly/monthly */}
+                      {(perSessionStr || plan.savingsPct) && (
+                        <div className={`mt-2 flex items-center gap-2 flex-wrap`}>
+                          {perSessionStr && (
+                            <span className={`text-xs ${plan.priceText} opacity-60`}>
+                              {perSessionStr}
+                            </span>
+                          )}
+                          {plan.savingsPct && (
+                            <span className={`text-xs font-black px-2 py-0.5 rounded-full ${
+                              isPopular ? 'bg-white/25 text-white' : 'bg-amber-100 text-amber-700'
+                            }`}>
+                              {isAr ? `وفّر ${plan.savingsPct}%` : `Save ${plan.savingsPct}%`}
+                            </span>
+                          )}
+                        </div>
+                      )}
                       {discountedPrice !== null && settings?.discountLabel && (
                         <span className={`inline-block mt-1.5 text-xs font-bold px-2 py-0.5 rounded-full bg-white/20 ${plan.priceText}`}>
                           {settings.discountLabel}

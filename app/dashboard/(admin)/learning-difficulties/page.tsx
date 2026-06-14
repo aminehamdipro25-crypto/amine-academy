@@ -2,12 +2,13 @@
 import { useState, useEffect } from 'react'
 import type { LearningDifficultyProfile } from '@/lib/types'
 import Link from 'next/link'
+import { BookOpen, Search } from 'lucide-react'
 
 const SEVERITY_COLORS: Record<string, string> = {
-  none: 'text-green-400 bg-green-900/20',
-  mild: 'text-amber-400 bg-amber-900/20',
-  moderate: 'text-orange-400 bg-orange-900/20',
-  severe: 'text-red-400 bg-red-900/20',
+  none:     'text-emerald-700 bg-emerald-50 ring-1 ring-emerald-200',
+  mild:     'text-amber-700 bg-amber-50 ring-1 ring-amber-200',
+  moderate: 'text-orange-700 bg-orange-50 ring-1 ring-orange-200',
+  severe:   'text-red-700 bg-red-50 ring-1 ring-red-200',
 }
 const SEVERITY_LABELS: Record<string, string> = {
   none: 'طبيعي', mild: 'خفيف', moderate: 'متوسط', severe: 'شديد',
@@ -58,80 +59,84 @@ export default function LearningDifficultiesPage() {
   )
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
-      <div className="flex items-center justify-between mb-8">
+    <div className="space-y-6" dir="rtl">
+      <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-3xl font-black text-gray-900">صعوبات التعلم</h1>
-          <p className="text-gray-500 mt-1">ملفات صعوبات التعلم الشاملة للطلاب</p>
+          <h1 className="text-2xl font-black text-gray-900 flex items-center gap-2">
+            <BookOpen className="w-6 h-6 text-brand-500" />
+            صعوبات التعلم
+          </h1>
+          <p className="text-gray-400 text-sm mt-1">ملفات صعوبات التعلم الشاملة للطلاب</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="relative">
+          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
           <input
             value={search} onChange={e => setSearch(e.target.value)}
             placeholder="بحث..."
-            className="border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+            className="border border-gray-200 rounded-xl pr-9 pl-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300 bg-white"
           />
         </div>
       </div>
 
       {/* Summary Stats */}
-      <div className="grid grid-cols-5 gap-4 mb-8">
+      <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
         {LD_DOMAINS.map(d => {
           const affected = profiles.filter(p => {
             const domain = p[d.key as keyof LearningDifficultyProfile] as { severity: string } | undefined
             return domain && domain.severity !== 'none'
           }).length
           return (
-            <div key={d.key} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm text-center">
+            <div key={d.key} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm hover:shadow-md transition-shadow text-center">
               <div className="text-3xl mb-2">{d.emoji}</div>
-              <div className="text-2xl font-black text-gray-900">{affected}</div>
-              <div className="text-xs text-gray-500 mt-1">{d.label}</div>
+              <div className="text-2xl font-black text-gray-900 ltr-num">{affected}</div>
+              <div className="text-xs text-gray-400 mt-0.5 font-medium">{d.label}</div>
             </div>
           )
         })}
       </div>
 
       {filtered.length === 0 ? (
-        <div className="text-center py-16 text-gray-400">
-          <div className="text-5xl mb-4">📊</div>
-          <p>لا توجد ملفات صعوبات تعلم حتى الآن.</p>
-          <p className="text-sm mt-2">أجر تقييم صعوبات التعلم خلال الجلسة لإنشاء ملفات.</p>
+        <div className="bg-white rounded-3xl border border-gray-100 py-24 text-center shadow-sm">
+          <div className="text-6xl mb-4">📊</div>
+          <p className="text-gray-900 font-black text-lg">لا توجد ملفات بعد</p>
+          <p className="text-gray-400 text-sm mt-1">أجر تقييم صعوبات التعلم خلال الجلسة لإنشاء ملفات</p>
         </div>
       ) : (
         <div className="space-y-4">
           {filtered.map(p => (
-            <div key={p.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+            <div key={p.id} className="bg-white rounded-3xl border border-gray-100 shadow-sm p-5 hover:shadow-lg hover:border-brand-200 transition-all">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h3 className="font-black text-gray-900">طالب #{p.studentId.slice(-6)}</h3>
-                  <p className="text-gray-400 text-sm">آخر تحديث: {new Date(p.updatedAt).toLocaleDateString('ar')}</p>
+                  <h3 className="font-black text-gray-900 text-sm">طالب #{p.studentId.slice(-6)}</h3>
+                  <p className="text-gray-400 text-xs mt-0.5">آخر تحديث: {new Date(p.updatedAt).toLocaleDateString('ar')}</p>
                 </div>
                 <Link href={`/dashboard/clients/${p.studentId}`}
-                  className="text-brand-600 text-sm font-bold hover:underline">
+                  className="inline-flex items-center gap-1.5 text-xs font-black text-brand-600 bg-brand-50 hover:bg-brand-100 px-3 py-1.5 rounded-xl transition-colors">
                   عرض الملف
                 </Link>
               </div>
 
-              <div className="grid grid-cols-5 gap-3">
+              <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
                 {LD_DOMAINS.map(d => {
                   const domain = p[d.key as keyof LearningDifficultyProfile] as { severity: string; indicators: string[] }
                   const sev = domain?.severity || 'none'
                   return (
-                    <div key={d.key} className={`rounded-xl p-3 text-center ${SEVERITY_COLORS[sev]}`}>
-                      <div className="text-2xl mb-1">{d.emoji}</div>
+                    <div key={d.key} className={`rounded-2xl p-3 text-center ${SEVERITY_COLORS[sev]}`}>
+                      <div className="text-xl mb-1">{d.emoji}</div>
                       <div className="font-black text-xs">{SEVERITY_LABELS[sev]}</div>
-                      <div className="text-xs opacity-70 mt-0.5">{d.label}</div>
+                      <div className="text-[10px] opacity-80 mt-0.5">{d.label}</div>
                     </div>
                   )
                 })}
               </div>
 
               {p.recommendations.length > 0 && (
-                <div className="mt-4 bg-brand-50 rounded-xl p-3">
-                  <h4 className="font-bold text-brand-700 text-xs mb-2">التوصيات:</h4>
+                <div className="mt-4 bg-brand-50 rounded-2xl p-4 border border-brand-100">
+                  <h4 className="font-black text-brand-700 text-[10px] uppercase tracking-widest mb-2">التوصيات</h4>
                   <ul className="space-y-1">
                     {p.recommendations.slice(0, 3).map((r, i) => (
-                      <li key={i} className="text-brand-600 text-xs flex items-start gap-2">
-                        <span>•</span>{r}
+                      <li key={i} className="text-brand-700 text-xs flex items-start gap-2">
+                        <span className="text-brand-400 mt-0.5">•</span>{r}
                       </li>
                     ))}
                   </ul>

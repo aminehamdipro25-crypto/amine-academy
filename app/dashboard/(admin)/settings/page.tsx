@@ -28,13 +28,19 @@ function StatusBadge({ ok, label }: { ok: boolean; label: string }) {
   )
 }
 
-type PlanKey = 'basic' | 'standard' | 'premium'
+type PlanKey = 'session' | 'weekly' | 'monthly'
 type Currency = 'QAR' | 'TND'
 
 const PLAN_LABELS: Record<PlanKey, string> = {
-  basic:    'الأساسي',
-  standard: 'المتقدم',
-  premium:  'المتميز',
+  session: 'الحصة المفردة',
+  weekly:  'الباقة الأسبوعية',
+  monthly: 'الباقة الشهرية',
+}
+
+const PLAN_PERIOD: Record<PlanKey, string> = {
+  session: '/ حصة',
+  weekly:  '/ أسبوع',
+  monthly: '/ شهر',
 }
 
 const CURRENCY_SYMBOLS: Record<Currency, string> = { QAR: 'ر.ق', TND: 'د.ت' }
@@ -190,13 +196,17 @@ export default function AdminSettingsPage() {
   function updatePrice(plan: PlanKey, currency: Currency, raw: string) {
     const num = parseInt(raw, 10)
     const val = isNaN(num) ? 0 : Math.max(0, num)
-    setSettings(prev => prev ? {
-      ...prev,
-      prices: {
-        ...prev.prices,
-        [plan]: { ...prev.prices[plan], [currency]: val },
-      },
-    } : prev)
+    setSettings(prev => {
+      if (!prev) return prev
+      const prices = prev.prices as Record<PlanKey, { QAR: number; TND: number }>
+      return {
+        ...prev,
+        prices: {
+          ...prices,
+          [plan]: { ...(prices[plan] ?? {}), [currency]: val },
+        },
+      }
+    })
   }
 
   function discountedPrice(base: number): number | null {
@@ -281,41 +291,48 @@ export default function AdminSettingsPage() {
 
       {/* Prices section */}
       <div className="bg-white rounded-2xl border border-gray-100 p-6">
-        <h2 className="font-black text-gray-900 mb-5 flex items-center gap-2 text-lg">
+        <h2 className="font-black text-gray-900 mb-1 flex items-center gap-2 text-lg">
           <DollarSign className="w-5 h-5 text-brand-500" />
-          أسعار الباقات
+          أسعار الاشتراك
         </h2>
+        <p className="text-xs text-gray-400 mb-5">نفس المزايا الكاملة في كل خيار — الفرق فقط في طريقة الدفع</p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {(['basic', 'standard', 'premium'] as PlanKey[]).map(plan => (
-            <div key={plan} className="bg-gray-50 rounded-2xl p-5 space-y-4">
-              <h3 className="font-black text-gray-800">{PLAN_LABELS[plan]}</h3>
-              {(['QAR', 'TND'] as Currency[]).map(currency => {
-                const base = settings.prices[plan][currency]
-                const discounted = discountedPrice(base)
-                return (
-                  <Field key={currency} label={`السعر (${CURRENCY_SYMBOLS[currency]})`}>
-                    <Input
-                      type="number"
-                      value={base}
-                      onChange={v => updatePrice(plan, currency, v)}
-                      min={0}
-                      step={1}
-                      suffix={CURRENCY_SYMBOLS[currency]}
-                    />
-                    {discounted !== null && (
-                      <p className="text-xs mt-1 text-brand-600 font-medium">
-                        بعد الخصم:{' '}
-                        <span className="font-black ltr-num">{discounted}</span>{' '}
-                        {CURRENCY_SYMBOLS[currency]}
-                        {' '}
-                        <span className="text-gray-400 line-through ltr-num">{base}</span>
-                      </p>
-                    )}
-                  </Field>
-                )
-              })}
-            </div>
-          ))}
+          {(['session', 'weekly', 'monthly'] as PlanKey[]).map(plan => {
+            const prices = settings.prices as Record<PlanKey, { QAR: number; TND: number }>
+            return (
+              <div key={plan} className="bg-gray-50 rounded-2xl p-5 space-y-4">
+                <div>
+                  <h3 className="font-black text-gray-800">{PLAN_LABELS[plan]}</h3>
+                  <p className="text-xs text-gray-400 mt-0.5">{PLAN_PERIOD[plan]}</p>
+                </div>
+                {(['QAR', 'TND'] as Currency[]).map(currency => {
+                  const base = prices[plan]?.[currency] ?? 0
+                  const discounted = discountedPrice(base)
+                  return (
+                    <Field key={currency} label={`السعر (${CURRENCY_SYMBOLS[currency]})`}>
+                      <Input
+                        type="number"
+                        value={base}
+                        onChange={v => updatePrice(plan, currency, v)}
+                        min={0}
+                        step={1}
+                        suffix={CURRENCY_SYMBOLS[currency]}
+                      />
+                      {discounted !== null && (
+                        <p className="text-xs mt-1 text-brand-600 font-medium">
+                          بعد الخصم:{' '}
+                          <span className="font-black ltr-num">{discounted}</span>{' '}
+                          {CURRENCY_SYMBOLS[currency]}
+                          {' '}
+                          <span className="text-gray-400 line-through ltr-num">{base}</span>
+                        </p>
+                      )}
+                    </Field>
+                  )
+                })}
+              </div>
+            )
+          })}
         </div>
       </div>
 
@@ -378,22 +395,26 @@ export default function AdminSettingsPage() {
           <div className="mt-5 bg-brand-50 rounded-2xl p-4">
             <p className="text-sm font-black text-brand-700 mb-3">معاينة الأسعار بعد الخصم:</p>
             <div className="grid grid-cols-3 gap-3">
-              {(['basic', 'standard', 'premium'] as PlanKey[]).map(plan => (
-                <div key={plan} className="text-center bg-white rounded-xl p-3 border border-brand-100">
-                  <p className="text-xs text-gray-500 mb-1">{PLAN_LABELS[plan]}</p>
-                  {(['QAR', 'TND'] as Currency[]).map(cur => {
-                    const base = settings.prices[plan][cur]
-                    const disc = Math.round(base * (1 - settings.discountPct / 100))
-                    return (
-                      <p key={cur} className="text-xs">
-                        <span className="font-black text-brand-700 ltr-num">{disc}</span>
-                        <span className="text-gray-400 mx-1 line-through ltr-num">{base}</span>
-                        <span className="text-gray-400">{CURRENCY_SYMBOLS[cur]}</span>
-                      </p>
-                    )
-                  })}
-                </div>
-              ))}
+              {(['session', 'weekly', 'monthly'] as PlanKey[]).map(plan => {
+                const prices = settings.prices as Record<PlanKey, { QAR: number; TND: number }>
+                return (
+                  <div key={plan} className="text-center bg-white rounded-xl p-3 border border-brand-100">
+                    <p className="text-xs text-gray-500 mb-0.5 font-bold">{PLAN_LABELS[plan]}</p>
+                    <p className="text-[10px] text-gray-400 mb-1">{PLAN_PERIOD[plan]}</p>
+                    {(['QAR', 'TND'] as Currency[]).map(cur => {
+                      const base = prices[plan]?.[cur] ?? 0
+                      const disc = Math.round(base * (1 - settings.discountPct / 100))
+                      return (
+                        <p key={cur} className="text-xs">
+                          <span className="font-black text-brand-700 ltr-num">{disc}</span>
+                          <span className="text-gray-400 mx-1 line-through ltr-num">{base}</span>
+                          <span className="text-gray-400">{CURRENCY_SYMBOLS[cur]}</span>
+                        </p>
+                      )
+                    })}
+                  </div>
+                )
+              })}
             </div>
           </div>
         )}

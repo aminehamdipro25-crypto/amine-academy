@@ -2,21 +2,20 @@ import { redis } from '@/lib/redis'
 
 export interface SiteSettings {
   prices: {
-    basic:    { QAR: number; TND: number }
-    standard: { QAR: number; TND: number }
-    premium:  { QAR: number; TND: number }
+    session:  { QAR: number; TND: number }
+    weekly:   { QAR: number; TND: number }
+    monthly:  { QAR: number; TND: number }
   }
   discountPct: number
   discountLabel: string
   offerDurationDays: number
   whatsappNumber: string
-  // Landing page stats (editable by admin — put YOUR real numbers)
   stats: {
-    childrenCount: string    // e.g. "+12" or "12"
-    satisfactionPct: string  // e.g. "97%"
-    protocolsCount: string   // e.g. "+25"
-    sessionMinutes: string   // e.g. "45"
-    yearsExperience: string  // e.g. "+5"
+    childrenCount:   string
+    satisfactionPct: string
+    protocolsCount:  string
+    sessionMinutes:  string
+    yearsExperience: string
   }
 }
 
@@ -24,35 +23,45 @@ const SETTINGS_KEY = 'site:settings'
 
 const DEFAULT_SETTINGS: SiteSettings = {
   prices: {
-    basic:    { QAR: 179, TND: 49 },
-    standard: { QAR: 369, TND: 99 },
-    premium:  { QAR: 659, TND: 179 },
+    session: { QAR: 49,  TND: 15  },
+    weekly:  { QAR: 169, TND: 49  },
+    monthly: { QAR: 549, TND: 149 },
   },
   discountPct: 0,
   discountLabel: 'عرض التسجيل المبكر',
   offerDurationDays: 5,
   whatsappNumber: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '',
   stats: {
-    childrenCount:    '12',
-    satisfactionPct:  '97%',
-    protocolsCount:   '+25',
-    sessionMinutes:   '45',
-    yearsExperience:  '+5',
+    childrenCount:   '12',
+    satisfactionPct: '97%',
+    protocolsCount:  '+25',
+    sessionMinutes:  '45',
+    yearsExperience: '+5',
   },
 }
 
 export async function getSiteSettings(): Promise<SiteSettings> {
   try {
-    const stored = await redis.get<SiteSettings>(SETTINGS_KEY)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const stored = await redis.get<any>(SETTINGS_KEY)
     if (stored && typeof stored === 'object') {
-      // Deep-merge stored over defaults to handle any new keys added later
+      // Migrate old basic/standard/premium keys if they exist
+      const storedPrices = stored.prices ?? {}
+      const migratedPrices = storedPrices.session
+        ? storedPrices
+        : {
+            session: storedPrices.basic    ?? DEFAULT_SETTINGS.prices.session,
+            weekly:  storedPrices.standard ?? DEFAULT_SETTINGS.prices.weekly,
+            monthly: storedPrices.premium  ?? DEFAULT_SETTINGS.prices.monthly,
+          }
+
       return {
         ...DEFAULT_SETTINGS,
         ...stored,
         prices: {
-          basic:    { ...DEFAULT_SETTINGS.prices.basic,    ...(stored.prices?.basic    ?? {}) },
-          standard: { ...DEFAULT_SETTINGS.prices.standard, ...(stored.prices?.standard ?? {}) },
-          premium:  { ...DEFAULT_SETTINGS.prices.premium,  ...(stored.prices?.premium  ?? {}) },
+          session: { ...DEFAULT_SETTINGS.prices.session, ...(migratedPrices.session ?? {}) },
+          weekly:  { ...DEFAULT_SETTINGS.prices.weekly,  ...(migratedPrices.weekly  ?? {}) },
+          monthly: { ...DEFAULT_SETTINGS.prices.monthly, ...(migratedPrices.monthly ?? {}) },
         },
         stats: { ...DEFAULT_SETTINGS.stats, ...(stored.stats ?? {}) },
       }
@@ -70,9 +79,9 @@ export async function updateSiteSettings(updates: Partial<SiteSettings>): Promis
     ...updates,
     prices: updates.prices
       ? {
-          basic:    { ...current.prices.basic,    ...(updates.prices.basic    ?? {}) },
-          standard: { ...current.prices.standard, ...(updates.prices.standard ?? {}) },
-          premium:  { ...current.prices.premium,  ...(updates.prices.premium  ?? {}) },
+          session: { ...current.prices.session, ...(updates.prices.session ?? {}) },
+          weekly:  { ...current.prices.weekly,  ...(updates.prices.weekly  ?? {}) },
+          monthly: { ...current.prices.monthly, ...(updates.prices.monthly ?? {}) },
         }
       : current.prices,
   }

@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { Clock, X, Save, Video, Star, ClipboardList } from 'lucide-react'
+import { Clock, X, Save, Video, Star, ClipboardList, PenLine, ChevronDown, User } from 'lucide-react'
 import type { ExerciseResult, AssessmentResult, SessionObservations } from '@/lib/types'
 import { rankGamesForStudent, getTopGames, DIFFICULTY_LABELS_AR } from '@/lib/game-mapping'
 import type { StudentAssessmentProfile } from '@/lib/types'
@@ -26,6 +26,7 @@ import BehaviorContract from '@/components/session/exercises/BehaviorContract'
 import ColorGrid        from '@/components/session/exercises/ColorGrid'
 import PatternMatch     from '@/components/session/exercises/PatternMatch'
 import WordBuilder      from '@/components/session/exercises/WordBuilder'
+import Whiteboard      from '@/components/session/Whiteboard'
 import ADHDScale       from '@/components/session/assessments/ADHDScale'
 import LearningDifficultiesScale from '@/components/session/assessments/LearningDifficultiesScale'
 import AttentionDomainsScale from '@/components/session/assessments/AttentionDomainsScale'
@@ -42,6 +43,24 @@ interface ObsEntry {
   elapsed: number   // seconds since session start
   ts: string        // HH:MM
 }
+
+interface ABCEntry {
+  antecedent: string
+  behavior: string
+  consequence: string
+  intensity: 1|2|3
+  ts: string
+  elapsed: number
+}
+
+const PROMPT_CARDS = [
+  { id: 'stop',    text: 'توقف وفكّر',     emoji: '🛑', bg: 'linear-gradient(135deg,#DC2626,#EF4444)', glow: '#EF4444' },
+  { id: 'breathe', text: 'تنفس معي',       emoji: '🌬️', bg: 'linear-gradient(135deg,#1D4ED8,#3B82F6)', glow: '#3B82F6' },
+  { id: 'great',   text: 'أنت رائع!',      emoji: '⭐', bg: 'linear-gradient(135deg,#D97706,#F59E0B)', glow: '#F59E0B' },
+  { id: 'listen',  text: 'استمع جيداً',    emoji: '👂', bg: 'linear-gradient(135deg,#7C3AED,#8B5CF6)', glow: '#8B5CF6' },
+  { id: 'calm',    text: 'هدّئ نفسك',      emoji: '😌', bg: 'linear-gradient(135deg,#059669,#10B981)', glow: '#10B981' },
+  { id: 'try',     text: 'حاول مرة أخرى', emoji: '💪', bg: 'linear-gradient(135deg,#EA580C,#F97316)', glow: '#F97316' },
+]
 
 const QUICK_OBS: { category: string; color: string; bg: string; items: { text: string; icon: string }[] }[] = [
   {
@@ -84,6 +103,21 @@ const QUICK_OBS: { category: string; color: string; bg: string; items: { text: s
       { text: 'أداء استثنائي',        icon: '🏆' },
     ],
   },
+]
+
+interface SessionPhase {
+  id: string
+  label: string
+  icon: string
+  defaultMin: number
+  color: string
+}
+
+const SESSION_PHASES: SessionPhase[] = [
+  { id: 'warmup',  label: 'تحية ودفء',   icon: '👋', defaultMin: 5,  color: '#3B82F6' },
+  { id: 'main',    label: 'نشاط رئيسي',  icon: '🎯', defaultMin: 25, color: '#7C5CFC' },
+  { id: 'assess',  label: 'تقييم',        icon: '📊', defaultMin: 10, color: '#F59E0B' },
+  { id: 'wrap',    label: 'تلخيص',        icon: '✅', defaultMin: 5,  color: '#22C55E' },
 ]
 
 const EXERCISES = [
@@ -135,7 +169,9 @@ function formatTime(s: number) {
   return `${m}:${sec}`
 }
 
-function playSound(type: 'success' | 'complete' | 'start') {
+type SoundType = 'success' | 'complete' | 'start' | 'phase' | 'tick' | 'ding' | 'compare' | 'abc'
+
+function playSound(type: SoundType) {
   if (typeof window === 'undefined') return
   try {
     const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)()
@@ -143,40 +179,77 @@ function playSound(type: 'success' | 'complete' | 'start') {
     g.connect(ctx.destination)
 
     if (type === 'success') {
-      // Short happy ding
-      const o = ctx.createOscillator()
-      o.connect(g)
-      o.type = 'sine'
+      const o = ctx.createOscillator(); o.connect(g); o.type = 'sine'
       g.gain.setValueAtTime(0.3, ctx.currentTime)
       g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4)
       o.frequency.setValueAtTime(523, ctx.currentTime)
       o.frequency.setValueAtTime(659, ctx.currentTime + 0.1)
       o.frequency.setValueAtTime(784, ctx.currentTime + 0.2)
-      o.start(ctx.currentTime)
-      o.stop(ctx.currentTime + 0.4)
+      o.start(ctx.currentTime); o.stop(ctx.currentTime + 0.4)
+
     } else if (type === 'complete') {
-      // Fanfare for session complete
       const notes = [523, 659, 784, 1047]
       notes.forEach((freq, i) => {
-        const o = ctx.createOscillator()
-        o.connect(g)
-        o.type = 'sine'
+        const o = ctx.createOscillator(); o.connect(g); o.type = 'sine'
         o.frequency.value = freq
         g.gain.setValueAtTime(0.25, ctx.currentTime + i * 0.12)
         g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.12 + 0.3)
-        o.start(ctx.currentTime + i * 0.12)
-        o.stop(ctx.currentTime + i * 0.12 + 0.3)
+        o.start(ctx.currentTime + i * 0.12); o.stop(ctx.currentTime + i * 0.12 + 0.3)
       })
+
     } else if (type === 'start') {
-      // Subtle start beep
-      const o = ctx.createOscillator()
-      o.connect(g)
-      o.type = 'sine'
+      const o = ctx.createOscillator(); o.connect(g); o.type = 'sine'
       o.frequency.value = 440
       g.gain.setValueAtTime(0.2, ctx.currentTime)
       g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2)
-      o.start(ctx.currentTime)
-      o.stop(ctx.currentTime + 0.2)
+      o.start(ctx.currentTime); o.stop(ctx.currentTime + 0.2)
+
+    } else if (type === 'phase') {
+      // Gong-like tone for phase transition
+      const o = ctx.createOscillator(); o.connect(g); o.type = 'sine'
+      o.frequency.setValueAtTime(660, ctx.currentTime)
+      o.frequency.exponentialRampToValueAtTime(330, ctx.currentTime + 0.6)
+      g.gain.setValueAtTime(0.35, ctx.currentTime)
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8)
+      o.start(ctx.currentTime); o.stop(ctx.currentTime + 0.8)
+
+    } else if (type === 'tick') {
+      // Countdown tick
+      const o = ctx.createOscillator(); o.connect(g); o.type = 'square'
+      o.frequency.value = 880
+      g.gain.setValueAtTime(0.08, ctx.currentTime)
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05)
+      o.start(ctx.currentTime); o.stop(ctx.currentTime + 0.05)
+
+    } else if (type === 'ding') {
+      // Timer done — rising bell
+      const notes = [659, 784, 988, 1319]
+      notes.forEach((freq, i) => {
+        const o = ctx.createOscillator(); o.connect(g); o.type = 'sine'
+        o.frequency.value = freq
+        g.gain.setValueAtTime(0.2, ctx.currentTime + i * 0.08)
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.08 + 0.25)
+        o.start(ctx.currentTime + i * 0.08); o.stop(ctx.currentTime + i * 0.08 + 0.3)
+      })
+
+    } else if (type === 'compare') {
+      // Improvement fanfare — major chord
+      const chord = [523, 659, 784]
+      chord.forEach(freq => {
+        const o = ctx.createOscillator(); o.connect(g); o.type = 'triangle'
+        o.frequency.value = freq
+        g.gain.setValueAtTime(0.15, ctx.currentTime)
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6)
+        o.start(ctx.currentTime); o.stop(ctx.currentTime + 0.7)
+      })
+
+    } else if (type === 'abc') {
+      // Soft click — ABC entry saved
+      const o = ctx.createOscillator(); o.connect(g); o.type = 'sine'
+      o.frequency.value = 300
+      g.gain.setValueAtTime(0.12, ctx.currentTime)
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1)
+      o.start(ctx.currentTime); o.stop(ctx.currentTime + 0.1)
     }
   } catch { /* AudioContext blocked */ }
 }
@@ -225,6 +298,50 @@ export default function SessionPage() {
   const [studentSeverity, setStudentSeverity] = useState<number>(1)
   const [sessionCount, setSessionCount] = useState<number>(0)
   const [gameUsageCounts, setGameUsageCounts] = useState<Record<string, number>>({})
+
+  // Session phases
+  const [phaseIdx, setPhaseIdx]         = useState(0)
+  const [phaseToast, setPhaseToast]     = useState<SessionPhase | null>(null)
+  const [phaseDurations, setPhaseDurations] = useState<number[]>(SESSION_PHASES.map(p => p.defaultMin))
+  const [showPhaseEdit, setShowPhaseEdit] = useState(false)
+
+  // Profile card
+  const [profileOpen, setProfileOpen]   = useState(false)
+  const [pastSessions, setPastSessions] = useState<{ score: number; date: string; count: number }[]>([])
+
+  // Whiteboard
+  const [showWhiteboard, setShowWhiteboard] = useState(false)
+
+  // ABC Behavior Log
+  const [abcLog, setAbcLog]   = useState<ABCEntry[]>([])
+  const [abcOpen, setAbcOpen] = useState(false)
+  const [abcForm, setAbcForm] = useState<{ antecedent: string; behavior: string; consequence: string; intensity: 1|2|3 }>({
+    antecedent: '', behavior: '', consequence: '', intensity: 2,
+  })
+
+  // Prompt Cards
+  const [promptCard, setPromptCard]               = useState<typeof PROMPT_CARDS[0] | null>(null)
+  const [promptPickerOpen, setPromptPickerOpen]   = useState(false)
+
+  // Homework Builder
+  const [hwOpen, setHwOpen]       = useState(false)
+  const [hwSelected, setHwSelected] = useState<string[]>([])
+  const [hwNote, setHwNote]       = useState('')
+  const [hwSent, setHwSent]       = useState(false)
+  const [hwSending, setHwSending] = useState(false)
+
+  // Student Timer (#9)
+  const [studentTimerTotal, setStudentTimerTotal]     = useState(120)
+  const [studentTimerLeft, setStudentTimerLeft]       = useState(120)
+  const [studentTimerRunning, setStudentTimerRunning] = useState(false)
+  const [showStudentTimer, setShowStudentTimer]       = useState(false)
+  const [timerPickerOpen, setTimerPickerOpen]         = useState(false)
+
+  // Before/After comparison (#10)
+  const [compareToast, setCompareToast] = useState<{ prev: ExerciseResult; curr: ExerciseResult } | null>(null)
+
+  // Session Report (#8)
+  const [showReport, setShowReport] = useState(false)
 
   // Load appointment/student info + assessment profile + session history
   useEffect(() => {
@@ -292,6 +409,59 @@ export default function SessionPage() {
     return () => clearInterval(t)
   }, [running])
 
+  // Phase auto-advance based on elapsed seconds
+  useEffect(() => {
+    if (!running) return
+    const thresholds = phaseDurations.reduce<number[]>((acc, d, i) => {
+      acc.push((acc[i - 1] ?? 0) + d * 60)
+      return acc
+    }, [])
+    const newPhase = thresholds.findIndex(t => elapsed < t)
+    const clamped  = newPhase === -1 ? SESSION_PHASES.length - 1 : newPhase
+    if (clamped !== phaseIdx) {
+      setPhaseIdx(clamped)
+      const phase = SESSION_PHASES[clamped]
+      setPhaseToast(phase)
+      playSound('phase')
+      setTimeout(() => setPhaseToast(null), 3000)
+    }
+  }, [elapsed, running, phaseDurations, phaseIdx])
+
+  // Load past sessions for profile card
+  useEffect(() => {
+    if (!currentStudentId) return
+    fetch(`/api/admin/sessions/student/${currentStudentId}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        if (!d?.sessions?.length) return
+        const recent = (d.sessions as Array<{ exercises?: Array<{ score: number }>; createdAt?: string }>)
+          .slice(0, 3)
+          .map(s => ({
+            score: s.exercises?.length
+              ? Math.round(s.exercises.reduce((sum, e) => sum + e.score, 0) / s.exercises.length)
+              : 0,
+            date: s.createdAt?.slice(0, 10) ?? '',
+            count: s.exercises?.length ?? 0,
+          }))
+        setPastSessions(recent)
+      })
+      .catch(() => {})
+  }, [currentStudentId])
+
+  // Student Timer countdown with audio ticks
+  useEffect(() => {
+    if (!studentTimerRunning || studentTimerLeft <= 0) return
+    const t = setTimeout(() => {
+      setStudentTimerLeft(l => {
+        const next = l - 1
+        if (next > 0 && next <= 5) playSound('tick')
+        if (next === 0) { playSound('ding'); setStudentTimerRunning(false) }
+        return next
+      })
+    }, 1000)
+    return () => clearTimeout(t)
+  }, [studentTimerRunning, studentTimerLeft])
+
   function startSession() {
     setRunning(true)
     startRef.current = Date.now()
@@ -313,8 +483,138 @@ export default function SessionPage() {
     setTimeout(() => setObsToast(null), 2500)
   }
 
+  function startStudentTimer(seconds: number) {
+    setStudentTimerTotal(seconds)
+    setStudentTimerLeft(seconds)
+    setStudentTimerRunning(true)
+    setShowStudentTimer(true)
+    setTimerPickerOpen(false)
+  }
+
+  function printSessionReport() {
+    const date = new Date().toLocaleDateString('ar-SA', { year: 'numeric', month: 'long', day: 'numeric' })
+    const avgScoreVal = results.length
+      ? Math.round(results.reduce((s, r) => s + r.score, 0) / results.length) : 0
+    const phasesInfo = SESSION_PHASES.map((ph, i) => `${ph.icon} ${ph.label}: ${phaseDurations[i]} دقيقة`).join(' | ')
+    const exerciseRows = results.map(r =>
+      `<tr><td>${r.exerciseLabelAr}</td><td style="text-align:center;font-weight:900;color:${r.score>=80?'#16a34a':r.score>=60?'#d97706':'#dc2626'}">${r.score}%</td><td style="text-align:center">${r.accuracy}%</td><td style="text-align:center">${r.duration}ث</td></tr>`
+    ).join('')
+    const abcRows = abcLog.map(e =>
+      `<tr><td>${e.ts}</td><td>${e.antecedent||'—'}</td><td>${e.behavior||'—'}</td><td>${e.consequence||'—'}</td><td style="text-align:center">${e.intensity===1?'خفيف':e.intensity===2?'متوسط':'شديد'}</td></tr>`
+    ).join('')
+    const obsRows = obsLog.map(e => `<li><strong>${e.ts}</strong> — ${e.category}: ${e.text}</li>`).join('')
+    const recText = avgScoreVal >= 80
+      ? 'أداء ممتاز. يُوصى بالاستمرار على نفس المستوى مع زيادة الصعوبة تدريجياً.'
+      : avgScoreVal >= 60
+      ? 'أداء جيد. يُوصى بمواصلة التدريب مع التركيز على التمارين التي سجّل فيها أقل من 70%.'
+      : 'يحتاج لمزيد من الدعم. يُوصى بتكثيف التمارين الأساسية وخفض مستوى الصعوبة.'
+
+    const html = `<!DOCTYPE html><html dir="rtl" lang="ar">
+<head><meta charset="UTF-8"><title>تقرير جلسة — ${studentName}</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Arial', sans-serif; font-size: 13px; color: #1a1a2e; padding: 32px; direction: rtl; }
+  h1 { font-size: 22px; font-weight: 900; color: #4c1d95; margin-bottom: 4px; }
+  .meta { color: #666; font-size: 12px; margin-bottom: 20px; }
+  .badge { display: inline-block; background: #ede9fe; color: #4c1d95; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; margin-left: 6px; }
+  h2 { font-size: 14px; font-weight: 900; color: #4c1d95; border-bottom: 2px solid #ede9fe; padding-bottom: 4px; margin: 20px 0 10px; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+  th { background: #4c1d95; color: white; padding: 7px 10px; font-size: 12px; text-align: right; }
+  td { padding: 6px 10px; border-bottom: 1px solid #f0f0f0; }
+  tr:nth-child(even) td { background: #f9f5ff; }
+  .stats { display: flex; gap: 16px; margin-bottom: 20px; }
+  .stat { flex: 1; background: #f9f5ff; border-radius: 12px; padding: 12px; text-align: center; border: 1px solid #ede9fe; }
+  .stat .val { font-size: 28px; font-weight: 900; color: #4c1d95; }
+  .stat .lbl { font-size: 11px; color: #888; }
+  .phases { font-size: 11px; color: #666; background: #f9f5ff; padding: 8px 12px; border-radius: 8px; margin-bottom: 16px; }
+  .notes { background: #fafafa; border: 1px solid #eee; border-radius: 8px; padding: 12px; font-size: 12px; line-height: 1.6; }
+  .rec { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px; font-size: 12px; line-height: 1.6; }
+  ul { padding-right: 16px; }
+  li { margin-bottom: 4px; }
+  @media print { body { padding: 16px; } button { display: none; } }
+</style></head>
+<body>
+<div style="display:flex;align-items:start;justify-content:space-between;margin-bottom:16px">
+  <div>
+    <h1>تقرير جلسة — ${studentName || 'الطالب'}</h1>
+    <div class="meta">${date} • مدة الجلسة: ${formatTime(elapsed)} • ${results.length} تمارين
+      <span class="badge">${DIAG_LABELS[studentDiagnosis] || studentDiagnosis || 'لا يوجد تشخيص'}</span>
+      <span class="badge">${SEVERITY_LABELS[studentSeverity]}</span>
+    </div>
+  </div>
+  <button onclick="window.print()" style="background:#4c1d95;color:white;border:none;padding:8px 20px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">🖨 طباعة PDF</button>
+</div>
+
+<div class="stats">
+  <div class="stat"><div class="val">${avgScoreVal}%</div><div class="lbl">متوسط الأداء</div></div>
+  <div class="stat"><div class="val">${results.filter(r=>r.score>=80).length}</div><div class="lbl">تمارين ممتازة</div></div>
+  <div class="stat"><div class="val">${results.length}</div><div class="lbl">إجمالي التمارين</div></div>
+  <div class="stat"><div class="val">${abcLog.length}</div><div class="lbl">حوادث سلوكية</div></div>
+</div>
+
+<div class="phases">${phasesInfo}</div>
+
+${results.length > 0 ? `<h2>نتائج التمارين</h2>
+<table><thead><tr><th>التمرين</th><th style="text-align:center">الدرجة</th><th style="text-align:center">الدقة</th><th style="text-align:center">المدة</th></tr></thead>
+<tbody>${exerciseRows}</tbody></table>` : ''}
+
+${abcLog.length > 0 ? `<h2>🔗 سجل ABC السلوكي</h2>
+<table><thead><tr><th>الوقت</th><th>السابق (A)</th><th>السلوك (B)</th><th>النتيجة (C)</th><th style="text-align:center">الحدة</th></tr></thead>
+<tbody>${abcRows}</tbody></table>` : ''}
+
+${obsLog.length > 0 ? `<h2>📝 الملاحظات الفورية</h2><ul>${obsRows}</ul>` : ''}
+
+${notes ? `<h2>ملاحظات المعالج</h2><div class="notes">${notes.replace(/\n/g, '<br>')}</div>` : ''}
+
+<h2>التوصيات</h2><div class="rec">${recText}</div>
+</body></html>`
+
+    const w = window.open('', '_blank', 'width=900,height=700')
+    if (w) { w.document.write(html); w.document.close() }
+  }
+
+  function logABC() {
+    if (!abcForm.antecedent && !abcForm.behavior) return
+    const now = new Date()
+    const ts = now.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })
+    setAbcLog(prev => [...prev, { ...abcForm, ts, elapsed }])
+    setAbcForm({ antecedent: '', behavior: '', consequence: '', intensity: 2 })
+    setAbcOpen(false)
+    playSound('abc')
+  }
+
+  async function sendHomework() {
+    if (!currentStudentId || hwSelected.length === 0) return
+    setHwSending(true)
+    const exercises = hwSelected
+      .map(eid => EXERCISES.find(e => e.id === eid))
+      .filter(Boolean)
+      .map(e => ({ id: e!.id, labelAr: e!.labelAr, icon: e!.icon, category: e!.category }))
+    try {
+      await fetch(`/api/students/${currentStudentId}/homework`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ exercises, note: hwNote, sessionId: id, difficulty }),
+      })
+      setHwSent(true)
+      setTimeout(() => { setHwOpen(false); setHwSent(false); setHwSelected([]); setHwNote('') }, 1800)
+    } finally {
+      setHwSending(false)
+    }
+  }
+
   function handleExerciseComplete(result: ExerciseResult) {
     setResults(r => {
+      // Before/After comparison: detect if same exercise was played before in this session
+      const prev = r.find(x => x.exerciseType === result.exerciseType)
+      if (prev) {
+        setTimeout(() => {
+          setCompareToast({ prev, curr: result })
+          if (result.score > prev.score) playSound('compare')
+          setTimeout(() => setCompareToast(null), 5000)
+        }, 500)
+      }
+
       const newResults = [...r, result]
       // Kid Mode completion check — trigger celebration once all top games are done
       if (kidMode && topGames.length > 0) {
@@ -384,6 +684,7 @@ export default function SessionPage() {
           durationSeconds: elapsed,
           highlights: results.filter(r => r.score >= 80).map(r => `${r.exerciseLabelAr}: ${r.score}%`),
           observationLog: obsLog,
+          abcLog,
         }),
       })
       setSaved(true)
@@ -417,6 +718,103 @@ export default function SessionPage() {
   return (
     <div className="min-h-screen bg-gray-950 text-white flex flex-col">
 
+      {/* ── Student Timer Large Display (#9) ── */}
+      {showStudentTimer && (
+        <div
+          className="fixed z-[150] flex flex-col items-center justify-center pointer-events-none select-none"
+          style={{
+            bottom: 80, left: '50%', transform: 'translateX(-50%)',
+            background: 'rgba(0,0,0,0.85)',
+            borderRadius: 24,
+            padding: '16px 32px',
+            backdropFilter: 'blur(12px)',
+            border: `2px solid ${studentTimerLeft <= studentTimerTotal * 0.1 ? '#EF4444' : studentTimerLeft <= studentTimerTotal * 0.25 ? '#F59E0B' : '#22C55E'}55`,
+            boxShadow: `0 0 40px ${studentTimerLeft <= studentTimerTotal * 0.1 ? '#EF444420' : studentTimerLeft <= studentTimerTotal * 0.25 ? '#F59E0B20' : '#22C55E20'}`,
+            minWidth: 200,
+          }}
+        >
+          <div
+            className="font-black ltr-num"
+            style={{
+              fontSize: '3.5rem',
+              color: studentTimerLeft <= studentTimerTotal * 0.1 ? '#EF4444'
+                   : studentTimerLeft <= studentTimerTotal * 0.25 ? '#F59E0B'
+                   : '#22C55E',
+              fontVariantNumeric: 'tabular-nums',
+              letterSpacing: '0.05em',
+            }}
+          >
+            {formatTime(studentTimerLeft)}
+          </div>
+          {/* Progress bar */}
+          <div className="w-full h-1.5 rounded-full mt-2 overflow-hidden" style={{ background: 'rgba(255,255,255,0.1)' }}>
+            <div
+              className="h-full rounded-full transition-all duration-1000"
+              style={{
+                width: `${(studentTimerLeft / studentTimerTotal) * 100}%`,
+                background: studentTimerLeft <= studentTimerTotal * 0.1 ? '#EF4444'
+                           : studentTimerLeft <= studentTimerTotal * 0.25 ? '#F59E0B'
+                           : '#22C55E',
+              }}
+            />
+          </div>
+          {studentTimerLeft === 0 && (
+            <div className="text-white font-black text-sm mt-1">انتهى الوقت! ⏰</div>
+          )}
+          {/* Clickable to pause/resume */}
+          <div className="pointer-events-auto mt-2 flex gap-2">
+            <button
+              onClick={() => setStudentTimerRunning(r => !r)}
+              className="text-white/50 hover:text-white text-xs font-bold px-3 py-1 rounded-lg transition-colors"
+              style={{ background: 'rgba(255,255,255,0.08)' }}
+            >
+              {studentTimerRunning ? '⏸ إيقاف مؤقت' : '▶ استئناف'}
+            </button>
+            <button
+              onClick={() => { setStudentTimerLeft(studentTimerTotal); setStudentTimerRunning(true) }}
+              className="text-white/50 hover:text-white text-xs font-bold px-3 py-1 rounded-lg transition-colors"
+              style={{ background: 'rgba(255,255,255,0.08)' }}
+            >
+              ↺ إعادة
+            </button>
+            <button
+              onClick={() => { setShowStudentTimer(false); setStudentTimerRunning(false) }}
+              className="text-white/30 hover:text-white text-xs px-2 rounded-lg transition-colors"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Prompt Card Full-Screen Overlay ── */}
+      {promptCard && (
+        <div
+          className="fixed inset-0 z-[300] flex flex-col items-center justify-center cursor-pointer select-none"
+          style={{ background: promptCard.bg }}
+          onClick={() => setPromptCard(null)}
+          dir="rtl"
+        >
+          <div className="text-center">
+            <div
+              className="leading-none mb-8"
+              style={{ fontSize: '10rem', filter: `drop-shadow(0 0 40px ${promptCard.glow}88)` }}
+            >
+              {promptCard.emoji}
+            </div>
+            <div
+              className="text-white font-black"
+              style={{ fontSize: '4.5rem', textShadow: `0 4px 30px rgba(0,0,0,0.4), 0 0 60px ${promptCard.glow}66` }}
+            >
+              {promptCard.text}
+            </div>
+          </div>
+          <div className="absolute bottom-10 text-white/40 font-bold text-sm">
+            اضغط في أي مكان للإغلاق
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <header className="bg-gray-900 border-b border-white/10 px-4 py-3 flex items-center gap-4">
         <button onClick={() => router.back()} className="text-white/50 hover:text-white transition-colors">
@@ -424,11 +822,15 @@ export default function SessionPage() {
         </button>
 
         <div className="flex-1 flex items-center gap-4">
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 relative">
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="font-black text-white text-sm">
-                {studentName || 'جلسة تفاعلية'}
-              </h1>
+              <button
+                onClick={() => setProfileOpen(o => !o)}
+                className="flex items-center gap-1.5 font-black text-white text-sm hover:text-brand-300 transition-colors"
+              >
+                <h1>{studentName || 'جلسة تفاعلية'}</h1>
+                <ChevronDown className={`w-3 h-3 transition-transform ${profileOpen ? 'rotate-180' : ''}`} />
+              </button>
               {studentDiagnosis && (
                 <span className="text-[10px] bg-brand-900/60 text-brand-300 border border-brand-500/40 px-1.5 py-0.5 rounded-full font-bold">
                   {DIAG_LABELS[studentDiagnosis] || studentDiagnosis}
@@ -465,6 +867,104 @@ export default function SessionPage() {
                 ))
               }
             </div>
+
+            {/* ── Quick Profile Card ── */}
+            {profileOpen && (
+              <div
+                className="absolute top-full mt-2 right-0 z-[70] rounded-2xl p-4 w-72 shadow-2xl"
+                style={{
+                  background: '#111827',
+                  border: '1.5px solid rgba(255,255,255,0.12)',
+                  boxShadow: '0 16px 48px rgba(0,0,0,0.7)',
+                }}
+                dir="rtl"
+              >
+                {/* Identity row */}
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 rounded-2xl bg-brand-900/60 border border-brand-500/30 flex items-center justify-center flex-shrink-0">
+                    <User className="w-6 h-6 text-brand-400" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-white font-black text-sm truncate">{studentName || '—'}</div>
+                    <div className="text-white/50 text-xs mt-0.5">
+                      {studentAge} سنة • {DIAG_LABELS[studentDiagnosis] || studentDiagnosis || 'لا يوجد تشخيص'}
+                    </div>
+                    <div className="flex items-center gap-1.5 mt-1">
+                      {studentSeverity > 0 && (
+                        <span className="text-[10px] bg-brand-900/60 text-brand-300 border border-brand-500/30 px-1.5 py-0.5 rounded-full font-bold">
+                          {SEVERITY_LABELS[studentSeverity]}
+                        </span>
+                      )}
+                      {sessionCount > 0 && (
+                        <span className="text-[10px] text-white/35 font-medium">{sessionCount} جلسة سابقة</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Past 3 sessions */}
+                {pastSessions.length > 0 && (
+                  <div className="mb-3">
+                    <div className="text-white/35 text-[10px] font-black mb-2 uppercase tracking-wider">آخر 3 جلسات</div>
+                    <div className="space-y-1.5">
+                      {pastSessions.map((s, i) => (
+                        <div key={i} className="flex items-center gap-2">
+                          <div className="flex-1 bg-white/10 rounded-full h-1.5 overflow-hidden">
+                            <div
+                              className="h-full rounded-full"
+                              style={{
+                                width: `${s.score}%`,
+                                background: s.score >= 80 ? '#22C55E' : s.score >= 60 ? '#F59E0B' : '#EF4444',
+                              }}
+                            />
+                          </div>
+                          <span className="text-white/60 text-[10px] font-black ltr-num w-8 text-left">{s.score}%</span>
+                          <span className="text-white/25 text-[9px] ltr-num flex-shrink-0">{s.date}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Assessment difficulties */}
+                {profile && Object.entries(profile.diagnosedDifficulties).some(([, v]) => v !== 'none') && (
+                  <div className="border-t border-white/10 pt-3 mb-3">
+                    <div className="text-white/35 text-[10px] font-black mb-2 uppercase tracking-wider">صعوبات موثقة</div>
+                    <div className="flex flex-wrap gap-1">
+                      {Object.entries(profile.diagnosedDifficulties)
+                        .filter(([, v]) => v !== 'none')
+                        .map(([k, v]) => (
+                          <span key={k} className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${
+                            v === 'severe'   ? 'bg-red-900/50 text-red-300 border-red-500/30' :
+                            v === 'moderate' ? 'bg-orange-900/50 text-orange-300 border-orange-500/30' :
+                                               'bg-yellow-900/50 text-yellow-300 border-yellow-500/30'
+                          }`}>
+                            {DIFFICULTY_LABELS_AR[k as keyof typeof DIFFICULTY_LABELS_AR]}
+                          </span>
+                        ))
+                      }
+                    </div>
+                  </div>
+                )}
+
+                {/* Pinned notes placeholder */}
+                <div className={`${(profile && Object.entries(profile.diagnosedDifficulties).some(([, v]) => v !== 'none')) || pastSessions.length > 0 ? 'border-t border-white/10 pt-3' : ''}`}>
+                  <div className="text-white/35 text-[10px] font-black mb-1 uppercase tracking-wider">ملاحظات</div>
+                  {notes ? (
+                    <p className="text-white/50 text-[10px] leading-relaxed line-clamp-3">{notes}</p>
+                  ) : (
+                    <p className="text-white/25 text-[10px] italic">لا توجد ملاحظات بعد</p>
+                  )}
+                </div>
+
+                <button
+                  onClick={() => setProfileOpen(false)}
+                  className="mt-3 w-full text-white/30 hover:text-white/60 text-[10px] font-bold transition-colors pt-2 border-t border-white/10"
+                >
+                  إغلاق ✕
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Timer */}
@@ -474,6 +974,53 @@ export default function SessionPage() {
             <Clock className="w-4 h-4 text-green-400" />
             <span className="font-black text-lg ltr-num">{formatTime(elapsed)}</span>
           </div>
+
+          {/* Prompt Cards button */}
+          <div className="relative flex-shrink-0">
+            <button
+              onClick={() => setPromptPickerOpen(p => !p)}
+              className={`flex items-center gap-1.5 font-black px-3 py-1.5 rounded-lg text-xs transition-all ${
+                promptPickerOpen
+                  ? 'bg-purple-500 text-white ring-2 ring-purple-400/50'
+                  : 'bg-white/10 hover:bg-white/20 text-white/70'
+              }`}
+              title="بطاقات التحفيز"
+            >
+              🃏 بطاقة
+            </button>
+            {promptPickerOpen && (
+              <div
+                className="absolute top-full mt-2 left-0 z-[70] rounded-2xl overflow-hidden shadow-2xl"
+                style={{ background: '#111827', border: '1.5px solid rgba(255,255,255,0.12)', minWidth: 200 }}
+                dir="rtl"
+              >
+                {PROMPT_CARDS.map(card => (
+                  <button
+                    key={card.id}
+                    onClick={() => { setPromptCard(card); setPromptPickerOpen(false) }}
+                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/10 transition-colors text-right"
+                  >
+                    <span className="text-2xl">{card.emoji}</span>
+                    <span className="text-white font-black text-sm">{card.text}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Whiteboard button */}
+          <button
+            onClick={() => setShowWhiteboard(w => !w)}
+            className={`flex items-center gap-1.5 font-black px-3 py-1.5 rounded-lg text-xs transition-all flex-shrink-0 ${
+              showWhiteboard
+                ? 'bg-amber-500 text-white ring-2 ring-amber-400/50'
+                : 'bg-white/10 hover:bg-white/20 text-white/70'
+            }`}
+            title="السبورة التفاعلية"
+          >
+            <PenLine className="w-3.5 h-3.5" />
+            سبورة
+          </button>
 
           {jitsiUrl && (
             <button
@@ -542,6 +1089,62 @@ export default function SessionPage() {
             🎯 {focusMode ? 'تركيز فعّال' : 'تركيز'}
           </button>
 
+          {/* Student Timer button (#9) */}
+          <div className="relative flex-shrink-0">
+            <button
+              onClick={() => setTimerPickerOpen(p => !p)}
+              className={`flex items-center gap-1.5 font-black px-3 py-2 rounded-xl text-sm transition-all ${
+                showStudentTimer
+                  ? 'bg-orange-500 text-white ring-2 ring-orange-400/50'
+                  : 'bg-white/10 text-white/60 hover:bg-white/20 hover:text-white'
+              }`}
+              title="مؤقت الطالب"
+            >
+              ⏱ {showStudentTimer ? formatTime(studentTimerLeft) : 'مؤقت'}
+            </button>
+            {timerPickerOpen && (
+              <div
+                className="absolute top-full mt-2 left-0 z-[70] rounded-2xl p-3 shadow-2xl"
+                style={{ background: '#111827', border: '1.5px solid rgba(255,255,255,0.12)', minWidth: 180 }}
+                dir="rtl"
+              >
+                <p className="text-white/40 text-[10px] font-black mb-2">اختر مدة المؤقت</p>
+                <div className="grid grid-cols-2 gap-1.5 mb-2">
+                  {[[60,'1 دقيقة'],[120,'2 دقيقة'],[180,'3 دقائق'],[300,'5 دقائق']].map(([s,l]) => (
+                    <button
+                      key={s}
+                      onClick={() => startStudentTimer(s as number)}
+                      className="py-2 rounded-xl text-xs font-black text-white transition-all hover:ring-1 hover:ring-orange-400"
+                      style={{ background: 'rgba(255,255,255,0.08)' }}
+                    >
+                      {l as string}
+                    </button>
+                  ))}
+                </div>
+                {showStudentTimer && (
+                  <button
+                    onClick={() => { setShowStudentTimer(false); setStudentTimerRunning(false); setTimerPickerOpen(false) }}
+                    className="w-full py-1.5 rounded-xl text-[10px] font-black text-red-400 transition-all"
+                    style={{ background: 'rgba(239,68,68,0.1)' }}
+                  >
+                    إيقاف المؤقت
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Session Report button (#8) */}
+          {results.length > 0 && (
+            <button
+              onClick={printSessionReport}
+              className="flex items-center gap-1.5 font-black px-3 py-2 rounded-xl text-sm transition-all bg-white/10 text-white/60 hover:bg-white/20 hover:text-white flex-shrink-0"
+              title="طباعة تقرير الجلسة"
+            >
+              📄 تقرير
+            </button>
+          )}
+
           <button onClick={saveSession} disabled={saving}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-black text-sm transition-all shadow-lg hover:-translate-y-0.5 ${
               saved
@@ -570,7 +1173,93 @@ export default function SessionPage() {
         </div>
       )}
 
-      <div className="flex flex-1 overflow-hidden">
+      {/* ── Session Phase Progress Bar ── */}
+      {running && (
+        <div className="bg-gray-900 border-b border-white/10 px-4 py-2 flex items-center gap-3" dir="rtl">
+          <span className="text-white/30 text-[10px] font-black flex-shrink-0">مراحل</span>
+          <div className="flex items-center gap-2 flex-1">
+            {SESSION_PHASES.map((ph, i) => {
+              const isActive = i === phaseIdx
+              const isDone   = i < phaseIdx
+              const phaseStartSec = phaseDurations.slice(0, i).reduce((a, b) => a + b, 0) * 60
+              const phaseTotalSec = phaseDurations[i] * 60
+              const phaseElapsed  = isActive ? Math.max(0, elapsed - phaseStartSec) : 0
+              const progress = isActive
+                ? Math.min(100, (phaseElapsed / phaseTotalSec) * 100)
+                : isDone ? 100 : 0
+              return (
+                <button
+                  key={ph.id}
+                  onClick={() => { setPhaseIdx(i); setPhaseToast(null) }}
+                  className="flex-1 flex flex-col items-center gap-1 rounded-xl px-2 py-1 transition-all"
+                  style={{
+                    background: isActive ? `${ph.color}18` : 'transparent',
+                    border: isActive ? `1px solid ${ph.color}40` : '1px solid transparent',
+                  }}
+                >
+                  <div className="flex items-center gap-1 w-full">
+                    <span className="text-[11px]">{ph.icon}</span>
+                    <span
+                      className="text-[10px] font-black truncate"
+                      style={{ color: isActive ? ph.color : isDone ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.2)' }}
+                    >
+                      {ph.label}
+                    </span>
+                    {isActive && (
+                      <span className="text-[9px] mr-auto ltr-num" style={{ color: `${ph.color}99` }}>
+                        {formatTime(phaseElapsed)}/{phaseDurations[i]}د
+                      </span>
+                    )}
+                    {isDone && <span className="text-[9px] mr-auto" style={{ color: 'rgba(255,255,255,0.25)' }}>✓</span>}
+                  </div>
+                  <div className="w-full h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                    <div
+                      className="h-full rounded-full transition-all duration-1000"
+                      style={{ width: `${progress}%`, background: ph.color, opacity: isDone ? 0.4 : 1 }}
+                    />
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+          {/* Phase duration edit — simple inline inputs */}
+          <button
+            onClick={() => setShowPhaseEdit(e => !e)}
+            className="text-white/25 hover:text-white/50 text-[10px] font-bold flex-shrink-0 transition-colors px-1"
+            title="تعديل مدة المراحل"
+          >
+            ⚙
+          </button>
+          {showPhaseEdit && (
+            <div
+              className="absolute top-full left-0 right-0 z-[60] flex items-center gap-2 px-4 py-2 flex-wrap"
+              style={{ background: '#0F172A', borderBottom: '1px solid rgba(255,255,255,0.08)' }}
+              dir="rtl"
+            >
+              {SESSION_PHASES.map((ph, i) => (
+                <label key={ph.id} className="flex items-center gap-1.5 text-[10px] text-white/50">
+                  <span>{ph.icon} {ph.label}</span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={60}
+                    value={phaseDurations[i]}
+                    onChange={e => {
+                      const v = Math.max(1, Math.min(60, Number(e.target.value)))
+                      setPhaseDurations(prev => prev.map((d, idx) => idx === i ? v : d))
+                    }}
+                    className="w-12 bg-white/10 border border-white/15 rounded-lg px-1.5 py-0.5 text-white text-center text-[10px] font-bold"
+                  />
+                  <span className="text-white/30">د</span>
+                </label>
+              ))}
+              <button onClick={() => setShowPhaseEdit(false)} className="text-white/30 hover:text-white/60 text-[10px] mr-auto">✕ إغلاق</button>
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="flex flex-1 overflow-hidden" style={{ position: 'relative' }}>
 
         {/* Sidebar */}
         {!focusMode && <aside className="w-72 bg-gray-900 border-l border-white/10 flex flex-col">
@@ -725,6 +1414,50 @@ export default function SessionPage() {
                           <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: e.color }} />
                           <span className="text-white/80 text-xs flex-1">{e.text}</span>
                           <span className="text-white/30 text-[10px] font-mono ltr-num flex-shrink-0">{e.ts}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* ABC Behavior Log entries */}
+                {abcLog.length > 0 && (
+                  <div className="bg-amber-900/20 border border-amber-500/20 rounded-xl p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-amber-400 text-[10px] font-black uppercase tracking-wider">🔗 سجل ABC</span>
+                      <span className="text-amber-400/50 text-[10px]">{abcLog.length} حوادث</span>
+                    </div>
+                    <div className="space-y-3">
+                      {abcLog.map((e, i) => (
+                        <div key={i} className="bg-white/5 rounded-xl p-2.5">
+                          <div className="flex items-center justify-between mb-1.5">
+                            <span className="text-white/30 text-[9px] ltr-num font-mono">{e.ts}</span>
+                            <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full ${
+                              e.intensity === 1 ? 'bg-green-900/60 text-green-400' :
+                              e.intensity === 2 ? 'bg-amber-900/60 text-amber-400' :
+                              'bg-red-900/60 text-red-400'
+                            }`}>
+                              {e.intensity === 1 ? 'خفيف' : e.intensity === 2 ? 'متوسط' : 'شديد'}
+                            </span>
+                          </div>
+                          {e.antecedent && (
+                            <div className="flex gap-1.5 mb-1">
+                              <span className="text-blue-400 text-[9px] font-black flex-shrink-0">A:</span>
+                              <span className="text-white/70 text-[10px]">{e.antecedent}</span>
+                            </div>
+                          )}
+                          {e.behavior && (
+                            <div className="flex gap-1.5 mb-1">
+                              <span className="text-amber-400 text-[9px] font-black flex-shrink-0">B:</span>
+                              <span className="text-white/70 text-[10px]">{e.behavior}</span>
+                            </div>
+                          )}
+                          {e.consequence && (
+                            <div className="flex gap-1.5">
+                              <span className="text-green-400 text-[9px] font-black flex-shrink-0">C:</span>
+                              <span className="text-white/70 text-[10px]">{e.consequence}</span>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -1191,6 +1924,13 @@ export default function SessionPage() {
             </div>
           )}
 
+          {/* ── Whiteboard ── */}
+          {showWhiteboard && !activeView && (
+            <div className="absolute inset-0 z-20 flex flex-col">
+              <Whiteboard onClose={() => setShowWhiteboard(false)} />
+            </div>
+          )}
+
           {activeView?.type === 'assessment' && (
             <div className="w-full max-w-2xl mx-auto py-6 px-4">
               <div className="bg-gray-900 rounded-2xl overflow-hidden">
@@ -1238,6 +1978,193 @@ export default function SessionPage() {
           <button onClick={() => setFocusMode(false)}
             className="bg-gray-800 text-white/50 text-xs py-2 rounded-xl hover:bg-gray-700 transition-colors">
             خروج من وضع التركيز
+          </button>
+        </div>
+      )}
+
+      {/* ── ABC Behavior Log Panel ── */}
+      {running && (
+        <div
+          className="fixed z-[80]"
+          style={{ bottom: 24, right: focusMode ? 24 : 288, marginRight: 190, transition: 'right 0.3s' }}
+          dir="rtl"
+        >
+          {abcOpen && (
+            <div
+              className="mb-2 rounded-2xl p-4 w-80"
+              style={{ background: '#111827', border: '1.5px solid rgba(245,158,11,0.3)', boxShadow: '0 16px 48px rgba(0,0,0,0.6)' }}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-amber-400 font-black text-xs">🔗 تحليل ABC</span>
+                <button onClick={() => setAbcOpen(false)} className="text-white/40 hover:text-white text-lg leading-none">×</button>
+              </div>
+              <div className="space-y-2.5">
+                <div>
+                  <label className="text-[10px] font-black text-blue-400 mb-1 block">A — السابق (ما حدث قبل)</label>
+                  <input
+                    value={abcForm.antecedent}
+                    onChange={e => setAbcForm(f => ({ ...f, antecedent: e.target.value }))}
+                    placeholder="ما الذي سبق السلوك؟"
+                    className="w-full bg-white/8 border border-white/15 rounded-xl px-3 py-2 text-white text-xs placeholder-white/30 focus:outline-none focus:border-blue-400"
+                    dir="rtl"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-amber-400 mb-1 block">B — السلوك (ما حدث)</label>
+                  <input
+                    value={abcForm.behavior}
+                    onChange={e => setAbcForm(f => ({ ...f, behavior: e.target.value }))}
+                    placeholder="صِف السلوك بدقة..."
+                    className="w-full bg-white/8 border border-white/15 rounded-xl px-3 py-2 text-white text-xs placeholder-white/30 focus:outline-none focus:border-amber-400"
+                    dir="rtl"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-green-400 mb-1 block">C — النتيجة (ردة الفعل)</label>
+                  <input
+                    value={abcForm.consequence}
+                    onChange={e => setAbcForm(f => ({ ...f, consequence: e.target.value }))}
+                    placeholder="ما الذي تلا السلوك؟"
+                    className="w-full bg-white/8 border border-white/15 rounded-xl px-3 py-2 text-white text-xs placeholder-white/30 focus:outline-none focus:border-green-400"
+                    dir="rtl"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-white/40 mb-1 block">الحدة</label>
+                  <div className="flex gap-1.5">
+                    {([1,2,3] as const).map(v => (
+                      <button
+                        key={v}
+                        onClick={() => setAbcForm(f => ({ ...f, intensity: v }))}
+                        className="flex-1 py-1.5 rounded-xl text-xs font-black transition-all"
+                        style={{
+                          background: abcForm.intensity === v
+                            ? v === 1 ? '#22C55E' : v === 2 ? '#F59E0B' : '#EF4444'
+                            : 'rgba(255,255,255,0.08)',
+                          color: abcForm.intensity === v ? '#FFFFFF' : 'rgba(255,255,255,0.4)',
+                        }}
+                      >
+                        {v === 1 ? 'خفيف' : v === 2 ? 'متوسط' : 'شديد'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={logABC}
+                disabled={!abcForm.antecedent && !abcForm.behavior}
+                className="mt-3 w-full py-2.5 rounded-xl font-black text-sm transition-all"
+                style={{
+                  background: (abcForm.antecedent || abcForm.behavior) ? '#F59E0B' : 'rgba(255,255,255,0.06)',
+                  color: (abcForm.antecedent || abcForm.behavior) ? '#000000' : 'rgba(255,255,255,0.2)',
+                }}
+              >
+                حفظ السجل ✓
+              </button>
+            </div>
+          )}
+          <button
+            onClick={() => { setAbcOpen(o => !o); setObsOpen(false); setHwOpen(false) }}
+            className="flex items-center gap-2 font-black text-xs px-4 py-2.5 rounded-2xl transition-all active:scale-95 shadow-lg"
+            style={abcOpen
+              ? { background: '#F59E0B', color: '#000000', boxShadow: '0 4px 16px rgba(245,158,11,0.4)' }
+              : { background: 'linear-gradient(135deg,#1F2937,#374151)', color: '#FFFFFF', boxShadow: '0 4px 16px rgba(0,0,0,0.4)', border: '1.5px solid rgba(255,255,255,0.1)' }
+            }
+          >
+            🔗 ABC
+            {abcLog.length > 0 && (
+              <span className="font-black text-[10px] px-1.5 py-0.5 rounded-full ltr-num bg-amber-500 text-black">
+                {abcLog.length}
+              </span>
+            )}
+          </button>
+        </div>
+      )}
+
+      {/* ── Homework Builder Panel ── */}
+      {running && currentStudentId && (
+        <div
+          className="fixed z-[80]"
+          style={{ bottom: 24, right: focusMode ? 24 : 288, marginRight: 96, transition: 'right 0.3s' }}
+          dir="rtl"
+        >
+          {hwOpen && (
+            <div
+              className="mb-2 rounded-2xl p-4 w-80"
+              style={{ background: '#111827', border: '1.5px solid rgba(34,197,94,0.3)', boxShadow: '0 16px 48px rgba(0,0,0,0.6)' }}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-green-400 font-black text-xs">🏠 الواجب المنزلي</span>
+                <button onClick={() => setHwOpen(false)} className="text-white/40 hover:text-white text-lg leading-none">×</button>
+              </div>
+              {hwSent ? (
+                <div className="text-center py-6">
+                  <div className="text-4xl mb-2">✅</div>
+                  <p className="text-green-400 font-black">تم الإرسال للطالب!</p>
+                </div>
+              ) : (
+                <>
+                  <p className="text-white/40 text-[10px] mb-3">اختر حتى 3 تمارين للواجب المنزلي</p>
+                  <div className="space-y-1 max-h-52 overflow-y-auto mb-3">
+                    {EXERCISES.filter(e => studentAge >= (e.ageMin ?? 5) && studentAge <= (e.ageMax ?? 22)).map(ex => {
+                      const sel = hwSelected.includes(ex.id)
+                      return (
+                        <button
+                          key={ex.id}
+                          onClick={() => {
+                            if (sel) {
+                              setHwSelected(prev => prev.filter(id => id !== ex.id))
+                            } else if (hwSelected.length < 3) {
+                              setHwSelected(prev => [...prev, ex.id])
+                            }
+                          }}
+                          className="w-full flex items-center gap-2 p-2 rounded-xl transition-all text-right"
+                          style={{
+                            background: sel ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.05)',
+                            border: sel ? '1px solid rgba(34,197,94,0.4)' : '1px solid transparent',
+                            opacity: !sel && hwSelected.length >= 3 ? 0.4 : 1,
+                          }}
+                        >
+                          <span className="text-lg">{ex.icon}</span>
+                          <span className="text-white text-xs font-bold flex-1 text-right">{ex.labelAr}</span>
+                          {sel && <span className="text-green-400 text-xs">✓</span>}
+                        </button>
+                      )
+                    })}
+                  </div>
+                  <textarea
+                    value={hwNote}
+                    onChange={e => setHwNote(e.target.value)}
+                    placeholder="ملاحظة للطالب (اختياري)..."
+                    className="w-full bg-white/8 border border-white/15 rounded-xl px-3 py-2 text-white text-xs placeholder-white/30 focus:outline-none focus:border-green-400 mb-3 resize-none"
+                    rows={2}
+                    dir="rtl"
+                  />
+                  <button
+                    onClick={sendHomework}
+                    disabled={hwSelected.length === 0 || hwSending}
+                    className="w-full py-2.5 rounded-xl font-black text-sm transition-all"
+                    style={{
+                      background: hwSelected.length > 0 ? '#22C55E' : 'rgba(255,255,255,0.06)',
+                      color: hwSelected.length > 0 ? '#000000' : 'rgba(255,255,255,0.2)',
+                    }}
+                  >
+                    {hwSending ? '...' : `إرسال (${hwSelected.length}/3) →`}
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+          <button
+            onClick={() => { setHwOpen(o => !o); setAbcOpen(false); setObsOpen(false) }}
+            className="flex items-center gap-2 font-black text-xs px-4 py-2.5 rounded-2xl transition-all active:scale-95 shadow-lg"
+            style={hwOpen
+              ? { background: '#22C55E', color: '#000000', boxShadow: '0 4px 16px rgba(34,197,94,0.4)' }
+              : { background: 'linear-gradient(135deg,#1F2937,#374151)', color: '#FFFFFF', boxShadow: '0 4px 16px rgba(0,0,0,0.4)', border: '1.5px solid rgba(255,255,255,0.1)' }
+            }
+          >
+            🏠 واجب
+            {hwSent && <span className="text-green-400 text-[10px]">✓</span>}
           </button>
         </div>
       )}
@@ -1334,6 +2261,84 @@ export default function SessionPage() {
             <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: obsToast.color }} />
             <span className="text-white font-bold text-sm">{obsToast.text}</span>
             <span className="text-white/40 text-xs font-mono ltr-num">{obsToast.ts}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Before/After Comparison Toast (#10) */}
+      {compareToast && (
+        <div className="fixed bottom-32 left-1/2 -translate-x-1/2 z-[95] pointer-events-none" dir="rtl">
+          <div
+            className="rounded-2xl px-5 py-4 shadow-2xl"
+            style={{ background: '#1F2937', border: '1.5px solid rgba(255,255,255,0.12)', minWidth: 280 }}
+          >
+            <div className="text-white/50 text-[10px] font-black mb-2 uppercase tracking-wider">
+              📊 مقارنة قبل/بعد — {compareToast.curr.exerciseLabelAr}
+            </div>
+            <div className="flex items-center gap-4 justify-center">
+              <div className="text-center">
+                <div className="text-white/40 text-[10px] mb-1">قبل</div>
+                <div
+                  className="font-black text-2xl ltr-num"
+                  style={{ color: compareToast.prev.score >= 80 ? '#22C55E' : compareToast.prev.score >= 60 ? '#F59E0B' : '#EF4444' }}
+                >
+                  {compareToast.prev.score}%
+                </div>
+              </div>
+              <div className="flex flex-col items-center gap-1">
+                <div
+                  className="font-black text-lg"
+                  style={{ color: compareToast.curr.score > compareToast.prev.score ? '#22C55E' : compareToast.curr.score < compareToast.prev.score ? '#EF4444' : '#9CA3AF' }}
+                >
+                  {compareToast.curr.score > compareToast.prev.score ? '↑' : compareToast.curr.score < compareToast.prev.score ? '↓' : '='}
+                </div>
+                <div
+                  className="text-[10px] font-black px-2 py-0.5 rounded-full"
+                  style={{
+                    background: compareToast.curr.score > compareToast.prev.score ? 'rgba(34,197,94,0.15)' : compareToast.curr.score < compareToast.prev.score ? 'rgba(239,68,68,0.15)' : 'rgba(156,163,175,0.15)',
+                    color: compareToast.curr.score > compareToast.prev.score ? '#22C55E' : compareToast.curr.score < compareToast.prev.score ? '#EF4444' : '#9CA3AF',
+                  }}
+                >
+                  {compareToast.curr.score > compareToast.prev.score
+                    ? `+${compareToast.curr.score - compareToast.prev.score}%`
+                    : compareToast.curr.score < compareToast.prev.score
+                    ? `${compareToast.curr.score - compareToast.prev.score}%`
+                    : 'نفس الأداء'}
+                </div>
+              </div>
+              <div className="text-center">
+                <div className="text-white/40 text-[10px] mb-1">بعد</div>
+                <div
+                  className="font-black text-2xl ltr-num"
+                  style={{ color: compareToast.curr.score >= 80 ? '#22C55E' : compareToast.curr.score >= 60 ? '#F59E0B' : '#EF4444' }}
+                >
+                  {compareToast.curr.score}%
+                </div>
+              </div>
+            </div>
+            {compareToast.curr.score > compareToast.prev.score && (
+              <div className="text-center text-green-400 font-black text-sm mt-2">تحسّن رائع! 🎉</div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Phase Transition Toast */}
+      {phaseToast && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[100] pointer-events-none" dir="rtl">
+          <div
+            className="flex items-center gap-3 px-5 py-3 rounded-2xl shadow-2xl"
+            style={{
+              background: '#1F2937',
+              border: `1.5px solid ${phaseToast.color}50`,
+              boxShadow: `0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px ${phaseToast.color}20`,
+            }}
+          >
+            <span className="text-2xl">{phaseToast.icon}</span>
+            <div>
+              <div className="text-white font-black text-sm">مرحلة جديدة: {phaseToast.label}</div>
+              <div className="text-white/50 text-xs ltr-num">{phaseDurations[phaseIdx]} دقيقة</div>
+            </div>
           </div>
         </div>
       )}

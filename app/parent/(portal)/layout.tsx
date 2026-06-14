@@ -50,7 +50,7 @@ export default function ParentPortalLayout({ children }: { children: React.React
           backdropFilter: scrolled ? 'blur(12px)' : 'none',
         }}
       >
-        <div className="h-full max-w-4xl mx-auto px-4 flex items-center justify-between">
+        <div className="h-full px-4 md:px-6 flex items-center justify-between gap-3">
           {/* Brand */}
           <Link href="/parent/dashboard" className="flex items-center gap-2.5 flex-shrink-0">
             <div

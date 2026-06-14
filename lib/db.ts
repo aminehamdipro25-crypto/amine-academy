@@ -122,10 +122,17 @@ export async function getAllExercises(): Promise<Exercise[]> {
   return exercises.filter(Boolean) as Exercise[]
 }
 
+export async function updateExercise(id: string, updates: Partial<Omit<Exercise, 'id' | 'createdAt'>>): Promise<Exercise | null> {
+  const existing = await getExercise(id)
+  if (!existing) return null
+  const updated: Exercise = { ...existing, ...updates }
+  await redis.set(`exercise:${id}`, JSON.stringify(updated))
+  return updated
+}
+
 export async function deleteAllExercises(): Promise<number> {
   const ids = await redis.lrange('exercises:index', 0, -1)
   if (ids.length > 0) {
-    // Delete in batches of 20 to avoid overwhelming the connection
     for (let i = 0; i < ids.length; i += 20) {
       const batch = ids.slice(i, i + 20)
       await Promise.all(batch.map(id => redis.del(`exercise:${id}`)))
@@ -233,7 +240,7 @@ export async function deleteActivationCode(email: string): Promise<void> {
 export async function createPasswordResetToken(email: string): Promise<string> {
   const { randomBytes } = await import('crypto')
   const token = randomBytes(32).toString('hex')
-  await redis.set(`pwd_reset:${email}`, token, { ex: 3600 }) // 1 hour
+  await redis.set(`pwd_reset:${email}`, token, { ex: 3600 })
   return token
 }
 
@@ -248,9 +255,6 @@ export async function deletePasswordResetToken(email: string): Promise<void> {
 }
 
 // ── Pending Payments ──────────────────────────────────────────
-//   payment:{id}           → PendingPayment JSON (TTL 30d)
-//   payments:index         → [payment IDs]
-//   payments:parent:{pid}  → [payment IDs] for logged-in parents
 
 export async function createPendingPayment(
   data: Omit<PendingPayment, 'id' | 'referenceCode' | 'createdAt'>
@@ -304,7 +308,6 @@ interface AchievementDef {
   id: string
   nameAr: string
   icon: string
-  /** Format: 'exercises:N' | 'streak:N' | 'points:N' */
   threshold: string
 }
 
@@ -358,11 +361,6 @@ function checkNewAchievements(
   return unlocked
 }
 
-/**
- * Mark an exercise as completed for today.
- * Uses Redis Set keyed by date (TTL 90 days) to prevent double-counting.
- * Returns { alreadyDone, pointsEarned, newTotalPoints, newStreak, newAchievements }
- */
 export async function completeExercise(
   studentId: string,
   exerciseId: string,
@@ -377,7 +375,6 @@ export async function completeExercise(
   const today    = new Date().toISOString().slice(0, 10)
   const todayKey = `completed:${studentId}:${today}`
 
-  // Check for duplicate completion
   const alreadyDone = (await redis.sismember(todayKey, exerciseId)) === 1
   if (alreadyDone) {
     const student = await getStudent(studentId)
@@ -390,27 +387,21 @@ export async function completeExercise(
     }
   }
 
-  // Mark exercise as done for today
   await redis.sadd(todayKey, exerciseId)
   await redis.expire(todayKey, TTL_90D)
 
-  // Increment all-time exercise counter
   const exerciseCount = await redis.incr(`exercises:count:${studentId}`)
 
-  // Load student
   const student = await getStudent(studentId)
   if (!student) throw new Error('Student not found')
 
-  // Calculate streak — if yesterday's set has any members the streak continues
   const yesterday    = new Date(Date.now() - 86400 * 1000).toISOString().slice(0, 10)
   const yesterdayKey = `completed:${studentId}:${yesterday}`
   const hadYesterday = (await redis.smembers(yesterdayKey)).length > 0
   const newStreak    = hadYesterday ? student.streak + 1 : 1
 
-  // Add points
   const newTotalPoints = student.totalPoints + pointsToAdd
 
-  // Check achievements
   const newlyUnlocked = checkNewAchievements(
     student.achievements,
     newTotalPoints,
@@ -419,7 +410,6 @@ export async function completeExercise(
   )
   const updatedAchievements = [...student.achievements, ...newlyUnlocked]
 
-  // Persist updated student
   await updateStudent(studentId, {
     totalPoints: newTotalPoints,
     streak: newStreak,
@@ -475,14 +465,8 @@ export async function deleteParentFull(parentId: string): Promise<void> {
 }
 
 // ── Messages ──────────────────────────────────────────────────
-// Key scheme:
-//   message:{id}                        → Message JSON (TTL 90 days)
-//   messages:thread:{parentId}          → LPUSH list of message IDs (latest first)
-//   messages:unread:parent:{parentId}   → counter (parent hasn't read admin messages)
-//   messages:unread:admin:{parentId}    → counter (admin hasn't read parent messages)
-//   messages:threads:index              → LPUSH parentId (when first message is sent)
 
-const MSG_TTL = 90 * 24 * 3600 // 90 days in seconds
+const MSG_TTL = 90 * 24 * 3600
 
 export async function sendMessage(
   data: Omit<Message, 'id' | 'createdAt'>
@@ -490,7 +474,6 @@ export async function sendMessage(
   const id = `MSG-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`
   const message: Message = { ...data, id, createdAt: new Date().toISOString() }
 
-  // Check if this is first message in thread (add to index)
   const existingThread = await redis.lrange(`messages:thread:${data.threadId}`, 0, 0)
   const isFirstMessage = existingThread.length === 0
 
@@ -500,13 +483,10 @@ export async function sendMessage(
     ['EXPIRE', `messages:thread:${data.threadId}`, String(MSG_TTL)],
   ]
 
-  // Increment unread counter for the recipient
   if (data.from === 'admin') {
-    // Parent hasn't read this admin message
     cmds.push(['INCR', `messages:unread:parent:${data.threadId}`])
     cmds.push(['EXPIRE', `messages:unread:parent:${data.threadId}`, String(MSG_TTL)])
   } else {
-    // Admin hasn't read this parent message
     cmds.push(['INCR', `messages:unread:admin:${data.threadId}`])
     cmds.push(['EXPIRE', `messages:unread:admin:${data.threadId}`, String(MSG_TTL)])
   }
@@ -525,7 +505,6 @@ export async function getThreadMessages(parentId: string, limit = 50): Promise<M
   const messages = await Promise.all(
     ids.map(id => redis.get<Message>(`message:${id}`))
   )
-  // Filter nulls and reverse so oldest is first
   return (messages.filter(Boolean) as Message[]).reverse()
 }
 
@@ -545,9 +524,7 @@ export async function getAllMessageThreads(): Promise<{
   lastMessage: Message
   unreadForAdmin: number
 }[]> {
-  // Get all parentIds that have threads
   const parentIds = await redis.lrange('messages:threads:index', 0, 99)
-  // Deduplicate (same parentId could be pushed multiple times in edge cases)
   const unique = Array.from(new Set(parentIds))
 
   const results = await Promise.all(
@@ -566,7 +543,6 @@ export async function getAllMessageThreads(): Promise<{
 }
 
 // ── Assessment Profiles ───────────────────────────────────────
-// Key scheme: assessment-profile:{studentId} → StudentAssessmentProfile
 
 const DEFAULT_DIFFICULTIES = {
   attentionDeficit: 'none' as const, impulsivity: 'none' as const,
@@ -608,10 +584,6 @@ export async function saveAssessmentProfile(
 }
 
 // ── Game Results ──────────────────────────────────────────────
-// Key scheme:
-//   game-result:{id}            → GameResult (TTL 365d)
-//   game-results:student:{sid}  → list of IDs
-//   game-results:session:{aid}  → list of IDs
 
 const GAME_RESULT_TTL = 365 * 24 * 3600
 
@@ -644,7 +616,6 @@ export async function getSessionGameResults(sessionId: string): Promise<GameResu
   return results.filter(Boolean) as GameResult[]
 }
 
-// Compute 8-week rolling game performance per domain
 export async function getStudentGameHistory(studentId: string): Promise<{
   byGame: Record<string, { plays: number; avgScore: number; avgAccuracy: number; lastPlayed: string }>
   byWeek: { week: string; gamesPlayed: number; avgScore: number; totalMinutes: number }[]
@@ -656,7 +627,6 @@ export async function getStudentGameHistory(studentId: string): Promise<{
     return { byGame: {}, byWeek: [], totalPlays: 0, totalMinutes: 0 }
   }
 
-  // Aggregate by game
   const gameMap: Record<string, { scores: number[]; accuracies: number[]; lastPlayed: string }> = {}
   for (const r of results) {
     if (!gameMap[r.gameId]) gameMap[r.gameId] = { scores: [], accuracies: [], lastPlayed: r.playedAt }
@@ -675,7 +645,6 @@ export async function getStudentGameHistory(studentId: string): Promise<{
     }
   }
 
-  // Aggregate by week (Monday-based)
   const weekMap: Record<string, { scores: number[]; minutes: number }> = {}
   for (const r of results) {
     const d = new Date(r.playedAt)

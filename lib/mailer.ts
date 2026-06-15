@@ -110,6 +110,54 @@ export function resetPasswordEmail(resetUrl: string): string {
   `)
 }
 
+export function appointmentReminderEmail(
+  parentName: string,
+  when: 'today' | 'tomorrow',
+  date: string,
+  timeSlot: string,
+  type: string,
+  meetingUrl: string
+): string {
+  const typeAr: Record<string, string> = {
+    assessment: 'جلسة تقييمية', followup: 'جلسة متابعة',
+    emergency: 'استشارة طارئة', consultation: 'استشارة للوالدين',
+    training: 'جلسة تدريبية مكثفة', review: 'مراجعة البرنامج',
+  }
+  const whenText = when === 'today' ? 'اليوم' : 'غداً'
+  const whenEmoji = when === 'today' ? '🔔' : '📅'
+
+  return wrap('#7C5CFC', `
+    <h2 style="color:#1e293b;font-size:20px;margin:0 0 16px">${whenEmoji} تذكير بموعد جلستك ${whenText}</h2>
+    <p style="color:#475569;line-height:1.8">السيد/ة ${parentName}، لديك جلسة مع الأستاذ أمين <strong>${whenText}</strong>.</p>
+
+    <div style="background:#F3EEFF;border-right:4px solid #7C5CFC;padding:20px;border-radius:12px;margin:24px 0">
+      <p style="margin:0 0 10px;color:#5A32D9;font-size:16px;font-weight:800">${typeAr[type] || type}</p>
+      <p style="margin:0 0 6px;color:#374151">📅 التاريخ: <strong>${date}</strong></p>
+      <p style="margin:0;color:#374151">⏰ الوقت: <strong style="direction:ltr;display:inline-block">${timeSlot}</strong></p>
+    </div>
+
+    <div style="background:#F0FFF4;border-right:4px solid #4ade80;padding:16px;border-radius:12px;margin:20px 0">
+      <p style="margin:0 0 8px;color:#166534;font-weight:800;font-size:14px">📋 كيف تنضم للجلسة:</p>
+      <ol style="margin:0;padding-right:20px;color:#374151;font-size:14px;line-height:2">
+        <li>افتح بوابتك على <a href="${process.env.NEXT_PUBLIC_BASE_URL || 'https://amine-academy.com'}/parent/appointments" style="color:#7C5CFC;font-weight:700">أكاديمية أمين</a></li>
+        <li>اضغط زر <strong>"انضم الآن"</strong> الذي سيظهر أخضر اللون عند وقت الجلسة</li>
+        <li>ستفتح المكالمة تلقائياً في المتصفح — <strong>لا حاجة لأي برنامج</strong></li>
+      </ol>
+    </div>
+
+    <div style="text-align:center;margin:28px 0">
+      <a href="${meetingUrl}" style="display:inline-block;background:linear-gradient(135deg,#7C5CFC,#9A7BFD);color:white;text-decoration:none;font-size:16px;font-weight:800;padding:14px 36px;border-radius:14px;letter-spacing:0.3px">
+        🎥 رابط الجلسة المباشر
+      </a>
+      <p style="color:#9CA3AF;font-size:12px;margin:10px 0 0">يمكن فتحه من المتصفح مباشرة بدون أي تحميل</p>
+    </div>
+
+    <div style="background:#FFFBEB;border-right:4px solid #F59E0B;padding:12px 16px;border-radius:8px">
+      <p style="margin:0;color:#92400E;font-size:13px">⚠️ يُرجى الانضمام قبل الموعد بـ 5 دقائق وتجهيز الطفل في مكان هادئ.</p>
+    </div>
+  `)
+}
+
 export function weeklyProgressEmail(
   parentName: string,
   studentProgress: Array<{

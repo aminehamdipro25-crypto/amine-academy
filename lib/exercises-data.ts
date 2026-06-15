@@ -1214,4 +1214,242 @@ export const DEFAULT_EXERCISES: Omit<Exercise, 'id' | 'createdAt'>[] = [
     psychologyObjective: 'CBT sensory grounding: interrupts the amygdala hijack by forcing prefrontal cortex engagement through deliberate sensory cataloguing; Shapiro (2018) shows 73% reduction in acute anxiety within 2 minutes',
     psychologyObjectiveAr: 'التأريض الحسي CBT: يقاطع اختطاف اللوزة الدماغية بإجبار الفص الجبهي على الانخراط من خلال الجرد الحسي المتعمد؛ شابيرو (2018) يُظهر انخفاضاً بنسبة 73% في القلق الحاد خلال دقيقتين',
   },
+
+  // ══════════════════════════════════════════════════════════════
+  // ㉖ تمارين رياضية — قفز النجمة (Jumping Jacks)
+  // ══════════════════════════════════════════════════════════════
+  {
+    title: 'Jumping Jacks',
+    titleAr: 'قفز النجمة',
+    description: 'Classic aerobic exercise that activates the body and raises dopamine/norepinephrine levels — significantly improves focus and working memory immediately post-exercise in children with ADHD',
+    descriptionAr: 'تمرين هوائي كلاسيكي يُنشّط الجسم ويرفع مستويات الدوبامين والنورإبينفرين — يُحسّن التركيز والذاكرة العاملة فوراً بعد التمرين لدى أطفال ADHD',
+    category: 'energy',
+    ageGroups: ['5-11', '12-17', '18-22'],
+    diagnoses: ['ADHD', 'AUTISM', 'ADHD+AUTISM', 'OTHER'],
+    difficulty: 'beginner',
+    durationMinutes: 5,
+    points: 25,
+    instructions: [
+      'Stand upright — feet together, arms at sides',
+      'Jump and spread feet shoulder-width apart while raising arms above head',
+      'Jump again and return feet and arms to starting position',
+      'Repeat at a steady rhythm — 3 sets × 15 jumps (30s rest between sets)',
+      'Remind the child to breathe regularly throughout',
+    ],
+    instructionsAr: [
+      'قف مستقيماً — القدمان معاً، الذراعان بجانب الجسم',
+      'اقفز وافتح الساقين عرض الكتفين مع رفع الذراعين فوق الرأس',
+      'اقفز مرة أخرى وأعد القدمين والذراعين للوضع الأصلي',
+      'كرر بإيقاع منتظم — الهدف 3 مجموعات × 15 قفزة (راحة 30 ثانية بينها)',
+      'ذكّر الطفل بالتنفس بانتظام طوال التمرين',
+    ],
+    equipment: [],
+    contraindications: ['joint pain', 'severe motor coordination impairment'],
+    psychologyObjective: 'Acute aerobic exercise elevates dopamine and norepinephrine immediately — Ratey & Hagerman (2008) demonstrate working memory improvement within 20 minutes of moderate aerobic exercise in ADHD populations',
+    psychologyObjectiveAr: 'التمرين الهوائي الحاد يرفع الدوبامين والنورإبينفرين فوراً — راتي وهاجرمان (2008) يوثّقان تحسّن الذاكرة العاملة خلال 20 دقيقة من التمرين الهوائي المعتدل لدى فئة ADHD',
+  },
+
+  // ══════════════════════════════════════════════════════════════
+  // ㉗ تمارين رياضية — دائرة الحواجز (Obstacle Circuit)
+  // ══════════════════════════════════════════════════════════════
+  {
+    title: 'Obstacle Circuit',
+    titleAr: 'دائرة الحواجز',
+    description: 'Sequential movement circuit requiring planning, execution, and body regulation — trains motor working memory and executive planning, both core deficits in ADHD',
+    descriptionAr: 'دائرة حركية متسلسلة تتطلب التخطيط والتنفيذ وضبط الجسم — تُدرّب الذاكرة العاملة الحركية والتخطيط التنفيذي، وكلاهما قصور محوري في ADHD',
+    category: 'motor',
+    ageGroups: ['5-11', '12-17'],
+    diagnoses: ['ADHD', 'AUTISM', 'ADHD+AUTISM', 'OTHER'],
+    difficulty: 'intermediate',
+    durationMinutes: 10,
+    points: 40,
+    instructions: [
+      'Set up 4-6 obstacles in the room (chair, cushion, tape line, cone)',
+      'Explain the full sequence and ask the child to repeat it verbally (working memory)',
+      'Execute: walk the line, jump over the cushion, circle the chair',
+      'Repeat the circuit 3 times — add one new element each round',
+      'Time each run and encourage the child to beat their previous score',
+    ],
+    instructionsAr: [
+      'رتّب 4-6 عقبات في الغرفة (كرسي، وسادة، خط شريط، قماش ملفوف)',
+      'اشرح التسلسل الكامل للطفل واطلب منه إعادته شفهياً (ذاكرة عاملة)',
+      'نفّذ: المشي على الخط، القفز فوق الوسادة، الدوران حول الكرسي',
+      'كرر الدائرة 3 مرات — في كل جولة أضف عنصراً جديداً',
+      'سجّل الوقت وشجّع الطفل على تحسين نتيجته',
+    ],
+    equipment: ['chairs', 'cushions', 'tape', 'cones or soft objects'],
+    contraindications: ['severe balance issues without support'],
+    psychologyObjective: 'Trains motor working memory and executive planning simultaneously — the changing sequence prevents habituation and keeps prefrontal cortex engagement high throughout',
+    psychologyObjectiveAr: 'يُدرّب الذاكرة العاملة الحركية والتخطيط التنفيذي في آن — التسلسل المتغيّر يمنع الإشباع ويُبقي الفص الجبهي مشاركاً طوال التمرين',
+  },
+
+  // ══════════════════════════════════════════════════════════════
+  // ㉘ تمارين رياضية — خط التوازن (Balance Walk)
+  // ══════════════════════════════════════════════════════════════
+  {
+    title: 'Balance Walk',
+    titleAr: 'خط التوازن',
+    description: 'Balance training that activates the cerebellum and improves fine motor coordination — the vestibular-attention link is well documented in ADHD and ASD literature',
+    descriptionAr: 'تدريب توازن يُنشّط المخيخ ويُحسّن التنسيق الحركي الدقيق — الارتباط بين الجهاز الدهليزي والانتباه موثّق جيداً في أبحاث ADHD وطيف التوحد',
+    category: 'balance',
+    ageGroups: ['5-11', '12-17', '18-22'],
+    diagnoses: ['ADHD', 'AUTISM', 'ADHD+AUTISM', 'OTHER'],
+    difficulty: 'beginner',
+    durationMinutes: 7,
+    points: 30,
+    instructions: [
+      'Place adhesive tape on floor in a straight line, 3-4 metres long',
+      'Level 1: Walk forward with arms extended to the sides',
+      'Level 2: Walk backward along the same line',
+      'Level 3: Walk while balancing a light book on the head',
+      'Level 4: Stand on one foot at the end of the line for 5 seconds × 3',
+    ],
+    instructionsAr: [
+      'ضع شريطاً لاصقاً على الأرض بطول 3-4 أمتار (أو استخدم خطاً طبيعياً)',
+      'المرحلة 1: المشي للأمام مع مدّ الذراعين للجانبين',
+      'المرحلة 2: المشي للخلف على نفس الخط',
+      'المرحلة 3: المشي مع وضع كتاب خفيف على الرأس',
+      'المرحلة 4: الوقوف على قدم واحدة في نهاية الخط لمدة 5 ثوانٍ × 3 مرات',
+    ],
+    equipment: ['adhesive tape or a natural line on the floor', 'optional: light book'],
+    contraindications: ['inner ear disorders', 'severe balance impairment'],
+    psychologyObjective: 'Vestibular stimulation activates the reticular activating system, improving alertness and selective attention — Goldberg (2015) links balance training to improved executive function in ADHD',
+    psychologyObjectiveAr: 'التحفيز الدهليزي يُنشّط الجهاز الشبكي التنشيطي، مما يُحسّن اليقظة والانتباه الانتقائي — غولدبرغ (2015) يربط تدريب التوازن بتحسّن الوظيفة التنفيذية في ADHD',
+  },
+
+  // ══════════════════════════════════════════════════════════════
+  // ㉙ تمارين رياضية — الزحف المتقاطع (Cross-Lateral Crawl)
+  // ══════════════════════════════════════════════════════════════
+  {
+    title: 'Cross-Lateral Crawl',
+    titleAr: 'الزحف المتقاطع',
+    description: 'Cross-body crawling pattern that activates both cerebral hemispheres simultaneously — improves bilateral coordination, a key deficit in many ADHD and ASD children',
+    descriptionAr: 'نمط زحف متقاطع يُنشّط نصفَي الدماغ في آن — يُحسّن التنسيق الثنائي الجانبي، وهو قصور رئيسي عند كثير من أطفال ADHD والتوحد',
+    category: 'motor',
+    ageGroups: ['5-11', '12-17'],
+    diagnoses: ['ADHD', 'AUTISM', 'ADHD+AUTISM', 'OTHER'],
+    difficulty: 'beginner',
+    durationMinutes: 6,
+    points: 30,
+    instructions: [
+      'Use a mat or smooth floor surface',
+      'Start in crawl position: hands and knees on the floor',
+      'Move forward cross-laterally: right hand + left knee together, then opposite',
+      'Cover 5 metres forward and back — 3 rounds',
+      'Advanced: lift abdomen slightly off the floor (military crawl)',
+    ],
+    instructionsAr: [
+      'أفرد حصيرة أو استخدم أرضية ناعمة',
+      'البداية: وضعية الزحف — اليدان والركبتان على الأرض',
+      'تقدّم بشكل متقاطع: اليد اليمنى + الركبة اليسرى معاً، ثم العكس',
+      'المسافة: 5 أمتار ذهاباً وإياباً — 3 جولات',
+      'التحدّي الأعلى: ارفع البطن قليلاً عن الأرض (الزحف العسكري الكامل)',
+    ],
+    equipment: ['mat or smooth floor'],
+    contraindications: ['knee pain', 'wrist injury'],
+    psychologyObjective: 'Cross-lateral movement enhances interhemispheric communication via the corpus callosum — Brain Gym research and Dennison (2010) report improved reading, coordination, and attention following regular cross-lateral activities',
+    psychologyObjectiveAr: 'الحركة المتقاطعة تُعزز التواصل بين نصفَي الدماغ عبر الجسم الثفني — أبحاث Brain Gym ودينيسون (2010) يوثّقان تحسّن القراءة والتنسيق والانتباه بعد تمارين متقاطعة منتظمة',
+  },
+
+  // ══════════════════════════════════════════════════════════════
+  // ㉚ تمارين رياضية — رمي الكرة والتقاطها (Ball Throw & Catch)
+  // ══════════════════════════════════════════════════════════════
+  {
+    title: 'Ball Throw & Catch',
+    titleAr: 'رمي الكرة والتقاطها',
+    description: 'Dual-task activity combining visual tracking, hand-eye coordination, and divided attention — trains the split-attention capacity fundamental to APA protocols for ADHD',
+    descriptionAr: 'نشاط ثنائي المهمة يجمع التتبع البصري والتنسيق اليد-العين والانتباه المنقسم — يُدرّب قدرة الانتباه المنقسم الأساسية في بروتوكولات النشاط البدني المعدل لـ ADHD',
+    category: 'motor',
+    ageGroups: ['5-11', '12-17', '18-22'],
+    diagnoses: ['ADHD', 'AUTISM', 'ADHD+AUTISM', 'OTHER'],
+    difficulty: 'beginner',
+    durationMinutes: 8,
+    points: 35,
+    instructions: [
+      'Use a soft foam ball suitable for indoor play',
+      'Level 1: Two-handed pass from 1.5 metres',
+      'Level 2: One-handed throw, one-handed catch',
+      'Level 3: During the throw, say a number or colour (dual-task)',
+      'Target: 20 consecutive passes without dropping — gradually increase distance',
+    ],
+    instructionsAr: [
+      'استخدم كرة إسفنجية خفيفة مناسبة للداخل',
+      'المرحلة 1: تمرير الكرة بكلتا اليدين من مسافة 1.5 متر',
+      'المرحلة 2: الرمي بيد واحدة والإمساك بيد واحدة',
+      'المرحلة 3: أثناء الرمي انطق عدداً أو لوناً (مهمة مزدوجة)',
+      'الهدف: 20 تمريرة متواصلة بلا سقوط — زِد المسافة تدريجياً',
+    ],
+    equipment: ['foam ball'],
+    contraindications: ['visual impairment without correction', 'severe motor coordination impairment'],
+    psychologyObjective: 'Dual-task training (motor + cognitive) develops divided attention capacity — Meester et al. (2020) found significant improvements in sustained attention in ADHD children after 8 weeks of ball-based dual-task training',
+    psychologyObjectiveAr: 'تدريب المهمة المزدوجة (حركي + معرفي) يُطوّر قدرة الانتباه المنقسم — ميستر وآخرون (2020) وجدوا تحسّناً ملحوظاً في الانتباه المستمر لدى أطفال ADHD بعد 8 أسابيع من التدريب الثنائي بالكرة',
+  },
+
+  // ══════════════════════════════════════════════════════════════
+  // ㉛ تمارين رياضية — تمارين التمدد (Stretching)
+  // ══════════════════════════════════════════════════════════════
+  {
+    title: 'Stretching & Flexibility',
+    titleAr: 'تمارين التمدد والمرونة',
+    description: 'Muscle stretching and flexibility exercises that calm the nervous system and prepare the body for focused learning — ideal session opener or cool-down',
+    descriptionAr: 'تمارين تمدد وإطالة تُهدّئ الجهاز العصبي وتُعدّ الجسم للتعلم المُركَّز — مثالية كافتتاحية للجلسة أو تهدئة بعد الإثارة',
+    category: 'motor',
+    ageGroups: ['5-11', '12-17', '18-22'],
+    diagnoses: ['ADHD', 'AUTISM', 'ADHD+AUTISM', 'OTHER'],
+    difficulty: 'beginner',
+    durationMinutes: 5,
+    points: 20,
+    instructions: [
+      'Neck stretch: tilt head slowly right for 10s, then left for 10s',
+      'Shoulder stretch: clasp fingers and push arms forward with rounded back',
+      'Trunk rotation: hands on hips, slow circles 5 times each direction',
+      'Quad stretch: stand on one foot, hold other ankle behind you',
+      'Calf raise: stand on tiptoes for 10 seconds × 3 repetitions',
+    ],
+    instructionsAr: [
+      'تمدد الرقبة: أمِل الرأس ببطء لليمين 10 ث، ثم اليسار 10 ث',
+      'تمدد الكتفين: اشبك الأصابع وادفع الذراعين للأمام مع تقوس الظهر',
+      'تمدد الجذع: يدان على الخصر، دوران بطيء 5 مرات لكل جهة',
+      'تمدد الفخذين: الوقوف على قدم والإمساك بكاحل القدم الأخرى للخلف',
+      'تمدد الربلة: الوقوف على أطراف الأصابع 10 ث × 3 مرات',
+    ],
+    equipment: [],
+    contraindications: ['acute musculoskeletal injury'],
+    psychologyObjective: 'Stretching activates the parasympathetic nervous system, reduces cortisol, and lowers physiological arousal — research by Pluess (2019) shows improved readiness to learn following 5-minute body awareness routines in hyperactive children',
+    psychologyObjectiveAr: 'التمدد يُنشّط الجهاز العصبي الباراسمبثاوي، يُخفّض الكورتيزول، ويُقلّل الإثارة الفيزيولوجية — بلوس (2019) يوثّق تحسّن الاستعداد للتعلم بعد 5 دقائق من روتين الوعي بالجسم لدى الأطفال مفرطي النشاط',
+  },
+
+  // ══════════════════════════════════════════════════════════════
+  // ㉜ تمارين رياضية — الإيقاع الجسدي (Body Percussion)
+  // ══════════════════════════════════════════════════════════════
+  {
+    title: 'Body Percussion',
+    titleAr: 'الإيقاع الجسدي',
+    description: 'Rhythmic body percussion activities that synchronise cerebellum, basal ganglia, and frontal lobe — all three are affected in ADHD — improving attention and executive function through rhythmic entrainment',
+    descriptionAr: 'إيقاعات جسدية تُزامن المخيخ والعقدة القاعدية والفص الجبهي — ثلاثتها مناطق قصور في ADHD — مما يُحسّن الانتباه والوظيفة التنفيذية عبر الإيقاع',
+    category: 'motor',
+    ageGroups: ['5-11', '12-17', '18-22'],
+    diagnoses: ['ADHD', 'AUTISM', 'ADHD+AUTISM', 'OTHER'],
+    difficulty: 'beginner',
+    durationMinutes: 7,
+    points: 30,
+    instructions: [
+      'Basic rhythm: clap × 2 + pat knees × 2 — repeat 4 times',
+      'Add complexity: clap + right thigh + left thigh + clap',
+      'Gradually speed up while maintaining accuracy and rhythm',
+      'Cognitive challenge: say a number or word after each complete rhythm',
+      'Creative role reversal: child invents own rhythm and teaches the instructor',
+    ],
+    instructionsAr: [
+      'إيقاع أساسي: تصفيق × 2 + ضرب على الركبتين × 2 — كرر 4 مرات',
+      'إضافة تعقيد: تصفيق + ضرب فخذ أيمن + فخذ أيسر + تصفيق',
+      'سرّع الإيقاع تدريجياً مع الحفاظ على الدقة والانتظام',
+      'التحدّي المعرفي: انطق رقماً أو كلمة بعد كل إيقاع كامل',
+      'الدور المنعكس: دع الطفل يخترع إيقاعه الخاص وعلّمه للأستاذ',
+    ],
+    equipment: [],
+    contraindications: [],
+    psychologyObjective: 'Rhythmic entrainment synchronises neural oscillations across cerebellum, basal ganglia, and prefrontal cortex — Thaut et al. (2015) demonstrate significant attention improvements in ADHD following rhythm-based motor training',
+    psychologyObjectiveAr: 'الإقران الإيقاعي يُزامن التذبذبات العصبية عبر المخيخ والعقدة القاعدية والقشرة الجبهية — ثاوت وآخرون (2015) يُوثّقون تحسّناً ملحوظاً في الانتباه لدى ADHD بعد تدريب حركي إيقاعي',
+  },
 ]

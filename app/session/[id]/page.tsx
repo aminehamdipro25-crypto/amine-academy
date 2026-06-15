@@ -66,6 +66,7 @@ import ReadingCards         from '@/components/session/exercises/ReadingCards'
 import SpanExtension        from '@/components/session/exercises/SpanExtension'
 import DirectionFollow      from '@/components/session/exercises/DirectionFollow'
 import LogicSort            from '@/components/session/exercises/LogicSort'
+import PhysicalExercise from '@/components/session/exercises/PhysicalExercise'
 import Whiteboard      from '@/components/session/Whiteboard'
 import ADHDScale       from '@/components/session/assessments/ADHDScale'
 import LearningDifficultiesScale from '@/components/session/assessments/LearningDifficultiesScale'
@@ -231,6 +232,14 @@ const EXERCISES = [
   { id:'span-extension',        labelAr:'امتداد الذاكرة',           icon:'🔢', category:'ذاكرة',            color:'bg-indigo-900/40 border-indigo-300',   ageMin:6,  ageMax:22 },
   { id:'direction-follow',      labelAr:'اتباع الاتجاهات',         icon:'🧭', category:'إدراكي',           color:'bg-cyan-900/40 border-cyan-300',       ageMin:5,  ageMax:17 },
   { id:'logic-sort',            labelAr:'الترتيب المنطقي',         icon:'📊', category:'تفكير',            color:'bg-emerald-900/40 border-emerald-300', ageMin:5,  ageMax:17 },
+  // ── رياضي ──────────────────────────────────────────
+  { id:'jumping-jacks',    labelAr:'قفز النجمة',           icon:'⭐', category:'رياضي', color:'bg-green-900/40 border-green-500',     ageMin:5,  ageMax:22 },
+  { id:'obstacle-circuit', labelAr:'دائرة الحواجز',         icon:'🏅', category:'رياضي', color:'bg-orange-900/40 border-orange-500',   ageMin:5,  ageMax:17 },
+  { id:'balance-walk',     labelAr:'خط التوازن',            icon:'⚖️', category:'رياضي', color:'bg-blue-900/40 border-blue-500',       ageMin:5,  ageMax:22 },
+  { id:'tiger-crawl',      labelAr:'الزحف المتقاطع',        icon:'🐆', category:'رياضي', color:'bg-amber-900/40 border-amber-500',     ageMin:5,  ageMax:17 },
+  { id:'ball-throw',       labelAr:'رمي الكرة والتقاطها',  icon:'⚽', category:'رياضي', color:'bg-emerald-900/40 border-emerald-500', ageMin:5,  ageMax:22 },
+  { id:'stretching',       labelAr:'تمارين التمدد',         icon:'🧘', category:'رياضي', color:'bg-teal-900/40 border-teal-500',       ageMin:5,  ageMax:22 },
+  { id:'body-percussion',  labelAr:'الإيقاع الجسدي',        icon:'🥁', category:'رياضي', color:'bg-purple-900/40 border-purple-500',   ageMin:5,  ageMax:22 },
 ]
 
 const ASSESSMENTS = [
@@ -440,6 +449,15 @@ export default function SessionPage() {
   const [unlockTaps, setUnlockTaps]       = useState(0)
   const unlockTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  // White noise / focus music
+  const [showNoisePanel, setShowNoisePanel] = useState(false)
+  const [noiseMode, setNoiseMode]           = useState<'white' | 'rain' | 'focus'>('white')
+  const [noiseRunning, setNoiseRunning]     = useState(false)
+  const [noiseSecsLeft, setNoiseSecsLeft]   = useState(5 * 60)
+  const noiseCtxRef   = useRef<AudioContext | null>(null)
+  const noiseSrcRef   = useRef<AudioBufferSourceNode | null>(null)
+  const noiseTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
   // ── Session draft persistence — restore on refresh ──────────
   const draftRestoredRef = useRef(false)
 
@@ -625,6 +643,77 @@ export default function SessionPage() {
     setStudentTimerRunning(true)
     setShowStudentTimer(true)
     setTimerPickerOpen(false)
+  }
+
+  function startNoise() {
+    if (typeof window === 'undefined') return
+    try {
+      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
+      const ctx = new AudioCtx()
+      noiseCtxRef.current = ctx
+
+      const rate = ctx.sampleRate
+      const buf  = ctx.createBuffer(1, rate * 3, rate)
+      const data = buf.getChannelData(0)
+      for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1
+
+      const src = ctx.createBufferSource()
+      src.buffer = buf
+      src.loop = true
+      noiseSrcRef.current = src
+
+      const masterGain = ctx.createGain()
+      masterGain.gain.value = noiseMode === 'focus' ? 0.05 : 0.09
+      masterGain.connect(ctx.destination)
+
+      if (noiseMode === 'rain') {
+        const lp = ctx.createBiquadFilter()
+        lp.type = 'lowpass'
+        lp.frequency.value = 800
+        src.connect(lp)
+        lp.connect(masterGain)
+      } else if (noiseMode === 'focus') {
+        // 40Hz gamma amplitude modulation (scientifically linked to focus)
+        src.connect(masterGain)
+        const lfo = ctx.createOscillator()
+        lfo.type = 'sine'
+        lfo.frequency.value = 40
+        const lfoScale = ctx.createGain()
+        lfoScale.gain.value = 0.04
+        lfo.connect(lfoScale)
+        lfoScale.connect(masterGain.gain)
+        lfo.start()
+      } else {
+        src.connect(masterGain)
+      }
+      src.start()
+
+      setNoiseRunning(true)
+      setNoiseSecsLeft(5 * 60)
+      const interval = setInterval(() => {
+        setNoiseSecsLeft(s => {
+          if (s <= 1) { stopNoise(); return 5 * 60 }
+          return s - 1
+        })
+      }, 1000)
+      noiseTimerRef.current = interval
+    } catch { /* silently ignore if Web Audio unavailable */ }
+  }
+
+  function stopNoise() {
+    if (noiseSrcRef.current) {
+      try { noiseSrcRef.current.stop() } catch { /* already stopped */ }
+      noiseSrcRef.current = null
+    }
+    if (noiseCtxRef.current) {
+      noiseCtxRef.current.close().catch(() => {})
+      noiseCtxRef.current = null
+    }
+    if (noiseTimerRef.current) {
+      clearInterval(noiseTimerRef.current)
+      noiseTimerRef.current = null
+    }
+    setNoiseRunning(false)
   }
 
   function printSessionReport() {
@@ -1494,6 +1583,82 @@ ${notes ? `
           )}
         </div>
 
+        {/* White noise / focus music */}
+        <div className="relative flex-shrink-0">
+          <button
+            onClick={() => setShowNoisePanel(p => !p)}
+            className={`flex items-center gap-1.5 font-black px-2.5 py-1.5 rounded-lg text-xs transition-all ${
+              noiseRunning
+                ? 'bg-cyan-600 text-white ring-1 ring-cyan-400/50'
+                : 'bg-white/10 hover:bg-white/20 text-white/60'
+            }`}
+            title="موسيقى التركيز / الضوضاء البيضاء"
+          >
+            🎵 {noiseRunning ? formatTime(noiseSecsLeft) : 'موسيقى'}
+          </button>
+          {showNoisePanel && (
+            <div
+              className="absolute top-full mt-2 left-0 z-[70] rounded-2xl p-3 shadow-2xl"
+              style={{ background: '#0f172a', border: '1.5px solid rgba(6,182,212,0.25)', minWidth: 230 }}
+              dir="rtl"
+            >
+              <p className="text-white/40 text-[10px] font-black mb-2.5 flex items-center gap-1">
+                🎵 موسيقى التركيز <span className="text-cyan-400">(5 دقائق)</span>
+              </p>
+
+              {/* Mode selector */}
+              <div className="grid grid-cols-3 gap-1.5 mb-3">
+                {([
+                  { key: 'white', label: 'ضوضاء بيضاء', emoji: '🌊' },
+                  { key: 'rain',  label: 'مطر',          emoji: '🌧️' },
+                  { key: 'focus', label: 'غاما 40Hz',    emoji: '🧠' },
+                ] as const).map(m => (
+                  <button
+                    key={m.key}
+                    onClick={() => { setNoiseMode(m.key); if (noiseRunning) stopNoise() }}
+                    className={`py-2 px-1 rounded-xl text-[10px] font-black text-center transition-all leading-tight ${
+                      noiseMode === m.key
+                        ? 'bg-cyan-600 text-white'
+                        : 'text-white/50 hover:text-white/80'
+                    }`}
+                    style={{ background: noiseMode === m.key ? undefined : 'rgba(255,255,255,0.07)' }}
+                  >
+                    <div className="text-base mb-0.5">{m.emoji}</div>
+                    <div>{m.label}</div>
+                  </button>
+                ))}
+              </div>
+
+              {/* Countdown */}
+              {noiseRunning && (
+                <div className="text-center mb-3">
+                  <div className="text-cyan-400 font-black text-xl ltr-num">{formatTime(noiseSecsLeft)}</div>
+                  <div className="h-1.5 bg-white/10 rounded-full mt-1.5 overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-l from-cyan-400 to-cyan-600 rounded-full transition-all duration-1000"
+                      style={{ width: `${((5 * 60 - noiseSecsLeft) / (5 * 60)) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              <button
+                onClick={() => noiseRunning ? stopNoise() : startNoise()}
+                className={`w-full py-2.5 rounded-xl text-sm font-black transition-all ${
+                  noiseRunning
+                    ? 'bg-red-600/80 hover:bg-red-600 text-white'
+                    : 'bg-cyan-600 hover:bg-cyan-500 text-white'
+                }`}
+              >
+                {noiseRunning ? '⏹ إيقاف' : '▶ تشغيل'}
+              </button>
+              <p className="text-white/20 text-[9px] mt-2 text-center leading-relaxed">
+                الضوضاء البيضاء تُحسّن التركيز لدى ADHD — موثّق علمياً
+              </p>
+            </div>
+          )}
+        </div>
+
         <div className="w-px h-5 bg-white/15 flex-shrink-0" />
 
         {/* Group 3 — Modes */}
@@ -2336,6 +2501,10 @@ ${notes ? `
               {activeView.id === 'span-extension'        && <SpanExtension         onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
               {activeView.id === 'direction-follow'      && <DirectionFollow       onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
               {activeView.id === 'logic-sort'            && <LogicSort             onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {/* ── Physical exercises ── */}
+              {['jumping-jacks','obstacle-circuit','balance-walk','tiger-crawl','ball-throw','stretching','body-percussion'].includes(activeView.id) && (
+                <PhysicalExercise id={activeView.id} onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />
+              )}
             </div>
           )}
 

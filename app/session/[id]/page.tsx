@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { Clock, X, Save, Video, Star, ClipboardList, PenLine, ChevronDown, User, Gamepad2, BarChart3, BookOpen } from 'lucide-react'
+import { Clock, X, Save, Video, Star, ClipboardList, PenLine, ChevronDown, User, Gamepad2, BarChart3, BookOpen, Play, Youtube, ExternalLink } from 'lucide-react'
 import type { ExerciseResult, AssessmentResult, SessionObservations } from '@/lib/types'
 import { rankGamesForStudent, getTopGames, DIFFICULTY_LABELS_AR } from '@/lib/game-mapping'
 import type { StudentAssessmentProfile } from '@/lib/types'
@@ -242,6 +242,42 @@ const EXERCISES = [
   { id:'body-percussion',  labelAr:'الإيقاع الجسدي',        icon:'🥁', category:'رياضي', color:'bg-purple-900/40 border-purple-500',   ageMin:5,  ageMax:22 },
 ]
 
+// ── مكتبة الفيديو ──────────────────────────────────────────────────────────
+const VIDEO_LIBRARY: Record<string, { desc: string; tips: string[]; youtubeQuery: string }> = {
+  'breathing':           { desc: 'يُهدّئ الجهاز العصبي ويقلل الاندفاعية والقلق ويُحسّن التركيز.', tips: ['استنشق 4 عدّات من الأنف', 'حبس 4 عدّات', 'زفير بطيء 6 عدّات', 'كرر 3-5 مرات'], youtubeQuery: 'تمرين التنفس العميق للأطفال ADHD' },
+  'calm-corner':         { desc: 'مساحة آمنة يلجأ إليها الطفل عند الإرهاق لتنظيم نفسه ذاتياً.', tips: ['بيئة هادئة وخافتة الإضاءة', 'أدوات حسية: كرة ضغط، سماعات', 'لا يُستخدم كعقاب', 'علّم الطفل متى يذهب إليه'], youtubeQuery: 'ركن الهدوء للأطفال ذوي ADHD' },
+  'jumping-jacks':       { desc: 'ينشّط الجسم ويفرغ الطاقة الزائدة ويُحسّن التنسيق الثنائي.', tips: ['3 مجموعات × 10 قفزات', 'استخدمه قبل جلسات التركيز', 'تأكد من تزامن الذراعين والساقين', 'زد الوتيرة تدريجياً'], youtubeQuery: 'تمارين قفز النجمة للأطفال' },
+  'stretching':          { desc: 'يُهدّئ الجسم وينمّي الوعي الجسدي ويُسهّل الانتقال للاسترخاء.', tips: ['كل حركة 10-15 ثانية', 'تنفس بعمق أثناء التمدد', 'ابدأ بالرقبة ثم الكتفين ثم الظهر', 'حركات بطيئة هادئة'], youtubeQuery: 'تمارين التمدد والاسترخاء للأطفال' },
+  'balance-walk':        { desc: 'يُنشّط المخيخ المسؤول عن الانتباه ويُحسّن التنسيق بين الجانبين.', tips: ['ضع شريطاً لاصقاً على الأرض', 'امشِ ببطء مركّزاً على التوازن', 'جرّب بأعين مغمضة لاحقاً', 'احمل غرضاً على رأسك لزيادة الصعوبة'], youtubeQuery: 'تمارين التوازن الحركي للأطفال' },
+  'tiger-crawl':         { desc: 'يُنشّط التكامل بين نصفي المخ وهو أساسي للقراءة والانتباه.', tips: ['اليد اليمنى مع الركبة اليسرى في آنٍ', 'الزحف ببطء مع الوعي الكامل', '5-7 دقائق قبل التمارين المعرفية', 'مناسب لجميع الأعمار'], youtubeQuery: 'الزحف المتقاطع تكامل نصفي المخ' },
+  'body-percussion':     { desc: 'يُحسّن التنسيق الدقيق والإيقاع الزمني والانتباه المستمر.', tips: ['ابدأ بنمط بسيط: تصفيق + ضرب الركبة', 'كرر 3 مرات قبل أن يؤديه وحده', 'زد التعقيد تدريجياً', 'استخدم موسيقى هادئة'], youtubeQuery: 'الإيقاع الجسدي للأطفال' },
+  'body-scan':           { desc: 'يُطوّر الوعي الجسدي ويُساعد على رصد التوتر قبل الانفجار الانفعالي.', tips: ['الطفل مستلقٍ أو جالس بهدوء', 'انتقل من القدمين للرأس', 'اطلب منه توصيف ما يشعر به', '10 دقائق كافية للتأثير'], youtubeQuery: 'تمرين فحص الجسم استرخاء الأطفال' },
+  'emotion-cards':       { desc: 'يُطوّر الذكاء الانفعالي والقدرة على قراءة تعابير الوجه.', tips: ['استخدم صوراً حقيقية لأشخاص', 'اربط المشاعر بمواقف يومية', 'اطلب منه تمثيل المشعر بجسده', 'ابدأ بالمشاعر الأساسية الستة'], youtubeQuery: 'بطاقات المشاعر للأطفال' },
+  'emotion-mirror':      { desc: 'يُطوّر التواصل الاجتماعي من خلال تقليد تعابير الوجه.', tips: ['قفا أمام مرآة معاً', 'ابدأ بمشاعر واضحة: فرح، حزن', 'تناوبا الأدوار', 'اربط كل تعبير بحدث يومي'], youtubeQuery: 'تمارين مرآة المشاعر للأطفال' },
+  'social-scenarios':    { desc: 'يُطوّر التعامل مع المواقف الاجتماعية وحل النزاعات بشكل بناء.', tips: ['استخدم مواقف من حياة الطفل الفعلية', 'اسأل: ماذا تفعل؟ وماذا سيحدث؟', 'ناقش أكثر من حل ممكن', 'العب أدواراً تمثيلية'], youtubeQuery: 'مهارات اجتماعية للأطفال ADHD' },
+  'social-problem-solving': { desc: 'يُطوّر التفكير التسلسلي والقدرة على إيجاد الحلول البديلة.', tips: ['SODAS: موقف، خيارات، مشكلات، نتائج، مفاضلة', 'استخدم قصصاً مصورة', 'فكّر بصوت عالٍ نموذجاً له', 'اربطه بمواقف حديثة'], youtubeQuery: 'حل المشكلات الاجتماعية مهارات ADHD' },
+  'token-board':         { desc: 'يُحفّز الطفل ويعزز السلوك الإيجابي من خلال مكافآت فورية.', tips: ['5-10 رموز لكل مكافأة', 'حدد السلوك المطلوب بوضوح', 'المكافأة فورية وليست مؤجلة', 'تناقص تدريجي مع التحسن'], youtubeQuery: 'Token Board نظام النقاط أطفال ADHD' },
+  'behavior-contract':   { desc: 'يُوضّح التوقعات والمكافآت ويعزز التزام الطفل بأهدافه.', tips: ['اكتب الاتفاق معه لا له', 'هدف واحد فقط في البداية', 'مكافأة محددة وقابلة للتحقيق', 'راجعه أسبوعياً'], youtubeQuery: 'عقد السلوك أطفال ADHD' },
+  'traffic-light':       { desc: 'يُعلّم التوقف والتفكير قبل التصرف — أداة فعّالة لكبح الاندفاعية.', tips: ['أحمر: توقف وتنفس', 'أصفر: فكر في خياراتك', 'أخضر: تصرف', 'طبّق على مواقف يومية حقيقية'], youtubeQuery: 'إشارة المرور كبح الاندفاعية ADHD' },
+  'stop-signal':         { desc: 'يُطوّر القدرة على كبح الاستجابة الاندفاعية وهو الأكثر فاعلية مع ADHD.', tips: ['ابدأ بزمن استجابة طويل ثم قلّصه', 'راقب دقة التوقف لا السرعة فقط', '10-15 دقيقة للجلسة', 'سجّل التحسن عبر الجلسات'], youtubeQuery: 'كبح الاندفاعية Stop Signal ADHD' },
+  'mood-meter':          { desc: 'يُطوّر الوعي الانفعالي ويُساعد الطفل على تسمية مشاعره وشدتها.', tips: ['محور أفقي: الطاقة (عالية/منخفضة)', 'محور رأسي: الشعور (إيجابي/سلبي)', 'ابدأ الجلسة بتحديد المزاج', 'استخدم الألوان للمساعدة'], youtubeQuery: 'مقياس المزاج RULER للأطفال' },
+  'verbal-fluency':      { desc: 'يُطوّر الذاكرة الدلالية والبحث السريع في مخازن الذاكرة.', tips: ['فئات مألوفة: حيوانات، أكل، ألوان', 'دقيقة واحدة لكل فئة', 'سجّل العدد وقارنه بين الجلسات', 'زد الصعوبة بفئات أكثر تخصصاً'], youtubeQuery: 'تمارين الطلاقة اللفظية للأطفال' },
+  'finger-gym':          { desc: 'يُطوّر الحركة الدقيقة ويُقوّي عضلات الأصابع للكتابة.', tips: ['فرد الأصابع واحداً تلو الآخر', 'ضرب كل أصبع بالإبهام', 'عجن الطين أو كرات الضغط', '5 دقائق قبل جلسات الكتابة'], youtubeQuery: 'تمارين الحركة الدقيقة أصابع الأطفال' },
+  'memory-cards':        { desc: 'يُطوّر الذاكرة البصرية قصيرة المدى والانتباه الانتقائي.', tips: ['ابدأ بـ 6 بطاقات (3 أزواج)', 'زد تدريجياً حتى 20 بطاقة', 'شجعه على تسمية الصور بصوت عالٍ', 'راقب زمن الإنجاز'], youtubeQuery: 'ألعاب تقوية الذاكرة للأطفال ADHD' },
+  'sequence-memory':     { desc: 'يُطوّر الذاكرة العاملة وترتيب المعلومات في الزمن.', tips: ['ابدأ بتسلسل من 3 عناصر', 'استخدم أرقاماً ثم ألواناً ثم صوراً', 'سرعة التقديم: 1 ثانية/عنصر', 'أضف عنصراً كل 2-3 جلسات'], youtubeQuery: 'تمارين الذاكرة العاملة للأطفال ADHD' },
+  'conversation-starter':{ desc: 'يُعلّم الطفل كيف يبدأ محادثة ويُبقيها مستمرة.', tips: ['ابدأ بسؤال عن الطرف الآخر', 'تناوبا البدء والاستمرار', 'استخدم موضوعات مشتركة', 'راقب لغة الجسد'], youtubeQuery: 'مهارات المحادثة الاجتماعية للأطفال' },
+  'choice-board':        { desc: 'يمنح الطفل شعوراً بالسيطرة مما يُقلّل مقاومة التعليمات.', tips: ['2-3 خيارات كافية', 'تأكد أن كل الخيارات مقبولة', 'الطفل يختار ويلتزم باختياره', 'استخدم صوراً للأطفال الصغار'], youtubeQuery: 'لوح الاختيارات Choice Board للأطفال' },
+  'daily-goals':         { desc: 'يُطوّر التخطيط والتنظيم الذاتي ويُحسّن الشعور بالكفاءة.', tips: ['هدفان كحد أقصى', 'الأهداف قابلة للقياس والتحقيق', 'راجع الأهداف نهاية الجلسة', 'احتفل بالإنجاز مهما كان صغيراً'], youtubeQuery: 'تحديد الأهداف اليومية مهارات التنظيم ADHD' },
+  'ball-throw':          { desc: 'يُحسّن التنسيق البصري الحركي والتتبع البصري وسرعة رد الفعل.', tips: ['ابدأ بمسافة قريبة', 'تناوبا الرمي والإمساك', 'عدّ الرميات الناجحة', 'أضف مسافة تدريجياً'], youtubeQuery: 'تمارين التوازن والتنسيق الحركي للأطفال' },
+  'emotion-volume':      { desc: 'يُطوّر القدرة على تقدير شدة الانفعالات والتحكم في ردود الفعل.', tips: ['مقياس 1-10 أو صور صوتية', 'اربط الرقم بموقف حقيقي', 'ناقش متى يكون رقم 8 مناسباً', 'علّمه استراتيجيات خفض الرقم'], youtubeQuery: 'تنظيم الانفعالات حجم المشاعر للأطفال' },
+}
+
+
+function extractYoutubeId(url: string): string | null {
+  const m = url.match(/(?:v=|youtu\.be\/|embed\/)([a-zA-Z0-9_-]{11})/)
+  return m ? m[1] : null
+}
+
 const ASSESSMENTS = [
   { id:'adhd',               labelAr:'مقياس ADHD',              icon:'⚡', color:'bg-blue-900/40 border-blue-500'    },
   { id:'attention-domains',  labelAr:'أنماط الانتباه — SNAP-IV', icon:'🧠', color:'bg-purple-900/40 border-purple-500' },
@@ -380,7 +416,9 @@ export default function SessionPage() {
   const [observations, setObservations] = useState<SessionObservations>({
     attention:3, cooperation:3, energy:3, mood:3, anxiety:3,
   })
-  const [tab, setTab] = useState<'exercises'|'assessments'|'log'>('exercises')
+  const [tab, setTab] = useState<'exercises'|'assessments'|'log'|'videos'>('exercises')
+  const [videoModal, setVideoModal] = useState<string | null>(null)
+  const [videoUrls, setVideoUrls] = useState<Record<string, string>>({})
   const [categoryFilter, setCategoryFilter] = useState<string>('الكل')
   const [obsLog, setObsLog] = useState<ObsEntry[]>([])
   const [obsOpen, setObsOpen] = useState(false)
@@ -1851,12 +1889,18 @@ ${notes ? `
         {!focusMode && !sessionLocked && <aside className="hidden lg:flex w-72 bg-gray-900 border-l border-white/10 flex-col">
           {/* Tabs */}
           <div className="flex border-b border-white/10">
-            {(['exercises','assessments','log'] as const).map(t => (
+            {([
+              { key: 'exercises',   icon: '🎮', label: 'تمارين' },
+              { key: 'assessments', icon: '📊', label: 'تقييم'  },
+              { key: 'log',         icon: '📝', label: 'سجل'    },
+              { key: 'videos',      icon: '📹', label: 'فيديو'  },
+            ] as const).map(({ key: t, icon, label }) => (
               <button key={t} onClick={() => setTab(t)}
-                className={`flex-1 py-2.5 text-xs font-bold transition-colors ${
-                  tab === t ? 'text-white border-b-2 border-brand-500' : 'text-white/40 hover:text-white/70'
+                className={`flex-1 py-2 flex flex-col items-center gap-0.5 text-[10px] font-bold transition-colors ${
+                  tab === t ? 'text-brand-400 border-b-2 border-brand-500' : 'text-white/40 hover:text-white/70'
                 }`}>
-                {t === 'exercises' ? '🎮 تمارين' : t === 'assessments' ? '📊 تقييم' : '📝 سجل'}
+                <span className="text-sm leading-none">{icon}</span>
+                {label}
               </button>
             ))}
           </div>
@@ -2149,6 +2193,33 @@ ${notes ? `
                 ))}
               </div>
             )}
+
+            {tab === 'videos' && (
+              <div className="space-y-2" dir="rtl">
+                <p className="text-white/30 text-[10px] px-1 pb-1">انقر على أي تمرين لعرض وصفه وطريقة تطبيقه والبحث عن فيديو تعليمي</p>
+                {EXERCISES.filter(ex => VIDEO_LIBRARY[ex.id]).map(ex => {
+                  const entry = VIDEO_LIBRARY[ex.id]
+                  const hasUrl = !!videoUrls[ex.id]
+                  return (
+                    <button
+                      key={ex.id}
+                      onClick={() => setVideoModal(ex.id)}
+                      className={`w-full flex items-center gap-3 p-2.5 rounded-xl border text-right transition-all hover:scale-[1.01] ${ex.color}`}
+                    >
+                      <span className="text-xl flex-shrink-0">{ex.icon}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-white font-bold text-xs">{ex.labelAr}</div>
+                        <div className="text-white/40 text-[10px] truncate">{entry.desc.slice(0, 50)}…</div>
+                      </div>
+                      {hasUrl
+                        ? <Play className="w-4 h-4 text-brand-400 flex-shrink-0" />
+                        : <Youtube className="w-4 h-4 text-white/20 flex-shrink-0" />
+                      }
+                    </button>
+                  )
+                })}
+              </div>
+            )}
           </div>
 
           {/* Notes */}
@@ -2196,19 +2267,20 @@ ${notes ? `
               {/* Tabs */}
               <div className="flex border-b mx-3 mb-1" style={{ borderColor: 'rgba(255,255,255,0.07)' }}>
                 {([
-                  { key: 'exercises', labelAr: 'تمارين', Icon: Gamepad2 },
-                  { key: 'assessments', labelAr: 'تقييم', Icon: BarChart3 },
-                  { key: 'log', labelAr: 'سجل', Icon: BookOpen },
+                  { key: 'exercises',   labelAr: 'تمارين', Icon: Gamepad2    },
+                  { key: 'assessments', labelAr: 'تقييم',  Icon: BarChart3   },
+                  { key: 'log',         labelAr: 'سجل',    Icon: BookOpen    },
+                  { key: 'videos',      labelAr: 'فيديو',  Icon: Play        },
                 ] as const).map(({ key: t, labelAr, Icon }) => (
                   <button key={t} onClick={() => setTab(t)}
-                    className={`flex-1 py-2.5 flex items-center justify-center gap-1.5 text-xs font-bold transition-all relative ${
+                    className={`flex-1 py-2.5 flex items-center justify-center gap-1 text-[11px] font-bold transition-all relative ${
                       tab === t ? 'text-brand-400' : 'text-white/30 hover:text-white/60'
                     }`}
                   >
                     {tab === t && (
                       <div className="absolute bottom-0 left-1/4 right-1/4 h-0.5 rounded-full" style={{ background: 'linear-gradient(90deg,#7C5CFC,#C084FC)' }} />
                     )}
-                    <Icon className="w-3.5 h-3.5" />
+                    <Icon className="w-3 h-3" />
                     {labelAr}
                   </button>
                 ))}
@@ -2276,6 +2348,33 @@ ${notes ? `
                             </div>
                           </div>
                         </div>
+                      )
+                    })}
+                  </div>
+                )}
+
+                {tab === 'videos' && (
+                  <div className="space-y-2" dir="rtl">
+                    <p className="text-white/30 text-[10px] px-1 pb-1">انقر على أي تمرين للاطلاع على طريقة التطبيق وفتح فيديو تعليمي</p>
+                    {EXERCISES.filter(ex => VIDEO_LIBRARY[ex.id]).map(ex => {
+                      const entry = VIDEO_LIBRARY[ex.id]
+                      const hasUrl = !!videoUrls[ex.id]
+                      return (
+                        <button
+                          key={ex.id}
+                          onClick={() => { setVideoModal(ex.id); setShowMobilePanel(false) }}
+                          className={`w-full flex items-center gap-3 p-3 rounded-xl border text-right transition-all ${ex.color}`}
+                        >
+                          <span className="text-xl flex-shrink-0">{ex.icon}</span>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-white font-bold text-xs">{ex.labelAr}</div>
+                            <div className="text-white/40 text-[10px] truncate">{entry.desc.slice(0, 48)}…</div>
+                          </div>
+                          {hasUrl
+                            ? <Play className="w-4 h-4 text-brand-400 flex-shrink-0" />
+                            : <ExternalLink className="w-3.5 h-3.5 text-white/20 flex-shrink-0" />
+                          }
+                        </button>
                       )
                     })}
                   </div>
@@ -3618,6 +3717,123 @@ ${notes ? `
               >
                 {ex.icon} تشغيل التمرين الآن →
               </button>
+            </div>
+          </div>
+        )
+      })()}
+
+      {/* ── مكتبة الفيديو Modal ── */}
+      {videoModal && (() => {
+        const ex = EXERCISES.find(e => e.id === videoModal)
+        const entry = VIDEO_LIBRARY[videoModal]
+        if (!ex || !entry) return null
+        const currentUrl = videoUrls[videoModal] || ''
+        const videoId = extractYoutubeId(currentUrl)
+        return (
+          <div
+            className="fixed inset-0 z-[150] flex items-center justify-center"
+            onClick={() => setVideoModal(null)}
+          >
+            <div className="absolute inset-0 bg-black/75 backdrop-blur-md" />
+            <div
+              className="relative rounded-3xl w-full max-w-xl mx-4 overflow-hidden shadow-2xl"
+              style={{
+                background: 'rgba(10,8,22,0.97)',
+                border: '1px solid rgba(124,92,252,0.2)',
+                boxShadow: '0 40px 100px rgba(0,0,0,0.8)',
+                backdropFilter: 'blur(20px)',
+              }}
+              onClick={e => e.stopPropagation()}
+              dir="rtl"
+            >
+              {/* Gradient header bar */}
+              <div className="h-1" style={{ background: 'linear-gradient(90deg,#7C5CFC,#C084FC,#7C5CFC)' }} />
+
+              {/* Header */}
+              <div className="px-5 pt-5 pb-4 flex items-center gap-4">
+                <div
+                  className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0"
+                  style={{ background: 'rgba(124,92,252,0.15)', border: '1px solid rgba(124,92,252,0.3)' }}
+                >
+                  {ex.icon}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-white font-black text-lg leading-tight">{ex.labelAr}</div>
+                  <div className="text-brand-400 text-xs font-bold mt-0.5">{ex.category}</div>
+                  <div className="text-white/50 text-xs mt-1 leading-relaxed">{entry.desc}</div>
+                </div>
+                <button
+                  onClick={() => setVideoModal(null)}
+                  className="w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-xl text-white/40 hover:text-white hover:bg-white/10 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Video embed */}
+              {videoId ? (
+                <div className="mx-5 mb-4 rounded-2xl overflow-hidden" style={{ aspectRatio: '16/9', background: '#000' }}>
+                  <iframe
+                    src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`}
+                    className="w-full h-full"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                </div>
+              ) : (
+                <div
+                  className="mx-5 mb-4 rounded-2xl flex flex-col items-center justify-center gap-3 py-8"
+                  style={{ background: 'rgba(255,255,255,0.03)', border: '1px dashed rgba(255,255,255,0.1)' }}
+                >
+                  <Youtube className="w-10 h-10 text-white/20" />
+                  <p className="text-white/30 text-sm">الصق رابط يوتيوب لتشغيل الفيديو هنا</p>
+                </div>
+              )}
+
+              {/* Tips */}
+              <div className="px-5 mb-4">
+                <div className="text-white/40 text-[10px] font-black uppercase tracking-wider mb-2">💡 نصائح التطبيق</div>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {entry.tips.map((tip, i) => (
+                    <div key={i} className="flex items-start gap-1.5 px-2 py-1.5 rounded-lg" style={{ background: 'rgba(255,255,255,0.04)' }}>
+                      <span className="text-brand-500 text-[10px] font-black mt-0.5 flex-shrink-0">{i + 1}.</span>
+                      <span className="text-white/60 text-[10px] leading-snug">{tip}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* URL input + search */}
+              <div className="px-5 pb-5 space-y-2">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={currentUrl}
+                    onChange={e => setVideoUrls(prev => ({ ...prev, [videoModal]: e.target.value }))}
+                    placeholder="الصق رابط يوتيوب هنا..."
+                    className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder-white/25 focus:outline-none focus:border-brand-500/60 text-right"
+                    dir="ltr"
+                  />
+                  {currentUrl && (
+                    <button
+                      onClick={() => setVideoUrls(prev => ({ ...prev, [videoModal]: '' }))}
+                      className="w-10 h-10 flex items-center justify-center rounded-xl text-white/40 hover:text-red-400 hover:bg-red-900/20 transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+                <a
+                  href={`https://www.youtube.com/results?search_query=${encodeURIComponent(entry.youtubeQuery)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl font-bold text-sm transition-all hover:opacity-90"
+                  style={{ background: 'linear-gradient(135deg,#FF0000,#CC0000)', color: '#fff', boxShadow: '0 4px 16px rgba(255,0,0,0.25)' }}
+                >
+                  <Youtube className="w-4 h-4" />
+                  ابحث على يوتيوب — {entry.youtubeQuery}
+                </a>
+              </div>
             </div>
           </div>
         )

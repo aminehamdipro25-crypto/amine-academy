@@ -87,7 +87,7 @@ function ReportDocument({ report, child }: { report: ProgressReport; child: Stud
 <html dir="rtl" lang="ar">
 <head>
   <meta charset="UTF-8"/>
-  <title>تقرير تقدم — ${child.firstName} ${child.lastName}</title>
+  <title>تقرير التقدّم التطوري — ${child.firstName}</title>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet"/>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}

@@ -136,25 +136,49 @@ ${exList}
   }
 }`
 
+    // Rate limit: max 10 AI generations per hour per admin token
+    const rateLimitKey = `ai_prog_limit:${token}`
+    const count = await redis.incr(rateLimitKey)
+    if (count === 1) await redis.expire(rateLimitKey, 3600)
+    if (count > 10) {
+      return NextResponse.json({ error: 'تجاوزت الحد الأقصى (10 توليدات/ساعة) — انتظر قليلاً' }, { status: 429 })
+    }
+
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
     const message = await client.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 1536,
+      max_tokens: 2048,
       messages: [{ role: 'user', content: prompt }],
     })
 
     const rawText = message.content[0].type === 'text' ? message.content[0].text : ''
-    const jsonMatch = rawText.match(/\{[\s\S]*\}/)
-    if (!jsonMatch) {
+
+    // Extract outermost JSON object with balanced-brace scan (avoids greedy-regex over-extension)
+    let depth = 0, jsonStart = -1, jsonEnd = -1
+    for (let i = 0; i < rawText.length; i++) {
+      if (rawText[i] === '{') { if (depth === 0) jsonStart = i; depth++ }
+      else if (rawText[i] === '}') { depth--; if (depth === 0 && jsonStart !== -1) { jsonEnd = i; break } }
+    }
+    if (jsonStart === -1 || jsonEnd === -1) {
       return NextResponse.json({ error: 'لم يتمكن الذكاء الاصطناعي من توليد البرنامج — حاول مرة أخرى' }, { status: 500 })
     }
 
-    const result = JSON.parse(jsonMatch[0])
+    let result: { title?: string; rationale?: string; schedule?: Record<string, string[]> }
+    try {
+      result = JSON.parse(rawText.slice(jsonStart, jsonEnd + 1))
+    } catch {
+      return NextResponse.json({ error: 'البرنامج المولَّد تالف البنية — أعد المحاولة' }, { status: 500 })
+    }
 
-    // Validate that returned exercise IDs exist
+    if (!result.schedule || typeof result.schedule !== 'object') {
+      return NextResponse.json({ error: 'لم يُنتج الذكاء الاصطناعي جدولاً أسبوعياً — أعد المحاولة' }, { status: 500 })
+    }
+
+    // Validate that returned exercise IDs exist; force weekends to empty
     const validIds = new Set(allExercises.map(e => e.id))
     const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
     for (const day of days) {
+      if (day === 'saturday' || day === 'sunday') { result.schedule[day] = []; continue }
       if (!Array.isArray(result.schedule[day])) result.schedule[day] = []
       result.schedule[day] = result.schedule[day].filter((id: string) => validIds.has(id))
     }

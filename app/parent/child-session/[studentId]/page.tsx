@@ -1,0 +1,475 @@
+'use client'
+import { useEffect, useState, useRef, use } from 'react'
+import { useRouter } from 'next/navigation'
+import { CheckCircle, Play, X, Clock, LogOut, Star } from 'lucide-react'
+import type { Exercise, Student } from '@/lib/types'
+
+const GAME_CFG: Record<string, { gradient: string; icon: string }> = {
+  'memory-cards':    { gradient: 'linear-gradient(135deg,#7C5CFC,#9A7BFD)', icon: '🃏' },
+  'sequence-memory': { gradient: 'linear-gradient(135deg,#3B9EFF,#60B4FF)', icon: '🔢' },
+  'n-back':          { gradient: 'linear-gradient(135deg,#6B46F0,#8B66F0)', icon: '🧩' },
+  'word-recall':     { gradient: 'linear-gradient(135deg,#7C5CFC,#B99AFF)', icon: '📝' },
+  'breathing':       { gradient: 'linear-gradient(135deg,#2ABFA3,#4DD4BD)', icon: '🌬️' },
+  'tap-target':      { gradient: 'linear-gradient(135deg,#FF8C65,#FFAA88)', icon: '🎯' },
+  'simon-says':      { gradient: 'linear-gradient(135deg,#10B981,#34D399)', icon: '🎨' },
+  'letter-match':    { gradient: 'linear-gradient(135deg,#FFBA44,#FFD080)', icon: '🔤' },
+  'reaction-game':   { gradient: 'linear-gradient(135deg,#FF6B6B,#FF9999)', icon: '⚡' },
+  'stroop-test':     { gradient: 'linear-gradient(135deg,#FF6B6B,#FF8C65)', icon: '🎨' },
+  'stop-signal':     { gradient: 'linear-gradient(135deg,#EF4444,#F87171)', icon: '🛑' },
+  'emotion-cards':   { gradient: 'linear-gradient(135deg,#EC4899,#F472B6)', icon: '🎭' },
+  'calm-corner':     { gradient: 'linear-gradient(135deg,#06B6D4,#38BDF8)', icon: '🧘' },
+  'jumping-jacks':   { gradient: 'linear-gradient(135deg,#F97316,#FB923C)', icon: '⭐' },
+  'stretching':      { gradient: 'linear-gradient(135deg,#84CC16,#A3E635)', icon: '🤸' },
+  'balance-walk':    { gradient: 'linear-gradient(135deg,#8B5CF6,#A78BFA)', icon: '🚶' },
+  'tiger-crawl':     { gradient: 'linear-gradient(135deg,#F59E0B,#FCD34D)', icon: '🐯' },
+  'body-scan':       { gradient: 'linear-gradient(135deg,#14B8A6,#2DD4BF)', icon: '🌟' },
+  'token-board':     { gradient: 'linear-gradient(135deg,#6366F1,#818CF8)', icon: '🏅' },
+  'traffic-light':   { gradient: 'linear-gradient(135deg,#EF4444,#FCD34D)', icon: '🚦' },
+}
+
+const CAT_CFG: Record<string, { gradient: string; icon: string }> = {
+  motor:   { gradient: 'linear-gradient(135deg,#FF8C65,#FFAA88)', icon: '🏃' },
+  focus:   { gradient: 'linear-gradient(135deg,#3B9EFF,#60B4FF)', icon: '🎯' },
+  balance: { gradient: 'linear-gradient(135deg,#2ABFA3,#4DD4BD)', icon: '🌊' },
+  energy:  { gradient: 'linear-gradient(135deg,#FFBA44,#FFD080)', icon: '⚡' },
+  sensory: { gradient: 'linear-gradient(135deg,#FF6B6B,#FF9999)', icon: '🌈' },
+  social:  { gradient: 'linear-gradient(135deg,#7C5CFC,#9A7BFD)', icon: '🤝' },
+}
+
+interface CompleteResult {
+  ok: boolean
+  alreadyDone: boolean
+  pointsEarned: number
+  newTotalPoints: number
+  newAchievements: string[]
+}
+
+export default function ChildSessionPage({ params }: { params: Promise<{ studentId: string }> }) {
+  const { studentId } = use(params)
+  const router = useRouter()
+
+  const [student, setStudent] = useState<Student | null>(null)
+  const [exercises, setExercises] = useState<Exercise[]>([])
+  const [done, setDone] = useState<Set<string>>(new Set())
+  const [loading, setLoading] = useState(true)
+
+  const [selected, setSelected] = useState<Exercise | null>(null)
+  const [step, setStep] = useState(0)
+  const [timer, setTimer] = useState(0)
+  const [running, setRunning] = useState(false)
+  const [saving, setSaving] = useState(false)
+
+  const [showCelebration, setShowCelebration] = useState(false)
+  const [celebPoints, setCelebPoints] = useState(0)
+  const [newBadges, setNewBadges] = useState<string[]>([])
+  const [totalPoints, setTotalPoints] = useState(0)
+
+  const [showExitConfirm, setShowExitConfirm] = useState(false)
+  const exitHoldRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    fetch(`/api/parent/child-session/${studentId}`)
+      .then(r => r.json())
+      .then(d => {
+        if (d.student) {
+          setStudent(d.student)
+          setTotalPoints(d.student.totalPoints || 0)
+        }
+        setExercises(d.todayExercises || [])
+        if (Array.isArray(d.completedTodayIds)) setDone(new Set(d.completedTodayIds))
+      })
+      .catch(() => router.push('/parent/children'))
+      .finally(() => setLoading(false))
+  }, [studentId, router])
+
+  useEffect(() => {
+    if (!running) return
+    const id = setInterval(() => setTimer(t => t + 1), 1000)
+    return () => clearInterval(id)
+  }, [running])
+
+  function open(ex: Exercise) { setSelected(ex); setStep(0); setTimer(0); setRunning(false) }
+  function close() { setSelected(null); setRunning(false) }
+
+  async function finish() {
+    if (!selected || saving) return
+    setRunning(false)
+    setSaving(true)
+    try {
+      const res = await fetch(`/api/parent/child-session/${studentId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ exerciseId: selected.id, points: selected.points }),
+      })
+      const data: CompleteResult = await res.json()
+      const next = new Set(done)
+      next.add(selected.id)
+      setDone(next)
+      setSelected(null)
+
+      if (data.ok && !data.alreadyDone) {
+        setCelebPoints(data.pointsEarned)
+        setTotalPoints(data.newTotalPoints)
+        setShowCelebration(true)
+        setTimeout(() => setShowCelebration(false), 3000)
+        if (data.newAchievements?.length > 0) {
+          setNewBadges(data.newAchievements)
+          setTimeout(() => setNewBadges([]), 5000)
+        }
+      }
+    } catch {
+      /* swallow — don't disrupt the child */
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  // Exit: hold 1.5s or show confirm modal
+  function startExit() {
+    exitHoldRef.current = setTimeout(() => setShowExitConfirm(true), 1500)
+  }
+  function cancelExit() {
+    if (exitHoldRef.current) clearTimeout(exitHoldRef.current)
+  }
+
+  if (loading) return (
+    <div className="min-h-screen flex flex-col items-center justify-center gap-4" style={{ background: 'linear-gradient(135deg,#F3EEFF,#E8F4FF)' }}>
+      <div className="text-7xl animate-bounce">🎮</div>
+      <p className="font-black text-2xl" style={{ color: '#7C5CFC' }}>جاري التحضير...</p>
+    </div>
+  )
+
+  const completedAll = exercises.length > 0 && done.size >= exercises.length
+  const selCfg = selected
+    ? (GAME_CFG[selected.id] || CAT_CFG[selected.category] || { gradient: 'linear-gradient(135deg,#7C5CFC,#9A7BFD)', icon: '🏋️' })
+    : null
+
+  return (
+    <div
+      className="min-h-screen flex flex-col"
+      dir="rtl"
+      style={{ background: 'linear-gradient(160deg,#F8F4FF 0%,#EFF6FF 50%,#F0FFF8 100%)', fontFamily: 'var(--font-cairo,Cairo,sans-serif)' }}
+    >
+      {/* ── Top bar ── */}
+      <div
+        className="flex items-center justify-between px-4 py-3 sticky top-0 z-20"
+        style={{ background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(16px)', borderBottom: '1px solid rgba(124,92,252,0.1)' }}
+      >
+        {/* Exit hold button */}
+        <button
+          onMouseDown={startExit}
+          onMouseUp={cancelExit}
+          onMouseLeave={cancelExit}
+          onTouchStart={startExit}
+          onTouchEnd={cancelExit}
+          className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold transition-all active:scale-95"
+          style={{ background: '#FEF2F2', color: '#B91C1C' }}
+        >
+          <LogOut className="w-4 h-4" />
+          <span className="hidden sm:inline">اضغط مطولاً للخروج</span>
+          <span className="sm:hidden">خروج</span>
+        </button>
+
+        {/* Child name */}
+        <div className="text-center">
+          <p className="font-black text-lg" style={{ color: '#5A32D9' }}>
+            {student ? `${student.firstName} 👋` : ''}
+          </p>
+        </div>
+
+        {/* Points */}
+        <div
+          className="flex items-center gap-1.5 px-3 py-2 rounded-xl"
+          style={{ background: '#FFFBEB', border: '1.5px solid #FDE68A' }}
+        >
+          <Star className="w-4 h-4 text-amber-500 fill-amber-400" />
+          <span className="font-black text-amber-700 ltr-num text-sm">{totalPoints}</span>
+        </div>
+      </div>
+
+      {/* ── Celebration overlay ── */}
+      {showCelebration && (
+        <div
+          className="fixed inset-0 z-[200] flex flex-col items-center justify-center"
+          style={{ background: 'rgba(0,0,0,0.65)' }}
+        >
+          <div className="text-center animate-badge-pop space-y-3">
+            <div className="text-9xl">🎉</div>
+            <div className="text-white font-black text-4xl">أحسنت!</div>
+            <div
+              className="text-white font-black text-2xl px-8 py-3 rounded-2xl"
+              style={{ background: 'rgba(255,255,255,0.2)' }}
+            >
+              +{celebPoints} ⭐
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Achievement banners ── */}
+      {newBadges.length > 0 && (
+        <div className="fixed top-20 inset-x-4 z-50 space-y-2 pointer-events-none">
+          {newBadges.map((name, i) => (
+            <div
+              key={i}
+              className="text-center py-3 px-4 rounded-2xl font-black animate-badge-pop text-sm"
+              style={{ background: '#FBBF24', color: '#78350F', boxShadow: '0 4px 16px rgba(251,191,36,0.5)' }}
+            >
+              🏆 وسام جديد: {name}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ── Exit confirm modal ── */}
+      {showExitConfirm && (
+        <div
+          className="fixed inset-0 z-[300] flex items-center justify-center p-6"
+          style={{ background: 'rgba(0,0,0,0.7)' }}
+        >
+          <div className="bg-white rounded-3xl p-7 w-full max-w-sm text-center">
+            <div className="text-5xl mb-4">🔒</div>
+            <h2 className="font-black text-gray-900 text-xl mb-2">هل أنت ولي الأمر؟</h2>
+            <p className="text-gray-500 text-sm mb-6">هذا الزر مخصص للأهل فقط</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => router.push('/parent/children')}
+                className="flex-1 text-white font-black py-3 rounded-2xl transition-all active:scale-95"
+                style={{ background: 'linear-gradient(135deg,#EF4444,#F87171)' }}
+              >
+                نعم، خروج
+              </button>
+              <button
+                onClick={() => setShowExitConfirm(false)}
+                className="flex-1 font-black py-3 rounded-2xl transition-all active:scale-95"
+                style={{ background: '#F3F4F6', color: '#374151' }}
+              >
+                إلغاء
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Main content ── */}
+      <div className="flex-1 px-4 py-4 space-y-4 max-w-lg mx-auto w-full">
+
+        {/* Header greeting */}
+        <div className="text-center pt-2">
+          <h1 className="font-black text-3xl text-gray-900 mb-1">اختر لعبتك 🎮</h1>
+          {exercises.length > 0 && (
+            <p className="text-gray-500 font-bold">
+              {completedAll
+                ? '🎊 أكملت كل التمارين! رائع جداً!'
+                : <span className="ltr-num">{done.size} من {exercises.length} مكتمل</span>
+              }
+            </p>
+          )}
+        </div>
+
+        {/* Progress bar */}
+        {exercises.length > 0 && (
+          <div className="rounded-2xl p-3" style={{ background: '#FFFFFF', border: '1.5px solid #E9D8FF', boxShadow: '0 2px 8px rgba(124,92,252,0.08)' }}>
+            <div className="h-4 rounded-full overflow-hidden" style={{ background: '#F0E8FF' }}>
+              <div
+                className="h-full rounded-full transition-all duration-700"
+                style={{
+                  width: `${exercises.length ? (done.size / exercises.length) * 100 : 0}%`,
+                  background: completedAll
+                    ? 'linear-gradient(to left,#10B981,#34D399)'
+                    : 'linear-gradient(to left,#7C5CFC,#9A7BFD)',
+                }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* All done state */}
+        {completedAll && (
+          <div
+            className="rounded-3xl p-8 text-center"
+            style={{ background: 'linear-gradient(135deg,#F0FFF4,#ECFDF5)', border: '2px solid #A7F3D0' }}
+          >
+            <div className="text-6xl mb-3">🏆</div>
+            <p className="font-black text-2xl text-green-800 mb-1">عمل رائع!</p>
+            <p className="text-green-600 font-bold">أكملت جميع تمارين اليوم</p>
+          </div>
+        )}
+
+        {/* Exercises grid */}
+        {exercises.length === 0 ? (
+          <div
+            className="rounded-3xl p-12 text-center"
+            style={{ border: '2px dashed #D3BBFF', background: '#FFFFFF' }}
+          >
+            <div className="text-6xl mb-4">😴</div>
+            <p className="font-black text-gray-700 text-xl">لا توجد تمارين اليوم</p>
+            <p className="text-gray-400 mt-2">استرح جيداً، ستصلك تمارين غداً!</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-3">
+            {exercises.map(ex => {
+              const isDone = done.has(ex.id)
+              const cfg = GAME_CFG[ex.id] || CAT_CFG[ex.category] || { gradient: 'linear-gradient(135deg,#7C5CFC,#9A7BFD)', icon: '🏋️' }
+              return (
+                <button
+                  key={ex.id}
+                  onClick={() => !isDone && open(ex)}
+                  disabled={isDone}
+                  className="relative rounded-3xl overflow-hidden transition-all duration-200 text-right active:scale-95"
+                  style={{
+                    boxShadow: isDone ? 'none' : '0 6px 20px rgba(0,0,0,0.15)',
+                    opacity: isDone ? 0.7 : 1,
+                    border: isDone ? '2px solid #D1FAE5' : 'none',
+                  }}
+                >
+                  <div
+                    className="p-5 h-44 flex flex-col justify-between"
+                    style={{ background: isDone ? '#F0FFF4' : cfg.gradient }}
+                  >
+                    <div className="text-5xl leading-none">{isDone ? '✅' : cfg.icon}</div>
+                    <div>
+                      <p
+                        className="font-black text-base leading-tight"
+                        style={{ color: isDone ? '#065F46' : '#FFFFFF' }}
+                      >
+                        {ex.titleAr}
+                      </p>
+                      <p
+                        className="text-xs mt-1 ltr-num font-bold"
+                        style={{ color: isDone ? '#6EE7B7' : 'rgba(255,255,255,0.75)' }}
+                      >
+                        {isDone ? 'تم ✓' : `⭐ ${ex.points} نقطة`}
+                      </p>
+                    </div>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* ── Exercise modal ── */}
+      {selected && selCfg && (
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+          style={{ background: 'rgba(0,0,0,0.7)' }}
+          onClick={e => { if (e.target === e.currentTarget) close() }}
+        >
+          <div
+            className="w-full sm:max-w-lg overflow-y-auto"
+            style={{
+              background: '#FFFFFF',
+              borderRadius: '1.75rem 1.75rem 0 0',
+              maxHeight: '92vh',
+            }}
+          >
+            {/* Modal header */}
+            <div className="px-5 pt-6 pb-6 rounded-t-3xl" style={{ background: selCfg.gradient }}>
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-4xl">{selCfg.icon}</span>
+                <button
+                  onClick={close}
+                  className="w-10 h-10 rounded-full flex items-center justify-center"
+                  style={{ background: 'rgba(255,255,255,0.25)' }}
+                >
+                  <X className="w-5 h-5 text-white" />
+                </button>
+              </div>
+              <h2 className="text-white font-black text-2xl mb-2">{selected.titleAr}</h2>
+              <div className="flex items-center gap-4 text-white/80 text-sm font-bold">
+                <span className="ltr-num flex items-center gap-1">
+                  <Clock className="w-4 h-4" /> {selected.durationMinutes} دقيقة
+                </span>
+                <span>⭐ {selected.points} نقطة</span>
+              </div>
+              {running && (
+                <div
+                  className="mt-3 py-3 rounded-2xl text-center"
+                  style={{ background: 'rgba(255,255,255,0.2)' }}
+                >
+                  <span className="text-white font-black text-3xl ltr-num">
+                    {Math.floor(timer / 60).toString().padStart(2, '0')}:{(timer % 60).toString().padStart(2, '0')}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Modal body */}
+            <div className="p-5">
+              <div
+                className="rounded-2xl p-4 mb-5"
+                style={{ background: '#FFFBEB', border: '1px solid #FDE68A' }}
+              >
+                <p className="text-amber-700 text-xs font-black mb-1">لماذا هذا التمرين؟</p>
+                <p className="text-gray-700 text-sm leading-relaxed">
+                  {selected.psychologyObjectiveAr || selected.psychologyObjective}
+                </p>
+              </div>
+
+              <div className="space-y-2 mb-5">
+                {selected.instructionsAr.map((inst, i) => (
+                  <div
+                    key={i}
+                    className="flex items-start gap-3 p-4 rounded-2xl transition-all"
+                    style={{
+                      background: i === step ? '#F3EEFF' : i < step ? '#F0FFF9' : '#F9FAFB',
+                      border: i === step ? '2px solid #D3BBFF' : '2px solid transparent',
+                      opacity: i > step ? 0.5 : 1,
+                    }}
+                  >
+                    <div
+                      className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-black flex-shrink-0"
+                      style={{
+                        background: i === step ? '#7C5CFC' : i < step ? '#10B981' : '#E5E7EB',
+                        color: i <= step ? '#FFFFFF' : '#6B7280',
+                      }}
+                    >
+                      {i < step ? '✓' : i + 1}
+                    </div>
+                    <p className={`text-base leading-relaxed ${i === step ? 'font-bold text-gray-900' : 'text-gray-500'}`}>
+                      {inst}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="pb-safe">
+                {!running ? (
+                  <button
+                    onClick={() => setRunning(true)}
+                    className="w-full text-white font-black py-5 rounded-2xl text-xl flex items-center justify-center gap-3 transition-all active:scale-95"
+                    style={{ background: selCfg.gradient, boxShadow: '0 6px 20px rgba(124,92,252,0.35)' }}
+                  >
+                    <Play className="w-6 h-6 fill-white" /> ابدأ!
+                  </button>
+                ) : step < selected.instructionsAr.length - 1 ? (
+                  <button
+                    onClick={() => setStep(s => s + 1)}
+                    className="w-full text-white font-black py-5 rounded-2xl text-xl transition-all active:scale-95"
+                    style={{ background: selCfg.gradient, boxShadow: '0 6px 20px rgba(124,92,252,0.35)' }}
+                  >
+                    التالي ←
+                  </button>
+                ) : (
+                  <button
+                    onClick={finish}
+                    disabled={saving}
+                    className="w-full text-white font-black py-5 rounded-2xl text-xl flex items-center justify-center gap-3 transition-all active:scale-95 disabled:opacity-60"
+                    style={{ background: 'linear-gradient(135deg,#10B981,#059669)', boxShadow: '0 6px 20px rgba(16,185,129,0.35)' }}
+                  >
+                    {saving
+                      ? <span className="animate-pulse">جاري الحفظ...</span>
+                      : <><CheckCircle className="w-6 h-6" /> انتهيت! 🎉</>
+                    }
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}

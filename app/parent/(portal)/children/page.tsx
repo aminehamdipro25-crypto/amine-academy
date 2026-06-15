@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { TrendingUp, Dumbbell } from 'lucide-react'
+import { TrendingUp, Dumbbell, Play } from 'lucide-react'
 import type { Student } from '@/lib/types'
 
 const DIAGNOSIS_LABELS: Record<string, string> = {
@@ -193,6 +193,18 @@ export default function ChildrenPage() {
                       </div>
                     </div>
                   )}
+
+                  {/* Start session button */}
+                  <Link
+                    href={`/parent/child-session/${child.id}`}
+                    className="flex items-center justify-center gap-2 font-black text-sm px-4 py-3 rounded-2xl transition-all mb-3 w-full"
+                    style={{ background: 'linear-gradient(135deg,#7C5CFC,#9A7BFD)', color: '#FFFFFF', boxShadow: '0 4px 14px rgba(124,92,252,0.35)' }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.transform = 'translateY(-1px)'; (e.currentTarget as HTMLAnchorElement).style.boxShadow = '0 6px 18px rgba(124,92,252,0.45)' }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.transform = ''; (e.currentTarget as HTMLAnchorElement).style.boxShadow = '0 4px 14px rgba(124,92,252,0.35)' }}
+                  >
+                    <Play className="w-4 h-4 fill-white" />
+                    ابدأ جلسة {child.firstName}
+                  </Link>
 
                   {/* Links row */}
                   <div className="grid grid-cols-2 gap-2">

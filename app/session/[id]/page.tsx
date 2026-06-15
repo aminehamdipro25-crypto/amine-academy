@@ -1354,10 +1354,11 @@ ${notes ? `
               className="w-7 h-7 rounded-xl flex-shrink-0 flex items-center justify-center text-xs font-black text-white"
               style={{ background: 'linear-gradient(135deg,#7C5CFC,#C084FC)' }}
             >
-              {(studentName || 'ج').charAt(0)}
+              {(studentName || 'ج').charAt(0).toUpperCase()}
             </div>
-            <span className="text-white font-black text-sm truncate max-w-[100px] sm:max-w-[160px]">
-              {studentName || 'جلسة تفاعلية'}
+            <span className="text-white font-black text-sm truncate">
+              <span className="sm:hidden">{(studentName || 'جلسة').split(' ')[0]}</span>
+              <span className="hidden sm:inline">{studentName || 'جلسة تفاعلية'}</span>
             </span>
             <ChevronDown className={`w-3 h-3 text-white/30 flex-shrink-0 transition-transform ${profileOpen ? 'rotate-180' : ''}`} />
           </button>
@@ -1387,17 +1388,10 @@ ${notes ? `
             )}
           </div>
 
-          {/* Mobile: show appointment type badge compactly under name */}
-          {appointmentType && SESSION_TYPE_CFG[appointmentType] && (
-            <span className={`sm:hidden text-[9px] font-black px-1.5 py-0.5 rounded-full border ${SESSION_TYPE_CFG[appointmentType].color}`}>
-              {SESSION_TYPE_CFG[appointmentType].label}
-            </span>
-          )}
-
           {/* ── Quick Profile Card ── */}
           {profileOpen && (
             <div
-              className="absolute top-full mt-2 left-0 z-[70] rounded-2xl p-4 w-72 shadow-2xl"
+              className="absolute top-full mt-2 right-0 sm:left-0 sm:right-auto z-[70] rounded-2xl p-4 w-[min(288px,calc(100vw-24px))] shadow-2xl"
               style={{
                 background: '#111827',
                 border: '1.5px solid rgba(255,255,255,0.12)',

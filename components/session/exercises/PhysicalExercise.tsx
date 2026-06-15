@@ -141,6 +141,9 @@ export default function PhysicalExercise({ id, onComplete, onCancel, difficulty 
 
   const elapsed = totalSec - secsLeft
   const pct     = Math.min(100, Math.round((elapsed / totalSec) * 100))
+  const currentStep = running || completed
+    ? Math.min(ex.steps.length - 1, Math.floor((elapsed / totalSec) * ex.steps.length))
+    : -1
 
   useEffect(() => {
     if (!running || completed) return
@@ -204,16 +207,37 @@ export default function PhysicalExercise({ id, onComplete, onCancel, difficulty 
         />
       </div>
 
-      {/* Steps */}
-      <div className="space-y-2.5 mb-5">
-        {ex.steps.map((step, i) => (
-          <div key={i} className="flex gap-3 items-start">
-            <div className="w-6 h-6 rounded-full bg-brand-600/40 text-brand-300 flex items-center justify-center text-[11px] font-black flex-shrink-0 mt-0.5">
-              {i + 1}
+      {/* Steps — active step glows as timer progresses */}
+      <div className="space-y-2 mb-5">
+        {ex.steps.map((step, i) => {
+          const isActive = i === currentStep
+          const isDone   = i < currentStep
+          return (
+            <div
+              key={i}
+              className={`flex gap-3 items-start rounded-2xl p-2.5 transition-all duration-500 ${
+                isActive
+                  ? 'bg-cyan-500/15 border border-cyan-500/30'
+                  : isDone
+                  ? 'opacity-50'
+                  : 'opacity-70'
+              }`}
+            >
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-black flex-shrink-0 mt-0.5 transition-all ${
+                isActive
+                  ? 'bg-cyan-500 text-white shadow-[0_0_10px_rgba(6,182,212,0.6)]'
+                  : isDone
+                  ? 'bg-emerald-600/60 text-emerald-300'
+                  : 'bg-brand-600/40 text-brand-300'
+              }`}>
+                {isDone ? '✓' : i + 1}
+              </div>
+              <p className={`text-sm leading-relaxed ${isActive ? 'text-white font-bold' : 'text-white/70'}`}>
+                {step}
+              </p>
             </div>
-            <p className="text-white/80 text-sm leading-relaxed">{step}</p>
-          </div>
-        ))}
+          )
+        })}
       </div>
 
       {/* Scientific basis */}

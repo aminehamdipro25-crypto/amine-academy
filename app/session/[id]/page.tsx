@@ -458,6 +458,17 @@ export default function SessionPage() {
   const noiseSrcRef   = useRef<AudioBufferSourceNode | null>(null)
   const noiseTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
+  // Pre-session readiness check
+  const [readyDone, setReadyDone]     = useState(false)
+  const [readySleep, setReadySleep]   = useState(0)
+  const [readyEnergy, setReadyEnergy] = useState(0)
+  const [readyMood, setReadyMood]     = useState(0)
+
+  // Kiosk exercise queue
+  const [exerciseQueue, setExerciseQueue] = useState<string[]>([])
+  const [queueActive, setQueueActive]     = useState(false)
+  const [queueIndex, setQueueIndex]       = useState(0)
+
   // ── Session draft persistence — restore on refresh ──────────
   const draftRestoredRef = useRef(false)
 
@@ -1109,6 +1120,21 @@ ${notes ? `
     if (result.score >= 95) showAchievement('🏆', `أداء مثالي! ${result.score}%`)
     else if (result.score >= 80) showAchievement('⭐', `أداء ممتاز! ${result.score}%`)
     else if (result.score >= 60) showAchievement('👍', `أداء جيد! ${result.score}%`)
+
+    // Kiosk queue auto-advance
+    if (queueActive) {
+      setQueueIndex(qi => {
+        const next = qi + 1
+        if (next < exerciseQueue.length) {
+          setTimeout(() => setActiveView({ type: 'exercise', id: exerciseQueue[next] }), 1200)
+          return next
+        } else {
+          setQueueActive(false)
+          setTimeout(() => { setShowCelebration(true); playSound('complete') }, 800)
+          return qi
+        }
+      })
+    }
   }
 
   function handleAssessmentComplete(result: AssessmentResult) {
@@ -2112,6 +2138,56 @@ ${notes ? `
           >
             <div className="max-w-2xl mx-auto px-4 py-6">
 
+              {/* ── Exercise queue builder ── */}
+              {exerciseQueue.length > 0 && !queueActive && (
+                <div className="mb-5 bg-white/90 rounded-3xl p-4 shadow-lg border-2 border-brand-200" dir="rtl">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-black text-brand-700 text-sm">قائمة الجلسة <span className="text-brand-400">({exerciseQueue.length})</span></h3>
+                    <button onClick={() => setExerciseQueue([])} className="text-red-400 text-xs font-bold hover:text-red-600">مسح الكل ×</button>
+                  </div>
+                  <div className="flex gap-2 flex-wrap mb-3">
+                    {exerciseQueue.map((eid, qi) => {
+                      const qex = EXERCISES.find(e => e.id === eid)
+                      return qex ? (
+                        <div key={qi} className="bg-brand-50 border border-brand-200 text-brand-700 text-xs font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
+                          <span>{qex.icon}</span>
+                          <span>{qex.labelAr}</span>
+                          <button
+                            onClick={() => setExerciseQueue(q => q.filter((_, i) => i !== qi))}
+                            className="text-brand-300 hover:text-red-500 ml-0.5 font-black"
+                          >×</button>
+                        </div>
+                      ) : null
+                    })}
+                  </div>
+                  <button
+                    onClick={() => {
+                      if (!running) startSession()
+                      setQueueIndex(0)
+                      setQueueActive(true)
+                      setActiveView({ type: 'exercise', id: exerciseQueue[0] })
+                      setKidMode(false)
+                    }}
+                    className="w-full bg-gradient-to-l from-[#7C5CFC] to-[#9A7BFD] text-white font-black py-3 rounded-2xl text-sm shadow-lg transition-all active:scale-95"
+                  >
+                    ▶ ابدأ القائمة — {exerciseQueue.length} تمارين متتالية
+                  </button>
+                </div>
+              )}
+
+              {/* Queue progress when active */}
+              {queueActive && (
+                <div className="mb-5 bg-brand-600/90 rounded-3xl p-4 text-white" dir="rtl">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-black text-sm">تمرين {queueIndex + 1} من {exerciseQueue.length}</span>
+                    <button onClick={() => { setQueueActive(false); setQueueIndex(0) }} className="text-white/60 text-xs hover:text-white">إيقاف القائمة</button>
+                  </div>
+                  <div className="h-2 bg-white/20 rounded-full overflow-hidden">
+                    <div className="h-full bg-white rounded-full transition-all" style={{ width: `${((queueIndex) / exerciseQueue.length) * 100}%` }} />
+                  </div>
+                </div>
+              )}
+
               {/* ── Greeting header ── */}
               <div className="text-center mb-7">
                 <div className="relative inline-block">
@@ -2168,37 +2244,50 @@ ${notes ? `
                         '0 12px 32px -4px rgba(255,140,101,0.35)',
                         '0 12px 32px -4px rgba(42,191,163,0.35)',
                       ]
+                      const inQueue = exerciseQueue.includes(ex.id)
                       return (
-                        <button
-                          key={ex.id}
-                          onClick={() => {
-                            if (!running) startSession()
-                            setActiveView({ type: 'exercise', id: ex.id })
-                            setKidMode(false)
-                          }}
-                          className={`bg-gradient-to-l ${CARD_GRADIENTS[idx]} rounded-3xl p-5 flex items-center gap-5 text-right
-                            active:scale-[0.97] transition-all duration-200 w-full select-none`}
-                          style={{ boxShadow: CARD_SHADOWS[idx] }}
-                        >
-                          <div
-                            className="w-20 h-20 rounded-2xl bg-white/20 flex items-center justify-center flex-shrink-0"
-                            style={{ fontSize: '3rem' }}
+                        <div key={ex.id} className="relative">
+                          <button
+                            onClick={() => {
+                              if (!running) startSession()
+                              setActiveView({ type: 'exercise', id: ex.id })
+                              setKidMode(false)
+                            }}
+                            className={`bg-gradient-to-l ${CARD_GRADIENTS[idx]} rounded-3xl p-5 flex items-center gap-5 text-right
+                              active:scale-[0.97] transition-all duration-200 w-full select-none`}
+                            style={{ boxShadow: CARD_SHADOWS[idx] }}
                           >
-                            {ex.icon}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="text-white font-black text-2xl leading-tight">{ex.labelAr}</div>
-                            <div className="text-white/70 text-sm mt-1">{ex.category}</div>
-                            {(gameUsageCounts[ex.id] ?? 0) > 0 && (
-                              <div className="text-white/60 text-xs mt-1 font-medium ltr-num">
-                                لعبتها {gameUsageCounts[ex.id]} مرة ✓
-                              </div>
-                            )}
-                          </div>
-                          <div className="w-12 h-12 bg-white/25 rounded-2xl flex items-center justify-center flex-shrink-0">
-                            <span className="text-white text-2xl font-black">←</span>
-                          </div>
-                        </button>
+                            <div
+                              className="w-20 h-20 rounded-2xl bg-white/20 flex items-center justify-center flex-shrink-0"
+                              style={{ fontSize: '3rem' }}
+                            >
+                              {ex.icon}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="text-white font-black text-2xl leading-tight">{ex.labelAr}</div>
+                              <div className="text-white/70 text-sm mt-1">{ex.category}</div>
+                              {(gameUsageCounts[ex.id] ?? 0) > 0 && (
+                                <div className="text-white/60 text-xs mt-1 font-medium ltr-num">
+                                  لعبتها {gameUsageCounts[ex.id]} مرة ✓
+                                </div>
+                              )}
+                            </div>
+                            <div className="w-12 h-12 bg-white/25 rounded-2xl flex items-center justify-center flex-shrink-0">
+                              <span className="text-white text-2xl font-black">←</span>
+                            </div>
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setExerciseQueue(q => inQueue ? q.filter(i => i !== ex.id) : [...q, ex.id])
+                            }}
+                            className={`absolute top-2 left-2 text-xs font-black px-2.5 py-1 rounded-xl transition-all ${
+                              inQueue ? 'bg-white text-brand-700' : 'bg-white/20 hover:bg-white/40 text-white'
+                            }`}
+                          >
+                            {inQueue ? '✓ في القائمة' : '+ قائمة'}
+                          </button>
+                        </div>
                       )
                     })}
                   </div>
@@ -2224,31 +2313,44 @@ ${notes ? `
                       { bg: '#F0FAFF', border: '#A8DEFF', text: '#0070B0' },
                     ]
                     const c = GRID_COLORS[idx % GRID_COLORS.length]
+                    const inQ = exerciseQueue.includes(ex.id)
                     return (
-                      <button
-                        key={ex.id}
-                        onClick={() => {
-                          if (!running) startSession()
-                          setActiveView({ type: 'exercise', id: ex.id })
-                          setKidMode(false)
-                        }}
-                        className="rounded-3xl p-4 text-center active:scale-95 transition-all duration-150 select-none w-full"
-                        style={{
-                          background: c.bg,
-                          border: `2px solid ${c.border}`,
-                          boxShadow: `0 4px 16px -4px ${c.border}`,
-                        }}
-                      >
-                        <div className="text-5xl mb-2 leading-none">{ex.icon}</div>
-                        <div className="font-black text-sm leading-tight" style={{ color: c.text }}>
-                          {ex.labelAr}
-                        </div>
-                        {(gameUsageCounts[ex.id] ?? 0) > 0 && (
-                          <div className="text-[10px] mt-1 font-medium opacity-60 ltr-num" style={{ color: c.text }}>
-                            ×{gameUsageCounts[ex.id]}
+                      <div key={ex.id} className="relative">
+                        <button
+                          onClick={() => {
+                            if (!running) startSession()
+                            setActiveView({ type: 'exercise', id: ex.id })
+                            setKidMode(false)
+                          }}
+                          className="rounded-3xl p-4 text-center active:scale-95 transition-all duration-150 select-none w-full"
+                          style={{
+                            background: c.bg,
+                            border: `2px solid ${inQ ? '#7C5CFC' : c.border}`,
+                            boxShadow: `0 4px 16px -4px ${c.border}`,
+                          }}
+                        >
+                          <div className="text-5xl mb-2 leading-none">{ex.icon}</div>
+                          <div className="font-black text-sm leading-tight" style={{ color: c.text }}>
+                            {ex.labelAr}
                           </div>
-                        )}
-                      </button>
+                          {(gameUsageCounts[ex.id] ?? 0) > 0 && (
+                            <div className="text-[10px] mt-1 font-medium opacity-60 ltr-num" style={{ color: c.text }}>
+                              ×{gameUsageCounts[ex.id]}
+                            </div>
+                          )}
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setExerciseQueue(q => inQ ? q.filter(i => i !== ex.id) : [...q, ex.id])
+                          }}
+                          className={`absolute top-1.5 left-1.5 text-[9px] font-black px-1.5 py-0.5 rounded-lg transition-all ${
+                            inQ ? 'bg-brand-600 text-white' : 'bg-black/10 hover:bg-brand-100 text-gray-500'
+                          }`}
+                        >
+                          {inQ ? '✓' : '+'}
+                        </button>
+                      </div>
                     )
                   })}
                 </div>
@@ -2399,18 +2501,107 @@ ${notes ? `
             </div>
           )}
 
-          {/* Start screen — hidden when Jitsi is embedded */}
-          {!jitsiEmbedded && !activeView && !running && (
-            <div className="text-center">
-              <div className="text-8xl mb-6">🎯</div>
-              <h2 className="text-2xl font-black text-white mb-3">جاهز للجلسة؟</h2>
-              <p className="text-white/40 mb-8">اضغط &quot;ابدأ الجلسة&quot; لتفعيل التمارين</p>
-              <button onClick={startSession}
-                className="bg-green-600 hover:bg-green-500 text-white font-black px-10 py-4 rounded-2xl text-lg transition-colors">
-                ▶ ابدأ الجلسة
-              </button>
-            </div>
-          )}
+          {/* Start screen — readiness check then start */}
+          {!jitsiEmbedded && !activeView && !running && (() => {
+            const readyComplete = readySleep > 0 && readyEnergy > 0 && readyMood > 0
+            const avgReady = readyComplete ? (readySleep + readyEnergy + readyMood) / 3 : 0
+            const readyLevel = avgReady >= 3.8 ? 'high' : avgReady >= 2.5 ? 'medium' : avgReady > 0 ? 'low' : 'none'
+            const readyColor = readyLevel === 'high' ? '#22C55E' : readyLevel === 'medium' ? '#F59E0B' : '#EF4444'
+            const readyEmoji = readyLevel === 'high' ? '🚀' : readyLevel === 'medium' ? '🙂' : readyLevel === 'low' ? '⚠️' : '🎯'
+
+            function handleStartWithReadiness() {
+              if (readyComplete) {
+                const newDiff = avgReady >= 3.8 ? 3 : avgReady >= 2.5 ? 2 : 1
+                setDifficulty(newDiff as 1|2|3)
+              }
+              setReadyDone(true)
+              startSession()
+            }
+
+            const SCALE_OPTS = [
+              ['1', '😴'], ['2', '😐'], ['3', '🙂'], ['4', '⚡'], ['5', '🌟'],
+            ]
+
+            return (
+              <div className="w-full max-w-lg mx-auto" dir="rtl">
+                {!readyDone ? (
+                  <div className="bg-gray-800/80 rounded-3xl p-6 border border-white/10">
+                    <div className="text-center mb-6">
+                      <div className="text-4xl mb-2">📋</div>
+                      <h2 className="text-white font-black text-lg">تقييم الجاهزية</h2>
+                      <p className="text-white/40 text-xs mt-1">3 أسئلة سريعة لضبط الجلسة تلقائياً</p>
+                    </div>
+
+                    {[
+                      { label: 'كيف كان نوم الطفل الليلة؟', val: readySleep, set: setReadySleep, icons: ['😴','😟','😐','🙂','🌟'] },
+                      { label: 'مستوى طاقة الطفل الآن؟',     val: readyEnergy, set: setReadyEnergy, icons: ['🔋','😐','🙂','⚡','🚀'] },
+                      { label: 'مزاج الطفل عند الدخول؟',      val: readyMood,   set: setReadyMood,   icons: ['😢','😟','😐','🙂','😄'] },
+                    ].map(({ label, val, set, icons }) => (
+                      <div key={label} className="mb-5">
+                        <p className="text-white/70 text-sm font-bold mb-2">{label}</p>
+                        <div className="flex gap-2 justify-between">
+                          {icons.map((icon, i) => (
+                            <button
+                              key={i}
+                              onClick={() => set(i + 1)}
+                              className={`flex-1 py-2.5 rounded-xl text-xl transition-all ${
+                                val === i + 1
+                                  ? 'bg-brand-600 scale-110 shadow-[0_0_12px_rgba(124,92,252,0.5)]'
+                                  : 'bg-white/10 hover:bg-white/20 hover:scale-105'
+                              }`}
+                            >
+                              {icon}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+
+                    {readyComplete && (
+                      <div className="text-center mt-2 mb-5 py-3 rounded-2xl" style={{ background: `${readyColor}15`, border: `1px solid ${readyColor}40` }}>
+                        <span className="text-2xl">{readyEmoji}</span>
+                        <p className="text-white font-black text-sm mt-1">
+                          {readyLevel === 'high' ? 'جاهزية ممتازة — سنبدأ بمستوى متقدم' :
+                           readyLevel === 'medium' ? 'جاهزية جيدة — مستوى متوسط مناسب' :
+                           'يحتاج دعماً إضافياً — سنبدأ بمستوى سهل'}
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => { setReadyDone(true); startSession() }}
+                        className="flex-1 py-3 rounded-2xl text-sm font-bold text-white/50 bg-white/10 hover:bg-white/20 transition-all"
+                      >
+                        تخطّ التقييم
+                      </button>
+                      <button
+                        onClick={handleStartWithReadiness}
+                        className={`flex-1 py-3 rounded-2xl text-sm font-black text-white transition-all ${
+                          readyComplete
+                            ? 'bg-green-600 hover:bg-green-500'
+                            : 'bg-white/20 cursor-not-allowed opacity-50'
+                        }`}
+                        disabled={!readyComplete}
+                      >
+                        ▶ ابدأ الجلسة
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center">
+                    <div className="text-8xl mb-6">🎯</div>
+                    <h2 className="text-2xl font-black text-white mb-3">جاهز للجلسة؟</h2>
+                    <p className="text-white/40 mb-8">اضغط &quot;ابدأ الجلسة&quot; لتفعيل التمارين</p>
+                    <button onClick={startSession}
+                      className="bg-green-600 hover:bg-green-500 text-white font-black px-10 py-4 rounded-2xl text-lg transition-colors">
+                      ▶ ابدأ الجلسة
+                    </button>
+                  </div>
+                )}
+              </div>
+            )
+          })()}
 
           {/* Idle screen — hidden when Jitsi is embedded */}
           {!jitsiEmbedded && !activeView && running && (

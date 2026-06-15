@@ -14,8 +14,8 @@ const ContentSecurityPolicy = [
   "img-src 'self' data: blob: https://res.cloudinary.com https://lh3.googleusercontent.com",
   // Connect: self + Upstash Redis (via server-side only, but kept for safety) + Jitsi signaling
   "connect-src 'self' https://*.upstash.io https://meet.jit.si wss://meet.jit.si",
-  // Frames: Jitsi Meet only
-  "frame-src 'self' https://meet.jit.si",
+  // Frames: Jitsi Meet + YouTube embeds
+  "frame-src 'self' https://meet.jit.si https://www.youtube.com https://youtube.com",
   // Media: self
   "media-src 'self' blob:",
   // Workers: self + blob (for Next.js SW)

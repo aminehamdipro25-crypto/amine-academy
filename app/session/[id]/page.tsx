@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { Clock, X, Save, Video, Star, ClipboardList, PenLine, ChevronDown, User } from 'lucide-react'
+import { Clock, X, Save, Video, Star, ClipboardList, PenLine, ChevronDown, User, Gamepad2, BarChart3, BookOpen } from 'lucide-react'
 import type { ExerciseResult, AssessmentResult, SessionObservations } from '@/lib/types'
 import { rankGamesForStudent, getTopGames, DIFFICULTY_LABELS_AR } from '@/lib/game-mapping'
 import type { StudentAssessmentProfile } from '@/lib/types'
@@ -1340,7 +1340,7 @@ ${notes ? `
               onClick={() => setProfileOpen(o => !o)}
               className="flex items-center gap-1.5 font-black text-white text-sm hover:text-brand-300 transition-colors"
             >
-              <h1>{studentName || 'جلسة تفاعلية'}</h1>
+              <h1 className="truncate max-w-[110px] sm:max-w-none">{studentName || 'جلسة تفاعلية'}</h1>
               <ChevronDown className={`w-3 h-3 transition-transform ${profileOpen ? 'rotate-180' : ''}`} />
             </button>
             {studentDiagnosis && (
@@ -1500,7 +1500,7 @@ ${notes ? `
       </header>
 
       {/* ── Toolbar strip ── */}
-      <div className={`bg-gray-900/95 border-b border-white/[0.08] px-3 py-1.5 flex items-center gap-1.5 flex-wrap ${sessionLocked ? 'hidden' : ''}`}>
+      <div className={`bg-gray-900/95 border-b border-white/[0.08] px-3 py-1.5 flex items-center gap-1.5 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden ${sessionLocked ? 'hidden' : ''}`}>
 
         {/* Group 1 — Camera */}
         {jitsiUrl && (
@@ -2142,21 +2142,39 @@ ${notes ? `
 
             {/* Slide-up panel */}
             <div
-              className={`lg:hidden fixed inset-x-0 z-[79] bg-gray-900 border-t border-white/10 rounded-t-3xl shadow-2xl transition-transform duration-300 ${showMobilePanel ? 'translate-y-0' : 'translate-y-full'}`}
-              style={{ bottom: 64, maxHeight: '70vh' }}
+              className={`lg:hidden fixed inset-x-0 z-[79] rounded-t-3xl shadow-2xl transition-all duration-300 ease-out ${showMobilePanel ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'}`}
+              style={{
+                bottom: 60,
+                maxHeight: '72vh',
+                background: 'rgba(12,10,28,0.97)',
+                border: '1px solid rgba(124,92,252,0.15)',
+                borderBottom: 'none',
+                backdropFilter: 'blur(24px)',
+              }}
               dir="rtl"
             >
               {/* Handle */}
               <button onClick={() => setShowMobilePanel(false)} className="w-full flex justify-center pt-3 pb-2">
-                <div className="w-10 h-1 bg-white/20 rounded-full" />
+                <div className="w-12 h-1 rounded-full" style={{ background: 'rgba(255,255,255,0.15)' }} />
               </button>
 
               {/* Tabs */}
-              <div className="flex border-b border-white/10">
-                {(['exercises','assessments','log'] as const).map(t => (
+              <div className="flex border-b mx-3 mb-1" style={{ borderColor: 'rgba(255,255,255,0.07)' }}>
+                {([
+                  { key: 'exercises', labelAr: 'تمارين', Icon: Gamepad2 },
+                  { key: 'assessments', labelAr: 'تقييم', Icon: BarChart3 },
+                  { key: 'log', labelAr: 'سجل', Icon: BookOpen },
+                ] as const).map(({ key: t, labelAr, Icon }) => (
                   <button key={t} onClick={() => setTab(t)}
-                    className={`flex-1 py-2.5 text-xs font-bold transition-colors ${tab === t ? 'text-white border-b-2 border-brand-500' : 'text-white/40'}`}>
-                    {t === 'exercises' ? '🎮 تمارين' : t === 'assessments' ? '📊 تقييم' : '📝 سجل'}
+                    className={`flex-1 py-2.5 flex items-center justify-center gap-1.5 text-xs font-bold transition-all relative ${
+                      tab === t ? 'text-brand-400' : 'text-white/30 hover:text-white/60'
+                    }`}
+                  >
+                    {tab === t && (
+                      <div className="absolute bottom-0 left-1/4 right-1/4 h-0.5 rounded-full" style={{ background: 'linear-gradient(90deg,#7C5CFC,#C084FC)' }} />
+                    )}
+                    <Icon className="w-3.5 h-3.5" />
+                    {labelAr}
                   </button>
                 ))}
               </div>
@@ -2243,21 +2261,56 @@ ${notes ? `
             </div>
 
             {/* Mobile bottom tab bar */}
-            <div className="lg:hidden fixed bottom-0 inset-x-0 z-[80] bg-gray-900/95 border-t border-white/10 backdrop-blur-sm" dir="rtl">
-              <div className="flex h-16">
-                {(['exercises','assessments','log'] as const).map(t => (
-                  <button
-                    key={t}
-                    onClick={() => {
-                      if (tab === t && showMobilePanel) setShowMobilePanel(false)
-                      else { setTab(t); setShowMobilePanel(true) }
-                    }}
-                    className={`flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors ${tab === t && showMobilePanel ? 'text-brand-400' : 'text-white/40'}`}
-                  >
-                    <span className="text-xl">{t === 'exercises' ? '🎮' : t === 'assessments' ? '📊' : '📝'}</span>
-                    <span className="text-[10px] font-bold">{t === 'exercises' ? 'تمارين' : t === 'assessments' ? 'تقييم' : 'سجل'}</span>
-                  </button>
-                ))}
+            <div
+              className="lg:hidden fixed bottom-0 inset-x-0 z-[80]"
+              style={{
+                background: 'rgba(9,9,18,0.96)',
+                borderTop: '1px solid rgba(255,255,255,0.08)',
+                backdropFilter: 'blur(20px)',
+              }}
+              dir="rtl"
+            >
+              <div className="flex h-[60px]">
+                {([
+                  { key: 'exercises',   labelAr: 'تمارين', Icon: Gamepad2    },
+                  { key: 'assessments', labelAr: 'تقييم',  Icon: BarChart3   },
+                  { key: 'log',         labelAr: 'سجل',    Icon: BookOpen    },
+                ] as const).map(({ key: t, labelAr, Icon }) => {
+                  const isActive = tab === t && showMobilePanel
+                  return (
+                    <button
+                      key={t}
+                      onClick={() => {
+                        if (tab === t && showMobilePanel) setShowMobilePanel(false)
+                        else { setTab(t); setShowMobilePanel(true) }
+                      }}
+                      className="flex-1 flex flex-col items-center justify-center gap-1 relative transition-all duration-200 active:scale-95"
+                    >
+                      {/* Active indicator pill */}
+                      {isActive && (
+                        <div
+                          className="absolute top-0 left-1/2 -translate-x-1/2 rounded-full transition-all duration-300"
+                          style={{ width: 32, height: 3, background: 'linear-gradient(90deg,#7C5CFC,#C084FC)', boxShadow: '0 0 8px rgba(124,92,252,0.6)' }}
+                        />
+                      )}
+                      <Icon
+                        className="transition-all duration-200"
+                        style={{
+                          width: 20,
+                          height: 20,
+                          color: isActive ? '#A78BFA' : 'rgba(255,255,255,0.3)',
+                          filter: isActive ? 'drop-shadow(0 0 6px rgba(124,92,252,0.5))' : 'none',
+                        }}
+                      />
+                      <span
+                        className="text-[10px] font-bold transition-all duration-200"
+                        style={{ color: isActive ? '#A78BFA' : 'rgba(255,255,255,0.3)' }}
+                      >
+                        {labelAr}
+                      </span>
+                    </button>
+                  )
+                })}
               </div>
             </div>
           </>
@@ -2657,79 +2710,170 @@ ${notes ? `
               ['1', '😴'], ['2', '😐'], ['3', '🙂'], ['4', '⚡'], ['5', '🌟'],
             ]
 
-            return (
-              <div className="w-full max-w-lg mx-auto" dir="rtl">
-                {!readyDone ? (
-                  <div className="bg-gray-800/80 rounded-3xl p-6 border border-white/10">
-                    <div className="text-center mb-6">
-                      <div className="text-4xl mb-2">📋</div>
-                      <h2 className="text-white font-black text-lg">تقييم الجاهزية</h2>
-                      <p className="text-white/40 text-xs mt-1">3 أسئلة سريعة لضبط الجلسة تلقائياً</p>
-                    </div>
+            const READY_COLORS = ['#EF4444','#F97316','#F59E0B','#22C55E','#3B82F6']
 
-                    {[
-                      { label: 'كيف كان نوم الطفل الليلة؟', val: readySleep, set: setReadySleep, icons: ['😴','😟','😐','🙂','🌟'] },
-                      { label: 'مستوى طاقة الطفل الآن؟',     val: readyEnergy, set: setReadyEnergy, icons: ['🔋','😐','🙂','⚡','🚀'] },
-                      { label: 'مزاج الطفل عند الدخول؟',      val: readyMood,   set: setReadyMood,   icons: ['😢','😟','😐','🙂','😄'] },
-                    ].map(({ label, val, set, icons }) => (
-                      <div key={label} className="mb-5">
-                        <p className="text-white/70 text-sm font-bold mb-2">{label}</p>
-                        <div className="flex gap-2 justify-between">
-                          {icons.map((icon, i) => (
-                            <button
+            return (
+              <div className="w-full max-w-sm mx-auto px-4" dir="rtl">
+                {!readyDone ? (
+                  <div
+                    className="rounded-3xl overflow-hidden shadow-2xl"
+                    style={{
+                      background: 'linear-gradient(160deg, #13111f 0%, #1e1a38 50%, #151228 100%)',
+                      border: '1px solid rgba(124,92,252,0.2)',
+                      boxShadow: '0 32px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(124,92,252,0.1)',
+                    }}
+                  >
+                    {/* Top glow bar */}
+                    <div className="h-0.5" style={{ background: 'linear-gradient(90deg, #7C5CFC, #C084FC, #7C5CFC)' }} />
+
+                    <div className="p-6">
+                      {/* Header */}
+                      <div className="text-center mb-6">
+                        <div
+                          className="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-3"
+                          style={{
+                            background: 'rgba(124,92,252,0.15)',
+                            border: '1.5px solid rgba(124,92,252,0.35)',
+                            boxShadow: '0 0 28px rgba(124,92,252,0.25)',
+                          }}
+                        >
+                          <span className="text-2xl">📋</span>
+                        </div>
+                        <h2 className="text-white font-black text-xl tracking-tight">تقييم الجاهزية</h2>
+                        <p className="text-white/35 text-xs mt-1">3 أسئلة لضبط مستوى الجلسة تلقائياً</p>
+
+                        {/* Progress dots */}
+                        <div className="flex justify-center gap-2 mt-3">
+                          {[readySleep, readyEnergy, readyMood].map((v, i) => (
+                            <div
                               key={i}
-                              onClick={() => set(i + 1)}
-                              className={`flex-1 py-2.5 rounded-xl text-xl transition-all ${
-                                val === i + 1
-                                  ? 'bg-brand-600 scale-110 shadow-[0_0_12px_rgba(124,92,252,0.5)]'
-                                  : 'bg-white/10 hover:bg-white/20 hover:scale-105'
-                              }`}
-                            >
-                              {icon}
-                            </button>
+                              className="rounded-full transition-all duration-300"
+                              style={{
+                                width: v > 0 ? 20 : 8,
+                                height: 8,
+                                background: v > 0 ? 'linear-gradient(90deg,#7C5CFC,#C084FC)' : 'rgba(255,255,255,0.12)',
+                                boxShadow: v > 0 ? '0 0 8px rgba(124,92,252,0.5)' : 'none',
+                              }}
+                            />
                           ))}
                         </div>
                       </div>
-                    ))}
 
-                    {readyComplete && (
-                      <div className="text-center mt-2 mb-5 py-3 rounded-2xl" style={{ background: `${readyColor}15`, border: `1px solid ${readyColor}40` }}>
-                        <span className="text-2xl">{readyEmoji}</span>
-                        <p className="text-white font-black text-sm mt-1">
-                          {readyLevel === 'high' ? 'جاهزية ممتازة — سنبدأ بمستوى متقدم' :
-                           readyLevel === 'medium' ? 'جاهزية جيدة — مستوى متوسط مناسب' :
-                           'يحتاج دعماً إضافياً — سنبدأ بمستوى سهل'}
-                        </p>
+                      {/* Questions */}
+                      {[
+                        { label: 'نوم الطفل الليلة؟',   val: readySleep,  set: setReadySleep,  icons: ['😴','😟','😐','🙂','🌟'] },
+                        { label: 'طاقة الطفل الآن؟',    val: readyEnergy, set: setReadyEnergy, icons: ['🔋','😐','🙂','⚡','🚀'] },
+                        { label: 'مزاجه عند الدخول؟',   val: readyMood,   set: setReadyMood,   icons: ['😢','😟','😐','🙂','😄'] },
+                      ].map(({ label, val, set, icons }) => (
+                        <div key={label} className="mb-5">
+                          <div className="flex items-center justify-between mb-3">
+                            <p className="text-white/75 text-sm font-bold">{label}</p>
+                            {val > 0 && (
+                              <span
+                                className="text-[10px] font-black px-2 py-0.5 rounded-full"
+                                style={{ background: `${READY_COLORS[val-1]}20`, color: READY_COLORS[val-1] }}
+                              >
+                                {val}/5
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex gap-2">
+                            {icons.map((icon, i) => (
+                              <button
+                                key={i}
+                                onClick={() => set(i + 1)}
+                                className="flex-1 flex items-center justify-center rounded-2xl transition-all duration-200 active:scale-90"
+                                style={{
+                                  height: 56,
+                                  fontSize: '1.5rem',
+                                  background: val === i + 1
+                                    ? `${READY_COLORS[i]}22`
+                                    : 'rgba(255,255,255,0.05)',
+                                  border: val === i + 1
+                                    ? `1.5px solid ${READY_COLORS[i]}55`
+                                    : '1.5px solid rgba(255,255,255,0.08)',
+                                  boxShadow: val === i + 1
+                                    ? `0 0 20px ${READY_COLORS[i]}25, inset 0 1px 0 rgba(255,255,255,0.08)`
+                                    : 'none',
+                                  transform: val === i + 1 ? 'scale(1.1)' : 'scale(1)',
+                                }}
+                              >
+                                {icon}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+
+                      {/* Result banner */}
+                      {readyComplete && (
+                        <div
+                          className="text-center py-4 px-4 rounded-2xl mb-5 transition-all duration-500"
+                          style={{
+                            background: `linear-gradient(135deg, ${readyColor}12, ${readyColor}06)`,
+                            border: `1px solid ${readyColor}30`,
+                          }}
+                        >
+                          <div className="text-3xl mb-1.5">{readyEmoji}</div>
+                          <p className="text-white font-black text-sm">
+                            {readyLevel === 'high' ? 'جاهزية ممتازة!' : readyLevel === 'medium' ? 'جاهزية جيدة' : 'يحتاج دعماً'}
+                          </p>
+                          <p className="text-white/40 text-xs mt-0.5">
+                            {readyLevel === 'high' ? 'سنبدأ بمستوى متقدم' : readyLevel === 'medium' ? 'مستوى متوسط مناسب' : 'سنبدأ بمستوى سهل'}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Action buttons */}
+                      <div className="flex gap-3">
+                        <button
+                          onClick={() => { setReadyDone(true); startSession() }}
+                          className="flex-1 py-3.5 rounded-2xl text-xs font-bold transition-all active:scale-95"
+                          style={{ background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.4)', border: '1px solid rgba(255,255,255,0.08)' }}
+                        >
+                          تخطّ ←
+                        </button>
+                        <button
+                          onClick={handleStartWithReadiness}
+                          disabled={!readyComplete}
+                          className="flex-[2] py-3.5 rounded-2xl text-sm font-black text-white transition-all duration-200 active:scale-95"
+                          style={readyComplete ? {
+                            background: 'linear-gradient(135deg, #22C55E, #16A34A)',
+                            boxShadow: '0 4px 24px rgba(34,197,94,0.4)',
+                          } : {
+                            background: 'rgba(255,255,255,0.07)',
+                            color: 'rgba(255,255,255,0.2)',
+                            border: '1px solid rgba(255,255,255,0.08)',
+                          }}
+                        >
+                          {readyComplete ? '▶ ابدأ الجلسة' : 'أجب على الأسئلة أولاً'}
+                        </button>
                       </div>
-                    )}
-
-                    <div className="flex gap-3">
-                      <button
-                        onClick={() => { setReadyDone(true); startSession() }}
-                        className="flex-1 py-3 rounded-2xl text-sm font-bold text-white/50 bg-white/10 hover:bg-white/20 transition-all"
-                      >
-                        تخطّ التقييم
-                      </button>
-                      <button
-                        onClick={handleStartWithReadiness}
-                        className={`flex-1 py-3 rounded-2xl text-sm font-black text-white transition-all ${
-                          readyComplete
-                            ? 'bg-green-600 hover:bg-green-500'
-                            : 'bg-white/20 cursor-not-allowed opacity-50'
-                        }`}
-                        disabled={!readyComplete}
-                      >
-                        ▶ ابدأ الجلسة
-                      </button>
                     </div>
                   </div>
                 ) : (
                   <div className="text-center">
-                    <div className="text-8xl mb-6">🎯</div>
-                    <h2 className="text-2xl font-black text-white mb-3">جاهز للجلسة؟</h2>
-                    <p className="text-white/40 mb-8">اضغط &quot;ابدأ الجلسة&quot; لتفعيل التمارين</p>
-                    <button onClick={startSession}
-                      className="bg-green-600 hover:bg-green-500 text-white font-black px-10 py-4 rounded-2xl text-lg transition-colors">
+                    <div
+                      className="inline-flex items-center justify-center w-24 h-24 rounded-3xl mb-6"
+                      style={{
+                        background: 'linear-gradient(135deg, rgba(124,92,252,0.2), rgba(192,132,252,0.1))',
+                        border: '2px solid rgba(124,92,252,0.3)',
+                        boxShadow: '0 0 48px rgba(124,92,252,0.2)',
+                        fontSize: '3rem',
+                      }}
+                    >
+                      🎯
+                    </div>
+                    <h2 className="text-2xl font-black text-white mb-2">جاهز للجلسة؟</h2>
+                    <p className="text-white/30 text-sm mb-8">اضغط لبدء تشغيل التمارين</p>
+                    <button
+                      onClick={startSession}
+                      className="text-white font-black px-10 py-4 rounded-2xl text-lg transition-all active:scale-95"
+                      style={{
+                        background: 'linear-gradient(135deg, #22C55E, #16A34A)',
+                        boxShadow: '0 8px 32px rgba(34,197,94,0.4)',
+                      }}
+                    >
                       ▶ ابدأ الجلسة
                     </button>
                   </div>

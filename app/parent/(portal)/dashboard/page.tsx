@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Calendar, Bell, MessageSquare, FileText, ChevronLeft, Zap, TrendingUp, Clock, Star } from 'lucide-react'
+import { Calendar, Bell, MessageSquare, FileText, ChevronLeft, Zap, TrendingUp, Clock, Star, X } from 'lucide-react'
 import type { Parent, Student, Program } from '@/lib/types'
 
 interface DashboardData {
@@ -27,6 +27,73 @@ const PLAN_INFO: Record<string, { label: string; color: string; bg: string }> = 
   premium:  { label: 'مميز ✨', color: '#FDE68A', bg: 'rgba(253,230,138,0.25)' },
 }
 
+const MILESTONES = [500, 1000, 2000, 5000]
+
+type NotifSeverity = 'urgent' | 'warning' | 'positive' | 'achievement' | 'info'
+
+interface Notification {
+  id: number
+  severity: NotifSeverity
+  message: string
+}
+
+function buildNotifications(
+  children: Student[],
+  unreadReports: number,
+  upcomingAppointment: { date: string; time: string; type?: string } | null,
+): Notification[] {
+  const notifs: Notification[] = []
+  let id = 0
+
+  for (const student of children) {
+    const name = student.firstName
+
+    // 1. Streak > 7 — positive
+    if ((student.streak || 0) > 7) {
+      notifs.push({ id: id++, severity: 'positive', message: `🔥 أسبوع كامل من التمارين! استمر على هذا الإيقاع` })
+    }
+
+    // 2. streak === 0 AND totalPoints > 0 — warning
+    if ((student.streak || 0) === 0 && (student.totalPoints || 0) > 0) {
+      notifs.push({ id: id++, severity: 'warning', message: `⚠️ لم يُكمل ${name} أي تمرين اليوم — حافظ على الروتين اليومي` })
+    }
+
+    // 5. Milestone within last 10 points — achievement
+    const pts = student.totalPoints || 0
+    for (const milestone of MILESTONES) {
+      if (pts >= milestone && pts - 10 < milestone) {
+        notifs.push({ id: id++, severity: 'achievement', message: `🏆 أكمل ${name} ${milestone} نقطة!` })
+        break
+      }
+    }
+  }
+
+  // 3. Unread reports — info
+  if (unreadReports > 0) {
+    notifs.push({ id: id++, severity: 'info', message: `📋 يوجد ${unreadReports} تقرير/تقارير جديدة من الأستاذ أمين غير مقروءة` })
+  }
+
+  // 4. Upcoming appointment within 24h — urgent
+  if (upcomingAppointment) {
+    const apptDate = new Date(upcomingAppointment.date)
+    const now = new Date()
+    const diffMs = apptDate.getTime() - now.getTime()
+    if (diffMs > 0 && diffMs <= 24 * 60 * 60 * 1000) {
+      notifs.push({ id: id++, severity: 'urgent', message: `📅 موعدك القادم غداً — تأكد من تجهيز الطفل` })
+    }
+  }
+
+  return notifs
+}
+
+const NOTIF_STYLES: Record<NotifSeverity, string> = {
+  urgent:      'bg-amber-50 border-amber-200 text-amber-800',
+  warning:     'bg-red-50 border-red-100 text-red-700',
+  positive:    'bg-emerald-50 border-emerald-200 text-emerald-800',
+  achievement: 'bg-emerald-50 border-emerald-200 text-emerald-800',
+  info:        'bg-purple-50 border-purple-200 text-purple-800',
+}
+
 function greeting() {
   const h = new Date().getHours()
   if (h < 5)  return 'ليلة طيبة'
@@ -40,6 +107,7 @@ export default function ParentDashboardPage() {
   const [programs, setPrograms] = useState<Record<string, Program>>({})
   const [loading, setLoading] = useState(true)
   const [unreadMessages, setUnreadMessages] = useState(0)
+  const [dismissedNotifs, setDismissedNotifs] = useState<number[]>([])
 
   useEffect(() => {
     fetch('/api/parent/me')
@@ -83,6 +151,10 @@ export default function ParentDashboardPage() {
   const planCfg = PLAN_INFO[parent.subscriptionPlan] || PLAN_INFO.basic
   const totalPoints = children.reduce((s, c) => s + (c.totalPoints || 0), 0)
   const totalStreak = children.reduce((s, c) => s + (c.streak || 0), 0)
+
+  // Compute notifications from available data
+  const allNotifications = buildNotifications(children, unreadReports, upcomingAppointment)
+  const visibleNotifications = allNotifications.filter(n => !dismissedNotifs.includes(n.id))
 
   return (
     <div className="space-y-5" dir="rtl">
@@ -164,6 +236,27 @@ export default function ParentDashboardPage() {
           )}
         </div>
       </div>
+
+      {/* ══ Smart Notifications ══ */}
+      {visibleNotifications.length > 0 && (
+        <div className="space-y-2">
+          {visibleNotifications.map(notif => (
+            <div
+              key={notif.id}
+              className={`flex items-center gap-3 rounded-2xl px-4 py-3 border text-sm font-bold transition-all ${NOTIF_STYLES[notif.severity]}`}
+            >
+              <span className="flex-1 leading-snug">{notif.message}</span>
+              <button
+                onClick={() => setDismissedNotifs(prev => [...prev, notif.id])}
+                className="flex-shrink-0 opacity-60 hover:opacity-100 transition-opacity p-0.5 rounded"
+                aria-label="إغلاق"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* ══ Quick stats row ══ */}
       <div className="grid grid-cols-3 gap-3">

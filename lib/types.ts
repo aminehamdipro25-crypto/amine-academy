@@ -31,6 +31,17 @@ export interface Parent {
   notes: string                 // ملاحظات الأستاذ
 }
 
+// ── Home Environment ─────────────────────────────────────────
+export interface HomeEnvironment {
+  spaceAvailable: 'small' | 'medium' | 'large'
+  equipment: string[]           // ['ball', 'mat', 'rope', 'none', etc]
+  noiseLevel: 'quiet' | 'moderate' | 'noisy'
+  sensoryIssues: string[]       // ['bright-lights', 'loud-sounds', 'textures', 'smells']
+  bestTimeOfDay: 'morning' | 'afternoon' | 'evening'
+  parentAvailability: 'always' | 'sometimes' | 'rarely'
+  notes: string
+}
+
 // ── Student (Child) ──────────────────────────────────────────
 export interface Student {
   id: string                    // AS-xxx-xxx
@@ -48,6 +59,7 @@ export interface Student {
   streak: number                // أيام متتالية
   createdAt: string
   notes: string
+  homeEnvironment?: HomeEnvironment
 }
 
 export interface SensoryProfile {

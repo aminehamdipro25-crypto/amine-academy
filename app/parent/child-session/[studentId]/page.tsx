@@ -4,34 +4,76 @@ import { useParams, useRouter } from 'next/navigation'
 import { CheckCircle, Play, X, Clock, LogOut, Star, Volume2, Film, List } from 'lucide-react'
 import type { Exercise, Student } from '@/lib/types'
 
-// ── Video IDs per exercise ────────────────────────────────────
-const EXERCISE_VIDEOS: Record<string, string> = {
-  'breathing':             '9zXVFK6RTnw',
-  'calm-corner':           'lAgnqQ3sbwk',
-  'jumping-jacks':         'mePc87XdsIE',
-  'stretching':            'QeVh3NVfa0k',
-  'balance-walk':          'KwjBGh7khco',
-  'tiger-crawl':           'SBNxJuEXDyc',
-  'body-percussion':       'MC4rQKU9cEk',
-  'body-scan':             'JL_22TU80Hs',
-  'emotion-cards':         'wPITpAMRHHU',
-  'emotion-mirror':        'PDjIzdLXK80',
-  'social-scenarios':      'ANwBmsfywkA',
-  'social-problem-solving':'ejjM1Apj56c',
-  'token-board':           'FzEI_fJYmFI',
-  'behavior-contract':     'dZd5X2MpxhQ',
-  'traffic-light':         '0AFRnZEkqq4',
-  'stop-signal':           'hSsGS8Sec_0',
-  'mood-meter':            'frN2YcB63NA',
-  'verbal-fluency':        'BBlaaSKP4HM',
-  'finger-gym':            'mEalRQjsGqA',
-  'memory-cards':          'LdxAMNLZpFU',
-  'sequence-memory':       'D3oRmGx7MVM',
-  'conversation-starter':  'ejjM1Apj56c',
-  'choice-board':          'gIDaj-5wFwU',
-  'daily-goals':           '8ttJ37GsF8Q',
-  'ball-throw':            'Xc3DQ7XuSWY',
-  'emotion-volume':        'ejjM1Apj56c',
+// ── Video lookup by exercise English title (stable key, unlike the random AE-xxx-xxx ID) ──
+const TITLE_VIDEOS: Record<string, string> = {
+  // Focus / Breathing
+  'Bubble Breathing':                        '9zXVFK6RTnw',
+  'Box Breathing 4-4-4-4':                  '9zXVFK6RTnw',
+  'Zone of Regulation Body Check-In':        'frN2YcB63NA',
+  'Stop & Listen Game':                      'hSsGS8Sec_0',
+  'Target Toss Focus':                       'BBlaaSKP4HM',
+  'Visual Tracking Trail':                   'mEalRQjsGqA',
+  'Motor Sequencing Challenge':              'D3oRmGx7MVM',
+  'Focused Listening Protocol':              'BBlaaSKP4HM',
+  'Attention Rebuild Protocol':              '9zXVFK6RTnw',
+  'Distraction Inoculation Training':        'dZd5X2MpxhQ',
+  'Reverse Sequence Challenge':              'LdxAMNLZpFU',
+  'Task Tower: Breaking Down Goals':         '8ttJ37GsF8Q',
+  'Mindful Movement: Walking Meditation':    'QeVh3NVfa0k',
+  'Reaction Time Training':                  'mEalRQjsGqA',
+  'Digital Tracking & Scan':                 'mEalRQjsGqA',
+  'Simon Says — Advanced Inhibition':        'hSsGS8Sec_0',
+  'Anger Thermometer & Cool-Down Protocol':  '0AFRnZEkqq4',
+  // Motor
+  'Animal Walk Circuit':                     'mePc87XdsIE',
+  'Rhythm Coordination Drill':               'MC4rQKU9cEk',
+  'Rhythmic Beat Synchronization':           'MC4rQKU9cEk',
+  'Jumping Jacks':                           'mePc87XdsIE',
+  'Balloon Keep-Up Challenge':               'Xc3DQ7XuSWY',
+  'Ball Throw & Catch':                      'Xc3DQ7XuSWY',
+  'Cross-Lateral Crawl':                     'SBNxJuEXDyc',
+  'Obstacle Circuit':                        'mePc87XdsIE',
+  'Obstacle Navigation Course':              'mePc87XdsIE',
+  'Adapted Swimming Program':                'SBNxJuEXDyc',
+  'Stretching & Flexibility':                'QeVh3NVfa0k',
+  'Body Percussion':                         'MC4rQKU9cEk',
+  // Balance
+  'Balance Beam Walk':                       'KwjBGh7khco',
+  'Balance Walk':                            'KwjBGh7khco',
+  'Kids Yoga Flow — Focus & Calm':           'QeVh3NVfa0k',
+  // Sensory
+  'Sensory Body Scan':                       'JL_22TU80Hs',
+  'Progressive Muscle Relaxation':           'lAgnqQ3sbwk',
+  'Deep Pressure & Proprioceptive Reset':    'SBNxJuEXDyc',
+  'Animal Sound Discrimination':             'JL_22TU80Hs',
+  '5-4-3-2-1 Grounding Technique':          'lAgnqQ3sbwk',
+  // Social
+  'Mirror Movement Game':                    'PDjIzdLXK80',
+  'Cooperative Ball Pass':                   'ANwBmsfywkA',
+  'Token Economy Daily Chart':               'FzEI_fJYmFI',
+  'Social Story: The Classroom Transition':  'ejjM1Apj56c',
+  'PEERS Conversation Entry Protocol':       'ANwBmsfywkA',
+  'Daily Routine Mastery':                   'gIDaj-5wFwU',
+  // Energy
+  'Mindful Strength Circuit':                'MC4rQKU9cEk',
+}
+
+const CATEGORY_VIDEOS: Record<string, string> = {
+  motor:   'mePc87XdsIE',
+  focus:   '9zXVFK6RTnw',
+  balance: 'KwjBGh7khco',
+  sensory: 'JL_22TU80Hs',
+  energy:  'MC4rQKU9cEk',
+  social:  'ANwBmsfywkA',
+}
+
+function getVideoId(ex: { title: string; category: string; videoUrl?: string }): string | null {
+  if (ex.videoUrl) {
+    const m = ex.videoUrl.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/)
+    if (m) return m[1]
+    if (/^[a-zA-Z0-9_-]{11}$/.test(ex.videoUrl)) return ex.videoUrl
+  }
+  return TITLE_VIDEOS[ex.title] || CATEGORY_VIDEOS[ex.category] || null
 }
 
 // ── Exercise card visuals ─────────────────────────────────────
@@ -177,7 +219,7 @@ export default function ChildSessionPage() {
     setRunning(false)
     setSpeaking(false)
     // default to video tab if a video exists for this exercise
-    setModalTab(EXERCISE_VIDEOS[ex.id] ? 'video' : 'steps')
+    setModalTab(getVideoId(ex) ? 'video' : 'steps')
   }, [])
 
   function close() {
@@ -254,7 +296,7 @@ export default function ChildSessionPage() {
   const selCfg = selected
     ? (GAME_CFG[selected.id] || CAT_CFG[selected.category] || { gradient: 'linear-gradient(135deg,#7C5CFC,#9A7BFD)', icon: '🏋️' })
     : null
-  const selVideoId = selected ? EXERCISE_VIDEOS[selected.id] : null
+  const selVideoId = selected ? getVideoId(selected) : null
 
   return (
     <div className="min-h-screen flex flex-col" dir="rtl"
@@ -383,7 +425,7 @@ export default function ChildSessionPage() {
             {exercises.map(ex => {
               const isDone = done.has(ex.id)
               const cfg = GAME_CFG[ex.id] || CAT_CFG[ex.category] || { gradient: 'linear-gradient(135deg,#7C5CFC,#9A7BFD)', icon: '🏋️' }
-              const hasVideo = !!EXERCISE_VIDEOS[ex.id]
+              const hasVideo = !!getVideoId(ex)
               return (
                 <button key={ex.id} onClick={() => !isDone && open(ex)} disabled={isDone}
                   className="relative rounded-3xl overflow-hidden text-right transition-all duration-200 active:scale-95"

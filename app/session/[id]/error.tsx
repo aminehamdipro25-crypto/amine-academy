@@ -1,0 +1,33 @@
+'use client'
+import { useEffect } from 'react'
+import { AlertCircle } from 'lucide-react'
+import Link from 'next/link'
+
+export default function SessionError({ error, reset }: { error: Error; reset: () => void }) {
+  useEffect(() => { console.error('[session-error]', error) }, [error])
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6" dir="rtl">
+      <div className="bg-white rounded-2xl p-8 max-w-md w-full text-center border border-gray-100 shadow-sm">
+        <div className="w-14 h-14 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <AlertCircle className="w-7 h-7 text-red-500" />
+        </div>
+        <h2 className="font-black text-gray-900 text-xl mb-2">خطأ في الجلسة</h2>
+        <p className="text-gray-500 text-sm mb-6">{error.message || 'تعذّر تحميل الجلسة، يرجى المحاولة مجدداً'}</p>
+        <div className="flex gap-3 justify-center">
+          <button
+            onClick={reset}
+            className="bg-brand-600 hover:bg-brand-700 text-white font-bold px-5 py-2.5 rounded-xl transition-colors text-sm"
+          >
+            إعادة المحاولة
+          </button>
+          <Link
+            href="/dashboard"
+            className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold px-5 py-2.5 rounded-xl transition-colors text-sm"
+          >
+            لوحة التحكم
+          </Link>
+        </div>
+      </div>
+    </div>
+  )
+}

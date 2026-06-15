@@ -15,7 +15,7 @@ export async function isRateLimited(
     ])
     const count = (results[1]?.result as number) ?? 0
     return count > maxRequests
-  } catch { return false }
+  } catch { return true }
 }
 
 export function getClientIp(req: Request): string {

@@ -3,6 +3,7 @@ import { isRateLimited, getClientIp } from '@/lib/rateLimit'
 import { createSession } from '@/lib/auth'
 import { getParentByEmail } from '@/lib/db'
 import { verifyPassword } from '@/lib/password'
+import { redis } from '@/lib/redis'
 
 export const runtime = 'nodejs'
 
@@ -45,8 +46,18 @@ export async function POST(req: Request) {
 
     if (role === 'student') {
       if (!code) return NextResponse.json({ error: 'أدخل رمز الدخول' }, { status: 400 })
-      // TODO: verify student code from Redis
-      return NextResponse.json({ error: 'رمز الدخول غير صحيح' }, { status: 401 })
+      const studentId = await redis.get<string>(`student_code:${String(code).trim().toUpperCase()}`)
+      if (!studentId) return NextResponse.json({ error: 'رمز الدخول غير صحيح أو منتهي الصلاحية' }, { status: 401 })
+      const token = await createSession(studentId, 'student')
+      const res = NextResponse.json({ ok: true })
+      res.cookies.set('student_token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 30 * 24 * 3600,
+        path: '/',
+      })
+      return res
     }
 
     return NextResponse.json({ error: 'طلب غير صالح' }, { status: 400 })

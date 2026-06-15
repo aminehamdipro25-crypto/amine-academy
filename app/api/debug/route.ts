@@ -3,7 +3,13 @@ import { redis } from '@/lib/redis'
 
 export const runtime = 'nodejs'
 
-export async function GET() {
+export async function GET(req: Request) {
+  const host = req.headers.get('host') || ''
+  const isLocalhost = host.startsWith('localhost') || host.startsWith('127.0.0.1')
+  if (!isLocalhost) {
+    return NextResponse.json({ error: 'forbidden' }, { status: 403 })
+  }
+
   const results: Record<string, string> = {}
 
   // 1. Check env vars

@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Cairo } from 'next/font/google'
 import './globals.css'
 import { LanguageProvider } from '@/lib/i18n'
@@ -13,6 +13,13 @@ const cairo = Cairo({
 })
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://amine-academy.com'
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  viewportFit: 'cover',
+}
 
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),

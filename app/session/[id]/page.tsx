@@ -539,12 +539,15 @@ export default function SessionPage() {
     } catch { /* ignore */ }
   }, [id])
 
-  // Auto-save draft to sessionStorage on every meaningful change
+  // Auto-save draft to sessionStorage (debounced 2s to avoid thrashing on elapsed counter)
   useEffect(() => {
     if (elapsed === 0 && results.length === 0 && notes === '' && obsLog.length === 0 && abcLog.length === 0) return
     const key = `session_draft_${id}`
     const draft = { elapsed, running, results, assessments, notes, difficulty, obsLog, abcLog, phaseIdx, phaseDurations, savedAt: Date.now() }
-    try { sessionStorage.setItem(key, JSON.stringify(draft)) } catch { /* storage full */ }
+    const tid = setTimeout(() => {
+      try { sessionStorage.setItem(key, JSON.stringify(draft)) } catch { /* storage full */ }
+    }, 2000)
+    return () => clearTimeout(tid)
   }, [elapsed, running, results, assessments, notes, difficulty, obsLog, abcLog, phaseIdx, phaseDurations, id])
 
   // Load appointment/student info + assessment profile + session history

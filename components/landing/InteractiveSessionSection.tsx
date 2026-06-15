@@ -19,7 +19,7 @@ const STEPS = [
     title: 'التمارين الحية',
     titleEn: 'Live Exercises',
     desc: 'الطفل يؤدي التمارين أمام الكاميرا — الأستاذ يصحح الحركة في الوقت الفعلي ويحفّزه.',
-    descEn: 'The child performs exercises in front of the camera — the therapist corrects movement in real time and provides encouragement.',
+    descEn: 'The child performs exercises in front of the camera — the instructor corrects movement in real time and provides encouragement.',
     icon: CheckCircle,
   },
   {

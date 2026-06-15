@@ -57,7 +57,7 @@ const PILLARS = [
 ]
 
 const EXTRA = [
-  { icon: Video,     color: 'text-brand-600 bg-brand-50',   title: 'جلسات تفاعلية بالفيديو', titleEn: 'Live Video Sessions', desc: 'الأستاذ يشاهد الطفل مباشرة ويصحح الحركة في الوقت الفعلي', descEn: 'The therapist watches the child live and corrects movement in real time' },
+  { icon: Video,     color: 'text-brand-600 bg-brand-50',   title: 'جلسات تفاعلية بالفيديو', titleEn: 'Live Video Sessions', desc: 'الأستاذ يشاهد الطفل مباشرة ويصحح الحركة في الوقت الفعلي', descEn: 'The instructor watches the child live and corrects movement in real time' },
   { icon: Heart,     color: 'text-rose-600 bg-rose-50',     title: 'توجيه الوالدين', titleEn: 'Parent Coaching', desc: 'كل جلسة تنتهي بـ 10 دقائق توجيه للوالد على المتابعة اليومية في البيت', descEn: 'Every session ends with 10 minutes of parent guidance on daily home follow-up' },
   { icon: BarChart3, color: 'text-amber-600 bg-amber-50',   title: 'تقارير ذكية', titleEn: 'Smart Reports', desc: 'تقارير دورية تقيس 5 محاور سلوكية مع تفسير علمي وخطة تعديل', descEn: 'Periodic reports measuring 5 behavioral dimensions with scientific interpretation and adjustment plans' },
   { icon: Sparkles,  color: 'text-indigo-600 bg-indigo-50', title: 'تلعيب وتحفيز', titleEn: 'Gamification & Motivation', desc: 'نقاط وإنجازات وتحديات تجعل الطفل يطلب التمرين بنفسه', descEn: 'Points, achievements, and challenges that make children ask to exercise on their own' },

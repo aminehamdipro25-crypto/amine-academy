@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
       ? Math.round((completedExercises / totalExercises) * 100)
       : 0
 
-    const prompt = `أنت أستاذ أمين حمدي، معالج نفسي وتربوي متخصص في ADHD والتوحد. اكتب ملاحظات تقرير تقدم مهنية وموجزة بالعربية لتقرير ${REPORT_TYPE_AR[type] || type}.
+    const prompt = `أنت أستاذ أمين حمدي، أخصائي تربية بدنية ومختص في التأهيل الحركي والوظيفي والنشاط البدني المعدل لأطفال ADHD والتوحد. اكتب ملاحظات تقرير تقدم مهنية وموجزة بالعربية لتقرير ${REPORT_TYPE_AR[type] || type}.
 
 بيانات الجلسة:
 - الطفل: ${studentName}

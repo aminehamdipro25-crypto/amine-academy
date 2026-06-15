@@ -23,8 +23,8 @@ export default function FooterSection() {
             </div>
             <p className="text-white/60 text-sm leading-relaxed max-w-sm">
               {isAr
-                ? 'منصة تفاعلية عالمية للرياضة المعدلة وعلم النفس لأطفال وشباب ADHD وطيف التوحد، من عمر 5 إلى 22 سنة.'
-                : 'A global interactive platform for adapted sports and psychology for children and young adults with ADHD and Autism Spectrum, ages 5 to 22.'}
+                ? 'منصة تفاعلية عالمية للتأهيل الحركي والنشاط البدني المعدل لأطفال وشباب ADHD وطيف التوحد، من عمر 5 إلى 22 سنة.'
+                : 'A global interactive platform for Adapted Physical Activity (APA) and movement rehabilitation for children and young adults with ADHD and Autism Spectrum, ages 5 to 22.'}
             </p>
           </div>
           {/* Links */}

@@ -1007,7 +1007,7 @@ export default function ClientDetailPage() {
                           {/* Therapist notes */}
                           {log.therapistNotes && (
                             <div className="bg-blue-50 rounded-xl px-4 py-3">
-                              <p className="text-xs font-bold text-blue-600 mb-1">ملاحظات المعالج</p>
+                              <p className="text-xs font-bold text-blue-600 mb-1">ملاحظات الأستاذ</p>
                               <p className="text-xs text-gray-700 whitespace-pre-wrap">{log.therapistNotes}</p>
                             </div>
                           )}

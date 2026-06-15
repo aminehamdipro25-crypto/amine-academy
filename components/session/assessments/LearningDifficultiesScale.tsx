@@ -91,7 +91,7 @@ export default function LearningDifficultiesScale({ studentId, onComplete, onCan
       domainScores[domain] = score
       const sev = severity(score)
       if (sev === 'mild') recommendations.push(`متابعة ${section.labelAr} مع تمارين تدعيمية`)
-      if (sev === 'moderate') recommendations.push(`تدخل متخصص لـ${section.labelAr} (معالج تعلمي)`)
+      if (sev === 'moderate') recommendations.push(`تدخل متخصص لـ${section.labelAr} (أخصائي تعلمي)`)
       if (sev === 'severe') recommendations.push(`تقييم رسمي وخطة تربوية فردية لـ${section.labelAr}`)
     }
 

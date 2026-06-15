@@ -120,7 +120,7 @@ export default function VerbalFluency({ onComplete, onCancel, studentAge, diffic
           <div className="text-5xl text-center mb-2">🗣️</div>
           <h2 className="text-white font-black text-xl text-center">الطلاقة اللفظية</h2>
           <p className="text-white/50 text-sm text-center mt-1">
-            60 ثانية — المعالج يضغط (+) لكل كلمة صحيحة ينطق بها الطالب
+            60 ثانية — الأستاذ يضغط (+) لكل كلمة صحيحة ينطق بها الطالب
           </p>
           <div className="mt-2 p-3 bg-brand-600/20 border border-brand-400/30 rounded-xl">
             <p className="text-brand-300 text-xs text-center">

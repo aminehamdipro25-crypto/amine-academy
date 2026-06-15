@@ -73,7 +73,7 @@ export default function TokenBoard({ onComplete, onCancel, studentAge, difficult
         <div className="text-6xl">🏅</div>
         <h2 className="text-white font-black text-2xl text-center">لوح التعزيز</h2>
         <p className="text-white/60 text-sm text-center max-w-xs">
-          المعالج يمنح الطالب رمزاً عند كل سلوك إيجابي — عندما يجمع الهدف يحصل على المكافأة
+          الأستاذ يمنح الطالب رمزاً عند كل سلوك إيجابي — عندما يجمع الهدف يحصل على المكافأة
         </p>
         <div className="w-full max-w-xs">
           <p className="text-white/70 text-sm font-bold mb-3">اختر الهدف (عدد الرموز)</p>

@@ -131,7 +131,7 @@ function ReportDocument({ report, child }: { report: ProgressReport; child: Stud
               <div style={{ width: 52, height: 52, background: 'rgba(255,255,255,0.18)', borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, flexShrink: 0 }}>🧠</div>
               <div>
                 <div style={{ color: '#fff', fontWeight: 900, fontSize: 19, lineHeight: 1.2 }}>أكاديمية أمين</div>
-                <div style={{ color: 'rgba(255,255,255,0.55)', fontSize: 11, marginTop: 3 }}>للاستشارات النفسية والتربوية · ADHD & Autism Specialist</div>
+                <div style={{ color: 'rgba(255,255,255,0.55)', fontSize: 11, marginTop: 3 }}>للتأهيل الحركي والنشاط البدني المعدل · APA & ADHD Movement Specialist</div>
               </div>
             </div>
             <div style={{ textAlign: 'right' }}>
@@ -184,17 +184,17 @@ function ReportDocument({ report, child }: { report: ProgressReport; child: Stud
 
           {/* Therapist */}
           <div style={{ padding: '20px 28px' }}>
-            <div style={{ fontSize: 9, fontWeight: 800, color: '#9CA3AF', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 10 }}>بيانات المعالج</div>
+            <div style={{ fontSize: 9, fontWeight: 800, color: '#9CA3AF', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 10 }}>بيانات المختص</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
               <div style={{ width: 44, height: 44, borderRadius: 12, background: 'linear-gradient(135deg,#0891b2,#6366f1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 900, fontSize: 18, flexShrink: 0 }}>أ</div>
               <div>
                 <div style={{ fontWeight: 900, fontSize: 15, color: '#111827' }}>الأستاذ أمين حمدي</div>
-                <div style={{ fontSize: 11, color: '#6B7280', marginTop: 2 }}>معالج نفسي وتربوي متخصص</div>
+                <div style={{ fontSize: 11, color: '#6B7280', marginTop: 2 }}>أخصائي تربية بدنية وتأهيل حركي وظيفي</div>
               </div>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
               {[
-                { label: 'التخصص',   val: 'ADHD & ASD' },
+                { label: 'المجال',   val: 'APA · ADHD & ASD' },
                 { label: 'نوع التقرير', val: typeCfg.ar },
               ].map(({ label, val }) => (
                 <div key={label} style={{ background: '#F9FAFB', borderRadius: 8, padding: '8px 10px' }}>
@@ -349,13 +349,13 @@ function ReportDocument({ report, child }: { report: ProgressReport; child: Stud
         <div style={{ padding: '18px 28px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', background: '#F9FAFB' }}>
           <div>
             <div style={{ fontSize: 9, color: '#9CA3AF', marginBottom: 4 }}>هذا التقرير صادر رسمياً من</div>
-            <div style={{ fontWeight: 900, fontSize: 13, color: '#1e1b4b' }}>أكاديمية أمين للاستشارات النفسية والتربوية</div>
+            <div style={{ fontWeight: 900, fontSize: 13, color: '#1e1b4b' }}>أكاديمية أمين للتأهيل الحركي والنشاط البدني المعدل</div>
             <div style={{ fontSize: 10, color: '#6B7280', marginTop: 2 }}>جميع الحقوق محفوظة · {new Date().getFullYear()}</div>
           </div>
           <div style={{ textAlign: 'center' }}>
             <div style={{ width: 100, borderTop: '1.5px solid #9CA3AF', marginBottom: 4 }} />
             <div style={{ fontSize: 10, color: '#6B7280', fontWeight: 700 }}>الأستاذ أمين حمدي</div>
-            <div style={{ fontSize: 9, color: '#9CA3AF' }}>المعالج النفسي والتربوي</div>
+            <div style={{ fontSize: 9, color: '#9CA3AF' }}>أخصائي التأهيل الحركي والوظيفي</div>
           </div>
         </div>
 

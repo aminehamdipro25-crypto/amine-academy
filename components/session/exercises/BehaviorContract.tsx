@@ -101,7 +101,7 @@ export default function BehaviorContract({ onComplete, onCancel, studentAge }: P
           <div className="text-5xl mb-2">📋</div>
           <h2 className="text-white font-black text-xl">عقد الجلسة</h2>
           <p className="text-white/50 text-sm mt-1">
-            الطالب والمعالج يتفقان على {isYoung ? '3 أهداف' : '3 التزامات'} للجلسة
+            الطالب والأستاذ يتفقان على {isYoung ? '3 أهداف' : '3 التزامات'} للجلسة
           </p>
         </div>
 

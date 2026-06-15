@@ -251,7 +251,7 @@ export default function SocialScenarios({ onComplete, onCancel, studentAge }: Pr
               </button>
             ) : (
               <div className="bg-brand-600/20 border border-brand-400/30 rounded-xl p-4">
-                <p className="text-brand-200 text-xs font-black mb-1">للمعالج — سؤال نقاش:</p>
+                <p className="text-brand-200 text-xs font-black mb-1">للأستاذ — سؤال نقاش:</p>
                 <p className="text-white/80 text-sm">{scenario.discussionPrompt}</p>
               </div>
             )}

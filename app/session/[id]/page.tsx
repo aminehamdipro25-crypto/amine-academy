@@ -896,7 +896,7 @@ ${obsLog.length > 0 ? `
 ${notes ? `
 <!-- Therapist notes -->
 <div class="section">
-  <h2>💬 ملاحظات المعالج</h2>
+  <h2>💬 ملاحظات الأستاذ</h2>
   <div class="notes-box">${notes.replace(/\n/g,'<br>')}</div>
 </div>` : ''}
 
@@ -908,7 +908,7 @@ ${notes ? `
 
 <div class="watermark">
   أُعِدَّ هذا التقرير بواسطة نظام أمين أكاديمي للإدارة العلاجية المتكاملة •
-  هذا المستند سري وموجّه حصراً للمعالج المختص
+  هذا المستند سري وموجّه حصراً للأستاذ المختص
 </div>
 
 </div>
@@ -1929,7 +1929,7 @@ ${notes ? `
             <textarea
               value={notes}
               onChange={e => setNotes(e.target.value)}
-              placeholder="ملاحظات المعالج..."
+              placeholder="ملاحظات الأستاذ..."
               className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm text-white placeholder-white/30 resize-none focus:outline-none focus:border-brand-500"
               rows={3}
               dir="rtl"

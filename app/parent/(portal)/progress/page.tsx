@@ -113,6 +113,36 @@ export default function ProgressPage() {
     })
   })
 
+  // Behavioral domain trend over time
+  const behaviorTrend = reports.length >= 2
+    ? [...reports].reverse().map(r => {
+        const row: Record<string, number | string> = {
+          date: new Date(r.periodEnd || r.createdAt).toLocaleDateString('ar', { month: 'short', day: 'numeric' }),
+        }
+        r.behaviorRatings?.forEach(({ metric, score }) => {
+          row[METRIC_LABELS[metric] || metric] = score
+        })
+        return row
+      })
+    : []
+
+  const TREND_COLORS = ['#7C5CFC', '#FF8C65', '#22C55E', '#F59E0B', '#3B9EFF']
+  const trendMetrics = Object.keys(METRIC_LABELS).filter(m =>
+    reports.some(r => r.behaviorRatings?.some(b => b.metric === m))
+  )
+
+  // Milestones: metrics improved from first to last report by ≥1
+  const milestones: string[] = []
+  if (reports.length >= 2) {
+    const first = reports[reports.length - 1].behaviorRatings || []
+    const last  = reports[0].behaviorRatings || []
+    trendMetrics.forEach(m => {
+      const firstScore = first.find(b => b.metric === m)?.score ?? 0
+      const lastScore  = last.find(b => b.metric === m)?.score ?? 0
+      if (lastScore - firstScore >= 1) milestones.push(METRIC_LABELS[m])
+    })
+  }
+
   const hasGameData = history && history.totalPlays > 0
   const hasReportData = reports.length > 0
 
@@ -285,6 +315,56 @@ export default function ProgressPage() {
                 </div>
               ) : (
                 <>
+                  {/* Milestones banner */}
+                  {milestones.length > 0 && (
+                    <div className="rounded-2xl p-4 flex items-start gap-3" style={{ background: '#F0FDF4', border: '1.5px solid #A7F3D0' }}>
+                      <span className="text-2xl flex-shrink-0">🏅</span>
+                      <div>
+                        <p className="font-black text-emerald-800 text-sm mb-1">تقدّم ملحوظ!</p>
+                        <p className="text-emerald-700 text-xs leading-relaxed">
+                          تحسّن ملحوظ في: <span className="font-bold">{milestones.join(' · ')}</span> مقارنةً بأول تقرير
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Behavioral domain trend chart */}
+                  {behaviorTrend.length >= 2 && trendMetrics.length > 0 && (
+                    <div className="rounded-2xl p-5" style={{ background: '#FFFFFF', border: '1px solid #F0E8FF' }}>
+                      <h2 className="font-black text-gray-900 mb-1 text-sm">تطور المجالات السلوكية</h2>
+                      <p className="text-gray-400 text-xs mb-4">مقياس 1-5 عبر جميع التقارير</p>
+                      <ResponsiveContainer width="100%" height={200}>
+                        <LineChart data={behaviorTrend}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#F0E8FF" />
+                          <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#94a3b8' }} />
+                          <YAxis domain={[1, 5]} ticks={[1, 2, 3, 4, 5]} tick={{ fontSize: 10, fill: '#94a3b8' }} />
+                          <Tooltip
+                            contentStyle={{ borderRadius: 12, border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.1)', fontSize: 12 }}
+                          />
+                          {trendMetrics.map((m, i) => (
+                            <Line
+                              key={m}
+                              type="monotone"
+                              dataKey={METRIC_LABELS[m]}
+                              stroke={TREND_COLORS[i % TREND_COLORS.length]}
+                              strokeWidth={2}
+                              dot={{ r: 4, fill: TREND_COLORS[i % TREND_COLORS.length] }}
+                              connectNulls
+                            />
+                          ))}
+                        </LineChart>
+                      </ResponsiveContainer>
+                      <div className="flex flex-wrap gap-x-4 gap-y-1.5 mt-3">
+                        {trendMetrics.map((m, i) => (
+                          <div key={m} className="flex items-center gap-1.5">
+                            <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: TREND_COLORS[i % TREND_COLORS.length] }} />
+                            <span className="text-xs text-gray-500">{METRIC_LABELS[m]}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {Object.keys(avgScores).length > 0 && (
                     <div className="rounded-2xl p-5" style={{ background: '#FFFFFF', border: '1px solid #F0E8FF' }}>
                       <h2 className="font-black text-gray-900 mb-4 text-sm">متوسط التقييم السلوكي</h2>

@@ -468,6 +468,7 @@ export default function SessionPage() {
   const [exerciseQueue, setExerciseQueue] = useState<string[]>([])
   const [queueActive, setQueueActive]     = useState(false)
   const [queueIndex, setQueueIndex]       = useState(0)
+  const [showMobilePanel, setShowMobilePanel] = useState(false)
 
   // ── Session draft persistence — restore on refresh ──────────
   const draftRestoredRef = useRef(false)
@@ -1812,7 +1813,7 @@ ${notes ? `
       <div className="flex flex-1 overflow-hidden" style={{ position: 'relative' }}>
 
         {/* Sidebar */}
-        {!focusMode && !sessionLocked && <aside className="w-72 bg-gray-900 border-l border-white/10 flex flex-col">
+        {!focusMode && !sessionLocked && <aside className="hidden lg:flex w-72 bg-gray-900 border-l border-white/10 flex-col">
           {/* Tabs */}
           <div className="flex border-b border-white/10">
             {(['exercises','assessments','log'] as const).map(t => (
@@ -2127,6 +2128,140 @@ ${notes ? `
             />
           </div>
         </aside>}
+
+        {/* ── Mobile nav + slide-up panel (hidden on lg+) ── */}
+        {!focusMode && !sessionLocked && !kidMode && (
+          <>
+            {/* Backdrop */}
+            {showMobilePanel && (
+              <div
+                className="lg:hidden fixed inset-0 bg-black/60 z-[78] backdrop-blur-sm"
+                onClick={() => setShowMobilePanel(false)}
+              />
+            )}
+
+            {/* Slide-up panel */}
+            <div
+              className={`lg:hidden fixed inset-x-0 z-[79] bg-gray-900 border-t border-white/10 rounded-t-3xl shadow-2xl transition-transform duration-300 ${showMobilePanel ? 'translate-y-0' : 'translate-y-full'}`}
+              style={{ bottom: 64, maxHeight: '70vh' }}
+              dir="rtl"
+            >
+              {/* Handle */}
+              <button onClick={() => setShowMobilePanel(false)} className="w-full flex justify-center pt-3 pb-2">
+                <div className="w-10 h-1 bg-white/20 rounded-full" />
+              </button>
+
+              {/* Tabs */}
+              <div className="flex border-b border-white/10">
+                {(['exercises','assessments','log'] as const).map(t => (
+                  <button key={t} onClick={() => setTab(t)}
+                    className={`flex-1 py-2.5 text-xs font-bold transition-colors ${tab === t ? 'text-white border-b-2 border-brand-500' : 'text-white/40'}`}>
+                    {t === 'exercises' ? '🎮 تمارين' : t === 'assessments' ? '📊 تقييم' : '📝 سجل'}
+                  </button>
+                ))}
+              </div>
+
+              {/* Content */}
+              <div className="overflow-y-auto p-3 space-y-2" style={{ maxHeight: 'calc(70vh - 130px)' }}>
+                {tab === 'exercises' && (() => {
+                  const allCats = ['الكل', ...Array.from(new Set(EXERCISES.map(e => e.category)))]
+                  const filteredEx = categoryFilter === 'الكل' ? sortedExercises : sortedExercises.filter(e => e.category === categoryFilter)
+                  return (
+                    <>
+                      <div className="flex flex-wrap gap-1 pb-1">
+                        {allCats.map(cat => (
+                          <button key={cat} onClick={() => setCategoryFilter(cat)}
+                            className={`text-[10px] font-black px-2 py-0.5 rounded-full transition-colors ${categoryFilter === cat ? 'bg-brand-600 text-white' : 'bg-white/10 text-white/50 hover:bg-white/20'}`}>
+                            {cat}
+                          </button>
+                        ))}
+                      </div>
+                      {filteredEx.map(ex => {
+                        const isActive = activeView?.type === 'exercise' && activeView.id === ex.id
+                        const ageOk = studentAge >= (ex.ageMin ?? 5) && studentAge <= (ex.ageMax ?? 22)
+                        return (
+                          <button key={ex.id}
+                            onClick={() => { if (!running) startSession(); setActiveView({ type: 'exercise', id: ex.id }); setShowMobilePanel(false) }}
+                            className={`w-full flex items-center gap-3 p-3 rounded-xl border text-right transition-all ${ex.color} hover:scale-[1.02] ${isActive ? 'ring-1 ring-white/30' : ''} ${!ageOk ? 'opacity-40' : ''}`}>
+                            <span className="text-xl">{ex.icon}</span>
+                            <div className="flex-1 text-right">
+                              <div className="text-white font-bold text-xs">{ex.labelAr}</div>
+                              <div className="text-white/40 text-[10px]">{ex.category}</div>
+                            </div>
+                          </button>
+                        )
+                      })}
+                    </>
+                  )
+                })()}
+
+                {tab === 'assessments' && (
+                  <div className="space-y-2">
+                    {ASSESSMENTS.map(as => (
+                      <button key={as.id}
+                        onClick={() => { setActiveView({ type: 'assessment', id: as.id }); setShowMobilePanel(false) }}
+                        className={`w-full flex items-center gap-3 p-3 rounded-xl border text-right transition-all ${as.color}`}>
+                        <span className="text-2xl">{as.icon}</span>
+                        <div className="text-white font-bold text-sm">{as.labelAr}</div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {tab === 'log' && (
+                  <div className="space-y-2">
+                    {results.length === 0 && <p className="text-white/30 text-sm text-center py-4">لم تبدأ أي نشاط بعد</p>}
+                    {results.map((r, i) => {
+                      const exInfo = EXERCISES.find(e => e.id === r.exerciseType)
+                      return (
+                        <div key={i} className="bg-white/5 rounded-xl p-3">
+                          <div className="flex items-center justify-between">
+                            <span className={`text-xs font-black px-2 py-0.5 rounded-full ${r.score >= 80 ? 'bg-emerald-900/50 text-emerald-400' : r.score >= 60 ? 'bg-amber-900/50 text-amber-400' : 'bg-red-900/50 text-red-400'}`}>{r.score}%</span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-base">{exInfo?.icon ?? '🎮'}</span>
+                              <span className="text-white/80 text-xs">{r.exerciseLabelAr}</span>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Notes textarea */}
+              <div className="p-3 border-t border-white/10">
+                <textarea
+                  value={notes}
+                  onChange={e => setNotes(e.target.value)}
+                  placeholder="ملاحظات الأستاذ..."
+                  className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm text-white placeholder-white/30 resize-none focus:outline-none focus:border-brand-500"
+                  rows={2}
+                  dir="rtl"
+                />
+              </div>
+            </div>
+
+            {/* Mobile bottom tab bar */}
+            <div className="lg:hidden fixed bottom-0 inset-x-0 z-[80] bg-gray-900/95 border-t border-white/10 backdrop-blur-sm" dir="rtl">
+              <div className="flex h-16">
+                {(['exercises','assessments','log'] as const).map(t => (
+                  <button
+                    key={t}
+                    onClick={() => {
+                      if (tab === t && showMobilePanel) setShowMobilePanel(false)
+                      else { setTab(t); setShowMobilePanel(true) }
+                    }}
+                    className={`flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors ${tab === t && showMobilePanel ? 'text-brand-400' : 'text-white/40'}`}
+                  >
+                    <span className="text-xl">{t === 'exercises' ? '🎮' : t === 'assessments' ? '📊' : '📝'}</span>
+                    <span className="text-[10px] font-bold">{t === 'exercises' ? 'تمارين' : t === 'assessments' ? 'تقييم' : 'سجل'}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
 
         {/* Kid Mode — full-screen friendly game grid */}
         {kidMode && (
@@ -2607,7 +2742,13 @@ ${notes ? `
           {!jitsiEmbedded && !activeView && running && (
             <div className="text-center">
               <div className="text-6xl mb-4">✨</div>
-              <p className="text-white/40">اختر تمريناً من القائمة الجانبية</p>
+              <p className="text-white/40">اختر تمريناً من القائمة</p>
+              <button
+                onClick={() => setShowMobilePanel(true)}
+                className="lg:hidden mt-4 bg-brand-600 hover:bg-brand-500 text-white font-black px-6 py-2.5 rounded-xl text-sm transition-colors"
+              >
+                🎮 اختر تمريناً
+              </button>
               {results.length > 0 && (
                 <div className="mt-8 bg-white/5 rounded-2xl p-6 max-w-sm mx-auto">
                   <h3 className="font-black text-white mb-4">ملخص الجلسة</h3>
@@ -2760,8 +2901,8 @@ ${notes ? `
       {/* ── ABC Behavior Log Panel ── */}
       {running && (
         <div
-          className="fixed z-[80]"
-          style={{ bottom: 24, right: focusMode ? 24 : 288, marginRight: 190, transition: 'right 0.3s' }}
+          className={`fixed z-[80] bottom-20 lg:bottom-6 ${focusMode ? 'right-6' : 'right-4 lg:right-72'}`}
+          style={{ marginRight: 190 }}
           dir="rtl"
         >
           {abcOpen && (
@@ -2862,8 +3003,8 @@ ${notes ? `
       {/* ── Homework Builder Panel ── */}
       {running && currentStudentId && (
         <div
-          className="fixed z-[80]"
-          style={{ bottom: 24, right: focusMode ? 24 : 288, marginRight: 96, transition: 'right 0.3s' }}
+          className={`fixed z-[80] bottom-20 lg:bottom-6 ${focusMode ? 'right-6' : 'right-4 lg:right-72'}`}
+          style={{ marginRight: 96 }}
           dir="rtl"
         >
           {hwOpen && (
@@ -2950,8 +3091,7 @@ ${notes ? `
       {/* ── Quick Observation Panel ── */}
       {running && (
         <div
-          className="fixed z-[80]"
-          style={{ bottom: 24, right: focusMode ? 24 : 288, transition: 'right 0.3s' }}
+          className={`fixed z-[80] bottom-20 lg:bottom-6 ${focusMode ? 'right-6' : 'right-4 lg:right-72'}`}
           dir="rtl"
         >
           {/* Expanded panel */}

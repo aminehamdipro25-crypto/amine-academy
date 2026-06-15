@@ -1327,22 +1327,43 @@ ${notes ? `
       )}
 
       {/* ── Header row ── */}
-      <header className={`bg-gray-900 border-b border-white/10 px-4 py-2.5 flex items-center gap-3 ${sessionLocked ? 'hidden' : ''}`}>
+      <header
+        className={`border-b flex items-center gap-2 px-3 py-2 flex-shrink-0 ${sessionLocked ? 'hidden' : ''}`}
+        style={{
+          background: 'rgba(8,8,18,0.97)',
+          borderColor: 'rgba(255,255,255,0.07)',
+          backdropFilter: 'blur(20px)',
+        }}
+      >
         {/* Close */}
-        <button onClick={() => router.back()} className="text-white/50 hover:text-white transition-colors flex-shrink-0">
-          <X className="w-5 h-5" />
+        <button
+          onClick={() => router.back()}
+          className="w-8 h-8 flex items-center justify-center rounded-xl flex-shrink-0 transition-colors hover:bg-white/10 text-white/40 hover:text-white"
+        >
+          <X className="w-4 h-4" />
         </button>
 
-        {/* Student name + profile dropdown */}
+        {/* Student info — name only on mobile, full on desktop */}
         <div className="flex-1 min-w-0 relative">
-          <div className="flex items-center gap-2 flex-wrap">
-            <button
-              onClick={() => setProfileOpen(o => !o)}
-              className="flex items-center gap-1.5 font-black text-white text-sm hover:text-brand-300 transition-colors"
+          <button
+            onClick={() => setProfileOpen(o => !o)}
+            className="flex items-center gap-1.5 min-w-0 max-w-full"
+          >
+            {/* Avatar initial */}
+            <div
+              className="w-7 h-7 rounded-xl flex-shrink-0 flex items-center justify-center text-xs font-black text-white"
+              style={{ background: 'linear-gradient(135deg,#7C5CFC,#C084FC)' }}
             >
-              <h1 className="truncate max-w-[110px] sm:max-w-none">{studentName || 'جلسة تفاعلية'}</h1>
-              <ChevronDown className={`w-3 h-3 transition-transform ${profileOpen ? 'rotate-180' : ''}`} />
-            </button>
+              {(studentName || 'ج').charAt(0)}
+            </div>
+            <span className="text-white font-black text-sm truncate max-w-[100px] sm:max-w-[160px]">
+              {studentName || 'جلسة تفاعلية'}
+            </span>
+            <ChevronDown className={`w-3 h-3 text-white/30 flex-shrink-0 transition-transform ${profileOpen ? 'rotate-180' : ''}`} />
+          </button>
+
+          {/* Badges — hidden on mobile */}
+          <div className="hidden sm:flex items-center gap-1.5 mt-0.5">
             {studentDiagnosis && (
               <span className="text-[10px] bg-brand-900/60 text-brand-300 border border-brand-500/40 px-1.5 py-0.5 rounded-full font-bold">
                 {DIAG_LABELS[studentDiagnosis] || studentDiagnosis}
@@ -1365,6 +1386,13 @@ ${notes ? `
               </span>
             )}
           </div>
+
+          {/* Mobile: show appointment type badge compactly under name */}
+          {appointmentType && SESSION_TYPE_CFG[appointmentType] && (
+            <span className={`sm:hidden text-[9px] font-black px-1.5 py-0.5 rounded-full border ${SESSION_TYPE_CFG[appointmentType].color}`}>
+              {SESSION_TYPE_CFG[appointmentType].label}
+            </span>
+          )}
 
           {/* ── Quick Profile Card ── */}
           {profileOpen && (
@@ -1462,16 +1490,22 @@ ${notes ? `
         </div>
 
         {/* Session Timer */}
-        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg flex-shrink-0 ${
-          running ? 'bg-green-900/40 border border-green-500/40' : 'bg-white/5 border border-white/10'
-        }`}>
-          <Clock className="w-4 h-4 text-green-400" />
-          <span className="font-black text-lg ltr-num">{formatTime(elapsed)}</span>
+        <div
+          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl flex-shrink-0 ${running ? 'border' : 'border'}`}
+          style={running
+            ? { background: 'rgba(22,163,74,0.12)', borderColor: 'rgba(34,197,94,0.3)' }
+            : { background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.08)' }
+          }
+        >
+          <Clock className="w-3.5 h-3.5" style={{ color: running ? '#4ade80' : 'rgba(255,255,255,0.3)' }} />
+          <span className="font-black text-base ltr-num" style={{ color: running ? '#4ade80' : 'rgba(255,255,255,0.6)' }}>
+            {formatTime(elapsed)}
+          </span>
         </div>
 
-        {/* Average score */}
+        {/* Average score — hidden on mobile */}
         {results.length > 0 && (
-          <div className="text-center flex-shrink-0">
+          <div className="hidden sm:block text-center flex-shrink-0">
             <div className="font-black text-brand-400 text-lg ltr-num">{avgScore}%</div>
             <div className="text-white/40 text-[10px]">متوسط</div>
           </div>
@@ -1479,23 +1513,29 @@ ${notes ? `
 
         {/* Start */}
         {!running && (
-          <button onClick={startSession}
-            className="bg-green-600 hover:bg-green-500 text-white font-black px-4 py-1.5 rounded-lg text-sm transition-colors flex-shrink-0">
+          <button
+            onClick={startSession}
+            className="font-black text-white text-xs px-3 py-2 rounded-xl flex-shrink-0 transition-all active:scale-95"
+            style={{ background: 'linear-gradient(135deg,#16A34A,#22C55E)', boxShadow: '0 4px 16px rgba(34,197,94,0.3)' }}
+          >
             ▶ ابدأ
           </button>
         )}
 
         {/* Save */}
-        <button onClick={saveSession} disabled={saving}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl font-black text-sm transition-all shadow-lg hover:-translate-y-0.5 flex-shrink-0 ${
-            saved
-              ? 'bg-green-600 text-white shadow-green-900/40'
-              : saving
-              ? 'bg-brand-700 text-white/80 cursor-wait'
-              : 'bg-gradient-to-r from-brand-500 to-[#9A7BFD] text-white shadow-brand hover:shadow-[0_6px_20px_-4px_rgba(124,92,252,0.5)]'
-          }`}>
-          <Save className="w-4 h-4" />
-          {saving ? '...' : saved ? '✓ محفوظ' : 'حفظ'}
+        <button
+          onClick={saveSession}
+          disabled={saving}
+          className="flex items-center gap-1.5 px-3 py-2 rounded-xl font-black text-xs flex-shrink-0 transition-all active:scale-95"
+          style={saved
+            ? { background: 'rgba(22,163,74,0.2)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.3)' }
+            : saving
+            ? { background: 'rgba(124,92,252,0.2)', color: 'rgba(255,255,255,0.5)' }
+            : { background: 'linear-gradient(135deg,#7C5CFC,#9A7BFD)', color: '#fff', boxShadow: '0 4px 16px rgba(124,92,252,0.35)' }
+          }
+        >
+          <Save className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">{saving ? '...' : saved ? '✓ محفوظ' : 'حفظ'}</span>
         </button>
       </header>
 
@@ -2262,19 +2302,19 @@ ${notes ? `
 
             {/* Mobile bottom tab bar */}
             <div
-              className="lg:hidden fixed bottom-0 inset-x-0 z-[80]"
+              className="lg:hidden fixed bottom-0 inset-x-0 z-[80] px-3 pb-2 pt-1.5"
               style={{
-                background: 'rgba(9,9,18,0.96)',
-                borderTop: '1px solid rgba(255,255,255,0.08)',
-                backdropFilter: 'blur(20px)',
+                background: 'rgba(6,5,15,0.95)',
+                borderTop: '1px solid rgba(255,255,255,0.06)',
+                backdropFilter: 'blur(28px)',
               }}
               dir="rtl"
             >
-              <div className="flex h-[60px]">
+              <div className="flex gap-2">
                 {([
-                  { key: 'exercises',   labelAr: 'تمارين', Icon: Gamepad2    },
-                  { key: 'assessments', labelAr: 'تقييم',  Icon: BarChart3   },
-                  { key: 'log',         labelAr: 'سجل',    Icon: BookOpen    },
+                  { key: 'exercises',   labelAr: 'التمارين', Icon: Gamepad2  },
+                  { key: 'assessments', labelAr: 'التقييم',  Icon: ClipboardList },
+                  { key: 'log',         labelAr: 'السجل',    Icon: BookOpen  },
                 ] as const).map(({ key: t, labelAr, Icon }) => {
                   const isActive = tab === t && showMobilePanel
                   return (
@@ -2284,27 +2324,30 @@ ${notes ? `
                         if (tab === t && showMobilePanel) setShowMobilePanel(false)
                         else { setTab(t); setShowMobilePanel(true) }
                       }}
-                      className="flex-1 flex flex-col items-center justify-center gap-1 relative transition-all duration-200 active:scale-95"
+                      className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-2xl transition-all duration-200 active:scale-95 relative overflow-hidden"
+                      style={isActive ? {
+                        background: 'rgba(124,92,252,0.18)',
+                        border: '1px solid rgba(124,92,252,0.35)',
+                        boxShadow: '0 4px 16px rgba(124,92,252,0.15)',
+                      } : {
+                        background: 'rgba(255,255,255,0.04)',
+                        border: '1px solid rgba(255,255,255,0.06)',
+                      }}
                     >
-                      {/* Active indicator pill */}
-                      {isActive && (
-                        <div
-                          className="absolute top-0 left-1/2 -translate-x-1/2 rounded-full transition-all duration-300"
-                          style={{ width: 32, height: 3, background: 'linear-gradient(90deg,#7C5CFC,#C084FC)', boxShadow: '0 0 8px rgba(124,92,252,0.6)' }}
-                        />
-                      )}
                       <Icon
-                        className="transition-all duration-200"
                         style={{
-                          width: 20,
-                          height: 20,
-                          color: isActive ? '#A78BFA' : 'rgba(255,255,255,0.3)',
-                          filter: isActive ? 'drop-shadow(0 0 6px rgba(124,92,252,0.5))' : 'none',
+                          width: 16,
+                          height: 16,
+                          color: isActive ? '#A78BFA' : 'rgba(255,255,255,0.35)',
+                          transition: 'color 0.2s',
                         }}
                       />
                       <span
-                        className="text-[10px] font-bold transition-all duration-200"
-                        style={{ color: isActive ? '#A78BFA' : 'rgba(255,255,255,0.3)' }}
+                        className="text-xs font-bold"
+                        style={{
+                          color: isActive ? '#C4B5FD' : 'rgba(255,255,255,0.35)',
+                          transition: 'color 0.2s',
+                        }}
                       >
                         {labelAr}
                       </span>

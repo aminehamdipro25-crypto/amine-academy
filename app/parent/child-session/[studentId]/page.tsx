@@ -1,6 +1,6 @@
 'use client'
-import { useEffect, useState, useRef, use, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect, useState, useRef, useCallback } from 'react'
+import { useParams, useRouter } from 'next/navigation'
 import { CheckCircle, Play, X, Clock, LogOut, Star, Volume2, Film, List } from 'lucide-react'
 import type { Exercise, Student } from '@/lib/types'
 
@@ -127,8 +127,8 @@ interface CompleteResult {
   newAchievements: string[]
 }
 
-export default function ChildSessionPage({ params }: { params: Promise<{ studentId: string }> }) {
-  const { studentId } = use(params)
+export default function ChildSessionPage() {
+  const { studentId } = useParams<{ studentId: string }>()
   const router = useRouter()
 
   const [student, setStudent]   = useState<Student | null>(null)
@@ -187,7 +187,8 @@ export default function ChildSessionPage({ params }: { params: Promise<{ student
     setSpeaking(false)
   }
 
-  function handleSpeak(text: string) {
+  function handleSpeak(text: string | undefined) {
+    if (!text) return
     setSpeaking(true)
     speakAr(text)
     setTimeout(() => setSpeaking(false), text.length * 80)
@@ -197,14 +198,14 @@ export default function ChildSessionPage({ params }: { params: Promise<{ student
     setRunning(true)
     setModalTab('steps')
     playChime('start')
-    if (selected) handleSpeak(selected.instructionsAr[0])
+    if (selected) handleSpeak(selected.instructionsAr?.[0])
   }
 
   function handleNext() {
     const nextStep = step + 1
     setStep(nextStep)
     playChime('step')
-    if (selected) handleSpeak(selected.instructionsAr[nextStep])
+    if (selected) handleSpeak(selected.instructionsAr?.[nextStep])
   }
 
   async function finish() {

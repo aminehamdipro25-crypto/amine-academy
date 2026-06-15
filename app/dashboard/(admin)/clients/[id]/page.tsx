@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import type { Parent, Student, Appointment, SessionLog, StudentAssessmentProfile, DifficultyLevel, Program } from '@/lib/types'
 import { DIFFICULTY_LABELS_AR } from '@/lib/game-mapping'
+import AIPatternAnalysis from '@/components/dashboard/AIPatternAnalysis'
 
 const STATUS_CONFIG = {
   active:    { label: 'نشط',             color: 'bg-green-100 text-green-700 border-green-200' },
@@ -824,6 +825,16 @@ export default function ClientDetailPage() {
               </div>
             </div>
           )}
+
+          {/* AI Pattern Analysis */}
+          {students.length > 0 && students.map(s => (
+            <AIPatternAnalysis
+              key={s.id}
+              studentId={s.id}
+              studentName={`${s.firstName} ${s.lastName}`}
+              diagnosis={s.diagnosis}
+            />
+          ))}
 
           {/* Upcoming appointments */}
           {upcoming.length > 0 && (

@@ -1328,7 +1328,7 @@ ${notes ? `
 
       {/* ── Header row ── */}
       <header
-        className={`border-b flex items-center gap-2 px-3 py-2 flex-shrink-0 ${sessionLocked ? 'hidden' : ''}`}
+        className={`border-b flex items-center gap-2 px-3 py-2 flex-shrink-0 relative z-[60] ${sessionLocked ? 'hidden' : ''}`}
         style={{
           background: 'rgba(8,8,18,0.97)',
           borderColor: 'rgba(255,255,255,0.07)',
@@ -1357,7 +1357,7 @@ ${notes ? `
               {(studentName || 'ج').charAt(0).toUpperCase()}
             </div>
             <span className="text-white font-black text-sm truncate">
-              <span className="sm:hidden">{(studentName || 'جلسة').split(' ')[0]}</span>
+              <span className="sm:hidden">{(() => { const n = (studentName || 'جلسة').split(' ')[0]; return n.charAt(0).toUpperCase() + n.slice(1); })()}</span>
               <span className="hidden sm:inline">{studentName || 'جلسة تفاعلية'}</span>
             </span>
             <ChevronDown className={`w-3 h-3 text-white/30 flex-shrink-0 transition-transform ${profileOpen ? 'rotate-180' : ''}`} />
@@ -1393,9 +1393,10 @@ ${notes ? `
             <div
               className="absolute top-full mt-2 right-0 sm:left-0 sm:right-auto z-[70] rounded-2xl p-4 w-[min(288px,calc(100vw-24px))] shadow-2xl"
               style={{
-                background: '#111827',
-                border: '1.5px solid rgba(255,255,255,0.12)',
-                boxShadow: '0 16px 48px rgba(0,0,0,0.7)',
+                background: 'rgba(10,9,24,0.96)',
+                border: '1.5px solid rgba(124,92,252,0.2)',
+                boxShadow: '0 24px 64px rgba(0,0,0,0.8), 0 0 0 1px rgba(124,92,252,0.08)',
+                backdropFilter: 'blur(24px)',
               }}
               dir="rtl"
             >
@@ -2178,7 +2179,7 @@ ${notes ? `
             <div
               className={`lg:hidden fixed inset-x-0 z-[79] rounded-t-3xl shadow-2xl transition-all duration-300 ease-out ${showMobilePanel ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'}`}
               style={{
-                bottom: 60,
+                bottom: 'calc(56px + env(safe-area-inset-bottom, 0px))',
                 maxHeight: '72vh',
                 background: 'rgba(12,10,28,0.97)',
                 border: '1px solid rgba(124,92,252,0.15)',
@@ -2296,11 +2297,12 @@ ${notes ? `
 
             {/* Mobile bottom tab bar */}
             <div
-              className="lg:hidden fixed bottom-0 inset-x-0 z-[80] px-3 pb-2 pt-1.5"
+              className="lg:hidden fixed bottom-0 inset-x-0 z-[80] px-3 pt-1.5"
               style={{
                 background: 'rgba(6,5,15,0.95)',
                 borderTop: '1px solid rgba(255,255,255,0.06)',
                 backdropFilter: 'blur(28px)',
+                paddingBottom: 'max(8px, env(safe-area-inset-bottom, 8px))',
               }}
               dir="rtl"
             >
@@ -2682,7 +2684,7 @@ ${notes ? `
 
         {/* Main exercise area */}
 
-        <main className={`flex-1 flex items-center justify-center bg-gray-950 relative overflow-auto ${kidMode ? 'hidden' : ''}`}>
+        <main className={`flex-1 flex items-center justify-center bg-gray-950 relative overflow-auto pb-20 lg:pb-0 ${kidMode ? 'hidden' : ''}`}>
 
           {/* ── Embedded Jitsi iframe ── */}
           {jitsiEmbedded && jitsiEmbedUrl && (

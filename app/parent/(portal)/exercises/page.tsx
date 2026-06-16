@@ -178,178 +178,364 @@ function equipEmoji(eq: string): string {
   return '📦'
 }
 
-// ── Exercise pose SVG illustrations ──────────────────────────
+// ── Exercise pose SVG illustrations (filled cartoon style) ───
 function StepIllustration({ text, color }: { text: string; color: string }) {
   const t = text
-  const s = { stroke: color, strokeLinecap: 'round' as const, fill: 'none' }
 
+  // ── Cat-Cow yoga pose ──
   if (t.includes('قطة') || t.includes('بقرة'))
-    return <svg viewBox="0 0 130 90" width={170} height={120}><g opacity={0.92}>
-      <circle cx={18} cy={36} r={12} fill={color}/>
-      <path d="M10 26 L16 18 L22 26" fill={color}/>
-      <line x1={28} y1={44} x2={98} y2={44} stroke={color} strokeWidth={7} strokeLinecap="round"/>
-      <path d="M28 44 Q60 22 98 44" stroke={color} strokeWidth={4} fill="none" opacity={0.35}/>
-      <line x1={38} y1={44} x2={38} y2={70} stroke={color} strokeWidth={6} strokeLinecap="round"/>
-      <line x1={54} y1={44} x2={54} y2={70} stroke={color} strokeWidth={6} strokeLinecap="round"/>
-      <line x1={76} y1={44} x2={76} y2={70} stroke={color} strokeWidth={6} strokeLinecap="round"/>
-      <line x1={92} y1={44} x2={92} y2={70} stroke={color} strokeWidth={6} strokeLinecap="round"/>
-      <path d="M98 44 Q112 30 108 14" stroke={color} strokeWidth={5} fill="none" strokeLinecap="round"/>
+    return <svg viewBox="0 0 220 145" width={210} height={138}><g opacity={0.96}>
+      {/* floor shadow */}
+      <ellipse cx={110} cy={137} rx={88} ry={8} fill={color} opacity={0.12}/>
+      {/* body (filled oval) */}
+      <ellipse cx={120} cy={86} rx={62} ry={30} fill={color} transform="rotate(-3 120 86)"/>
+      {/* arch indicator */}
+      <path d="M72 72 Q120 44 168 72" stroke="white" strokeWidth={3.5} fill="none" opacity={0.45} strokeDasharray="8 5"/>
+      {/* neck */}
+      <ellipse cx={60} cy={82} rx={20} ry={13} fill={color} transform="rotate(-15 60 82)"/>
+      {/* head */}
+      <circle cx={40} cy={75} r={26} fill={color}/>
+      {/* ears */}
+      <path d="M25 54 L18 36 L36 50" fill={color}/>
+      <path d="M27 53 L22 40 L34 49" fill="white" opacity={0.25}/>
+      <path d="M50 50 L53 33 L64 48" fill={color}/>
+      <path d="M51 50 L54 37 L62 47" fill="white" opacity={0.25}/>
+      {/* eyes */}
+      <ellipse cx={30} cy={71} rx={6} ry={7} fill="white"/>
+      <ellipse cx={30} cy={72} rx={3.5} ry={4.5} fill="#1a1a2e"/>
+      <circle cx={31} cy={69} r={1.5} fill="white"/>
+      <ellipse cx={50} cy={71} rx={6} ry={7} fill="white"/>
+      <ellipse cx={50} cy={72} rx={3.5} ry={4.5} fill="#1a1a2e"/>
+      <circle cx={51} cy={69} r={1.5} fill="white"/>
+      {/* nose */}
+      <ellipse cx={40} cy={83} rx={5} ry={3.5} fill="white" opacity={0.55}/>
+      {/* whiskers */}
+      <line x1={8}  y1={78} x2={22} y2={80} stroke="white" strokeWidth={1.5} opacity={0.5}/>
+      <line x1={8}  y1={83} x2={22} y2={83} stroke="white" strokeWidth={1.5} opacity={0.5}/>
+      <line x1={58} y1={80} x2={72} y2={78} stroke="white" strokeWidth={1.5} opacity={0.5}/>
+      <line x1={58} y1={83} x2={72} y2={83} stroke="white" strokeWidth={1.5} opacity={0.5}/>
+      {/* front legs (filled rounded rects) */}
+      <rect x={76} y={106} width={20} height={34} rx={10} fill={color}/>
+      <rect x={100} y={108} width={20} height={32} rx={10} fill={color} opacity={0.8}/>
+      {/* back legs */}
+      <rect x={130} y={106} width={20} height={34} rx={10} fill={color}/>
+      <rect x={153} y={108} width={20} height={32} rx={10} fill={color} opacity={0.8}/>
+      {/* tail */}
+      <path d="M180 82 Q202 60 198 38 Q196 26 188 29" stroke={color} strokeWidth={13} fill="none" strokeLinecap="round"/>
+      <circle cx={186} cy={30} r={10} fill={color}/>
     </g></svg>
 
+  // ── Tree pose ──
   if (t.includes('شجرة'))
-    return <svg viewBox="0 0 80 155" width={110} height={190}><g {...s} strokeLinecap="round">
-      <circle cx={40} cy={17} r={13} fill={color} opacity={0.92}/>
-      <line x1={40} y1={30} x2={40} y2={92} strokeWidth={7} stroke={color}/>
-      <line x1={40} y1={52} x2={7}  y2={32} strokeWidth={6} stroke={color}/>
-      <line x1={40} y1={52} x2={73} y2={32} strokeWidth={6} stroke={color}/>
-      <line x1={40} y1={92} x2={40} y2={145} strokeWidth={7} stroke={color}/>
-      <line x1={40} y1={105} x2={22} y2={86} strokeWidth={6} stroke={color}/>
+    return <svg viewBox="0 0 120 195" width={110} height={188}><g>
+      <ellipse cx={62} cy={188} rx={36} ry={7} fill={color} opacity={0.12}/>
+      {/* standing leg */}
+      <rect x={52} y={122} width={22} height={64} rx={11} fill={color}/>
+      {/* raised leg bent outward */}
+      <path d="M52 148 Q32 140 26 118 Q24 106 34 102" stroke={color} strokeWidth={18} fill="none" strokeLinecap="round"/>
+      <circle cx={36} cy={100} r={12} fill={color}/>
+      {/* body */}
+      <rect x={49} y={58} width={28} height={68} rx={14} fill={color}/>
+      {/* arms raised like branches */}
+      <path d="M49 80 L14 52" stroke={color} strokeWidth={19} fill="none" strokeLinecap="round"/>
+      <circle cx={11} cy={50} r={11} fill={color}/>
+      <path d="M77 80 L110 52" stroke={color} strokeWidth={19} fill="none" strokeLinecap="round"/>
+      <circle cx={113} cy={50} r={11} fill={color}/>
+      {/* head */}
+      <circle cx={63} cy={36} r={26} fill={color}/>
+      <ellipse cx={54} cy={34} rx={5} ry={6} fill="white" opacity={0.9}/>
+      <circle cx={54} cy={35} r={3} fill="#1a1a2e"/>
+      <circle cx={55} cy={32} r={1.5} fill="white"/>
+      <ellipse cx={72} cy={34} rx={5} ry={6} fill="white" opacity={0.9}/>
+      <circle cx={72} cy={35} r={3} fill="#1a1a2e"/>
+      <circle cx={73} cy={32} r={1.5} fill="white"/>
+      <path d="M57 44 Q63 49 69 44" stroke="white" strokeWidth={2.5} fill="none" opacity={0.75}/>
     </g></svg>
 
+  // ── Warrior pose ──
   if (t.includes('محارب'))
-    return <svg viewBox="0 0 155 135" width={195} height={165}><g {...s}>
-      <circle cx={77} cy={17} r={13} fill={color} opacity={0.92}/>
-      <line x1={77} y1={30} x2={77} y2={76} strokeWidth={7} stroke={color}/>
-      <line x1={14} y1={54} x2={140} y2={54} strokeWidth={6} stroke={color}/>
-      <line x1={77} y1={76} x2={116} y2={118} strokeWidth={7} stroke={color}/>
-      <line x1={116} y1={118} x2={132} y2={128} strokeWidth={5} stroke={color}/>
-      <line x1={77} y1={76} x2={28}  y2={122} strokeWidth={7} stroke={color}/>
+    return <svg viewBox="0 0 210 165" width={200} height={158}><g>
+      <ellipse cx={100} cy={158} rx={65} ry={7} fill={color} opacity={0.12}/>
+      {/* back leg straight */}
+      <path d="M88 118 L52 158" stroke={color} strokeWidth={22} fill="none" strokeLinecap="round"/>
+      {/* front leg bent */}
+      <path d="M88 118 L124 126 L128 158" stroke={color} strokeWidth={22} fill="none" strokeLinecap="round"/>
+      {/* body */}
+      <rect x={75} y={58} width={28} height={64} rx={14} fill={color}/>
+      {/* arms spread wide */}
+      <path d="M75 82 L18 72" stroke={color} strokeWidth={19} fill="none" strokeLinecap="round"/>
+      <circle cx={14} cy={71} r={11} fill={color}/>
+      <path d="M103 82 L172 72" stroke={color} strokeWidth={19} fill="none" strokeLinecap="round"/>
+      <circle cx={176} cy={71} r={11} fill={color}/>
+      {/* head */}
+      <circle cx={89} cy={36} r={26} fill={color}/>
+      <ellipse cx={80} cy={34} rx={5} ry={6} fill="white" opacity={0.9}/>
+      <circle cx={81} cy={35} r={3} fill="#1a1a2e"/>
+      <circle cx={82} cy={32} r={1.5} fill="white"/>
+      <ellipse cx={98} cy={34} rx={5} ry={6} fill="white" opacity={0.9}/>
+      <circle cx={99} cy={35} r={3} fill="#1a1a2e"/>
+      <circle cx={100} cy={32} r={1.5} fill="white"/>
+      <path d="M83 44 Q89 49 95 44" stroke="white" strokeWidth={2.5} fill="none" opacity={0.75}/>
     </g></svg>
 
-  if (t.includes('جبل') || (t.includes('قف') && !t.includes('توازن')))
-    return <svg viewBox="0 0 80 155" width={105} height={185}><g {...s}>
-      <circle cx={40} cy={16} r={13} fill={color} opacity={0.92}/>
-      <line x1={40} y1={29} x2={40} y2={96} strokeWidth={7} stroke={color}/>
-      <line x1={40} y1={52} x2={14} y2={78} strokeWidth={6} stroke={color}/>
-      <line x1={40} y1={52} x2={66} y2={78} strokeWidth={6} stroke={color}/>
-      <line x1={40} y1={96} x2={22} y2={145} strokeWidth={7} stroke={color}/>
-      <line x1={40} y1={96} x2={58} y2={145} strokeWidth={7} stroke={color}/>
-    </g></svg>
-
-  if (t.includes('طفل') && (t.includes('وضع') || t.includes('انحن') || t.includes('اجلس')))
-    return <svg viewBox="0 0 155 90" width={195} height={115}><g {...s}>
-      <circle cx={22} cy={28} r={11} fill={color} opacity={0.92}/>
-      <path d="M31 28 Q58 38 78 64" strokeWidth={7} stroke={color}/>
-      <line x1={78} y1={64} x2={95} y2={72} strokeWidth={7} stroke={color}/>
-      <line x1={95} y1={72} x2={118} y2={65} strokeWidth={6} stroke={color}/>
-      <line x1={22} y1={29} x2={7}  y2={24} strokeWidth={5} stroke={color}/>
-      <line x1={30} y1={30} x2={10} y2={26} strokeWidth={5} stroke={color}/>
-    </g></svg>
-
+  // ── Bridge pose ──
   if (t.includes('جسر'))
-    return <svg viewBox="0 0 155 90" width={195} height={115}><g {...s}>
-      <circle cx={14} cy={66} r={11} fill={color} opacity={0.92}/>
-      <line x1={24} y1={66} x2={55} y2={60} strokeWidth={7} stroke={color}/>
-      <path d="M55 60 Q82 22 108 58" strokeWidth={7} stroke={color}/>
-      <line x1={108} y1={58} x2={124} y2={74} strokeWidth={7} stroke={color}/>
-      <line x1={124} y1={74} x2={140} y2={74} strokeWidth={5} stroke={color}/>
-      <line x1={52}  y1={62} x2={40}  y2={78} strokeWidth={5} stroke={color}/>
-      <line x1={40}  y1={78} x2={24}  y2={78} strokeWidth={5} stroke={color}/>
+    return <svg viewBox="0 0 225 115" width={215} height={108}><g>
+      <ellipse cx={112} cy={108} rx={92} ry={7} fill={color} opacity={0.12}/>
+      {/* head lying on floor */}
+      <circle cx={26} cy={84} r={24} fill={color}/>
+      <circle cx={18} cy={82} r={5} fill="white" opacity={0.85}/>
+      <circle cx={19} cy={83} r={3} fill="#1a1a2e"/>
+      <path d="M20 90 Q25 94 30 90" stroke="white" strokeWidth={2} fill="none" opacity={0.6}/>
+      {/* body arched up (bridge shape) */}
+      <path d="M48 84 Q62 70 82 52 Q106 30 135 52 Q155 68 168 84" stroke={color} strokeWidth={26} fill="none" strokeLinecap="round"/>
+      {/* arm on ground */}
+      <path d="M44 86 L26 100" stroke={color} strokeWidth={18} fill="none" strokeLinecap="round"/>
+      <circle cx={24} cy={102} r={10} fill={color}/>
+      {/* feet planted */}
+      <path d="M168 84 L180 100" stroke={color} strokeWidth={22} fill="none" strokeLinecap="round"/>
+      <ellipse cx={184} cy={104} rx={16} ry={9} fill={color}/>
+      <path d="M156 84 L164 102" stroke={color} strokeWidth={22} fill="none" strokeLinecap="round"/>
+      <ellipse cx={167} cy={105} rx={14} ry={8} fill={color} opacity={0.8}/>
     </g></svg>
 
-  if (t.includes('فراشة') || t.includes('أرض') || (t.includes('اجلس') && !t.includes('كرسي')))
-    return <svg viewBox="0 0 100 115" width={130} height={145}><g {...s}>
-      <circle cx={50} cy={16} r={13} fill={color} opacity={0.92}/>
-      <line x1={50} y1={29} x2={50} y2={68} strokeWidth={7} stroke={color}/>
-      <line x1={50} y1={46} x2={18} y2={36} strokeWidth={6} stroke={color}/>
-      <line x1={50} y1={46} x2={82} y2={36} strokeWidth={6} stroke={color}/>
-      <path d="M50 68 Q30 78 16 70" strokeWidth={6} stroke={color}/>
-      <path d="M50 68 Q70 78 84 70" strokeWidth={6} stroke={color}/>
-      <path d="M16 70 Q26 84 38 80" strokeWidth={5} stroke={color}/>
-      <path d="M84 70 Q74 84 62 80" strokeWidth={5} stroke={color}/>
+  // ── Child's pose ──
+  if ((t.includes('طفل') && (t.includes('وضع') || t.includes('انحن'))) || t.includes('مسترخ'))
+    return <svg viewBox="0 0 230 115" width={218} height={108}><g>
+      <ellipse cx={115} cy={108} rx={95} ry={7} fill={color} opacity={0.12}/>
+      {/* head resting on floor */}
+      <circle cx={42} cy={76} r={26} fill={color}/>
+      <circle cx={32} cy={82} r={5} fill="white" opacity={0.8}/>
+      {/* arms stretched forward on ground */}
+      <path d="M42 80 L12 76" stroke={color} strokeWidth={18} fill="none" strokeLinecap="round"/>
+      <circle cx={8} cy={75} r={10} fill={color}/>
+      {/* curved body (kneeling, bent forward) */}
+      <path d="M64 76 Q90 70 116 84 Q136 94 148 90" stroke={color} strokeWidth={28} fill="none" strokeLinecap="round"/>
+      {/* hips / bottom */}
+      <ellipse cx={154} cy={90} rx={28} ry={20} fill={color} opacity={0.9}/>
+      {/* feet folded back */}
+      <path d="M152 108 Q172 112 192 106" stroke={color} strokeWidth={16} fill="none" strokeLinecap="round"/>
     </g></svg>
 
-  if (t.includes('كلب') || t.includes('V') || t.includes('منحني'))
-    return <svg viewBox="0 0 145 100" width={185} height={125}><g {...s}>
-      <circle cx={28} cy={40} r={11} fill={color} opacity={0.92}/>
-      <line x1={36} y1={40} x2={72} y2={18} strokeWidth={7} stroke={color}/>
-      <line x1={72} y1={18} x2={114} y2={55} strokeWidth={7} stroke={color}/>
-      <line x1={44} y1={34} x2={30} y2={62} strokeWidth={6} stroke={color}/>
-      <line x1={56} y1={28} x2={44} y2={58} strokeWidth={6} stroke={color}/>
-      <line x1={104} y1={52} x2={98} y2={82} strokeWidth={6} stroke={color}/>
-      <line x1={114} y1={55} x2={112} y2={84} strokeWidth={6} stroke={color}/>
+  // ── Seated butterfly / cross-legged ──
+  if (t.includes('فراشة') || t.includes('اجلس') || t.includes('جلوس'))
+    return <svg viewBox="0 0 145 155" width={135} height={148}><g>
+      <ellipse cx={72} cy={148} rx={52} ry={7} fill={color} opacity={0.12}/>
+      {/* left leg (bent, knee out) */}
+      <path d="M72 110 Q44 122 24 112 Q16 106 22 98 Q32 88 52 96" stroke={color} strokeWidth={22} fill="none" strokeLinecap="round"/>
+      {/* right leg */}
+      <path d="M72 110 Q100 122 120 112 Q128 106 122 98 Q112 88 92 96" stroke={color} strokeWidth={22} fill="none" strokeLinecap="round"/>
+      {/* body */}
+      <rect x={58} y={54} width={30} height={60} rx={15} fill={color}/>
+      {/* arms resting on knees */}
+      <path d="M58 80 L34 96" stroke={color} strokeWidth={17} fill="none" strokeLinecap="round"/>
+      <circle cx={30} cy={98} r={10} fill={color}/>
+      <path d="M88 80 L110 96" stroke={color} strokeWidth={17} fill="none" strokeLinecap="round"/>
+      <circle cx={114} cy={98} r={10} fill={color}/>
+      {/* head */}
+      <circle cx={73} cy={30} r={28} fill={color}/>
+      <ellipse cx={63} cy={28} rx={5} ry={6} fill="white" opacity={0.9}/>
+      <circle cx={63} cy={29} r={3} fill="#1a1a2e"/>
+      <circle cx={64} cy={26} r={1.5} fill="white"/>
+      <ellipse cx={83} cy={28} rx={5} ry={6} fill="white" opacity={0.9}/>
+      <circle cx={83} cy={29} r={3} fill="#1a1a2e"/>
+      <circle cx={84} cy={26} r={1.5} fill="white"/>
+      <path d="M66 40 Q73 45 80 40" stroke="white" strokeWidth={2.5} fill="none" opacity={0.75}/>
     </g></svg>
 
-  if (t.includes('سباح') || t.includes('عوم') || (t.includes('ماء') && t.includes('حرك')))
-    return <svg viewBox="0 0 165 85" width={210} height={105}><g {...s}>
-      <circle cx={138} cy={30} r={12} fill={color} opacity={0.92}/>
-      <line x1={126} y1={30} x2={55} y2={37} strokeWidth={7} stroke={color}/>
-      <line x1={100} y1={33} x2={95} y2={54} strokeWidth={6} stroke={color}/>
-      <line x1={95} y1={54} x2={78} y2={54} strokeWidth={5} stroke={color}/>
-      <line x1={72}  y1={36} x2={60} y2={18} strokeWidth={6} stroke={color}/>
-      <line x1={60}  y1={18} x2={32} y2={20} strokeWidth={6} stroke={color}/>
-      <path d="M55 37 Q38 55 18 46" strokeWidth={7} stroke={color}/>
-      <path d="M8 68 Q22 60 38 68 Q54 76 70 68 Q86 60 102 68 Q118 76 134 68 Q150 60 162 68" strokeWidth={3} opacity={0.45} stroke={color}/>
+  // ── Swimming ──
+  if (t.includes('سباح') || t.includes('عوم') || t.includes('سباح'))
+    return <svg viewBox="0 0 240 120" width={225} height={112}><g>
+      {/* water */}
+      <path d="M0 90 Q30 80 60 90 Q90 100 120 90 Q150 80 180 90 Q210 100 240 90 L240 120 L0 120" fill={color} opacity={0.14}/>
+      <path d="M0 95 Q30 85 60 95 Q90 105 120 95 Q150 85 180 95 Q210 105 240 95" stroke={color} strokeWidth={3} fill="none" opacity={0.38}/>
+      {/* body horizontal */}
+      <rect x={65} y={56} width={115} height={30} rx={15} fill={color}/>
+      {/* head (side view) */}
+      <circle cx={188} cy={62} r={28} fill={color}/>
+      <circle cx={202} cy={58} r={6} fill="white" opacity={0.9}/>
+      <circle cx={204} cy={59} r={3.5} fill="#1a1a2e"/>
+      <circle cx={205} cy={56} r={1.5} fill="white"/>
+      <path d="M200 70 Q205 74 212 70" stroke="white" strokeWidth={2} fill="none" opacity={0.6}/>
+      {/* arm forward */}
+      <path d="M65 66 Q38 52 14 48" stroke={color} strokeWidth={20} fill="none" strokeLinecap="round"/>
+      <circle cx={10} cy={46} r={12} fill={color}/>
+      {/* arm back / recovering */}
+      <path d="M100 68 Q112 90 104 108" stroke={color} strokeWidth={18} fill="none" strokeLinecap="round"/>
+      <circle cx={104} cy={112} r={11} fill={color}/>
+      {/* legs kicking */}
+      <path d="M65 72 Q44 86 24 80" stroke={color} strokeWidth={20} fill="none" strokeLinecap="round"/>
+      <path d="M65 60 Q45 46 28 52" stroke={color} strokeWidth={17} fill="none" strokeLinecap="round" opacity={0.75}/>
     </g></svg>
 
+  // ── Jumping (star jump) ──
   if (t.includes('اقفز') || t.includes('قفز') || t.includes('ضفدع'))
-    return <svg viewBox="0 0 105 155" width={130} height={185}><g {...s}>
-      <circle cx={52} cy={14} r={13} fill={color} opacity={0.92}/>
-      <line x1={52} y1={27} x2={52} y2={76} strokeWidth={7} stroke={color}/>
-      <line x1={52} y1={48} x2={10} y2={22} strokeWidth={6} stroke={color}/>
-      <line x1={52} y1={48} x2={94} y2={22} strokeWidth={6} stroke={color}/>
-      <line x1={52} y1={76} x2={14} y2={118} strokeWidth={7} stroke={color}/>
-      <line x1={52} y1={76} x2={90} y2={118} strokeWidth={7} stroke={color}/>
-      <line x1={14} y1={118} x2={4}  y2={130} strokeWidth={5} stroke={color}/>
-      <line x1={90} y1={118} x2={100} y2={130} strokeWidth={5} stroke={color}/>
+    return <svg viewBox="0 0 175 195" width={162} height={185}><g>
+      <ellipse cx={88} cy={188} rx={48} ry={7} fill={color} opacity={0.12}/>
+      {/* legs spread diagonally */}
+      <path d="M88 128 L42 178" stroke={color} strokeWidth={24} fill="none" strokeLinecap="round"/>
+      <ellipse cx={38} cy={183} rx={18} ry={10} fill={color}/>
+      <path d="M88 128 L134 178" stroke={color} strokeWidth={24} fill="none" strokeLinecap="round"/>
+      <ellipse cx={138} cy={183} rx={18} ry={10} fill={color}/>
+      {/* body */}
+      <rect x={74} y={58} width={28} height={74} rx={14} fill={color}/>
+      {/* arms spread up-diagonally */}
+      <path d="M74 84 L18 46" stroke={color} strokeWidth={20} fill="none" strokeLinecap="round"/>
+      <circle cx={13} cy={43} r={12} fill={color}/>
+      <path d="M102 84 L158 46" stroke={color} strokeWidth={20} fill="none" strokeLinecap="round"/>
+      <circle cx={163} cy={43} r={12} fill={color}/>
+      {/* head */}
+      <circle cx={88} cy={33} r={28} fill={color}/>
+      <ellipse cx={79} cy={31} rx={5} ry={6} fill="white" opacity={0.9}/>
+      <circle cx={79} cy={32} r={3} fill="#1a1a2e"/>
+      <circle cx={80} cy={29} r={1.5} fill="white"/>
+      <ellipse cx={97} cy={31} rx={5} ry={6} fill="white" opacity={0.9}/>
+      <circle cx={97} cy={32} r={3} fill="#1a1a2e"/>
+      <circle cx={98} cy={29} r={1.5} fill="white"/>
+      <path d="M81 42 Q88 48 95 42" stroke="white" strokeWidth={2.5} fill="none" opacity={0.8}/>
     </g></svg>
 
+  // ── Walking ──
   if (t.includes('امشِ') || t.includes('مشي') || t.includes('تمشي') || t.includes('خطوة'))
-    return <svg viewBox="0 0 90 155" width={115} height={185}><g {...s}>
-      <circle cx={50} cy={14} r={13} fill={color} opacity={0.92}/>
-      <line x1={50} y1={27} x2={48} y2={88} strokeWidth={7} stroke={color}/>
-      <line x1={48} y1={50} x2={18} y2={40} strokeWidth={6} stroke={color}/>
-      <line x1={48} y1={50} x2={74} y2={65} strokeWidth={6} stroke={color}/>
-      <line x1={48} y1={88} x2={22} y2={135} strokeWidth={7} stroke={color}/>
-      <line x1={48} y1={88} x2={68} y2={128} strokeWidth={7} stroke={color}/>
-      <line x1={68} y1={128} x2={80} y2={140} strokeWidth={5} stroke={color}/>
+    return <svg viewBox="0 0 140 195" width={128} height={185}><g>
+      <ellipse cx={72} cy={188} rx={42} ry={7} fill={color} opacity={0.12}/>
+      {/* legs in stride */}
+      <path d="M78 128 L46 178" stroke={color} strokeWidth={24} fill="none" strokeLinecap="round"/>
+      <ellipse cx={43} cy={182} rx={18} ry={10} fill={color}/>
+      <path d="M78 128 L100 168" stroke={color} strokeWidth={24} fill="none" strokeLinecap="round"/>
+      <ellipse cx={103} cy={172} rx={18} ry={10} fill={color}/>
+      {/* body slightly angled */}
+      <rect x={64} y={56} width={28} height={76} rx={14} fill={color} transform="rotate(4 78 94)"/>
+      {/* arms swinging opposite to legs */}
+      <path d="M66 80 L28 58" stroke={color} strokeWidth={20} fill="none" strokeLinecap="round"/>
+      <circle cx={23} cy={55} r={12} fill={color}/>
+      <path d="M96 82 L122 105" stroke={color} strokeWidth={18} fill="none" strokeLinecap="round"/>
+      <circle cx={125} cy={108} r={11} fill={color}/>
+      {/* head */}
+      <circle cx={82} cy={32} r={28} fill={color}/>
+      <ellipse cx={73} cy={30} rx={5} ry={6} fill="white" opacity={0.9}/>
+      <circle cx={73} cy={31} r={3} fill="#1a1a2e"/>
+      <circle cx={74} cy={28} r={1.5} fill="white"/>
+      <ellipse cx={91} cy={30} rx={5} ry={6} fill="white" opacity={0.9}/>
+      <circle cx={91} cy={31} r={3} fill="#1a1a2e"/>
+      <circle cx={92} cy={28} r={1.5} fill="white"/>
+      <path d="M76 41 Q82 46 88 41" stroke="white" strokeWidth={2.5} fill="none" opacity={0.75}/>
     </g></svg>
 
-  if (t.includes('ارمِ') || t.includes('رمي') || t.includes('ارفع'))
-    return <svg viewBox="0 0 110 155" width={140} height={185}><g {...s}>
-      <circle cx={48} cy={14} r={13} fill={color} opacity={0.92}/>
-      <line x1={48} y1={27} x2={48} y2={88} strokeWidth={7} stroke={color}/>
-      <line x1={48} y1={44} x2={15} y2={62} strokeWidth={6} stroke={color}/>
-      <line x1={48} y1={44} x2={90} y2={18} strokeWidth={6} stroke={color}/>
-      <circle cx={100} cy={12} r={8} fill={color} opacity={0.5}/>
-      <line x1={48} y1={88} x2={24} y2={138} strokeWidth={7} stroke={color}/>
-      <line x1={48} y1={88} x2={66} y2={132} strokeWidth={7} stroke={color}/>
+  // ── Throwing / lifting ──
+  if (t.includes('ارمِ') || t.includes('رمي') || t.includes('ارفع') || t.includes('رمية'))
+    return <svg viewBox="0 0 190 195" width={178} height={185}><g>
+      <ellipse cx={75} cy={188} rx={50} ry={7} fill={color} opacity={0.12}/>
+      {/* ball in air */}
+      <circle cx={162} cy={32} r={22} fill={color} opacity={0.35}/>
+      <circle cx={162} cy={32} r={16} fill={color} opacity={0.65}/>
+      {/* motion trail */}
+      <path d="M108 74 Q136 52 150 40" stroke={color} strokeWidth={3.5} fill="none" opacity={0.3} strokeDasharray="7 5"/>
+      {/* legs planted wide */}
+      <path d="M78 128 L44 178" stroke={color} strokeWidth={24} fill="none" strokeLinecap="round"/>
+      <ellipse cx={41} cy={182} rx={18} ry={10} fill={color}/>
+      <path d="M78 128 L104 166" stroke={color} strokeWidth={24} fill="none" strokeLinecap="round"/>
+      <ellipse cx={107} cy={170} rx={18} ry={10} fill={color}/>
+      {/* body rotated in throw */}
+      <rect x={64} y={52} width={28} height={80} rx={14} fill={color} transform="rotate(10 78 92)"/>
+      {/* throwing arm high */}
+      <path d="M84 72 L118 58" stroke={color} strokeWidth={20} fill="none" strokeLinecap="round"/>
+      <circle cx={122} cy={56} r={12} fill={color}/>
+      {/* other arm back */}
+      <path d="M68 82 L30 100" stroke={color} strokeWidth={18} fill="none" strokeLinecap="round"/>
+      <circle cx={26} cy={102} r={11} fill={color}/>
+      {/* head */}
+      <circle cx={82} cy={28} r={28} fill={color}/>
+      <ellipse cx={73} cy={26} rx={5} ry={6} fill="white" opacity={0.9}/>
+      <circle cx={74} cy={27} r={3} fill="#1a1a2e"/>
+      <circle cx={76} cy={24} r={1.5} fill="white"/>
+      <ellipse cx={91} cy={26} rx={5} ry={6} fill="white" opacity={0.9}/>
+      <circle cx={92} cy={27} r={3} fill="#1a1a2e"/>
+      <circle cx={94} cy={24} r={1.5} fill="white"/>
     </g></svg>
 
+  // ── Clapping / body percussion ──
   if (t.includes('تصفيق') || t.includes('صفق') || t.includes('إيقاع'))
-    return <svg viewBox="0 0 120 120" width={150} height={150}><g {...s}>
-      <circle cx={60} cy={22} r={13} fill={color} opacity={0.92}/>
-      <line x1={60} y1={35} x2={60} y2={80} strokeWidth={7} stroke={color}/>
-      <line x1={60} y1={52} x2={24} y2={65} strokeWidth={6} stroke={color}/>
-      <line x1={24} y1={65} x2={40} y2={72} strokeWidth={5} stroke={color}/>
-      <line x1={60} y1={52} x2={96} y2={65} strokeWidth={6} stroke={color}/>
-      <line x1={96} y1={65} x2={80} y2={72} strokeWidth={5} stroke={color}/>
-      <path d="M32 68 Q60 58 88 68" strokeWidth={3} opacity={0.4} stroke={color}/>
-      <line x1={60} y1={80} x2={38} y2={118} strokeWidth={7} stroke={color}/>
-      <line x1={60} y1={80} x2={82} y2={118} strokeWidth={7} stroke={color}/>
+    return <svg viewBox="0 0 155 195" width={143} height={185}><g>
+      <ellipse cx={78} cy={188} rx={44} ry={7} fill={color} opacity={0.12}/>
+      {/* sound rings */}
+      <path d="M42 96 Q22 108 22 120 Q22 132 42 142" stroke={color} strokeWidth={3.5} fill="none" opacity={0.28} strokeLinecap="round"/>
+      <path d="M113 96 Q133 108 133 120 Q133 132 113 142" stroke={color} strokeWidth={3.5} fill="none" opacity={0.28} strokeLinecap="round"/>
+      {/* legs together */}
+      <rect x={60} y={130} width={22} height={56} rx={11} fill={color}/>
+      <rect x={84} y={130} width={22} height={56} rx={11} fill={color}/>
+      {/* body */}
+      <rect x={57} y={58} width={42} height={76} rx={21} fill={color}/>
+      {/* hands clapping (meeting at center) */}
+      <path d="M57 90 L26 110" stroke={color} strokeWidth={20} fill="none" strokeLinecap="round"/>
+      <circle cx={62} cy={116} r={18} fill={color}/>
+      <circle cx={82} cy={116} r={18} fill={color}/>
+      <path d="M99 90 L130 110" stroke={color} strokeWidth={20} fill="none" strokeLinecap="round"/>
+      {/* head */}
+      <circle cx={78} cy={33} r={28} fill={color}/>
+      <ellipse cx={69} cy={31} rx={5} ry={6} fill="white" opacity={0.9}/>
+      <circle cx={69} cy={32} r={3} fill="#1a1a2e"/>
+      <circle cx={70} cy={29} r={1.5} fill="white"/>
+      <ellipse cx={87} cy={31} rx={5} ry={6} fill="white" opacity={0.9}/>
+      <circle cx={87} cy={32} r={3} fill="#1a1a2e"/>
+      <circle cx={88} cy={29} r={1.5} fill="white"/>
+      <path d="M72 42 Q78 48 84 42" stroke="white" strokeWidth={2.5} fill="none" opacity={0.85}/>
     </g></svg>
 
-  if (t.includes('مد') || t.includes('تمد') || t.includes('تمدد') || t.includes('استرخ'))
-    return <svg viewBox="0 0 165 65" width={210} height={82}><g {...s}>
-      <circle cx={18} cy={30} r={11} fill={color} opacity={0.92}/>
-      <line x1={28}  y1={30} x2={90} y2={32} strokeWidth={7} stroke={color}/>
-      <line x1={90}  y1={32} x2={150} y2={30} strokeWidth={7} stroke={color}/>
-      <line x1={62}  y1={31} x2={58} y2={50} strokeWidth={6} stroke={color}/>
-      <line x1={58}  y1={50} x2={42} y2={52} strokeWidth={5} stroke={color}/>
-      <line x1={112} y1={31} x2={110} y2={50} strokeWidth={6} stroke={color}/>
-      <line x1={110} y1={50} x2={128} y2={52} strokeWidth={5} stroke={color}/>
+  // ── Lying flat / stretch / relaxation ──
+  if (t.includes('مد') || t.includes('تمدد') || t.includes('استرخ') || t.includes('ارقد') || t.includes('استلقِ'))
+    return <svg viewBox="0 0 230 95" width={218} height={88}><g>
+      <ellipse cx={115} cy={88} rx={98} ry={7} fill={color} opacity={0.12}/>
+      {/* head */}
+      <circle cx={28} cy={60} r={26} fill={color}/>
+      {/* closed eyes (relaxing) */}
+      <path d="M20 58 Q24 62 28 58" stroke="white" strokeWidth={2.5} fill="none" opacity={0.7} strokeLinecap="round"/>
+      <path d="M30 58 Q34 62 38 58" stroke="white" strokeWidth={2.5} fill="none" opacity={0.7} strokeLinecap="round"/>
+      <path d="M22 68 Q28 72 34 68" stroke="white" strokeWidth={2} fill="none" opacity={0.5}/>
+      {/* body lying flat */}
+      <rect x={50} y={50} width={136} height={28} rx={14} fill={color}/>
+      {/* arm above head */}
+      <path d="M50 58 L22 42" stroke={color} strokeWidth={20} fill="none" strokeLinecap="round"/>
+      <circle cx={18} cy={40} r={12} fill={color}/>
+      {/* other arm alongside body */}
+      <path d="M148} y1={68} L188 72" stroke={color} strokeWidth={18} fill="none" strokeLinecap="round"/>
+      <circle cx={192} cy={73} r={11} fill={color}/>
+      {/* legs straight together */}
+      <path d="M186 64 L215 62" stroke={color} strokeWidth={22} fill="none" strokeLinecap="round"/>
+      <ellipse cx={219} cy={62} rx={14} ry={10} fill={color}/>
+      <path d="M186 72 L215 74" stroke={color} strokeWidth={20} fill="none" strokeLinecap="round"/>
     </g></svg>
 
+  // ── Breathing / standing calm ──
   if (t.includes('تنفس') || t.includes('استنشق') || t.includes('زفير') || t.includes('شهيق') || t.includes('نفس'))
-    return <svg viewBox="0 0 100 120" width={130} height={150}><g {...s}>
-      <circle cx={50} cy={18} r={13} fill={color} opacity={0.92}/>
-      <line x1={50} y1={31} x2={50} y2={82} strokeWidth={7} stroke={color}/>
-      <line x1={50} y1={50} x2={18} y2={68} strokeWidth={6} stroke={color}/>
-      <line x1={50} y1={50} x2={82} y2={68} strokeWidth={6} stroke={color}/>
-      <line x1={50} y1={82} x2={30} y2={118} strokeWidth={7} stroke={color}/>
-      <line x1={50} y1={82} x2={70} y2={118} strokeWidth={7} stroke={color}/>
-      <path d="M42 38 Q50 28 58 38" strokeWidth={3} opacity={0.5} stroke={color}/>
-      <path d="M36 32 Q50 18 64 32" strokeWidth={2} opacity={0.3} stroke={color}/>
+    return <svg viewBox="0 0 145 195" width={133} height={185}><g>
+      <ellipse cx={72} cy={188} rx={40} ry={7} fill={color} opacity={0.12}/>
+      {/* breath glow rings */}
+      <circle cx={72} cy={80} r={62} fill={color} opacity={0.07}/>
+      <circle cx={72} cy={80} r={46} fill={color} opacity={0.09}/>
+      {/* legs */}
+      <rect x={54} y={130} width={22} height={56} rx={11} fill={color}/>
+      <rect x={78} y={130} width={22} height={56} rx={11} fill={color}/>
+      {/* body */}
+      <rect x={50} y={62} width={44} height={72} rx={22} fill={color}/>
+      {/* arms slightly lifted */}
+      <path d="M50 88 L14 72" stroke={color} strokeWidth={20} fill="none" strokeLinecap="round"/>
+      <circle cx={10} cy={70} r={12} fill={color}/>
+      <path d="M94 88 L130 72" stroke={color} strokeWidth={20} fill="none" strokeLinecap="round"/>
+      <circle cx={134} cy={70} r={12} fill={color}/>
+      {/* head */}
+      <circle cx={72} cy={37} r={28} fill={color}/>
+      <ellipse cx={63} cy={35} rx={5} ry={6} fill="white" opacity={0.9}/>
+      <circle cx={63} cy={36} r={3} fill="#1a1a2e"/>
+      <circle cx={64} cy={33} r={1.5} fill="white"/>
+      <ellipse cx={81} cy={35} rx={5} ry={6} fill="white" opacity={0.9}/>
+      <circle cx={81} cy={36} r={3} fill="#1a1a2e"/>
+      <circle cx={82} cy={33} r={1.5} fill="white"/>
+      <path d="M66 47 Q72 52 78 47" stroke="white" strokeWidth={2.5} fill="none" opacity={0.75}/>
+      {/* breath dots above head */}
+      <circle cx={72} cy={12} r={5} fill={color} opacity={0.4}/>
+      <circle cx={60} cy={7}  r={3.5} fill={color} opacity={0.28}/>
+      <circle cx={84} cy={7}  r={3.5} fill={color} opacity={0.28}/>
     </g></svg>
 
   return null

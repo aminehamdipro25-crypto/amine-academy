@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
-import { Clock, Star, CheckCircle, Play, X, ChevronRight, ChevronLeft, Info } from 'lucide-react'
+import { Clock, CheckCircle, Play, X, ChevronRight, ChevronLeft, Info, Volume2 } from 'lucide-react'
 import type { Exercise, Student } from '@/lib/types'
 
 // ── Category config ───────────────────────────────────────────
@@ -29,15 +29,18 @@ function stepEmoji(text: string, cat: string): string {
   if (text.includes('بالون')) return '🎈'
   if (text.includes('كرة')) return '⚽'
   if (text.includes('موسيقى') || text.includes('إيقاع') || text.includes('ميترونوم')) return '🎵'
-  if (text.includes('استمع') || text.includes('اسمع') || text.includes('صوت')) return '👂'
-  if (text.includes('انظر') || text.includes('عين') || text.includes('بصر') || text.includes('ترى') || text.includes('تراها')) return '👁️'
+  // Vision BEFORE audio — "ترى/تراها/انظر" must not be shadowed by audio match
+  if (text.includes('انظر') || text.includes('عين') || text.includes('بصر') || text.includes('ترى') || text.includes('تراها') || text.includes('شاهد')) return '👁️'
+  // Audio: exclude "بصوت" (say aloud) which contains "صوت" but isn't a listening step
+  if ((text.includes('استمع') || text.includes('اسمع') || text.includes('صوت')) && !text.includes('بصوت')) return '👂'
   if (text.includes('لمس') || text.includes('الملس') || text.includes('تلمس')) return '🤚'
   if (text.includes('شمّ') || text.includes('تشمه') || text.includes('رائحة')) return '👃'
   if (text.includes('تذوق') || text.includes('طعم')) return '👅'
   if (text.includes('امشِ') || text.includes('مشي') || text.includes('خطوة') || text.includes('خطوات')) return '🚶'
   if (text.includes('تصفيق') || text.includes('صفق') || text.includes('ضرب')) return '👏'
   if (text.includes('قف') || text.includes('تجمّد') || text.includes('اثبت') || text.includes('لا تتحرك')) return '🧍'
-  if (text.includes('جلس') || text.includes('اجلس')) return '🧘'
+  // "اجلس"/"جلوس" only — bare "جلس" also matches "الجلسة" (session) which is not a sitting step
+  if (text.includes('اجلس') || text.includes('جلوس')) return '🧘'
   if (text.includes('ارفع') || text.includes('رفع')) return '💪'
   if (text.includes('ارمِ') || text.includes('رمي') || text.includes('قذف')) return '🎯'
   if (text.includes('ذراع') || text.includes('يد')) return '🙌'
@@ -45,7 +48,9 @@ function stepEmoji(text: string, cat: string): string {
   if (text.includes('ابدأ') || text.includes('استعد') || text.includes('جهّز')) return '🚀'
   if (text.includes('كرر') || text.includes('تكرار')) return '🔄'
   if (text.includes('خط') || text.includes('توازن')) return '⚖️'
-  if (text.includes('سيمون')) return '🎮'
+  // Data uses "سايمون" (not "سيمون") — match both spellings
+  if (text.includes('سيمون') || text.includes('سايمون')) return '🎮'
+  if (text.includes('تطبيق') || text.includes('شاشة') || text.includes('جهاز')) return '📱'
   if (text.includes('هدف') || text.includes('رقم')) return '🎯'
   if (text.includes('تأمل') || text.includes('يقظ')) return '🌟'
   if (text.includes('ماء') || text.includes('سباح')) return '🌊'
@@ -79,6 +84,16 @@ function equipEmoji(eq: string): string {
   return '📦'
 }
 
+function speakAr(text: string) {
+  if (typeof window === 'undefined' || !window.speechSynthesis) return
+  window.speechSynthesis.cancel()
+  const utt = new SpeechSynthesisUtterance(text)
+  utt.lang = 'ar-SA'
+  utt.rate = 0.85
+  utt.pitch = 1.1
+  window.speechSynthesis.speak(utt)
+}
+
 export default function ExercisesPage() {
   const [exercises, setExercises]   = useState<Exercise[]>([])
   const [child, setChild]           = useState<Student | null>(null)
@@ -110,6 +125,15 @@ export default function ExercisesPage() {
     const id = setInterval(() => setTimer(t => t + 1), 1000)
     return () => clearInterval(id)
   }, [started])
+
+  // Auto-speak current step text when step changes or exercise starts
+  useEffect(() => {
+    if (!started || !selected) return
+    const steps = selected.instructionsAr || selected.instructions || []
+    if (!steps[step]) return
+    const id = setTimeout(() => speakAr(shortStep(steps[step])), 400)
+    return () => { clearTimeout(id); window.speechSynthesis?.cancel() }
+  }, [step, started, selected])
 
   const openExercise = useCallback((ex: Exercise) => {
     setSelected(ex); setStep(0); setTimer(0); setStarted(false); setShowInfo(false)
@@ -400,7 +424,7 @@ export default function ExercisesPage() {
                     </p>
 
                     {/* Step dots */}
-                    <div className="flex gap-2 mb-6">
+                    <div className="flex gap-2 mb-4">
                       {steps.map((_, i) => (
                         <div
                           key={i}
@@ -413,6 +437,15 @@ export default function ExercisesPage() {
                         />
                       ))}
                     </div>
+
+                    {/* Re-speak button */}
+                    <button
+                      onClick={() => speakAr(shortStep(steps[step]))}
+                      className="flex items-center gap-2 px-5 py-2.5 rounded-2xl font-black text-sm transition-all active:scale-95 mb-5"
+                      style={{ background: cfg.light, color: '#5A32D9', border: '1.5px solid rgba(124,92,252,0.2)' }}
+                    >
+                      <Volume2 className="w-4 h-4" /> اسمع مرة أخرى
+                    </button>
 
                     {/* Full instruction — for the supervising adult, subtle */}
                     <div

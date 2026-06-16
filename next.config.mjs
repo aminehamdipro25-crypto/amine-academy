@@ -50,6 +50,8 @@ const nextConfig = {
       { protocol: 'https', hostname: 'res.cloudinary.com' },
     ],
   },
+  // No .eslintrc in the project — skip ESLint during CI/Vercel builds
+  eslint: { ignoreDuringBuilds: true },
 }
 
 export default nextConfig

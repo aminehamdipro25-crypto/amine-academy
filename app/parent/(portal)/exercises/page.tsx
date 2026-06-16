@@ -178,6 +178,183 @@ function equipEmoji(eq: string): string {
   return '📦'
 }
 
+// ── Exercise pose SVG illustrations ──────────────────────────
+function StepIllustration({ text, color }: { text: string; color: string }) {
+  const t = text
+  const s = { stroke: color, strokeLinecap: 'round' as const, fill: 'none' }
+
+  if (t.includes('قطة') || t.includes('بقرة'))
+    return <svg viewBox="0 0 130 90" width={170} height={120}><g opacity={0.92}>
+      <circle cx={18} cy={36} r={12} fill={color}/>
+      <path d="M10 26 L16 18 L22 26" fill={color}/>
+      <line x1={28} y1={44} x2={98} y2={44} stroke={color} strokeWidth={7} strokeLinecap="round"/>
+      <path d="M28 44 Q60 22 98 44" stroke={color} strokeWidth={4} fill="none" opacity={0.35}/>
+      <line x1={38} y1={44} x2={38} y2={70} stroke={color} strokeWidth={6} strokeLinecap="round"/>
+      <line x1={54} y1={44} x2={54} y2={70} stroke={color} strokeWidth={6} strokeLinecap="round"/>
+      <line x1={76} y1={44} x2={76} y2={70} stroke={color} strokeWidth={6} strokeLinecap="round"/>
+      <line x1={92} y1={44} x2={92} y2={70} stroke={color} strokeWidth={6} strokeLinecap="round"/>
+      <path d="M98 44 Q112 30 108 14" stroke={color} strokeWidth={5} fill="none" strokeLinecap="round"/>
+    </g></svg>
+
+  if (t.includes('شجرة'))
+    return <svg viewBox="0 0 80 155" width={110} height={190}><g {...s} strokeLinecap="round">
+      <circle cx={40} cy={17} r={13} fill={color} opacity={0.92}/>
+      <line x1={40} y1={30} x2={40} y2={92} strokeWidth={7} stroke={color}/>
+      <line x1={40} y1={52} x2={7}  y2={32} strokeWidth={6} stroke={color}/>
+      <line x1={40} y1={52} x2={73} y2={32} strokeWidth={6} stroke={color}/>
+      <line x1={40} y1={92} x2={40} y2={145} strokeWidth={7} stroke={color}/>
+      <line x1={40} y1={105} x2={22} y2={86} strokeWidth={6} stroke={color}/>
+    </g></svg>
+
+  if (t.includes('محارب'))
+    return <svg viewBox="0 0 155 135" width={195} height={165}><g {...s}>
+      <circle cx={77} cy={17} r={13} fill={color} opacity={0.92}/>
+      <line x1={77} y1={30} x2={77} y2={76} strokeWidth={7} stroke={color}/>
+      <line x1={14} y1={54} x2={140} y2={54} strokeWidth={6} stroke={color}/>
+      <line x1={77} y1={76} x2={116} y2={118} strokeWidth={7} stroke={color}/>
+      <line x1={116} y1={118} x2={132} y2={128} strokeWidth={5} stroke={color}/>
+      <line x1={77} y1={76} x2={28}  y2={122} strokeWidth={7} stroke={color}/>
+    </g></svg>
+
+  if (t.includes('جبل') || (t.includes('قف') && !t.includes('توازن')))
+    return <svg viewBox="0 0 80 155" width={105} height={185}><g {...s}>
+      <circle cx={40} cy={16} r={13} fill={color} opacity={0.92}/>
+      <line x1={40} y1={29} x2={40} y2={96} strokeWidth={7} stroke={color}/>
+      <line x1={40} y1={52} x2={14} y2={78} strokeWidth={6} stroke={color}/>
+      <line x1={40} y1={52} x2={66} y2={78} strokeWidth={6} stroke={color}/>
+      <line x1={40} y1={96} x2={22} y2={145} strokeWidth={7} stroke={color}/>
+      <line x1={40} y1={96} x2={58} y2={145} strokeWidth={7} stroke={color}/>
+    </g></svg>
+
+  if (t.includes('طفل') && (t.includes('وضع') || t.includes('انحن') || t.includes('اجلس')))
+    return <svg viewBox="0 0 155 90" width={195} height={115}><g {...s}>
+      <circle cx={22} cy={28} r={11} fill={color} opacity={0.92}/>
+      <path d="M31 28 Q58 38 78 64" strokeWidth={7} stroke={color}/>
+      <line x1={78} y1={64} x2={95} y2={72} strokeWidth={7} stroke={color}/>
+      <line x1={95} y1={72} x2={118} y2={65} strokeWidth={6} stroke={color}/>
+      <line x1={22} y1={29} x2={7}  y2={24} strokeWidth={5} stroke={color}/>
+      <line x1={30} y1={30} x2={10} y2={26} strokeWidth={5} stroke={color}/>
+    </g></svg>
+
+  if (t.includes('جسر'))
+    return <svg viewBox="0 0 155 90" width={195} height={115}><g {...s}>
+      <circle cx={14} cy={66} r={11} fill={color} opacity={0.92}/>
+      <line x1={24} y1={66} x2={55} y2={60} strokeWidth={7} stroke={color}/>
+      <path d="M55 60 Q82 22 108 58" strokeWidth={7} stroke={color}/>
+      <line x1={108} y1={58} x2={124} y2={74} strokeWidth={7} stroke={color}/>
+      <line x1={124} y1={74} x2={140} y2={74} strokeWidth={5} stroke={color}/>
+      <line x1={52}  y1={62} x2={40}  y2={78} strokeWidth={5} stroke={color}/>
+      <line x1={40}  y1={78} x2={24}  y2={78} strokeWidth={5} stroke={color}/>
+    </g></svg>
+
+  if (t.includes('فراشة') || t.includes('أرض') || (t.includes('اجلس') && !t.includes('كرسي')))
+    return <svg viewBox="0 0 100 115" width={130} height={145}><g {...s}>
+      <circle cx={50} cy={16} r={13} fill={color} opacity={0.92}/>
+      <line x1={50} y1={29} x2={50} y2={68} strokeWidth={7} stroke={color}/>
+      <line x1={50} y1={46} x2={18} y2={36} strokeWidth={6} stroke={color}/>
+      <line x1={50} y1={46} x2={82} y2={36} strokeWidth={6} stroke={color}/>
+      <path d="M50 68 Q30 78 16 70" strokeWidth={6} stroke={color}/>
+      <path d="M50 68 Q70 78 84 70" strokeWidth={6} stroke={color}/>
+      <path d="M16 70 Q26 84 38 80" strokeWidth={5} stroke={color}/>
+      <path d="M84 70 Q74 84 62 80" strokeWidth={5} stroke={color}/>
+    </g></svg>
+
+  if (t.includes('كلب') || t.includes('V') || t.includes('منحني'))
+    return <svg viewBox="0 0 145 100" width={185} height={125}><g {...s}>
+      <circle cx={28} cy={40} r={11} fill={color} opacity={0.92}/>
+      <line x1={36} y1={40} x2={72} y2={18} strokeWidth={7} stroke={color}/>
+      <line x1={72} y1={18} x2={114} y2={55} strokeWidth={7} stroke={color}/>
+      <line x1={44} y1={34} x2={30} y2={62} strokeWidth={6} stroke={color}/>
+      <line x1={56} y1={28} x2={44} y2={58} strokeWidth={6} stroke={color}/>
+      <line x1={104} y1={52} x2={98} y2={82} strokeWidth={6} stroke={color}/>
+      <line x1={114} y1={55} x2={112} y2={84} strokeWidth={6} stroke={color}/>
+    </g></svg>
+
+  if (t.includes('سباح') || t.includes('عوم') || (t.includes('ماء') && t.includes('حرك')))
+    return <svg viewBox="0 0 165 85" width={210} height={105}><g {...s}>
+      <circle cx={138} cy={30} r={12} fill={color} opacity={0.92}/>
+      <line x1={126} y1={30} x2={55} y2={37} strokeWidth={7} stroke={color}/>
+      <line x1={100} y1={33} x2={95} y2={54} strokeWidth={6} stroke={color}/>
+      <line x1={95} y1={54} x2={78} y2={54} strokeWidth={5} stroke={color}/>
+      <line x1={72}  y1={36} x2={60} y2={18} strokeWidth={6} stroke={color}/>
+      <line x1={60}  y1={18} x2={32} y2={20} strokeWidth={6} stroke={color}/>
+      <path d="M55 37 Q38 55 18 46" strokeWidth={7} stroke={color}/>
+      <path d="M8 68 Q22 60 38 68 Q54 76 70 68 Q86 60 102 68 Q118 76 134 68 Q150 60 162 68" strokeWidth={3} opacity={0.45} stroke={color}/>
+    </g></svg>
+
+  if (t.includes('اقفز') || t.includes('قفز') || t.includes('ضفدع'))
+    return <svg viewBox="0 0 105 155" width={130} height={185}><g {...s}>
+      <circle cx={52} cy={14} r={13} fill={color} opacity={0.92}/>
+      <line x1={52} y1={27} x2={52} y2={76} strokeWidth={7} stroke={color}/>
+      <line x1={52} y1={48} x2={10} y2={22} strokeWidth={6} stroke={color}/>
+      <line x1={52} y1={48} x2={94} y2={22} strokeWidth={6} stroke={color}/>
+      <line x1={52} y1={76} x2={14} y2={118} strokeWidth={7} stroke={color}/>
+      <line x1={52} y1={76} x2={90} y2={118} strokeWidth={7} stroke={color}/>
+      <line x1={14} y1={118} x2={4}  y2={130} strokeWidth={5} stroke={color}/>
+      <line x1={90} y1={118} x2={100} y2={130} strokeWidth={5} stroke={color}/>
+    </g></svg>
+
+  if (t.includes('امشِ') || t.includes('مشي') || t.includes('تمشي') || t.includes('خطوة'))
+    return <svg viewBox="0 0 90 155" width={115} height={185}><g {...s}>
+      <circle cx={50} cy={14} r={13} fill={color} opacity={0.92}/>
+      <line x1={50} y1={27} x2={48} y2={88} strokeWidth={7} stroke={color}/>
+      <line x1={48} y1={50} x2={18} y2={40} strokeWidth={6} stroke={color}/>
+      <line x1={48} y1={50} x2={74} y2={65} strokeWidth={6} stroke={color}/>
+      <line x1={48} y1={88} x2={22} y2={135} strokeWidth={7} stroke={color}/>
+      <line x1={48} y1={88} x2={68} y2={128} strokeWidth={7} stroke={color}/>
+      <line x1={68} y1={128} x2={80} y2={140} strokeWidth={5} stroke={color}/>
+    </g></svg>
+
+  if (t.includes('ارمِ') || t.includes('رمي') || t.includes('ارفع'))
+    return <svg viewBox="0 0 110 155" width={140} height={185}><g {...s}>
+      <circle cx={48} cy={14} r={13} fill={color} opacity={0.92}/>
+      <line x1={48} y1={27} x2={48} y2={88} strokeWidth={7} stroke={color}/>
+      <line x1={48} y1={44} x2={15} y2={62} strokeWidth={6} stroke={color}/>
+      <line x1={48} y1={44} x2={90} y2={18} strokeWidth={6} stroke={color}/>
+      <circle cx={100} cy={12} r={8} fill={color} opacity={0.5}/>
+      <line x1={48} y1={88} x2={24} y2={138} strokeWidth={7} stroke={color}/>
+      <line x1={48} y1={88} x2={66} y2={132} strokeWidth={7} stroke={color}/>
+    </g></svg>
+
+  if (t.includes('تصفيق') || t.includes('صفق') || t.includes('إيقاع'))
+    return <svg viewBox="0 0 120 120" width={150} height={150}><g {...s}>
+      <circle cx={60} cy={22} r={13} fill={color} opacity={0.92}/>
+      <line x1={60} y1={35} x2={60} y2={80} strokeWidth={7} stroke={color}/>
+      <line x1={60} y1={52} x2={24} y2={65} strokeWidth={6} stroke={color}/>
+      <line x1={24} y1={65} x2={40} y2={72} strokeWidth={5} stroke={color}/>
+      <line x1={60} y1={52} x2={96} y2={65} strokeWidth={6} stroke={color}/>
+      <line x1={96} y1={65} x2={80} y2={72} strokeWidth={5} stroke={color}/>
+      <path d="M32 68 Q60 58 88 68" strokeWidth={3} opacity={0.4} stroke={color}/>
+      <line x1={60} y1={80} x2={38} y2={118} strokeWidth={7} stroke={color}/>
+      <line x1={60} y1={80} x2={82} y2={118} strokeWidth={7} stroke={color}/>
+    </g></svg>
+
+  if (t.includes('مد') || t.includes('تمد') || t.includes('تمدد') || t.includes('استرخ'))
+    return <svg viewBox="0 0 165 65" width={210} height={82}><g {...s}>
+      <circle cx={18} cy={30} r={11} fill={color} opacity={0.92}/>
+      <line x1={28}  y1={30} x2={90} y2={32} strokeWidth={7} stroke={color}/>
+      <line x1={90}  y1={32} x2={150} y2={30} strokeWidth={7} stroke={color}/>
+      <line x1={62}  y1={31} x2={58} y2={50} strokeWidth={6} stroke={color}/>
+      <line x1={58}  y1={50} x2={42} y2={52} strokeWidth={5} stroke={color}/>
+      <line x1={112} y1={31} x2={110} y2={50} strokeWidth={6} stroke={color}/>
+      <line x1={110} y1={50} x2={128} y2={52} strokeWidth={5} stroke={color}/>
+    </g></svg>
+
+  if (t.includes('تنفس') || t.includes('استنشق') || t.includes('زفير') || t.includes('شهيق') || t.includes('نفس'))
+    return <svg viewBox="0 0 100 120" width={130} height={150}><g {...s}>
+      <circle cx={50} cy={18} r={13} fill={color} opacity={0.92}/>
+      <line x1={50} y1={31} x2={50} y2={82} strokeWidth={7} stroke={color}/>
+      <line x1={50} y1={50} x2={18} y2={68} strokeWidth={6} stroke={color}/>
+      <line x1={50} y1={50} x2={82} y2={68} strokeWidth={6} stroke={color}/>
+      <line x1={50} y1={82} x2={30} y2={118} strokeWidth={7} stroke={color}/>
+      <line x1={50} y1={82} x2={70} y2={118} strokeWidth={7} stroke={color}/>
+      <path d="M42 38 Q50 28 58 38" strokeWidth={3} opacity={0.5} stroke={color}/>
+      <path d="M36 32 Q50 18 64 32" strokeWidth={2} opacity={0.3} stroke={color}/>
+    </g></svg>
+
+  return null
+}
+
 // ── Guided Step Timer sub-component ──────────────────────────
 function StepTimer({ seconds, onDone }: { seconds: number; onDone: () => void }) {
   const [left, setLeft] = useState(seconds)
@@ -804,15 +981,31 @@ export default function ExercisesPage() {
                 ) : (
                 /* ══ STANDARD GUIDED STEPS ══ */
                   <div className="flex-1 overflow-y-auto flex flex-col items-center text-center px-6 py-8 gap-5">
-                    {/* Big emoji — changes with animation on step change */}
-                    <div key={step} style={{ fontSize: 100, lineHeight: 1,
-                      animation: 'popIn 0.35s cubic-bezier(.34,1.56,.64,1)',
-                      filter: 'drop-shadow(0 6px 16px rgba(0,0,0,0.10))' }}>
-                      {isAnimal
-                        ? (steps[step].includes('دب') ? '🐻' : steps[step].includes('ضفدع') ? '🐸'
-                          : steps[step].includes('أفعى') ? '🐍' : steps[step].includes('حصان') ? '🐴' : '🐾')
-                        : stepEmoji(steps[step], selected.category)}
-                    </div>
+                    {/* SVG illustration OR animal emoji OR category emoji */}
+                    {(() => {
+                      const illustColor = cfg.gradient.match(/#[0-9A-Fa-f]{6}/)?.[0] || '#7C5CFC'
+                      const svgIllust = !isAnimal ? StepIllustration({ text: steps[step], color: illustColor }) : null
+                      if (svgIllust) return (
+                        <div key={step} style={{
+                          animation: 'popIn 0.35s cubic-bezier(.34,1.56,.64,1)',
+                          filter: `drop-shadow(0 8px 24px ${illustColor}55)`,
+                          background: illustColor + '12',
+                          borderRadius: 24, padding: '16px 24px',
+                        }}>
+                          {svgIllust}
+                        </div>
+                      )
+                      return (
+                        <div key={step} style={{ fontSize: 110, lineHeight: 1,
+                          animation: 'popIn 0.35s cubic-bezier(.34,1.56,.64,1)',
+                          filter: 'drop-shadow(0 8px 20px rgba(0,0,0,0.12))' }}>
+                          {isAnimal
+                            ? (steps[step].includes('دب') ? '🐻' : steps[step].includes('ضفدع') ? '🐸'
+                              : steps[step].includes('أفعى') ? '🐍' : steps[step].includes('حصان') ? '🐴' : '🐾')
+                            : stepEmoji(steps[step], selected.category)}
+                        </div>
+                      )
+                    })()}
 
                     {/* Count badge */}
                     {extractCount(steps[step]) && (

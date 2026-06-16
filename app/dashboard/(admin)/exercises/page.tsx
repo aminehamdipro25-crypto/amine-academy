@@ -16,6 +16,11 @@ interface Exercise {
   durationMinutes: number
   points: number
   psychologyObjectiveAr: string
+  psychologyObjective?: string
+  instructionsAr?: string[]
+  instructions?: string[]
+  equipment?: string[]
+  contraindications?: string[]
 }
 
 const CATEGORY_CONFIG: Record<string, { label: string; bg: string; text: string; glow: string; icon: React.ComponentType<{className?: string}> }> = {
@@ -53,6 +58,7 @@ export default function ExercisesPage() {
   const [seeding, setSeeding] = useState(false)
   const [filterCategory, setFilterCategory] = useState<string>('all')
   const [seedMsg, setSeedMsg] = useState('')
+  const [viewEx, setViewEx] = useState<Exercise | null>(null)
   const [editEx, setEditEx] = useState<Exercise | null>(null)
   const [form, setForm] = useState<EditForm>({})
   const [saving, setSaving] = useState(false)
@@ -263,11 +269,12 @@ export default function ExercisesPage() {
             return (
               <div
                 key={ex.id}
-                className={`group relative bg-gradient-to-br ${cardGrad} rounded-3xl border p-5 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200`}
+                onClick={() => setViewEx(ex)}
+                className={`group relative bg-gradient-to-br ${cardGrad} rounded-3xl border p-5 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 cursor-pointer`}
               >
                 {/* Edit button */}
                 <button
-                  onClick={() => openEdit(ex)}
+                  onClick={e => { e.stopPropagation(); openEdit(ex) }}
                   className="absolute top-4 left-4 p-2 rounded-xl bg-white/80 hover:bg-white text-gray-400 hover:text-brand-600 shadow-sm opacity-0 group-hover:opacity-100 transition-all"
                   title="تعديل"
                 >
@@ -319,6 +326,134 @@ export default function ExercisesPage() {
           })}
         </div>
       )}
+
+      {/* ── Detail View Modal ── */}
+      {viewEx && !editEx && (() => {
+        const cat   = CATEGORY_CONFIG[viewEx.category]
+        const diff  = DIFFICULTY_CONFIG[viewEx.difficulty]
+        const CatIcon = cat?.icon ?? Dumbbell
+        const steps = viewEx.instructionsAr ?? viewEx.instructions ?? []
+        const equip = (viewEx.equipment ?? []).filter(e => e && e !== 'none')
+        return (
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-start justify-center p-4 overflow-y-auto"
+            onClick={() => setViewEx(null)}
+          >
+            <div
+              className="bg-white rounded-3xl w-full max-w-lg my-8 shadow-2xl overflow-hidden"
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Gradient header */}
+              <div className={`p-6 bg-gradient-to-br ${CARD_GRADIENTS[viewEx.category] ?? 'from-gray-50 to-gray-50'} border-b border-gray-100`}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-12 h-12 ${cat?.bg ?? 'bg-gray-500'} rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0`}>
+                      <CatIcon className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <h2 className="font-black text-gray-900 text-lg leading-tight">{viewEx.titleAr}</h2>
+                      <p className="text-gray-500 text-xs mt-0.5">{viewEx.title}</p>
+                    </div>
+                  </div>
+                  <button onClick={() => setViewEx(null)} className="p-2 rounded-xl hover:bg-white/60 transition-colors flex-shrink-0">
+                    <X className="w-5 h-5 text-gray-500" />
+                  </button>
+                </div>
+                <div className="flex flex-wrap items-center gap-2 mt-4">
+                  <span className={`text-xs font-black px-2.5 py-1 rounded-full ${diff?.color ?? 'bg-gray-100 text-gray-500'}`}>{diff?.label}</span>
+                  <span className="flex items-center gap-1 bg-white/70 rounded-xl px-2.5 py-1 text-xs font-black text-gray-700">
+                    <Clock className="w-3 h-3 text-gray-400" />{viewEx.durationMinutes} د
+                  </span>
+                  <span className="flex items-center gap-1 bg-white/70 rounded-xl px-2.5 py-1 text-xs font-black text-gray-700">
+                    <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />{viewEx.points} نقطة
+                  </span>
+                  {viewEx.ageGroups?.map(a => (
+                    <span key={a} className="bg-white/80 text-gray-600 text-xs font-bold px-2 py-0.5 rounded-full border border-white">{a}س</span>
+                  ))}
+                  {viewEx.diagnoses?.map(d => (
+                    <span key={d} className="bg-gray-800/10 text-gray-700 text-xs font-bold px-2 py-0.5 rounded-full">{d}</span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Body */}
+              <div className="p-6 space-y-5 max-h-[55vh] overflow-y-auto">
+                {/* Description */}
+                <div>
+                  <p className="text-xs font-black text-gray-400 uppercase tracking-wider mb-1.5">الوصف</p>
+                  <p className="text-gray-700 text-sm leading-relaxed">{viewEx.descriptionAr}</p>
+                </div>
+
+                {/* Steps */}
+                {steps.length > 0 && (
+                  <div>
+                    <p className="text-xs font-black text-gray-400 uppercase tracking-wider mb-3">
+                      الخطوات ({steps.length})
+                    </p>
+                    <div className="space-y-2">
+                      {steps.map((s, i) => (
+                        <div key={i} className="flex gap-3 p-3 rounded-xl" style={{ background: '#F9FAFB' }}>
+                          <div className="w-6 h-6 rounded-full bg-brand-600 text-white text-xs font-black flex items-center justify-center flex-shrink-0 mt-0.5">
+                            {i + 1}
+                          </div>
+                          <p className="text-sm text-gray-700 leading-relaxed">{s}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Equipment */}
+                {equip.length > 0 && (
+                  <div>
+                    <p className="text-xs font-black text-gray-400 uppercase tracking-wider mb-2">الأدوات المطلوبة</p>
+                    <div className="flex flex-wrap gap-2">
+                      {equip.map((eq, i) => (
+                        <span key={i} className="text-xs px-3 py-1 rounded-full font-bold" style={{ background: '#FFFBEB', color: '#B45309', border: '1px solid #FDE68A' }}>
+                          📦 {eq}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Psychology objective */}
+                {(viewEx.psychologyObjectiveAr || viewEx.psychologyObjective) && (
+                  <div>
+                    <p className="text-xs font-black text-gray-400 uppercase tracking-wider mb-1.5">الهدف النفسي</p>
+                    <p className="text-xs text-gray-500 leading-relaxed bg-violet-50 border border-violet-100 rounded-xl p-3">
+                      {viewEx.psychologyObjectiveAr || viewEx.psychologyObjective}
+                    </p>
+                  </div>
+                )}
+
+                {/* Contraindications */}
+                {(viewEx.contraindications ?? []).filter(Boolean).length > 0 && (
+                  <div>
+                    <p className="text-xs font-black text-red-400 uppercase tracking-wider mb-2">موانع الاستخدام</p>
+                    <div className="flex flex-wrap gap-2">
+                      {(viewEx.contraindications ?? []).filter(Boolean).map((c, i) => (
+                        <span key={i} className="text-xs px-2.5 py-1 rounded-full font-bold bg-red-50 text-red-600 border border-red-100">⚠️ {c}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between">
+                <span className="text-xs text-gray-400 font-mono">{viewEx.id}</span>
+                <button
+                  onClick={() => { setViewEx(null); openEdit(viewEx) }}
+                  className="flex items-center gap-2 bg-brand-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-brand-700 transition-colors"
+                >
+                  <Edit2 className="w-4 h-4" /> تعديل
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* ── Edit Modal ── */}
       {editEx && (

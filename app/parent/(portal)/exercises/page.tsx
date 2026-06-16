@@ -151,7 +151,7 @@ export default function ExercisesPage() {
         {[
           { label: 'متاح',    value: exercises.length, bg: '#F3EEFF', color: '#5A32D9' },
           { label: 'أنجزت',  value: completed.size,   bg: '#ECFDF5', color: '#059669' },
-          { label: 'نقاط',   value: [...completed].reduce((s,id) => s + (exercises.find(e=>e.id===id)?.points||0), 0), bg: '#FFFBEB', color: '#B45309' },
+          { label: 'نقاط',   value: Array.from(completed).reduce((s,id) => s + (exercises.find(e=>e.id===id)?.points||0), 0), bg: '#FFFBEB', color: '#B45309' },
         ].map(({ label, value, bg, color }) => (
           <div key={label} className="rounded-2xl p-3 text-center" style={{ background: bg }}>
             <div className="font-black text-xl" style={{ color }}>{value}</div>

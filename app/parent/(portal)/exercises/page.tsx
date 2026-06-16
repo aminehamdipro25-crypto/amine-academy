@@ -9,10 +9,17 @@ const BreathingGuide   = dynamic(() => import('@/components/session/exercises/Br
 const SimonSays        = dynamic(() => import('@/components/session/exercises/SimonSays'),        { ssr: false })
 const TargetTracking   = dynamic(() => import('@/components/session/exercises/TargetTracking'),   { ssr: false })
 const PhysicalExercise = dynamic(() => import('@/components/session/exercises/PhysicalExercise'), { ssr: false })
+const BalloonControl   = dynamic(() => import('@/components/session/exercises/BalloonControl'),   { ssr: false })
+const ReactionGame     = dynamic(() => import('@/components/session/exercises/ReactionGame'),     { ssr: false })
+const StopSignal       = dynamic(() => import('@/components/session/exercises/StopSignal'),       { ssr: false })
+const BodyScan         = dynamic(() => import('@/components/session/exercises/BodyScan'),         { ssr: false })
 
 // ── Types ─────────────────────────────────────────────────────
 type Phase = 'grid' | 'prestart' | 'game' | 'complete'
-type InteractiveKind = 'breathing' | 'simon-says' | 'target-tracking' | 'physical' | null
+type InteractiveKind =
+  | 'breathing' | 'simon-says' | 'target-tracking' | 'physical'
+  | 'balloon-control' | 'reaction-game' | 'stop-signal' | 'body-scan'
+  | null
 type PhysId = 'jumping-jacks' | 'obstacle-circuit' | 'balance-walk' | 'tiger-crawl' | 'ball-throw' | 'stretching' | 'body-percussion'
 
 // ── Category config ───────────────────────────────────────────
@@ -36,9 +43,20 @@ const AGE_MAP: Record<string, number> = { '5-11': 8, '12-17': 14, '18-22': 20 }
 // ── Interactive component detector ────────────────────────────
 function detectInteractive(ex: Exercise): { kind: InteractiveKind; physId?: PhysId } {
   const t = ex.title.toLowerCase()
-  if (t.includes('bubble breath') || t.includes('box breath') || t.includes('breath')) return { kind: 'breathing' }
+  // Breathing
+  if (t.includes('bubble breath') || t.includes('box breath') || t.includes('breathing')) return { kind: 'breathing' }
+  // Cognitive games
   if (t.includes('simon says')) return { kind: 'simon-says' }
-  if (t.includes('digital tracking') || t.includes('visual tracking') || t.includes('target toss')) return { kind: 'target-tracking' }
+  if (t.includes('stop') && t.includes('listen')) return { kind: 'stop-signal' }
+  // Visual tracking — screen game (NOT "target toss" which is physical throwing)
+  if (t.includes('digital tracking') || t.includes('visual tracking trail')) return { kind: 'target-tracking' }
+  // Balloon control — inhibition game
+  if (t.includes('balloon keep') || t.includes('balloon control')) return { kind: 'balloon-control' }
+  // Reaction time
+  if (t.includes('reaction time')) return { kind: 'reaction-game' }
+  // Body scan / muscle relaxation
+  if (t.includes('body scan') || t.includes('muscle relax') || t.includes('progressive muscle')) return { kind: 'body-scan' }
+  // Physical exercises with timer component
   if (t.includes('jumping jack')) return { kind: 'physical', physId: 'jumping-jacks' }
   if (t.includes('obstacle navigation') || t.includes('obstacle circuit')) return { kind: 'physical', physId: 'obstacle-circuit' }
   if (t.includes('balance walk') || t.includes('balance beam')) return { kind: 'physical', physId: 'balance-walk' }
@@ -86,9 +104,16 @@ function stepEmoji(text: string, cat: string): string {
 
 function keyTitle(text: string): string {
   const clean = text.replace(/\([^)]*\)/g, '').trim()
-  const part  = clean.split(/[—:؛،]/)[0].trim()
-  if (part.length <= 28) return part
-  return part.split(' ').slice(0, 5).join(' ')
+  const parts = clean.split(/\s*[—:؛،]\s*/)
+  const first = parts[0].trim()
+  // "المرحلة N / الجولة N / الجلسة N" are stage labels, not useful alone — append name
+  if (/^(المرحلة|الجولة|الجلسة)\s+\d/.test(first) && parts.length > 1) {
+    const label = first
+    const name  = parts[1].trim().split(' ').slice(0, 3).join(' ')
+    return `${label}: ${name}`
+  }
+  if (first.length <= 28) return first
+  return first.split(' ').slice(0, 5).join(' ')
 }
 
 function extractCount(text: string): number | null {
@@ -419,12 +444,37 @@ export default function ExercisesPage() {
                   {/* What to expect card */}
                   <div className="rounded-3xl p-5 text-center"
                     style={{ background: cfg.light, border: `2px solid ${cfg.shadow.replace('0.30','0.12')}` }}>
-                    <div style={{ fontSize: 68, lineHeight: 1, marginBottom: 10 }}>{cfg.icon}</div>
+                    <div style={{ fontSize: 68, lineHeight: 1, marginBottom: 10 }}>
+                      {kind === 'breathing' ? '🌬️' :
+                       kind === 'simon-says' ? '🎮' :
+                       kind === 'target-tracking' ? '🌟' :
+                       kind === 'balloon-control' ? '🎈' :
+                       kind === 'reaction-game' ? '⚡' :
+                       kind === 'stop-signal' ? '🛑' :
+                       kind === 'body-scan' ? '🧘' :
+                       cfg.icon}
+                    </div>
                     {isGame ? (
                       <>
-                        <p className="font-black text-gray-800 text-base mb-1">لعبة تفاعلية!</p>
+                        <p className="font-black text-gray-800 text-base mb-1">
+                          {kind === 'breathing' && 'تمرين تنفس تفاعلي'}
+                          {kind === 'simon-says' && 'لعبة التسلسل اللوني'}
+                          {kind === 'target-tracking' && 'لعبة تتبع الهدف المتحرك'}
+                          {kind === 'balloon-control' && 'لعبة التحكم في البالون'}
+                          {kind === 'reaction-game' && 'لعبة رد الفعل'}
+                          {kind === 'stop-signal' && 'لعبة توقف أو اكمل'}
+                          {kind === 'body-scan' && 'فحص عضلات الجسم'}
+                          {kind === 'physical' && 'تمرين جسدي موجّه'}
+                        </p>
                         <p className="text-sm text-gray-500 leading-relaxed">
-                          {selected.descriptionAr?.split(/[—–]/)[0].trim() || selected.titleAr}
+                          {kind === 'breathing' && 'حلقة تنفس حية — استنشق، احبس، أخرج — مع عداد مرئي'}
+                          {kind === 'simon-says' && 'شاهد تسلسل الألوان ثم كرّره بنفس الترتيب'}
+                          {kind === 'target-tracking' && 'اضغط النجمة 🌟 المتحركة ولا تضغط الدوائر الحمراء 🔴'}
+                          {kind === 'balloon-control' && 'البالون يكبر ببطء — اضغط عند المنطقة الخضراء!'}
+                          {kind === 'reaction-game' && 'اضغط الهدف الأخضر فور ظهوره — قِس سرعتك!'}
+                          {kind === 'stop-signal' && 'أخضر = اضغط بسرعة • أحمر = لا تضغط! تحدٍّ للتحكم'}
+                          {kind === 'body-scan' && 'شدّ وأرخِ كل عضلة واحدة بعد الأخرى مع مؤقت تلقائي'}
+                          {kind === 'physical' && (selected.descriptionAr?.split(/[—–]/)[0].trim() || selected.titleAr)}
                         </p>
                       </>
                     ) : (
@@ -453,19 +503,18 @@ export default function ExercisesPage() {
                   {isGame ? (
                     <div className="rounded-2xl overflow-hidden" style={{ border: '1.5px solid #E5E7EB' }}>
                       <div className="px-4 py-3 flex items-center gap-2" style={{ background: cfg.light }}>
-                        <Zap className="w-4 h-4" style={{ color: cfg.shadow.replace('rgba(','').split(',')[0] }} />
-                        <p className="text-xs font-black" style={{ color: '#374151' }}>
-                          {kind === 'breathing' && 'اختر نمط التنفس المناسب'}
-                          {kind === 'simon-says' && 'تمرين الذاكرة والتسلسل اللوني'}
-                          {kind === 'target-tracking' && 'تتبع النجمة المتحركة واضرب الهدف!'}
-                          {kind === 'physical' && 'تمرين جسدي مع توقيت ذكي'}
-                        </p>
+                        <Zap className="w-4 h-4 text-violet-500" />
+                        <p className="text-xs font-black text-gray-700">كيف تعمل اللعبة</p>
                       </div>
-                      <div className="px-4 py-3 text-sm text-gray-600">
-                        {kind === 'breathing' && '🌬️ سيرشدك التطبيق خطوة بخطوة مع حلقة تنفس حية'}
-                        {kind === 'simon-says' && '🔴🔵🟢🟡 شاهد التسلسل واضغط الألوان بنفس الترتيب'}
-                        {kind === 'target-tracking' && '🌟 اضغط على النجمة — لا تضغط على الدوائر الحمراء!'}
-                        {kind === 'physical' && '▶️ اضغط ابدأ وتابع الخطوات مع المؤقت التلقائي'}
+                      <div className="px-4 py-3 text-sm text-gray-600 leading-relaxed">
+                        {kind === 'breathing' && '🌬️ اختر نمط التنفس ثم اتبع الحلقة المتحركة — استنشق مع توسعها، وأخرج مع انكماشها'}
+                        {kind === 'simon-says' && '🔴🔵🟢🟡 يومض التسلسل — شاهد جيداً ثم كرّره باللمس بنفس الترتيب'}
+                        {kind === 'target-tracking' && '🌟 النجمة تتحرك بسرعة — الملسها! الدوائر الحمراء 🔴 خسارة نقطة'}
+                        {kind === 'balloon-control' && '🎈 البالون يكبر تدريجياً — اضغط "الآن!" في المنطقة الخضراء فقط — قبلها = اندفاع!'}
+                        {kind === 'reaction-game' && '⚡ انتظر النجمة الخضراء تظهر فجأة... اضغطها فوراً! لا تضغط قبل ظهورها'}
+                        {kind === 'stop-signal' && '🛑 دائرة خضراء = اضغط | دائرة حمراء = اثبت لا تتحرك! تحدٍّ 24 محاولة'}
+                        {kind === 'body-scan' && '🧘 5 مناطق في الجسم — شدّ كل منطقة 4 ثوانٍ ثم أرخِها — مؤقت تلقائي'}
+                        {kind === 'physical' && '▶️ اضغط ابدأ وتابع الخطوات مع المؤقت — المنبّه ينتقل تلقائياً'}
                       </div>
                     </div>
                   ) : (
@@ -504,10 +553,11 @@ export default function ExercisesPage() {
 
             {/* ─── GAME MODE: Interactive component ─── */}
             {phase === 'game' && isGame && (
-              <div className="w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl overflow-hidden"
-                style={{ background: `linear-gradient(160deg, ${cfg.dark}, #0f172a)`, maxHeight: '95vh', overflowY: 'auto' }}>
+              <div className="w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl flex flex-col"
+                style={{ background: `linear-gradient(160deg, ${cfg.dark}, #0f172a)`,
+                  height: '92vh', maxHeight: 680, overflowY: 'auto' }}>
                 {/* Dark header */}
-                <div className="flex items-center justify-between px-5 pt-5 pb-3">
+                <div className="flex items-center justify-between px-5 pt-5 pb-3 flex-shrink-0">
                   <button onClick={handleCancel}
                     className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl"
                     style={{ background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.7)' }}>
@@ -526,6 +576,18 @@ export default function ExercisesPage() {
                 )}
                 {kind === 'target-tracking' && (
                   <TargetTracking onComplete={handleComplete} onCancel={handleCancel} studentAge={age} difficulty={diff} />
+                )}
+                {kind === 'balloon-control' && (
+                  <BalloonControl onComplete={handleComplete} onCancel={handleCancel} studentAge={age} difficulty={diff} />
+                )}
+                {kind === 'reaction-game' && (
+                  <ReactionGame onComplete={handleComplete} onCancel={handleCancel} studentAge={age} difficulty={diff} />
+                )}
+                {kind === 'stop-signal' && (
+                  <StopSignal onComplete={handleComplete} onCancel={handleCancel} studentAge={age} difficulty={diff} />
+                )}
+                {kind === 'body-scan' && (
+                  <BodyScan onComplete={handleComplete} onCancel={handleCancel} studentAge={age} difficulty={diff} />
                 )}
                 {kind === 'physical' && physId && (
                   <PhysicalExercise id={physId} onComplete={handleComplete} onCancel={handleCancel} studentAge={age} difficulty={diff} />

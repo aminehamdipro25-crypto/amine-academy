@@ -1,5 +1,6 @@
 'use client'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { useParams, useRouter } from 'next/navigation'
 import { Clock, X, Save, Video, Star, ClipboardList, PenLine, ChevronDown, User, Gamepad2, BarChart3, BookOpen, Play, Youtube, ExternalLink } from 'lucide-react'
 import type { ExerciseResult, AssessmentResult, SessionObservations } from '@/lib/types'
@@ -304,6 +305,35 @@ function formatTime(s: number) {
   return `${m}:${sec}`
 }
 
+// Renders dropdown panels via a portal so the toolbar's overflow-x-auto
+// (which forces overflow-y to clip too, per the CSS overflow spec) never hides them.
+function ToolbarPopover({ anchorRef, open, children }: { anchorRef: React.RefObject<HTMLElement | null>; open: boolean; children: React.ReactNode }) {
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null)
+
+  useEffect(() => {
+    if (!open || !anchorRef.current) { setPos(null); return }
+    const update = () => {
+      const r = anchorRef.current!.getBoundingClientRect()
+      setPos({ top: r.bottom + 8, left: r.left })
+    }
+    update()
+    window.addEventListener('scroll', update, true)
+    window.addEventListener('resize', update)
+    return () => {
+      window.removeEventListener('scroll', update, true)
+      window.removeEventListener('resize', update)
+    }
+  }, [open, anchorRef])
+
+  if (!open || !pos || typeof document === 'undefined') return null
+  return createPortal(
+    <div style={{ position: 'fixed', top: pos.top, left: pos.left, zIndex: 9999 }}>
+      {children}
+    </div>,
+    document.body
+  )
+}
+
 type SoundType = 'success' | 'complete' | 'start' | 'phase' | 'tick' | 'ding' | 'compare' | 'abc'
 
 function playSound(type: SoundType) {
@@ -496,6 +526,11 @@ export default function SessionPage() {
   const noiseSrcRef   = useRef<AudioBufferSourceNode | null>(null)
   const noiseTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
+  // Toolbar dropdown anchors (positions for portal-rendered popovers)
+  const promptBtnRef = useRef<HTMLDivElement>(null)
+  const timerBtnRef  = useRef<HTMLDivElement>(null)
+  const noiseBtnRef  = useRef<HTMLDivElement>(null)
+
   // Pre-session readiness check
   const [readyDone, setReadyDone]     = useState(false)
   const [readySleep, setReadySleep]   = useState(0)
@@ -675,10 +710,12 @@ export default function SessionPage() {
     playSound('start')
   }
 
-  function showAchievement(icon: string, message: string) {
+  const showAchievement = useCallback((icon: string, message: string) => {
     setAchievementToast({ icon, message })
     setTimeout(() => setAchievementToast(null), 3500)
-  }
+  }, [])
+
+  const topGames = profile ? getTopGames(profile, 3) : []
 
   function logObs(text: string, category: string, color: string) {
     const now = new Date()
@@ -1071,7 +1108,7 @@ ${notes ? `
   }
 
   // Cancel exercise — blocked when session is locked (child can't exit)
-  function handleCancel() { if (!sessionLocked) setActiveView(null) }
+  const handleCancel = useCallback(() => { if (!sessionLocked) setActiveView(null) }, [sessionLocked])
 
   // Unlock: requires 3 quick taps within 2 s
   function handleUnlockTap() {
@@ -1108,7 +1145,7 @@ ${notes ? `
     }
   }
 
-  function handleExerciseComplete(result: ExerciseResult) {
+  const handleExerciseComplete = useCallback((result: ExerciseResult) => {
     setResults(r => {
       // Before/After comparison: detect if same exercise was played before in this session
       const prev = r.find(x => x.exerciseType === result.exerciseType)
@@ -1177,9 +1214,9 @@ ${notes ? `
         }
       })
     }
-  }
+  }, [kidMode, topGames, currentStudentId, id, difficulty, queueActive, exerciseQueue, showAchievement])
 
-  function handleAssessmentComplete(result: AssessmentResult) {
+  const handleAssessmentComplete = useCallback((result: AssessmentResult) => {
     setAssessments(a => [...a, result])
     setActiveView(null)
     // Save assessment to API
@@ -1188,7 +1225,7 @@ ${notes ? `
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(result),
     }).catch(() => {})
-  }
+  }, [])
 
   async function saveSession() {
     setSaving(true)
@@ -1215,7 +1252,6 @@ ${notes ? `
     }
   }
 
-  const topGames = profile ? getTopGames(profile, 3) : []
   const activeDifficulty: 1|2|3 = (activeView?.type === 'exercise' && exerciseDiffOverrides[activeView.id])
     ? exerciseDiffOverrides[activeView.id]!
     : difficulty
@@ -1610,7 +1646,7 @@ ${notes ? `
           سبورة
         </button>
 
-        <div className="relative flex-shrink-0">
+        <div className="relative flex-shrink-0" ref={promptBtnRef}>
           <button
             onClick={() => setPromptPickerOpen(p => !p)}
             className={`flex items-center gap-1.5 font-black px-2.5 py-1.5 rounded-lg text-xs transition-all ${
@@ -1622,27 +1658,27 @@ ${notes ? `
           >
             🃏 بطاقة
           </button>
-          {promptPickerOpen && (
-            <div
-              className="absolute top-full mt-2 left-0 z-[70] rounded-2xl overflow-hidden shadow-2xl"
-              style={{ background: '#111827', border: '1.5px solid rgba(255,255,255,0.12)', minWidth: 200 }}
-              dir="rtl"
-            >
-              {PROMPT_CARDS.map(card => (
-                <button
-                  key={card.id}
-                  onClick={() => { setPromptCard(card); setPromptPickerOpen(false) }}
-                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/10 transition-colors text-right"
-                >
-                  <span className="text-2xl">{card.emoji}</span>
-                  <span className="text-white font-black text-sm">{card.text}</span>
-                </button>
-              ))}
-            </div>
-          )}
         </div>
+        <ToolbarPopover anchorRef={promptBtnRef} open={promptPickerOpen}>
+          <div
+            className="rounded-2xl overflow-hidden shadow-2xl"
+            style={{ background: '#111827', border: '1.5px solid rgba(255,255,255,0.12)', minWidth: 200 }}
+            dir="rtl"
+          >
+            {PROMPT_CARDS.map(card => (
+              <button
+                key={card.id}
+                onClick={() => { setPromptCard(card); setPromptPickerOpen(false) }}
+                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/10 transition-colors text-right"
+              >
+                <span className="text-2xl">{card.emoji}</span>
+                <span className="text-white font-black text-sm">{card.text}</span>
+              </button>
+            ))}
+          </div>
+        </ToolbarPopover>
 
-        <div className="relative flex-shrink-0">
+        <div className="relative flex-shrink-0" ref={timerBtnRef}>
           <button
             onClick={() => setTimerPickerOpen(p => !p)}
             className={`flex items-center gap-1.5 font-black px-2.5 py-1.5 rounded-lg text-xs transition-all ${
@@ -1654,40 +1690,40 @@ ${notes ? `
           >
             ⏱ {showStudentTimer ? formatTime(studentTimerLeft) : 'مؤقت'}
           </button>
-          {timerPickerOpen && (
-            <div
-              className="absolute top-full mt-2 left-0 z-[70] rounded-2xl p-3 shadow-2xl"
-              style={{ background: '#111827', border: '1.5px solid rgba(255,255,255,0.12)', minWidth: 180 }}
-              dir="rtl"
-            >
-              <p className="text-white/40 text-[10px] font-black mb-2">اختر مدة المؤقت</p>
-              <div className="grid grid-cols-2 gap-1.5 mb-2">
-                {[[60,'1 دقيقة'],[120,'2 دقيقة'],[180,'3 دقائق'],[300,'5 دقائق']].map(([s,l]) => (
-                  <button
-                    key={s}
-                    onClick={() => startStudentTimer(s as number)}
-                    className="py-2 rounded-xl text-xs font-black text-white transition-all hover:ring-1 hover:ring-orange-400"
-                    style={{ background: 'rgba(255,255,255,0.08)' }}
-                  >
-                    {l as string}
-                  </button>
-                ))}
-              </div>
-              {showStudentTimer && (
-                <button
-                  onClick={() => { setShowStudentTimer(false); setStudentTimerRunning(false); setTimerPickerOpen(false) }}
-                  className="w-full py-1.5 rounded-xl text-[10px] font-black text-red-400 transition-all"
-                  style={{ background: 'rgba(239,68,68,0.1)' }}
-                >
-                  إيقاف المؤقت
-                </button>
-              )}
-            </div>
-          )}
         </div>
+        <ToolbarPopover anchorRef={timerBtnRef} open={timerPickerOpen}>
+          <div
+            className="rounded-2xl p-3 shadow-2xl"
+            style={{ background: '#111827', border: '1.5px solid rgba(255,255,255,0.12)', minWidth: 180 }}
+            dir="rtl"
+          >
+            <p className="text-white/40 text-[10px] font-black mb-2">اختر مدة المؤقت</p>
+            <div className="grid grid-cols-2 gap-1.5 mb-2">
+              {[[60,'1 دقيقة'],[120,'2 دقيقة'],[180,'3 دقائق'],[300,'5 دقائق']].map(([s,l]) => (
+                <button
+                  key={s}
+                  onClick={() => startStudentTimer(s as number)}
+                  className="py-2 rounded-xl text-xs font-black text-white transition-all hover:ring-1 hover:ring-orange-400"
+                  style={{ background: 'rgba(255,255,255,0.08)' }}
+                >
+                  {l as string}
+                </button>
+              ))}
+            </div>
+            {showStudentTimer && (
+              <button
+                onClick={() => { setShowStudentTimer(false); setStudentTimerRunning(false); setTimerPickerOpen(false) }}
+                className="w-full py-1.5 rounded-xl text-[10px] font-black text-red-400 transition-all"
+                style={{ background: 'rgba(239,68,68,0.1)' }}
+              >
+                إيقاف المؤقت
+              </button>
+            )}
+          </div>
+        </ToolbarPopover>
 
         {/* White noise / focus music */}
-        <div className="relative flex-shrink-0">
+        <div className="relative flex-shrink-0" ref={noiseBtnRef}>
           <button
             onClick={() => setShowNoisePanel(p => !p)}
             className={`flex items-center gap-1.5 font-black px-2.5 py-1.5 rounded-lg text-xs transition-all ${
@@ -1699,68 +1735,68 @@ ${notes ? `
           >
             🎵 {noiseRunning ? formatTime(noiseSecsLeft) : 'موسيقى'}
           </button>
-          {showNoisePanel && (
-            <div
-              className="absolute top-full mt-2 left-0 z-[70] rounded-2xl p-3 shadow-2xl"
-              style={{ background: '#0f172a', border: '1.5px solid rgba(6,182,212,0.25)', minWidth: 230 }}
-              dir="rtl"
-            >
-              <p className="text-white/40 text-[10px] font-black mb-2.5 flex items-center gap-1">
-                🎵 موسيقى التركيز <span className="text-cyan-400">(5 دقائق)</span>
-              </p>
-
-              {/* Mode selector */}
-              <div className="grid grid-cols-3 gap-1.5 mb-3">
-                {([
-                  { key: 'white', label: 'ضوضاء بيضاء', emoji: '🌊' },
-                  { key: 'rain',  label: 'مطر',          emoji: '🌧️' },
-                  { key: 'focus', label: 'غاما 40Hz',    emoji: '🧠' },
-                ] as const).map(m => (
-                  <button
-                    key={m.key}
-                    onClick={() => { setNoiseMode(m.key); if (noiseRunning) stopNoise() }}
-                    className={`py-2 px-1 rounded-xl text-[10px] font-black text-center transition-all leading-tight ${
-                      noiseMode === m.key
-                        ? 'bg-cyan-600 text-white'
-                        : 'text-white/50 hover:text-white/80'
-                    }`}
-                    style={{ background: noiseMode === m.key ? undefined : 'rgba(255,255,255,0.07)' }}
-                  >
-                    <div className="text-base mb-0.5">{m.emoji}</div>
-                    <div>{m.label}</div>
-                  </button>
-                ))}
-              </div>
-
-              {/* Countdown */}
-              {noiseRunning && (
-                <div className="text-center mb-3">
-                  <div className="text-cyan-400 font-black text-xl ltr-num">{formatTime(noiseSecsLeft)}</div>
-                  <div className="h-1.5 bg-white/10 rounded-full mt-1.5 overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-l from-cyan-400 to-cyan-600 rounded-full transition-all duration-1000"
-                      style={{ width: `${((5 * 60 - noiseSecsLeft) / (5 * 60)) * 100}%` }}
-                    />
-                  </div>
-                </div>
-              )}
-
-              <button
-                onClick={() => noiseRunning ? stopNoise() : startNoise()}
-                className={`w-full py-2.5 rounded-xl text-sm font-black transition-all ${
-                  noiseRunning
-                    ? 'bg-red-600/80 hover:bg-red-600 text-white'
-                    : 'bg-cyan-600 hover:bg-cyan-500 text-white'
-                }`}
-              >
-                {noiseRunning ? '⏹ إيقاف' : '▶ تشغيل'}
-              </button>
-              <p className="text-white/20 text-[9px] mt-2 text-center leading-relaxed">
-                الضوضاء البيضاء تُحسّن التركيز لدى ADHD — موثّق علمياً
-              </p>
-            </div>
-          )}
         </div>
+        <ToolbarPopover anchorRef={noiseBtnRef} open={showNoisePanel}>
+          <div
+            className="rounded-2xl p-3 shadow-2xl"
+            style={{ background: '#0f172a', border: '1.5px solid rgba(6,182,212,0.25)', minWidth: 230 }}
+            dir="rtl"
+          >
+            <p className="text-white/40 text-[10px] font-black mb-2.5 flex items-center gap-1">
+              🎵 موسيقى التركيز <span className="text-cyan-400">(5 دقائق)</span>
+            </p>
+
+            {/* Mode selector */}
+            <div className="grid grid-cols-3 gap-1.5 mb-3">
+              {([
+                { key: 'white', label: 'ضوضاء بيضاء', emoji: '🌊' },
+                { key: 'rain',  label: 'مطر',          emoji: '🌧️' },
+                { key: 'focus', label: 'غاما 40Hz',    emoji: '🧠' },
+              ] as const).map(m => (
+                <button
+                  key={m.key}
+                  onClick={() => { setNoiseMode(m.key); if (noiseRunning) stopNoise() }}
+                  className={`py-2 px-1 rounded-xl text-[10px] font-black text-center transition-all leading-tight ${
+                    noiseMode === m.key
+                      ? 'bg-cyan-600 text-white'
+                      : 'text-white/50 hover:text-white/80'
+                  }`}
+                  style={{ background: noiseMode === m.key ? undefined : 'rgba(255,255,255,0.07)' }}
+                >
+                  <div className="text-base mb-0.5">{m.emoji}</div>
+                  <div>{m.label}</div>
+                </button>
+              ))}
+            </div>
+
+            {/* Countdown */}
+            {noiseRunning && (
+              <div className="text-center mb-3">
+                <div className="text-cyan-400 font-black text-xl ltr-num">{formatTime(noiseSecsLeft)}</div>
+                <div className="h-1.5 bg-white/10 rounded-full mt-1.5 overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-l from-cyan-400 to-cyan-600 rounded-full transition-all duration-1000"
+                    style={{ width: `${((5 * 60 - noiseSecsLeft) / (5 * 60)) * 100}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
+            <button
+              onClick={() => noiseRunning ? stopNoise() : startNoise()}
+              className={`w-full py-2.5 rounded-xl text-sm font-black transition-all ${
+                noiseRunning
+                  ? 'bg-red-600/80 hover:bg-red-600 text-white'
+                  : 'bg-cyan-600 hover:bg-cyan-500 text-white'
+              }`}
+            >
+              {noiseRunning ? '⏹ إيقاف' : '▶ تشغيل'}
+            </button>
+            <p className="text-white/20 text-[9px] mt-2 text-center leading-relaxed">
+              الضوضاء البيضاء تُحسّن التركيز لدى ADHD — موثّق علمياً
+            </p>
+          </div>
+        </ToolbarPopover>
 
         <div className="w-px h-5 bg-white/15 flex-shrink-0" />
 

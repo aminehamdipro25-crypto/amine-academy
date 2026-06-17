@@ -23,24 +23,32 @@ export default function MemoryCards({ onComplete, onCancel, difficulty = 1 }: Pr
   const [done, setDone]           = useState(false)
   const [elapsed, setElapsed]     = useState(0)
   const [celebrating, setCelebrating] = useState(false)
+  const [previewing, setPreviewing]   = useState(true)
 
   useEffect(() => {
     const emojis = emojiSet.slice(0, pairCount)
     const pairs  = [...emojis, ...emojis]
       .sort(() => Math.random() - 0.5)
-      .map((emoji, i) => ({ id: i, emoji, flipped: false, matched: false }))
+      .map((emoji, i) => ({ id: i, emoji, flipped: true, matched: false }))
     setCards(pairs)
-    startRef.current = Date.now()
+    setPreviewing(true)
+    const revealMs = 1500 + pairCount * 250
+    const t = setTimeout(() => {
+      setCards(c => c.map(card => ({ ...card, flipped: false })))
+      setPreviewing(false)
+      startRef.current = Date.now()
+    }, revealMs)
+    return () => clearTimeout(t)
   }, [pairCount, emojiSet])
 
   useEffect(() => {
-    if (done) return
+    if (done || previewing) return
     const id = setInterval(() => setElapsed(Math.floor((Date.now() - startRef.current) / 1000)), 1000)
     return () => clearInterval(id)
-  }, [done])
+  }, [done, previewing])
 
   const handleFlip = useCallback((id: number) => {
-    if (locked || cards[id]?.flipped || cards[id]?.matched) return
+    if (previewing || locked || cards[id]?.flipped || cards[id]?.matched) return
     const newFlipped = [...flipped, id]
     setCards(c => c.map(card => card.id === id ? { ...card, flipped: true } : card))
     if (newFlipped.length === 2) {
@@ -83,7 +91,7 @@ export default function MemoryCards({ onComplete, onCancel, difficulty = 1 }: Pr
     } else {
       setFlipped(newFlipped)
     }
-  }, [locked, cards, flipped, matches, pairCount, errors, onComplete])
+  }, [previewing, locked, cards, flipped, matches, pairCount, errors, onComplete])
 
   const cols = pairCount <= 6 ? 3 : pairCount <= 8 ? 4 : 5
   const fmt  = (s: number) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
@@ -128,7 +136,10 @@ export default function MemoryCards({ onComplete, onCancel, difficulty = 1 }: Pr
           <div className="text-base font-black text-blue-400 font-mono">{fmt(elapsed)}</div>
           <div className="text-[10px] text-white/40">الوقت</div>
         </div>
-        <h2 className="text-lg font-black text-white">مطابقة البطاقات</h2>
+        <h2 className="text-lg font-black text-white">
+          مطابقة البطاقات
+          {previewing && <span className="block text-xs font-bold text-amber-400 mt-0.5">احفظ الأماكن! 👀</span>}
+        </h2>
         <div className="flex gap-3">
           <div className="text-center">
             <div className="text-lg font-black text-green-400">{matches}</div>
@@ -151,7 +162,7 @@ export default function MemoryCards({ onComplete, onCancel, difficulty = 1 }: Pr
         {cards.map(card => (
           <div key={card.id}
             onClick={() => handleFlip(card.id)}
-            style={{ width: 76, height: 76, perspective: '600px', cursor: card.matched || card.flipped ? 'default' : 'pointer' }}
+            style={{ width: 76, height: 76, perspective: '600px', cursor: previewing || card.matched || card.flipped ? 'default' : 'pointer' }}
           >
             <div className={`mc-inner ${card.flipped || card.matched ? 'mc-flipped' : ''}`}>
               {/* Front */}

@@ -13,15 +13,15 @@ const QUICK = [
 ]
 
 function nowTime() {
-  return new Date().toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit' })
+  return new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
 }
 
 function formatMsgTime(iso: string) {
-  try { return new Date(iso).toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit' }) } catch { return '' }
+  try { return new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) } catch { return '' }
 }
 
 function formatMsgDate(iso: string) {
-  try { return new Date(iso).toLocaleDateString('ar', { year: 'numeric', month: 'short', day: 'numeric' }) } catch { return '' }
+  try { return new Date(iso).toLocaleDateString('fr-FR', { year: 'numeric', month: 'short', day: 'numeric' }) } catch { return '' }
 }
 
 // ── AI Chat Tab ──────────────────────────────────────────────────

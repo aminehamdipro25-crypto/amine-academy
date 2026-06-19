@@ -45,7 +45,7 @@ export default function TokenBoard({ onComplete, onCancel, studentAge, difficult
   function awardToken(behavior: string) {
     const newTokens = tokens + 1
     setTokens(newTokens)
-    const time = new Date().toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })
+    const time = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
     setLog(prev => [...prev, { behavior, time }])
     if (newTokens >= goal) {
       setCelebration(true)

@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
       html: `<div dir="rtl" style="font-family:sans-serif;padding:24px">
         <h2 style="color:#5b6ef2">اختبار ناجح!</h2>
         <p>تم إرسال هذا البريد بنجاح من خادم أكاديمية أمين الدولية.</p>
-        <p style="color:#64748b;font-size:13px">التاريخ: ${new Date().toLocaleString('ar')}</p>
+        <p style="color:#64748b;font-size:13px">التاريخ: ${new Date().toLocaleString('fr-FR')}</p>
       </div>`,
     })
 

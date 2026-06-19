@@ -78,7 +78,7 @@ export default async function AnalyticsPage() {
   const months: Array<{ label: string; count: number }> = []
   for (let i = 5; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
-    const label = d.toLocaleDateString('ar-SA', { month: 'short', year: '2-digit' })
+    const label = d.toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' })
     const count = parents.filter(p => {
       const created = new Date(p.createdAt)
       return created.getFullYear() === d.getFullYear() && created.getMonth() === d.getMonth()

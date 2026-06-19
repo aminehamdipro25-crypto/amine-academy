@@ -178,7 +178,7 @@ export default function AdminPaymentsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {filtered.map(payment => {
             const isProcessing = processingId === payment.id
-            const date = new Date(payment.createdAt).toLocaleDateString('ar-QA', {
+            const date = new Date(payment.createdAt).toLocaleDateString('fr-FR', {
               year: 'numeric', month: 'short', day: 'numeric',
             })
 

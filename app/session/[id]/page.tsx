@@ -742,7 +742,7 @@ export default function SessionPage() {
 
   function logObs(text: string, category: string, color: string) {
     const now = new Date()
-    const ts = now.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })
+    const ts = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
     const entry: ObsEntry = { text, category, color, elapsed, ts }
     setObsLog(prev => [...prev, entry])
     setObsOpen(false)
@@ -830,8 +830,8 @@ export default function SessionPage() {
   }
 
   function printSessionReport() {
-    const date = new Date().toLocaleDateString('ar-SA', { year: 'numeric', month: 'long', day: 'numeric' })
-    const time = new Date().toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })
+    const date = new Date().toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' })
+    const time = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
     const avgScoreVal = results.length
       ? Math.round(results.reduce((s, r) => s + r.score, 0) / results.length) : 0
 
@@ -1123,7 +1123,7 @@ ${notes ? `
   function logABC() {
     if (!abcForm.antecedent && !abcForm.behavior) return
     const now = new Date()
-    const ts = now.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })
+    const ts = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
     setAbcLog(prev => [...prev, { ...abcForm, ts, elapsed }])
     setAbcForm({ antecedent: '', behavior: '', consequence: '', intensity: 2 })
     setAbcOpen(false)

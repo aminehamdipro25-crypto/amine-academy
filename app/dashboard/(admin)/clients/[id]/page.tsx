@@ -351,7 +351,7 @@ export default function ClientDetailPage() {
               <span className="flex items-center gap-1"><Mail className="w-3.5 h-3.5" />{parent.email}</span>
               {parent.phone && <span className="flex items-center gap-1 ltr-num"><Phone className="w-3.5 h-3.5" />{parent.phone}</span>}
               {parent.country && <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" />{parent.country}</span>}
-              <span className="flex items-center gap-1 ltr-num"><Calendar className="w-3.5 h-3.5" />{new Date(parent.createdAt).toLocaleDateString('ar-SA')}</span>
+              <span className="flex items-center gap-1 ltr-num"><Calendar className="w-3.5 h-3.5" />{new Date(parent.createdAt).toLocaleDateString('fr-FR')}</span>
             </div>
           </div>
           <div className="flex flex-wrap gap-2 flex-shrink-0">
@@ -856,7 +856,7 @@ export default function ClientDetailPage() {
                   <div key={a.id} className="px-6 py-3 flex items-center justify-between">
                     <div>
                       <div className="text-sm font-bold text-gray-800 ltr-num">
-                        {new Date(a.date).toLocaleDateString('ar-SA', { weekday: 'long', day: 'numeric', month: 'long' })}
+                        {new Date(a.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
                         {' '}{a.timeSlot}
                       </div>
                       <div className="text-xs text-gray-500 mt-0.5">{a.notes || '—'}</div>
@@ -903,7 +903,7 @@ export default function ClientDetailPage() {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
                               <span className="text-sm font-bold text-gray-800 ltr-num">
-                                {new Date(a.date).toLocaleDateString('ar-SA', { weekday: 'short', day: 'numeric', month: 'short' })}
+                                {new Date(a.date).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
                                 {' '}{a.timeSlot}
                               </span>
                               {log?.durationSeconds > 0 && (

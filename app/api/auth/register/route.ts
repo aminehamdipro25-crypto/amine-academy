@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
       `🧒 الطفل: ${tgEsc(student.firstName)} ${tgEsc(student.lastName)}\n` +
       `🏷 التشخيص: ${tgEsc(student.diagnosis)} | العمر: ${tgEsc(student.ageGroup)}\n` +
       `📦 الخطة: ${tgEsc(newParent.subscriptionPlan)}\n` +
-      `🕐 ${new Date().toLocaleString('ar-SA', { timeZone: 'Asia/Qatar' })}`
+      `🕐 ${new Date().toLocaleString('fr-FR', { timeZone: 'Asia/Qatar' })}`
     ).catch(() => {})
 
     return NextResponse.json({ ok: true, parentId: newParent.id })

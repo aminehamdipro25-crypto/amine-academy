@@ -163,7 +163,7 @@ export default async function ReportsPage() {
                       {TYPE_LABEL[report.type] ?? report.type}
                     </span>
                     <span className="text-[11px] text-gray-400 ltr-num bg-gray-50 px-2.5 py-1 rounded-full">
-                      {new Date(report.createdAt).toLocaleDateString('ar-SA')}
+                      {new Date(report.createdAt).toLocaleDateString('fr-FR')}
                     </span>
                   </div>
                 </div>

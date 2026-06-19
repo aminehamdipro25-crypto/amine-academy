@@ -75,7 +75,7 @@ export async function POST(req: Request) {
           `📆 التاريخ: ${tgEsc(date)}\n` +
           `⏰ الوقت: ${tgEsc(timeSlot)}\n` +
           (notes?.trim() ? `📝 ملاحظات: ${tgEsc(notes)}\n` : '') +
-          `🕐 ${new Date().toLocaleString('ar-SA', { timeZone: 'Asia/Qatar' })}`
+          `🕐 ${new Date().toLocaleString('fr-FR', { timeZone: 'Asia/Qatar' })}`
         ).catch(() => {})
       }
     } catch { /* email failure non-critical */ }

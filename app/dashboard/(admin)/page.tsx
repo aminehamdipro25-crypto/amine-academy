@@ -26,7 +26,7 @@ export default async function AdminDashboardPage() {
   const pendingPayments = payments.filter(p => p.status === 'pending')
   const recentParents = [...parents].reverse().slice(0, 5)
 
-  const todayAr = new Date().toLocaleDateString('ar-SA', {
+  const todayAr = new Date().toLocaleDateString('fr-FR', {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
     timeZone: 'Asia/Qatar',
   })

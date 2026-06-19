@@ -18,24 +18,24 @@ function formatTime(iso: string) {
     const now = new Date()
     const diffDays = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24))
     if (diffDays === 0) {
-      return d.toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit' })
+      return d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
     } else if (diffDays === 1) {
       return 'أمس'
     } else {
-      return d.toLocaleDateString('ar', { month: 'short', day: 'numeric' })
+      return d.toLocaleDateString('fr-FR', { month: 'short', day: 'numeric' })
     }
   } catch { return '' }
 }
 
 function formatMsgDate(iso: string) {
   try {
-    return new Date(iso).toLocaleDateString('ar', { year: 'numeric', month: 'short', day: 'numeric' })
+    return new Date(iso).toLocaleDateString('fr-FR', { year: 'numeric', month: 'short', day: 'numeric' })
   } catch { return '' }
 }
 
 function formatMsgTime(iso: string) {
   try {
-    return new Date(iso).toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit' })
+    return new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
   } catch { return '' }
 }
 

@@ -73,9 +73,9 @@ function ReportDocument({ report, child }: { report: ProgressReport; child: Stud
 
   const typeCfg = TYPE_CFG[report.type] ?? { ar: report.type, icon: '📄' }
   const dateOpts: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'long', day: 'numeric' }
-  const issueDate  = new Date(report.createdAt).toLocaleDateString('ar-SA', dateOpts)
-  const periodFrom = new Date(report.periodStart).toLocaleDateString('ar-SA', dateOpts)
-  const periodTo   = new Date(report.periodEnd).toLocaleDateString('ar-SA', dateOpts)
+  const issueDate  = new Date(report.createdAt).toLocaleDateString('fr-FR', dateOpts)
+  const periodFrom = new Date(report.periodStart).toLocaleDateString('fr-FR', dateOpts)
+  const periodTo   = new Date(report.periodEnd).toLocaleDateString('fr-FR', dateOpts)
   const diagnosisAr = DIAGNOSIS_AR[child.diagnosis] ?? child.diagnosis
 
   function handlePrint() {

@@ -106,7 +106,7 @@ export default async function ClientsPage() {
             const status = STATUS[parent.subscriptionStatus] ?? { label: parent.subscriptionStatus, dot: 'bg-gray-400', badge: 'bg-gray-100 text-gray-600 ring-1 ring-gray-200' }
             const gradient = AVATAR_COLORS[idx % AVATAR_COLORS.length]
             const plan = PLAN_LABELS[parent.subscriptionPlan] || parent.subscriptionPlan
-            const joinDate = new Date(parent.createdAt).toLocaleDateString('ar-SA', { year: 'numeric', month: 'short', day: 'numeric' })
+            const joinDate = new Date(parent.createdAt).toLocaleDateString('fr-FR', { year: 'numeric', month: 'short', day: 'numeric' })
             const childCount = parent.childrenIds?.length ?? 0
             const expiringIn7 = parent.subscriptionExpiry
               ? (new Date(parent.subscriptionExpiry).getTime() - Date.now()) / (1000 * 60 * 60 * 24) <= 7

@@ -125,7 +125,7 @@ export default async function AppointmentsPage() {
                         {parent ? `${parent.firstName} ${parent.lastName}` : '—'}
                       </p>
                       <p className="text-blue-200 text-[11px] ltr-num">
-                        {new Date(appt.date).toLocaleDateString('ar-SA', { weekday: 'short', month: 'short', day: 'numeric' })}
+                        {new Date(appt.date).toLocaleDateString('fr-FR', { weekday: 'short', month: 'short', day: 'numeric' })}
                         {' · '}{appt.timeSlot}
                       </p>
                     </div>
@@ -171,7 +171,7 @@ export default async function AppointmentsPage() {
             const type = TYPE_CFG[appt.type]
             const StatusIcon = status.icon
             const gradient = AVATAR_GRADIENTS[idx % AVATAR_GRADIENTS.length]
-            const dateStr = new Date(appt.date).toLocaleDateString('ar-SA', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })
+            const dateStr = new Date(appt.date).toLocaleDateString('fr-FR', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })
 
             return (
               <div

@@ -25,7 +25,7 @@ export default function JournalPage() {
   const [text, setText] = useState('')
   const [saved, setSaved] = useState(false)
 
-  const todayStr = new Date().toLocaleDateString('ar-SA-u-ca-gregory', {
+  const todayStr = new Date().toLocaleDateString('fr-FR', {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
   })
   const prompt = PROMPTS[new Date().getDay() % PROMPTS.length]
@@ -196,7 +196,7 @@ export default function JournalPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs text-gray-400 ltr-num">
-                      {new Date(e.date).toLocaleDateString('ar-SA')}
+                      {new Date(e.date).toLocaleDateString('fr-FR')}
                     </p>
                     {e.text
                       ? <p className="text-sm text-gray-700 font-medium truncate mt-0.5">{e.text}</p>

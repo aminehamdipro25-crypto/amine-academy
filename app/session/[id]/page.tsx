@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { useParams, useRouter } from 'next/navigation'
 import { Clock, X, Save, Video, Star, ClipboardList, PenLine, ChevronDown, User, Gamepad2, BarChart3, BookOpen, Play, Youtube, ExternalLink } from 'lucide-react'
@@ -715,7 +715,12 @@ export default function SessionPage() {
     setTimeout(() => setAchievementToast(null), 3500)
   }, [])
 
-  const topGames = profile ? getTopGames(profile, 3) : []
+  // useMemo — getTopGames returns a new array every call; without memoizing it,
+  // handleExerciseComplete (which depends on topGames) gets recreated every
+  // render, which re-triggers every exercise component's onComplete-dependent
+  // effects (e.g. BreathingGuide's countdown) on every tick of the page's
+  // 1-second elapsed-time timer, freezing them.
+  const topGames = useMemo(() => (profile ? getTopGames(profile, 3) : []), [profile])
 
   function logObs(text: string, category: string, color: string) {
     const now = new Date()

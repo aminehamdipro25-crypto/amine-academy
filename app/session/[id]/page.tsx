@@ -457,6 +457,10 @@ export default function SessionPage() {
   const [kidMode, setKidMode] = useState(false)
   const [showCelebration, setShowCelebration] = useState(false)
   const [achievementToast, setAchievementToast] = useState<{ icon: string; message: string } | null>(null)
+  const headerRef = useRef<HTMLElement>(null)
+  const toolbarRef = useRef<HTMLDivElement>(null)
+  const phaseBarRef = useRef<HTMLDivElement>(null)
+  const [toastTop, setToastTop] = useState(96)
   const [focusMode, setFocusMode] = useState(false)
   const [jitsiUrl, setJitsiUrl] = useState<string | null>(null)
   const [currentStudentId, setCurrentStudentId] = useState<string>('')
@@ -584,6 +588,20 @@ export default function SessionPage() {
     }, 2000)
     return () => clearTimeout(tid)
   }, [elapsed, running, results, assessments, notes, difficulty, obsLog, abcLog, phaseIdx, phaseDurations, id])
+
+  // Track header + toolbar + phase-bar height so top toasts never overlap them, regardless of how many rows they take
+  useEffect(() => {
+    const update = () => {
+      const h = (headerRef.current?.offsetHeight ?? 0) + (toolbarRef.current?.offsetHeight ?? 0) + (phaseBarRef.current?.offsetHeight ?? 0)
+      setToastTop(h > 0 ? h + 16 : 64)
+    }
+    update()
+    const ro = new ResizeObserver(update)
+    if (headerRef.current) ro.observe(headerRef.current)
+    if (toolbarRef.current) ro.observe(toolbarRef.current)
+    if (phaseBarRef.current) ro.observe(phaseBarRef.current)
+    return () => ro.disconnect()
+  }, [running, sessionLocked])
 
   // Load appointment/student info + assessment profile + session history
   useEffect(() => {
@@ -1410,6 +1428,7 @@ ${notes ? `
 
       {/* ── Header row ── */}
       <header
+        ref={headerRef}
         className={`border-b flex items-center gap-2 px-3 py-2 flex-shrink-0 relative z-[60] ${sessionLocked ? 'hidden' : ''}`}
         style={{
           background: 'rgba(8,8,18,0.97)',
@@ -1617,7 +1636,9 @@ ${notes ? `
       </header>
 
       {/* ── Toolbar strip ── */}
-      <div className={`bg-gray-900/95 border-b border-white/[0.08] px-3 py-1.5 flex items-center gap-1.5 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden ${sessionLocked ? 'hidden' : ''}`}>
+      <div
+        ref={toolbarRef}
+        className={`bg-gray-900/95 border-b border-white/[0.08] px-3 py-1.5 flex items-center gap-1.5 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden ${sessionLocked ? 'hidden' : ''}`}>
 
         {/* Group 1 — Camera */}
         {jitsiUrl && (
@@ -1869,7 +1890,7 @@ ${notes ? `
 
       {/* ── Session Phase Progress Bar ── */}
       {running && !sessionLocked && (
-        <div className="bg-gray-900 border-b border-white/10 px-4 py-2 flex items-center gap-3" dir="rtl">
+        <div ref={phaseBarRef} className="bg-gray-900 border-b border-white/10 px-4 py-2 flex items-center gap-3" dir="rtl">
           <span className="text-white/30 text-[10px] font-black flex-shrink-0">مراحل</span>
           <div className="flex items-center gap-2 flex-1">
             {SESSION_PHASES.map((ph, i) => {
@@ -3569,7 +3590,7 @@ ${notes ? `
 
       {/* Phase Transition Toast */}
       {phaseToast && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[100] pointer-events-none" dir="rtl">
+        <div className="fixed left-1/2 -translate-x-1/2 z-[100] pointer-events-none" style={{ top: toastTop }} dir="rtl">
           <div
             className="flex items-center gap-3 px-5 py-3 rounded-2xl shadow-2xl"
             style={{
@@ -3876,17 +3897,27 @@ ${notes ? `
       })()}
 
       {/* Achievement Toast */}
-      {achievementToast && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[100] pointer-events-none">
-          <div className="bg-gray-900 border border-white/20 rounded-2xl px-6 py-4 flex items-center gap-3 shadow-2xl animate-[slideInDown_0.3s_ease-out]">
-            <span className="text-3xl animate-bounce">{achievementToast.icon}</span>
-            <div>
-              <p className="text-white font-black text-base">{achievementToast.message}</p>
-              <p className="text-white/50 text-xs">إنجاز رائع!</p>
+      {achievementToast && (() => {
+        const tierColor = achievementToast.icon === '🏆' ? '#FFBA44' : achievementToast.icon === '⭐' ? '#7C5CFC' : '#2ABFA3'
+        return (
+          <div className="fixed left-1/2 -translate-x-1/2 z-[100] pointer-events-none" style={{ top: toastTop }}>
+            <div
+              className="toast-enter rounded-2xl px-7 py-5 flex items-center gap-4"
+              style={{
+                background: '#111827',
+                border: `2px solid ${tierColor}`,
+                boxShadow: `0 12px 40px rgba(0,0,0,0.55), 0 0 32px ${tierColor}66`,
+              }}
+            >
+              <span className="text-5xl animate-bounce">{achievementToast.icon}</span>
+              <div>
+                <p className="text-white font-black text-xl">{achievementToast.message}</p>
+                <p className="font-bold text-sm" style={{ color: tierColor }}>إنجاز رائع! 🎉</p>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
     </div>
   )
 }

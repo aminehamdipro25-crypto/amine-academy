@@ -25,7 +25,7 @@ export default function JournalPage() {
   const [text, setText] = useState('')
   const [saved, setSaved] = useState(false)
 
-  const todayStr = new Date().toLocaleDateString('ar-SA', {
+  const todayStr = new Date().toLocaleDateString('ar-SA-u-ca-gregory', {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
   })
   const prompt = PROMPTS[new Date().getDay() % PROMPTS.length]

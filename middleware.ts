@@ -15,7 +15,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // ── Parent Portal ─────────────────────────────────────────
-  const parentPublic = ['/parent/login', '/parent']
+  const parentPublic = ['/parent/login', '/parent', '/parent/forgot-password', '/parent/reset-password']
   if (pathname.startsWith('/parent') && !parentPublic.includes(pathname)) {
     const token   = request.cookies.get('parent_token')?.value
     const payload = await verifyToken(token)

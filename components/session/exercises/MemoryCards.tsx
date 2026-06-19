@@ -125,7 +125,7 @@ export default function MemoryCards({ onComplete, onCancel, difficulty = 1 }: Pr
     <div className="flex flex-col items-center gap-4 p-4 select-none" dir="rtl">
       <style>{`
         .mc-inner{transition:transform .45s cubic-bezier(.4,2,.6,1);transform-style:preserve-3d;position:relative;width:100%;height:100%}
-        .mc-flipped .mc-inner{transform:rotateY(180deg)}
+        .mc-inner.mc-flipped{transform:rotateY(180deg)}
         .mc-front,.mc-back{position:absolute;inset:0;backface-visibility:hidden;border-radius:14px;display:flex;align-items:center;justify-content:center}
         .mc-back{transform:rotateY(180deg)}
       `}</style>

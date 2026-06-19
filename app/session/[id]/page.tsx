@@ -469,6 +469,7 @@ export default function SessionPage() {
   const [studentSeverity, setStudentSeverity] = useState<number>(1)
   const [sessionCount, setSessionCount] = useState<number>(0)
   const [gameUsageCounts, setGameUsageCounts] = useState<Record<string, number>>({})
+  const [gameHistoryByGame, setGameHistoryByGame] = useState<Record<string, { plays: number; avgScore: number }>>({})
 
   // Session phases
   const [phaseIdx, setPhaseIdx]         = useState(0)
@@ -633,6 +634,11 @@ export default function SessionPage() {
           fetch(`/api/admin/assessment-profile/${sid}`)
             .then(r => r.ok ? r.json() : null)
             .then(d => { if (d?.profile) setProfile(d.profile) })
+            .catch(() => {})
+
+          fetch(`/api/admin/game-progress/${sid}`)
+            .then(r => r.ok ? r.json() : null)
+            .then(d => { if (d?.history?.byGame) setGameHistoryByGame(d.history.byGame) })
             .catch(() => {})
 
           // Load session history → compute game usage counts
@@ -1275,9 +1281,19 @@ ${notes ? `
     }
   }
 
+  const suggestedDifficulty = (exId: string, base: 1|2|3): 1|2|3 => {
+    const stats = gameHistoryByGame[exId]
+    if (!stats || stats.plays < 2) return base
+    if (stats.avgScore >= 85) return Math.min(3, base + 1) as 1|2|3
+    if (stats.avgScore <= 40) return Math.max(1, base - 1) as 1|2|3
+    return base
+  }
+
   const activeDifficulty: 1|2|3 = (activeView?.type === 'exercise' && exerciseDiffOverrides[activeView.id])
     ? exerciseDiffOverrides[activeView.id]!
-    : difficulty
+    : activeView?.type === 'exercise'
+      ? suggestedDifficulty(activeView.id, difficulty)
+      : difficulty
   const sortedExercises = profile
     ? (() => {
         const ranked = rankGamesForStudent(profile)
@@ -2029,6 +2045,11 @@ ${notes ? `
                                   {exerciseDiffOverrides[ex.id] && exerciseDiffOverrides[ex.id] !== difficulty && (
                                     <span className="text-[9px] font-black px-1 py-0.5 rounded bg-brand-600/70 text-brand-200">
                                       {exerciseDiffOverrides[ex.id] === 1 ? 'سهل' : exerciseDiffOverrides[ex.id] === 2 ? 'وسط' : 'صعب'}
+                                    </span>
+                                  )}
+                                  {!exerciseDiffOverrides[ex.id] && suggestedDifficulty(ex.id, difficulty) !== difficulty && (
+                                    <span className="text-[9px] font-black px-1 py-0.5 rounded bg-emerald-600/70 text-emerald-200" title="مقترح تلقائياً حسب الأداء السابق">
+                                      🤖 {suggestedDifficulty(ex.id, difficulty) === 1 ? 'سهل' : suggestedDifficulty(ex.id, difficulty) === 2 ? 'وسط' : 'صعب'}
                                     </span>
                                   )}
                                   {isTop && <Star className="w-3 h-3 text-brand-400 flex-shrink-0" />}
@@ -3738,6 +3759,15 @@ ${notes ? `
                     className="mt-2 text-white/30 hover:text-white/60 text-[10px] font-bold transition-colors"
                   >
                     ← العودة للمستوى العام ({difficulty === 1 ? 'سهل' : difficulty === 2 ? 'متوسط' : 'صعب'})
+                  </button>
+                )}
+                {!exerciseDiffOverrides[exerciseConfigId] && suggestedDifficulty(exerciseConfigId, difficulty) !== difficulty && (
+                  <button
+                    onClick={() => setExerciseDiffOverrides(prev => ({ ...prev, [exerciseConfigId]: suggestedDifficulty(exerciseConfigId, difficulty) }))}
+                    className="mt-2 w-full flex items-center justify-between bg-emerald-500/10 border border-emerald-500/25 rounded-xl px-3 py-2 text-[11px] font-bold text-emerald-300 hover:bg-emerald-500/20 transition-colors"
+                  >
+                    <span>🤖 مقترح بناءً على متوسط {gameHistoryByGame[exerciseConfigId]?.avgScore}%: {suggestedDifficulty(exerciseConfigId, difficulty) === 1 ? 'سهل' : suggestedDifficulty(exerciseConfigId, difficulty) === 2 ? 'متوسط' : 'صعب'}</span>
+                    <span className="text-emerald-200">تطبيق ←</span>
                   </button>
                 )}
               </div>

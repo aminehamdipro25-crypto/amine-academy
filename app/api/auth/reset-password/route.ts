@@ -7,8 +7,11 @@ export const runtime = 'nodejs'
 
 export async function POST(req: NextRequest) {
   const ip = getClientIp(req)
-  if (await isRateLimited(`pwd_reset_use:${ip}`, 10, 3600)) {
-    return NextResponse.json({ error: 'حاول مجدداً بعد قليل' }, { status: 429 })
+  const rl = await isRateLimited(`pwd_reset_use:${ip}`, 10, 3600)
+  if (rl.limited) {
+    return rl.unavailable
+      ? NextResponse.json({ error: 'الخدمة غير متوفرة مؤقتًا، يرجى المحاولة بعد قليل' }, { status: 503 })
+      : NextResponse.json({ error: 'حاول مجدداً بعد قليل' }, { status: 429 })
   }
 
   try {

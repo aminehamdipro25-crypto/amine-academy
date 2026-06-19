@@ -36,8 +36,11 @@ export async function POST(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   try {
     const ip = getClientIp(req)
-    if (await isRateLimited(`student_code:${ip}`, 10, 3600)) {
-      return NextResponse.json({ error: 'حاول مجدداً بعد ساعة' }, { status: 429 })
+    const rl = await isRateLimited(`student_code:${ip}`, 10, 3600)
+    if (rl.limited) {
+      return rl.unavailable
+        ? NextResponse.json({ error: 'الخدمة غير متوفرة مؤقتًا، يرجى المحاولة بعد قليل' }, { status: 503 })
+        : NextResponse.json({ error: 'حاول مجدداً بعد ساعة' }, { status: 429 })
     }
     const { code } = await req.json().catch(() => ({}))
     if (!code) return NextResponse.json({ error: 'أدخل رمز الدخول' }, { status: 400 })

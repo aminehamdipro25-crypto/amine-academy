@@ -8,8 +8,9 @@ export const runtime = 'nodejs'
 
 export async function POST(req: NextRequest) {
   const ip = getClientIp(req)
-  if (await isRateLimited(`pwd_reset_req:${ip}`, 5, 3600)) {
-    return NextResponse.json({ ok: true }) // silent — don't reveal rate limit
+  const rl = await isRateLimited(`pwd_reset_req:${ip}`, 5, 3600)
+  if (rl.limited) {
+    return NextResponse.json({ ok: true }) // silent — don't reveal rate limit or service status
   }
 
   try {

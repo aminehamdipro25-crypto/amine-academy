@@ -18,8 +18,13 @@ export const runtime = 'nodejs'
 export async function POST(req: Request) {
   const ip = getClientIp(req)
 
-  if (await isRateLimited(`chat:${ip}`, 20, 3600)) {
-    return NextResponse.json({ reply: 'حاول مجدداً بعد قليل.' })
+  const rl = await isRateLimited(`chat:${ip}`, 20, 3600)
+  if (rl.limited) {
+    return NextResponse.json({
+      reply: rl.unavailable
+        ? 'الخدمة غير متوفرة مؤقتًا، يرجى المحاولة بعد قليل أو التواصل معنا على واتساب.'
+        : 'حاول مجدداً بعد قليل.',
+    })
   }
 
   const { messages }: { messages: Message[] } = await req.json()

@@ -11,8 +11,11 @@ export async function POST(req: Request) {
   try {
     const ip = getClientIp(req)
 
-    if (await isRateLimited(`client_auth:${ip}`, 20, 3600)) {
-      return NextResponse.json({ error: 'حاول مجدداً بعد ساعة' }, { status: 429 })
+    const rl = await isRateLimited(`client_auth:${ip}`, 20, 3600)
+    if (rl.limited) {
+      return rl.unavailable
+        ? NextResponse.json({ error: 'الخدمة غير متوفرة مؤقتًا، يرجى المحاولة بعد قليل' }, { status: 503 })
+        : NextResponse.json({ error: 'حاول مجدداً بعد ساعة' }, { status: 429 })
     }
 
     const body = await req.json().catch(() => ({}))

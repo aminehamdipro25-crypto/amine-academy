@@ -11,6 +11,13 @@ async function requireAdmin(): Promise<boolean> {
   return verifyAdminSession(token)
 }
 
+// Plan duration in days — 'basic'/'standard'/'premium' are legacy aliases for 'session'/'weekly'/'monthly'
+const PLAN_DURATION_DAYS: Record<string, number> = {
+  session: 1, basic: 1,
+  weekly: 7, standard: 7,
+  monthly: 30, premium: 30,
+}
+
 export async function GET() {
   if (!(await requireAdmin())) {
     return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
@@ -60,10 +67,11 @@ export async function PATCH(req: NextRequest) {
 
     // If confirming and payment has a parentId, activate the parent's subscription
     if (status === 'confirmed' && payment.parentId) {
+      const durationDays = PLAN_DURATION_DAYS[payment.plan] ?? 30
       await updateParent(payment.parentId, {
         subscriptionStatus: 'active',
         subscriptionPlan: payment.plan,
-        subscriptionExpiry: new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString(),
+        subscriptionExpiry: new Date(Date.now() + durationDays * 24 * 3600 * 1000).toISOString(),
       })
     }
 

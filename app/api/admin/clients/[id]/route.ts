@@ -35,7 +35,7 @@ export async function GET(
 }
 
 const VALID_STATUSES: SubscriptionStatus[] = ['pending', 'active', 'suspended', 'cancelled', 'expired']
-const VALID_PLANS = ['basic', 'standard', 'premium'] as const
+const VALID_PLANS = ['basic', 'standard', 'premium', 'session', 'weekly', 'monthly'] as const
 
 export async function PATCH(
   req: NextRequest,

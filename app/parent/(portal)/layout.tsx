@@ -98,15 +98,16 @@ export default function ParentPortalLayout({ children }: { children: React.React
               </span>
             )}
 
-            {/* Notifications placeholder */}
-            <button
+            {/* Notifications — jumps to the notifications panel on the dashboard */}
+            <Link
+              href="/parent/dashboard#notifications"
               className="w-9 h-9 rounded-xl flex items-center justify-center transition-all"
               style={{ background: '#F3EEFF' }}
-              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#E8DBFF' }}
-              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '#F3EEFF' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = '#E8DBFF' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = '#F3EEFF' }}
             >
               <Bell className="w-4 h-4" style={{ color: '#7C5CFC' }} />
-            </button>
+            </Link>
 
             {/* Logout (desktop only) */}
             <form action="/api/auth/client/logout" method="POST" className="hidden md:block">

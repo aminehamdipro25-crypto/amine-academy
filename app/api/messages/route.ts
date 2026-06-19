@@ -19,10 +19,11 @@ export async function GET(req: NextRequest) {
     const parentId = payload.id
     const messages = await getThreadMessages(parentId)
 
+    // Read the unread count BEFORE marking as read, otherwise it's always 0
+    const unreadFromAdmin = await getUnreadCount(parentId, 'parent')
+
     // Mark as read by parent (admin messages now seen)
     await markThreadRead(parentId, 'parent')
-
-    const unreadFromAdmin = await getUnreadCount(parentId, 'parent')
 
     return NextResponse.json({ messages, unreadFromAdmin })
   } catch (err) {

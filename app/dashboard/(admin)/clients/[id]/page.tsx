@@ -19,7 +19,10 @@ const STATUS_CONFIG = {
   expired:   { label: 'منتهي الصلاحية',  color: 'bg-yellow-100 text-yellow-700 border-yellow-200' },
 }
 
-const PLAN_LABELS = { basic: 'أساسي', standard: 'قياسي', premium: 'مميز' }
+const PLAN_LABELS = {
+  basic: 'أساسي', standard: 'قياسي', premium: 'مميز',
+  session: 'حصة مفردة', weekly: 'الباقة الأسبوعية', monthly: 'الباقة الشهرية',
+}
 const DIAG_LABELS: Record<string, string> = { ADHD: 'ADHD', AUTISM: 'توحد', 'ADHD+AUTISM': 'ADHD + توحد', OTHER: 'أخرى' }
 const SEVERITY_LABELS = { 1: 'خفيف', 2: 'متوسط', 3: 'شديد' }
 
@@ -454,6 +457,9 @@ export default function ClientDetailPage() {
             <label className="block text-xs font-bold text-gray-500 mb-1.5">الباقة</label>
             <select value={plan} onChange={e => setPlan(e.target.value)}
               className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-brand-300 focus:outline-none">
+              <option value="session">حصة مفردة</option>
+              <option value="weekly">الباقة الأسبوعية</option>
+              <option value="monthly">الباقة الشهرية</option>
               <option value="basic">أساسي</option>
               <option value="standard">قياسي</option>
               <option value="premium">مميز</option>

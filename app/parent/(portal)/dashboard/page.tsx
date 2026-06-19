@@ -239,7 +239,7 @@ export default function ParentDashboardPage() {
 
       {/* ══ Smart Notifications ══ */}
       {visibleNotifications.length > 0 && (
-        <div className="space-y-2">
+        <div id="notifications" className="space-y-2">
           {visibleNotifications.map(notif => (
             <div
               key={notif.id}

@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { useLang } from '@/lib/i18n'
+import { useLang, pickLang } from '@/lib/i18n'
 
 interface DynStats {
   childrenCount: string
@@ -18,7 +18,7 @@ const DEFAULTS: DynStats = {
 
 export default function StatsSection() {
   const { lang } = useLang()
-  const isAr = lang === 'ar'
+  const isRtl = lang === 'ar'
   const [s, setS] = useState<DynStats>(DEFAULTS)
 
   useEffect(() => {
@@ -33,24 +33,30 @@ export default function StatsSection() {
       value: s.childrenCount,
       label:   'طفل مستفيد من برامجنا',
       labelEn: 'Children in Program',
+      labelFr: 'Enfants accompagnés',
       sub:     'قطر وتونس والعالم العربي',
       subEn:   'Qatar, Tunisia & Arab World',
+      subFr:   'Qatar, Tunisie et monde arabe',
       color:   'text-brand-400',
     },
     {
       value: s.satisfactionPct,
       label:   'رضا أولياء الأمور',
       labelEn: 'Parent Satisfaction',
+      labelFr: 'Parents satisfaits',
       sub:     'بعد 3 أشهر من البرنامج',
       subEn:   'After 3 months',
+      subFr:   'Après 3 mois de programme',
       color:   'text-calm-teal',
     },
     {
       value: s.protocolsCount,
       label:   'بروتوكولاً علمياً',
       labelEn: 'Scientific Protocols',
+      labelFr: 'Protocoles scientifiques',
       sub:     'APA + ABA + CBT',
       subEn:   'APA + ABA + CBT',
+      subFr:   'APA + ABA + TCC',
       color:   'text-purple-400',
     },
     {
@@ -58,14 +64,16 @@ export default function StatsSection() {
       unit:    'min',
       label:   'جلسة تفاعلية مباشرة',
       labelEn: 'Live Interactive Session',
+      labelFr: 'Séance interactive en direct',
       sub:     'حركة + سلوك + معرفة',
       subEn:   'Movement + Behavior + Cognition',
+      subFr:   'Mouvement + comportement + cognition',
       color:   'text-amber-400',
     },
   ]
 
   return (
-    <section className="bg-[#FFF8F0] py-14" dir={isAr ? 'rtl' : 'ltr'}>
+    <section className="bg-[#FFF8F0] py-14" dir={isRtl ? 'rtl' : 'ltr'}>
       <div className="max-w-7xl mx-auto px-6">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           {stats.map((stat) => (
@@ -75,15 +83,15 @@ export default function StatsSection() {
                 <span className="ltr-num">{stat.value}</span>
                 {'unit' in stat && stat.unit && (
                   <span className="text-base font-bold mb-0.5 opacity-80">
-                    {isAr ? 'دق' : stat.unit}
+                    {pickLang(lang, 'دق', stat.unit, 'min')}
                   </span>
                 )}
               </div>
               <div className="text-gray-800 font-bold text-sm mb-0.5">
-                {isAr ? stat.label : stat.labelEn}
+                {pickLang(lang, stat.label, stat.labelEn, stat.labelFr)}
               </div>
               <div className="text-gray-500 text-xs">
-                {isAr ? stat.sub : stat.subEn}
+                {pickLang(lang, stat.sub, stat.subEn, stat.subFr)}
               </div>
             </div>
           ))}

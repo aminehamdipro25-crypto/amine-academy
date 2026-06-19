@@ -1,47 +1,53 @@
 'use client'
 import Link from 'next/link'
 import { ArrowLeft, ArrowRight, MessageCircle, Play } from 'lucide-react'
-import { useLang } from '@/lib/i18n'
+import { useLang, pickLang } from '@/lib/i18n'
 
 export default function CTASection() {
   const wa = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '21600000000'
   const { lang } = useLang()
-  const isAr = lang === 'ar'
+  const isRtl = lang === 'ar'
 
-  const waMessage = isAr
-    ? 'مرحباً، أريد معرفة المزيد عن أكاديمية أمين'
-    : 'Hello, I would like to learn more about Amine Academy'
+  const waMessage = pickLang(
+    lang,
+    'مرحباً، أريد معرفة المزيد عن أكاديمية أمين',
+    'Hello, I would like to learn more about Amine Academy',
+    "Bonjour, je souhaite en savoir plus sur Amine Academy"
+  )
 
   return (
-    <section className="py-20 bg-gradient-to-l from-brand-700 via-brand-600 to-[#9A7BFD]" dir={isAr ? 'rtl' : 'ltr'}>
+    <section className="py-20 bg-gradient-to-l from-brand-700 via-brand-600 to-[#9A7BFD]" dir={isRtl ? 'rtl' : 'ltr'}>
       <div className="max-w-3xl mx-auto px-6 text-center">
         <div className="text-5xl mb-6">🌟</div>
         <h2 className="text-3xl md:text-4xl font-black text-white mb-5">
-          {isAr ? 'ابدأ رحلة طفلك اليوم' : "Start Your Child's Journey Today"}
+          {pickLang(lang, 'ابدأ رحلة طفلك اليوم', "Start Your Child's Journey Today", "Commencez dès aujourd'hui le parcours de votre enfant")}
         </h2>
         <p className="text-white/80 text-lg leading-relaxed mb-10">
-          {isAr
-            ? 'كل يوم تأخير هو يوم ضائع من التطور. انضم لأكثر من 200 عائلة تثق في أكاديمية أمين.'
-            : 'Every day of delay is a lost day of development. Join over 200 families who trust Amine Academy.'}
+          {pickLang(
+            lang,
+            'كل يوم تأخير هو يوم ضائع من التطور. انضم لأكثر من 200 عائلة تثق في أكاديمية أمين.',
+            'Every day of delay is a lost day of development. Join over 200 families who trust Amine Academy.',
+            'Chaque jour de retard est une journée de progrès perdue. Rejoignez plus de 200 familles qui font confiance à Amine Academy.'
+          )}
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
           <Link href="/register"
             className="flex items-center gap-2 bg-white text-brand-700 font-black text-lg px-8 py-4 rounded-2xl hover:-translate-y-1 shadow-xl transition-all active:scale-95">
-            {isAr ? 'سجّل الآن مجاناً' : 'Register Now for Free'}
-            {isAr ? <ArrowLeft className="w-5 h-5" /> : <ArrowRight className="w-5 h-5" />}
+            {pickLang(lang, 'سجّل الآن مجاناً', 'Register Now for Free', "Inscrivez-vous gratuitement")}
+            {isRtl ? <ArrowLeft className="w-5 h-5" /> : <ArrowRight className="w-5 h-5" />}
           </Link>
           <a
             href={`https://wa.me/${wa}?text=${encodeURIComponent(waMessage)}`}
             target="_blank" rel="noopener noreferrer"
             className="flex items-center gap-2 bg-white/10 border border-white/30 text-white hover:bg-white/20 font-bold text-lg px-8 py-4 rounded-2xl transition-all">
             <MessageCircle className="w-5 h-5 text-green-400" />
-            {isAr ? 'تواصل عبر واتساب' : 'Contact via WhatsApp'}
+            {pickLang(lang, 'تواصل عبر واتساب', 'Contact via WhatsApp', 'Contactez-nous sur WhatsApp')}
           </a>
         </div>
         <Link href="/demo"
           className="inline-flex items-center gap-2 text-white/60 hover:text-white/90 text-sm font-medium transition-colors">
           <Play className="w-4 h-4" />
-          {isAr ? 'أو شاهد جولة تجريبية للمنصة أولاً' : 'Or watch a demo tour of the platform first'}
+          {pickLang(lang, 'أو شاهد جولة تجريبية للمنصة أولاً', 'Or watch a demo tour of the platform first', "Ou découvrez d'abord une visite guidée de la plateforme")}
         </Link>
       </div>
     </section>

@@ -2,7 +2,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import React from 'react'
 
-export type Lang = 'ar' | 'en'
+export type Lang = 'ar' | 'en' | 'fr'
 
 const STORAGE_KEY = 'aa_lang'
 
@@ -14,7 +14,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY) as Lang | null
-    if (saved === 'ar' || saved === 'en') setLangState(saved)
+    if (saved === 'ar' || saved === 'en' || saved === 'fr') setLangState(saved)
   }, [])
 
   function setLang(l: Lang) {
@@ -28,6 +28,12 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 }
 
 export function useLang() { return useContext(Ctx) }
+
+// ── 3-way text picker ────────────────────────────────────────
+// Usage: pickLang(lang, arabicText, englishText, frenchText)
+export function pickLang<T>(lang: Lang, ar: T, en: T, fr: T): T {
+  return lang === 'ar' ? ar : lang === 'fr' ? fr : en
+}
 
 // ── Translations ──────────────────────────────────────────────
 export const tr = {
@@ -144,6 +150,64 @@ export const tr = {
         invalid:  'Incorrect email or password',
         network:  'Connection error occurred',
         timeout:  'Connection timed out — check your internet and try again',
+      },
+    },
+  },
+  fr: {
+    nav: {
+      trial:    'Essai gratuit',
+      parents:  'Espace parents',
+      register: "S'inscrire",
+      lang:     'ع',
+    },
+    hero: {
+      badge:   'Plateforme mondialement accréditée en activité physique adaptée et psychologie',
+      h1a:     'Votre enfant pense',
+      h1b:     'différemment',
+      h1c:     'et nous parlons son langage',
+      desc:    "La première plateforme arabe qui réunit l'activité physique adaptée (APA), l'analyse appliquée du comportement (ABA) et l'entraînement cognitivo-comportemental (TCC) dans des séances interactives en direct pour les enfants TDAH et autistes.",
+      ages:    'De 5 à 22 ans • Qatar 🇶🇦, Tunisie 🇹🇳 et monde arabe',
+      cta1:    "Réservez votre séance d'évaluation gratuite",
+      cta2:    'Découvrez comment se déroule une séance',
+      offerLabel: "⏰ L'offre d'inscription anticipée se termine dans",
+      units:   { d: 'Jours', h: 'Heures', m: 'Min', s: 'Sec' },
+      stats:   { children: 'Enfants accompagnés', years: "Années d'expertise", satisfaction: 'Parents satisfaits' },
+    },
+    register: {
+      title:     'Créer un nouveau compte',
+      hasAccount: 'Vous avez déjà un compte ?',
+      login:     'Se connecter',
+      steps: ['Informations du parent','Informations de l\'enfant','Choix de la formule'],
+      next:      'Suivant →',
+      prev:      'Retour',
+      submit:    "Terminer l'inscription ✓",
+      fields: {
+        firstName: 'Prénom', lastName: 'Nom de famille',
+        email: 'Adresse e-mail', phone: 'Numéro de téléphone (WhatsApp)',
+        country: 'Pays', password: 'Mot de passe',
+        confirmPassword: 'Confirmer le mot de passe',
+        childFirstName: "Prénom de l'enfant", childLastName: 'Nom de famille (facultatif)',
+        birthDate: 'Date de naissance', diagnosis: 'Diagnostic',
+        severity: 'Degré de sévérité', visualSens: 'Sensibilité visuelle',
+        audioSens: 'Sensibilité auditive',
+      },
+      severity: { 1: 'Léger', 2: 'Modéré', 3: 'Sévère' },
+      sensitivity: { low: 'Faible', medium: 'Moyenne', high: 'Élevée' },
+      countries: ['Tunisie','Maroc','Algérie','Égypte','Arabie saoudite','Émirats arabes unis','Qatar','Koweït','France','Autre'],
+      selectCountry: 'Choisissez votre pays',
+    },
+    login: {
+      title:    'Espace parents',
+      subtitle: "Suivez les progrès de votre enfant",
+      email:    'Adresse e-mail',
+      password: 'Mot de passe',
+      submit:   'Se connecter',
+      noAccount: "Vous n'avez pas de compte ?",
+      register: "S'inscrire",
+      errors: {
+        invalid:  'E-mail ou mot de passe incorrect',
+        network:  'Une erreur de connexion est survenue',
+        timeout:  'La connexion a expiré — vérifiez votre connexion et réessayez',
       },
     },
   },

@@ -1,7 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { Video, CheckCircle, Clock, Users, Star } from 'lucide-react'
-import { useLang } from '@/lib/i18n'
+import { useLang, pickLang } from '@/lib/i18n'
 
 const STEPS = [
   {
@@ -9,8 +9,10 @@ const STEPS = [
     color: 'bg-brand-600',
     title: 'الاتصال بالفيديو',
     titleEn: 'Video Call',
+    titleFr: 'Appel vidéo',
     desc: 'الأستاذ أمين والطفل وجهاً لوجه عبر الشاشة. الوالد موجود يراقب ويتعلم.',
     descEn: 'Prof. Amine and the child face-to-face via screen. The parent is present, observing and learning.',
+    descFr: "Le professeur Amine et l'enfant se retrouvent face à face via l'écran. Le parent est présent, il observe et apprend.",
     icon: Video,
   },
   {
@@ -18,8 +20,10 @@ const STEPS = [
     color: 'bg-emerald-600',
     title: 'التمارين الحية',
     titleEn: 'Live Exercises',
+    titleFr: 'Exercices en direct',
     desc: 'الطفل يؤدي التمارين أمام الكاميرا — الأستاذ يصحح الحركة في الوقت الفعلي ويحفّزه.',
     descEn: 'The child performs exercises in front of the camera — the instructor corrects movement in real time and provides encouragement.',
+    descFr: "L'enfant effectue les exercices devant la caméra — le professeur corrige le mouvement en temps réel et l'encourage.",
     icon: CheckCircle,
   },
   {
@@ -27,8 +31,10 @@ const STEPS = [
     color: 'bg-purple-600',
     title: 'تعديل السلوك',
     titleEn: 'Behavior Modification',
+    titleFr: 'Modification du comportement',
     desc: 'خلال الجلسة نطبق بروتوكول ABA أو Zone of Regulation مباشرة مع الطفل.',
     descEn: 'During the session we apply the ABA protocol or Zone of Regulation directly with the child.',
+    descFr: "Pendant la séance, nous appliquons directement avec l'enfant le protocole ABA ou la Zone of Regulation.",
     icon: Star,
   },
   {
@@ -36,8 +42,10 @@ const STEPS = [
     color: 'bg-amber-500',
     title: 'توجيه الوالد',
     titleEn: 'Parent Coaching',
+    titleFr: 'Accompagnement du parent',
     desc: '10 دقائق لتعليم الوالد كيف يكرر التمارين يومياً في البيت. الوالد شريك، لا مُتفرّج.',
     descEn: '10 minutes to teach the parent how to repeat the exercises daily at home. The parent is a partner, not a spectator.',
+    descFr: "10 minutes pour apprendre au parent à reproduire les exercices chaque jour à la maison. Le parent est un partenaire, pas un simple spectateur.",
     icon: Users,
   },
 ]
@@ -52,6 +60,12 @@ const BENEFITS_EN = [
   'No travel needed — family convenience', 'Precise motor assessment via camera',
   'Session recording for review', 'Flexible session scheduling',
   'Continuous communication between sessions', 'Program adapts weekly',
+]
+
+const BENEFITS_FR = [
+  'Aucun déplacement — confort pour la famille', 'Évaluation motrice précise par caméra',
+  'Enregistrement de la séance pour révision', 'Horaires de séances flexibles',
+  'Communication continue entre les séances', 'Programme ajusté chaque semaine',
 ]
 
 const SESSION_TIMELINE_AR = [
@@ -70,29 +84,40 @@ const SESSION_TIMELINE_EN = [
   { time: '40–45 min', label: 'Parent coaching',       note: 'Clear weekly action plan',    color: 'bg-emerald-600' },
 ]
 
+const SESSION_TIMELINE_FR = [
+  { time: '0–5 min',   label: 'Bilan de la zone émotionnelle', note: 'Point Zone of Regulation', color: 'bg-brand-600' },
+  { time: '5–20 min',  label: 'Exercices moteurs APA',  note: 'Guidés en direct par caméra',  color: 'bg-blue-600' },
+  { time: '20–30 min', label: 'Entraînement TCC / ABA', note: "Protocole propre à l'enfant",  color: 'bg-purple-600' },
+  { time: '30–40 min', label: 'Points et succès',       note: 'Activation de la récompense dopaminergique', color: 'bg-amber-500' },
+  { time: '40–45 min', label: 'Accompagnement du parent', note: 'Plan d\'action hebdomadaire clair', color: 'bg-emerald-600' },
+]
+
 export default function InteractiveSessionSection() {
   const { lang } = useLang()
-  const isAr = lang === 'ar'
+  const isRtl = lang === 'ar'
 
-  const benefits = isAr ? BENEFITS_AR : BENEFITS_EN
-  const timeline = isAr ? SESSION_TIMELINE_AR : SESSION_TIMELINE_EN
+  const benefits = pickLang(lang, BENEFITS_AR, BENEFITS_EN, BENEFITS_FR)
+  const timeline = pickLang(lang, SESSION_TIMELINE_AR, SESSION_TIMELINE_EN, SESSION_TIMELINE_FR)
 
   return (
-    <section className="py-24 bg-[#FFF8F0]" id="how-it-works" dir={isAr ? 'rtl' : 'ltr'}>
+    <section className="py-24 bg-[#FFF8F0]" id="how-it-works" dir={isRtl ? 'rtl' : 'ltr'}>
       <div className="max-w-7xl mx-auto px-6">
 
         {/* Header */}
         <div className="text-center mb-16">
           <span className="inline-block text-brand-600 font-bold text-sm bg-brand-50 px-4 py-1.5 rounded-full mb-4">
-            {isAr ? 'الجلسة التفاعلية' : 'The Interactive Session'}
+            {pickLang(lang, 'الجلسة التفاعلية', 'The Interactive Session', 'La séance interactive')}
           </span>
           <h2 className="text-3xl md:text-5xl font-black text-gray-900 mb-5">
-            {isAr ? 'ليست مجرد مكالمة فيديو' : 'More Than Just a Video Call'}
+            {pickLang(lang, 'ليست مجرد مكالمة فيديو', 'More Than Just a Video Call', "Bien plus qu'un simple appel vidéo")}
           </h2>
           <p className="text-gray-500 max-w-2xl mx-auto text-lg leading-relaxed">
-            {isAr
-              ? 'كل جلسة هي تجربة تعليمية متكاملة — الطفل يتحرك، يتعلم، ويكسب نقاطاً. الوالد يخرج بخطة يومية واضحة.'
-              : 'Every session is a complete learning experience — the child moves, learns, and earns points. The parent leaves with a clear daily plan.'}
+            {pickLang(
+              lang,
+              'كل جلسة هي تجربة تعليمية متكاملة — الطفل يتحرك، يتعلم، ويكسب نقاطاً. الوالد يخرج بخطة يومية واضحة.',
+              'Every session is a complete learning experience — the child moves, learns, and earns points. The parent leaves with a clear daily plan.',
+              "Chaque séance est une expérience d'apprentissage complète — l'enfant bouge, apprend et gagne des points. Le parent repart avec un plan quotidien clair."
+            )}
           </p>
         </div>
 
@@ -108,8 +133,8 @@ export default function InteractiveSessionSection() {
                   </span>
                   <Icon className="w-5 h-5 text-brand-400" />
                 </div>
-                <h3 className="text-gray-900 font-black text-base mb-2">{isAr ? step.title : step.titleEn}</h3>
-                <p className="text-gray-500 text-sm leading-relaxed">{isAr ? step.desc : step.descEn}</p>
+                <h3 className="text-gray-900 font-black text-base mb-2">{pickLang(lang, step.title, step.titleEn, step.titleFr)}</h3>
+                <p className="text-gray-500 text-sm leading-relaxed">{pickLang(lang, step.desc, step.descEn, step.descFr)}</p>
               </div>
             )
           })}
@@ -122,7 +147,7 @@ export default function InteractiveSessionSection() {
             {/* Left: What a session looks like */}
             <div>
               <h3 className="text-gray-900 font-black text-2xl mb-6">
-                {isAr ? 'ماذا يحدث في 45 دقيقة؟' : 'What Happens in 45 Minutes?'}
+                {pickLang(lang, 'ماذا يحدث في 45 دقيقة؟', 'What Happens in 45 Minutes?', 'Que se passe-t-il en 45 minutes ?')}
               </h3>
               <div className="space-y-4">
                 {timeline.map(({ time, label, note, color }) => (
@@ -143,7 +168,7 @@ export default function InteractiveSessionSection() {
             {/* Right: Benefits */}
             <div>
               <h3 className="text-gray-900 font-black text-2xl mb-6">
-                {isAr ? 'لماذا عن بُعد يعمل أفضل؟' : 'Why Does Remote Work Better?'}
+                {pickLang(lang, 'لماذا عن بُعد يعمل أفضل؟', 'Why Does Remote Work Better?', 'Pourquoi le suivi à distance fonctionne-t-il mieux ?')}
               </h3>
               <div className="grid grid-cols-2 gap-3 mb-8">
                 {benefits.map(b => (
@@ -158,12 +183,15 @@ export default function InteractiveSessionSection() {
                 <Clock className="w-8 h-8 text-brand-500 flex-shrink-0" />
                 <div>
                   <p className="text-gray-900 font-black text-sm">
-                    {isAr ? 'جلسة تقييمية مجانية للتعارف' : 'Free Assessment Session'}
+                    {pickLang(lang, 'جلسة تقييمية مجانية للتعارف', 'Free Assessment Session', "Séance d'évaluation gratuite")}
                   </p>
                   <p className="text-gray-500 text-xs mt-0.5">
-                    {isAr
-                      ? '30 دقيقة مع الأستاذ أمين — بدون أي التزام'
-                      : '30 minutes with Prof. Amine — no commitment required'}
+                    {pickLang(
+                      lang,
+                      '30 دقيقة مع الأستاذ أمين — بدون أي التزام',
+                      '30 minutes with Prof. Amine — no commitment required',
+                      '30 minutes avec le professeur Amine — sans aucun engagement'
+                    )}
                   </p>
                 </div>
               </div>
@@ -177,10 +205,10 @@ export default function InteractiveSessionSection() {
           <Link href="/register"
             className="inline-flex items-center gap-3 bg-gradient-to-l from-brand-600 to-brand-500 text-white font-black text-lg px-10 py-4 rounded-2xl hover:-translate-y-1 transition-all shadow-brand">
             <Video className="w-5 h-5" />
-            {isAr ? 'احجز الجلسة التقييمية المجانية' : 'Book Your Free Assessment Session'}
+            {pickLang(lang, 'احجز الجلسة التقييمية المجانية', 'Book Your Free Assessment Session', "Réservez votre séance d'évaluation gratuite")}
           </Link>
           <p className="text-gray-400 text-sm mt-4">
-            {isAr ? 'بدون بطاقة ائتمانية • متاح لجميع الدول' : 'No credit card required • Available worldwide'}
+            {pickLang(lang, 'بدون بطاقة ائتمانية • متاح لجميع الدول', 'No credit card required • Available worldwide', 'Sans carte bancaire • Disponible partout dans le monde')}
           </p>
         </div>
 

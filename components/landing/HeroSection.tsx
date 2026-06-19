@@ -2,7 +2,7 @@
 import Link from 'next/link'
 import { ArrowLeft, ArrowRight, Star, Users, Award, Play, LayoutDashboard, Sparkles } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { useLang, tr } from '@/lib/i18n'
+import { useLang, tr, pickLang } from '@/lib/i18n'
 import LangToggle from '@/components/shared/LangToggle'
 
 const DEFAULT_OFFER_DAYS = 5
@@ -144,13 +144,13 @@ export default function HeroSection() {
   const time = useCountdown(offerDays)
   const { lang } = useLang()
   const t = tr[lang]
-  const isAr = lang === 'ar'
+  const isRtl = lang === 'ar'
 
   return (
     <section
-      className={`relative min-h-screen overflow-hidden ${isAr ? 'direction-rtl' : 'direction-ltr'}`}
+      className={`relative min-h-screen overflow-hidden ${isRtl ? 'direction-rtl' : 'direction-ltr'}`}
       style={{ background: 'linear-gradient(135deg, #2D1B69 0%, #4A2FA3 50%, #7C5CFC 100%)' }}
-      dir={isAr ? 'rtl' : 'ltr'}
+      dir={isRtl ? 'rtl' : 'ltr'}
     >
       {/* Decorative blurred circles */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
@@ -158,7 +158,7 @@ export default function HeroSection() {
         <div className="absolute bottom-20 left-10 w-80 h-80 bg-orange-500/30 rounded-full blur-3xl" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 bg-teal-400/30 rounded-full blur-3xl" />
         {/* Dot grid — decorative */}
-        <div className={`absolute top-32 ${isAr ? 'left-24' : 'right-24'} hidden lg:grid grid-cols-5 gap-3 opacity-[0.08]`}>
+        <div className={`absolute top-32 ${isRtl ? 'left-24' : 'right-24'} hidden lg:grid grid-cols-5 gap-3 opacity-[0.08]`}>
           {Array.from({ length: 25 }).map((_, i) => (
             <div key={i} className="w-2 h-2 bg-white rounded-full" />
           ))}
@@ -173,7 +173,7 @@ export default function HeroSection() {
           </div>
           <div>
             <span className="text-white font-black text-lg block leading-none">
-              {isAr ? 'أكاديمية أمين' : 'Amine Academy'}
+              {pickLang(lang, 'أكاديمية أمين', 'Amine Academy', 'Amine Academy')}
             </span>
             <span className="text-white/50 text-xs">ADHD & Autism Academy</span>
           </div>
@@ -194,7 +194,7 @@ export default function HeroSection() {
           <Link href="/dashboard"
             className="flex items-center gap-1.5 bg-white/10 border border-white/20 text-white hover:bg-white/20 font-bold text-xs px-3 py-2 rounded-xl transition-all">
             <LayoutDashboard className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">لوحة التحكم</span>
+            <span className="hidden sm:inline">{pickLang(lang, 'لوحة التحكم', 'Dashboard', 'Tableau de bord')}</span>
           </Link>
           <LangToggle />
         </div>
@@ -205,7 +205,7 @@ export default function HeroSection() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center min-h-[82vh]">
 
           {/* ── Text Column ── */}
-          <div className={isAr ? 'order-1' : 'order-2'}>
+          <div className={isRtl ? 'order-1' : 'order-2'}>
             {/* Badge */}
             <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-4 py-1.5 mb-6">
               <Sparkles className="w-3.5 h-3.5 text-brand-300" />
@@ -243,7 +243,7 @@ export default function HeroSection() {
               <Link href="/register"
                 className="flex items-center gap-2 bg-white text-brand-700 font-black text-lg px-8 py-4 rounded-2xl hover:-translate-y-1 shadow-xl transition-all active:scale-95">
                 {t.hero.cta1}
-                {isAr ? <ArrowLeft className="w-5 h-5" /> : <ArrowRight className="w-5 h-5" />}
+                {isRtl ? <ArrowLeft className="w-5 h-5" /> : <ArrowRight className="w-5 h-5" />}
               </Link>
               <Link href="/demo"
                 className="flex items-center gap-2 bg-white/10 border border-white/30 text-white hover:bg-white/20 font-bold text-lg px-8 py-4 rounded-2xl transition-all">
@@ -295,7 +295,7 @@ export default function HeroSection() {
           </div>
 
           {/* ── Visual Column ── */}
-          <div className={`${isAr ? 'order-2' : 'order-1'} flex items-center justify-center py-12 lg:py-0`}>
+          <div className={`${isRtl ? 'order-2' : 'order-1'} flex items-center justify-center py-12 lg:py-0`}>
             <GameVisual />
           </div>
 

@@ -248,7 +248,10 @@ export async function createPasswordResetToken(email: string): Promise<string> {
 export async function verifyPasswordResetToken(email: string, token: string): Promise<boolean> {
   const stored = await redis.get<string>(`pwd_reset:${email}`)
   if (!stored) return false
-  return String(stored).trim() === String(token).trim()
+  const a = Buffer.from(String(stored).trim())
+  const b = Buffer.from(String(token).trim())
+  if (a.length !== b.length) return false
+  return crypto.timingSafeEqual(a, b)
 }
 
 export async function deletePasswordResetToken(email: string): Promise<void> {

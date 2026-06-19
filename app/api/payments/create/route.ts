@@ -1,10 +1,12 @@
 export const runtime = 'nodejs'
 
 import { NextRequest, NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
 import { createPendingPayment } from '@/lib/db'
 import { getSiteSettings } from '@/lib/site-settings'
 import { sendEmail } from '@/lib/mailer'
 import { tg, tgEsc } from '@/lib/telegram'
+import { verifyToken } from '@/lib/auth'
 import type { PaymentMethod } from '@/lib/types'
 
 const METHOD_LABELS: Record<PaymentMethod, string> = {
@@ -30,7 +32,13 @@ function esc(s: string): string {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { plan, currency, guestName, guestEmail, guestPhone, method, parentId } = body
+    const { plan, currency, guestName, guestEmail, guestPhone, method } = body
+
+    // Never trust a client-supplied parentId — derive it from the parent's own
+    // session, if any, so a payment can't be linked to someone else's account.
+    const cookieStore = await cookies()
+    const sessionPayload = await verifyToken(cookieStore.get('parent_token')?.value)
+    const parentId = sessionPayload?.role === 'parent' ? sessionPayload.id : undefined
 
     // Validate required fields
     if (!plan || !currency || !guestName || !guestEmail || !guestPhone || !method) {

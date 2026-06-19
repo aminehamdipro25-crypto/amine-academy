@@ -8,7 +8,7 @@ export function generateId(prefix: 'AA' | 'AS' | 'AE' | 'AP'): string {
   return `${prefix}-${Date.now().toString(36)}-${crypto.randomBytes(3).toString('hex')}`
 }
 
-export function createToken(id: string, role: UserRole): string {
+export function createToken(id: string, role: UserRole, ttlMs: number = 30 * 24 * 60 * 60 * 1000): string {
   const SECRET = process.env.AUTH_SECRET
   if (!SECRET) throw new Error('AUTH_SECRET not configured')
   const sessionId = crypto.randomBytes(16).toString('hex')
@@ -16,7 +16,7 @@ export function createToken(id: string, role: UserRole): string {
     id,
     role,
     sessionId,
-    exp: Date.now() + 30 * 24 * 60 * 60 * 1000,
+    exp: Date.now() + ttlMs,
   }
   const data = Buffer.from(JSON.stringify(payload)).toString('base64url')
   const sig  = crypto.createHmac('sha256', SECRET).update(data).digest('base64url')
@@ -65,11 +65,11 @@ export async function verifyToken(token: string | undefined): Promise<SessionPay
 
 // ── Session Management ───────────────────────────────────────
 
-export async function createSession(id: string, role: UserRole): Promise<string> {
-  const token = createToken(id, role)
+export async function createSession(id: string, role: UserRole, ttlSec: number = 30 * 24 * 3600): Promise<string> {
+  const token = createToken(id, role, ttlSec * 1000)
   const [data] = token.split('.')
   const payload: SessionPayload = JSON.parse(Buffer.from(data, 'base64url').toString())
-  await redis.set(`sess:${id}`, payload.sessionId, { ex: 30 * 24 * 3600 })
+  await redis.set(`sess:${id}`, payload.sessionId, { ex: ttlSec })
   return token
 }
 

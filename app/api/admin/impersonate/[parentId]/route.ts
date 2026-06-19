@@ -21,8 +21,10 @@ export async function POST(
     return NextResponse.json({ error: 'الولي غير موجود' }, { status: 404 })
   }
 
-  // Create a 2-hour parent session (overrides their existing session if any)
-  const sessionToken = await createSession(parent.id, 'parent')
+  // Create a 2-hour parent session (overrides their existing session if any).
+  // Both the cookie's maxAge and the underlying Redis session TTL must match —
+  // otherwise the server would keep accepting this token for 30 days.
+  const sessionToken = await createSession(parent.id, 'parent', 2 * 3600)
 
   const res = NextResponse.json({ ok: true, parentName: `${parent.firstName} ${parent.lastName}` })
   res.cookies.set('parent_token', sessionToken, {

@@ -2,8 +2,10 @@ import type { Metadata, Viewport } from 'next'
 import { Cairo } from 'next/font/google'
 import './globals.css'
 import { LanguageProvider } from '@/lib/i18n'
+import { AccessibilityProvider } from '@/lib/accessibility'
 import ScrollToTop from '@/components/ScrollToTop'
 import PWARegister from '@/components/PWARegister'
+import AccessibilityWidget from '@/components/AccessibilityWidget'
 
 const cairo = Cairo({
   subsets: ['arabic', 'latin'],
@@ -80,11 +82,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="font-cairo antialiased">
+        <AccessibilityProvider>
         <LanguageProvider>
         {children}
         </LanguageProvider>
         <ScrollToTop />
         <PWARegister />
+        <AccessibilityWidget />
+        </AccessibilityProvider>
         {GA_ID && (
           <>
             <script

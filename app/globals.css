@@ -163,6 +163,38 @@ body {
   html { scroll-behavior: auto; }
 }
 
+/* ── Accessibility widget: reduced motion toggle ──────────────── */
+html.a11y-motion-reduced *, html.a11y-motion-reduced ::before, html.a11y-motion-reduced ::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+html.a11y-motion-reduced { scroll-behavior: auto; }
+
+/* ── Accessibility widget: dyslexia-friendly reading mode ─────── */
+html.a11y-dyslexia, html.a11y-dyslexia * {
+  font-family: Verdana, Tahoma, Arial, sans-serif !important;
+  letter-spacing: 0.04em;
+  word-spacing: 0.12em;
+  line-height: 1.8 !important;
+}
+
+/* ── Accessibility widget: high contrast mode ──────────────────── */
+html.a11y-contrast-high body { background: #FFFFFF !important; color: #000000 !important; }
+html.a11y-contrast-high * {
+  text-shadow: none !important;
+  background-image: none !important;
+}
+html.a11y-contrast-high :is(p, span, li, label, h1, h2, h3, h4, h5, h6) { color: #000000 !important; }
+html.a11y-contrast-high .gradient-text, html.a11y-contrast-high .gradient-text-warm {
+  -webkit-text-fill-color: #000000 !important;
+  color: #000000 !important;
+}
+html.a11y-contrast-high a { color: #0000EE !important; text-decoration: underline !important; }
+html.a11y-contrast-high button, html.a11y-contrast-high .card-lift, html.a11y-contrast-high .card-hover {
+  border: 2px solid #000000 !important;
+}
+
 /* ── Toast animation ─────────────────────────────────────────── */
 @keyframes toast-in {
   from { opacity: 0; transform: translateY(12px) scale(0.95); }

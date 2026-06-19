@@ -7,7 +7,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "vitest run"
   },
   "repository": {
     "type": "git",
@@ -37,8 +38,11 @@
     "@types/nodemailer": "^6.4.14",
     "@types/react": "^18.2.55",
     "@types/react-dom": "^18.3.7",
+    "@vitejs/plugin-react": "^6.0.2",
     "eslint": "^8.56.0",
     "eslint-config-next": "^14.2.0",
-    "typescript": "^5.3.3"
+    "jsdom": "^29.1.1",
+    "typescript": "^5.3.3",
+    "vitest": "^4.1.9"
   }
 }

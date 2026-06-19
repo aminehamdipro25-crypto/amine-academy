@@ -24,6 +24,11 @@ export default function MemoryCards({ onComplete, onCancel, difficulty = 1 }: Pr
   const [elapsed, setElapsed]     = useState(0)
   const [celebrating, setCelebrating] = useState(false)
   const [previewing, setPreviewing]   = useState(true)
+  const [speedMult, setSpeedMult]     = useState<number>(() => {
+    if (typeof window === 'undefined') return 1
+    const saved = Number(localStorage.getItem('mc-preview-speed'))
+    return saved === 0.6 || saved === 1 || saved === 1.6 ? saved : 1
+  })
 
   useEffect(() => {
     const emojis = emojiSet.slice(0, pairCount)
@@ -32,14 +37,23 @@ export default function MemoryCards({ onComplete, onCancel, difficulty = 1 }: Pr
       .map((emoji, i) => ({ id: i, emoji, flipped: true, matched: false }))
     setCards(pairs)
     setPreviewing(true)
-    const revealMs = 1500 + pairCount * 250
+  }, [pairCount, emojiSet])
+
+  useEffect(() => {
+    if (!previewing) return
+    const revealMs = Math.round((2200 + pairCount * 350) * speedMult)
     const t = setTimeout(() => {
       setCards(c => c.map(card => ({ ...card, flipped: false })))
       setPreviewing(false)
       startRef.current = Date.now()
     }, revealMs)
     return () => clearTimeout(t)
-  }, [pairCount, emojiSet])
+  }, [previewing, pairCount, speedMult])
+
+  function setPreviewSpeed(m: number) {
+    setSpeedMult(m)
+    localStorage.setItem('mc-preview-speed', String(m))
+  }
 
   useEffect(() => {
     if (done || previewing) return
@@ -136,10 +150,27 @@ export default function MemoryCards({ onComplete, onCancel, difficulty = 1 }: Pr
           <div className="text-base font-black text-blue-400 font-mono">{fmt(elapsed)}</div>
           <div className="text-[10px] text-white/40">الوقت</div>
         </div>
-        <h2 className="text-lg font-black text-white">
-          مطابقة البطاقات
-          {previewing && <span className="block text-xs font-bold text-amber-400 mt-0.5">احفظ الأماكن! 👀</span>}
-        </h2>
+        <div className="flex flex-col items-center">
+          <h2 className="text-lg font-black text-white">مطابقة البطاقات</h2>
+          {previewing && (
+            <>
+              <span className="block text-xs font-bold text-amber-400 mt-0.5">احفظ الأماكن! 👀</span>
+              <div className="flex items-center gap-1.5 mt-1.5">
+                {[{ m: 1.6, l: '🐢 أبطأ' }, { m: 1, l: '⏱ عادي' }, { m: 0.6, l: '🐇 أسرع' }].map(opt => (
+                  <button
+                    key={opt.m}
+                    onClick={() => setPreviewSpeed(opt.m)}
+                    className={`text-[10px] font-bold px-2 py-1 rounded-lg transition-colors ${
+                      speedMult === opt.m ? 'bg-amber-500 text-white' : 'bg-white/10 text-white/50 hover:bg-white/20'
+                    }`}
+                  >
+                    {opt.l}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
         <div className="flex gap-3">
           <div className="text-center">
             <div className="text-lg font-black text-green-400">{matches}</div>

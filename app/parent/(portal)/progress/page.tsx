@@ -4,6 +4,7 @@ import { TrendingUp, Award, Zap, Target, Clock, Brain } from 'lucide-react'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   LineChart, Line, CartesianGrid,
+  RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
 } from 'recharts'
 import type { Student, ProgressReport } from '@/lib/types'
 
@@ -142,6 +143,11 @@ export default function ProgressPage() {
       if (lastScore - firstScore >= 1) milestones.push(METRIC_LABELS[m])
     })
   }
+
+  const radarData = Object.entries(avgScores).map(([metric, { total, count }]) => ({
+    domain: METRIC_LABELS[metric] || metric,
+    score: Math.round((total / count) * 10) / 10,
+  }))
 
   const hasGameData = history && history.totalPlays > 0
   const hasReportData = reports.length > 0
@@ -362,6 +368,22 @@ export default function ProgressPage() {
                           </div>
                         ))}
                       </div>
+                    </div>
+                  )}
+
+                  {radarData.length >= 3 && (
+                    <div className="rounded-2xl p-5" style={{ background: '#FFFFFF', border: '1px solid #F0E8FF' }}>
+                      <h2 className="font-black text-gray-900 mb-1 text-sm">لقطة الأداء حسب المجال</h2>
+                      <p className="text-gray-400 text-xs mb-2">نظرة شاملة على كل المجالات السلوكية دفعة واحدة</p>
+                      <ResponsiveContainer width="100%" height={260}>
+                        <RadarChart data={radarData}>
+                          <PolarGrid stroke="#F0E8FF" />
+                          <PolarAngleAxis dataKey="domain" tick={{ fontSize: 11, fill: '#6B7280' }} />
+                          <PolarRadiusAxis domain={[0, 5]} tick={false} axisLine={false} />
+                          <Radar name="المتوسط" dataKey="score" stroke="#7C5CFC" fill="#7C5CFC" fillOpacity={0.35} />
+                          <Tooltip contentStyle={{ borderRadius: 12, border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.1)', fontSize: 12 }} />
+                        </RadarChart>
+                      </ResponsiveContainer>
                     </div>
                   )}
 

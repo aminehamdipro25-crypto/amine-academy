@@ -524,7 +524,7 @@ export default function SessionPage() {
 
   // White noise / focus music
   const [showNoisePanel, setShowNoisePanel] = useState(false)
-  const [noiseMode, setNoiseMode]           = useState<'white' | 'rain' | 'focus'>('white')
+  const [noiseMode, setNoiseMode]           = useState<'white' | 'rain' | 'focus' | 'calm'>('calm')
   const [noiseRunning, setNoiseRunning]     = useState(false)
   const [noiseSecsLeft, setNoiseSecsLeft]   = useState(5 * 60)
   const noiseCtxRef   = useRef<AudioContext | null>(null)
@@ -782,7 +782,7 @@ export default function SessionPage() {
       noiseSrcRef.current = src
 
       const masterGain = ctx.createGain()
-      masterGain.gain.value = noiseMode === 'focus' ? 0.05 : 0.09
+      masterGain.gain.value = noiseMode === 'focus' ? 0.05 : noiseMode === 'calm' ? 0.045 : 0.09
       masterGain.connect(ctx.destination)
 
       if (noiseMode === 'rain') {
@@ -802,6 +802,39 @@ export default function SessionPage() {
         lfo.connect(lfoScale)
         lfoScale.connect(masterGain.gain)
         lfo.start()
+      } else if (noiseMode === 'calm') {
+        // Quiet, heavily-filtered noise bed under a slow consonant pad —
+        // gentle ambient texture (no sudden hits, no melody) shown to lower
+        // heart rate/anxiety in slow ambient-music research.
+        const lp = ctx.createBiquadFilter()
+        lp.type = 'lowpass'
+        lp.frequency.value = 400
+        src.connect(lp)
+        lp.connect(masterGain)
+
+        // Sustained open chord (A2-E3-A3-C#4), each voice breathing in and
+        // out at ~0.1Hz — about 6 cycles/min, matching a relaxed breathing rate.
+        const padFreqs = [110, 164.81, 220, 277.18]
+        padFreqs.forEach((freq, idx) => {
+          const osc = ctx.createOscillator()
+          osc.type = 'sine'
+          osc.frequency.value = freq
+          const oscGain = ctx.createGain()
+          const baseLevel = 0.05 / (idx + 1)
+          oscGain.gain.value = baseLevel
+          osc.connect(oscGain)
+          oscGain.connect(masterGain)
+          osc.start()
+
+          const breathe = ctx.createOscillator()
+          breathe.type = 'sine'
+          breathe.frequency.value = 0.1
+          const breatheGain = ctx.createGain()
+          breatheGain.gain.value = baseLevel * 0.6
+          breathe.connect(breatheGain)
+          breatheGain.connect(oscGain.gain)
+          breathe.start()
+        })
       } else {
         src.connect(masterGain)
       }
@@ -1790,11 +1823,12 @@ ${notes ? `
             </p>
 
             {/* Mode selector */}
-            <div className="grid grid-cols-3 gap-1.5 mb-3">
+            <div className="grid grid-cols-2 gap-1.5 mb-3">
               {([
-                { key: 'white', label: 'ضوضاء بيضاء', emoji: '🌊' },
-                { key: 'rain',  label: 'مطر',          emoji: '🌧️' },
+                { key: 'calm',  label: 'أمبيانت هادئ', emoji: '🎐' },
                 { key: 'focus', label: 'غاما 40Hz',    emoji: '🧠' },
+                { key: 'rain',  label: 'مطر',          emoji: '🌧️' },
+                { key: 'white', label: 'ضوضاء بيضاء', emoji: '🌊' },
               ] as const).map(m => (
                 <button
                   key={m.key}
@@ -1836,7 +1870,9 @@ ${notes ? `
               {noiseRunning ? '⏹ إيقاف' : '▶ تشغيل'}
             </button>
             <p className="text-white/20 text-[9px] mt-2 text-center leading-relaxed">
-              الضوضاء البيضاء تُحسّن التركيز لدى ADHD — موثّق علمياً
+              {noiseMode === 'calm'
+                ? 'نغمات هادئة متجانسة بتذبذب يحاكي التنفس البطيء (~6 أنفاس/د) — مستوحى من أبحاث الموسيقى المهدئة للدماغ'
+                : 'الضوضاء البيضاء تُحسّن التركيز لدى ADHD — موثّق علمياً'}
             </p>
           </div>
         </ToolbarPopover>

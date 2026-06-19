@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, Users, LineChart,
-  Calendar, MessageSquare, FileText, LogOut, Dumbbell, Bell, ClipboardCheck, ChevronLeft,
+  Calendar, MessageSquare, FileText, LogOut, Dumbbell, Bell, ClipboardCheck, ChevronLeft, Sparkles,
 } from 'lucide-react'
 
 const navItems = [
@@ -16,6 +16,7 @@ const navItems = [
   { href: '/parent/appointments', label: 'المواعيد', icon: Calendar },
   { href: '/parent/reports',      label: 'التقارير', icon: FileText },
   { href: '/parent/chat',         label: 'التواصل',  icon: MessageSquare },
+  { href: '/parent/family-challenge', label: 'تحدي العائلة', icon: Sparkles },
 ]
 
 const bottomItems = navItems.slice(0, 5)

@@ -59,7 +59,7 @@ export default function JournalPage() {
       {/* ── Header ── */}
       <div className="text-center pt-1 pb-1">
         <h1 className="font-black text-2xl text-gray-900">يومياتي 📔</h1>
-        <p className="text-gray-500 text-sm mt-1">{todayStr}</p>
+        <p className="text-gray-500 text-sm mt-1 ltr-num">{todayStr}</p>
       </div>
 
       {/* ── Save success banner ── */}

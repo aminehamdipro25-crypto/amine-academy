@@ -972,6 +972,7 @@ export default function SessionPage() {
   @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;700;900&display=swap');
   * { box-sizing:border-box; margin:0; padding:0 }
   body { font-family:'Noto Sans Arabic','Arial',sans-serif; font-size:13px; color:#1a1a2e; background:#fff; direction:rtl }
+  .ltr-num { direction:ltr; unicode-bidi:embed; display:inline-block }
   .page { max-width:820px; margin:0 auto; padding:32px }
   /* Header */
   .report-header { background:linear-gradient(135deg,#4c1d95,#7C5CFC); color:white; border-radius:16px; padding:24px 28px; margin-bottom:24px; display:flex; justify-content:space-between; align-items:flex-start }
@@ -1022,7 +1023,7 @@ export default function SessionPage() {
     <div class="sub">
       الطالب: <strong>${studentName || 'غير محدد'}</strong><br>
       التشخيص: ${diagLabel} • الشدة: ${sevLabel}<br>
-      التاريخ: ${date} • الوقت: ${time}<br>
+      التاريخ: <span class="ltr-num">${date}</span> • الوقت: <span class="ltr-num">${time}</span><br>
       مدة الجلسة: <strong>${formatTime(elapsed)}</strong> • المستوى: ${diffLabel}
     </div>
   </div>

@@ -108,7 +108,7 @@ export default function LearningDifficultiesPage() {
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h3 className="font-black text-gray-900 text-sm">طالب #{p.studentId.slice(-6)}</h3>
-                  <p className="text-gray-400 text-xs mt-0.5">آخر تحديث: {new Date(p.updatedAt).toLocaleDateString('fr-FR')}</p>
+                  <p className="text-gray-400 text-xs mt-0.5">آخر تحديث: <span className="ltr-num">{new Date(p.updatedAt).toLocaleDateString('fr-FR')}</span></p>
                 </div>
                 <Link href={`/dashboard/clients/${p.studentId}`}
                   className="inline-flex items-center gap-1.5 text-xs font-black text-brand-600 bg-brand-50 hover:bg-brand-100 px-3 py-1.5 rounded-xl transition-colors">

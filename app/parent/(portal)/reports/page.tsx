@@ -93,6 +93,7 @@ function ReportDocument({ report, child }: { report: ProgressReport; child: Stud
     *{box-sizing:border-box;margin:0;padding:0}
     body{font-family:'Cairo',Arial,sans-serif;background:#fff;color:#111827;direction:rtl;font-size:13px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
     .doc{max-width:780px;margin:0 auto;padding:0}
+    .ltr-num{direction:ltr;unicode-bidi:embed;display:inline-block}
     @media print{@page{margin:15mm}}
   </style>
 </head>
@@ -117,7 +118,7 @@ function ReportDocument({ report, child }: { report: ProgressReport; child: Stud
           طباعة / تحميل PDF
         </button>
         <span style={{ marginRight: 'auto', fontSize: 11, color: '#9CA3AF', alignSelf: 'center' }}>
-          {typeCfg.icon} {typeCfg.ar} · {issueDate}
+          {typeCfg.icon} {typeCfg.ar} · <span className="ltr-num">{issueDate}</span>
         </span>
       </div>
 
@@ -138,7 +139,7 @@ function ReportDocument({ report, child }: { report: ProgressReport; child: Stud
               <div style={{ display: 'inline-block', background: 'rgba(255,255,255,0.15)', borderRadius: 20, padding: '5px 14px', color: '#fff', fontSize: 12, fontWeight: 700 }}>
                 {typeCfg.icon} {typeCfg.ar}
               </div>
-              <div style={{ color: 'rgba(255,255,255,0.45)', fontSize: 10, marginTop: 4 }}>تاريخ الإصدار: {issueDate}</div>
+              <div style={{ color: 'rgba(255,255,255,0.45)', fontSize: 10, marginTop: 4 }}>تاريخ الإصدار: <span className="ltr-num">{issueDate}</span></div>
             </div>
           </div>
 
@@ -150,7 +151,7 @@ function ReportDocument({ report, child }: { report: ProgressReport; child: Stud
               تقرير تقدم: {child.firstName} {child.lastName}
             </div>
             <div style={{ color: 'rgba(255,255,255,0.55)', fontSize: 12, marginTop: 4 }}>
-              الفترة: {periodFrom} — {periodTo}
+              الفترة: <span className="ltr-num">{periodFrom}</span> — <span className="ltr-num">{periodTo}</span>
             </div>
           </div>
         </div>

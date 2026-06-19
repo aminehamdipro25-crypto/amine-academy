@@ -197,7 +197,7 @@ export default function AdminMessagesPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1">
                       <span className="font-bold text-gray-900 text-sm truncate">{thread.parentName}</span>
-                      <span className="text-xs text-gray-400 flex-shrink-0 mr-2">
+                      <span className="text-xs text-gray-400 flex-shrink-0 mr-2 ltr-num">
                         {formatTime(thread.lastMessage.createdAt)}
                       </span>
                     </div>
@@ -267,7 +267,7 @@ export default function AdminMessagesPage() {
                   <div key={group.date}>
                     <div className="flex items-center gap-3 my-4">
                       <div className="flex-1 h-px bg-gray-200" />
-                      <span className="text-xs text-gray-400 whitespace-nowrap px-2">{group.date}</span>
+                      <span className="text-xs text-gray-400 whitespace-nowrap px-2 ltr-num">{group.date}</span>
                       <div className="flex-1 h-px bg-gray-200" />
                     </div>
                     {group.msgs.map(msg => (

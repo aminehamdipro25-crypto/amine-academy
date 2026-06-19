@@ -273,7 +273,7 @@ function DirectMessagesTab() {
             <div key={group.date}>
               <div className="flex items-center gap-3 my-4">
                 <div className="flex-1 h-px" style={{ background: '#F0E8FF' }} />
-                <span className="text-xs text-gray-400 whitespace-nowrap px-2">{group.date}</span>
+                <span className="text-xs text-gray-400 whitespace-nowrap px-2 ltr-num">{group.date}</span>
                 <div className="flex-1 h-px" style={{ background: '#F0E8FF' }} />
               </div>
               {group.msgs.map(msg => (

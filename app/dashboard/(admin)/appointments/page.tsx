@@ -206,7 +206,7 @@ export default async function AppointmentsPage() {
                     <Calendar className="w-4 h-4 text-brand-600" />
                   </div>
                   <div>
-                    <p className="text-xs font-black text-gray-800">{dateStr}</p>
+                    <p className="text-xs font-black text-gray-800 ltr-num">{dateStr}</p>
                     <p className="text-[11px] text-gray-400 ltr-num mt-0.5">{appt.timeSlot}</p>
                   </div>
                 </div>

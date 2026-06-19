@@ -42,7 +42,7 @@ export default async function AdminDashboardPage() {
         <div className="pointer-events-none absolute -top-4 left-1/2 w-24 h-24 bg-white/5 rounded-full" />
 
         <div className="relative">
-          <p className="text-white/60 text-xs font-medium mb-1">{todayAr}</p>
+          <p className="text-white/60 text-xs font-medium mb-1 ltr-num">{todayAr}</p>
           <h1 className="text-2xl md:text-3xl font-black mb-1">مرحباً، الأستاذ أمين 👋</h1>
           <p className="text-white/70 text-sm">
             {activeCount > 0

@@ -118,7 +118,7 @@ export default function ProgressPage() {
   const behaviorTrend = reports.length >= 2
     ? [...reports].reverse().map(r => {
         const row: Record<string, number | string> = {
-          date: new Date(r.periodEnd || r.createdAt).toLocaleDateString('fr-FR', { month: 'short', day: 'numeric' }),
+          date: `⁦${new Date(r.periodEnd || r.createdAt).toLocaleDateString('fr-FR', { month: 'short', day: 'numeric' })}⁩`,
         }
         r.behaviorRatings?.forEach(({ metric, score }) => {
           row[METRIC_LABELS[metric] || metric] = score
@@ -441,7 +441,7 @@ export default function ProgressPage() {
                     >
                       <div className="flex items-center justify-between mb-3">
                         <h2 className="font-black text-lg">آخر تقرير</h2>
-                        <span className="text-white/70 text-xs">
+                        <span className="text-white/70 text-xs ltr-num">
                           {new Date(latest.periodEnd).toLocaleDateString('fr-FR')}
                         </span>
                       </div>

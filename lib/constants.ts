@@ -22,6 +22,7 @@ export const GAME_LABELS_AR: Record<string, string> = {
   'reaction-game':   'سرعة رد الفعل',
   'stroop-test':     'ستروب — كبح الاستجابة',
   'stop-signal':     'توقف أو اكمل',
+  'go-no-go':        'اضغط / لا تضغط',
   'emotion-cards':   'التعرف على المشاعر',
 }
 
@@ -37,5 +38,6 @@ export const GAME_CATEGORIES_AR: Record<string, string> = {
   'reaction-game':   'حركي',
   'stroop-test':     'انتباه',
   'stop-signal':     'اندفاعية',
+  'go-no-go':        'اندفاعية',
   'emotion-cards':   'اجتماعي',
 }

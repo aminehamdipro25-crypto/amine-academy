@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer'
+import { GAME_LABELS_AR } from './constants'
 
 let _transport: nodemailer.Transporter | null = null
 
@@ -175,12 +176,28 @@ export function weeklyProgressEmail(
       .sort((a, b) => b[1].plays - a[1].plays)
       .slice(0, 3)
 
+    const bestGame = Object.entries(history.byGame)
+      .sort((a, b) => b[1].avgScore - a[1].avgScore)[0]
+
+    let highlight: string | null = null
+    if (bestGame && bestGame[1].avgScore >= 70 && bestGame[1].plays >= 2) {
+      highlight = `🌟 نقطة قوة ${student.firstName}: <strong>${GAME_LABELS_AR[bestGame[0]] ?? bestGame[0]}</strong> بمتوسط ${bestGame[1].avgScore}% على مدى ${bestGame[1].plays} محاولة!`
+    } else if (improvement > 0) {
+      highlight = `📈 تحسّن أداء ${student.firstName} بنسبة ${improvement}% هذا الأسبوع — استمروا بهذا الزخم!`
+    } else if (thisWeek?.gamesPlayed) {
+      highlight = `💪 لعب ${student.firstName} ${thisWeek.gamesPlayed} تمرين هذا الأسبوع — الاستمرارية هي الأهم!`
+    }
+
     return `
       <div style="background:#f8faff;border-radius:12px;padding:20px;margin-bottom:16px;border:1px solid #e2e8f0">
         <h3 style="color:#1e293b;margin:0 0 12px;font-size:16px;font-weight:800">
           ${student.firstName} ${student.lastName}
           <span style="font-size:12px;color:#64748b;font-weight:400;margin-right:8px">${student.diagnosis}</span>
         </h3>
+        ${highlight ? `
+        <div style="background:linear-gradient(135deg,#fef3c7,#fde68a);border-radius:10px;padding:12px 16px;margin-bottom:16px">
+          <p style="margin:0;color:#92400e;font-size:14px;font-weight:700">${highlight}</p>
+        </div>` : ''}
         <div style="display:flex;gap:16px;margin-bottom:16px">
           <div style="flex:1;background:white;border-radius:8px;padding:12px;text-align:center;border:1px solid #e2e8f0">
             <div style="font-size:24px;font-weight:900;color:#5b6ef2">${thisWeek?.gamesPlayed ?? 0}</div>
@@ -200,7 +217,7 @@ export function weeklyProgressEmail(
           <p style="color:#64748b;font-size:12px;font-weight:700;margin:0 0 8px">الألعاب الأكثر ممارسة:</p>
           ${topGames.map(([gameId, data]) => `
             <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:white;border-radius:6px;margin-bottom:4px;border:1px solid #e2e8f0">
-              <span style="color:#334155;font-size:13px">${gameId}</span>
+              <span style="color:#334155;font-size:13px">${GAME_LABELS_AR[gameId] ?? gameId}</span>
               <span style="color:#5b6ef2;font-size:12px;font-weight:700">${data.avgScore}% متوسط • ${data.plays} مرة</span>
             </div>
           `).join('')}

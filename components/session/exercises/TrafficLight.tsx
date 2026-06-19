@@ -96,7 +96,7 @@ export default function TrafficLight({ onComplete, onCancel, difficulty = 1 }: P
       }, RED_MS)
     }, 600)
     return clear
-  }, [phase, round]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [round]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => () => clear(), [])
 

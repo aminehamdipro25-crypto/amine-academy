@@ -35,3 +35,6 @@ next-env.d.ts
 
 # Claude Code agent worktrees
 .claude/worktrees/
+
+# Temporary verification harness pages (never shipped)
+/app/dev-test-*/

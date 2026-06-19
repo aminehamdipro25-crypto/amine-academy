@@ -524,11 +524,12 @@ export default function SessionPage() {
 
   // White noise / focus music
   const [showNoisePanel, setShowNoisePanel] = useState(false)
-  const [noiseMode, setNoiseMode]           = useState<'white' | 'rain' | 'focus' | 'calm'>('calm')
+  const [noiseMode, setNoiseMode]           = useState<'white' | 'rain' | 'focus' | 'calm' | 'theta'>('calm')
   const [noiseRunning, setNoiseRunning]     = useState(false)
   const [noiseSecsLeft, setNoiseSecsLeft]   = useState(5 * 60)
   const noiseCtxRef   = useRef<AudioContext | null>(null)
   const noiseSrcRef   = useRef<AudioBufferSourceNode | null>(null)
+  const noiseEnvRef   = useRef<GainNode | null>(null)
   const noiseTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   // Toolbar dropdown anchors (positions for portal-rendered popovers)
@@ -771,74 +772,93 @@ export default function SessionPage() {
       const ctx = new AudioCtx()
       noiseCtxRef.current = ctx
 
-      const rate = ctx.sampleRate
-      const buf  = ctx.createBuffer(1, rate * 3, rate)
-      const data = buf.getChannelData(0)
-      for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1
-
-      const src = ctx.createBufferSource()
-      src.buffer = buf
-      src.loop = true
-      noiseSrcRef.current = src
-
       const masterGain = ctx.createGain()
-      masterGain.gain.value = noiseMode === 'focus' ? 0.05 : noiseMode === 'calm' ? 0.045 : 0.09
-      masterGain.connect(ctx.destination)
+      // Fade the whole output in from silence instead of jumping straight to
+      // the target level — an instant gain step is a broadband click, the
+      // main source of "dirty"/harsh sound on start.
+      const envGain = ctx.createGain()
+      envGain.gain.value = 0
+      envGain.gain.linearRampToValueAtTime(1, ctx.currentTime + 0.6)
+      masterGain.connect(envGain)
+      envGain.connect(ctx.destination)
+      noiseEnvRef.current = envGain
 
-      if (noiseMode === 'rain') {
-        const lp = ctx.createBiquadFilter()
-        lp.type = 'lowpass'
-        lp.frequency.value = 800
-        src.connect(lp)
-        lp.connect(masterGain)
-      } else if (noiseMode === 'focus') {
-        // 40Hz gamma amplitude modulation (scientifically linked to focus)
-        src.connect(masterGain)
-        const lfo = ctx.createOscillator()
-        lfo.type = 'sine'
-        lfo.frequency.value = 40
-        const lfoScale = ctx.createGain()
-        lfoScale.gain.value = 0.04
-        lfo.connect(lfoScale)
-        lfoScale.connect(masterGain.gain)
-        lfo.start()
-      } else if (noiseMode === 'calm') {
-        // Quiet, heavily-filtered noise bed under a slow consonant pad —
-        // gentle ambient texture (no sudden hits, no melody) shown to lower
-        // heart rate/anxiety in slow ambient-music research.
-        const lp = ctx.createBiquadFilter()
-        lp.type = 'lowpass'
-        lp.frequency.value = 400
-        src.connect(lp)
-        lp.connect(masterGain)
-
-        // Sustained open chord (A2-E3-A3-C#4), each voice breathing in and
-        // out at ~0.1Hz — about 6 cycles/min, matching a relaxed breathing rate.
-        const padFreqs = [110, 164.81, 220, 277.18]
-        padFreqs.forEach((freq, idx) => {
+      if (noiseMode === 'focus' || noiseMode === 'theta') {
+        // Clean binaural beat: two pure sine tones, no noise floor at all,
+        // panned hard left/right so the interaural frequency difference is
+        // perceived as a single pulsing beat. Needs stereo headphones —
+        // amplitude-modulated broadband noise (the old approach) is the
+        // harsher, "impure"-sounding way to do this.
+        masterGain.gain.value = 0.05
+        const beatHz  = noiseMode === 'focus' ? 40 : 6 // gamma vs theta range
+        const carrier = 200
+        for (const pan of [-1, 1]) {
           const osc = ctx.createOscillator()
           osc.type = 'sine'
-          osc.frequency.value = freq
-          const oscGain = ctx.createGain()
-          const baseLevel = 0.05 / (idx + 1)
-          oscGain.gain.value = baseLevel
-          osc.connect(oscGain)
-          oscGain.connect(masterGain)
+          osc.frequency.value = carrier + (pan * beatHz) / 2
+          const panner = ctx.createStereoPanner()
+          panner.pan.value = pan
+          osc.connect(panner)
+          panner.connect(masterGain)
           osc.start()
-
-          const breathe = ctx.createOscillator()
-          breathe.type = 'sine'
-          breathe.frequency.value = 0.1
-          const breatheGain = ctx.createGain()
-          breatheGain.gain.value = baseLevel * 0.6
-          breathe.connect(breatheGain)
-          breatheGain.connect(oscGain.gain)
-          breathe.start()
-        })
+        }
       } else {
-        src.connect(masterGain)
+        masterGain.gain.value = noiseMode === 'calm' ? 0.045 : 0.09
+
+        const rate = ctx.sampleRate
+        const buf  = ctx.createBuffer(1, rate * 3, rate)
+        const data = buf.getChannelData(0)
+        for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1
+
+        const src = ctx.createBufferSource()
+        src.buffer = buf
+        src.loop = true
+        noiseSrcRef.current = src
+
+        if (noiseMode === 'rain') {
+          const lp = ctx.createBiquadFilter()
+          lp.type = 'lowpass'
+          lp.frequency.value = 800
+          src.connect(lp)
+          lp.connect(masterGain)
+        } else if (noiseMode === 'calm') {
+          // Quiet, heavily-filtered noise bed under a slow consonant pad —
+          // gentle ambient texture (no sudden hits, no melody) shown to lower
+          // heart rate/anxiety in slow ambient-music research.
+          const lp = ctx.createBiquadFilter()
+          lp.type = 'lowpass'
+          lp.frequency.value = 400
+          src.connect(lp)
+          lp.connect(masterGain)
+
+          // Sustained open chord (A2-E3-A3-C#4), each voice breathing in and
+          // out at ~0.1Hz — about 6 cycles/min, matching a relaxed breathing rate.
+          const padFreqs = [110, 164.81, 220, 277.18]
+          padFreqs.forEach((freq, idx) => {
+            const osc = ctx.createOscillator()
+            osc.type = 'sine'
+            osc.frequency.value = freq
+            const oscGain = ctx.createGain()
+            const baseLevel = 0.05 / (idx + 1)
+            oscGain.gain.value = baseLevel
+            osc.connect(oscGain)
+            oscGain.connect(masterGain)
+            osc.start()
+
+            const breathe = ctx.createOscillator()
+            breathe.type = 'sine'
+            breathe.frequency.value = 0.1
+            const breatheGain = ctx.createGain()
+            breatheGain.gain.value = baseLevel * 0.6
+            breathe.connect(breatheGain)
+            breatheGain.connect(oscGain.gain)
+            breathe.start()
+          })
+        } else {
+          src.connect(masterGain)
+        }
+        src.start()
       }
-      src.start()
 
       setNoiseRunning(true)
       setNoiseSecsLeft(5 * 60)
@@ -853,14 +873,27 @@ export default function SessionPage() {
   }
 
   function stopNoise() {
-    if (noiseSrcRef.current) {
-      try { noiseSrcRef.current.stop() } catch { /* already stopped */ }
-      noiseSrcRef.current = null
+    // Capture the live nodes before clearing the refs — a fade-out is
+    // scheduled async below, and if the therapist hits start again before
+    // it finishes, the refs will already point at a brand-new context.
+    // Closing/stopping must act on what THIS call started, not on
+    // whatever the refs hold by the time the timeout fires.
+    const ctx = noiseCtxRef.current
+    const env = noiseEnvRef.current
+    const src = noiseSrcRef.current
+    if (ctx && env) {
+      const now = ctx.currentTime
+      env.gain.cancelScheduledValues(now)
+      env.gain.setValueAtTime(env.gain.value, now)
+      env.gain.linearRampToValueAtTime(0, now + 0.3) // fade-out avoids a stop click
     }
-    if (noiseCtxRef.current) {
-      noiseCtxRef.current.close().catch(() => {})
-      noiseCtxRef.current = null
-    }
+    setTimeout(() => {
+      if (src) { try { src.stop() } catch { /* already stopped */ } }
+      if (ctx) { ctx.close().catch(() => {}) }
+    }, ctx ? 320 : 0)
+    noiseSrcRef.current = null
+    noiseCtxRef.current = null
+    noiseEnvRef.current = null
     if (noiseTimerRef.current) {
       clearInterval(noiseTimerRef.current)
       noiseTimerRef.current = null
@@ -1807,7 +1840,7 @@ ${notes ? `
                 ? 'bg-cyan-600 text-white ring-1 ring-cyan-400/50'
                 : 'bg-white/10 hover:bg-white/20 text-white/60'
             }`}
-            title="موسيقى التركيز / الضوضاء البيضاء"
+            title="موسيقى وترددات الاسترخاء والتركيز"
           >
             🎵 {noiseRunning ? formatTime(noiseSecsLeft) : 'موسيقى'}
           </button>
@@ -1819,16 +1852,17 @@ ${notes ? `
             dir="rtl"
           >
             <p className="text-white/40 text-[10px] font-black mb-2.5 flex items-center gap-1">
-              🎵 موسيقى التركيز <span className="text-cyan-400">(5 دقائق)</span>
+              🎵 صوت الجلسة <span className="text-cyan-400">(5 دقائق)</span>
             </p>
 
             {/* Mode selector */}
             <div className="grid grid-cols-2 gap-1.5 mb-3">
               {([
-                { key: 'calm',  label: 'أمبيانت هادئ', emoji: '🎐' },
-                { key: 'focus', label: 'غاما 40Hz',    emoji: '🧠' },
-                { key: 'rain',  label: 'مطر',          emoji: '🌧️' },
-                { key: 'white', label: 'ضوضاء بيضاء', emoji: '🌊' },
+                { key: 'calm',  label: 'أمبيانت هادئ',  emoji: '🎐' },
+                { key: 'theta', label: 'ثيتا للاسترخاء', emoji: '🌙' },
+                { key: 'focus', label: 'غاما 40Hz',     emoji: '🧠' },
+                { key: 'rain',  label: 'مطر',           emoji: '🌧️' },
+                { key: 'white', label: 'ضوضاء بيضاء',  emoji: '🌊' },
               ] as const).map(m => (
                 <button
                   key={m.key}
@@ -1870,9 +1904,13 @@ ${notes ? `
               {noiseRunning ? '⏹ إيقاف' : '▶ تشغيل'}
             </button>
             <p className="text-white/20 text-[9px] mt-2 text-center leading-relaxed">
-              {noiseMode === 'calm'
-                ? 'نغمات هادئة متجانسة بتذبذب يحاكي التنفس البطيء (~6 أنفاس/د) — مستوحى من أبحاث الموسيقى المهدئة للدماغ'
-                : 'الضوضاء البيضاء تُحسّن التركيز لدى ADHD — موثّق علمياً'}
+              {{
+                calm:  'نغمات هادئة متجانسة بتذبذب يحاكي التنفس البطيء (~6 أنفاس/د) — مستوحى من أبحاث الموسيقى المهدئة للدماغ',
+                theta: 'نبضة ثنائية (binaural) بتردد ~6Hz (ثيتا) مرتبطة بالاسترخاء العميق — يلزم استخدام سماعات الرأس',
+                focus: 'نبضة ثنائية (binaural) بتردد 40Hz (غاما) مرتبطة باليقظة والتركيز — يلزم استخدام سماعات الرأس',
+                rain:  'صوت مطر طبيعي مهدئ لتغطية المشتتات الصوتية',
+                white: 'الضوضاء البيضاء تُحسّن التركيز لدى ADHD — موثّق علمياً',
+              }[noiseMode]}
             </p>
           </div>
         </ToolbarPopover>

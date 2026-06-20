@@ -1,6 +1,18 @@
 import { getAllAppointments, getAllParents } from '@/lib/db'
-import { Calendar, Clock, Video, AlertCircle, CheckCircle2, XCircle, User, Plus, MonitorPlay, ChevronLeft } from 'lucide-react'
+import { Calendar, Clock, Video, AlertCircle, CheckCircle2, XCircle, User, Plus, MonitorPlay, ChevronLeft, MessageCircle } from 'lucide-react'
 import Link from 'next/link'
+
+// No WhatsApp Business API is configured — this opens a pre-filled chat in
+// wa.me so the admin sends the reminder themselves with one click, instead
+// of typing the whole message by hand.
+function waReminderLink(phone: string | undefined, firstName: string, date: string, timeSlot: string): string | null {
+  if (!phone) return null
+  const digits = phone.replace(/[^\d]/g, '').replace(/^00/, '')
+  if (digits.length < 8) return null
+  const dateStr = new Date(date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
+  const message = `مرحباً ${firstName}، تذكير بموعدكم في أكاديمية أمين يوم ${dateStr} الساعة ${timeSlot}. بانتظاركم 🌟`
+  return `https://wa.me/${digits}?text=${encodeURIComponent(message)}`
+}
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -114,6 +126,7 @@ export default async function AppointmentsPage() {
               const parent = parentMap[appt.parentId]
               const type = TYPE_CFG[appt.type]
               const gradient = AVATAR_GRADIENTS[idx % AVATAR_GRADIENTS.length]
+              const wa = parent ? waReminderLink(parent.phone, parent.firstName, appt.date, appt.timeSlot) : null
               return (
                 <div key={appt.id} className="bg-white/10 backdrop-blur-sm rounded-2xl px-4 py-3 flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -135,6 +148,14 @@ export default async function AppointmentsPage() {
                       <span className="bg-white/20 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
                         {type.label}
                       </span>
+                    )}
+                    {wa && (
+                      <a href={wa} target="_blank" rel="noopener noreferrer"
+                        title="إرسال تذكير واتساب"
+                        className="flex items-center gap-1 bg-emerald-400/20 text-emerald-200 hover:bg-emerald-400/30 text-[11px] font-bold px-2.5 py-1 rounded-xl transition-colors">
+                        <MessageCircle className="w-3 h-3" />
+                        تذكير
+                      </a>
                     )}
                     {appt.meetingUrl && (
                       <a href={appt.meetingUrl} target="_blank" rel="noopener noreferrer"
@@ -172,6 +193,7 @@ export default async function AppointmentsPage() {
             const StatusIcon = status.icon
             const gradient = AVATAR_GRADIENTS[idx % AVATAR_GRADIENTS.length]
             const dateStr = new Date(appt.date).toLocaleDateString('fr-FR', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })
+            const wa = appt.status === 'scheduled' && parent ? waReminderLink(parent.phone, parent.firstName, appt.date, appt.timeSlot) : null
 
             return (
               <div
@@ -236,6 +258,14 @@ export default async function AppointmentsPage() {
                     بدء الجلسة
                   </Link>
                   <div className="flex items-center gap-2">
+                    {wa && (
+                      <a href={wa} target="_blank" rel="noopener noreferrer"
+                        title="إرسال تذكير واتساب"
+                        className="inline-flex items-center gap-1.5 text-xs font-black text-emerald-600 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-xl transition-colors">
+                        <MessageCircle className="w-3.5 h-3.5" />
+                        تذكير
+                      </a>
+                    )}
                     {appt.meetingUrl && (
                       <a href={appt.meetingUrl} target="_blank" rel="noopener noreferrer"
                         className="inline-flex items-center gap-1.5 text-xs font-black text-green-600 bg-green-50 hover:bg-green-100 px-3 py-1.5 rounded-xl transition-colors">

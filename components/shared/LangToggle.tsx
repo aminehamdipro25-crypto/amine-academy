@@ -10,13 +10,16 @@ const TOOLTIP: Record<Lang, string> = {
   fr: 'Passer au français',
 }
 
-export default function LangToggle({ className = '' }: { className?: string }) {
+export default function LangToggle({ className = '', variant = 'dark' }: { className?: string; variant?: 'dark' | 'light' }) {
   const { lang, setLang } = useLang()
   const next = NEXT_LANG[lang]
+  const colors = variant === 'light'
+    ? 'border-gray-200 text-gray-500 hover:text-gray-900 hover:bg-gray-50'
+    : 'border-white/30 text-white/80 hover:text-white hover:bg-white/10'
   return (
     <button
       onClick={() => setLang(next)}
-      className={`flex items-center gap-1.5 border border-white/30 text-white/80 hover:text-white hover:bg-white/10 text-sm font-bold px-3 py-1.5 rounded-lg transition-colors ${className}`}
+      className={`flex items-center gap-1.5 border ${colors} text-sm font-bold px-3 py-1.5 rounded-lg transition-colors ${className}`}
       title={TOOLTIP[next]}
     >
       <span className="text-base leading-none">{FLAG[next]}</span>

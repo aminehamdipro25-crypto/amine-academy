@@ -94,6 +94,19 @@ export const tr = {
         timeout:  'انتهت مهلة الاتصال — تحقق من اتصالك وحاول مجدداً',
       },
     },
+    portal: {
+      parentNav: {
+        home: 'الرئيسية', children: 'أطفالي', assessment: 'التقييم', exercises: 'التمارين',
+        progress: 'التطور', appointments: 'المواعيد', reports: 'التقارير', chat: 'التواصل',
+        familyChallenge: 'تحدي العائلة', more: 'المزيد',
+      },
+      studentNav: {
+        home: 'بيتي', exercises: 'تمارين', journal: 'يومياتي', achievements: 'جوائزي', schedule: 'جدولي',
+      },
+      common: {
+        logout: 'خروج', notifications: 'الإشعارات', parentsPortalSubtitle: 'بوابة الأولياء', day: 'يوم',
+      },
+    },
   },
   en: {
     nav: {
@@ -152,6 +165,19 @@ export const tr = {
         timeout:  'Connection timed out — check your internet and try again',
       },
     },
+    portal: {
+      parentNav: {
+        home: 'Home', children: 'My Children', assessment: 'Assessment', exercises: 'Exercises',
+        progress: 'Progress', appointments: 'Appointments', reports: 'Reports', chat: 'Messages',
+        familyChallenge: 'Family Challenge', more: 'More',
+      },
+      studentNav: {
+        home: 'Home', exercises: 'Exercises', journal: 'Journal', achievements: 'Awards', schedule: 'Schedule',
+      },
+      common: {
+        logout: 'Log out', notifications: 'Notifications', parentsPortalSubtitle: 'Parents Portal', day: 'day',
+      },
+    },
   },
   fr: {
     nav: {
@@ -208,6 +234,19 @@ export const tr = {
         invalid:  'E-mail ou mot de passe incorrect',
         network:  'Une erreur de connexion est survenue',
         timeout:  'La connexion a expiré — vérifiez votre connexion et réessayez',
+      },
+    },
+    portal: {
+      parentNav: {
+        home: 'Accueil', children: 'Mes enfants', assessment: 'Évaluation', exercises: 'Exercices',
+        progress: 'Progrès', appointments: 'Rendez-vous', reports: 'Rapports', chat: 'Messages',
+        familyChallenge: 'Défi familial', more: 'Plus',
+      },
+      studentNav: {
+        home: 'Accueil', exercises: 'Exercices', journal: 'Journal', achievements: 'Récompenses', schedule: 'Emploi du temps',
+      },
+      common: {
+        logout: 'Déconnexion', notifications: 'Notifications', parentsPortalSubtitle: 'Espace parents', day: 'jour',
       },
     },
   },

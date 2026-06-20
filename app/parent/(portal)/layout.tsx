@@ -6,24 +6,29 @@ import {
   LayoutDashboard, Users, LineChart,
   Calendar, MessageSquare, FileText, LogOut, Dumbbell, Bell, ClipboardCheck, ChevronLeft, Sparkles,
 } from 'lucide-react'
-
-const navItems = [
-  { href: '/parent/dashboard',    label: 'الرئيسية', icon: LayoutDashboard },
-  { href: '/parent/children',     label: 'أطفالي',   icon: Users },
-  { href: '/parent/assessment',   label: 'التقييم',  icon: ClipboardCheck },
-  { href: '/parent/exercises',    label: 'التمارين', icon: Dumbbell },
-  { href: '/parent/progress',     label: 'التطور',   icon: LineChart },
-  { href: '/parent/appointments', label: 'المواعيد', icon: Calendar },
-  { href: '/parent/reports',      label: 'التقارير', icon: FileText },
-  { href: '/parent/chat',         label: 'التواصل',  icon: MessageSquare },
-  { href: '/parent/family-challenge', label: 'تحدي العائلة', icon: Sparkles },
-]
-
-const bottomItems = navItems.slice(0, 5)
+import { useLang, tr } from '@/lib/i18n'
+import LangToggle from '@/components/shared/LangToggle'
 
 export default function ParentPortalLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const [scrolled, setScrolled] = useState(false)
+  const { lang } = useLang()
+  const dir = lang === 'ar' ? 'rtl' : 'ltr'
+  const t = tr[lang].portal
+
+  const navItems = [
+    { href: '/parent/dashboard',    label: t.parentNav.home,    icon: LayoutDashboard },
+    { href: '/parent/children',     label: t.parentNav.children, icon: Users },
+    { href: '/parent/assessment',   label: t.parentNav.assessment, icon: ClipboardCheck },
+    { href: '/parent/exercises',    label: t.parentNav.exercises, icon: Dumbbell },
+    { href: '/parent/progress',     label: t.parentNav.progress, icon: LineChart },
+    { href: '/parent/appointments', label: t.parentNav.appointments, icon: Calendar },
+    { href: '/parent/reports',      label: t.parentNav.reports, icon: FileText },
+    { href: '/parent/chat',         label: t.parentNav.chat,    icon: MessageSquare },
+    { href: '/parent/family-challenge', label: t.parentNav.familyChallenge, icon: Sparkles },
+  ]
+
+  const bottomItems = navItems.slice(0, 5)
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8)
@@ -38,7 +43,7 @@ export default function ParentPortalLayout({ children }: { children: React.React
   const activeItem = navItems.find(n => isActive(n.href))
 
   return (
-    <div dir="rtl" style={{ minHeight: '100vh', background: '#FFF8F0' }}>
+    <div dir={dir} style={{ minHeight: '100vh', background: '#FFF8F0' }}>
 
       {/* ══ Header ══ */}
       <header
@@ -62,7 +67,7 @@ export default function ParentPortalLayout({ children }: { children: React.React
             </div>
             <div className="hidden sm:block">
               <div className="font-black text-sm leading-tight" style={{ color: '#6B46F0' }}>أكاديمية أمين</div>
-              <div className="text-[10px] text-gray-400 leading-tight">بوابة الأولياء</div>
+              <div className="text-[10px] text-gray-400 leading-tight">{t.common.parentsPortalSubtitle}</div>
             </div>
           </Link>
 
@@ -104,11 +109,15 @@ export default function ParentPortalLayout({ children }: { children: React.React
               href="/parent/dashboard#notifications"
               className="w-9 h-9 rounded-xl flex items-center justify-center transition-all"
               style={{ background: '#F3EEFF' }}
+              title={t.common.notifications}
               onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = '#E8DBFF' }}
               onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = '#F3EEFF' }}
             >
               <Bell className="w-4 h-4" style={{ color: '#7C5CFC' }} />
             </Link>
+
+            {/* Language switcher (desktop only) */}
+            <LangToggle variant="light" className="hidden md:flex" />
 
             {/* Logout (desktop only) */}
             <form action="/api/auth/client/logout" method="POST" className="hidden md:block">
@@ -120,7 +129,7 @@ export default function ParentPortalLayout({ children }: { children: React.React
                 onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '#F9FAFB'; (e.currentTarget as HTMLButtonElement).style.color = '#9CA3AF' }}
               >
                 <LogOut className="w-3.5 h-3.5" />
-                خروج
+                {t.common.logout}
               </button>
             </form>
           </div>
@@ -180,7 +189,7 @@ export default function ParentPortalLayout({ children }: { children: React.React
             }
           >
             <ChevronLeft className="w-5 h-5 rotate-180" />
-            <span className="text-[10px] font-black leading-none">المزيد</span>
+            <span className="text-[10px] font-black leading-none">{t.parentNav.more}</span>
           </Link>
         </div>
       </nav>

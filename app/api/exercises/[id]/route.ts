@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
-import { verifyAdminSession } from '@/lib/auth'
+import { isDashboardUser } from '@/lib/auth'
 import { getExercise, updateExercise } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
@@ -18,9 +17,7 @@ export async function GET(_: Request, { params }: { params: { id: string } }) {
 
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
   try {
-    const cookieStore = await cookies()
-    const adminToken = cookieStore.get('admin_token')?.value
-    const isAdmin = await verifyAdminSession(adminToken)
+    const isAdmin = await isDashboardUser()
     if (!isAdmin) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
 
     const updates = await req.json()

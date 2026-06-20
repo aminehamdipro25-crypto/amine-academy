@@ -1,17 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
-import { verifyAdminSession } from '@/lib/auth'
+import { isOwnerUser } from '@/lib/auth'
 import { getParent, createPasswordResetToken } from '@/lib/db'
 
 export const runtime = 'nodejs'
 
+// Returns a live password-reset link for the parent account — owner-only,
+// since this is equivalent to an account takeover if handed to staff.
 export async function POST(
   req: NextRequest,
   { params }: { params: { parentId: string } }
 ) {
-  const cookieStore = await cookies()
-  const token = cookieStore.get('admin_token')?.value
-  if (!token || !await verifyAdminSession(token)) {
+  if (!(await isOwnerUser())) {
     return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
   }
 

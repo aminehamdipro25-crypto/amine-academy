@@ -63,6 +63,11 @@ export default function ClientDetailPage() {
   const [profileSaving, setProfileSaving] = useState(false)
   const [programs, setPrograms] = useState<Record<string, Program | null>>({})
   const [programsLoading, setProgramsLoading] = useState(false)
+  const [isOwner, setIsOwner] = useState(false)
+
+  useEffect(() => {
+    fetch('/api/auth/me').then(r => r.ok ? r.json() : null).then(d => { if (d?.role === 'owner') setIsOwner(true) }).catch(() => {})
+  }, [])
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -549,7 +554,7 @@ export default function ClientDetailPage() {
               {parent.subscriptionStatus === 'suspended' ? 'إعادة تفعيل الحساب' : 'إيقاف الحساب مؤقتاً'}
             </button>
 
-            {!confirmDelete ? (
+            {isOwner && (!confirmDelete ? (
               <button onClick={() => setConfirmDelete(true)}
                 className="w-full bg-red-50 text-red-700 font-bold py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 hover:bg-red-100 transition-colors">
                 <Trash2 className="w-4 h-4" />
@@ -571,7 +576,7 @@ export default function ClientDetailPage() {
                   </button>
                 </div>
               </div>
-            )}
+            ))}
           </div>
 
           <p className="text-xs text-gray-400 ltr-num text-center">ID: {parent.id}</p>

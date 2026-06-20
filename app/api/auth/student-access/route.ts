@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
-import { verifyAdminSession, createSession } from '@/lib/auth'
+import { isDashboardUser, createSession } from '@/lib/auth'
 import { getStudent, getStudentsByParent } from '@/lib/db'
 import { redis } from '@/lib/redis'
 import { isRateLimited, getClientIp } from '@/lib/rateLimit'
@@ -10,9 +9,7 @@ export const runtime = 'nodejs'
 // Admin generates a 6-char alphanumeric access code for a student
 export async function POST(req: NextRequest) {
   try {
-    const cookieStore = await cookies()
-    const token = cookieStore.get('admin_token')?.value
-    if (!await verifyAdminSession(token)) {
+    if (!await isDashboardUser()) {
       return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
     }
 

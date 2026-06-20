@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
-import { verifyAdminSession } from '@/lib/auth'
+import { isDashboardUser } from '@/lib/auth'
 import { redis } from '@/lib/redis'
 import type { SessionLog } from '@/lib/types'
 
@@ -10,9 +9,7 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const cookieStore = await cookies()
-  const token = cookieStore.get('admin_session')?.value
-  if (!(await verifyAdminSession(token || ''))) {
+  if (!(await isDashboardUser())) {
     return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
   }
 

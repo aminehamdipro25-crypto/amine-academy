@@ -25,6 +25,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/dashboard/messages':          'الرسائل',
   '/dashboard/settings':          'الإعدادات',
   '/dashboard/analytics':         'الإحصائيات',
+  '/dashboard/staff':             'فريق العمل',
 }
 
 export default function AdminHeader({ onMenuToggle, onUnreadChange }: { onMenuToggle?: () => void; onUnreadChange?: (n: number) => void }) {
@@ -35,6 +36,11 @@ export default function AdminHeader({ onMenuToggle, onUnreadChange }: { onMenuTo
   const [open, setOpen]               = useState(false)
   const [loading, setLoading]         = useState(false)
   const dropRef = useRef<HTMLDivElement>(null)
+  const [actor, setActor] = useState<{ role: 'owner' | 'staff'; name: string } | null>(null)
+
+  useEffect(() => {
+    fetch('/api/auth/me').then(r => r.ok ? r.json() : null).then(data => { if (data) setActor(data) }).catch(() => {})
+  }, [])
 
   const pageTitle = Object.entries(PAGE_TITLES).find(([k]) =>
     pathname === k || pathname.startsWith(k + '/')
@@ -217,11 +223,11 @@ export default function AdminHeader({ onMenuToggle, onUnreadChange }: { onMenuTo
         {/* Admin avatar */}
         <div className="flex items-center gap-2 pr-1 border-r border-gray-100 mr-0.5">
           <div className="w-8 h-8 bg-gradient-to-br from-brand-500 to-brand-700 rounded-full flex items-center justify-center text-white font-black text-sm flex-shrink-0 shadow-sm">
-            أ
+            {(actor?.name || 'أ').charAt(0)}
           </div>
           <div className="hidden md:block">
-            <div className="text-sm font-black text-gray-900 leading-none">الأستاذ أمين</div>
-            <div className="text-[10px] text-gray-400 mt-0.5">مشرف النظام</div>
+            <div className="text-sm font-black text-gray-900 leading-none">{actor?.name || 'الأستاذ أمين'}</div>
+            <div className="text-[10px] text-gray-400 mt-0.5">{actor?.role === 'staff' ? 'فريق العمل' : 'مشرف النظام'}</div>
           </div>
         </div>
 

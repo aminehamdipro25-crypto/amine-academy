@@ -245,6 +245,18 @@ export interface SessionPayload {
   exp: number
 }
 
+// ── Staff (multi-therapist accounts, distinct from the owner's
+// master ADMIN_PASSWORD) ────────────────────────────────────────
+export interface Staff {
+  id: string
+  email: string
+  passwordHash: string
+  name: string
+  isActive: boolean
+  createdAt: string
+  lastLoginAt: string | null
+}
+
 // ── Messages ──────────────────────────────────────────────────
 export interface Message {
   id: string

@@ -1,20 +1,18 @@
 export const runtime = 'nodejs'
 
 import { NextRequest, NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
-import { verifyAdminSession } from '@/lib/auth'
+import { isDashboardUser, getDashboardActorId } from '@/lib/auth'
 import {
   sendMessage,
   getThreadMessages,
   markThreadRead,
   getAllMessageThreads,
   getParent,
+  getStaff,
 } from '@/lib/db'
 
 async function requireAdmin(): Promise<boolean> {
-  const cookieStore = await cookies()
-  const token = cookieStore.get('admin_token')?.value
-  return verifyAdminSession(token)
+  return isDashboardUser()
 }
 
 export async function GET(req: NextRequest) {
@@ -71,10 +69,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'بيانات غير صالحة' }, { status: 400 })
     }
 
+    // Attribute the message to whoever actually sent it, not always the owner —
+    // staff can now reply to parents through this same endpoint.
+    const actorId = await getDashboardActorId()
+    let senderName = 'الأستاذ أمين'
+    if (actorId?.startsWith('staff:')) {
+      const staff = await getStaff(actorId.slice('staff:'.length))
+      if (staff) senderName = staff.name
+    }
+
     const message = await sendMessage({
       threadId,
       from: 'admin',
-      senderName: 'الأستاذ أمين',
+      senderName,
       content,
       read: false,
     })

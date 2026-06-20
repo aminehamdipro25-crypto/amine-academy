@@ -1,18 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
-import { verifyAdminSession } from '@/lib/auth'
-import { createSession } from '@/lib/auth'
+import { isOwnerUser, createSession } from '@/lib/auth'
 import { getParent } from '@/lib/db'
 
 export const runtime = 'nodejs'
 
+// Impersonation mints a working session for any parent account — owner-only,
+// even though staff can otherwise manage clients.
 export async function POST(
   req: NextRequest,
   { params }: { params: { parentId: string } }
 ) {
-  const cookieStore = await cookies()
-  const token = cookieStore.get('admin_token')?.value
-  if (!token || !await verifyAdminSession(token)) {
+  if (!(await isOwnerUser())) {
     return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
   }
 

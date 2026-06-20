@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
-import { verifyAdminSession } from '@/lib/auth'
+import { isDashboardUser, isOwnerUser } from '@/lib/auth'
 import { getParent, updateParent, getStudentsByParent, getParentAppointments, deleteParentFull } from '@/lib/db'
 import { hashPassword } from '@/lib/password'
 import type { SubscriptionStatus } from '@/lib/types'
@@ -12,9 +11,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const cookieStore = await cookies()
-    const token = cookieStore.get('admin_token')?.value
-    if (!await verifyAdminSession(token)) {
+    if (!await isDashboardUser()) {
       return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
     }
     const { id } = await params
@@ -42,9 +39,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const cookieStore = await cookies()
-    const token = cookieStore.get('admin_token')?.value
-    if (!await verifyAdminSession(token)) {
+    if (!await isDashboardUser()) {
       return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
     }
 
@@ -93,9 +88,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const cookieStore = await cookies()
-    const token = cookieStore.get('admin_token')?.value
-    if (!await verifyAdminSession(token)) {
+    // Permanently deleting a client's account is an owner-level action —
+    // staff accounts can view/manage clients but not erase them.
+    if (!await isOwnerUser()) {
       return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
     }
     const { id } = await params

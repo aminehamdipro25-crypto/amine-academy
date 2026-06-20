@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
-import { verifyAdminSession } from '@/lib/auth'
+import { isDashboardUser, getDashboardActorId } from '@/lib/auth'
 import { getStudent, getAllExercises } from '@/lib/db'
 import { redis } from '@/lib/redis'
 import Anthropic from '@anthropic-ai/sdk'
@@ -55,9 +54,7 @@ function formatAssessmentsForPrompt(assessments: AssessmentResult[]): string {
 
 export async function POST(req: NextRequest) {
   try {
-    const cookieStore = await cookies()
-    const token = cookieStore.get('admin_token')?.value
-    if (!await verifyAdminSession(token)) {
+    if (!await isDashboardUser()) {
       return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
     }
 
@@ -136,8 +133,10 @@ ${exList}
   }
 }`
 
-    // Rate limit: max 10 AI generations per hour per admin token
-    const rateLimitKey = `ai_prog_limit:${token}`
+    // Rate limit: max 10 AI generations per hour, per dashboard account (cost control) —
+    // keyed by actor so one busy staff member can't lock out everyone else.
+    const actorId = await getDashboardActorId()
+    const rateLimitKey = `ai_prog_limit:${actorId ?? 'unknown'}`
     const count = await redis.incr(rateLimitKey)
     if (count === 1) await redis.expire(rateLimitKey, 3600)
     if (count > 10) {

@@ -64,6 +64,7 @@ export default function ExercisesPage() {
   const [saving, setSaving] = useState(false)
   const [saveMsg, setSaveMsg] = useState('')
   const [search, setSearch] = useState('')
+  const [isOwner, setIsOwner] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -76,6 +77,10 @@ export default function ExercisesPage() {
   }, [])
 
   useEffect(() => { load() }, [load])
+
+  useEffect(() => {
+    fetch('/api/auth/me').then(r => r.ok ? r.json() : null).then(d => { if (d?.role === 'owner') setIsOwner(true) }).catch(() => {})
+  }, [])
 
   async function handleSeed(force = false) {
     setSeeding(true); setSeedMsg('')
@@ -157,7 +162,7 @@ export default function ExercisesPage() {
             <RefreshCw className="w-4 h-4" />
             تحديث
           </button>
-          {exercises.length === 0 ? (
+          {isOwner && (exercises.length === 0 ? (
             <button onClick={() => handleSeed(false)} disabled={seeding}
               className="flex items-center gap-2 bg-brand-600 text-white px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-brand-700 transition-all shadow-sm shadow-brand-500/20 disabled:opacity-60">
               {seeding ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
@@ -169,7 +174,7 @@ export default function ExercisesPage() {
               {seeding ? <RefreshCw className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
               إعادة التحميل
             </button>
-          )}
+          ))}
         </div>
       </div>
 
@@ -249,11 +254,13 @@ export default function ExercisesPage() {
           {exercises.length === 0 ? (
             <>
               <p className="text-gray-400 text-sm mt-1 mb-6">اضغط لتحميل مكتبة التمارين العلمية</p>
-              <button onClick={() => handleSeed(false)} disabled={seeding}
-                className="inline-flex items-center gap-2 bg-brand-600 text-white px-6 py-3 rounded-xl text-sm font-bold hover:bg-brand-700 transition-colors disabled:opacity-60">
-                {seeding ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                تحميل 35 تمرين علمي
-              </button>
+              {isOwner && (
+                <button onClick={() => handleSeed(false)} disabled={seeding}
+                  className="inline-flex items-center gap-2 bg-brand-600 text-white px-6 py-3 rounded-xl text-sm font-bold hover:bg-brand-700 transition-colors disabled:opacity-60">
+                  {seeding ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                  تحميل 35 تمرين علمي
+                </button>
+              )}
             </>
           ) : (
             <p className="text-gray-400 text-sm mt-1">جرّب تغيير الفلتر أو البحث</p>

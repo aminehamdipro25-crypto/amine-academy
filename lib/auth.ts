@@ -4,7 +4,7 @@ import type { SessionPayload, UserRole } from './types'
 
 // ── Token Generation ─────────────────────────────────────────
 
-export function generateId(prefix: 'AA' | 'AS' | 'AE' | 'AP'): string {
+export function generateId(prefix: 'AA' | 'AS' | 'AE' | 'AP' | 'AT'): string {
   return `${prefix}-${Date.now().toString(36)}-${crypto.randomBytes(3).toString('hex')}`
 }
 
@@ -163,4 +163,101 @@ export async function revokeAdminSession(token: string): Promise<void> {
     await redis.set(`admin_revoked:${raw}`, 'yes', { ex: 30 * 24 * 3600 })
     await redis.del(`admin_sess:${raw}`)
   } catch { /* cookie deletion on client side is sufficient fallback */ }
+}
+
+// ── Staff Session ──────────────────────────────────────────────
+// Multi-therapist accounts layered on top of the owner's master
+// ADMIN_PASSWORD — same Edge-compatible HMAC design as the admin
+// session above, so a staff login still works if Redis is down.
+// Format: `staff.<staffId-base64url>.<timestamp>.<hmacHex>`
+
+async function _buildStaffToken(staffId: string): Promise<string> {
+  const SECRET = process.env.AUTH_SECRET
+  if (!SECRET) throw new Error('AUTH_SECRET not configured')
+  const idEnc = btoa(staffId).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
+  const ts  = Date.now().toString()
+  const sig = await _webcryptoHmac(SECRET, `staff.${idEnc}.${ts}`)
+  return `staff.${idEnc}.${ts}.${sig}`
+}
+
+async function _verifyStaffToken(token: string): Promise<{ staffId: string } | null> {
+  const SECRET = process.env.AUTH_SECRET
+  if (!SECRET || !token) return null
+  try {
+    const parts = token.split('.')
+    if (parts.length !== 4 || parts[0] !== 'staff') return null
+    const [, idEnc, ts, sig] = parts
+    if (!idEnc || !ts || !sig) return null
+    const expected = await _webcryptoHmac(SECRET, `staff.${idEnc}.${ts}`)
+    if (sig.length !== expected.length) return null
+    let diff = 0
+    for (let i = 0; i < sig.length; i++) diff |= sig.charCodeAt(i) ^ expected.charCodeAt(i)
+    if (diff !== 0) return null
+    const age = Date.now() - parseInt(ts, 10)
+    if (isNaN(age) || age < 0 || age > 30 * 24 * 60 * 60 * 1000) return null
+    const padded = idEnc.replace(/-/g, '+').replace(/_/g, '/')
+    const staffId = atob(padded + '='.repeat((4 - padded.length % 4) % 4))
+    return { staffId }
+  } catch { return null }
+}
+
+export async function createStaffSession(staffId: string): Promise<string> {
+  const token = await _buildStaffToken(staffId)
+  try {
+    await redis.set(`staff_sess:${staffId}`, '1', { ex: 30 * 24 * 3600 })
+  } catch (e) {
+    console.warn('[staff-session] Redis write skipped:', (e as Error).message)
+  }
+  return token
+}
+
+export async function verifyStaffSession(token: string | undefined): Promise<{ staffId: string } | null> {
+  if (!token) return null
+  const parsed = await _verifyStaffToken(token)
+  if (!parsed) return null
+  try {
+    const revoked = await redis.get<string>(`staff_revoked:${parsed.staffId}`)
+    if (revoked === 'yes') return null
+  } catch { /* Redis unavailable — HMAC already confirmed validity */ }
+  return parsed
+}
+
+export async function revokeStaffSession(staffId: string): Promise<void> {
+  try {
+    await redis.set(`staff_revoked:${staffId}`, 'yes', { ex: 30 * 24 * 3600 })
+    await redis.del(`staff_sess:${staffId}`)
+  } catch { /* cookie deletion on client side is sufficient fallback */ }
+}
+
+/** True if the request carries either a valid owner session (admin_token)
+ *  or a valid staff session (staff_token) — for routes any logged-in
+ *  dashboard user (owner or staff) may call. */
+export async function isDashboardUser(): Promise<boolean> {
+  const { cookies } = await import('next/headers')
+  const cookieStore = await cookies()
+  if (await verifyAdminSession(cookieStore.get('admin_token')?.value)) return true
+  const staff = await verifyStaffSession(cookieStore.get('staff_token')?.value)
+  return !!staff
+}
+
+/** True only for the owner (admin_token) — for routes that grant
+ *  account-takeover-level power (impersonation, password resets, permanent
+ *  deletion) that must stay out of staff hands even though staff share the
+ *  rest of the dashboard. */
+export async function isOwnerUser(): Promise<boolean> {
+  const { cookies } = await import('next/headers')
+  const cookieStore = await cookies()
+  return verifyAdminSession(cookieStore.get('admin_token')?.value)
+}
+
+/** Stable per-actor identity for the current dashboard caller — 'owner' for
+ *  the admin session, `staff:<id>` for a staff session, null if neither.
+ *  Used to key per-actor rate limits so one busy account can't exhaust a
+ *  quota shared by everyone on the dashboard. */
+export async function getDashboardActorId(): Promise<string | null> {
+  const { cookies } = await import('next/headers')
+  const cookieStore = await cookies()
+  if (await verifyAdminSession(cookieStore.get('admin_token')?.value)) return 'owner'
+  const staff = await verifyStaffSession(cookieStore.get('staff_token')?.value)
+  return staff ? `staff:${staff.staffId}` : null
 }

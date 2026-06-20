@@ -1,15 +1,30 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { verifyToken, verifyAdminSession } from './lib/auth'
+import { verifyToken, verifyAdminSession, verifyStaffSession } from './lib/auth'
+
+// Pages reserved for the owner — staff accounts must not reach these
+// even though they share the /dashboard prefix with staff-accessible pages.
+const OWNER_ONLY_PAGES = ['/dashboard/payments', '/dashboard/analytics', '/dashboard/staff', '/dashboard/settings']
+
+async function isOwnerAuthorized(request: NextRequest): Promise<boolean> {
+  const adminToken = request.cookies.get('admin_token')?.value
+  return verifyAdminSession(adminToken)
+}
+
+async function isDashboardAuthorized(request: NextRequest): Promise<boolean> {
+  if (await isOwnerAuthorized(request)) return true
+  const staffToken = request.cookies.get('staff_token')?.value
+  return !!(await verifyStaffSession(staffToken))
+}
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // ── Admin Dashboard ───────────────────────────────────────
+  // ── Admin Dashboard (owner or staff) ──────────────────────
   if (pathname.startsWith('/dashboard') && pathname !== '/dashboard/login') {
-    const token = request.cookies.get('admin_token')?.value
-    const valid = await verifyAdminSession(token)
-    if (!valid) {
+    const ownerOnly = OWNER_ONLY_PAGES.some(p => pathname === p || pathname.startsWith(p + '/'))
+    const authorized = ownerOnly ? await isOwnerAuthorized(request) : await isDashboardAuthorized(request)
+    if (!authorized) {
       return NextResponse.redirect(new URL('/dashboard/login', request.url))
     }
   }
@@ -38,11 +53,9 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // ── Session Platform (admin only) ─────────────────────────
+  // ── Session Platform (owner or staff) ─────────────────────
   if (pathname.startsWith('/session')) {
-    const token = request.cookies.get('admin_token')?.value
-    const valid = await verifyAdminSession(token)
-    if (!valid) {
+    if (!(await isDashboardAuthorized(request))) {
       return NextResponse.redirect(new URL('/dashboard/login', request.url))
     }
   }

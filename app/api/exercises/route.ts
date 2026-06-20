@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
-import { verifyToken, verifyAdminSession } from '@/lib/auth'
+import { verifyToken, isDashboardUser } from '@/lib/auth'
 import { getAllExercises, createExercise } from '@/lib/db'
 import type { AgeGroup, Diagnosis, ExerciseCategory } from '@/lib/types'
 
@@ -29,9 +28,7 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const cookieStore = await cookies()
-    const adminToken = cookieStore.get('admin_token')?.value
-    const isAdmin = await verifyAdminSession(adminToken)
+    const isAdmin = await isDashboardUser()
     if (!isAdmin) {
       return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
     }

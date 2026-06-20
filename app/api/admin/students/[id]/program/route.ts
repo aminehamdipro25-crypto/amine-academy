@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
-import { verifyAdminSession } from '@/lib/auth'
+import { isDashboardUser } from '@/lib/auth'
 import { getStudentProgram } from '@/lib/db'
 
 export const runtime = 'nodejs'
@@ -11,9 +10,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const cookieStore = await cookies()
-    const token = cookieStore.get('admin_token')?.value
-    if (!await verifyAdminSession(token)) {
+    if (!await isDashboardUser()) {
       return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
     }
     const { id } = await params

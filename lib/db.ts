@@ -35,7 +35,52 @@
 import crypto from 'crypto'
 import { redis } from './redis'
 import { generateId } from './auth'
-import type { Parent, Student, Exercise, Program, Appointment, ProgressReport, PendingPayment, Message, Achievement, StudentAssessmentProfile, GameResult, WeeklyProgress } from './types'
+import type { Parent, Student, Exercise, Program, Appointment, ProgressReport, PendingPayment, Message, Achievement, StudentAssessmentProfile, GameResult, WeeklyProgress, Staff } from './types'
+
+// ── Staff (multi-therapist accounts) ────────────────────────────
+
+export async function createStaff(data: Omit<Staff, 'id' | 'createdAt' | 'lastLoginAt'>): Promise<Staff> {
+  const id = generateId('AT')
+  const staff: Staff = { ...data, id, createdAt: new Date().toISOString(), lastLoginAt: null }
+  await redis.pipeline([
+    ['SET', `staff:${id}`, JSON.stringify(staff)],
+    ['LPUSH', 'staff:index', id],
+    ['SET', `staff:email:${data.email.toLowerCase()}`, id, 'NX'],
+  ])
+  return staff
+}
+
+export async function getStaff(id: string): Promise<Staff | null> {
+  return redis.get<Staff>(`staff:${id}`)
+}
+
+export async function getStaffByEmail(email: string): Promise<Staff | null> {
+  const id = await redis.get<string>(`staff:email:${email.toLowerCase()}`)
+  if (!id) return null
+  return getStaff(id)
+}
+
+export async function updateStaff(id: string, updates: Partial<Staff>): Promise<void> {
+  const current = await getStaff(id)
+  if (!current) throw new Error('Staff not found')
+  await redis.set(`staff:${id}`, { ...current, ...updates })
+}
+
+export async function getAllStaff(): Promise<Staff[]> {
+  const ids = await redis.lrange('staff:index', 0, -1)
+  const staff = await Promise.all(ids.map(id => getStaff(id)))
+  return staff.filter(Boolean) as Staff[]
+}
+
+export async function deleteStaff(id: string): Promise<void> {
+  const staff = await getStaff(id)
+  if (!staff) return
+  await redis.pipeline([
+    ['DEL', `staff:${id}`],
+    ['DEL', `staff:email:${staff.email.toLowerCase()}`],
+    ['LREM', 'staff:index', '0', id],
+  ])
+}
 
 // ── Parents ───────────────────────────────────────────────────
 

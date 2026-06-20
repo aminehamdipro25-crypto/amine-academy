@@ -1,15 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
-import { verifyAdminSession } from '@/lib/auth'
+import { isDashboardUser } from '@/lib/auth'
 import { getAssessmentProfile, saveAssessmentProfile } from '@/lib/db'
 import { z } from 'zod'
 
 export const runtime = 'nodejs'
 
 async function checkAdmin() {
-  const cookieStore = await cookies()
-  const token = cookieStore.get('admin_token')?.value
-  return verifyAdminSession(token || '')
+  return isDashboardUser()
 }
 
 const DifficultyLevelSchema = z.enum(['none', 'mild', 'moderate', 'severe'])

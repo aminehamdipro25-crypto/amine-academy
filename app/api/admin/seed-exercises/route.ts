@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
-import { verifyAdminSession } from '@/lib/auth'
+import { isOwnerUser } from '@/lib/auth'
 import { getAllExercises, createExercise, deleteAllExercises } from '@/lib/db'
 import { DEFAULT_EXERCISES } from '@/lib/exercises-data'
 
@@ -8,9 +7,10 @@ export const runtime = 'nodejs'
 
 export async function POST(req: NextRequest) {
   try {
-    const cookieStore = await cookies()
-    const token = cookieStore.get('admin_token')?.value
-    if (!await verifyAdminSession(token)) {
+    // Wiping and reseeding the entire shared exercise catalog is a global,
+    // destructive, platform-wide action — owner-only even though the
+    // Exercises page itself is staff-accessible.
+    if (!await isOwnerUser()) {
       return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
     }
 

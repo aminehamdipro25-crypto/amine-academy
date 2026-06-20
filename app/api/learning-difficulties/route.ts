@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
-import { verifyAdminSession } from '@/lib/auth'
+import { isDashboardUser } from '@/lib/auth'
 import { redis } from '@/lib/redis'
 import type { LearningDifficultyProfile } from '@/lib/types'
 
@@ -9,9 +8,7 @@ export const runtime = 'nodejs'
 const VALID_SEVERITIES = ['none', 'mild', 'moderate', 'severe']
 
 async function requireAdmin(): Promise<boolean> {
-  const cookieStore = await cookies()
-  const token = cookieStore.get('admin_token')?.value
-  return verifyAdminSession(token)
+  return isDashboardUser()
 }
 
 export async function GET(req: NextRequest) {

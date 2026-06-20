@@ -1,29 +1,39 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import {
   LayoutDashboard, Users, Dumbbell, Calendar,
   BarChart3, FileText, LogOut, Brain,
   ClipboardList, BookOpen, Settings, CreditCard, MessageSquare,
-  Zap,
+  Zap, UserCog,
 } from 'lucide-react'
 
 const NAV = [
-  { href: '/dashboard',                        label: 'الرئيسية',       icon: LayoutDashboard },
-  { href: '/dashboard/clients',                label: 'المشتركون',      icon: Users },
-  { href: '/dashboard/payments',               label: 'المدفوعات',      icon: CreditCard },
-  { href: '/dashboard/appointments',           label: 'المواعيد',       icon: Calendar },
-  { href: '/dashboard/programs',               label: 'البرامج',        icon: ClipboardList },
-  { href: '/dashboard/exercises',              label: 'التمارين',       icon: Dumbbell },
-  { href: '/dashboard/reports',                label: 'التقارير',       icon: FileText },
-  { href: '/dashboard/messages',               label: 'الرسائل',        icon: MessageSquare },
-  { href: '/dashboard/learning-difficulties',  label: 'صعوبات التعلم', icon: BookOpen },
-  { href: '/dashboard/analytics',              label: 'الإحصائيات',    icon: BarChart3 },
-  { href: '/dashboard/settings',               label: 'الإعدادات',     icon: Settings },
+  { href: '/dashboard',                        label: 'الرئيسية',       icon: LayoutDashboard, ownerOnly: false },
+  { href: '/dashboard/clients',                label: 'المشتركون',      icon: Users, ownerOnly: false },
+  { href: '/dashboard/payments',               label: 'المدفوعات',      icon: CreditCard, ownerOnly: true },
+  { href: '/dashboard/appointments',           label: 'المواعيد',       icon: Calendar, ownerOnly: false },
+  { href: '/dashboard/programs',               label: 'البرامج',        icon: ClipboardList, ownerOnly: false },
+  { href: '/dashboard/exercises',              label: 'التمارين',       icon: Dumbbell, ownerOnly: false },
+  { href: '/dashboard/reports',                label: 'التقارير',       icon: FileText, ownerOnly: false },
+  { href: '/dashboard/messages',               label: 'الرسائل',        icon: MessageSquare, ownerOnly: false },
+  { href: '/dashboard/learning-difficulties',  label: 'صعوبات التعلم', icon: BookOpen, ownerOnly: false },
+  { href: '/dashboard/analytics',              label: 'الإحصائيات',    icon: BarChart3, ownerOnly: true },
+  { href: '/dashboard/staff',                  label: 'فريق العمل',    icon: UserCog, ownerOnly: true },
+  { href: '/dashboard/settings',               label: 'الإعدادات',     icon: Settings, ownerOnly: true },
 ]
 
 export default function AdminSidebar({ onClose, unreadMessages = 0 }: { onClose?: () => void; unreadMessages?: number }) {
   const pathname = usePathname()
+  const [actor, setActor] = useState<{ role: 'owner' | 'staff'; name: string } | null>(null)
+
+  useEffect(() => {
+    fetch('/api/auth/me').then(r => r.ok ? r.json() : null).then(data => { if (data) setActor(data) }).catch(() => {})
+  }, [])
+
+  const isOwner = actor?.role === 'owner'
+  const visibleNav = NAV.filter(item => !item.ownerOnly || isOwner)
 
   return (
     <aside className="w-64 h-full flex flex-col bg-[#0B1120] select-none overflow-hidden">
@@ -52,7 +62,7 @@ export default function AdminSidebar({ onClose, unreadMessages = 0 }: { onClose?
         {/* Group label */}
         <p className="text-white/20 text-[10px] font-black uppercase tracking-widest px-3 mb-3">القائمة الرئيسية</p>
 
-        {NAV.map(({ href, label, icon: Icon }) => {
+        {visibleNav.map(({ href, label, icon: Icon }) => {
           const active = href === '/dashboard'
             ? pathname === href
             : pathname === href || pathname.startsWith(href + '/')
@@ -106,15 +116,15 @@ export default function AdminSidebar({ onClose, unreadMessages = 0 }: { onClose?
         {/* Admin info */}
         <div className="flex items-center gap-3 px-3 py-2.5 mb-1">
           <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-brand-400 to-brand-700 flex items-center justify-center text-white font-black text-sm shadow-lg flex-shrink-0">
-            أ
+            {(actor?.name || 'أ').charAt(0)}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-white text-xs font-black truncate">الأستاذ أمين</p>
-            <p className="text-white/30 text-[10px] truncate">مشرف النظام</p>
+            <p className="text-white text-xs font-black truncate">{actor?.name || 'الأستاذ أمين'}</p>
+            <p className="text-white/30 text-[10px] truncate">{isOwner ? 'مشرف النظام' : 'فريق العمل'}</p>
           </div>
         </div>
 
-        <form action="/api/auth/admin/logout" method="POST">
+        <form action={isOwner ? '/api/auth/admin/logout' : '/api/auth/staff/logout'} method="POST">
           <button
             type="submit"
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-white/40 hover:text-red-400 hover:bg-red-500/10 transition-all duration-150"

@@ -1,15 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
-import { verifyAdminSession } from '@/lib/auth'
+import { isDashboardUser } from '@/lib/auth'
 import { createReport, getStudentReports, getStudent } from '@/lib/db'
 
 export const runtime = 'nodejs'
 
 export async function POST(req: NextRequest) {
   try {
-    const cookieStore = await cookies()
-    const token = cookieStore.get('admin_token')?.value
-    if (!await verifyAdminSession(token)) {
+    if (!await isDashboardUser()) {
       return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
     }
 
@@ -43,9 +40,7 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   try {
-    const cookieStore = await cookies()
-    const token = cookieStore.get('admin_token')?.value
-    if (!await verifyAdminSession(token)) {
+    if (!await isDashboardUser()) {
       return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
     }
 

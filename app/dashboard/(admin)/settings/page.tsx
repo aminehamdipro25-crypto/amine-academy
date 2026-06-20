@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import {
   Settings, Save, RefreshCw, CheckCircle, AlertCircle,
   DollarSign, Tag, Clock, Phone, TrendingDown, BarChart2,
-  Mail, Send, ExternalLink,
+  Mail, Send, ExternalLink, DatabaseBackup, Download,
 } from 'lucide-react'
 import type { SiteSettings } from '@/lib/site-settings'
 
@@ -178,6 +178,35 @@ export default function AdminSettingsPage() {
   const [testEmailTo, setTestEmailTo] = useState('')
   const [testEmailState, setTestEmailState] = useState<'idle' | 'sending' | 'ok' | 'error'>('idle')
   const [testEmailMsg, setTestEmailMsg] = useState('')
+
+  // Backup export
+  const [exportState, setExportState] = useState<'idle' | 'loading' | 'error'>('idle')
+  const [exportError, setExportError] = useState('')
+
+  async function handleExport() {
+    setExportState('loading')
+    setExportError('')
+    try {
+      const res = await fetch('/api/admin/export')
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error || 'فشل التصدير')
+      }
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `amine-academy-backup-${new Date().toISOString().slice(0, 10)}.json`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
+      setExportState('idle')
+    } catch (e) {
+      setExportState('error')
+      setExportError((e as Error).message)
+    }
+  }
 
   const fetchEnvStatus = useCallback(async () => {
     try {
@@ -733,6 +762,29 @@ export default function AdminSettingsPage() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Data backup */}
+      <div className="bg-white rounded-2xl border border-gray-100 p-6">
+        <h2 className="font-black text-gray-900 mb-1 flex items-center gap-2 text-lg">
+          <DatabaseBackup className="w-5 h-5 text-brand-500" />
+          نسخة احتياطية للبيانات
+        </h2>
+        <p className="text-xs text-gray-400 mb-5">
+          كل بيانات العملاء والمدفوعات والتقييمات محفوظة فقط في قاعدة بيانات واحدة (Redis) بدون نسخ احتياطي تلقائي.
+          نزّل نسخة كاملة (JSON) بشكل دوري واحفظها في مكان آمن خارج الموقع.
+        </p>
+        <button
+          onClick={handleExport}
+          disabled={exportState === 'loading'}
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gray-900 text-white text-sm font-bold hover:bg-gray-800 transition-colors disabled:opacity-60"
+        >
+          {exportState === 'loading' ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+          {exportState === 'loading' ? 'جاري التصدير…' : 'تنزيل نسخة احتياطية كاملة'}
+        </button>
+        {exportState === 'error' && (
+          <p className="text-red-600 text-xs font-medium mt-2">{exportError}</p>
+        )}
       </div>
 
       {/* Sticky save bar on mobile */}

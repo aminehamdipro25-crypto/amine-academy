@@ -1,5 +1,5 @@
-import { getAllParents, getAllExercises, getAllAppointments } from '@/lib/db'
-import { BarChart3, Users, TrendingUp, Calendar, Dumbbell, Globe, Brain, AlertCircle } from 'lucide-react'
+import { getAllParents, getAllExercises, getAllAppointments, getAllPendingPayments } from '@/lib/db'
+import { BarChart3, Users, TrendingUp, Calendar, Dumbbell, Globe, Brain, AlertCircle, DollarSign } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -21,17 +21,33 @@ export default async function AnalyticsPage() {
   let parents: Awaited<ReturnType<typeof getAllParents>> = []
   let exercises: Awaited<ReturnType<typeof getAllExercises>> = []
   let appointments: Awaited<ReturnType<typeof getAllAppointments>> = []
+  let payments: Awaited<ReturnType<typeof getAllPendingPayments>> = []
   let error = false
 
   try {
-    ;[parents, exercises, appointments] = await Promise.all([
+    ;[parents, exercises, appointments, payments] = await Promise.all([
       getAllParents(),
       getAllExercises(),
       getAllAppointments(),
+      getAllPendingPayments(),
     ])
   } catch {
     error = true
   }
+
+  // ── Revenue (confirmed payments only) ───────────────────────
+  const confirmedPayments = payments.filter(p => p.status === 'confirmed')
+  const revenueByCurrency: Record<string, number> = {}
+  confirmedPayments.forEach(p => {
+    revenueByCurrency[p.currency] = (revenueByCurrency[p.currency] ?? 0) + p.amount
+  })
+  const now30 = Date.now() - 30 * 24 * 3600 * 1000
+  const revenueLast30dByCurrency: Record<string, number> = {}
+  confirmedPayments
+    .filter(p => new Date(p.createdAt).getTime() >= now30)
+    .forEach(p => {
+      revenueLast30dByCurrency[p.currency] = (revenueLast30dByCurrency[p.currency] ?? 0) + p.amount
+    })
 
   // ── Subscription breakdown ──────────────────────────────────
   const statusCounts = {
@@ -129,6 +145,32 @@ export default async function AnalyticsPage() {
             <div className="text-gray-400 text-xs mt-0.5 font-medium">{label}</div>
           </div>
         ))}
+      </div>
+
+      {/* ── Revenue ── */}
+      <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
+        <h2 className="font-black text-gray-900 mb-5 flex items-center gap-2 text-sm">
+          <DollarSign className="w-4 h-4 text-emerald-500" />
+          الإيرادات (الدفعات المؤكدة فقط)
+        </h2>
+        {confirmedPayments.length === 0 ? (
+          <p className="text-gray-300 text-sm text-center py-4">لا توجد دفعات مؤكدة بعد</p>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {Object.entries(revenueByCurrency).map(([currency, total]) => (
+              <div key={`total-${currency}`} className="bg-emerald-50 rounded-2xl p-4 text-center">
+                <div className="text-2xl font-black text-emerald-700 ltr-num">{total.toLocaleString('en-US')}</div>
+                <div className="text-emerald-600 text-xs mt-0.5 font-bold">{currency} — إجمالي</div>
+              </div>
+            ))}
+            {Object.entries(revenueLast30dByCurrency).map(([currency, total]) => (
+              <div key={`30d-${currency}`} className="bg-gray-50 rounded-2xl p-4 text-center">
+                <div className="text-2xl font-black text-gray-800 ltr-num">{total.toLocaleString('en-US')}</div>
+                <div className="text-gray-400 text-xs mt-0.5 font-bold">{currency} — آخر 30 يوم</div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* ── Subscriptions + Plans ── */}
@@ -270,6 +312,15 @@ export default async function AnalyticsPage() {
             </div>
           ))}
         </div>
+        {(apptStats.completed + apptStats.cancelled) > 0 && (
+          <p className="text-gray-400 text-xs mt-4 text-center">
+            نسبة الإلغاء:{' '}
+            <span className="font-black text-gray-700 ltr-num">
+              {Math.round(apptStats.cancelled / (apptStats.completed + apptStats.cancelled) * 100)}%
+            </span>{' '}
+            من الجلسات المنتهية (مكتملة + ملغاة)
+          </p>
+        )}
       </div>
     </div>
   )

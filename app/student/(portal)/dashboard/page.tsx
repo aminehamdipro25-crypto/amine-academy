@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import type { Student, Exercise } from '@/lib/types'
+import { useLang, tr } from '@/lib/i18n'
 
 interface StudentData {
   student: Student
@@ -38,6 +39,8 @@ const CAT_FALLBACK: Record<string, { gradient: string; icon: string }> = {
 export default function StudentDashboardPage() {
   const [data, setData] = useState<StudentData | null>(null)
   const [loading, setLoading] = useState(true)
+  const { lang } = useLang()
+  const t = tr[lang].studentDashboard
 
   useEffect(() => {
     fetch('/api/student/me')
@@ -55,16 +58,16 @@ export default function StudentDashboardPage() {
   }, [])
 
   if (loading) return (
-    <div className="flex flex-col items-center justify-center py-24 gap-4" dir="rtl">
+    <div className="flex flex-col items-center justify-center py-24 gap-4">
       <div className="text-6xl animate-bounce-soft">⏳</div>
-      <p className="font-black text-lg" style={{ color: '#7C5CFC' }}>جاري التحميل...</p>
+      <p className="font-black text-lg" style={{ color: '#7C5CFC' }}>{t.loading}</p>
     </div>
   )
 
   if (!data?.student) return (
-    <div className="text-center py-24" dir="rtl">
+    <div className="text-center py-24">
       <div className="text-5xl mb-4">😕</div>
-      <p className="font-bold text-gray-500">حدث خطأ، حاول مجدداً</p>
+      <p className="font-bold text-gray-500">{t.error}</p>
     </div>
   )
 
@@ -75,7 +78,7 @@ export default function StudentDashboardPage() {
     : 0
 
   return (
-    <div className="space-y-5" dir="rtl">
+    <div className="space-y-5">
 
       {/* ── Hero greeting ── */}
       <div
@@ -91,13 +94,13 @@ export default function StudentDashboardPage() {
 
         <div className="relative z-10">
           <div className="text-4xl mb-2 inline-block animate-float">👋</div>
-          <h1 className="font-black text-2xl leading-tight">مرحباً {student.firstName}!</h1>
-          <p className="text-white/80 text-sm mt-1">جاهز للعب اليوم؟ ✨</p>
+          <h1 className="font-black text-2xl leading-tight">{t.greeting(student.firstName)}</h1>
+          <p className="text-white/80 text-sm mt-1">{t.readyToday}</p>
 
           {progressPct > 0 && (
             <div className="mt-4">
               <div className="flex justify-between text-xs text-white/70 mb-1 font-bold">
-                <span>تقدم اليوم</span>
+                <span>{t.progressToday}</span>
                 <span className="ltr-num">{completedToday}/{todayExercises.length}</span>
               </div>
               <div className="h-2.5 rounded-full" style={{ background: 'rgba(255,255,255,0.2)' }}>
@@ -114,10 +117,10 @@ export default function StudentDashboardPage() {
       {/* ── Stats strip — 4 mini-cards ── */}
       <div className="grid grid-cols-4 gap-2">
         {[
-          { emoji: '🔥', value: student.streak ?? 0,              label: 'يوم',    bg: '#FFF3E8', border: '#FFD5B0', color: '#EA6C0A' },
-          { emoji: '⭐', value: student.totalPoints ?? 0,          label: 'نقطة',   bg: '#FFF8E8', border: '#FFE58A', color: '#D97706' },
-          { emoji: '🏆', value: (student.achievements ?? []).length, label: 'وسام', bg: '#F3EEFF', border: '#D3BBFF', color: '#7C5CFC' },
-          { emoji: '🎯', value: todayExercises.length - completedToday, label: 'باقي', bg: '#F0FFF9', border: '#A7F3D0', color: '#059669' },
+          { emoji: '🔥', value: student.streak ?? 0,              label: tr[lang].portal.common.day, bg: '#FFF3E8', border: '#FFD5B0', color: '#EA6C0A' },
+          { emoji: '⭐', value: student.totalPoints ?? 0,          label: t.statPoint, bg: '#FFF8E8', border: '#FFE58A', color: '#D97706' },
+          { emoji: '🏆', value: (student.achievements ?? []).length, label: t.statBadge, bg: '#F3EEFF', border: '#D3BBFF', color: '#7C5CFC' },
+          { emoji: '🎯', value: todayExercises.length - completedToday, label: t.statLeft, bg: '#F0FFF9', border: '#A7F3D0', color: '#059669' },
         ].map((stat, i) => (
           <div
             key={i}
@@ -137,7 +140,7 @@ export default function StudentDashboardPage() {
         style={{ background: '#FFFFFF', border: '1.5px solid #F0E8FF', boxShadow: '0 1px 4px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.06)' }}
       >
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-black text-gray-900 text-base">تمارين اليوم 🎮</h2>
+          <h2 className="font-black text-gray-900 text-base">{t.todayExercisesTitle}</h2>
           <span
             className="text-xs font-black px-3 py-1 rounded-full ltr-num"
             style={{ background: '#F3EEFF', color: '#7C5CFC' }}
@@ -160,13 +163,13 @@ export default function StudentDashboardPage() {
         {progressPct === 100 ? (
           <div className="text-center py-4">
             <div className="text-4xl mb-2 animate-badge-pop">🎉</div>
-            <p className="font-black text-green-600 text-lg">أحسنت! أكملت كل تمارين اليوم!</p>
+            <p className="font-black text-green-600 text-lg">{t.allDoneToday}</p>
           </div>
         ) : todayExercises.length === 0 ? (
           <div className="rounded-2xl p-8 text-center" style={{ border: '2px dashed #E8DBFF' }}>
             <div className="text-4xl mb-2">😴</div>
-            <p className="font-bold text-gray-500 text-sm">لا توجد تمارين اليوم</p>
-            <p className="text-gray-400 text-xs mt-1">استرح جيداً!</p>
+            <p className="font-bold text-gray-500 text-sm">{t.noExercisesToday}</p>
+            <p className="text-gray-400 text-xs mt-1">{t.restWell}</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-3">
@@ -218,14 +221,14 @@ export default function StudentDashboardPage() {
           className="card-lift text-white font-black py-4 px-4 rounded-2xl text-center text-sm"
           style={{ background: 'linear-gradient(to left, #7C5CFC, #9A7BFD)', boxShadow: '0 4px 12px rgba(124,92,252,0.3)' }}
         >
-          🎮 ابدأ التمارين
+          {t.startExercises}
         </Link>
         <Link
           href="/student/achievements"
           className="card-lift text-white font-black py-4 px-4 rounded-2xl text-center text-sm"
           style={{ background: 'linear-gradient(to left, #FFBA44, #FF8C65)', boxShadow: '0 4px 12px rgba(255,140,101,0.3)' }}
         >
-          🏆 إنجازاتي
+          {t.myAchievements}
         </Link>
       </div>
 
@@ -236,9 +239,9 @@ export default function StudentDashboardPage() {
           style={{ background: '#FFFFFF', border: '1.5px solid #F0E8FF', boxShadow: '0 1px 4px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.06)' }}
         >
           <div className="flex items-center justify-between mb-3">
-            <h2 className="font-black text-gray-900">آخر جوائزي ✨</h2>
+            <h2 className="font-black text-gray-900">{t.recentAwardsTitle}</h2>
             <Link href="/student/achievements" className="text-sm font-black" style={{ color: '#7C5CFC' }}>
-              عرض الكل
+              {t.viewAll}
             </Link>
           </div>
           <div className="flex gap-3 overflow-x-auto pb-1">

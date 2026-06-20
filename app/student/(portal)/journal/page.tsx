@@ -1,34 +1,36 @@
 'use client'
 import { useState, useEffect } from 'react'
+import { useLang, tr } from '@/lib/i18n'
 
-const MOODS = [
-  { emoji: '😄', label: 'رائع',      ringColor: '#22C55E', bg: '#F0FFF4', textColor: '#15803D' },
-  { emoji: '😊', label: 'كويس',      ringColor: '#7C5CFC', bg: '#F3EEFF', textColor: '#6B46F0' },
-  { emoji: '😐', label: 'عادي',      ringColor: '#9CA3AF', bg: '#F9FAFB', textColor: '#6B7280' },
-  { emoji: '😕', label: 'مش كويس',  ringColor: '#F59E0B', bg: '#FFFBEB', textColor: '#B45309' },
-  { emoji: '😢', label: 'حزين',      ringColor: '#EF4444', bg: '#FEF2F2', textColor: '#B91C1C' },
+const MOOD_CFG = [
+  { ringColor: '#22C55E', bg: '#F0FFF4', textColor: '#15803D' },
+  { ringColor: '#7C5CFC', bg: '#F3EEFF', textColor: '#6B46F0' },
+  { ringColor: '#9CA3AF', bg: '#F9FAFB', textColor: '#6B7280' },
+  { ringColor: '#F59E0B', bg: '#FFFBEB', textColor: '#B45309' },
+  { ringColor: '#EF4444', bg: '#FEF2F2', textColor: '#B91C1C' },
 ]
-
-const PROMPTS = [
-  'ما أفضل شيء حدث اليوم؟',
-  'كيف كان تركيزك في التمارين اليوم؟',
-  'ما الذي صعب عليك اليوم؟',
-  'كيف ساعدك الأستاذ أمين هذا الأسبوع؟',
-  'شيء واحد تريد تحسينه غداً؟',
-]
+const MOOD_EMOJI = ['😄', '😊', '😐', '😕', '😢']
 
 interface Entry { date: string; mood: number; text: string }
 
 export default function JournalPage() {
+  const { lang } = useLang()
+  const t = tr[lang].studentJournal
+  const MOODS = MOOD_CFG.map((cfg, i) => ({
+    ...cfg,
+    emoji: MOOD_EMOJI[i],
+    label: [t.moods.great, t.moods.good, t.moods.okay, t.moods.bad, t.moods.sad][i],
+  }))
+  const locale = lang === 'ar' ? 'ar-TN' : lang === 'fr' ? 'fr-FR' : 'en-US'
   const [entries, setEntries] = useState<Entry[]>([])
   const [mood, setMood] = useState<number | null>(null)
   const [text, setText] = useState('')
   const [saved, setSaved] = useState(false)
 
-  const todayStr = new Date().toLocaleDateString('fr-FR', {
+  const todayStr = new Date().toLocaleDateString(locale, {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
   })
-  const prompt = PROMPTS[new Date().getDay() % PROMPTS.length]
+  const prompt = t.prompts[new Date().getDay() % t.prompts.length]
 
   useEffect(() => {
     try {
@@ -54,11 +56,11 @@ export default function JournalPage() {
   )
 
   return (
-    <div className="space-y-5" dir="rtl">
+    <div className="space-y-5">
 
       {/* ── Header ── */}
       <div className="text-center pt-1 pb-1">
-        <h1 className="font-black text-2xl text-gray-900">يومياتي 📔</h1>
+        <h1 className="font-black text-2xl text-gray-900">{t.pageTitle}</h1>
         <p className="text-gray-500 text-sm mt-1 ltr-num">{todayStr}</p>
       </div>
 
@@ -69,7 +71,7 @@ export default function JournalPage() {
           style={{ background: '#F0FFF4', border: '1.5px solid #A7F3D0' }}
         >
           <div className="text-3xl mb-1">🎉</div>
-          <p className="font-black text-green-700">تم حفظ يومياتك!</p>
+          <p className="font-black text-green-700">{t.savedBanner}</p>
         </div>
       )}
 
@@ -79,7 +81,7 @@ export default function JournalPage() {
           className="rounded-3xl p-5"
           style={{ background: '#FFFFFF', border: '1.5px solid #F0E8FF', boxShadow: '0 1px 4px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.06)' }}
         >
-          <h2 className="font-black text-gray-900 mb-5 text-lg">كيف حالك اليوم؟ 🌟</h2>
+          <h2 className="font-black text-gray-900 mb-5 text-lg">{t.howAreYouToday}</h2>
 
           {/* ── Mood picker ── */}
           <div className="flex gap-2 justify-between mb-6">
@@ -123,7 +125,7 @@ export default function JournalPage() {
           <textarea
             value={text}
             onChange={e => setText(e.target.value.slice(0, 300))}
-            placeholder="اكتب هنا..."
+            placeholder={t.textareaPlaceholder}
             rows={4}
             className="w-full rounded-2xl p-4 text-sm resize-none focus:outline-none leading-relaxed text-right"
             style={{
@@ -133,7 +135,7 @@ export default function JournalPage() {
             }}
             onFocus={e => { e.target.style.border = '1.5px solid #7C5CFC'; e.target.style.boxShadow = '0 0 0 3px rgba(124,92,252,0.1)' }}
             onBlur={e => { e.target.style.border = '1.5px solid #E8DBFF'; e.target.style.boxShadow = 'none' }}
-            dir="rtl"
+            dir={lang === 'ar' ? 'rtl' : 'ltr'}
           />
           <div className="text-xs text-gray-400 text-left mt-1 ltr-num">{text.length}/300</div>
 
@@ -148,7 +150,7 @@ export default function JournalPage() {
               cursor: mood === null ? 'not-allowed' : 'pointer',
             }}
           >
-            احفظ يومياتي 💾
+            {t.saveButton}
           </button>
         </div>
       ) : (
@@ -157,7 +159,7 @@ export default function JournalPage() {
           style={{ background: 'linear-gradient(135deg,#F0FFF4,#ECFDF5)', border: '1.5px solid #A7F3D0', boxShadow: '0 4px 16px rgba(16,185,129,0.1)' }}
         >
           <div className="text-5xl mb-3 animate-bounce-soft">{MOODS[todayEntry.mood]?.emoji}</div>
-          <p className="font-black text-green-700 text-lg">دوّنت يومياتك اليوم! 🎉</p>
+          <p className="font-black text-green-700 text-lg">{t.savedTodayTitle}</p>
           {todayEntry.text && (
             <div
               className="mt-3 rounded-2xl p-4 text-right"
@@ -172,7 +174,7 @@ export default function JournalPage() {
       {/* ── Past entries ── */}
       {entries.length > 1 && (
         <div>
-          <h2 className="font-black text-gray-900 mb-3 text-base">يومياتي السابقة 📚</h2>
+          <h2 className="font-black text-gray-900 mb-3 text-base">{t.pastEntriesTitle}</h2>
           <div className="space-y-2">
             {entries.slice(1, 8).map((e, i) => {
               const moodData = MOODS[e.mood]
@@ -196,11 +198,11 @@ export default function JournalPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs text-gray-400 ltr-num">
-                      {new Date(e.date).toLocaleDateString('fr-FR')}
+                      {new Date(e.date).toLocaleDateString(locale)}
                     </p>
                     {e.text
                       ? <p className="text-sm text-gray-700 font-medium truncate mt-0.5">{e.text}</p>
-                      : <p className="text-xs text-gray-300 mt-0.5">لا يوجد نص</p>
+                      : <p className="text-xs text-gray-300 mt-0.5">{t.noText}</p>
                     }
                   </div>
                   <span

@@ -2,8 +2,11 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { ArrowRight, Loader2, CheckCircle, Mail } from 'lucide-react'
+import { useLang, tr } from '@/lib/i18n'
 
 export default function ForgotPasswordPage() {
+  const { lang } = useLang()
+  const t = tr[lang].parentForgotPassword
   const [email, setEmail]     = useState('')
   const [loading, setLoading] = useState(false)
   const [sent, setSent]       = useState(false)
@@ -22,7 +25,7 @@ export default function ForgotPasswordPage() {
       // Always show success — don't reveal if email exists
       setSent(true)
     } catch {
-      setError('حدث خطأ في الاتصال، حاول مجدداً')
+      setError(t.networkError)
     } finally {
       setLoading(false)
     }
@@ -34,7 +37,7 @@ export default function ForgotPasswordPage() {
         <Link href="/parent/login"
           className="flex items-center gap-2 text-gray-400 hover:text-gray-700 text-sm font-medium mb-6 transition-colors">
           <ArrowRight className="w-4 h-4" />
-          العودة لتسجيل الدخول
+          {t.backToLogin}
         </Link>
 
         {sent ? (
@@ -42,12 +45,11 @@ export default function ForgotPasswordPage() {
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <CheckCircle className="w-8 h-8 text-green-600" />
             </div>
-            <h2 className="font-black text-xl text-gray-900 mb-2">تم الإرسال!</h2>
+            <h2 className="font-black text-xl text-gray-900 mb-2">{t.sentTitle}</h2>
             <p className="text-gray-500 text-sm leading-relaxed">
-              إذا كان البريد <span className="font-bold text-gray-700" dir="ltr">{email}</span> مسجلاً لدينا،
-              ستصلك رسالة تحتوي رابط إعادة التعيين خلال دقائق.
+              {t.sentBodyPrefix} <span className="font-bold text-gray-700" dir="ltr">{email}</span> {t.sentBodySuffix}
             </p>
-            <p className="text-gray-400 text-xs mt-3">تحقق من مجلد Spam إذا لم تجدها في البريد الوارد.</p>
+            <p className="text-gray-400 text-xs mt-3">{t.checkSpam}</p>
           </div>
         ) : (
           <>
@@ -55,13 +57,13 @@ export default function ForgotPasswordPage() {
               <div className="w-16 h-16 bg-brand-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <Mail className="w-8 h-8 text-brand-600" />
               </div>
-              <h1 className="font-black text-xl text-gray-900">نسيت كلمة المرور؟</h1>
-              <p className="text-gray-500 text-sm mt-1">أدخل بريدك وسنرسل لك رابط الاستعادة</p>
+              <h1 className="font-black text-xl text-gray-900">{t.title}</h1>
+              <p className="text-gray-500 text-sm mt-1">{t.subtitle}</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1.5">البريد الإلكتروني</label>
+                <label className="block text-sm font-bold text-gray-700 mb-1.5">{t.email}</label>
                 <input
                   type="email"
                   value={email}
@@ -84,7 +86,7 @@ export default function ForgotPasswordPage() {
               >
                 {loading
                   ? <Loader2 className="w-5 h-5 animate-spin mx-auto" />
-                  : 'إرسال رابط الاستعادة'
+                  : t.submit
                 }
               </button>
             </form>

@@ -3,9 +3,12 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Loader2, Eye, EyeOff } from 'lucide-react'
+import { useLang, tr } from '@/lib/i18n'
 
 export default function ParentLoginPage() {
   const router = useRouter()
+  const { lang } = useLang()
+  const t = tr[lang].login
   const [form, setForm] = useState({ email: '', password: '' })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -28,13 +31,13 @@ export default function ParentLoginPage() {
       if (res.ok) {
         router.push('/parent/dashboard')
       } else {
-        setError(data.error || 'بيانات غير صحيحة')
+        setError(data.error || t.errors.invalid)
       }
     } catch (e) {
       if ((e as Error).name === 'AbortError') {
-        setError('انتهت مهلة الاتصال — تحقق من اتصالك وحاول مجدداً')
+        setError(t.errors.timeout)
       } else {
-        setError('حدث خطأ في الاتصال')
+        setError(t.errors.network)
       }
     } finally {
       clearTimeout(tid)
@@ -50,13 +53,13 @@ export default function ParentLoginPage() {
           <div className="w-16 h-16 bg-brand-100 rounded-2xl flex items-center justify-center mx-auto mb-4 text-3xl">
             👪
           </div>
-          <h1 className="font-black text-xl text-gray-900">بوابة أولياء الأمور</h1>
-          <p className="text-gray-500 text-sm mt-1">تابع تطور طفلك</p>
+          <h1 className="font-black text-xl text-gray-900">{t.title}</h1>
+          <p className="text-gray-500 text-sm mt-1">{t.subtitle}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1.5">البريد الإلكتروني</label>
+            <label className="block text-sm font-bold text-gray-700 mb-1.5">{t.email}</label>
             <input
               type="email"
               value={form.email}
@@ -67,7 +70,7 @@ export default function ParentLoginPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1.5">كلمة المرور</label>
+            <label className="block text-sm font-bold text-gray-700 mb-1.5">{t.password}</label>
             <div className="relative">
               <input
                 type={showPass ? 'text' : 'password'}
@@ -85,7 +88,7 @@ export default function ParentLoginPage() {
           </div>
           <div className="flex justify-end">
             <Link href="/parent/forgot-password" className="text-sm text-brand-600 hover:underline">
-              نسيت كلمة المرور؟
+              {t.forgotPassword}
             </Link>
           </div>
 
@@ -96,13 +99,13 @@ export default function ParentLoginPage() {
           <button
             type="submit" disabled={loading}
             className={`w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-3 rounded-xl transition-colors ${loading ? 'opacity-60 cursor-not-allowed' : ''}`}>
-            {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'دخول'}
+            {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : t.submit}
           </button>
         </form>
 
         <p className="text-center text-sm text-gray-500 mt-6">
-          ليس لديك حساب؟{' '}
-          <Link href="/register" className="text-brand-600 font-bold hover:underline">سجّل الآن</Link>
+          {t.noAccount}{' '}
+          <Link href="/register" className="text-brand-600 font-bold hover:underline">{t.register}</Link>
         </p>
       </div>
     </div>

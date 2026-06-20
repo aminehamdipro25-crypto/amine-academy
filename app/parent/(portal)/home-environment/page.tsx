@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { Home, Check, Loader2, ChevronLeft } from 'lucide-react'
 import Link from 'next/link'
 import type { HomeEnvironment } from '@/lib/types'
+import { useLang, tr } from '@/lib/i18n'
 
 // ─── Option helpers ────────────────────────────────────────────
 
@@ -91,45 +92,10 @@ function MultiChips({
 
 // ─── Constants ─────────────────────────────────────────────────
 
-const SPACE_OPTIONS: RadioOption[] = [
-  { value: 'small', label: 'صغيرة', icon: '🏠', desc: 'أقل من 10م²' },
-  { value: 'medium', label: 'متوسطة', icon: '🏡', desc: '10-25م²' },
-  { value: 'large', label: 'كبيرة', icon: '🏘️', desc: 'أكثر من 25م²' },
-]
-
-const EQUIPMENT_OPTIONS = [
-  { value: 'ball', label: 'كرة' },
-  { value: 'mat', label: 'حصيرة' },
-  { value: 'rope', label: 'حبل' },
-  { value: 'stick', label: 'عصا' },
-  { value: 'none', label: 'لا شيء' },
-  { value: 'other', label: 'أخرى' },
-]
-
-const NOISE_OPTIONS: RadioOption[] = [
-  { value: 'quiet', label: 'هادئ', icon: '🤫', desc: 'بيئة صامتة' },
-  { value: 'moderate', label: 'متوسط', icon: '🔉', desc: 'ضوضاء عادية' },
-  { value: 'noisy', label: 'صاخب', icon: '📢', desc: 'ضوضاء عالية' },
-]
-
-const SENSORY_OPTIONS = [
-  { value: 'bright-lights', label: 'الإضاءة الساطعة' },
-  { value: 'loud-sounds', label: 'الأصوات العالية' },
-  { value: 'textures', label: 'الملمس الخشن' },
-  { value: 'smells', label: 'الروائح الحادة' },
-]
-
-const TIME_OPTIONS: RadioOption[] = [
-  { value: 'morning', label: 'الصباح', icon: '🌅', desc: '8 ص - 12 م' },
-  { value: 'afternoon', label: 'بعد الظهر', icon: '☀️', desc: '12 - 5 م' },
-  { value: 'evening', label: 'المساء', icon: '🌙', desc: 'بعد 5 م' },
-]
-
-const AVAILABILITY_OPTIONS: RadioOption[] = [
-  { value: 'always', label: 'دائماً', icon: '✅', desc: 'متاح طوال الوقت' },
-  { value: 'sometimes', label: 'أحياناً', icon: '🕐', desc: 'فترات محددة' },
-  { value: 'rarely', label: 'نادراً', icon: '⏳', desc: 'مشغول في العادة' },
-]
+const SPACE_ICONS: Record<'small' | 'medium' | 'large', string> = { small: '🏠', medium: '🏡', large: '🏘️' }
+const NOISE_ICONS: Record<'quiet' | 'moderate' | 'noisy', string> = { quiet: '🤫', moderate: '🔉', noisy: '📢' }
+const TIME_ICONS: Record<'morning' | 'afternoon' | 'evening', string> = { morning: '🌅', afternoon: '☀️', evening: '🌙' }
+const AVAILABILITY_ICONS: Record<'always' | 'sometimes' | 'rarely', string> = { always: '✅', sometimes: '🕐', rarely: '⏳' }
 
 const SECTION_LABEL = 'font-black text-gray-800 text-sm mb-3'
 const SECTION_HINT  = 'text-gray-400 text-xs mb-3'
@@ -147,6 +113,29 @@ const DEFAULT_FORM: HomeEnvironment = {
 
 // ─── Page ──────────────────────────────────────────────────────
 export default function HomeEnvironmentPage() {
+  const { lang } = useLang()
+  const t = tr[lang].parentHomeEnvironment
+  const coachName = tr[lang].portal.common.coachName
+
+  const spaceOptions: RadioOption[] = (['small', 'medium', 'large'] as const).map(v => ({
+    value: v, label: t.spaceOptions[v].label, icon: SPACE_ICONS[v], desc: t.spaceOptions[v].desc,
+  }))
+  const equipmentOptions = (['ball', 'mat', 'rope', 'stick', 'none', 'other'] as const).map(v => ({
+    value: v, label: t.equipmentOptions[v],
+  }))
+  const noiseOptions: RadioOption[] = (['quiet', 'moderate', 'noisy'] as const).map(v => ({
+    value: v, label: t.noiseOptions[v].label, icon: NOISE_ICONS[v], desc: t.noiseOptions[v].desc,
+  }))
+  const sensoryOptions = (['bright-lights', 'loud-sounds', 'textures', 'smells'] as const).map(v => ({
+    value: v, label: t.sensoryOptions[v],
+  }))
+  const timeOptions: RadioOption[] = (['morning', 'afternoon', 'evening'] as const).map(v => ({
+    value: v, label: t.timeOptions[v].label, icon: TIME_ICONS[v], desc: t.timeOptions[v].desc,
+  }))
+  const availabilityOptions: RadioOption[] = (['always', 'sometimes', 'rarely'] as const).map(v => ({
+    value: v, label: t.availabilityOptions[v].label, icon: AVAILABILITY_ICONS[v], desc: t.availabilityOptions[v].desc,
+  }))
+
   const [form, setForm] = useState<HomeEnvironment>(DEFAULT_FORM)
   const [childId, setChildId] = useState<string | null>(null)
   const [childName, setChildName] = useState<string>('')
@@ -179,12 +168,12 @@ export default function HomeEnvironmentPage() {
       })
       if (!res.ok) {
         const d = await res.json()
-        throw new Error(d.error || 'فشل الحفظ')
+        throw new Error(d.error || t.saveFailedError)
       }
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'فشل الحفظ، حاول مجدداً')
+      setError(e instanceof Error ? e.message : t.saveFailedRetry)
     } finally {
       setSaving(false)
     }
@@ -195,19 +184,19 @@ export default function HomeEnvironmentPage() {
   }
 
   if (loading) return (
-    <div className="flex flex-col items-center justify-center py-24 gap-4" dir="rtl">
+    <div className="flex flex-col items-center justify-center py-24 gap-4">
       <div
         className="w-16 h-16 rounded-3xl flex items-center justify-center"
         style={{ background: 'linear-gradient(135deg,#7C5CFC,#9A7BFD)' }}
       >
         <span className="text-3xl">🏠</span>
       </div>
-      <p className="font-black text-sm" style={{ color: '#7C5CFC' }}>جاري التحميل...</p>
+      <p className="font-black text-sm" style={{ color: '#7C5CFC' }}>{t.loadingText}</p>
     </div>
   )
 
   return (
-    <div className="space-y-5" dir="rtl">
+    <div className="space-y-5">
 
       {/* ══ Header ══ */}
       <div
@@ -226,7 +215,7 @@ export default function HomeEnvironmentPage() {
             className="inline-flex items-center gap-1.5 text-white/70 text-xs font-bold mb-4 hover:text-white transition-colors"
           >
             <ChevronLeft className="w-4 h-4 rotate-180" />
-            العودة للوحة التحكم
+            {t.backToDashboard}
           </Link>
           <div className="flex items-center gap-4">
             <div
@@ -236,9 +225,9 @@ export default function HomeEnvironmentPage() {
               🏠
             </div>
             <div>
-              <h1 className="font-black text-2xl text-white leading-tight">بيئة المنزل</h1>
+              <h1 className="font-black text-2xl text-white leading-tight">{t.pageTitle}</h1>
               <p className="text-white/70 text-sm mt-0.5">
-                {childName ? `تخصيص بيئة التمارين لـ ${childName}` : 'تخصيص بيئة التمارين'}
+                {childName ? t.pageSubtitleWithChild(childName) : t.pageSubtitleNoChild}
               </p>
             </div>
           </div>
@@ -253,10 +242,10 @@ export default function HomeEnvironmentPage() {
           className="rounded-3xl p-5"
           style={{ background: '#FFFFFF', border: '1.5px solid #F0E8FF', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}
         >
-          <p className={SECTION_LABEL}>المساحة المتاحة</p>
-          <p className={SECTION_HINT}>حجم المساحة المخصصة للتمارين</p>
+          <p className={SECTION_LABEL}>{t.spaceLabel}</p>
+          <p className={SECTION_HINT}>{t.spaceHint}</p>
           <RadioCards
-            options={SPACE_OPTIONS}
+            options={spaceOptions}
             value={form.spaceAvailable}
             onChange={v => patch('spaceAvailable', v as HomeEnvironment['spaceAvailable'])}
           />
@@ -267,10 +256,10 @@ export default function HomeEnvironmentPage() {
           className="rounded-3xl p-5"
           style={{ background: '#FFFFFF', border: '1.5px solid #F0E8FF', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}
         >
-          <p className={SECTION_LABEL}>المعدات المتاحة</p>
-          <p className={SECTION_HINT}>اختر كل ما يتوفر في منزلك</p>
+          <p className={SECTION_LABEL}>{t.equipmentLabel}</p>
+          <p className={SECTION_HINT}>{t.equipmentHint}</p>
           <MultiChips
-            options={EQUIPMENT_OPTIONS}
+            options={equipmentOptions}
             selected={form.equipment}
             onChange={v => patch('equipment', v)}
           />
@@ -281,10 +270,10 @@ export default function HomeEnvironmentPage() {
           className="rounded-3xl p-5"
           style={{ background: '#FFFFFF', border: '1.5px solid #F0E8FF', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}
         >
-          <p className={SECTION_LABEL}>مستوى الضوضاء في المنزل</p>
-          <p className={SECTION_HINT}>البيئة الصوتية العامة في المنزل</p>
+          <p className={SECTION_LABEL}>{t.noiseLabel}</p>
+          <p className={SECTION_HINT}>{t.noiseHint}</p>
           <RadioCards
-            options={NOISE_OPTIONS}
+            options={noiseOptions}
             value={form.noiseLevel}
             onChange={v => patch('noiseLevel', v as HomeEnvironment['noiseLevel'])}
           />
@@ -295,10 +284,10 @@ export default function HomeEnvironmentPage() {
           className="rounded-3xl p-5"
           style={{ background: '#FFFFFF', border: '1.5px solid #F0E8FF', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}
         >
-          <p className={SECTION_LABEL}>الحساسيات الحسية</p>
-          <p className={SECTION_HINT}>اختر أي حساسيات تؤثر على الطفل في بيئة المنزل</p>
+          <p className={SECTION_LABEL}>{t.sensoryLabel}</p>
+          <p className={SECTION_HINT}>{t.sensoryHint}</p>
           <MultiChips
-            options={SENSORY_OPTIONS}
+            options={sensoryOptions}
             selected={form.sensoryIssues}
             onChange={v => patch('sensoryIssues', v)}
           />
@@ -309,10 +298,10 @@ export default function HomeEnvironmentPage() {
           className="rounded-3xl p-5"
           style={{ background: '#FFFFFF', border: '1.5px solid #F0E8FF', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}
         >
-          <p className={SECTION_LABEL}>أفضل وقت للتمارين</p>
-          <p className={SECTION_HINT}>متى يكون الطفل في أفضل حالاته؟</p>
+          <p className={SECTION_LABEL}>{t.timeLabel}</p>
+          <p className={SECTION_HINT}>{t.timeHint}</p>
           <RadioCards
-            options={TIME_OPTIONS}
+            options={timeOptions}
             value={form.bestTimeOfDay}
             onChange={v => patch('bestTimeOfDay', v as HomeEnvironment['bestTimeOfDay'])}
           />
@@ -323,10 +312,10 @@ export default function HomeEnvironmentPage() {
           className="rounded-3xl p-5"
           style={{ background: '#FFFFFF', border: '1.5px solid #F0E8FF', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}
         >
-          <p className={SECTION_LABEL}>مدى توفر ولي الأمر</p>
-          <p className={SECTION_HINT}>كم من الوقت يمكنك مرافقة الطفل أثناء التمارين؟</p>
+          <p className={SECTION_LABEL}>{t.availabilityLabel}</p>
+          <p className={SECTION_HINT}>{t.availabilityHint}</p>
           <RadioCards
-            options={AVAILABILITY_OPTIONS}
+            options={availabilityOptions}
             value={form.parentAvailability}
             onChange={v => patch('parentAvailability', v as HomeEnvironment['parentAvailability'])}
           />
@@ -337,13 +326,13 @@ export default function HomeEnvironmentPage() {
           className="rounded-3xl p-5"
           style={{ background: '#FFFFFF', border: '1.5px solid #F0E8FF', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}
         >
-          <p className={SECTION_LABEL}>ملاحظات إضافية</p>
-          <p className={SECTION_HINT}>أي معلومات أخرى تودّ مشاركتها مع الأستاذ أمين</p>
+          <p className={SECTION_LABEL}>{t.notesLabel}</p>
+          <p className={SECTION_HINT}>{t.notesHint(coachName)}</p>
           <textarea
             value={form.notes}
             onChange={e => patch('notes', e.target.value)}
             rows={4}
-            placeholder="مثال: الطفل يحب التمارين الهادئة، وغرفة النوم هي الأنسب للتمرين..."
+            placeholder={t.notesPlaceholder}
             className="w-full rounded-2xl px-4 py-3 text-sm text-gray-700 placeholder-gray-300 resize-none outline-none transition-all"
             style={{
               background: '#FAFAFA',
@@ -362,7 +351,7 @@ export default function HomeEnvironmentPage() {
         )}
         {saved && (
           <div className="rounded-2xl px-4 py-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm font-bold">
-            ✅ تم حفظ بيئة المنزل بنجاح
+            ✅ {t.savedSuccess}
           </div>
         )}
 
@@ -380,12 +369,12 @@ export default function HomeEnvironmentPage() {
           {saving ? (
             <>
               <Loader2 className="w-5 h-5 animate-spin" />
-              جاري الحفظ...
+              {t.savingButton}
             </>
           ) : (
             <>
               <Check className="w-5 h-5" />
-              حفظ البيئة
+              {t.saveButton}
             </>
           )}
         </button>

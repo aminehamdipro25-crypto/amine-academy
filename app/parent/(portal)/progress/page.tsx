@@ -7,6 +7,7 @@ import {
   RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
 } from 'recharts'
 import type { Student, ProgressReport } from '@/lib/types'
+import { useLang, tr } from '@/lib/i18n'
 
 interface GameHistory {
   totalPlays: number
@@ -18,35 +19,15 @@ interface GameHistory {
 interface ChildData { student: Student; history: GameHistory }
 interface ChildReports { child: Student; reports: ProgressReport[] }
 
-const DOMAIN_LABELS: Record<string, string> = {
-  'memory-cards':    'مطابقة البطاقات',
-  'sequence-memory': 'تذكر التسلسل',
-  'n-back':          'ذاكرة N-Back',
-  'word-recall':     'تذكر الكلمات',
-  'letter-match':    'مطابقة الحروف',
-  'breathing':       'تمارين التنفس',
-  'tap-target':      'التناسق الحركي',
-  'simon-says':      'سايمون يقول',
-  'reaction-game':   'سرعة رد الفعل',
-  'stroop-test':     'ستروب',
-  'stop-signal':     'توقف أو اكمل',
-  'emotion-cards':   'التعرف على المشاعر',
-}
-
-const METRIC_LABELS: Record<string, string> = {
-  attention:            'الانتباه والتركيز',
-  impulse_control:      'كبح الاندفاعية',
-  social_interaction:   'المهارات الاجتماعية',
-  motor_coordination:   'التنسيق الحركي',
-  emotional_regulation: 'الضبط الانفعالي',
-}
-
 function weekLabel(iso: string): string {
   const d = new Date(iso)
   return `${d.getDate()}/${d.getMonth() + 1}`
 }
 
 export default function ProgressPage() {
+  const { lang } = useLang()
+  const t = tr[lang].parentProgress
+  const coachName = tr[lang].portal.common.coachName
   const [gameData, setGameData] = useState<ChildData[]>([])
   const [reportData, setReportData] = useState<ChildReports[]>([])
   const [loading, setLoading] = useState(true)
@@ -67,7 +48,7 @@ export default function ProgressPage() {
   }, [])
 
   if (loading) return (
-    <div className="flex items-center justify-center py-20" dir="rtl">
+    <div className="flex items-center justify-center py-20">
       <div className="text-4xl animate-pulse">📈</div>
     </div>
   )
@@ -88,21 +69,20 @@ export default function ProgressPage() {
 
   const topGames = history
     ? Object.entries(history.byGame)
-        .map(([gameId, data]) => ({ gameId, ...data, label: DOMAIN_LABELS[gameId] || gameId }))
+        .map(([gameId, data]) => ({ gameId, ...data, label: t.domainLabels[gameId as keyof typeof t.domainLabels] || gameId }))
         .sort((a, b) => b.plays - a.plays)
         .slice(0, 6)
     : []
 
   const weekChartData = history?.byWeek.map(w => ({
     name: weekLabel(w.week),
-    ألعاب: w.gamesPlayed,
-    'متوسط الأداء': w.avgScore,
-    دقائق: w.totalMinutes,
+    [t.chartGames]: w.gamesPlayed,
+    [t.chartMinutes]: w.totalMinutes,
   })) || []
 
   const scoreChartData = history?.byWeek.map(w => ({
     name: weekLabel(w.week),
-    الأداء: w.avgScore,
+    [t.chartScore]: w.avgScore,
   })) || []
 
   const avgScores: Record<string, { total: number; count: number }> = {}
@@ -121,14 +101,14 @@ export default function ProgressPage() {
           date: `⁦${new Date(r.periodEnd || r.createdAt).toLocaleDateString('fr-FR', { month: 'short', day: 'numeric' })}⁩`,
         }
         r.behaviorRatings?.forEach(({ metric, score }) => {
-          row[METRIC_LABELS[metric] || metric] = score
+          row[t.metricLabels[metric as keyof typeof t.metricLabels] || metric] = score
         })
         return row
       })
     : []
 
   const TREND_COLORS = ['#7C5CFC', '#FF8C65', '#22C55E', '#F59E0B', '#3B9EFF']
-  const trendMetrics = Object.keys(METRIC_LABELS).filter(m =>
+  const trendMetrics = Object.keys(t.metricLabels).filter(m =>
     reports.some(r => r.behaviorRatings?.some(b => b.metric === m))
   )
 
@@ -140,12 +120,12 @@ export default function ProgressPage() {
     trendMetrics.forEach(m => {
       const firstScore = first.find(b => b.metric === m)?.score ?? 0
       const lastScore  = last.find(b => b.metric === m)?.score ?? 0
-      if (lastScore - firstScore >= 1) milestones.push(METRIC_LABELS[m])
+      if (lastScore - firstScore >= 1) milestones.push(t.metricLabels[m as keyof typeof t.metricLabels])
     })
   }
 
   const radarData = Object.entries(avgScores).map(([metric, { total, count }]) => ({
-    domain: METRIC_LABELS[metric] || metric,
+    domain: t.metricLabels[metric as keyof typeof t.metricLabels] || metric,
     score: Math.round((total / count) * 10) / 10,
   }))
 
@@ -153,12 +133,12 @@ export default function ProgressPage() {
   const hasReportData = reports.length > 0
 
   return (
-    <div className="space-y-6" dir="rtl">
+    <div className="space-y-6">
 
       {/* ── Header ── */}
       <div>
-        <h1 className="font-black text-2xl text-gray-900">تطور طفلك</h1>
-        <p className="text-gray-500 text-sm mt-0.5">بيانات حقيقية من الجلسات • محدّث تلقائياً</p>
+        <h1 className="font-black text-2xl text-gray-900">{t.pageTitle}</h1>
+        <p className="text-gray-500 text-sm mt-0.5">{t.pageSubtitle}</p>
       </div>
 
       {/* ── Child selector ── */}
@@ -190,8 +170,8 @@ export default function ProgressPage() {
           style={{ background: '#FFFFFF', border: '2px dashed #E5E7EB' }}
         >
           <TrendingUp className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-          <h3 className="font-bold text-gray-600 mb-2">لم تبدأ الجلسات بعد</h3>
-          <p className="text-gray-400 text-sm max-w-xs mx-auto">بعد إجراء جلسات مع الأستاذ أمين، ستظهر هنا مؤشرات تطور طفلك بشكل تفصيلي.</p>
+          <h3 className="font-bold text-gray-600 mb-2">{t.emptyTitle}</h3>
+          <p className="text-gray-400 text-sm max-w-xs mx-auto">{t.emptyBody}</p>
         </div>
       )}
 
@@ -200,10 +180,10 @@ export default function ProgressPage() {
           {/* ── Quick stats ── */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
-              { icon: <Brain className="w-5 h-5" style={{ color: '#6B46F0' }} />, bg: '#F3EEFF', value: history?.totalPlays ?? 0, label: 'لعبة مكتملة', color: '#5A32D9' },
-              { icon: <Clock className="w-5 h-5" style={{ color: '#D97706' }} />, bg: '#FFFBEB', value: history?.totalMinutes ?? 0, label: 'دقيقة تدريب', color: '#B45309' },
-              { icon: <Zap className="w-5 h-5" style={{ color: '#EA580C' }} />, bg: '#FFF7ED', value: student?.streak ?? 0, label: 'يوم متتالي 🔥', color: '#C2410C' },
-              { icon: <Award className="w-5 h-5" style={{ color: '#7C3AED' }} />, bg: '#F5F3FF', value: student?.totalPoints ?? 0, label: 'نقطة إجمالية', color: '#6D28D9' },
+              { icon: <Brain className="w-5 h-5" style={{ color: '#6B46F0' }} />, bg: '#F3EEFF', value: history?.totalPlays ?? 0, label: t.statGamesCompleted, color: '#5A32D9' },
+              { icon: <Clock className="w-5 h-5" style={{ color: '#D97706' }} />, bg: '#FFFBEB', value: history?.totalMinutes ?? 0, label: t.statMinutesTrained, color: '#B45309' },
+              { icon: <Zap className="w-5 h-5" style={{ color: '#EA580C' }} />, bg: '#FFF7ED', value: student?.streak ?? 0, label: t.statStreakDays, color: '#C2410C' },
+              { icon: <Award className="w-5 h-5" style={{ color: '#7C3AED' }} />, bg: '#F5F3FF', value: student?.totalPoints ?? 0, label: t.statTotalPoints, color: '#6D28D9' },
             ].map((s, i) => (
               <div key={i} className="rounded-2xl p-4 text-center" style={{ background: s.bg }}>
                 <div className="flex justify-center mb-1">{s.icon}</div>
@@ -215,7 +195,7 @@ export default function ProgressPage() {
 
           {/* ── Tabs ── */}
           <div className="flex gap-1 rounded-2xl p-1" style={{ background: '#F3F4F6' }}>
-            {([['games', '🎮 أداء الألعاب'], ['reports', '📊 تقارير الأستاذ']] as const).map(([key, label]) => (
+            {([['games', t.tabGames], ['reports', t.tabReports]] as const).map(([key, label]) => (
               <button
                 key={key}
                 onClick={() => setActiveTab(key)}
@@ -239,14 +219,14 @@ export default function ProgressPage() {
               {!hasGameData ? (
                 <div className="rounded-2xl p-8 text-center" style={{ background: '#FFFFFF', border: '1px solid #F3F4F6' }}>
                   <Target className="w-8 h-8 text-gray-300 mx-auto mb-3" />
-                  <p className="text-gray-500 text-sm">سيتم عرض بيانات الألعاب هنا بعد أول جلسة تفاعلية</p>
+                  <p className="text-gray-500 text-sm">{t.noGameDataYet}</p>
                 </div>
               ) : (
                 <>
                   {scoreChartData.length > 1 && (
                     <div className="rounded-2xl p-5" style={{ background: '#FFFFFF', border: '1px solid #F0E8FF' }}>
-                      <h2 className="font-black text-gray-900 mb-1 text-sm">منحنى الأداء الأسبوعي</h2>
-                      <p className="text-gray-400 text-xs mb-4">متوسط الدرجة في كل أسبوع (0-100)</p>
+                      <h2 className="font-black text-gray-900 mb-1 text-sm">{t.weeklyPerformanceTitle}</h2>
+                      <p className="text-gray-400 text-xs mb-4">{t.weeklyPerformanceSubtitle}</p>
                       <ResponsiveContainer width="100%" height={180}>
                         <LineChart data={scoreChartData}>
                           <CartesianGrid strokeDasharray="3 3" stroke="#F0E8FF" />
@@ -254,9 +234,9 @@ export default function ProgressPage() {
                           <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: '#94a3b8' }} />
                           <Tooltip
                             contentStyle={{ borderRadius: 12, border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}
-                            formatter={(v: number) => [`${v}%`, 'الأداء']}
+                            formatter={(v: number) => [`${v}%`, t.chartScore]}
                           />
-                          <Line type="monotone" dataKey="الأداء" stroke="#7C5CFC" strokeWidth={2.5} dot={{ fill: '#7C5CFC', r: 4 }} />
+                          <Line type="monotone" dataKey={t.chartScore} stroke="#7C5CFC" strokeWidth={2.5} dot={{ fill: '#7C5CFC', r: 4 }} />
                         </LineChart>
                       </ResponsiveContainer>
                     </div>
@@ -264,16 +244,16 @@ export default function ProgressPage() {
 
                   {weekChartData.length > 0 && (
                     <div className="rounded-2xl p-5" style={{ background: '#FFFFFF', border: '1px solid #F0E8FF' }}>
-                      <h2 className="font-black text-gray-900 mb-1 text-sm">النشاط الأسبوعي</h2>
-                      <p className="text-gray-400 text-xs mb-4">عدد الألعاب ودقائق التدريب أسبوعياً</p>
+                      <h2 className="font-black text-gray-900 mb-1 text-sm">{t.weeklyActivityTitle}</h2>
+                      <p className="text-gray-400 text-xs mb-4">{t.weeklyActivitySubtitle}</p>
                       <ResponsiveContainer width="100%" height={160}>
                         <BarChart data={weekChartData} barGap={4}>
                           <CartesianGrid strokeDasharray="3 3" stroke="#F0E8FF" />
                           <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#94a3b8' }} />
                           <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} />
                           <Tooltip contentStyle={{ borderRadius: 12, border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }} />
-                          <Bar dataKey="ألعاب" fill="#7C5CFC" radius={[4, 4, 0, 0]} />
-                          <Bar dataKey="دقائق" fill="#FFBA44" radius={[4, 4, 0, 0]} />
+                          <Bar dataKey={t.chartGames} fill="#7C5CFC" radius={[4, 4, 0, 0]} />
+                          <Bar dataKey={t.chartMinutes} fill="#FFBA44" radius={[4, 4, 0, 0]} />
                         </BarChart>
                       </ResponsiveContainer>
                     </div>
@@ -281,7 +261,7 @@ export default function ProgressPage() {
 
                   {topGames.length > 0 && (
                     <div className="rounded-2xl p-5" style={{ background: '#FFFFFF', border: '1px solid #F0E8FF' }}>
-                      <h2 className="font-black text-gray-900 mb-4 text-sm">أداء كل لعبة</h2>
+                      <h2 className="font-black text-gray-900 mb-4 text-sm">{t.perGamePerformanceTitle}</h2>
                       <div className="space-y-3">
                         {topGames.map(game => (
                           <div key={game.gameId}>
@@ -317,7 +297,7 @@ export default function ProgressPage() {
               {!hasReportData ? (
                 <div className="rounded-2xl p-8 text-center" style={{ background: '#FFFFFF', border: '1px solid #F3F4F6' }}>
                   <TrendingUp className="w-8 h-8 text-gray-300 mx-auto mb-3" />
-                  <p className="text-gray-500 text-sm">سيتم عرض تقارير الأستاذ أمين هنا بعد كل دورة</p>
+                  <p className="text-gray-500 text-sm">{t.noReportDataYet(coachName)}</p>
                 </div>
               ) : (
                 <>
@@ -326,9 +306,9 @@ export default function ProgressPage() {
                     <div className="rounded-2xl p-4 flex items-start gap-3" style={{ background: '#F0FDF4', border: '1.5px solid #A7F3D0' }}>
                       <span className="text-2xl flex-shrink-0">🏅</span>
                       <div>
-                        <p className="font-black text-emerald-800 text-sm mb-1">تقدّم ملحوظ!</p>
+                        <p className="font-black text-emerald-800 text-sm mb-1">{t.milestoneBannerTitle}</p>
                         <p className="text-emerald-700 text-xs leading-relaxed">
-                          تحسّن ملحوظ في: <span className="font-bold">{milestones.join(' · ')}</span> مقارنةً بأول تقرير
+                          {t.milestoneBodyPrefix} <span className="font-bold">{milestones.join(' · ')}</span> {t.milestoneBodySuffix}
                         </p>
                       </div>
                     </div>
@@ -337,8 +317,8 @@ export default function ProgressPage() {
                   {/* Behavioral domain trend chart */}
                   {behaviorTrend.length >= 2 && trendMetrics.length > 0 && (
                     <div className="rounded-2xl p-5" style={{ background: '#FFFFFF', border: '1px solid #F0E8FF' }}>
-                      <h2 className="font-black text-gray-900 mb-1 text-sm">تطور المجالات السلوكية</h2>
-                      <p className="text-gray-400 text-xs mb-4">مقياس 1-5 عبر جميع التقارير</p>
+                      <h2 className="font-black text-gray-900 mb-1 text-sm">{t.behaviorTrendTitle}</h2>
+                      <p className="text-gray-400 text-xs mb-4">{t.behaviorTrendSubtitle}</p>
                       <ResponsiveContainer width="100%" height={200}>
                         <LineChart data={behaviorTrend}>
                           <CartesianGrid strokeDasharray="3 3" stroke="#F0E8FF" />
@@ -351,7 +331,7 @@ export default function ProgressPage() {
                             <Line
                               key={m}
                               type="monotone"
-                              dataKey={METRIC_LABELS[m]}
+                              dataKey={t.metricLabels[m as keyof typeof t.metricLabels]}
                               stroke={TREND_COLORS[i % TREND_COLORS.length]}
                               strokeWidth={2}
                               dot={{ r: 4, fill: TREND_COLORS[i % TREND_COLORS.length] }}
@@ -364,7 +344,7 @@ export default function ProgressPage() {
                         {trendMetrics.map((m, i) => (
                           <div key={m} className="flex items-center gap-1.5">
                             <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: TREND_COLORS[i % TREND_COLORS.length] }} />
-                            <span className="text-xs text-gray-500">{METRIC_LABELS[m]}</span>
+                            <span className="text-xs text-gray-500">{t.metricLabels[m as keyof typeof t.metricLabels]}</span>
                           </div>
                         ))}
                       </div>
@@ -373,14 +353,14 @@ export default function ProgressPage() {
 
                   {radarData.length >= 3 && (
                     <div className="rounded-2xl p-5" style={{ background: '#FFFFFF', border: '1px solid #F0E8FF' }}>
-                      <h2 className="font-black text-gray-900 mb-1 text-sm">لقطة الأداء حسب المجال</h2>
-                      <p className="text-gray-400 text-xs mb-2">نظرة شاملة على كل المجالات السلوكية دفعة واحدة</p>
+                      <h2 className="font-black text-gray-900 mb-1 text-sm">{t.radarTitle}</h2>
+                      <p className="text-gray-400 text-xs mb-2">{t.radarSubtitle}</p>
                       <ResponsiveContainer width="100%" height={260}>
                         <RadarChart data={radarData}>
                           <PolarGrid stroke="#F0E8FF" />
                           <PolarAngleAxis dataKey="domain" tick={{ fontSize: 11, fill: '#6B7280' }} />
                           <PolarRadiusAxis domain={[0, 5]} tick={false} axisLine={false} />
-                          <Radar name="المتوسط" dataKey="score" stroke="#7C5CFC" fill="#7C5CFC" fillOpacity={0.35} />
+                          <Radar name={t.radarAverageLabel} dataKey="score" stroke="#7C5CFC" fill="#7C5CFC" fillOpacity={0.35} />
                           <Tooltip contentStyle={{ borderRadius: 12, border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.1)', fontSize: 12 }} />
                         </RadarChart>
                       </ResponsiveContainer>
@@ -389,14 +369,14 @@ export default function ProgressPage() {
 
                   {Object.keys(avgScores).length > 0 && (
                     <div className="rounded-2xl p-5" style={{ background: '#FFFFFF', border: '1px solid #F0E8FF' }}>
-                      <h2 className="font-black text-gray-900 mb-4 text-sm">متوسط التقييم السلوكي</h2>
+                      <h2 className="font-black text-gray-900 mb-4 text-sm">{t.avgBehaviorTitle}</h2>
                       <div className="space-y-3.5">
                         {Object.entries(avgScores).map(([metric, { total, count }]) => {
                           const pct = Math.round(((total / count) / 5) * 100)
                           return (
                             <div key={metric}>
                               <div className="flex items-center justify-between mb-1.5">
-                                <span className="text-sm text-gray-700 font-medium">{METRIC_LABELS[metric] || metric}</span>
+                                <span className="text-sm text-gray-700 font-medium">{t.metricLabels[metric as keyof typeof t.metricLabels] || metric}</span>
                                 <span className="text-sm font-black text-gray-900 ltr-num">{pct}%</span>
                               </div>
                               <div className="h-2.5 rounded-full overflow-hidden" style={{ background: '#F3F4F6' }}>
@@ -414,7 +394,7 @@ export default function ProgressPage() {
 
                   {reports.length > 1 && (
                     <div className="rounded-2xl p-5" style={{ background: '#FFFFFF', border: '1px solid #F0E8FF' }}>
-                      <h2 className="font-black text-gray-900 mb-4 text-sm">تطور النقاط</h2>
+                      <h2 className="font-black text-gray-900 mb-4 text-sm">{t.pointsProgressTitle}</h2>
                       <div className="flex items-end gap-3 h-28">
                         {[...reports].reverse().slice(-6).map(r => {
                           const pct = Math.min(100, (r.pointsEarned / 300) * 100)
@@ -440,7 +420,7 @@ export default function ProgressPage() {
                       style={{ background: 'linear-gradient(to left, #6B46F0, #4A20C8)' }}
                     >
                       <div className="flex items-center justify-between mb-3">
-                        <h2 className="font-black text-lg">آخر تقرير</h2>
+                        <h2 className="font-black text-lg">{t.lastReportTitle}</h2>
                         <span className="text-white/70 text-xs ltr-num">
                           {new Date(latest.periodEnd).toLocaleDateString('fr-FR')}
                         </span>
@@ -450,13 +430,13 @@ export default function ProgressPage() {
                       )}
                       {latest.professorNotes && (
                         <div className="rounded-xl p-3 mb-3" style={{ background: 'rgba(255,255,255,0.1)' }}>
-                          <p className="text-white/70 text-xs mb-1 font-bold">ملاحظات الأستاذ أمين</p>
+                          <p className="text-white/70 text-xs mb-1 font-bold">{t.professorNotesLabel(coachName)}</p>
                           <p className="text-white text-sm leading-relaxed">{latest.professorNotes}</p>
                         </div>
                       )}
                       <div className="flex items-center gap-4 text-white/70 text-xs">
-                        <span>✅ {latest.completedExercises}/{latest.totalExercises} تمرين</span>
-                        <span>⭐ {latest.pointsEarned} نقطة</span>
+                        <span>✅ {latest.completedExercises}/{latest.totalExercises} {t.exerciseUnit}</span>
+                        <span>⭐ {latest.pointsEarned} {t.pointUnit}</span>
                       </div>
                     </div>
                   )}

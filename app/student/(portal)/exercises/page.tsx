@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { CheckCircle, Play, X, Clock } from 'lucide-react'
 import type { Exercise } from '@/lib/types'
+import { useLang, tr } from '@/lib/i18n'
 
 // Per-game gradient + icon
 const GAME_CFG: Record<string, { gradient: string; icon: string }> = {
@@ -26,10 +27,6 @@ const CAT_CFG: Record<string, { gradient: string; icon: string }> = {
   sensory: { gradient: 'linear-gradient(135deg,#FF6B6B,#FF9999)', icon: '🌈' },
   social:  { gradient: 'linear-gradient(135deg,#7C5CFC,#9A7BFD)', icon: '🤝' },
 }
-const CAT_LABEL: Record<string, string> = {
-  motor: 'حركي', focus: 'تركيز', balance: 'توازن', energy: 'طاقة', sensory: 'حسي', social: 'اجتماعي',
-}
-
 interface CompleteResult {
   ok: boolean
   alreadyDone: boolean
@@ -41,6 +38,9 @@ interface CompleteResult {
 interface Toast { id: number; message: string }
 
 export default function StudentExercisesPage() {
+  const { lang } = useLang()
+  const t = tr[lang].studentExercises
+  const catLabel = tr[lang].portal.common.categoryLabels
   const [exercises, setExercises] = useState<Exercise[]>([])
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState<Exercise | null>(null)
@@ -99,16 +99,16 @@ export default function StudentExercisesPage() {
       if (data.ok && !data.alreadyDone) {
         setShowCelebration(true)
         setTimeout(() => setShowCelebration(false), 2800)
-        addToast(`+${data.pointsEarned} نقطة! المجموع: ${data.newTotalPoints} ⭐`)
+        addToast(t.pointsToast(data.pointsEarned, data.newTotalPoints))
         if (data.newAchievements.length > 0) {
           setAchievementBanner(data.newAchievements)
           setTimeout(() => setAchievementBanner([]), 5000)
         }
       } else {
-        addToast('أتممت هذا التمرين بالفعل اليوم ✅')
+        addToast(t.alreadyDoneToast)
       }
     } catch {
-      addToast('حدث خطأ، حاول مجدداً')
+      addToast(t.errorToast)
     } finally {
       setSaving(false)
       setSelected(null)
@@ -116,9 +116,9 @@ export default function StudentExercisesPage() {
   }
 
   if (loading) return (
-    <div className="flex flex-col items-center justify-center py-24" dir="rtl">
+    <div className="flex flex-col items-center justify-center py-24">
       <div className="text-5xl animate-bounce-soft mb-4">🎮</div>
-      <p className="font-black text-lg" style={{ color: '#7C5CFC' }}>جاري تحضير ألعابك...</p>
+      <p className="font-black text-lg" style={{ color: '#7C5CFC' }}>{t.loadingGames}</p>
     </div>
   )
 
@@ -127,7 +127,7 @@ export default function StudentExercisesPage() {
     : null
 
   return (
-    <div className="space-y-4" dir="rtl">
+    <div className="space-y-4">
 
       {/* ── Celebration overlay ── */}
       {showCelebration && (
@@ -137,8 +137,8 @@ export default function StudentExercisesPage() {
         >
           <div className="text-center animate-badge-pop">
             <div className="text-8xl mb-4">🎉</div>
-            <div className="text-white font-black text-3xl">أحسنت!</div>
-            <div className="text-white/80 mt-1">تمرين رائع ✨</div>
+            <div className="text-white font-black text-3xl">{t.celebrationTitle}</div>
+            <div className="text-white/80 mt-1">{t.celebrationSubtitle}</div>
           </div>
         </div>
       )}
@@ -152,7 +152,7 @@ export default function StudentExercisesPage() {
               className="text-center py-3 px-4 rounded-2xl font-black animate-badge-pop"
               style={{ background: '#FBBF24', color: '#78350F', boxShadow: '0 4px 12px rgba(251,191,36,0.4)' }}
             >
-              🏆 وسام جديد: {name}
+              {t.newBadge(name)}
             </div>
           ))}
         </div>
@@ -173,11 +173,11 @@ export default function StudentExercisesPage() {
 
       {/* ── Page header ── */}
       <div className="text-center pt-1 pb-1">
-        <h1 className="font-black text-2xl text-gray-900">اختر لعبتك 🎮</h1>
+        <h1 className="font-black text-2xl text-gray-900">{t.pageTitle}</h1>
         <p className="text-gray-500 text-sm mt-1">
           {done.size === exercises.length && exercises.length > 0
-            ? '🎊 أكملت جميع التمارين!'
-            : <span className="ltr-num">{done.size} من {exercises.length} مكتمل</span>
+            ? t.allCompleted
+            : <span className="ltr-num">{t.completedOf(done.size, exercises.length)}</span>
           }
         </p>
       </div>
@@ -207,8 +207,8 @@ export default function StudentExercisesPage() {
           style={{ border: '2px dashed #D3BBFF', background: '#FFFFFF' }}
         >
           <div className="text-5xl mb-3">😴</div>
-          <p className="font-black text-gray-700">لا توجد تمارين اليوم</p>
-          <p className="text-gray-400 text-sm mt-1">استرح جيداً، ستصلك تمارين غداً!</p>
+          <p className="font-black text-gray-700">{t.noExercisesToday}</p>
+          <p className="text-gray-400 text-sm mt-1">{t.restWellTomorrow}</p>
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-3">
@@ -238,12 +238,12 @@ export default function StudentExercisesPage() {
                       className="text-[10px] font-black px-2 py-0.5 rounded-full"
                       style={{ background: 'rgba(255,255,255,0.25)', color: '#FFFFFF' }}
                     >
-                      {CAT_LABEL[ex.category] || ex.category}
+                      {catLabel[ex.category as keyof typeof catLabel] || ex.category}
                     </span>
                   </div>
                   <div>
                     <p className="text-white font-black text-sm leading-tight line-clamp-2">{ex.titleAr}</p>
-                    <p className="text-white/70 text-[10px] mt-1 ltr-num">⭐ {ex.points} نقطة</p>
+                    <p className="text-white/70 text-[10px] mt-1 ltr-num">{t.pointsUnit(ex.points)}</p>
                   </div>
                 </div>
 
@@ -295,9 +295,9 @@ export default function StudentExercisesPage() {
               <h2 className="text-white font-black text-xl mb-1">{selected.titleAr}</h2>
               <div className="flex items-center gap-4 text-white/70 text-xs">
                 <span className="ltr-num flex items-center gap-1">
-                  <Clock className="w-3 h-3" /> {selected.durationMinutes} دقيقة
+                  <Clock className="w-3 h-3" /> {t.minutesUnit(selected.durationMinutes)}
                 </span>
-                <span>⭐ {selected.points} نقطة</span>
+                <span>{t.pointsUnit(selected.points)}</span>
               </div>
               {running && (
                 <div
@@ -317,7 +317,7 @@ export default function StudentExercisesPage() {
                 className="rounded-2xl p-4 mb-5"
                 style={{ background: '#FFFBEB', border: '1px solid #FDE68A' }}
               >
-                <p className="text-amber-700 text-xs font-black mb-1">لماذا هذا التمرين؟</p>
+                <p className="text-amber-700 text-xs font-black mb-1">{t.whyThisExercise}</p>
                 <p className="text-gray-700 text-sm leading-relaxed">
                   {selected.psychologyObjectiveAr || selected.psychologyObjective}
                 </p>
@@ -357,7 +357,7 @@ export default function StudentExercisesPage() {
                     className="flex-1 text-white font-black py-4 rounded-2xl text-lg flex items-center justify-center gap-2 transition-all active:scale-95"
                     style={{ background: selCfg.gradient, boxShadow: '0 4px 12px rgba(124,92,252,0.3)' }}
                   >
-                    <Play className="w-5 h-5" /> ابدأ!
+                    <Play className="w-5 h-5" /> {t.startButton}
                   </button>
                 ) : step < selected.instructionsAr.length - 1 ? (
                   <button
@@ -365,7 +365,7 @@ export default function StudentExercisesPage() {
                     className="flex-1 text-white font-black py-4 rounded-2xl text-lg transition-all active:scale-95"
                     style={{ background: selCfg.gradient, boxShadow: '0 4px 12px rgba(124,92,252,0.3)' }}
                   >
-                    التالي ←
+                    {t.nextButton}
                   </button>
                 ) : (
                   <button
@@ -375,8 +375,8 @@ export default function StudentExercisesPage() {
                     style={{ background: 'linear-gradient(135deg,#10B981,#059669)', boxShadow: '0 4px 12px rgba(16,185,129,0.3)' }}
                   >
                     {saving
-                      ? <span className="animate-pulse">جاري الحفظ...</span>
-                      : <><CheckCircle className="w-5 h-5" /> انتهيت! 🎉</>
+                      ? <span className="animate-pulse">{t.savingButton}</span>
+                      : <><CheckCircle className="w-5 h-5" /> {t.finishButton}</>
                     }
                   </button>
                 )}

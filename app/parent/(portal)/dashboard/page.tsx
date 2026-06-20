@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Calendar, Bell, MessageSquare, FileText, ChevronLeft, Zap, TrendingUp, Clock, Star, X } from 'lucide-react'
 import type { Parent, Student, Program } from '@/lib/types'
+import { useLang, tr } from '@/lib/i18n'
 
 interface DashboardData {
   parent: Parent
@@ -15,16 +16,12 @@ const DIAG_EMOJI: Record<string, string> = {
   ADHD: '⚡', AUTISM: '🌈', 'ADHD+AUTISM': '🌟', OTHER: '💙',
 }
 
-const DAYS_AR: Record<string, string> = {
-  monday: 'الاثنين', tuesday: 'الثلاثاء', wednesday: 'الأربعاء',
-  thursday: 'الخميس', friday: 'الجمعة', saturday: 'السبت', sunday: 'الأحد',
-}
 const TODAY_KEY = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'][new Date().getDay()]
 
-const PLAN_INFO: Record<string, { label: string; color: string; bg: string }> = {
-  basic:    { label: 'أساسي',  color: '#6B7280', bg: 'rgba(107,114,128,0.2)' },
-  standard: { label: 'متقدم',  color: '#FDE68A', bg: 'rgba(253,230,138,0.25)' },
-  premium:  { label: 'مميز ✨', color: '#FDE68A', bg: 'rgba(253,230,138,0.25)' },
+const PLAN_COLOR: Record<string, { color: string; bg: string }> = {
+  basic:    { color: '#6B7280', bg: 'rgba(107,114,128,0.2)' },
+  standard: { color: '#FDE68A', bg: 'rgba(253,230,138,0.25)' },
+  premium:  { color: '#FDE68A', bg: 'rgba(253,230,138,0.25)' },
 }
 
 const MILESTONES = [500, 1000, 2000, 5000]
@@ -37,10 +34,20 @@ interface Notification {
   message: string
 }
 
+interface NotifT {
+  notifStreakWeek: string
+  notifNoExerciseToday: (name: string) => string
+  notifMilestone: (name: string, milestone: number) => string
+  notifUnreadReports: (count: number, coach: string) => string
+  notifApptTomorrow: string
+}
+
 function buildNotifications(
   children: Student[],
   unreadReports: number,
   upcomingAppointment: { date: string; time: string; type?: string } | null,
+  t: NotifT,
+  coachName: string,
 ): Notification[] {
   const notifs: Notification[] = []
   let id = 0
@@ -50,19 +57,19 @@ function buildNotifications(
 
     // 1. Streak > 7 — positive
     if ((student.streak || 0) > 7) {
-      notifs.push({ id: id++, severity: 'positive', message: `🔥 أسبوع كامل من التمارين! استمر على هذا الإيقاع` })
+      notifs.push({ id: id++, severity: 'positive', message: t.notifStreakWeek })
     }
 
     // 2. streak === 0 AND totalPoints > 0 — warning
     if ((student.streak || 0) === 0 && (student.totalPoints || 0) > 0) {
-      notifs.push({ id: id++, severity: 'warning', message: `⚠️ لم يُكمل ${name} أي تمرين اليوم — حافظ على الروتين اليومي` })
+      notifs.push({ id: id++, severity: 'warning', message: t.notifNoExerciseToday(name) })
     }
 
     // 5. Milestone within last 10 points — achievement
     const pts = student.totalPoints || 0
     for (const milestone of MILESTONES) {
       if (pts >= milestone && pts - 10 < milestone) {
-        notifs.push({ id: id++, severity: 'achievement', message: `🏆 أكمل ${name} ${milestone} نقطة!` })
+        notifs.push({ id: id++, severity: 'achievement', message: t.notifMilestone(name, milestone) })
         break
       }
     }
@@ -70,7 +77,7 @@ function buildNotifications(
 
   // 3. Unread reports — info
   if (unreadReports > 0) {
-    notifs.push({ id: id++, severity: 'info', message: `📋 يوجد ${unreadReports} تقرير/تقارير جديدة من الأستاذ أمين غير مقروءة` })
+    notifs.push({ id: id++, severity: 'info', message: t.notifUnreadReports(unreadReports, coachName) })
   }
 
   // 4. Upcoming appointment within 24h — urgent
@@ -79,7 +86,7 @@ function buildNotifications(
     const now = new Date()
     const diffMs = apptDate.getTime() - now.getTime()
     if (diffMs > 0 && diffMs <= 24 * 60 * 60 * 1000) {
-      notifs.push({ id: id++, severity: 'urgent', message: `📅 موعدك القادم غداً — تأكد من تجهيز الطفل` })
+      notifs.push({ id: id++, severity: 'urgent', message: t.notifApptTomorrow })
     }
   }
 
@@ -94,15 +101,25 @@ const NOTIF_STYLES: Record<NotifSeverity, string> = {
   info:        'bg-purple-50 border-purple-200 text-purple-800',
 }
 
-function greeting() {
+interface GreetT {
+  greetingNight: string
+  greetingMorning: string
+  greetingAfternoon: string
+  greetingEvening: string
+}
+
+function greeting(t: GreetT) {
   const h = new Date().getHours()
-  if (h < 5)  return 'ليلة طيبة'
-  if (h < 12) return 'صباح الخير'
-  if (h < 17) return 'مساء الخير'
-  return 'مساء النور'
+  if (h < 5)  return t.greetingNight
+  if (h < 12) return t.greetingMorning
+  if (h < 17) return t.greetingAfternoon
+  return t.greetingEvening
 }
 
 export default function ParentDashboardPage() {
+  const { lang } = useLang()
+  const t = tr[lang].parentDashboard
+  const coachName = tr[lang].portal.common.coachName
   const [data, setData] = useState<DashboardData | null>(null)
   const [programs, setPrograms] = useState<Record<string, Program>>({})
   const [loading, setLoading] = useState(true)
@@ -132,32 +149,33 @@ export default function ParentDashboardPage() {
   }, [])
 
   if (loading) return (
-    <div className="flex flex-col items-center justify-center py-24 gap-4" dir="rtl">
+    <div className="flex flex-col items-center justify-center py-24 gap-4">
       <div
         className="w-16 h-16 rounded-3xl flex items-center justify-center"
         style={{ background: 'linear-gradient(135deg,#7C5CFC,#9A7BFD)' }}
       >
         <span className="text-3xl">⭐</span>
       </div>
-      <p className="font-black text-sm" style={{ color: '#7C5CFC' }}>جاري التحميل...</p>
+      <p className="font-black text-sm" style={{ color: '#7C5CFC' }}>{t.loading}</p>
     </div>
   )
 
   if (!data?.parent) return (
-    <div className="text-center py-20 text-gray-500" dir="rtl">حدث خطأ، حاول مجدداً.</div>
+    <div className="text-center py-20 text-gray-500">{t.loadError}</div>
   )
 
   const { parent, children, upcomingAppointment, unreadReports } = data
-  const planCfg = PLAN_INFO[parent.subscriptionPlan] || PLAN_INFO.basic
+  const planColorCfg = PLAN_COLOR[parent.subscriptionPlan] || PLAN_COLOR.basic
+  const planCfg = { ...planColorCfg, label: t.planLabels[parent.subscriptionPlan as keyof typeof t.planLabels] || t.planLabels.basic }
   const totalPoints = children.reduce((s, c) => s + (c.totalPoints || 0), 0)
   const totalStreak = children.reduce((s, c) => s + (c.streak || 0), 0)
 
   // Compute notifications from available data
-  const allNotifications = buildNotifications(children, unreadReports, upcomingAppointment)
+  const allNotifications = buildNotifications(children, unreadReports, upcomingAppointment, t, coachName)
   const visibleNotifications = allNotifications.filter(n => !dismissedNotifs.includes(n.id))
 
   return (
-    <div className="space-y-5" dir="rtl">
+    <div className="space-y-5">
 
       {/* ══ Hero ══ */}
       <div
@@ -177,7 +195,7 @@ export default function ParentDashboardPage() {
           {/* Top row */}
           <div className="flex items-start justify-between mb-4">
             <div>
-              <p className="text-white/60 text-sm font-medium">{greeting()}</p>
+              <p className="text-white/60 text-sm font-medium">{greeting(t)}</p>
               <h1 className="font-black text-2xl text-white mt-0.5 leading-tight">
                 {parent.firstName} {parent.lastName}
               </h1>
@@ -190,8 +208,8 @@ export default function ParentDashboardPage() {
                     ? 'bg-green-400/20 text-green-200'
                     : 'bg-amber-400/20 text-amber-200'
                 }`}>
-                  {parent.subscriptionStatus === 'active' ? '● نشط' :
-                   parent.subscriptionStatus === 'pending' ? '◌ قيد التفعيل' : parent.subscriptionStatus}
+                  {parent.subscriptionStatus === 'active' ? t.statusActive :
+                   parent.subscriptionStatus === 'pending' ? t.statusPending : parent.subscriptionStatus}
                 </span>
               </div>
             </div>
@@ -199,7 +217,7 @@ export default function ParentDashboardPage() {
             {/* Stats bubble */}
             <div className="flex-shrink-0 text-center bg-white/10 backdrop-blur-sm rounded-2xl px-4 py-3">
               <div className="font-black text-2xl text-white ltr-num">{totalPoints}</div>
-              <div className="text-white/60 text-[10px] font-bold">نقطة مجموع</div>
+              <div className="text-white/60 text-[10px] font-bold">{t.pointsTotal}</div>
             </div>
           </div>
 
@@ -215,7 +233,7 @@ export default function ParentDashboardPage() {
               <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
                 <FileText className="w-4 h-4 text-white" />
               </div>
-              <span className="text-white text-sm font-bold flex-1">{unreadReports} تقرير جديد ينتظرك</span>
+              <span className="text-white text-sm font-bold flex-1">{t.newReportInline(unreadReports)}</span>
               <ChevronLeft className="w-4 h-4 text-white/60" />
             </Link>
           )}
@@ -230,7 +248,7 @@ export default function ParentDashboardPage() {
               <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
                 <MessageSquare className="w-4 h-4 text-white" />
               </div>
-              <span className="text-white text-sm font-bold flex-1">رسالة جديدة من الأستاذ أمين</span>
+              <span className="text-white text-sm font-bold flex-1">{t.newMessageFromCoach(coachName)}</span>
               <ChevronLeft className="w-4 h-4 text-white/60" />
             </Link>
           )}
@@ -249,7 +267,7 @@ export default function ParentDashboardPage() {
               <button
                 onClick={() => setDismissedNotifs(prev => [...prev, notif.id])}
                 className="flex-shrink-0 opacity-60 hover:opacity-100 transition-opacity p-0.5 rounded"
-                aria-label="إغلاق"
+                aria-label={t.closeAria}
               >
                 <X className="w-4 h-4" />
               </button>
@@ -267,7 +285,7 @@ export default function ParentDashboardPage() {
             iconBg: '#ECFDF5',
             iconColor: '#10B981',
             value: upcomingAppointment ? upcomingAppointment.date?.slice(5) : '—',
-            label: 'موعد قادم',
+            label: t.statUpcomingAppt,
           },
           {
             href: '/parent/exercises',
@@ -275,7 +293,7 @@ export default function ParentDashboardPage() {
             iconBg: '#FFF8E8',
             iconColor: '#F59E0B',
             value: `🔥 ${totalStreak}`,
-            label: 'يوم متتالي',
+            label: t.statStreakDays,
           },
           {
             href: '/parent/progress',
@@ -283,7 +301,7 @@ export default function ParentDashboardPage() {
             iconBg: '#F3EEFF',
             iconColor: '#7C5CFC',
             value: String(children.length),
-            label: children.length === 1 ? 'طفل مسجل' : 'أطفال',
+            label: children.length === 1 ? t.statChildSingular : t.statChildPlural,
           },
         ].map((s, i) => (
           <Link
@@ -323,7 +341,7 @@ export default function ParentDashboardPage() {
             <Calendar className="w-6 h-6 text-white" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="font-black text-green-900 text-sm">الجلسة القادمة</p>
+            <p className="font-black text-green-900 text-sm">{t.upcomingSessionTitle}</p>
             <p className="text-green-700 text-xs mt-0.5 ltr-num">{upcomingAppointment.date} — {upcomingAppointment.time}</p>
           </div>
           <Link
@@ -333,7 +351,7 @@ export default function ParentDashboardPage() {
             onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = '#059669' }}
             onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = '#10B981' }}
           >
-            التفاصيل
+            {t.detailsButton}
           </Link>
         </div>
       )}
@@ -341,7 +359,7 @@ export default function ParentDashboardPage() {
       {/* ══ Children ══ */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-black text-gray-900 text-lg">أطفالي</h2>
+          <h2 className="font-black text-gray-900 text-lg">{t.myChildrenTitle}</h2>
           <Link
             href="/parent/children"
             className="text-xs font-black flex items-center gap-1 px-3 py-1.5 rounded-xl transition-all"
@@ -349,7 +367,7 @@ export default function ParentDashboardPage() {
             onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = '#E8DBFF' }}
             onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = '#F3EEFF' }}
           >
-            إدارة <ChevronLeft className="w-3 h-3" />
+            {t.manageLink} <ChevronLeft className="w-3 h-3" />
           </Link>
         </div>
 
@@ -359,14 +377,14 @@ export default function ParentDashboardPage() {
             style={{ background: '#FFFFFF', border: '2px dashed #E8DBFF' }}
           >
             <div className="text-5xl mb-3">👶</div>
-            <p className="font-black text-gray-700 mb-1">لم تضف أي طفل بعد</p>
-            <p className="text-gray-400 text-sm mb-5">ابدأ بإضافة بيانات طفلك للمتابعة</p>
+            <p className="font-black text-gray-700 mb-1">{t.noChildrenTitle}</p>
+            <p className="text-gray-400 text-sm mb-5">{t.noChildrenSubtitle}</p>
             <Link
               href="/parent/children"
               className="inline-flex items-center gap-2 text-white font-black px-6 py-3 rounded-2xl text-sm transition-all"
               style={{ background: 'linear-gradient(135deg,#6B46F0,#9A7BFD)', boxShadow: '0 4px 16px rgba(124,92,252,0.3)' }}
             >
-              إضافة طفل
+              {t.addChildButton}
             </Link>
           </div>
         ) : (
@@ -402,11 +420,11 @@ export default function ParentDashboardPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="font-black text-gray-900 text-base">{child.firstName} {child.lastName}</div>
-                      <div className="text-gray-500 text-xs mt-0.5">{child.ageGroup} سنة • {child.diagnosis}</div>
+                      <div className="text-gray-500 text-xs mt-0.5">{child.ageGroup} {t.yearsUnit} • {child.diagnosis}</div>
                       {/* Progress bar inline */}
                       <div className="mt-2">
                         <div className="flex justify-between text-[10px] mb-1">
-                          <span className="text-gray-400">التقدم نحو الهدف</span>
+                          <span className="text-gray-400">{t.progressTowardGoal}</span>
                           <span className="font-black ltr-num" style={{ color: '#7C5CFC' }}>{pct}٪</span>
                         </div>
                         <div className="h-1.5 rounded-full overflow-hidden" style={{ background: '#F0E8FF' }}>
@@ -424,7 +442,7 @@ export default function ParentDashboardPage() {
                       onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = '#E8DBFF' }}
                       onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = '#F3EEFF' }}
                     >
-                      التفاصيل
+                      {t.detailsButton}
                     </Link>
                   </div>
 
@@ -432,11 +450,11 @@ export default function ParentDashboardPage() {
                   <div className="px-5 pb-4 grid grid-cols-3 gap-2.5">
                     <div className="rounded-2xl p-3 text-center" style={{ background: '#FFF8E8' }}>
                       <div className="font-black text-amber-700 text-base ltr-num">{child.totalPoints}</div>
-                      <div className="text-[10px] text-amber-600 mt-0.5">نقطة</div>
+                      <div className="text-[10px] text-amber-600 mt-0.5">{t.pointLabel}</div>
                     </div>
                     <div className="rounded-2xl p-3 text-center" style={{ background: '#FFF3E8' }}>
                       <div className="font-black text-orange-700 text-base">🔥 {child.streak}</div>
-                      <div className="text-[10px] text-orange-600 mt-0.5">متتالي</div>
+                      <div className="text-[10px] text-orange-600 mt-0.5">{t.streakLabel}</div>
                     </div>
                     <div
                       className="rounded-2xl p-3 text-center"
@@ -449,7 +467,7 @@ export default function ParentDashboardPage() {
                         {todayExs.length}
                       </div>
                       <div className="text-[10px] mt-0.5" style={{ color: todayExs.length > 0 ? '#16A34A' : '#9CA3AF' }}>
-                        تمارين اليوم
+                        {t.todayExercisesLabel}
                       </div>
                     </div>
                   </div>
@@ -463,14 +481,14 @@ export default function ParentDashboardPage() {
                       >
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-xs font-black text-green-800">
-                            🗓 تمارين {DAYS_AR[TODAY_KEY]} ({todayExs.length})
+                            {t.todayExercisesBoxTitle(tr[lang].studentSchedule.days[new Date().getDay()], todayExs.length)}
                           </span>
                           <Link
                             href="/parent/exercises"
                             className="text-xs font-black px-2.5 py-1 rounded-lg transition-all"
                             style={{ background: '#10B981', color: '#FFFFFF' }}
                           >
-                            ابدأ الآن
+                            {t.startNowButton}
                           </Link>
                         </div>
                         <div className="flex gap-1.5 flex-wrap">
@@ -480,11 +498,11 @@ export default function ParentDashboardPage() {
                               className="text-xs font-bold px-2.5 py-0.5 rounded-full ltr-num"
                               style={{ background: '#BBF7D0', color: '#15803D' }}
                             >
-                              تمرين {i + 1}
+                              {t.exerciseN(i + 1)}
                             </span>
                           ))}
                           {todayExs.length > 4 && (
-                            <span className="text-xs text-green-600">+{todayExs.length - 4} أخرى</span>
+                            <span className="text-xs text-green-600">{t.moreCount(todayExs.length - 4)}</span>
                           )}
                         </div>
                       </div>
@@ -511,8 +529,8 @@ export default function ParentDashboardPage() {
         >
           <div className="absolute top-0 left-0 w-24 h-24 rounded-full -translate-x-8 -translate-y-8 pointer-events-none" style={{ background: 'rgba(255,255,255,0.1)' }} />
           <div className="text-3xl mb-2 relative">🎮</div>
-          <div className="font-black text-base relative">ألعاب تفاعلية</div>
-          <div className="text-white/70 text-xs mt-1 relative">العب مع طفلك الآن</div>
+          <div className="font-black text-base relative">{t.gamesCardTitle}</div>
+          <div className="text-white/70 text-xs mt-1 relative">{t.gamesCardSubtitle}</div>
         </Link>
         <Link
           href="/parent/appointments"
@@ -526,8 +544,8 @@ export default function ParentDashboardPage() {
         >
           <div className="absolute bottom-0 right-0 w-24 h-24 rounded-full translate-x-8 translate-y-8 pointer-events-none" style={{ background: 'rgba(255,255,255,0.1)' }} />
           <div className="text-3xl mb-2 relative">📅</div>
-          <div className="font-black text-base relative">احجز جلسة</div>
-          <div className="text-white/70 text-xs mt-1 relative">6 أنواع متاحة</div>
+          <div className="font-black text-base relative">{t.bookSessionTitle}</div>
+          <div className="text-white/70 text-xs mt-1 relative">{t.bookSessionSubtitle}</div>
         </Link>
       </div>
 
@@ -546,9 +564,9 @@ export default function ParentDashboardPage() {
           💡
         </div>
         <div className="flex-1">
-          <p className="font-black text-amber-900 text-sm">نصيحة اليوم</p>
+          <p className="font-black text-amber-900 text-sm">{t.tipOfDayTitle}</p>
           <p className="text-amber-800 text-xs mt-1 leading-relaxed">
-            الثبات في التمارين اليومية يُحقق نتائج أفضل بكثير من الجلسات المكثفة المتفرقة.
+            {t.tipOfDayText}
           </p>
         </div>
       </div>

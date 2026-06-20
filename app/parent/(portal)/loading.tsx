@@ -1,6 +1,6 @@
 export default function ParentPortalLoading() {
   return (
-    <div className="p-4 md:p-6 space-y-6 animate-pulse" dir="rtl">
+    <div className="p-4 md:p-6 space-y-6 animate-pulse">
       <div className="h-7 w-48 bg-gray-200 rounded-xl" />
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[...Array(4)].map((_, i) => (

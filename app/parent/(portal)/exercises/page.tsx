@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import { Clock, CheckCircle, Play, X, Info, Volume2, Trophy, Flame, Zap } from 'lucide-react'
 import type { Exercise, Student, ExerciseResult } from '@/lib/types'
+import { useLang, tr } from '@/lib/i18n'
 
 // ── Lazy-load interactive game components ─────────────────────
 const BreathingGuide   = dynamic(() => import('@/components/session/exercises/BreathingGuide'),   { ssr: false })
@@ -23,10 +24,6 @@ type InteractiveKind =
 type PhysId = 'jumping-jacks' | 'obstacle-circuit' | 'balance-walk' | 'tiger-crawl' | 'ball-throw' | 'stretching' | 'body-percussion'
 
 // ── Category config ───────────────────────────────────────────
-const CAT_LABELS: Record<string, string> = {
-  motor: 'حركي', focus: 'تركيز', balance: 'توازن',
-  energy: 'طاقة', sensory: 'حسي', social: 'اجتماعي',
-}
 const CAT_CFG: Record<string, { gradient: string; icon: string; light: string; shadow: string; dark: string }> = {
   motor:   { gradient: 'linear-gradient(135deg,#FF8C65,#E05A2A)', icon: '🏃', light: '#FFF5F0', shadow: 'rgba(255,107,53,0.30)', dark: '#7A2000' },
   focus:   { gradient: 'linear-gradient(135deg,#7C5CFC,#5A32D9)', icon: '🎯', light: '#F3EEFF', shadow: 'rgba(124,92,252,0.30)', dark: '#2E1065' },
@@ -569,6 +566,9 @@ function StepTimer({ seconds, onDone }: { seconds: number; onDone: () => void })
 
 // ── Main Page ─────────────────────────────────────────────────
 export default function ExercisesPage() {
+  const { lang } = useLang()
+  const t = tr[lang].parentExercises
+  const catLabels = tr[lang].portal.common.categoryLabels
   const [exercises,  setExercises]  = useState<Exercise[]>([])
   const [child,      setChild]      = useState<Student | null>(null)
   const [loading,    setLoading]    = useState(true)
@@ -654,26 +654,26 @@ export default function ExercisesPage() {
   }
 
   const filtered  = filter === 'all' ? exercises : exercises.filter(e => e.category === filter)
-  const cats      = ['all', ...Object.keys(CAT_LABELS)]
+  const cats      = ['all', ...Object.keys(CAT_CFG)]
   const fmt       = (s: number) => `${String(Math.floor(s / 60)).padStart(2,'0')}:${String(s % 60).padStart(2,'0')}`
   const totalPts  = Array.from(completed).reduce((s, id) => s + (exercises.find(e => e.id === id)?.points || 0), 0)
 
   if (loading) return (
-    <div className="flex items-center justify-center py-20" dir="rtl">
+    <div className="flex items-center justify-center py-20">
       <div className="text-6xl" style={{ animation: 'spin 1s linear infinite' }}>🎮</div>
     </div>
   )
 
   return (
-    <div dir="rtl" className="space-y-5">
+    <div className="space-y-5">
 
       {/* ── Header ── */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="font-black text-2xl text-gray-900">التمارين 🎮</h1>
+          <h1 className="font-black text-2xl text-gray-900">{t.pageTitle}</h1>
           {child && (
             <p className="text-gray-400 text-sm mt-0.5">
-              {child.firstName} • {child.ageGroup} سنة
+              {child.firstName} • {child.ageGroup} {t.yearsUnit}
             </p>
           )}
         </div>
@@ -681,7 +681,7 @@ export default function ExercisesPage() {
           <div className="flex items-center gap-1.5 px-3 py-2 rounded-2xl"
             style={{ background: '#FFFBEB', border: '1.5px solid #FDE68A' }}>
             <Flame className="w-4 h-4 text-orange-500" />
-            <span className="font-black text-sm text-orange-700">{child.streak} يوم</span>
+            <span className="font-black text-sm text-orange-700">{child.streak} {t.daysUnit}</span>
           </div>
         ) : null}
       </div>
@@ -689,9 +689,9 @@ export default function ExercisesPage() {
       {/* ── Stats row ── */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: 'متاح',  value: exercises.length, bg: '#F3EEFF', color: '#5A32D9', icon: '📚' },
-          { label: 'أنجزت', value: completed.size,   bg: '#ECFDF5', color: '#059669', icon: '✅' },
-          { label: 'نقاط',  value: totalPts,         bg: '#FFFBEB', color: '#B45309', icon: '⭐' },
+          { label: t.statAvailable, value: exercises.length, bg: '#F3EEFF', color: '#5A32D9', icon: '📚' },
+          { label: t.statCompleted, value: completed.size,   bg: '#ECFDF5', color: '#059669', icon: '✅' },
+          { label: t.statPoints,    value: totalPts,         bg: '#FFFBEB', color: '#B45309', icon: '⭐' },
         ].map(({ label, value, bg, color, icon }) => (
           <div key={label} className="rounded-2xl p-3 text-center" style={{ background: bg }}>
             <div className="text-lg mb-0.5">{icon}</div>
@@ -712,7 +712,7 @@ export default function ExercisesPage() {
               style={active
                 ? { background: cfg?.gradient || '#6B46F0', color: '#FFF', boxShadow: `0 2px 8px ${cfg?.shadow || 'rgba(124,92,252,0.3)'}` }
                 : { background: '#FFF', color: '#9CA3AF', border: '1.5px solid #E5E7EB' }}>
-              {cat === 'all' ? '✨ الكل' : `${cfg?.icon} ${CAT_LABELS[cat]}`}
+              {cat === 'all' ? t.allCategoriesLabel : `${cfg?.icon} ${catLabels[cat as keyof typeof catLabels]}`}
             </button>
           )
         })}
@@ -722,7 +722,7 @@ export default function ExercisesPage() {
       {filtered.length === 0 ? (
         <div className="text-center py-16 text-gray-400">
           <div className="text-5xl mb-3">🔍</div>
-          <p>لا توجد تمارين في هذه الفئة</p>
+          <p>{t.noExercisesInCategory}</p>
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-3 pb-4">
@@ -741,7 +741,7 @@ export default function ExercisesPage() {
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-black px-2 py-0.5 rounded-full"
                       style={{ background: 'rgba(255,255,255,0.25)', color: done ? '#065F46' : '#FFF' }}>
-                      {CAT_LABELS[ex.category]}
+                      {catLabels[ex.category as keyof typeof catLabels]}
                     </span>
                     <span style={{ fontSize: 36, lineHeight: 1 }}>{done ? '✅' : cfg.icon}</span>
                   </div>
@@ -752,7 +752,7 @@ export default function ExercisesPage() {
                       <div className="flex items-center gap-1 mb-1.5">
                         <Zap style={{ width: 10, height: 10, color: 'rgba(255,255,255,0.9)' }} />
                         <span className="text-[10px] font-black" style={{ color: 'rgba(255,255,255,0.9)' }}>
-                          تفاعلي
+                          {t.interactiveBadge}
                         </span>
                       </div>
                     )}
@@ -763,11 +763,11 @@ export default function ExercisesPage() {
                     <div className="flex items-center gap-3">
                       <span className="text-xs font-bold flex items-center gap-0.5"
                         style={{ color: done ? '#6EE7B7' : 'rgba(255,255,255,0.8)' }}>
-                        <Clock style={{ width: 10, height: 10 }} /> {ex.durationMinutes}د
+                        <Clock style={{ width: 10, height: 10 }} /> {t.minutesShort(ex.durationMinutes)}
                       </span>
                       <span className="text-xs font-bold"
                         style={{ color: done ? '#6EE7B7' : 'rgba(255,255,255,0.8)' }}>
-                        ⭐ {ex.points}
+                        {t.pointsShort(ex.points)}
                       </span>
                     </div>
                   </div>
@@ -819,11 +819,11 @@ export default function ExercisesPage() {
                   </div>
                   <h2 className="text-white font-black text-2xl leading-snug mb-1">{selected.titleAr}</h2>
                   <div className="flex items-center gap-4 text-white/80 text-xs font-bold">
-                    <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" />{selected.durationMinutes} دقيقة</span>
-                    <span>⭐ {selected.points} نقطة</span>
+                    <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" />{t.durationMinutesLabel(selected.durationMinutes)}</span>
+                    <span>{t.pointsLabel(selected.points)}</span>
                     {isGame && (
                       <span className="flex items-center gap-1 font-black text-yellow-200">
-                        <Zap className="w-3 h-3" /> ألعاب تفاعلية
+                        <Zap className="w-3 h-3" /> {t.interactiveGamesLabel}
                       </span>
                     )}
                   </div>
@@ -833,7 +833,7 @@ export default function ExercisesPage() {
                   {/* Parent info toggle */}
                   {showInfo && (
                     <div className="rounded-2xl p-4" style={{ background: '#F3EEFF', border: '1px solid #E8DBFF' }}>
-                      <p className="text-xs font-black mb-1" style={{ color: '#5A32D9' }}>🔬 الهدف العلمي (للأهل)</p>
+                      <p className="text-xs font-black mb-1" style={{ color: '#5A32D9' }}>{t.parentObjectiveLabel}</p>
                       <p className="text-xs text-gray-600 leading-relaxed">
                         {selected.psychologyObjectiveAr || selected.psychologyObjective}
                       </p>
@@ -856,23 +856,11 @@ export default function ExercisesPage() {
                     {isGame ? (
                       <>
                         <p className="font-black text-gray-800 text-base mb-1">
-                          {kind === 'breathing' && 'تمرين تنفس تفاعلي'}
-                          {kind === 'simon-says' && 'لعبة التسلسل اللوني'}
-                          {kind === 'target-tracking' && 'لعبة تتبع الهدف المتحرك'}
-                          {kind === 'balloon-control' && 'لعبة التحكم في البالون'}
-                          {kind === 'reaction-game' && 'لعبة رد الفعل'}
-                          {kind === 'stop-signal' && 'لعبة توقف أو اكمل'}
-                          {kind === 'body-scan' && 'فحص عضلات الجسم'}
-                          {kind === 'physical' && 'تمرين جسدي موجّه'}
+                          {kind && kind !== 'physical' ? t.gameKindTitles[kind] : null}
+                          {kind === 'physical' && t.gameKindTitles.physical}
                         </p>
                         <p className="text-sm text-gray-500 leading-relaxed">
-                          {kind === 'breathing' && 'حلقة تنفس حية — استنشق، احبس، أخرج — مع عداد مرئي'}
-                          {kind === 'simon-says' && 'شاهد تسلسل الألوان ثم كرّره بنفس الترتيب'}
-                          {kind === 'target-tracking' && 'اضغط النجمة 🌟 المتحركة ولا تضغط الدوائر الحمراء 🔴'}
-                          {kind === 'balloon-control' && 'البالون يكبر ببطء — اضغط عند المنطقة الخضراء!'}
-                          {kind === 'reaction-game' && 'اضغط الهدف الأخضر فور ظهوره — قِس سرعتك!'}
-                          {kind === 'stop-signal' && 'أخضر = اضغط بسرعة • أحمر = لا تضغط! تحدٍّ للتحكم'}
-                          {kind === 'body-scan' && 'شدّ وأرخِ كل عضلة واحدة بعد الأخرى مع مؤقت تلقائي'}
+                          {kind && kind !== 'physical' ? t.gameKindDescriptions[kind] : null}
                           {kind === 'physical' && (selected.descriptionAr?.split(/[—–]/)[0].trim() || selected.titleAr)}
                         </p>
                       </>
@@ -886,7 +874,7 @@ export default function ExercisesPage() {
                   {/* Equipment */}
                   {equip.length > 0 && (
                     <div className="rounded-2xl p-4" style={{ background: '#FFFBEB', border: '1px solid #FDE68A' }}>
-                      <p className="text-xs font-black text-amber-700 mb-3">📦 ستحتاج إلى:</p>
+                      <p className="text-xs font-black text-amber-700 mb-3">{t.equipmentLabel}</p>
                       <div className="flex flex-wrap gap-2">
                         {equip.map((eq, i) => (
                           <span key={i} className="flex items-center gap-1 text-sm font-bold px-3 py-1.5 rounded-xl"
@@ -903,23 +891,16 @@ export default function ExercisesPage() {
                     <div className="rounded-2xl overflow-hidden" style={{ border: '1.5px solid #E5E7EB' }}>
                       <div className="px-4 py-3 flex items-center gap-2" style={{ background: cfg.light }}>
                         <Zap className="w-4 h-4 text-violet-500" />
-                        <p className="text-xs font-black text-gray-700">كيف تعمل اللعبة</p>
+                        <p className="text-xs font-black text-gray-700">{t.howGameWorksLabel}</p>
                       </div>
                       <div className="px-4 py-3 text-sm text-gray-600 leading-relaxed">
-                        {kind === 'breathing' && '🌬️ اختر نمط التنفس ثم اتبع الحلقة المتحركة — استنشق مع توسعها، وأخرج مع انكماشها'}
-                        {kind === 'simon-says' && '🔴🔵🟢🟡 يومض التسلسل — شاهد جيداً ثم كرّره باللمس بنفس الترتيب'}
-                        {kind === 'target-tracking' && '🌟 النجمة تتحرك بسرعة — الملسها! الدوائر الحمراء 🔴 خسارة نقطة'}
-                        {kind === 'balloon-control' && '🎈 البالون يكبر تدريجياً — اضغط "الآن!" في المنطقة الخضراء فقط — قبلها = اندفاع!'}
-                        {kind === 'reaction-game' && '⚡ انتظر النجمة الخضراء تظهر فجأة... اضغطها فوراً! لا تضغط قبل ظهورها'}
-                        {kind === 'stop-signal' && '🛑 دائرة خضراء = اضغط | دائرة حمراء = اثبت لا تتحرك! تحدٍّ 24 محاولة'}
-                        {kind === 'body-scan' && '🧘 5 مناطق في الجسم — شدّ كل منطقة 4 ثوانٍ ثم أرخِها — مؤقت تلقائي'}
-                        {kind === 'physical' && '▶️ اضغط ابدأ وتابع الخطوات مع المؤقت — المنبّه ينتقل تلقائياً'}
+                        {kind && t.gameKindHowItWorks[kind]}
                       </div>
                     </div>
                   ) : (
                     <div className="rounded-2xl overflow-hidden" style={{ border: '1.5px solid #F0E8FF' }}>
                       <div className="px-4 py-2.5" style={{ background: '#F3EEFF' }}>
-                        <p className="text-xs font-black" style={{ color: '#5A32D9' }}>📋 الخطوات ({steps.length})</p>
+                        <p className="text-xs font-black" style={{ color: '#5A32D9' }}>{t.stepsPreviewLabel(steps.length)}</p>
                       </div>
                       {steps.slice(0, 4).map((s, i) => (
                         <div key={i} className="flex items-center gap-3 px-4 py-3"
@@ -932,7 +913,7 @@ export default function ExercisesPage() {
                       {steps.length > 4 && (
                         <div className="px-4 py-3 text-center text-xs text-gray-400 font-bold"
                           style={{ borderTop: '1px solid #F0E8FF' }}>
-                          + {steps.length - 4} خطوات أخرى
+                          {t.moreStepsLabel(steps.length - 4)}
                         </div>
                       )}
                     </div>
@@ -944,7 +925,7 @@ export default function ExercisesPage() {
                     className="w-full text-white font-black py-4 rounded-2xl text-xl flex items-center justify-center gap-3 transition-all active:scale-95"
                     style={{ background: cfg.gradient, boxShadow: `0 6px 18px ${cfg.shadow}` }}>
                     <Play className="w-6 h-6 fill-white" />
-                    {isGame ? '🎮 ابدأ اللعبة!' : '🚀 ابدأ!'}
+                    {isGame ? t.startGameButton : t.startButton}
                   </button>
                 </div>
               </div>
@@ -960,7 +941,7 @@ export default function ExercisesPage() {
                   <button onClick={handleCancel}
                     className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl"
                     style={{ background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.7)' }}>
-                    ← رجوع
+                    {t.backButton}
                   </button>
                   <h3 className="text-white font-black text-sm">{selected.titleAr}</h3>
                   <div className="text-white/50 text-xs font-bold">{fmt(sessionSec)}</div>
@@ -1002,23 +983,25 @@ export default function ExercisesPage() {
               const isAnimal    = selected.title.toLowerCase().includes('animal walk')
 
               // Grounding exercise data
-              const GROUND_SENSES = [
-                { count: 5, icon: '👁️', color: '#7C5CFC', label: 'أشياء تراها',  hint: 'انظر حولك وسمِّها بصوت عالٍ' },
-                { count: 4, icon: '🤚', color: '#2ABFA3', label: 'أشياء تلمسها', hint: 'الملسها واحدة تلو الأخرى' },
-                { count: 3, icon: '👂', color: '#FFBA44', label: 'أشياء تسمعها', hint: 'استمع جيداً للأصوات من حولك' },
-                { count: 2, icon: '👃', color: '#EC4899', label: 'أشياء تشمهما', hint: 'خذ أنفاساً عميقة وركّز على الرائحة' },
-                { count: 1, icon: '👅', color: '#10B981', label: 'شيء تتذوقه',   hint: 'ما الطعم الموجود في فمك الآن؟' },
-                { count: 3, icon: '💨', color: '#5A32D9', label: 'أنفاس هادئة',  hint: 'استنشق ببطء... ثم أخرج ببطء' },
+              const GROUND_META = [
+                { count: 5, icon: '👁️', color: '#7C5CFC' },
+                { count: 4, icon: '🤚', color: '#2ABFA3' },
+                { count: 3, icon: '👂', color: '#FFBA44' },
+                { count: 2, icon: '👃', color: '#EC4899' },
+                { count: 1, icon: '👅', color: '#10B981' },
+                { count: 3, icon: '💨', color: '#5A32D9' },
               ]
+              const GROUND_SENSES = GROUND_META.map((m, i) => ({ ...m, ...t.groundSenses[i] }))
               const curSense = GROUND_SENSES[Math.min(step, GROUND_SENSES.length - 1)]
 
               // Zone of Regulation data
-              const ZONES = [
-                { color: '#3B82F6', label: 'المنطقة الزرقاء', emoji: '😴', desc: 'بطيء، متعب، حزين', tools: ['القفز', 'الموسيقى الصاخبة', 'ماء بارد'] },
-                { color: '#22C55E', label: 'المنطقة الخضراء', emoji: '😊', desc: 'مستعد، سعيد، هادئ', tools: ['ابدأ النشاط مباشرة!'] },
-                { color: '#EAB308', label: 'المنطقة الصفراء', emoji: '😤', desc: 'متوتر، مثار، قلق',  tools: ['التنفس العميق', 'التمدد', 'مضغ'] },
-                { color: '#EF4444', label: 'المنطقة الحمراء', emoji: '😡', desc: 'خارج السيطرة، غاضب', tools: ['مكان هادئ', 'ضغط عميق', 'كرة ضغط'] },
+              const ZONE_META = [
+                { color: '#3B82F6', emoji: '😴' },
+                { color: '#22C55E', emoji: '😊' },
+                { color: '#EAB308', emoji: '😤' },
+                { color: '#EF4444', emoji: '😡' },
               ]
+              const ZONES = ZONE_META.map((m, i) => ({ ...m, ...t.zones[i] }))
               return (
               <div className="w-full sm:max-w-md flex flex-col overflow-hidden"
                 style={{ background: '#FFF', borderRadius: '1.75rem 1.75rem 0 0', maxHeight: '95vh' }}>
@@ -1035,7 +1018,7 @@ export default function ExercisesPage() {
                     <h3 className="text-white font-black text-base truncate">{selected.titleAr}</h3>
                     <p className="text-white/70 text-xs font-bold">
                       {fmt(sessionSec)} •{' '}
-                      {isGrounding ? `الحاسة ${step + 1} من ${GROUND_SENSES.length}` : `خطوة ${step + 1} من ${steps.length}`}
+                      {isGrounding ? t.senseCounter(step + 1, GROUND_SENSES.length) : t.stepCounter(step + 1, steps.length)}
                     </p>
                   </div>
                   <div className="font-black text-white/90 text-sm">
@@ -1114,14 +1097,14 @@ export default function ExercisesPage() {
 
                     <p className="text-sm font-bold" style={{ color: curSense.color }}>
                       {groundTaps < curSense.count
-                        ? `اضغط ${curSense.count - groundTaps} ${curSense.count - groundTaps === 1 ? 'مرة' : 'مرات'} بعد`
-                        : '✨ رائع! الانتقال للحاسة التالية...'}
+                        ? t.tapMoreTimes(curSense.count - groundTaps)
+                        : t.greatNextSense}
                     </p>
 
                     {/* Parent note */}
                     <div className="w-full rounded-2xl p-3 text-right"
                       style={{ background: '#F8FAFC', border: '1px dashed #CBD5E1', maxWidth: 320 }}>
-                      <p className="text-xs font-black mb-1 text-gray-400">💡 للأهل</p>
+                      <p className="text-xs font-black mb-1 text-gray-400">{t.forParentsLabel}</p>
                       <p className="text-xs text-gray-400">{steps[Math.min(step, steps.length - 1)]}</p>
                     </div>
                   </div>
@@ -1129,7 +1112,7 @@ export default function ExercisesPage() {
                 ) : isZoneCheck ? (
                 /* ══ ZONE OF REGULATION MODE ══ */
                   <div className="flex-1 overflow-y-auto px-5 py-5 space-y-4">
-                    <p className="text-center font-black text-gray-700 text-base">كيف تشعر الآن؟</p>
+                    <p className="text-center font-black text-gray-700 text-base">{t.howFeelNowLabel}</p>
                     <div className="grid grid-cols-2 gap-3">
                       {ZONES.map((z, i) => (
                         <button key={i} onClick={() => { sfx.tap(); setZoneSelected(i); speakAr(z.label) }}
@@ -1148,17 +1131,17 @@ export default function ExercisesPage() {
 
                     {zoneSelected !== null && (
                       <div className="rounded-2xl p-4" style={{ background: ZONES[zoneSelected].color + '15', border: `1.5px solid ${ZONES[zoneSelected].color}40` }}>
-                        <p className="text-xs font-black mb-2" style={{ color: ZONES[zoneSelected].color }}>🛠 أدوات مقترحة</p>
+                        <p className="text-xs font-black mb-2" style={{ color: ZONES[zoneSelected].color }}>{t.suggestedToolsLabel}</p>
                         <div className="flex flex-wrap gap-2">
-                          {ZONES[zoneSelected].tools.map((t, i) => (
+                          {ZONES[zoneSelected].tools.map((tool, i) => (
                             <span key={i} className="text-sm font-bold px-3 py-1.5 rounded-xl text-white"
-                              style={{ background: ZONES[zoneSelected].color }}>{t}</span>
+                              style={{ background: ZONES[zoneSelected].color }}>{tool}</span>
                           ))}
                         </div>
                         <button onClick={() => handleComplete()}
                           className="mt-4 w-full font-black py-3 rounded-2xl text-white transition-all active:scale-95"
                           style={{ background: ZONES[zoneSelected].color }}>
-                          <CheckCircle className="w-4 h-4 inline ml-1" /> سجّلت حالتي ✓
+                          <CheckCircle className="w-4 h-4 inline ml-1" /> {t.recordedStateButton}
                         </button>
                       </div>
                     )}
@@ -1214,7 +1197,7 @@ export default function ExercisesPage() {
                       <button onClick={() => { sfx.tap(); setStepTimer(true) }}
                         className="flex items-center gap-2 px-5 py-2.5 rounded-2xl font-black text-sm transition-all active:scale-95"
                         style={{ background: cfg.light, color: '#5A32D9', border: '1.5px solid rgba(124,92,252,0.2)' }}>
-                        ⏱ ابدأ العد {extractTimer(steps[step])} ثانية
+                        {t.startCountdownButton(extractTimer(steps[step])!)}
                       </button>
                     ) : null}
 
@@ -1222,13 +1205,13 @@ export default function ExercisesPage() {
                     <button onClick={() => { sfx.pop(); speakAr(steps[step]) }}
                       className="flex items-center gap-2 px-4 py-2 rounded-2xl font-bold text-sm transition-all active:scale-95"
                       style={{ background: '#F8FAFC', color: '#64748B', border: '1px solid #E2E8F0' }}>
-                      <Volume2 className="w-4 h-4" /> اسمع مرة أخرى
+                      <Volume2 className="w-4 h-4" /> {t.listenAgainButton}
                     </button>
 
                     {/* Parent guidance */}
                     <div className="w-full rounded-2xl p-4 text-right"
                       style={{ background: '#F8FAFC', border: '1px dashed #CBD5E1', maxWidth: 340 }}>
-                      <p className="text-xs font-black mb-1" style={{ color: '#94A3B8' }}>💡 للأهل والمشرف</p>
+                      <p className="text-xs font-black mb-1" style={{ color: '#94A3B8' }}>{t.forParentsAndSupervisorLabel}</p>
                       <p className="text-sm text-gray-500 leading-relaxed">{steps[step]}</p>
                     </div>
                   </div>
@@ -1259,13 +1242,13 @@ export default function ExercisesPage() {
                     <button onClick={() => { sfx.step(); setStep(s => s + 1); setStepTimer(false) }}
                       className="flex-1 text-white font-black py-3 rounded-2xl text-lg transition-all active:scale-95"
                       style={{ background: cfg.gradient, boxShadow: `0 4px 14px ${cfg.shadow}` }}>
-                      التالي ←
+                      {t.nextButton}
                     </button>
                   ) : (
                     <button onClick={() => handleComplete()}
                       className="flex-1 text-white font-black py-3 rounded-2xl text-lg flex items-center justify-center gap-2 transition-all active:scale-95"
                       style={{ background: 'linear-gradient(135deg,#10B981,#059669)', boxShadow: '0 4px 14px rgba(16,185,129,0.35)' }}>
-                      <CheckCircle className="w-5 h-5" /> انتهيت! 🎉
+                      <CheckCircle className="w-5 h-5" /> {t.finishButton}
                     </button>
                   )}
 
@@ -1290,7 +1273,7 @@ export default function ExercisesPage() {
                   <div style={{ fontSize: 90, animation: 'popIn 0.5s cubic-bezier(.34,1.56,.64,1)' }}>🏆</div>
 
                   <div>
-                    <h2 className="text-white font-black text-3xl mb-1">أحسنت!</h2>
+                    <h2 className="text-white font-black text-3xl mb-1">{t.completeTitle}</h2>
                     <p className="text-white/60 text-sm">{selected.titleAr}</p>
                   </div>
 
@@ -1298,22 +1281,22 @@ export default function ExercisesPage() {
                   <div className="grid grid-cols-3 gap-3 w-full max-w-xs">
                     <div className="rounded-2xl p-3" style={{ background: 'rgba(255,255,255,0.08)' }}>
                       <div className="text-2xl font-black text-yellow-400">{result.score}</div>
-                      <div className="text-white/40 text-xs mt-0.5">نتيجة</div>
+                      <div className="text-white/40 text-xs mt-0.5">{t.scoreLabel}</div>
                     </div>
                     <div className="rounded-2xl p-3" style={{ background: 'rgba(255,255,255,0.08)' }}>
                       <div className="text-2xl font-black text-emerald-400">{selected.points}</div>
-                      <div className="text-white/40 text-xs mt-0.5">نقاط ⭐</div>
+                      <div className="text-white/40 text-xs mt-0.5">{t.pointsLabelShort}</div>
                     </div>
                     <div className="rounded-2xl p-3" style={{ background: 'rgba(255,255,255,0.08)' }}>
                       <div className="text-2xl font-black text-cyan-400">{fmt(result.duration)}</div>
-                      <div className="text-white/40 text-xs mt-0.5">وقت</div>
+                      <div className="text-white/40 text-xs mt-0.5">{t.timeLabel}</div>
                     </div>
                   </div>
 
                   {/* Total points banner */}
                   <div className="w-full max-w-xs rounded-2xl p-4 text-center"
                     style={{ background: 'linear-gradient(135deg,#7C5CFC,#5A32D9)' }}>
-                    <div className="text-xs text-white/70 font-bold mb-1">مجموع نقاطك</div>
+                    <div className="text-xs text-white/70 font-bold mb-1">{t.totalPointsBannerLabel}</div>
                     <div className="text-3xl font-black text-white flex items-center justify-center gap-2">
                       <Trophy className="w-6 h-6 text-yellow-300" />
                       {totalPts + selected.points}
@@ -1324,7 +1307,7 @@ export default function ExercisesPage() {
                     <button onClick={closeAll}
                       className="flex-1 font-black py-3.5 rounded-2xl text-base transition-all active:scale-95"
                       style={{ background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.8)' }}>
-                      رجوع
+                      {t.closeButton}
                     </button>
                     <button onClick={() => {
                         const next = filtered.find(e => !completed.has(e.id) && e.id !== selected.id)
@@ -1333,7 +1316,7 @@ export default function ExercisesPage() {
                       }}
                       className="flex-1 font-black py-3.5 rounded-2xl text-base text-white transition-all active:scale-95"
                       style={{ background: 'linear-gradient(135deg,#10B981,#059669)' }}>
-                      التمرين التالي ←
+                      {t.nextExerciseButton}
                     </button>
                   </div>
                 </div>

@@ -3,8 +3,11 @@ import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Loader2, Eye, EyeOff, CheckCircle, AlertCircle } from 'lucide-react'
+import { useLang, tr } from '@/lib/i18n'
 
 function ResetPasswordForm() {
+  const { lang }      = useLang()
+  const t              = tr[lang].parentResetPassword
   const router       = useRouter()
   const params       = useSearchParams()
   const token        = params.get('token') || ''
@@ -18,17 +21,17 @@ function ResetPasswordForm() {
   const [error,      setError]      = useState('')
 
   useEffect(() => {
-    if (!token || !email) setError('الرابط غير صالح أو منتهي الصلاحية.')
+    if (!token || !email) setError(t.invalidLinkInline)
   }, [token, email])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (password !== password2) {
-      setError('كلمتا المرور غير متطابقتين')
+      setError(t.passwordMismatch)
       return
     }
     if (password.length < 8) {
-      setError('كلمة المرور يجب أن تكون 8 أحرف على الأقل')
+      setError(t.passwordTooShort8)
       return
     }
     setLoading(true)
@@ -44,10 +47,10 @@ function ResetPasswordForm() {
         setDone(true)
         setTimeout(() => router.push('/parent/login'), 3000)
       } else {
-        setError(data.error || 'حدث خطأ، حاول مجدداً')
+        setError(data.error || t.genericError)
       }
     } catch {
-      setError('حدث خطأ في الاتصال')
+      setError(t.networkError)
     } finally {
       setLoading(false)
     }
@@ -59,10 +62,10 @@ function ResetPasswordForm() {
         <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <CheckCircle className="w-8 h-8 text-green-600" />
         </div>
-        <h2 className="font-black text-xl text-gray-900 mb-2">تم تغيير كلمة المرور!</h2>
-        <p className="text-gray-500 text-sm">سيتم توجيهك لتسجيل الدخول خلال ثوانٍ...</p>
+        <h2 className="font-black text-xl text-gray-900 mb-2">{t.successTitle}</h2>
+        <p className="text-gray-500 text-sm">{t.successSubtitle}</p>
         <Link href="/parent/login" className="inline-block mt-4 text-brand-600 font-bold text-sm hover:underline">
-          تسجيل الدخول الآن
+          {t.loginNow}
         </Link>
       </div>
     )
@@ -71,8 +74,8 @@ function ResetPasswordForm() {
   return (
     <>
       <div className="text-center mb-6">
-        <h1 className="font-black text-xl text-gray-900">كلمة مرور جديدة</h1>
-        <p className="text-gray-500 text-sm mt-1">اختر كلمة مرور قوية لحسابك</p>
+        <h1 className="font-black text-xl text-gray-900">{t.title}</h1>
+        <p className="text-gray-500 text-sm mt-1">{t.subtitle}</p>
       </div>
 
       {error && (
@@ -84,13 +87,13 @@ function ResetPasswordForm() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-bold text-gray-700 mb-1.5">كلمة المرور الجديدة</label>
+          <label className="block text-sm font-bold text-gray-700 mb-1.5">{t.newPasswordLabel}</label>
           <div className="relative">
             <input
               type={showPass ? 'text' : 'password'}
               value={password}
               onChange={e => setPassword(e.target.value)}
-              placeholder="8 أحرف على الأقل"
+              placeholder={t.newPasswordPlaceholder8}
               className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 pl-10"
               required
               minLength={8}
@@ -103,19 +106,19 @@ function ResetPasswordForm() {
         </div>
 
         <div>
-          <label className="block text-sm font-bold text-gray-700 mb-1.5">تأكيد كلمة المرور</label>
+          <label className="block text-sm font-bold text-gray-700 mb-1.5">{t.confirmPasswordLabel}</label>
           <input
             type={showPass ? 'text' : 'password'}
             value={password2}
             onChange={e => setPassword2(e.target.value)}
-            placeholder="أعد كتابة كلمة المرور"
+            placeholder={t.confirmPasswordPlaceholder}
             className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
             required
           />
         </div>
 
         {password && password2 && password !== password2 && (
-          <p className="text-red-500 text-xs font-medium">كلمتا المرور غير متطابقتين</p>
+          <p className="text-red-500 text-xs font-medium">{t.passwordMismatch}</p>
         )}
 
         <button
@@ -125,7 +128,7 @@ function ResetPasswordForm() {
         >
           {loading
             ? <Loader2 className="w-5 h-5 animate-spin mx-auto" />
-            : 'حفظ كلمة المرور الجديدة'
+            : t.submitNew
           }
         </button>
       </form>

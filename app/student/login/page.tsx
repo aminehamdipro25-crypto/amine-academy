@@ -2,9 +2,12 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Loader2 } from 'lucide-react'
+import { useLang, tr } from '@/lib/i18n'
 
 export default function StudentLoginPage() {
   const router = useRouter()
+  const { lang } = useLang()
+  const t = tr[lang].studentLoginPage
   const [form, setForm] = useState({ code: '' })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -24,10 +27,10 @@ export default function StudentLoginPage() {
         router.push('/student/dashboard')
         router.refresh()
       } else {
-        setError(data.error || 'الرمز غير صحيح')
+        setError(data.error || t.invalidCode)
       }
     } catch {
-      setError('حدث خطأ')
+      setError(t.genericError)
     } finally {
       setLoading(false)
     }
@@ -38,8 +41,8 @@ export default function StudentLoginPage() {
       <div className="bg-white rounded-3xl p-8 w-full max-w-sm shadow-xl text-center">
         {/* Big friendly icon */}
         <div className="text-7xl mb-4 animate-float inline-block">🌟</div>
-        <h1 className="font-black text-2xl text-gray-900 mb-2">أهلاً بك!</h1>
-        <p className="text-gray-500 text-sm mb-8">أدخل رمز الدخول الخاص بك</p>
+        <h1 className="font-black text-2xl text-gray-900 mb-2">{t.welcome}</h1>
+        <p className="text-gray-500 text-sm mb-8">{t.enterCode}</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
@@ -59,12 +62,12 @@ export default function StudentLoginPage() {
           <button
             type="submit" disabled={loading}
             className={`w-full bg-brand-600 hover:bg-brand-700 text-white font-black text-lg py-4 rounded-2xl transition-all hover:scale-105 ${loading ? 'opacity-60 cursor-not-allowed scale-100' : ''}`}>
-            {loading ? <Loader2 className="w-6 h-6 animate-spin mx-auto" /> : '🚀 ادخل!'}
+            {loading ? <Loader2 className="w-6 h-6 animate-spin mx-auto" /> : t.enterButton}
           </button>
         </form>
 
         <p className="text-gray-400 text-xs mt-6">
-          رمز الدخول من ولي أمرك
+          {t.codeFromParent}
         </p>
       </div>
     </div>

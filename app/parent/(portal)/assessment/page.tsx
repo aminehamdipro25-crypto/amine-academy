@@ -6,12 +6,15 @@ import {
   getScoreLevel, getDomainScores,
   type DomainKey,
 } from '@/lib/assessment-data'
+import { useLang, tr } from '@/lib/i18n'
 
 type Phase = 'intro' | 'questions' | 'results'
 
 interface Child { id: string; firstName: string; lastName: string }
 
 export default function AssessmentPage() {
+  const { lang } = useLang()
+  const t = tr[lang].parentAssessment
   const [phase, setPhase]     = useState<Phase>('intro')
   const [current, setCurrent] = useState(0)
   const [answers, setAnswers] = useState<Record<number, number>>({})
@@ -75,9 +78,9 @@ export default function AssessmentPage() {
         }),
       })
       if (res.ok) setSaved(true)
-      else setSaveError('تعذر الحفظ، حاول مرة أخرى')
+      else setSaveError(t.saveError)
     } catch {
-      setSaveError('حدث خطأ في الاتصال')
+      setSaveError(t.networkError)
     } finally {
       setSaving(false)
     }
@@ -88,10 +91,10 @@ export default function AssessmentPage() {
 
   // ── Intro ──────────────────────────────────────────────────
   if (phase === 'intro') return (
-    <div className="space-y-6" dir="rtl">
+    <div className="space-y-6">
       <div>
-        <h1 className="font-black text-2xl text-gray-900">تقييم أنماط الانتباه</h1>
-        <p className="text-gray-500 text-sm mt-0.5">20 سؤالاً علمياً • 4 أبعاد • نتيجة فورية</p>
+        <h1 className="font-black text-2xl text-gray-900">{t.pageTitle}</h1>
+        <p className="text-gray-500 text-sm mt-0.5">{t.pageSubtitle}</p>
       </div>
 
       {/* Hero card */}
@@ -100,9 +103,9 @@ export default function AssessmentPage() {
         style={{ background: 'linear-gradient(135deg,#7C5CFC,#4A20C8)' }}
       >
         <div style={{ fontSize: 64, marginBottom: 12 }}>🧠</div>
-        <h2 className="font-black text-xl mb-2">هل تعرف نمط انتباه طفلك؟</h2>
+        <h2 className="font-black text-xl mb-2">{t.heroQuestion}</h2>
         <p className="text-white/80 text-sm leading-relaxed">
-          هذا التقييم مبني على مقاييس علمية معتمدة (SNAP-IV & CPT) ويساعدك على تحديد أي نوع من أنواع الانتباه يحتاج طفلك إلى تطوير
+          {t.heroBody}
         </p>
       </div>
 
@@ -126,17 +129,12 @@ export default function AssessmentPage() {
 
       {/* How it works */}
       <div className="rounded-2xl p-4" style={{ background: '#F9FAFB', border: '1.5px solid #F0E8FF' }}>
-        <p className="font-black text-sm text-gray-700 mb-3">كيف يعمل؟</p>
+        <p className="font-black text-sm text-gray-700 mb-3">{t.howItWorksTitle}</p>
         <div className="space-y-2">
-          {[
-            ['📋', '20 سؤالاً تصف سلوك طفلك بموضوعية'],
-            ['⚖️', 'كل إجابة على مقياس من 0 إلى 3 (أبداً → دائماً)'],
-            ['📊', 'تحصل على مخطط لأربعة أبعاد الانتباه'],
-            ['🎯', 'توصيات بالتمارين المناسبة لكل بُعد'],
-          ].map(([e, t]) => (
-            <div key={t} className="flex items-start gap-2">
+          {['📋', '⚖️', '📊', '🎯'].map((e, i) => (
+            <div key={i} className="flex items-start gap-2">
               <span style={{ fontSize: 16 }}>{e}</span>
-              <span className="text-sm text-gray-600">{t}</span>
+              <span className="text-sm text-gray-600">{t.howItWorksSteps[i]}</span>
             </div>
           ))}
         </div>
@@ -144,7 +142,7 @@ export default function AssessmentPage() {
 
       <div className="rounded-2xl p-4" style={{ background: '#FFFBEB', border: '1.5px solid #FDE68A' }}>
         <p className="text-xs text-amber-700">
-          ⚠️ <strong>ملاحظة:</strong> هذا تقييم توجيهي وليس تشخيصاً طبياً. للتشخيص الرسمي راجع أخصائياً.
+          ⚠️ <strong>{t.disclaimerLabel}</strong> {t.disclaimerText}
         </p>
       </div>
 
@@ -155,7 +153,7 @@ export default function AssessmentPage() {
         onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-2px)' }}
         onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = '' }}
       >
-        🚀 ابدأ التقييم
+        {t.startButton}
       </button>
     </div>
   )
@@ -164,11 +162,11 @@ export default function AssessmentPage() {
   if (phase === 'questions') {
     const domainInfo = DOMAINS[question.domain]
     return (
-      <div className="space-y-5" dir="rtl">
+      <div className="space-y-5">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-xs text-gray-400">السؤال {current + 1} من {QUESTIONS.length}</p>
+            <p className="text-xs text-gray-400">{t.questionCounter(current + 1, QUESTIONS.length)}</p>
             <div className="font-black text-sm mt-0.5" style={{ color: domainInfo.color }}>
               {domainInfo.emoji} {domainInfo.label}
             </div>
@@ -231,12 +229,12 @@ export default function AssessmentPage() {
             onClick={() => setCurrent(c => c - 1)}
             className="flex items-center gap-1 text-sm text-gray-400 mx-auto"
           >
-            <ChevronRight className="w-4 h-4" /> السؤال السابق
+            <ChevronRight className="w-4 h-4" /> {t.previousQuestion}
           </button>
         )}
 
         {/* Answered count */}
-        <p className="text-center text-xs text-gray-400">{answered} من {QUESTIONS.length} أُجيب عليها</p>
+        <p className="text-center text-xs text-gray-400">{t.answeredCount(answered, QUESTIONS.length)}</p>
       </div>
     )
   }
@@ -246,18 +244,18 @@ export default function AssessmentPage() {
   const totalScore = Object.values(domainScores).reduce((a, b) => a + b, 0)
 
   return (
-    <div className="space-y-5" dir="rtl">
+    <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-black text-2xl text-gray-900">نتائج التقييم</h1>
-          <p className="text-gray-500 text-sm mt-0.5">بناءً على {QUESTIONS.length} سؤالاً</p>
+          <h1 className="font-black text-2xl text-gray-900">{t.resultsTitle}</h1>
+          <p className="text-gray-500 text-sm mt-0.5">{t.resultsSubtitle(QUESTIONS.length)}</p>
         </div>
         <button
           onClick={restart}
           className="flex items-center gap-1.5 text-sm font-bold px-3 py-1.5 rounded-xl"
           style={{ background: '#F3EEFF', color: '#6B46F0' }}
         >
-          <RotateCcw className="w-3.5 h-3.5" /> إعادة
+          <RotateCcw className="w-3.5 h-3.5" /> {t.restartButton}
         </button>
       </div>
 
@@ -267,14 +265,14 @@ export default function AssessmentPage() {
         style={{ background: `linear-gradient(135deg, ${topDomain.color}, ${topDomain.color}cc)` }}
       >
         <div style={{ fontSize: 48, marginBottom: 8 }}>{topDomain.emoji}</div>
-        <p className="text-white/70 text-xs mb-1">البُعد الذي يحتاج أكبر اهتمام</p>
+        <p className="text-white/70 text-xs mb-1">{t.topDomainLabel}</p>
         <h2 className="font-black text-xl mb-1">{topDomain.label}</h2>
         <p className="text-white/80 text-sm">{topDomain.description}</p>
         <div
           className="mt-3 rounded-2xl px-3 py-2 text-xs font-bold"
           style={{ background: 'rgba(255,255,255,0.15)' }}
         >
-          البروتوكول الموصى به: {topDomain.protocol}
+          {t.recommendedProtocol(topDomain.protocol)}
         </div>
       </div>
 
@@ -323,7 +321,7 @@ export default function AssessmentPage() {
 
       {/* Exercise recommendations */}
       <div>
-        <h3 className="font-black text-base text-gray-900 mb-3">🎯 التمارين الموصى بها</h3>
+        <h3 className="font-black text-base text-gray-900 mb-3">{t.recommendedExercisesTitle}</h3>
         <div className="space-y-3">
           {DOMAIN_ORDER
             .filter(key => domainScores[key] >= 5)
@@ -367,8 +365,8 @@ export default function AssessmentPage() {
               style={{ background: '#F0FFF4', border: '1.5px solid #BBF7D0' }}
             >
               <CheckCircle className="w-8 h-8 mx-auto mb-2" style={{ color: '#16A34A' }} />
-              <p className="font-black text-green-800">جميع أبعاد الانتباه ضمن المعدل الطبيعي</p>
-              <p className="text-green-700 text-sm mt-1">استمر في التمارين الوقائية للحفاظ على هذا المستوى</p>
+              <p className="font-black text-green-800">{t.allNormalTitle}</p>
+              <p className="text-green-700 text-sm mt-1">{t.allNormalSubtitle}</p>
             </div>
           )}
         </div>
@@ -380,11 +378,11 @@ export default function AssessmentPage() {
         style={{ background: '#F9FAFB', border: '1.5px solid #F0E8FF' }}
       >
         <div>
-          <p className="text-xs text-gray-400">مجموع النقاط الكلي</p>
+          <p className="text-xs text-gray-400">{t.totalScoreLabel}</p>
           <p className="font-black text-2xl text-gray-900">{totalScore}<span className="text-gray-400 font-normal text-sm">/60</span></p>
         </div>
         <div className="text-right">
-          <p className="text-xs text-gray-400 mb-1">التوزيع</p>
+          <p className="text-xs text-gray-400 mb-1">{t.distributionLabel}</p>
           <div className="flex gap-1">
             {DOMAIN_ORDER.map(k => (
               <div key={k} title={DOMAINS[k].label} className="flex flex-col items-center gap-0.5">
@@ -401,7 +399,7 @@ export default function AssessmentPage() {
       {/* Save to server */}
       {children.length > 0 && (
         <div className="rounded-2xl p-4 space-y-3" style={{ background: '#F9FAFB', border: '1.5px solid #F0E8FF' }}>
-          <p className="font-black text-sm text-gray-700">💾 حفظ النتائج لملف طفلك</p>
+          <p className="font-black text-sm text-gray-700">{t.saveResultsTitle}</p>
           {children.length > 1 && (
             <select
               value={selectedChild}
@@ -415,7 +413,7 @@ export default function AssessmentPage() {
           )}
           {saved ? (
             <div className="flex items-center gap-2 text-green-700 text-sm font-bold">
-              <CheckCircle className="w-4 h-4" /> تم حفظ النتائج بنجاح
+              <CheckCircle className="w-4 h-4" /> {t.savedSuccess}
             </div>
           ) : (
             <button
@@ -425,7 +423,7 @@ export default function AssessmentPage() {
               style={{ background: '#7C5CFC', color: '#FFFFFF' }}
             >
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              {saving ? 'جارٍ الحفظ...' : 'حفظ النتائج'}
+              {saving ? t.saving : t.saveButton}
             </button>
           )}
           {saveError && <p className="text-xs text-red-600 font-bold">{saveError}</p>}
@@ -441,7 +439,7 @@ export default function AssessmentPage() {
           onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = '#5A32D9' }}
           onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = '#7C5CFC' }}
         >
-          🏃 ابدأ التمارين
+          {t.startExercisesLink}
         </a>
         <a
           href="/parent/appointments"
@@ -450,7 +448,7 @@ export default function AssessmentPage() {
           onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = '#E8DBFF' }}
           onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = '#F3EEFF' }}
         >
-          📅 احجز جلسة
+          {t.bookSessionLink}
         </a>
       </div>
 
@@ -462,7 +460,7 @@ export default function AssessmentPage() {
         >
           <ChevronRight className="w-4 h-4" />
           <ChevronLeft className="w-4 h-4 -mr-3" />
-          مراجعة الإجابات
+          {t.reviewAnswers}
         </button>
       </div>
     </div>

@@ -2,32 +2,32 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { Send, MessageCircle, Phone, Mail, Bot, User } from 'lucide-react'
 import type { Message } from '@/lib/types'
+import { useLang, tr, type Lang } from '@/lib/i18n'
 
 interface AIMsg { role: 'user' | 'assistant'; text: string; time: string }
 
-const QUICK = [
-  'كيف يمكنني متابعة تقدم طفلي؟',
-  'ما هي مدة الجلسة الواحدة؟',
-  'هل يمكن تأجيل موعد؟',
-  'ما الفرق بين APA و ABA و CBT؟',
-]
-
-function nowTime() {
-  return new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+function localeFor(lang: Lang) {
+  return lang === 'en' ? 'en-US' : 'fr-FR'
 }
 
-function formatMsgTime(iso: string) {
-  try { return new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) } catch { return '' }
+function nowTime(lang: Lang) {
+  return new Date().toLocaleTimeString(localeFor(lang), { hour: '2-digit', minute: '2-digit' })
 }
 
-function formatMsgDate(iso: string) {
-  try { return new Date(iso).toLocaleDateString('fr-FR', { year: 'numeric', month: 'short', day: 'numeric' }) } catch { return '' }
+function formatMsgTime(iso: string, lang: Lang) {
+  try { return new Date(iso).toLocaleTimeString(localeFor(lang), { hour: '2-digit', minute: '2-digit' }) } catch { return '' }
+}
+
+function formatMsgDate(iso: string, lang: Lang) {
+  try { return new Date(iso).toLocaleDateString(localeFor(lang), { year: 'numeric', month: 'short', day: 'numeric' }) } catch { return '' }
 }
 
 // ── AI Chat Tab ──────────────────────────────────────────────────
 function AIChatTab() {
+  const { lang } = useLang()
+  const t = tr[lang].parentChat
   const [msgs, setMsgs] = useState<AIMsg[]>([
-    { role: 'assistant', text: 'أهلاً! أنا المساعد الذكي لأكاديمية أمين. كيف يمكنني مساعدتك اليوم؟', time: nowTime() },
+    { role: 'assistant', text: t.aiGreeting, time: nowTime(lang) },
   ])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -37,7 +37,7 @@ function AIChatTab() {
 
   async function send(text: string) {
     if (!text.trim() || loading) return
-    const userMsg: AIMsg = { role: 'user', text: text.trim(), time: nowTime() }
+    const userMsg: AIMsg = { role: 'user', text: text.trim(), time: nowTime(lang) }
     setMsgs(prev => [...prev, userMsg])
     setInput('')
     setLoading(true)
@@ -49,9 +49,9 @@ function AIChatTab() {
         body: JSON.stringify({ messages: history }),
       })
       const data = await res.json()
-      setMsgs(prev => [...prev, { role: 'assistant', text: data.reply || 'حدث خطأ، حاول مجدداً.', time: nowTime() }])
+      setMsgs(prev => [...prev, { role: 'assistant', text: data.reply || t.aiErrorReply, time: nowTime(lang) }])
     } catch {
-      setMsgs(prev => [...prev, { role: 'assistant', text: 'تعذّر الاتصال. للتواصل المباشر استخدم واتساب.', time: nowTime() }])
+      setMsgs(prev => [...prev, { role: 'assistant', text: t.aiConnectionError, time: nowTime(lang) }])
     } finally {
       setLoading(false)
     }
@@ -63,7 +63,7 @@ function AIChatTab() {
       <div className="px-5 py-3 flex items-center justify-between flex-shrink-0" style={{ background: '#FFFFFF', borderBottom: '1.5px solid #F0E8FF' }}>
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full" style={{ background: '#22C55E' }} />
-          <span className="text-xs text-gray-500">المساعد الذكي متاح الآن</span>
+          <span className="text-xs text-gray-500">{t.aiAvailableNow}</span>
         </div>
         <div className="flex items-center gap-2">
           <a
@@ -75,7 +75,7 @@ function AIChatTab() {
             onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = '#D1FAE5' }}
             onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = '#ECFDF5' }}
           >
-            <Phone className="w-3.5 h-3.5" /> واتساب
+            <Phone className="w-3.5 h-3.5" /> {t.whatsappLabel}
           </a>
           <a
             href="mailto:amine.hamdi.pro25@gmail.com"
@@ -84,7 +84,7 @@ function AIChatTab() {
             onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = '#E8DBFF' }}
             onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = '#F3EEFF' }}
           >
-            <Mail className="w-3.5 h-3.5" /> بريد
+            <Mail className="w-3.5 h-3.5" /> {t.emailLabel}
           </a>
         </div>
       </div>
@@ -129,7 +129,7 @@ function AIChatTab() {
 
       {/* Quick replies */}
       <div className="px-4 py-2 flex gap-2 overflow-x-auto flex-shrink-0" style={{ background: '#FFFFFF', borderTop: '1.5px solid #F0E8FF' }}>
-        {QUICK.map(q => (
+        {t.quickReplies.map(q => (
           <button
             key={q}
             onClick={() => send(q)}
@@ -149,12 +149,11 @@ function AIChatTab() {
           <input
             value={input}
             onChange={e => setInput(e.target.value.slice(0, 200))}
-            placeholder="اكتب سؤالك هنا..."
-            className="flex-1 rounded-2xl px-4 py-2.5 text-sm focus:outline-none text-right"
+            placeholder={t.aiInputPlaceholder}
+            className="flex-1 rounded-2xl px-4 py-2.5 text-sm focus:outline-none"
             style={{ background: '#FFF8F0', border: '1.5px solid #E8DBFF', color: '#1F2937' }}
             onFocus={e => { e.target.style.border = '1.5px solid #7C5CFC'; e.target.style.boxShadow = '0 0 0 3px rgba(124,92,252,0.1)' }}
             onBlur={e => { e.target.style.border = '1.5px solid #E8DBFF'; e.target.style.boxShadow = 'none' }}
-            dir="rtl"
           />
           <button
             type="submit"
@@ -168,8 +167,8 @@ function AIChatTab() {
           </button>
         </form>
         <p className="text-xs text-gray-400 text-center mt-2">
-          للتواصل الفوري مع الأستاذ أمين:{' '}
-          <a href="https://wa.me/97430653759" className="font-bold" style={{ color: '#16A34A' }}>واتساب</a>
+          {t.instantContactPrefix(tr[lang].portal.common.coachName)}{' '}
+          <a href="https://wa.me/97430653759" className="font-bold" style={{ color: '#16A34A' }}>{t.whatsappLabel}</a>
         </p>
       </div>
     </div>
@@ -178,6 +177,9 @@ function AIChatTab() {
 
 // ── Direct Messages Tab ──────────────────────────────────────────
 function DirectMessagesTab() {
+  const { lang } = useLang()
+  const t = tr[lang].parentChat
+  const coachName = tr[lang].portal.common.coachName
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [sending, setSending] = useState(false)
@@ -230,7 +232,7 @@ function DirectMessagesTab() {
 
   const grouped: { date: string; msgs: Message[] }[] = []
   for (const msg of messages) {
-    const d = formatMsgDate(msg.createdAt)
+    const d = formatMsgDate(msg.createdAt, lang)
     const last = grouped[grouped.length - 1]
     if (last && last.date === d) { last.msgs.push(msg) }
     else { grouped.push({ date: d, msgs: [msg] }) }
@@ -248,8 +250,8 @@ function DirectMessagesTab() {
             <User className="w-4 h-4" style={{ color: '#6B46F0' }} />
           </div>
           <div>
-            <div className="font-bold text-gray-900 text-sm">الأستاذ أمين</div>
-            <div className="text-xs text-gray-400">راسل مباشرة — يرد في أقرب وقت</div>
+            <div className="font-bold text-gray-900 text-sm">{coachName}</div>
+            <div className="text-xs text-gray-400">{t.directMessageSubtitle}</div>
           </div>
         </div>
       </div>
@@ -265,8 +267,8 @@ function DirectMessagesTab() {
             <div className="w-14 h-14 rounded-full flex items-center justify-center mb-3" style={{ background: '#F3EEFF' }}>
               <MessageCircle className="w-7 h-7" style={{ color: '#9A7BFD' }} />
             </div>
-            <p className="text-gray-500 text-sm font-medium">لا توجد رسائل بعد</p>
-            <p className="text-gray-400 text-xs mt-1">أرسل رسالتك الأولى للأستاذ أمين</p>
+            <p className="text-gray-500 text-sm font-medium">{t.noMessagesYet}</p>
+            <p className="text-gray-400 text-xs mt-1">{t.sendFirstMessage(coachName)}</p>
           </div>
         ) : (
           grouped.map(group => (
@@ -290,9 +292,9 @@ function DirectMessagesTab() {
                       {msg.content}
                     </div>
                     <div className={`text-xs text-gray-400 mt-1 ltr-num ${msg.from === 'parent' ? 'text-right' : 'text-left'}`}>
-                      {formatMsgTime(msg.createdAt)}
+                      {formatMsgTime(msg.createdAt, lang)}
                       {msg.from === 'admin' && (
-                        <span className="mr-1 font-medium" style={{ color: '#7C5CFC' }}> · الأستاذ</span>
+                        <span className="mr-1 font-medium" style={{ color: '#7C5CFC' }}>{t.adminBadgeSuffix}</span>
                       )}
                     </div>
                   </div>
@@ -310,12 +312,11 @@ function DirectMessagesTab() {
           <input
             value={input}
             onChange={e => setInput(e.target.value.slice(0, 1000))}
-            placeholder="اكتب رسالتك للأستاذ..."
-            className="flex-1 rounded-2xl px-4 py-2.5 text-sm focus:outline-none text-right"
+            placeholder={t.directInputPlaceholder}
+            className="flex-1 rounded-2xl px-4 py-2.5 text-sm focus:outline-none"
             style={{ background: '#FFF8F0', border: '1.5px solid #E8DBFF', color: '#1F2937' }}
             onFocus={e => { e.target.style.border = '1.5px solid #7C5CFC'; e.target.style.boxShadow = '0 0 0 3px rgba(124,92,252,0.1)' }}
             onBlur={e => { e.target.style.border = '1.5px solid #E8DBFF'; e.target.style.boxShadow = 'none' }}
-            dir="rtl"
           />
           <button
             type="submit"
@@ -332,7 +333,7 @@ function DirectMessagesTab() {
             )}
           </button>
         </form>
-        <p className="text-xs text-gray-400 text-center mt-2">يتم تحديث المحادثة تلقائياً كل 30 ثانية</p>
+        <p className="text-xs text-gray-400 text-center mt-2">{t.autoRefreshNote}</p>
       </div>
     </div>
   )
@@ -340,6 +341,8 @@ function DirectMessagesTab() {
 
 // ── Main Page ────────────────────────────────────────────────────
 export default function ChatPage() {
+  const { lang } = useLang()
+  const t = tr[lang].parentChat
   const [activeTab, setActiveTab] = useState<'ai' | 'direct'>('ai')
   const [unreadFromAdmin, setUnreadFromAdmin] = useState(0)
 
@@ -354,7 +357,6 @@ export default function ChatPage() {
     <div
       className="flex flex-col h-[calc(100vh-8rem)] md:h-[calc(100vh-3rem)] max-h-[750px] rounded-3xl overflow-hidden"
       style={{ background: '#FFFFFF', border: '1.5px solid #F0E8FF', boxShadow: '0 1px 4px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.06)' }}
-      dir="rtl"
     >
       {/* Page header */}
       <div className="px-5 py-4 flex items-center gap-3 flex-shrink-0" style={{ background: '#FFFFFF', borderBottom: '1.5px solid #F0E8FF' }}>
@@ -365,8 +367,8 @@ export default function ChatPage() {
           💬
         </div>
         <div>
-          <h1 className="font-black text-gray-900 text-xl">التواصل</h1>
-          <p className="text-gray-400 text-sm">المساعد الذكي والرسائل المباشرة</p>
+          <h1 className="font-black text-gray-900 text-xl">{t.pageTitle}</h1>
+          <p className="text-gray-400 text-sm">{t.pageSubtitle}</p>
         </div>
       </div>
 
@@ -383,7 +385,7 @@ export default function ChatPage() {
           onMouseEnter={e => { if (activeTab !== 'ai') (e.currentTarget as HTMLButtonElement).style.color = '#6B7280' }}
           onMouseLeave={e => { if (activeTab !== 'ai') (e.currentTarget as HTMLButtonElement).style.color = '#9CA3AF' }}
         >
-          <Bot className="w-4 h-4" /> المساعد الذكي
+          <Bot className="w-4 h-4" /> {t.aiTabLabel}
         </button>
         <button
           onClick={() => { setActiveTab('direct'); setUnreadFromAdmin(0) }}
@@ -396,7 +398,7 @@ export default function ChatPage() {
           onMouseEnter={e => { if (activeTab !== 'direct') (e.currentTarget as HTMLButtonElement).style.color = '#6B7280' }}
           onMouseLeave={e => { if (activeTab !== 'direct') (e.currentTarget as HTMLButtonElement).style.color = '#9CA3AF' }}
         >
-          <MessageCircle className="w-4 h-4" /> رسائل الأستاذ
+          <MessageCircle className="w-4 h-4" /> {t.directMessagesTabLabel}
           {unreadFromAdmin > 0 && (
             <span
               className="absolute top-2 left-4 w-4 h-4 text-white text-[10px] font-black rounded-full flex items-center justify-center"

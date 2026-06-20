@@ -2,34 +2,17 @@
 import { useEffect, useState } from 'react'
 import { Calendar, Clock, Video, Plus, CheckCircle, XCircle, AlertCircle } from 'lucide-react'
 import type { Appointment, Student } from '@/lib/types'
+import { useLang, tr } from '@/lib/i18n'
 
-function jitsiUrl(url: string, name = 'ولي الأمر'): string {
+function jitsiUrl(url: string, name: string): string {
   return `${url}#config.prejoinPageEnabled=false&config.startWithAudioMuted=false&userInfo.displayName=${encodeURIComponent(name)}`
 }
 
-const TYPE_LABELS: Record<string, string> = {
-  assessment:   'جلسة تقييمية',
-  followup:     'جلسة متابعة',
-  emergency:    'استشارة طارئة',
-  consultation: 'استشارة للوالدين',
-  training:     'جلسة تدريبية مكثفة',
-  review:       'مراجعة البرنامج',
-}
-
-const TYPE_DESCS: Record<string, string> = {
-  assessment:   'تقييم شامل لمستوى الطفل',
-  followup:     'متابعة التقدم الأسبوعي',
-  emergency:    'تواصل عاجل مع الأستاذ',
-  consultation: 'نقاش حول التطور والخطة',
-  training:     'جلسة مكثفة بروتوكول ABA',
-  review:       'مراجعة وتعديل البرنامج',
-}
-
-const STATUS_CFG: Record<string, { label: string; bg: string; color: string; icon: React.ElementType }> = {
-  scheduled: { label: 'مُجدولة', bg: '#EFF6FF', color: '#1D4ED8', icon: Clock },
-  completed: { label: 'منتهية',  bg: '#F0FFF4', color: '#15803D', icon: CheckCircle },
-  cancelled: { label: 'ملغاة',   bg: '#FEF2F2', color: '#B91C1C', icon: XCircle },
-  'no-show': { label: 'غياب',    bg: '#F9FAFB', color: '#6B7280', icon: AlertCircle },
+const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
+  scheduled: { bg: '#EFF6FF', color: '#1D4ED8' },
+  completed: { bg: '#F0FFF4', color: '#15803D' },
+  cancelled: { bg: '#FEF2F2', color: '#B91C1C' },
+  'no-show': { bg: '#F9FAFB', color: '#6B7280' },
 }
 
 const QUICK_TIMES = ['09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00']
@@ -52,6 +35,8 @@ function isSessionLive(date: string, timeSlot: string): boolean {
 }
 
 export default function AppointmentsPage() {
+  const { lang } = useLang()
+  const t = tr[lang].parentAppointments
   const [appointments, setAppointments] = useState<Appointment[]>([])
   const [children, setChildren] = useState<Student[]>([])
   const [loading, setLoading] = useState(true)
@@ -97,19 +82,19 @@ export default function AppointmentsPage() {
   const past = appointments.filter(a => a.status !== 'scheduled')
 
   if (loading) return (
-    <div className="flex items-center justify-center py-20" dir="rtl">
+    <div className="flex items-center justify-center py-20">
       <div className="text-4xl animate-pulse">📅</div>
     </div>
   )
 
   return (
-    <div className="space-y-6" dir="rtl">
+    <div className="space-y-6">
 
       {/* ── Header ── */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-black text-2xl text-gray-900">مواعيدي</h1>
-          <p className="text-gray-500 text-sm mt-0.5">جلساتك القادمة والسابقة</p>
+          <h1 className="font-black text-2xl text-gray-900">{t.pageTitle}</h1>
+          <p className="text-gray-500 text-sm mt-0.5">{t.pageSubtitle}</p>
         </div>
         <button
           onClick={() => setShowBook(true)}
@@ -118,7 +103,7 @@ export default function AppointmentsPage() {
           onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#5A32D9' }}
           onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '#6B46F0' }}
         >
-          <Plus className="w-4 h-4" /> حجز جلسة
+          <Plus className="w-4 h-4" /> {t.bookSessionButton}
         </button>
       </div>
 
@@ -127,8 +112,8 @@ export default function AppointmentsPage() {
         <div className="rounded-2xl p-4 flex items-center gap-3" style={{ background: '#F0FFF4', border: '1.5px solid #A7F3D0' }}>
           <CheckCircle className="w-5 h-5 flex-shrink-0" style={{ color: '#16A34A' }} />
           <div>
-            <p className="font-bold text-green-800 text-sm">تم تأكيد حجزك بنجاح!</p>
-            <p className="text-green-700 text-xs mt-0.5">ستجد رابط الجلسة في تفاصيل الموعد. ستصلك أيضاً رسالة تأكيد على بريدك.</p>
+            <p className="font-bold text-green-800 text-sm">{t.successTitle}</p>
+            <p className="text-green-700 text-xs mt-0.5">{t.successBody}</p>
           </div>
         </div>
       )}
@@ -137,7 +122,7 @@ export default function AppointmentsPage() {
       <div>
         <h2 className="font-black text-gray-900 mb-3 flex items-center gap-2">
           <Calendar className="w-5 h-5" style={{ color: '#6B46F0' }} />
-          الجلسات القادمة
+          {t.upcomingSessionsTitle}
           {upcoming.length > 0 && (
             <span className="text-xs font-bold px-2 py-0.5 rounded-full ltr-num" style={{ background: '#F3EEFF', color: '#5A32D9' }}>
               {upcoming.length}
@@ -151,7 +136,7 @@ export default function AppointmentsPage() {
             style={{ background: '#FFFFFF', border: '2px dashed #E5E7EB' }}
           >
             <Calendar className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-500 text-sm mb-4">لا توجد جلسات مجدولة</p>
+            <p className="text-gray-500 text-sm mb-4">{t.noScheduledSessions}</p>
             <button
               onClick={() => setShowBook(true)}
               className="inline-flex items-center gap-2 text-white font-bold px-5 py-2.5 rounded-xl text-sm transition-all"
@@ -159,7 +144,7 @@ export default function AppointmentsPage() {
               onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#5A32D9' }}
               onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '#6B46F0' }}
             >
-              <Plus className="w-4 h-4" /> احجز جلسة الآن
+              <Plus className="w-4 h-4" /> {t.bookNowButton}
             </button>
           </div>
         ) : (
@@ -179,18 +164,18 @@ export default function AppointmentsPage() {
                   {live && (
                     <div className="flex items-center gap-2 mb-3 rounded-xl px-3 py-2" style={{ background: '#F0FFF4' }}>
                       <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: '#22C55E' }} />
-                      <span className="font-black text-sm" style={{ color: '#15803D' }}>الجلسة جارية الآن!</span>
+                      <span className="font-black text-sm" style={{ color: '#15803D' }}>{t.sessionLiveNow}</span>
                     </div>
                   )}
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 flex-wrap mb-2">
-                        <span className="font-black text-gray-900">{TYPE_LABELS[appt.type] || appt.type}</span>
+                        <span className="font-black text-gray-900">{t.typeLabels[appt.type as keyof typeof t.typeLabels] || appt.type}</span>
                         <span
                           className="text-xs font-bold px-2 py-0.5 rounded-full"
-                          style={{ background: STATUS_CFG[appt.status]?.bg || '#F9FAFB', color: STATUS_CFG[appt.status]?.color || '#6B7280' }}
+                          style={{ background: STATUS_COLORS[appt.status]?.bg || '#F9FAFB', color: STATUS_COLORS[appt.status]?.color || '#6B7280' }}
                         >
-                          {STATUS_CFG[appt.status]?.label}
+                          {t.statusLabels[appt.status as keyof typeof t.statusLabels]}
                         </span>
                       </div>
                       <div className="flex items-center gap-4 text-sm text-gray-500">
@@ -207,7 +192,7 @@ export default function AppointmentsPage() {
                     </div>
                     {appt.meetingUrl && (
                       <a
-                        href={jitsiUrl(appt.meetingUrl)}
+                        href={jitsiUrl(appt.meetingUrl, t.parentDisplayName)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center gap-2 font-black px-4 py-2.5 rounded-xl text-sm transition-all flex-shrink-0"
@@ -226,14 +211,14 @@ export default function AppointmentsPage() {
                         }}
                       >
                         <Video className="w-4 h-4" />
-                        {live ? 'انضم الآن' : 'رابط الجلسة'}
+                        {live ? t.joinNowButton : t.sessionLinkButton}
                       </a>
                     )}
                   </div>
                   {appt.meetingUrl && (
                     <div className="mt-3 pt-3" style={{ borderTop: '1px solid #F0E8FF' }}>
                       <p className="text-xs text-gray-400">
-                        <span className="font-bold">أداة الجلسة:</span> Jitsi Meet — تعمل مباشرة في المتصفح، لا حاجة لتنزيل أي برنامج
+                        <span className="font-bold">{t.sessionToolLabel}</span> {t.sessionToolDesc}
                       </p>
                     </div>
                   )}
@@ -247,7 +232,7 @@ export default function AppointmentsPage() {
       {/* ── Past appointments ── */}
       {past.length > 0 && (
         <div>
-          <h2 className="font-black text-gray-600 mb-3 text-sm">الجلسات السابقة</h2>
+          <h2 className="font-black text-gray-600 mb-3 text-sm">{t.pastSessionsTitle}</h2>
           <div className="space-y-2">
             {past.map(appt => (
               <div
@@ -256,14 +241,14 @@ export default function AppointmentsPage() {
                 style={{ background: '#FFFFFF', border: '1px solid #F3F4F6' }}
               >
                 <div>
-                  <span className="font-bold text-gray-700 text-sm">{TYPE_LABELS[appt.type]}</span>
+                  <span className="font-bold text-gray-700 text-sm">{t.typeLabels[appt.type as keyof typeof t.typeLabels]}</span>
                   <div className="text-gray-400 text-xs mt-0.5 ltr-num">{appt.date} • {appt.timeSlot}</div>
                 </div>
                 <span
                   className="text-xs font-bold px-2 py-1 rounded-full"
-                  style={{ background: STATUS_CFG[appt.status]?.bg || '#F9FAFB', color: STATUS_CFG[appt.status]?.color || '#6B7280' }}
+                  style={{ background: STATUS_COLORS[appt.status]?.bg || '#F9FAFB', color: STATUS_COLORS[appt.status]?.color || '#6B7280' }}
                 >
-                  {STATUS_CFG[appt.status]?.label}
+                  {t.statusLabels[appt.status as keyof typeof t.statusLabels]}
                 </span>
               </div>
             ))}
@@ -279,11 +264,11 @@ export default function AppointmentsPage() {
           onClick={e => e.target === e.currentTarget && setShowBook(false)}
         >
           <div className="rounded-3xl w-full max-w-md p-6" style={{ background: '#FFFFFF' }}>
-            <h3 className="font-black text-xl text-gray-900 mb-5">حجز جلسة جديدة</h3>
+            <h3 className="font-black text-xl text-gray-900 mb-5">{t.bookingModalTitle}</h3>
             <form onSubmit={handleBook} className="space-y-4">
               {children.length > 1 && (
                 <div>
-                  <label className="text-xs font-bold text-gray-500 block mb-1">الطفل</label>
+                  <label className="text-xs font-bold text-gray-500 block mb-1">{t.childLabel}</label>
                   <select
                     value={booking.studentId}
                     onChange={e => setBooking(b => ({ ...b, studentId: e.target.value }))}
@@ -300,9 +285,9 @@ export default function AppointmentsPage() {
               )}
 
               <div>
-                <label className="text-xs font-bold text-gray-500 block mb-1.5">نوع الجلسة</label>
+                <label className="text-xs font-bold text-gray-500 block mb-1.5">{t.sessionTypeLabel}</label>
                 <div className="grid grid-cols-2 gap-2">
-                  {Object.entries(TYPE_LABELS).map(([val, label]) => (
+                  {Object.entries(t.typeLabels).map(([val, label]) => (
                     <button
                       key={val}
                       type="button"
@@ -317,14 +302,14 @@ export default function AppointmentsPage() {
                       onMouseLeave={e => { if (booking.type !== val) (e.currentTarget as HTMLButtonElement).style.borderColor = '#E5E7EB' }}
                     >
                       <div className="font-bold text-xs text-gray-900">{label}</div>
-                      <div className="text-[10px] text-gray-400 mt-0.5">{TYPE_DESCS[val]}</div>
+                      <div className="text-[10px] text-gray-400 mt-0.5">{t.typeDescs[val as keyof typeof t.typeDescs]}</div>
                     </button>
                   ))}
                 </div>
               </div>
 
               <div>
-                <label className="text-xs font-bold text-gray-500 block mb-1">التاريخ</label>
+                <label className="text-xs font-bold text-gray-500 block mb-1">{t.dateLabel}</label>
                 <input
                   type="date"
                   required
@@ -339,7 +324,7 @@ export default function AppointmentsPage() {
               </div>
 
               <div>
-                <label className="text-xs font-bold text-gray-500 block mb-1.5">الوقت المفضل</label>
+                <label className="text-xs font-bold text-gray-500 block mb-1.5">{t.preferredTimeLabel}</label>
                 <input
                   type="time"
                   required
@@ -351,33 +336,33 @@ export default function AppointmentsPage() {
                   onBlur={e => { e.target.style.border = '1.5px solid #E5E7EB'; e.target.style.boxShadow = 'none' }}
                 />
                 <div className="flex gap-1.5 flex-wrap mt-2">
-                  {QUICK_TIMES.map(t => (
+                  {QUICK_TIMES.map(qt => (
                     <button
-                      key={t}
+                      key={qt}
                       type="button"
-                      onClick={() => setBooking(b => ({ ...b, timeSlot: t }))}
+                      onClick={() => setBooking(b => ({ ...b, timeSlot: qt }))}
                       className="text-xs font-bold px-2.5 py-1 rounded-full transition-all ltr-num"
                       style={
-                        booking.timeSlot === t
+                        booking.timeSlot === qt
                           ? { background: '#6B46F0', color: '#FFFFFF', border: '1px solid #6B46F0' }
                           : { background: '#FFFFFF', color: '#6B7280', border: '1px solid #E5E7EB' }
                       }
-                      onMouseEnter={e => { if (booking.timeSlot !== t) { (e.currentTarget as HTMLButtonElement).style.borderColor = '#D3BBFF'; (e.currentTarget as HTMLButtonElement).style.color = '#6B46F0' } }}
-                      onMouseLeave={e => { if (booking.timeSlot !== t) { (e.currentTarget as HTMLButtonElement).style.borderColor = '#E5E7EB'; (e.currentTarget as HTMLButtonElement).style.color = '#6B7280' } }}
+                      onMouseEnter={e => { if (booking.timeSlot !== qt) { (e.currentTarget as HTMLButtonElement).style.borderColor = '#D3BBFF'; (e.currentTarget as HTMLButtonElement).style.color = '#6B46F0' } }}
+                      onMouseLeave={e => { if (booking.timeSlot !== qt) { (e.currentTarget as HTMLButtonElement).style.borderColor = '#E5E7EB'; (e.currentTarget as HTMLButtonElement).style.color = '#6B7280' } }}
                     >
-                      {t}
+                      {qt}
                     </button>
                   ))}
                 </div>
               </div>
 
               <div>
-                <label className="text-xs font-bold text-gray-500 block mb-1">ملاحظات (اختياري)</label>
+                <label className="text-xs font-bold text-gray-500 block mb-1">{t.notesLabel}</label>
                 <textarea
                   rows={2}
                   value={booking.notes}
                   onChange={e => setBooking(b => ({ ...b, notes: e.target.value }))}
-                  placeholder="أي معلومات مهمة تريد إبلاغ الأستاذ بها..."
+                  placeholder={t.notesPlaceholder}
                   className="w-full rounded-xl px-4 py-3 text-sm resize-none focus:outline-none"
                   style={{ border: '1.5px solid #E5E7EB' }}
                   onFocus={e => { e.target.style.border = '1.5px solid #7C5CFC'; e.target.style.boxShadow = '0 0 0 3px rgba(124,92,252,0.1)' }}
@@ -394,7 +379,7 @@ export default function AppointmentsPage() {
                   onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#F9FAFB' }}
                   onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '#FFFFFF' }}
                 >
-                  إلغاء
+                  {t.cancelButton}
                 </button>
                 <button
                   type="submit"
@@ -404,7 +389,7 @@ export default function AppointmentsPage() {
                   onMouseEnter={e => { if (!submitting) (e.currentTarget as HTMLButtonElement).style.background = '#5A32D9' }}
                   onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '#6B46F0' }}
                 >
-                  {submitting ? 'جاري الحجز...' : 'تأكيد الحجز'}
+                  {submitting ? t.bookingInProgress : t.confirmBookingButton}
                 </button>
               </div>
             </form>

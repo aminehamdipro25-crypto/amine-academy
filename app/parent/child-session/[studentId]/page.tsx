@@ -3,6 +3,7 @@ import { useEffect, useState, useRef, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { CheckCircle, Play, X, Clock, LogOut, Star, Volume2, Film, List } from 'lucide-react'
 import type { Exercise, Student } from '@/lib/types'
+import { useLang, tr } from '@/lib/i18n'
 
 // ── Video lookup by exercise English title (stable key, unlike the random AE-xxx-xxx ID) ──
 const TITLE_VIDEOS: Record<string, string> = {
@@ -170,6 +171,8 @@ interface CompleteResult {
 }
 
 export default function ChildSessionPage() {
+  const { lang } = useLang()
+  const t = tr[lang].parentChildSession
   const { studentId } = useParams<{ studentId: string }>()
   const router = useRouter()
 
@@ -288,7 +291,7 @@ export default function ChildSessionPage() {
     <div className="min-h-screen flex flex-col items-center justify-center gap-5"
       style={{ background: 'linear-gradient(135deg,#F3EEFF,#E8F4FF)' }}>
       <div className="text-8xl" style={{ animation: 'bounce 1s infinite' }}>🎮</div>
-      <p className="font-black text-2xl" style={{ color: '#7C5CFC' }}>جاري التحضير...</p>
+      <p className="font-black text-2xl" style={{ color: '#7C5CFC' }}>{t.loadingText}</p>
     </div>
   )
 
@@ -299,7 +302,7 @@ export default function ChildSessionPage() {
   const selVideoId = selected ? getVideoId(selected) : null
 
   return (
-    <div className="min-h-screen flex flex-col" dir="rtl"
+    <div className="min-h-screen flex flex-col"
       style={{ background: 'linear-gradient(160deg,#F8F4FF 0%,#EFF6FF 50%,#F0FFF8 100%)', fontFamily: 'var(--font-cairo,Cairo,sans-serif)' }}>
 
       {/* ── Top bar ── */}
@@ -312,8 +315,8 @@ export default function ChildSessionPage() {
           className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold transition-all active:scale-95"
           style={{ background: '#FEF2F2', color: '#B91C1C' }}>
           <LogOut className="w-4 h-4" />
-          <span className="hidden sm:inline text-xs">اضغط مطولاً للخروج</span>
-          <span className="sm:hidden">خروج</span>
+          <span className="hidden sm:inline text-xs">{t.holdToExitLabel}</span>
+          <span className="sm:hidden">{t.exitShortLabel}</span>
         </button>
 
         <div className="text-center">
@@ -335,7 +338,7 @@ export default function ChildSessionPage() {
           style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}>
           <div className="text-center space-y-4" style={{ animation: 'badgePop 0.4s cubic-bezier(.34,1.56,.64,1)' }}>
             <div style={{ fontSize: '8rem', lineHeight: 1 }}>🎉</div>
-            <div className="text-white font-black" style={{ fontSize: '3rem' }}>أحسنت!</div>
+            <div className="text-white font-black" style={{ fontSize: '3rem' }}>{t.celebrationText}</div>
             <div className="font-black text-2xl px-10 py-3 rounded-2xl"
               style={{ background: 'rgba(255,255,255,0.2)', color: '#FFF' }}>
               +{celebPoints} ⭐
@@ -350,7 +353,7 @@ export default function ChildSessionPage() {
           {newBadges.map((name, i) => (
             <div key={i} className="text-center py-3 px-4 rounded-2xl font-black text-sm"
               style={{ background: '#FBBF24', color: '#78350F', boxShadow: '0 4px 16px rgba(251,191,36,0.5)', animation: 'badgePop 0.4s ease' }}>
-              🏆 وسام جديد: {name}
+              {t.newBadgeLabel(name)}
             </div>
           ))}
         </div>
@@ -362,18 +365,18 @@ export default function ChildSessionPage() {
           style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(4px)' }}>
           <div className="bg-white rounded-3xl p-8 w-full max-w-sm text-center">
             <div className="text-6xl mb-4">🔒</div>
-            <h2 className="font-black text-gray-900 text-xl mb-2">هل أنت ولي الأمر؟</h2>
-            <p className="text-gray-400 text-sm mb-6">هذا الزر مخصص للأهل فقط</p>
+            <h2 className="font-black text-gray-900 text-xl mb-2">{t.exitConfirmTitle}</h2>
+            <p className="text-gray-400 text-sm mb-6">{t.exitConfirmBody}</p>
             <div className="flex gap-3">
               <button onClick={() => router.push('/parent/children')}
                 className="flex-1 text-white font-black py-3.5 rounded-2xl active:scale-95 transition-all"
                 style={{ background: 'linear-gradient(135deg,#EF4444,#F87171)' }}>
-                نعم، خروج
+                {t.exitConfirmYes}
               </button>
               <button onClick={() => setShowExitConfirm(false)}
                 className="flex-1 font-black py-3.5 rounded-2xl active:scale-95 transition-all"
                 style={{ background: '#F3F4F6', color: '#374151' }}>
-                إلغاء
+                {t.exitConfirmCancel}
               </button>
             </div>
           </div>
@@ -384,12 +387,12 @@ export default function ChildSessionPage() {
       <div className="flex-1 px-4 py-4 space-y-4 max-w-lg mx-auto w-full">
 
         <div className="text-center pt-1">
-          <h1 className="font-black text-3xl text-gray-900 mb-1">اختر لعبتك 🎮</h1>
+          <h1 className="font-black text-3xl text-gray-900 mb-1">{t.chooseGameTitle}</h1>
           {exercises.length > 0 && (
             <p className="font-bold text-gray-500">
               {completedAll
-                ? '🎊 أكملت كل التمارين اليوم!'
-                : <span>{done.size} من {exercises.length} مكتمل</span>}
+                ? t.allCompletedTodayBanner
+                : <span>{t.progressLabel(done.size, exercises.length)}</span>}
             </p>
           )}
         </div>
@@ -409,16 +412,16 @@ export default function ChildSessionPage() {
         {completedAll && (
           <div className="rounded-3xl p-8 text-center" style={{ background: 'linear-gradient(135deg,#F0FFF4,#ECFDF5)', border: '2px solid #A7F3D0' }}>
             <div className="text-6xl mb-3">🏆</div>
-            <p className="font-black text-2xl text-green-800 mb-1">عمل رائع!</p>
-            <p className="text-green-600 font-bold">أكملت كل تمارين اليوم</p>
+            <p className="font-black text-2xl text-green-800 mb-1">{t.greatJobTitle}</p>
+            <p className="text-green-600 font-bold">{t.allCompletedBody}</p>
           </div>
         )}
 
         {exercises.length === 0 ? (
           <div className="rounded-3xl p-12 text-center" style={{ border: '2px dashed #D3BBFF', background: '#FFF' }}>
             <div className="text-6xl mb-4">😴</div>
-            <p className="font-black text-gray-700 text-xl">لا توجد تمارين اليوم</p>
-            <p className="text-gray-400 mt-2">استرح جيداً، ستصلك تمارين غداً!</p>
+            <p className="font-black text-gray-700 text-xl">{t.noExercisesTitle}</p>
+            <p className="text-gray-400 mt-2">{t.noExercisesBody}</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-3 pb-6">
@@ -437,7 +440,7 @@ export default function ChildSessionPage() {
                       {hasVideo && !isDone && (
                         <span className="text-xs font-bold px-2 py-0.5 rounded-full flex items-center gap-1"
                           style={{ background: 'rgba(255,255,255,0.25)', color: '#FFF' }}>
-                          <Film className="w-3 h-3" /> فيديو
+                          <Film className="w-3 h-3" /> {t.videoLabel}
                         </span>
                       )}
                     </div>
@@ -448,7 +451,7 @@ export default function ChildSessionPage() {
                       </p>
                       <p className="text-xs mt-1 font-bold"
                         style={{ color: isDone ? '#6EE7B7' : 'rgba(255,255,255,0.75)' }}>
-                        {isDone ? 'تم ✓' : `⭐ ${ex.points} نقطة`}
+                        {isDone ? t.doneLabel : `⭐ ${ex.points} ${t.pointsSuffix}`}
                       </p>
                     </div>
                   </div>
@@ -488,10 +491,10 @@ export default function ChildSessionPage() {
               <h2 className="text-white font-black text-2xl mb-2">{selected.titleAr}</h2>
               <div className="flex items-center gap-4 text-white/80 text-sm font-bold">
                 <span className="flex items-center gap-1">
-                  <Clock className="w-4 h-4" /> {selected.durationMinutes} دقيقة
+                  <Clock className="w-4 h-4" /> {selected.durationMinutes} {t.minutesSuffix}
                 </span>
-                <span>⭐ {selected.points} نقطة</span>
-                {speaking && <span className="animate-pulse">🔊 يقرأ...</span>}
+                <span>⭐ {selected.points} {t.pointsSuffix}</span>
+                {speaking && <span className="animate-pulse">{t.speakingLabel}</span>}
               </div>
               {running && (
                 <div className="mt-3 py-3 rounded-2xl text-center" style={{ background: 'rgba(255,255,255,0.2)' }}>
@@ -512,7 +515,7 @@ export default function ChildSessionPage() {
                     color: modalTab === 'video' ? '#FFF' : '#5A32D9',
                     boxShadow: modalTab === 'video' ? '0 2px 8px rgba(124,92,252,0.35)' : 'none',
                   }}>
-                  <Film className="w-4 h-4" /> فيديو
+                  <Film className="w-4 h-4" /> {t.videoLabel}
                 </button>
               )}
               <button onClick={() => setModalTab('steps')}
@@ -522,7 +525,7 @@ export default function ChildSessionPage() {
                   color: modalTab === 'steps' ? '#FFF' : '#5A32D9',
                   boxShadow: modalTab === 'steps' ? '0 2px 8px rgba(124,92,252,0.35)' : 'none',
                 }}>
-                <List className="w-4 h-4" /> خطوات
+                <List className="w-4 h-4" /> {t.stepsTabLabel}
               </button>
             </div>
 
@@ -542,7 +545,7 @@ export default function ChildSessionPage() {
                     />
                   </div>
                   <div className="rounded-2xl p-3" style={{ background: '#FFFBEB', border: '1px solid #FDE68A' }}>
-                    <p className="text-amber-700 text-xs font-black mb-0.5">الهدف</p>
+                    <p className="text-amber-700 text-xs font-black mb-0.5">{t.objectiveLabel}</p>
                     <p className="text-gray-700 text-sm leading-relaxed">
                       {selected.psychologyObjectiveAr || selected.psychologyObjective}
                     </p>
@@ -550,7 +553,7 @@ export default function ChildSessionPage() {
                   <button onClick={() => setModalTab('steps')}
                     className="w-full text-white font-black py-4 rounded-2xl text-lg flex items-center justify-center gap-2 transition-all active:scale-95"
                     style={{ background: selCfg.gradient, boxShadow: '0 4px 14px rgba(124,92,252,0.3)' }}>
-                    <Play className="w-5 h-5 fill-white" /> ابدأ التمرين
+                    <Play className="w-5 h-5 fill-white" /> {t.startExerciseButton}
                   </button>
                 </div>
               )}
@@ -591,21 +594,21 @@ export default function ChildSessionPage() {
                     <button onClick={handleStart}
                       className="w-full text-white font-black py-5 rounded-2xl text-xl flex items-center justify-center gap-3 transition-all active:scale-95"
                       style={{ background: selCfg.gradient, boxShadow: '0 6px 20px rgba(124,92,252,0.35)' }}>
-                      <Play className="w-6 h-6 fill-white" /> ابدأ!
+                      <Play className="w-6 h-6 fill-white" /> {t.startButton}
                     </button>
                   ) : step < selected.instructionsAr.length - 1 ? (
                     <button onClick={handleNext}
                       className="w-full text-white font-black py-5 rounded-2xl text-xl transition-all active:scale-95"
                       style={{ background: selCfg.gradient, boxShadow: '0 6px 20px rgba(124,92,252,0.35)' }}>
-                      التالي ←
+                      {t.nextButton}
                     </button>
                   ) : (
                     <button onClick={finish} disabled={saving}
                       className="w-full text-white font-black py-5 rounded-2xl text-xl flex items-center justify-center gap-3 transition-all active:scale-95 disabled:opacity-60"
                       style={{ background: 'linear-gradient(135deg,#10B981,#059669)', boxShadow: '0 6px 20px rgba(16,185,129,0.35)' }}>
                       {saving
-                        ? <span className="animate-pulse">جاري الحفظ...</span>
-                        : <><CheckCircle className="w-6 h-6" /> انتهيت! 🎉</>}
+                        ? <span className="animate-pulse">{t.savingButton}</span>
+                        : <><CheckCircle className="w-6 h-6" /> {t.finishButton}</>}
                     </button>
                   )}
                 </div>

@@ -1,16 +1,15 @@
 'use client'
 import { useEffect, useState } from 'react'
 import type { Appointment } from '@/lib/types'
+import { useLang, tr } from '@/lib/i18n'
 
-const DAYS_AR = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت']
-
-const TYPE_CFG: Record<string, { label: string; bg: string; color: string; icon: string }> = {
-  assessment:   { label: 'تقييمية',  bg: '#EDE9FF', color: '#6B46F0', icon: '📊' },
-  followup:     { label: 'متابعة',   bg: '#ECFDF5', color: '#059669', icon: '🔄' },
-  emergency:    { label: 'طارئة',    bg: '#FEF2F2', color: '#DC2626', icon: '🚨' },
-  training:     { label: 'تدريبية',  bg: '#F0FFF9', color: '#0D9488', icon: '💪' },
-  consultation: { label: 'استشارة',  bg: '#FFF8E8', color: '#D97706', icon: '💬' },
-  review:       { label: 'مراجعة',   bg: '#F3EEFF', color: '#7C5CFC', icon: '📋' },
+const TYPE_STYLE: Record<string, { bg: string; color: string; icon: string }> = {
+  assessment:   { bg: '#EDE9FF', color: '#6B46F0', icon: '📊' },
+  followup:     { bg: '#ECFDF5', color: '#059669', icon: '🔄' },
+  emergency:    { bg: '#FEF2F2', color: '#DC2626', icon: '🚨' },
+  training:     { bg: '#F0FFF9', color: '#0D9488', icon: '💪' },
+  consultation: { bg: '#FFF8E8', color: '#D97706', icon: '💬' },
+  review:       { bg: '#F3EEFF', color: '#7C5CFC', icon: '📋' },
 }
 
 function jitsiUrl(url: string, name = 'الطالب'): string {
@@ -24,6 +23,9 @@ function daysUntil(dateStr: string): number {
 }
 
 export default function StudentSchedulePage() {
+  const { lang } = useLang()
+  const t = tr[lang].studentSchedule
+  const coachName = tr[lang].portal.common.coachName
   const [appointments, setAppointments] = useState<Appointment[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -35,9 +37,9 @@ export default function StudentSchedulePage() {
   }, [])
 
   if (loading) return (
-    <div className="flex flex-col items-center justify-center py-24" dir="rtl">
+    <div className="flex flex-col items-center justify-center py-24">
       <div className="text-5xl animate-bounce-soft mb-4">📅</div>
-      <p className="font-black text-lg" style={{ color: '#7C5CFC' }}>جاري التحميل...</p>
+      <p className="font-black text-lg" style={{ color: '#7C5CFC' }}>{t.loading}</p>
     </div>
   )
 
@@ -46,12 +48,12 @@ export default function StudentSchedulePage() {
   const restAppts = upcoming.slice(1)
 
   return (
-    <div className="space-y-5" dir="rtl">
+    <div className="space-y-5">
 
       {/* ── Header ── */}
       <div className="text-center pt-1 pb-1">
-        <h1 className="font-black text-2xl text-gray-900">جدولي 📅</h1>
-        <p className="text-gray-500 text-sm mt-1">جلساتك مع الأستاذ أمين</p>
+        <h1 className="font-black text-2xl text-gray-900">{t.pageTitle}</h1>
+        <p className="text-gray-500 text-sm mt-1">{t.sessionsWithCoach}</p>
       </div>
 
       {upcoming.length === 0 ? (
@@ -60,18 +62,19 @@ export default function StudentSchedulePage() {
           style={{ background: '#FFFFFF', border: '2px dashed #D3BBFF' }}
         >
           <div className="text-5xl mb-3">😊</div>
-          <p className="font-black text-gray-700">لا توجد جلسات مجدولة</p>
-          <p className="text-gray-400 text-sm mt-1">سيحدد لك ولي أمرك الموعد القادم</p>
+          <p className="font-black text-gray-700">{t.noSessionsScheduled}</p>
+          <p className="text-gray-400 text-sm mt-1">{t.parentWillSchedule}</p>
         </div>
       ) : (
         <>
           {/* ── Next session hero card ── */}
           {nextAppt && (() => {
             const d = new Date(nextAppt.date)
-            const day = DAYS_AR[d.getDay()]
+            const day = t.days[d.getDay()]
             const isToday = new Date().toDateString() === d.toDateString()
             const days = daysUntil(nextAppt.date)
-            const typeCfg = TYPE_CFG[nextAppt.type] || { label: nextAppt.type, bg: '#F3EEFF', color: '#7C5CFC', icon: '📅' }
+            const apptLabel = t.apptTypes[nextAppt.type as keyof typeof t.apptTypes] || nextAppt.type
+            const typeCfg = { label: apptLabel, ...(TYPE_STYLE[nextAppt.type] || { bg: '#F3EEFF', color: '#7C5CFC', icon: '📅' }) }
 
             return (
               <div
@@ -91,7 +94,7 @@ export default function StudentSchedulePage() {
                       className="text-xs font-black px-3 py-1 rounded-full"
                       style={{ background: 'rgba(255,255,255,0.2)' }}
                     >
-                      {isToday ? '⚡ اليوم!' : '🗓 الجلسة القادمة'}
+                      {isToday ? t.todayBadge : t.nextSessionBadge}
                     </span>
                     <span
                       className="text-xs font-black px-2.5 py-1 rounded-full"
@@ -112,13 +115,13 @@ export default function StudentSchedulePage() {
                     <div>
                       <h3 className="font-black text-lg leading-tight">
                         {isToday
-                          ? 'الجلسة الآن! 🎉'
-                          : days === 0 ? 'اليوم!'
-                          : days === 1 ? 'غداً!'
-                          : `بعد ${days} أيام`}
+                          ? t.sessionNowTitle
+                          : days === 0 ? t.todayExclaim
+                          : days === 1 ? t.tomorrowExclaim
+                          : t.inDays(days)}
                       </h3>
                       <p className="text-white/80 text-sm ltr-num mt-0.5">⏰ {nextAppt.timeSlot}</p>
-                      <p className="text-white/70 text-xs mt-0.5">👨‍⚕️ الأستاذ أمين</p>
+                      <p className="text-white/70 text-xs mt-0.5">👨‍⚕️ {coachName}</p>
                     </div>
                   </div>
 
@@ -130,7 +133,7 @@ export default function StudentSchedulePage() {
                       className="block text-center font-black py-3 rounded-2xl text-sm transition-all active:scale-95 hover:opacity-90"
                       style={{ background: '#FFFFFF', color: '#7C5CFC' }}
                     >
-                      ▶ ادخل الجلسة
+                      {t.enterSession}
                     </a>
                   )}
                 </div>
@@ -141,12 +144,13 @@ export default function StudentSchedulePage() {
           {/* ── Rest of sessions ── */}
           {restAppts.length > 0 && (
             <div className="space-y-3">
-              <h2 className="font-black text-gray-700 text-sm">جلسات قادمة</h2>
+              <h2 className="font-black text-gray-700 text-sm">{t.upcomingSessionsTitle}</h2>
               {restAppts.map(appt => {
                 const d = new Date(appt.date)
-                const day = DAYS_AR[d.getDay()]
+                const day = t.days[d.getDay()]
                 const isToday = new Date().toDateString() === d.toDateString()
-                const typeCfg = TYPE_CFG[appt.type] || { label: appt.type, bg: '#F3EEFF', color: '#7C5CFC', icon: '📅' }
+                const apptLabel = t.apptTypes[appt.type as keyof typeof t.apptTypes] || appt.type
+                const typeCfg = { label: apptLabel, ...(TYPE_STYLE[appt.type] || { bg: '#F3EEFF', color: '#7C5CFC', icon: '📅' }) }
 
                 return (
                   <div
@@ -163,7 +167,7 @@ export default function StudentSchedulePage() {
                     {isToday && (
                       <div className="flex items-center gap-2 mb-3">
                         <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: '#7C5CFC' }} />
-                        <span className="font-black text-xs" style={{ color: '#7C5CFC' }}>اليوم!</span>
+                        <span className="font-black text-xs" style={{ color: '#7C5CFC' }}>{t.todayExclaim}</span>
                       </div>
                     )}
                     <div className="flex items-center gap-4">
@@ -177,7 +181,7 @@ export default function StudentSchedulePage() {
                       <div className="flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
                           <h3 className="font-black text-gray-900 text-sm">
-                            {typeCfg.icon} جلسة {typeCfg.label}
+                            {t.sessionTypeTitle(typeCfg.icon, typeCfg.label)}
                           </h3>
                           <span
                             className="text-[10px] font-black px-2 py-0.5 rounded-full"
@@ -187,7 +191,7 @@ export default function StudentSchedulePage() {
                           </span>
                         </div>
                         <p className="text-gray-500 text-sm ltr-num mt-0.5">⏰ {appt.timeSlot}</p>
-                        <p className="text-gray-400 text-xs mt-0.5">👨‍⚕️ الأستاذ أمين</p>
+                        <p className="text-gray-400 text-xs mt-0.5">👨‍⚕️ {coachName}</p>
                       </div>
                     </div>
 
@@ -203,7 +207,7 @@ export default function StudentSchedulePage() {
                           boxShadow: '0 4px 8px rgba(124,92,252,0.25)',
                         }}
                       >
-                        ▶ ادخل الجلسة
+                        {t.enterSession}
                       </a>
                     )}
                   </div>
@@ -223,8 +227,8 @@ export default function StudentSchedulePage() {
         }}
       >
         <div className="text-3xl mb-2">🌟</div>
-        <p className="font-black text-lg">كل جلسة = نقاط + تطور!</p>
-        <p className="text-white/80 text-sm mt-1">الأستاذ أمين يتطلع لرؤيتك</p>
+        <p className="font-black text-lg">{t.motivationalFooter}</p>
+        <p className="text-white/80 text-sm mt-1">{t.coachLooksForward}</p>
       </div>
     </div>
   )

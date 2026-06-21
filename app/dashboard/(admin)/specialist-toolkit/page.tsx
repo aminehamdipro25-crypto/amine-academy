@@ -4,7 +4,7 @@ import { useLang, tr, type Lang } from '@/lib/i18n'
 import type { AssessmentResult } from '@/lib/types'
 import {
   Stethoscope, ArrowRight, ArrowLeft, Printer, RotateCcw,
-  CheckCircle2, Sparkles, ClipboardList, Save, Clock, TimerReset, AlertTriangle,
+  CheckCircle2, Sparkles, ClipboardList, Save, Clock, TimerReset, AlertTriangle, CalendarClock,
 } from 'lucide-react'
 import ADHDScale from '@/components/session/assessments/ADHDScale'
 import AttentionDomainsScale from '@/components/session/assessments/AttentionDomainsScale'
@@ -307,6 +307,14 @@ export default function SpecialistToolkitPage() {
 
     return flags
   }, [results, t])
+
+  const recommendedFrequency = useMemo((): 'low' | 'medium' | 'high' | null => {
+    if (results.length === 0) return null
+    if (results.some(r => r.severity === 'severe') || redFlags.length > 0) return 'high'
+    if (results.some(r => r.severity === 'moderate')) return 'medium'
+    if (results.some(r => r.severity === 'mild')) return 'low'
+    return null
+  }, [results, redFlags])
 
   const today = new Date().toLocaleDateString(localeFor(lang), { year: 'numeric', month: 'long', day: 'numeric' })
 
@@ -713,6 +721,17 @@ export default function SpecialistToolkitPage() {
                         </li>
                       ))}
                     </ul>
+                  </div>
+                )}
+
+                {/* Recommended session frequency */}
+                {recommendedFrequency && (
+                  <div className="bg-teal-50 border border-teal-100 rounded-2xl p-5 space-y-2 break-inside-avoid">
+                    <h3 className="font-black text-teal-800 flex items-center gap-2">
+                      <CalendarClock className="w-4 h-4" />
+                      {t.frequencyPlanTitle}
+                    </h3>
+                    <p className="text-sm text-teal-700/90">{t.frequencyPlanOptions[recommendedFrequency]}</p>
                   </div>
                 )}
 

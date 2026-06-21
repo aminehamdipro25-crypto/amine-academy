@@ -1121,6 +1121,17 @@ export const tr = {
         dyslexia: 'عسر القراءة', dyscalculia: 'عسر الحساب', dysgraphia: 'عسر الكتابة', workingMemory: 'ذاكرة العمل', processingSpeed: 'سرعة المعالجة',
         social: 'التواصل الاجتماعي', repetitive: 'السلوكيات النمطية', sensory: 'الحساسية الحسية', flexibility: 'المرونة والتكيف', selfRegulation: 'التنظيم الذاتي',
       },
+      draftFoundTitle: 'يوجد تقييم محفوظ تلقائياً',
+      draftFoundMessage: (name: string) => name
+        ? `تم العثور على تقييم غير مكتمل لـ"${name}" محفوظ على هذا الجهاز. هل تريد استرجاعه ومتابعة العمل، أم البدء من جديد؟`
+        : 'تم العثور على تقييم غير مكتمل محفوظ على هذا الجهاز. هل تريد استرجاعه ومتابعة العمل، أم البدء من جديد؟',
+      restoreDraftButton: 'استرجاع التقييم المحفوظ',
+      discardDraftButton: 'تجاهل والبدء من جديد',
+      autosavedLabel: (time: string) => `محفوظ تلقائياً على هذا الجهاز — آخر حفظ ${time}`,
+      resetConfirmTitle: 'بدء تقييم جديد؟',
+      resetConfirmMessage: 'سيُمحى هذا التقرير من الذاكرة المؤقتة لهذا الجهاز. تأكد من طباعته أو حفظه كـ PDF أولاً إذا كنت بحاجة إليه.',
+      resetConfirmButton: 'نعم، ابدأ تقييماً جديداً',
+      cancelButton: 'إلغاء',
     },
   },
   en: {
@@ -2207,6 +2218,17 @@ export const tr = {
         dyslexia: 'Dyslexia', dyscalculia: 'Dyscalculia', dysgraphia: 'Dysgraphia', workingMemory: 'Working memory', processingSpeed: 'Processing speed',
         social: 'Social communication', repetitive: 'Repetitive behaviors', sensory: 'Sensory sensitivity', flexibility: 'Flexibility & coping', selfRegulation: 'Self-regulation',
       },
+      draftFoundTitle: 'An auto-saved draft was found',
+      draftFoundMessage: (name: string) => name
+        ? `An unfinished assessment for "${name}" was found saved on this device. Restore it and continue, or start fresh?`
+        : 'An unfinished assessment was found saved on this device. Restore it and continue, or start fresh?',
+      restoreDraftButton: 'Restore saved assessment',
+      discardDraftButton: 'Discard and start fresh',
+      autosavedLabel: (time: string) => `Auto-saved on this device — last saved ${time}`,
+      resetConfirmTitle: 'Start a new assessment?',
+      resetConfirmMessage: "This report will be cleared from this device's temporary storage. Make sure to print or save it as PDF first if you need it.",
+      resetConfirmButton: 'Yes, start a new assessment',
+      cancelButton: 'Cancel',
     },
   },
   fr: {
@@ -3293,6 +3315,17 @@ export const tr = {
         dyslexia: 'Dyslexie', dyscalculia: 'Dyscalculie', dysgraphia: 'Dysgraphie', workingMemory: 'Mémoire de travail', processingSpeed: 'Vitesse de traitement',
         social: 'Communication sociale', repetitive: 'Comportements répétitifs', sensory: 'Sensibilité sensorielle', flexibility: 'Flexibilité et adaptation', selfRegulation: 'Autorégulation',
       },
+      draftFoundTitle: 'Un brouillon enregistré automatiquement a été trouvé',
+      draftFoundMessage: (name: string) => name
+        ? `Une évaluation inachevée pour « ${name} » a été trouvée, enregistrée sur cet appareil. La restaurer et continuer, ou repartir à zéro ?`
+        : 'Une évaluation inachevée a été trouvée, enregistrée sur cet appareil. La restaurer et continuer, ou repartir à zéro ?',
+      restoreDraftButton: "Restaurer l'évaluation enregistrée",
+      discardDraftButton: 'Ignorer et repartir à zéro',
+      autosavedLabel: (time: string) => `Enregistré automatiquement sur cet appareil — dernier enregistrement ${time}`,
+      resetConfirmTitle: 'Démarrer une nouvelle évaluation ?',
+      resetConfirmMessage: "Ce rapport sera effacé du stockage temporaire de cet appareil. Assurez-vous de l'imprimer ou de l'enregistrer en PDF avant si nécessaire.",
+      resetConfirmButton: 'Oui, démarrer une nouvelle évaluation',
+      cancelButton: 'Annuler',
     },
   },
 } as const

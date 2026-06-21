@@ -6,7 +6,9 @@ interface Props {
   title: string
   message: string
   confirmLabel?: string
+  cancelLabel?: string
   confirmClass?: string
+  dir?: 'rtl' | 'ltr'
   onConfirm: () => void
   onCancel: () => void
 }
@@ -14,7 +16,9 @@ interface Props {
 export function ConfirmDialog({
   open, title, message,
   confirmLabel = 'تأكيد',
+  cancelLabel = 'إلغاء',
   confirmClass = 'bg-red-600 hover:bg-red-700',
+  dir = 'rtl',
   onConfirm, onCancel,
 }: Props) {
   if (!open) return null
@@ -27,7 +31,7 @@ export function ConfirmDialog({
       <div
         className="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl palette-enter"
         onClick={e => e.stopPropagation()}
-        dir="rtl"
+        dir={dir}
       >
         <div className="flex items-start gap-4">
           <div className="w-11 h-11 bg-red-50 rounded-2xl flex items-center justify-center flex-shrink-0">
@@ -46,7 +50,7 @@ export function ConfirmDialog({
             onClick={onCancel}
             className="flex-1 py-2.5 rounded-2xl border border-gray-200 text-gray-700 text-sm font-bold hover:bg-gray-50 transition-colors"
           >
-            إلغاء
+            {cancelLabel}
           </button>
           <button
             onClick={onConfirm}

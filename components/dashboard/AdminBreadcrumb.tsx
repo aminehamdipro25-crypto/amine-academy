@@ -21,6 +21,8 @@ export default function AdminBreadcrumb() {
     messages:              navT.messages,
     settings:              navT.settings,
     analytics:             navT.analytics,
+    staff:                 navT.staff,
+    'specialist-toolkit':  navT.specialistToolkit,
     new:                   navT.newItem,
   }
 

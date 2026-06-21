@@ -1,15 +1,16 @@
 'use client'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useLang, tr, type Lang } from '@/lib/i18n'
 import type { AssessmentResult } from '@/lib/types'
 import {
   Stethoscope, ArrowRight, ArrowLeft, Printer, RotateCcw,
-  CheckCircle2, Sparkles, ClipboardList,
+  CheckCircle2, Sparkles, ClipboardList, Save,
 } from 'lucide-react'
 import ADHDScale from '@/components/session/assessments/ADHDScale'
 import AttentionDomainsScale from '@/components/session/assessments/AttentionDomainsScale'
 import LearningDifficultiesScale from '@/components/session/assessments/LearningDifficultiesScale'
 import AutismScale from '@/components/session/assessments/AutismScale'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 
 type ConcernKey = 'autism' | 'adhd' | 'attention' | 'learning'
 type ScaleKey = 'autism' | 'adhd' | 'attention-domains' | 'learning-difficulties'
@@ -51,6 +52,17 @@ function localeFor(lang: Lang) {
   return lang === 'en' ? 'en-US' : 'fr-FR'
 }
 
+const DRAFT_KEY = 'specialist-toolkit-draft-v1'
+
+interface Draft {
+  step: Step
+  name: string; age: string; gender: 'male' | 'female' | 'unspecified'; parentName: string
+  concerns: ConcernKey[]; selectedScales: ScaleKey[]
+  runOrder: ScaleKey[]; currentIndex: number; results: AssessmentResult[]
+  therapistName: string; studentId: string
+  savedAt: number
+}
+
 export default function SpecialistToolkitPage() {
   const { lang } = useLang()
   const t = tr[lang].adminSpecialistToolkit
@@ -72,10 +84,61 @@ export default function SpecialistToolkitPage() {
   const [runOrder, setRunOrder] = useState<ScaleKey[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [results, setResults] = useState<AssessmentResult[]>([])
-  const [studentId] = useState(() => `temp-${Date.now().toString(36)}`)
+  const [studentId, setStudentId] = useState(() => `temp-${Date.now().toString(36)}`)
 
   // Step 4 — report
   const [therapistName, setTherapistName] = useState('')
+
+  // Local draft recovery — protects an in-progress walk-in assessment from tab refresh/crash
+  const [pendingDraft, setPendingDraft] = useState<Draft | null>(null)
+  const [lastSavedAt, setLastSavedAt] = useState<number | null>(null)
+  const [confirmReset, setConfirmReset] = useState(false)
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY)
+      if (!raw) return
+      const draft: Draft = JSON.parse(raw)
+      if (draft.name?.trim() || (draft.results?.length ?? 0) > 0) {
+        setPendingDraft(draft)
+      } else {
+        localStorage.removeItem(DRAFT_KEY)
+      }
+    } catch {
+      localStorage.removeItem(DRAFT_KEY)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (pendingDraft) return // don't overwrite the saved draft until the user decides
+    if (!name.trim() && results.length === 0) return // nothing worth saving yet
+    const draft: Draft = {
+      step, name, age, gender, parentName,
+      concerns: [...concerns], selectedScales: [...selectedScales],
+      runOrder, currentIndex, results, therapistName, studentId,
+      savedAt: Date.now(),
+    }
+    try {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(draft))
+      setLastSavedAt(draft.savedAt)
+    } catch { /* storage unavailable — printing/report still works without autosave */ }
+  }, [pendingDraft, step, name, age, gender, parentName, concerns, selectedScales, runOrder, currentIndex, results, therapistName, studentId])
+
+  function restoreDraft() {
+    if (!pendingDraft) return
+    setStep(pendingDraft.step)
+    setName(pendingDraft.name); setAge(pendingDraft.age); setGender(pendingDraft.gender); setParentName(pendingDraft.parentName)
+    setConcerns(new Set(pendingDraft.concerns)); setSelectedScales(new Set(pendingDraft.selectedScales))
+    setRunOrder(pendingDraft.runOrder); setCurrentIndex(pendingDraft.currentIndex); setResults(pendingDraft.results)
+    setTherapistName(pendingDraft.therapistName); setStudentId(pendingDraft.studentId)
+    setLastSavedAt(pendingDraft.savedAt)
+    setPendingDraft(null)
+  }
+
+  function discardDraft() {
+    localStorage.removeItem(DRAFT_KEY)
+    setPendingDraft(null)
+  }
 
   function toggleConcern(c: ConcernKey) {
     setConcerns(prev => {
@@ -133,10 +196,13 @@ export default function SpecialistToolkitPage() {
   }
 
   function resetAll() {
+    localStorage.removeItem(DRAFT_KEY)
+    setLastSavedAt(null)
     setStep('info')
     setName(''); setAge(''); setGender('unspecified'); setParentName('')
     setConcerns(new Set()); setSelectedScales(new Set())
     setRunOrder([]); setCurrentIndex(0); setResults([]); setTherapistName('')
+    setStudentId(`temp-${Date.now().toString(36)}`)
     setError('')
   }
 
@@ -179,7 +245,34 @@ export default function SpecialistToolkitPage() {
             </div>
           ))}
         </div>
+
+        {lastSavedAt && step !== 'info' && (
+          <p className="flex items-center gap-1.5 text-[11px] text-gray-400 mt-3">
+            <Save className="w-3 h-3" />
+            {t.autosavedLabel(new Date(lastSavedAt).toLocaleTimeString(localeFor(lang), { hour: '2-digit', minute: '2-digit' }))}
+          </p>
+        )}
       </div>
+
+      {pendingDraft && (
+        <div className="print:hidden bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3">
+          <Save className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <p className="font-black text-amber-900 text-sm">{t.draftFoundTitle}</p>
+            <p className="text-amber-700 text-xs mt-1 leading-relaxed">{t.draftFoundMessage(pendingDraft.name)}</p>
+            <div className="flex gap-2 mt-3">
+              <button onClick={restoreDraft}
+                className="bg-amber-600 text-white text-xs font-black px-4 py-2 rounded-xl hover:bg-amber-700 transition-colors">
+                {t.restoreDraftButton}
+              </button>
+              <button onClick={discardDraft}
+                className="border border-amber-300 text-amber-700 text-xs font-bold px-4 py-2 rounded-xl hover:bg-amber-100 transition-colors">
+                {t.discardDraftButton}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {error && (
         <div className="print:hidden bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-red-700 text-sm font-bold">{error}</div>
@@ -330,7 +423,7 @@ export default function SpecialistToolkitPage() {
                   <Printer className="w-4 h-4" />
                   {t.printButton}
                 </button>
-                <button onClick={resetAll}
+                <button onClick={() => setConfirmReset(true)}
                   className="flex items-center gap-2 border border-gray-200 text-gray-600 font-bold px-5 py-2.5 rounded-xl hover:bg-gray-50 transition-colors text-sm flex-shrink-0">
                   <RotateCcw className="w-4 h-4" />
                   {t.newAssessmentButton}
@@ -445,6 +538,18 @@ export default function SpecialistToolkitPage() {
           )}
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmReset}
+        title={t.resetConfirmTitle}
+        message={t.resetConfirmMessage}
+        confirmLabel={t.resetConfirmButton}
+        cancelLabel={t.cancelButton}
+        confirmClass="bg-teal-600 hover:bg-teal-700"
+        dir={lang === 'ar' ? 'rtl' : 'ltr'}
+        onConfirm={() => { setConfirmReset(false); resetAll() }}
+        onCancel={() => setConfirmReset(false)}
+      />
     </div>
   )
 }

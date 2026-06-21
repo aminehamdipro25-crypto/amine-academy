@@ -15,6 +15,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 type ConcernKey = 'autism' | 'adhd' | 'attention' | 'learning'
 type ScaleKey = 'autism' | 'adhd' | 'attention-domains' | 'learning-difficulties'
 type Step = 'info' | 'battery' | 'running' | 'report'
+type ScaleSource = 'observation' | 'parentReport' | 'both'
 
 const SCALE_ORDER: ScaleKey[] = ['autism', 'adhd', 'attention-domains', 'learning-difficulties']
 
@@ -60,6 +61,7 @@ interface Draft {
   concerns: ConcernKey[]; selectedScales: ScaleKey[]
   runOrder: ScaleKey[]; currentIndex: number; results: AssessmentResult[]
   clinicalNotes: Partial<Record<ScaleKey, string>>
+  scaleSource: Partial<Record<ScaleKey, ScaleSource>>
   therapistName: string; studentId: string
   savedAt: number
 }
@@ -112,6 +114,7 @@ export default function SpecialistToolkitPage() {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [results, setResults] = useState<AssessmentResult[]>([])
   const [clinicalNotes, setClinicalNotes] = useState<Partial<Record<ScaleKey, string>>>({})
+  const [scaleSource, setScaleSource] = useState<Partial<Record<ScaleKey, ScaleSource>>>({})
   const [studentId, setStudentId] = useState(() => `temp-${Date.now().toString(36)}`)
   const [secondsLeft, setSecondsLeft] = useState(0)
   const [timerResetNonce, setTimerResetNonce] = useState(0)
@@ -145,14 +148,14 @@ export default function SpecialistToolkitPage() {
     const draft: Draft = {
       step, name, age, gender, parentName,
       concerns: [...concerns], selectedScales: [...selectedScales],
-      runOrder, currentIndex, results, clinicalNotes, therapistName, studentId,
+      runOrder, currentIndex, results, clinicalNotes, scaleSource, therapistName, studentId,
       savedAt: Date.now(),
     }
     try {
       localStorage.setItem(DRAFT_KEY, JSON.stringify(draft))
       setLastSavedAt(draft.savedAt)
     } catch { /* storage unavailable — printing/report still works without autosave */ }
-  }, [pendingDraft, step, name, age, gender, parentName, concerns, selectedScales, runOrder, currentIndex, results, clinicalNotes, therapistName, studentId])
+  }, [pendingDraft, step, name, age, gender, parentName, concerns, selectedScales, runOrder, currentIndex, results, clinicalNotes, scaleSource, therapistName, studentId])
 
   function restoreDraft() {
     if (!pendingDraft) return
@@ -161,6 +164,7 @@ export default function SpecialistToolkitPage() {
     setConcerns(new Set(pendingDraft.concerns)); setSelectedScales(new Set(pendingDraft.selectedScales))
     setRunOrder(pendingDraft.runOrder); setCurrentIndex(pendingDraft.currentIndex); setResults(pendingDraft.results)
     setClinicalNotes(pendingDraft.clinicalNotes ?? {})
+    setScaleSource(pendingDraft.scaleSource ?? {})
     setTherapistName(pendingDraft.therapistName); setStudentId(pendingDraft.studentId)
     setLastSavedAt(pendingDraft.savedAt)
     setPendingDraft(null)
@@ -232,7 +236,7 @@ export default function SpecialistToolkitPage() {
     setStep('info')
     setName(''); setAge(''); setGender('unspecified'); setParentName('')
     setConcerns(new Set()); setSelectedScales(new Set()); setWarmupOpen(false)
-    setRunOrder([]); setCurrentIndex(0); setResults([]); setClinicalNotes({}); setTherapistName('')
+    setRunOrder([]); setCurrentIndex(0); setResults([]); setClinicalNotes({}); setScaleSource({}); setTherapistName('')
     setStudentId(`temp-${Date.now().toString(36)}`)
     setError('')
   }
@@ -537,6 +541,19 @@ export default function SpecialistToolkitPage() {
               <CurrentScale studentId={studentId} onComplete={handleScaleComplete} onCancel={handleScaleSkip} />
             </div>
             <div className="mt-3">
+              <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.sourceLabel}</label>
+              <div className="grid grid-cols-3 gap-2">
+                {(['observation', 'parentReport', 'both'] as ScaleSource[]).map(src => (
+                  <button key={src} type="button" onClick={() => setScaleSource(prev => ({ ...prev, [currentScaleKey]: src }))}
+                    className={`py-2 rounded-xl text-xs font-bold border-2 transition-all ${
+                      scaleSource[currentScaleKey] === src ? 'border-teal-400 bg-teal-50 text-teal-700' : 'border-gray-200 bg-gray-50 text-gray-500 hover:border-gray-300'
+                    }`}>
+                    {t.sourceOptions[src]}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="mt-3">
               <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.clinicalNotesLabel}</label>
               <textarea
                 value={clinicalNotes[currentScaleKey] ?? ''}
@@ -628,8 +645,15 @@ export default function SpecialistToolkitPage() {
                 {results.map(result => (
                   <div key={result.id} className="space-y-3 break-inside-avoid">
                     <div className="flex items-center justify-between">
-                      <h3 className="font-black text-gray-900">{t.scaleNames[result.type as ScaleKey]}</h3>
-                      <span className={`text-xs font-black px-3 py-1 rounded-full ${SEVERITY_BADGE[result.severity]}`}>
+                      <div>
+                        <h3 className="font-black text-gray-900">{t.scaleNames[result.type as ScaleKey]}</h3>
+                        {scaleSource[result.type as ScaleKey] && (
+                          <p className="text-[11px] text-gray-400 mt-0.5">
+                            {t.sourceReportLabel}: {t.sourceOptions[scaleSource[result.type as ScaleKey] as ScaleSource]}
+                          </p>
+                        )}
+                      </div>
+                      <span className={`text-xs font-black px-3 py-1 rounded-full flex-shrink-0 ${SEVERITY_BADGE[result.severity]}`}>
                         {t.severityLabels[result.severity]}
                       </span>
                     </div>

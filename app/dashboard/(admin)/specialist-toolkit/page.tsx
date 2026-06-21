@@ -696,7 +696,7 @@ export default function SpecialistToolkitPage() {
                     )}
 
                     {clinicalNotes[result.type as ScaleKey]?.trim() && (
-                      <div className="bg-gray-50 rounded-xl p-3">
+                      <div className="bg-gray-50 rounded-xl p-3 print:rounded-none">
                         <p className="text-xs font-bold text-gray-500 mb-1">{t.clinicalNotesReportTitle}</p>
                         <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
                           {clinicalNotes[result.type as ScaleKey]}
@@ -708,7 +708,7 @@ export default function SpecialistToolkitPage() {
 
                 {/* Cross-domain red flags */}
                 {redFlags.length > 0 && (
-                  <div className="bg-red-50 border border-red-100 rounded-2xl p-5 space-y-2 break-inside-avoid">
+                  <div className="bg-red-50 border border-red-100 rounded-2xl p-5 space-y-2 break-inside-avoid print:rounded-none">
                     <h3 className="font-black text-red-700 flex items-center gap-2">
                       <AlertTriangle className="w-4 h-4" />
                       {t.redFlagsTitle}
@@ -726,7 +726,7 @@ export default function SpecialistToolkitPage() {
 
                 {/* Recommended session frequency */}
                 {recommendedFrequency && (
-                  <div className="bg-teal-50 border border-teal-100 rounded-2xl p-5 space-y-2 break-inside-avoid">
+                  <div className="bg-teal-50 border border-teal-100 rounded-2xl p-5 space-y-2 break-inside-avoid print:rounded-none">
                     <h3 className="font-black text-teal-800 flex items-center gap-2">
                       <CalendarClock className="w-4 h-4" />
                       {t.frequencyPlanTitle}
@@ -737,11 +737,11 @@ export default function SpecialistToolkitPage() {
 
                 {/* Action plan */}
                 {actionPlan.length > 0 && (
-                  <div className="bg-gray-50 rounded-2xl p-5 space-y-2 break-inside-avoid">
-                    <h3 className="font-black text-gray-900">{t.actionPlanTitle}</h3>
+                  <div className="bg-gray-50 rounded-2xl p-5 space-y-2 print:rounded-none">
+                    <h3 className="font-black text-gray-900 break-inside-avoid">{t.actionPlanTitle}</h3>
                     <ul className="text-sm text-gray-600 space-y-1.5">
                       {actionPlan.map((r, i) => (
-                        <li key={i} className="flex items-start gap-2">
+                        <li key={i} className="flex items-start gap-2 break-inside-avoid">
                           <CheckCircle2 className="w-4 h-4 text-teal-600 flex-shrink-0 mt-0.5" />
                           <span>{r}</span>
                         </li>
@@ -752,6 +752,8 @@ export default function SpecialistToolkitPage() {
 
                 {/* Disclaimer */}
                 <p className="text-[11px] text-gray-400 border-t border-gray-100 pt-4">{t.disclaimerText}</p>
+                {/* Trailing print buffer: avoids the browser clipping the disclaimer when it misjudges the last page's content height */}
+                <div className="hidden print:block print:h-24" aria-hidden="true" />
               </div>
             </>
           )}

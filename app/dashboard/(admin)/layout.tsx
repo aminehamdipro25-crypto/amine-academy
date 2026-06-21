@@ -14,7 +14,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <ToastProvider>
-      <div className="min-h-screen flex bg-slate-100" dir={dir}>
+      <div className="min-h-screen print:min-h-0 flex bg-slate-100" dir={dir}>
 
         {/* Mobile backdrop */}
         {mobileOpen && (
@@ -38,11 +38,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </aside>
 
         {/* Main area */}
-        <div className="flex-1 flex flex-col min-w-0 min-h-screen">
+        <div className="flex-1 flex flex-col min-w-0 min-h-screen print:min-h-0">
           <div className="print:hidden">
             <AdminHeader onMenuToggle={() => setMobileOpen(o => !o)} onUnreadChange={setUnreadMessages} />
           </div>
-          <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-auto print:p-0">
+          <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-auto print:overflow-visible print:h-auto print:p-0">
             {children}
           </main>
         </div>

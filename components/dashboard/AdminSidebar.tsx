@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Users, Dumbbell, Calendar,
   BarChart3, FileText, LogOut, Brain,
   ClipboardList, BookOpen, Settings, CreditCard, MessageSquare,
-  Zap, UserCog, Stethoscope,
+  Zap, UserCog, PersonStanding,
 } from 'lucide-react'
 import { useLang, tr } from '@/lib/i18n'
 
@@ -33,7 +33,7 @@ export default function AdminSidebar({ onClose, unreadMessages = 0 }: { onClose?
     { href: '/dashboard/reports',                label: navT.reports, icon: FileText, ownerOnly: false },
     { href: '/dashboard/messages',               label: navT.messages, icon: MessageSquare, ownerOnly: false },
     { href: '/dashboard/learning-difficulties',  label: navT.learningDifficulties, icon: BookOpen, ownerOnly: false },
-    { href: '/dashboard/specialist-toolkit',     label: navT.specialistToolkit, icon: Stethoscope, ownerOnly: false },
+    { href: '/dashboard/specialist-toolkit',     label: navT.specialistToolkit, icon: PersonStanding, ownerOnly: false },
     { href: '/dashboard/analytics',              label: navT.analytics, icon: BarChart3, ownerOnly: true },
     { href: '/dashboard/staff',                  label: navT.staff, icon: UserCog, ownerOnly: true },
     { href: '/dashboard/settings',               label: navT.settings, icon: Settings, ownerOnly: true },

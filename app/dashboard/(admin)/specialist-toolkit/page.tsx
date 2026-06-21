@@ -3,7 +3,7 @@ import { useState, useMemo, useEffect } from 'react'
 import { useLang, tr, type Lang } from '@/lib/i18n'
 import type { AssessmentResult } from '@/lib/types'
 import {
-  Stethoscope, ArrowRight, ArrowLeft, Printer, RotateCcw,
+  PersonStanding, ArrowRight, ArrowLeft, Printer, RotateCcw,
   CheckCircle2, Sparkles, ClipboardList, Save, Clock, TimerReset, AlertTriangle, CalendarClock,
   Brain, Activity, Eye, BookOpen,
 } from 'lucide-react'
@@ -333,7 +333,7 @@ export default function SpecialistToolkitPage() {
       <div className="print:hidden">
         <div className="flex items-center gap-3 mb-1">
           <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-teal-400 to-teal-700 flex items-center justify-center shadow-lg flex-shrink-0">
-            <Stethoscope className="w-5 h-5 text-white" />
+            <PersonStanding className="w-5 h-5 text-white" />
           </div>
           <div>
             <h1 className="text-2xl font-black text-gray-900">{t.pageTitle}</h1>
@@ -623,7 +623,7 @@ export default function SpecialistToolkitPage() {
                   <div className="flex items-start justify-between gap-4 flex-wrap">
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 rounded-2xl bg-white/15 flex items-center justify-center flex-shrink-0">
-                        <Stethoscope className="w-6 h-6 text-white" />
+                        <PersonStanding className="w-6 h-6 text-white" />
                       </div>
                       <div>
                         <p className="font-black text-lg leading-tight">{t.reportBrand}</p>

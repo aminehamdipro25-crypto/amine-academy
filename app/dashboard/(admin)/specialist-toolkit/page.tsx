@@ -4,7 +4,7 @@ import { useLang, tr, type Lang } from '@/lib/i18n'
 import type { AssessmentResult } from '@/lib/types'
 import {
   Stethoscope, ArrowRight, ArrowLeft, Printer, RotateCcw,
-  CheckCircle2, Sparkles, ClipboardList, Save,
+  CheckCircle2, Sparkles, ClipboardList, Save, Clock, TimerReset, AlertTriangle,
 } from 'lucide-react'
 import ADHDScale from '@/components/session/assessments/ADHDScale'
 import AttentionDomainsScale from '@/components/session/assessments/AttentionDomainsScale'
@@ -59,8 +59,34 @@ interface Draft {
   name: string; age: string; gender: 'male' | 'female' | 'unspecified'; parentName: string
   concerns: ConcernKey[]; selectedScales: ScaleKey[]
   runOrder: ScaleKey[]; currentIndex: number; results: AssessmentResult[]
+  clinicalNotes: Partial<Record<ScaleKey, string>>
   therapistName: string; studentId: string
   savedAt: number
+}
+
+function formatTime(totalSeconds: number) {
+  const m = Math.floor(totalSeconds / 60)
+  const s = totalSeconds % 60
+  return `${m}:${s.toString().padStart(2, '0')}`
+}
+
+function playChime() {
+  try {
+    const AudioContextClass = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
+    const ctx = new AudioContextClass()
+    const osc = ctx.createOscillator()
+    const gain = ctx.createGain()
+    osc.type = 'sine'
+    osc.frequency.value = 880
+    gain.gain.setValueAtTime(0.0001, ctx.currentTime)
+    gain.gain.exponentialRampToValueAtTime(0.3, ctx.currentTime + 0.05)
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.6)
+    osc.connect(gain)
+    gain.connect(ctx.destination)
+    osc.start()
+    osc.stop(ctx.currentTime + 0.65)
+    osc.onended = () => ctx.close()
+  } catch { /* Web Audio unavailable — the visual countdown still works */ }
 }
 
 export default function SpecialistToolkitPage() {
@@ -79,12 +105,16 @@ export default function SpecialistToolkitPage() {
 
   // Step 2 — battery
   const [selectedScales, setSelectedScales] = useState<Set<ScaleKey>>(new Set())
+  const [warmupOpen, setWarmupOpen] = useState(false)
 
   // Step 3 — running
   const [runOrder, setRunOrder] = useState<ScaleKey[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [results, setResults] = useState<AssessmentResult[]>([])
+  const [clinicalNotes, setClinicalNotes] = useState<Partial<Record<ScaleKey, string>>>({})
   const [studentId, setStudentId] = useState(() => `temp-${Date.now().toString(36)}`)
+  const [secondsLeft, setSecondsLeft] = useState(0)
+  const [timerResetNonce, setTimerResetNonce] = useState(0)
 
   // Step 4 — report
   const [therapistName, setTherapistName] = useState('')
@@ -115,14 +145,14 @@ export default function SpecialistToolkitPage() {
     const draft: Draft = {
       step, name, age, gender, parentName,
       concerns: [...concerns], selectedScales: [...selectedScales],
-      runOrder, currentIndex, results, therapistName, studentId,
+      runOrder, currentIndex, results, clinicalNotes, therapistName, studentId,
       savedAt: Date.now(),
     }
     try {
       localStorage.setItem(DRAFT_KEY, JSON.stringify(draft))
       setLastSavedAt(draft.savedAt)
     } catch { /* storage unavailable — printing/report still works without autosave */ }
-  }, [pendingDraft, step, name, age, gender, parentName, concerns, selectedScales, runOrder, currentIndex, results, therapistName, studentId])
+  }, [pendingDraft, step, name, age, gender, parentName, concerns, selectedScales, runOrder, currentIndex, results, clinicalNotes, therapistName, studentId])
 
   function restoreDraft() {
     if (!pendingDraft) return
@@ -130,6 +160,7 @@ export default function SpecialistToolkitPage() {
     setName(pendingDraft.name); setAge(pendingDraft.age); setGender(pendingDraft.gender); setParentName(pendingDraft.parentName)
     setConcerns(new Set(pendingDraft.concerns)); setSelectedScales(new Set(pendingDraft.selectedScales))
     setRunOrder(pendingDraft.runOrder); setCurrentIndex(pendingDraft.currentIndex); setResults(pendingDraft.results)
+    setClinicalNotes(pendingDraft.clinicalNotes ?? {})
     setTherapistName(pendingDraft.therapistName); setStudentId(pendingDraft.studentId)
     setLastSavedAt(pendingDraft.savedAt)
     setPendingDraft(null)
@@ -200,11 +231,33 @@ export default function SpecialistToolkitPage() {
     setLastSavedAt(null)
     setStep('info')
     setName(''); setAge(''); setGender('unspecified'); setParentName('')
-    setConcerns(new Set()); setSelectedScales(new Set())
-    setRunOrder([]); setCurrentIndex(0); setResults([]); setTherapistName('')
+    setConcerns(new Set()); setSelectedScales(new Set()); setWarmupOpen(false)
+    setRunOrder([]); setCurrentIndex(0); setResults([]); setClinicalNotes({}); setTherapistName('')
     setStudentId(`temp-${Date.now().toString(36)}`)
     setError('')
   }
+
+  function resetTimer() {
+    setTimerResetNonce(n => n + 1)
+  }
+
+  // Per-scale countdown timer — resets whenever a new scale starts, chimes once at zero
+  useEffect(() => {
+    if (step !== 'running' || runOrder.length === 0) return
+    const scaleKey = runOrder[currentIndex]
+    setSecondsLeft(SCALE_DURATION[scaleKey] * 60)
+    const id = setInterval(() => {
+      setSecondsLeft(s => {
+        if (s <= 1) {
+          playChime()
+          clearInterval(id)
+          return 0
+        }
+        return s - 1
+      })
+    }, 1000)
+    return () => clearInterval(id)
+  }, [step, currentIndex, runOrder, timerResetNonce])
 
   const totalMinutes = useMemo(
     () => [...selectedScales].reduce((sum, s) => sum + SCALE_DURATION[s], 0),
@@ -215,6 +268,41 @@ export default function SpecialistToolkitPage() {
     const all = results.flatMap(r => r.recommendations)
     return [...new Set(all)]
   }, [results])
+
+  // Conservative, deterministic cross-domain pattern detection — phrased as "needs attention", not a diagnosis
+  const redFlags = useMemo(() => {
+    const flags: string[] = []
+    const byType = new Map(results.map(r => [r.type, r] as const))
+    const autism = byType.get('autism')
+    const adhd = byType.get('adhd')
+    const attention = byType.get('attention-domains')
+    const learning = byType.get('learning-difficulties')
+    const isElevated = (r?: AssessmentResult) => !!r && r.severity !== 'none'
+
+    if (isElevated(autism) && isElevated(adhd)) flags.push(t.redFlags.autismAdhd)
+
+    if (autism && (autism.domainScores.selfRegulation ?? 0) >= 45 && (autism.domainScores.flexibility ?? 0) >= 45) {
+      flags.push(t.redFlags.selfRegFlex)
+    }
+
+    if (autism && attention && (autism.domainScores.sensory ?? 0) >= 45 && (attention.domainScores.inhibition ?? 0) >= 50) {
+      flags.push(t.redFlags.sensoryInhibition)
+    }
+
+    if (isElevated(learning) && (
+      (adhd?.domainScores.attention ?? 0) >= 50 ||
+      (attention?.domainScores.sustained ?? 0) >= 50 ||
+      (attention?.domainScores.selective ?? 0) >= 50
+    )) {
+      flags.push(t.redFlags.learningAttention)
+    }
+
+    if (results.filter(r => r.severity === 'moderate' || r.severity === 'severe').length >= 2) {
+      flags.push(t.redFlags.multiModerate)
+    }
+
+    return flags
+  }, [results, t])
 
   const today = new Date().toLocaleDateString(localeFor(lang), { year: 'numeric', month: 'long', day: 'numeric' })
 
@@ -353,6 +441,41 @@ export default function SpecialistToolkitPage() {
             <p className="text-gray-500 text-sm mt-1">{t.batterySubtitle}</p>
           </div>
 
+          <div className="border border-gray-100 rounded-2xl overflow-hidden">
+            <button type="button" onClick={() => setWarmupOpen(o => !o)}
+              className="w-full flex items-center justify-between gap-2 p-4 bg-gray-50 hover:bg-gray-100 transition-colors text-right">
+              <span className="font-bold text-sm text-gray-800">{t.warmupTitle}</span>
+              <span className="text-xs font-bold text-teal-600 flex-shrink-0">
+                {warmupOpen ? t.warmupCollapseLabel : t.warmupExpandLabel}
+              </span>
+            </button>
+            {warmupOpen && (
+              <div className="p-4 space-y-4 bg-white">
+                <ul className="text-sm text-gray-600 space-y-1.5">
+                  {t.warmupGeneral.map((tip, i) => (
+                    <li key={i} className="flex items-start gap-2">
+                      <span className="text-teal-500 mt-1">•</span>
+                      <span>{tip}</span>
+                    </li>
+                  ))}
+                </ul>
+                {[...concerns].map(c => (
+                  <div key={c} className="space-y-1.5">
+                    <p className="text-xs font-bold text-gray-400">{t.concernsOptions[c].label}</p>
+                    <ul className="text-sm text-gray-600 space-y-1.5">
+                      {t.warmupByConcern[c].map((tip, i) => (
+                        <li key={i} className="flex items-start gap-2">
+                          <span className="text-teal-500 mt-1">•</span>
+                          <span>{tip}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           <div className="space-y-2.5">
             {SCALE_ORDER.map(s => (
               <button key={s} type="button" onClick={() => toggleScale(s)}
@@ -391,11 +514,37 @@ export default function SpecialistToolkitPage() {
         const CurrentScale = SCALE_COMPONENT[currentScaleKey]
         return (
           <div>
-            <p className="text-sm font-bold text-teal-700 mb-3 ltr-num">
-              {t.progressLabel(currentIndex + 1, runOrder.length, t.scaleNames[currentScaleKey])}
-            </p>
+            <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
+              <p className="text-sm font-bold text-teal-700 ltr-num">
+                {t.progressLabel(currentIndex + 1, runOrder.length, t.scaleNames[currentScaleKey])}
+              </p>
+              <div className="flex items-center gap-2">
+                <Clock className="w-3.5 h-3.5 text-gray-400" />
+                <span className="text-xs font-bold text-gray-400">{t.timerLabel}</span>
+                <span className={`text-sm font-black ltr-num ${secondsLeft === 0 ? 'text-amber-600' : 'text-gray-700'}`}>
+                  {formatTime(secondsLeft)}
+                </span>
+                <button type="button" onClick={resetTimer} title={t.resetTimerLabel}
+                  className="text-gray-400 hover:text-teal-600 transition-colors">
+                  <TimerReset className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+            {secondsLeft === 0 && (
+              <p className="text-xs font-bold text-amber-600 mb-3">{t.timeUpLabel}</p>
+            )}
             <div className="bg-gray-900 rounded-3xl overflow-hidden">
               <CurrentScale studentId={studentId} onComplete={handleScaleComplete} onCancel={handleScaleSkip} />
+            </div>
+            <div className="mt-3">
+              <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.clinicalNotesLabel}</label>
+              <textarea
+                value={clinicalNotes[currentScaleKey] ?? ''}
+                onChange={e => setClinicalNotes(prev => ({ ...prev, [currentScaleKey]: e.target.value }))}
+                placeholder={t.clinicalNotesPlaceholder}
+                rows={3}
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-brand-300 focus:outline-none resize-none"
+              />
             </div>
           </div>
         )
@@ -513,8 +662,35 @@ export default function SpecialistToolkitPage() {
                     ) : (
                       <p className="text-sm text-gray-400">{t.noRecommendations}</p>
                     )}
+
+                    {clinicalNotes[result.type as ScaleKey]?.trim() && (
+                      <div className="bg-gray-50 rounded-xl p-3">
+                        <p className="text-xs font-bold text-gray-500 mb-1">{t.clinicalNotesReportTitle}</p>
+                        <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
+                          {clinicalNotes[result.type as ScaleKey]}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 ))}
+
+                {/* Cross-domain red flags */}
+                {redFlags.length > 0 && (
+                  <div className="bg-red-50 border border-red-100 rounded-2xl p-5 space-y-2 break-inside-avoid">
+                    <h3 className="font-black text-red-700 flex items-center gap-2">
+                      <AlertTriangle className="w-4 h-4" />
+                      {t.redFlagsTitle}
+                    </h3>
+                    <ul className="text-sm text-red-700/90 space-y-1.5">
+                      {redFlags.map((f, i) => (
+                        <li key={i} className="flex items-start gap-2">
+                          <span className="mt-1">•</span>
+                          <span>{f}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
 
                 {/* Action plan */}
                 {actionPlan.length > 0 && (

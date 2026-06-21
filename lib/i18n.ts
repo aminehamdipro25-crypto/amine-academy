@@ -1132,6 +1132,45 @@ export const tr = {
       resetConfirmMessage: 'سيُمحى هذا التقرير من الذاكرة المؤقتة لهذا الجهاز. تأكد من طباعته أو حفظه كـ PDF أولاً إذا كنت بحاجة إليه.',
       resetConfirmButton: 'نعم، ابدأ تقييماً جديداً',
       cancelButton: 'إلغاء',
+      timerLabel: 'مؤقت المقياس',
+      resetTimerLabel: 'إعادة العداد',
+      timeUpLabel: 'انتهى الوقت التقديري — تابع حسب استجابة الطفل',
+      clinicalNotesLabel: 'ملاحظات سريرية أثناء هذا المقياس (اختياري)',
+      clinicalNotesPlaceholder: 'سلوك ملحوظ، تواصل بصري، استجابة حسية، مستوى تعاون...',
+      clinicalNotesReportTitle: 'ملاحظات الأخصائي',
+      warmupTitle: 'بروتوكول الإحماء قبل البدء',
+      warmupExpandLabel: 'عرض النصائح',
+      warmupCollapseLabel: 'إخفاء',
+      warmupGeneral: [
+        'اشرح لولي الأمر أن النتائج استرشادية لتصميم برنامج الدعم، ولا تُعد تشخيصاً طبياً رسمياً.',
+        'ابدأ بدقيقتين من اللعب الحر أو نشاط يفضّله الطفل لبناء الثقة قبل أي سؤال مباشر.',
+        'اجلس على مستوى نظر الطفل وتحدث بجمل قصيرة وواضحة.',
+      ],
+      warmupByConcern: {
+        autism: [
+          'انتظر 5-10 ثوانٍ بعد كل توجيه أو سؤال — قد يحتاج وقتاً أطول للمعالجة والاستجابة.',
+          'لا تُلزمه بتواصل بصري مباشر مطوّل إن بدا ذلك مزعجاً له.',
+          'راقب أي علامات إثارة حسية زائدة (تغطية الأذنين، التململ) وخفّض المنبهات إن لزم.',
+        ],
+        adhd: [
+          'قسّم الجلسة لفترات قصيرة (5-7 دقائق) مع فاصل حركي بينها بدل جلسة متواصلة.',
+          'استخدم تعزيزاً فورياً وبسيطاً (كلمة تشجيع، نجمة) بعد كل مهمة قصيرة.',
+        ],
+        attention: [
+          'قلّل المشتتات البصرية والسمعية في مكان الجلسة قدر الإمكان قبل البدء.',
+        ],
+        learning: [
+          'ابدأ بمهمة يستطيع الطفل النجاح فيها لبناء الثقة قبل عرض مهمة قد تثير إحباطه.',
+        ],
+      },
+      redFlagsTitle: 'نقاط تستدعي انتباهاً خاصاً',
+      redFlags: {
+        autismAdhd: 'تزامن مؤشرات طيف التوحد مع فرط الحركة والتشتت (نمط معروف سريرياً) — يستدعي خطة تدخل مدمجة وتنسيقاً مع الطبيب المتابع.',
+        selfRegFlex: 'تزامن صعوبة التنظيم الذاتي مع صعوبة التكيف مع التغيير — يُنصح بإعطاء الأولوية لتمارين التهدئة الحسية والجدول البصري قبل أي تدخل أكاديمي.',
+        sensoryInhibition: 'حساسية حسية مرتفعة مرتبطة بصعوبة كبح المشتتات — قد يكون التشتت الظاهر استجابة حسية لا قصوراً انتباهياً بحتاً؛ يُنصح بتعديل البيئة الحسية أولاً.',
+        learningAttention: 'صعوبات تعلم نوعية متزامنة مع ضعف انتباه — يُنصح بمعالجة المكوّن الانتباهي أولاً لتحسين فعالية أي تدخل تعلّمي لاحق.',
+        multiModerate: 'تعدد المجالات ذات الشدة المتوسطة أو الشديدة عبر أكثر من مقياس — يُنصح بخطة تدخل متعددة التخصصات وتنسيق دوري بين الأخصائيين.',
+      },
     },
   },
   en: {
@@ -2229,6 +2268,45 @@ export const tr = {
       resetConfirmMessage: "This report will be cleared from this device's temporary storage. Make sure to print or save it as PDF first if you need it.",
       resetConfirmButton: 'Yes, start a new assessment',
       cancelButton: 'Cancel',
+      timerLabel: 'Scale timer',
+      resetTimerLabel: 'Reset timer',
+      timeUpLabel: "Estimated time is up — continue at the child's pace",
+      clinicalNotesLabel: 'Clinical notes during this scale (optional)',
+      clinicalNotesPlaceholder: 'Observed behavior, eye contact, sensory response, cooperation level...',
+      clinicalNotesReportTitle: "Specialist's notes",
+      warmupTitle: 'Warm-up protocol before starting',
+      warmupExpandLabel: 'Show tips',
+      warmupCollapseLabel: 'Hide',
+      warmupGeneral: [
+        'Explain to the parent that results guide the support plan and are not a formal medical diagnosis.',
+        'Start with two minutes of free play or a preferred activity to build rapport before any direct question.',
+        "Sit at the child's eye level and use short, clear sentences.",
+      ],
+      warmupByConcern: {
+        autism: [
+          'Wait 5–10 seconds after each instruction or question — they may need more time to process and respond.',
+          "Don't insist on prolonged direct eye contact if it seems uncomfortable for the child.",
+          'Watch for signs of sensory overload (covering ears, fidgeting) and reduce stimuli if needed.',
+        ],
+        adhd: [
+          'Split the session into short blocks (5–7 min) with a movement break in between instead of one continuous block.',
+          'Use immediate, simple reinforcement (a word of praise, a sticker) after each short task.',
+        ],
+        attention: [
+          'Reduce visual and auditory distractions in the session space as much as possible before starting.',
+        ],
+        learning: [
+          'Start with a task the child can succeed at to build confidence before one that may frustrate them.',
+        ],
+      },
+      redFlagsTitle: 'Points needing special attention',
+      redFlags: {
+        autismAdhd: 'Co-occurring autism spectrum and ADHD indicators (a recognized clinical pattern) — calls for an integrated intervention plan and coordination with the supervising physician.',
+        selfRegFlex: 'Co-occurring self-regulation and flexibility/coping difficulties — prioritize sensory calming exercises and a visual schedule before academic intervention.',
+        sensoryInhibition: 'High sensory sensitivity linked with distraction-inhibition difficulty — the apparent distraction may be a sensory response rather than a pure attention deficit; consider adjusting the sensory environment first.',
+        learningAttention: 'Specific learning difficulties co-occurring with attention deficits — address the attentional component first to improve the effectiveness of any later learning intervention.',
+        multiModerate: 'Multiple domains at moderate-to-severe severity across more than one scale — a coordinated, multi-disciplinary intervention plan with periodic specialist follow-up is recommended.',
+      },
     },
   },
   fr: {
@@ -3326,6 +3404,45 @@ export const tr = {
       resetConfirmMessage: "Ce rapport sera effacé du stockage temporaire de cet appareil. Assurez-vous de l'imprimer ou de l'enregistrer en PDF avant si nécessaire.",
       resetConfirmButton: 'Oui, démarrer une nouvelle évaluation',
       cancelButton: 'Annuler',
+      timerLabel: "Minuteur de l'échelle",
+      resetTimerLabel: 'Réinitialiser le minuteur',
+      timeUpLabel: "Le temps estimé est écoulé — continuez selon le rythme de l'enfant",
+      clinicalNotesLabel: 'Notes cliniques pendant cette échelle (optionnel)',
+      clinicalNotesPlaceholder: 'Comportement observé, contact visuel, réponse sensorielle, niveau de coopération...',
+      clinicalNotesReportTitle: 'Notes du spécialiste',
+      warmupTitle: "Protocole d'échauffement avant de commencer",
+      warmupExpandLabel: 'Afficher les conseils',
+      warmupCollapseLabel: 'Masquer',
+      warmupGeneral: [
+        "Expliquez au parent que les résultats orientent le programme de soutien et ne constituent pas un diagnostic médical formel.",
+        "Commencez par deux minutes de jeu libre ou une activité préférée de l'enfant pour établir une relation de confiance avant toute question directe.",
+        "Asseyez-vous au niveau des yeux de l'enfant et utilisez des phrases courtes et claires.",
+      ],
+      warmupByConcern: {
+        autism: [
+          "Attendez 5 à 10 secondes après chaque consigne ou question — il peut avoir besoin de plus de temps pour traiter et répondre.",
+          "N'imposez pas un contact visuel direct prolongé s'il semble inconfortable pour l'enfant.",
+          "Surveillez les signes de surcharge sensorielle (se couvrir les oreilles, s'agiter) et réduisez les stimuli si nécessaire.",
+        ],
+        adhd: [
+          "Divisez la séance en courtes périodes (5 à 7 min) avec une pause de mouvement entre elles plutôt qu'une séance continue.",
+          "Utilisez un renforcement immédiat et simple (un mot d'encouragement, un autocollant) après chaque courte tâche.",
+        ],
+        attention: [
+          "Réduisez autant que possible les distractions visuelles et auditives dans l'espace de la séance avant de commencer.",
+        ],
+        learning: [
+          "Commencez par une tâche que l'enfant peut réussir pour renforcer sa confiance avant une tâche pouvant le frustrer.",
+        ],
+      },
+      redFlagsTitle: 'Points nécessitant une attention particulière',
+      redFlags: {
+        autismAdhd: "Coexistence d'indicateurs du spectre autistique et de TDAH (profil cliniquement reconnu) — nécessite un plan d'intervention intégré et une coordination avec le médecin référent.",
+        selfRegFlex: "Coexistence de difficultés d'autorégulation et de flexibilité/adaptation — privilégier des exercices d'apaisement sensoriel et un emploi du temps visuel avant toute intervention académique.",
+        sensoryInhibition: "Sensibilité sensorielle élevée associée à une difficulté d'inhibition des distractions — la distraction apparente peut être une réponse sensorielle plutôt qu'un déficit attentionnel pur ; envisagez d'abord d'ajuster l'environnement sensoriel.",
+        learningAttention: "Difficultés d'apprentissage spécifiques coexistant avec un déficit d'attention — traiter d'abord la composante attentionnelle pour améliorer l'efficacité de toute intervention d'apprentissage ultérieure.",
+        multiModerate: "Plusieurs domaines de sévérité modérée à sévère répartis sur plus d'une échelle — un plan d'intervention pluridisciplinaire coordonné avec un suivi périodique est recommandé.",
+      },
     },
   },
 } as const

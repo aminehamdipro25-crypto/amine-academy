@@ -5,6 +5,7 @@ import type { AssessmentResult } from '@/lib/types'
 import {
   Stethoscope, ArrowRight, ArrowLeft, Printer, RotateCcw,
   CheckCircle2, Sparkles, ClipboardList, Save, Clock, TimerReset, AlertTriangle, CalendarClock,
+  Brain, Activity, Eye, BookOpen,
 } from 'lucide-react'
 import ADHDScale from '@/components/session/assessments/ADHDScale'
 import AttentionDomainsScale from '@/components/session/assessments/AttentionDomainsScale'
@@ -47,6 +48,13 @@ const SEVERITY_BADGE: Record<AssessmentResult['severity'], string> = {
 
 const SEVERITY_BAR: Record<AssessmentResult['severity'], string> = {
   none: 'bg-emerald-500', mild: 'bg-amber-400', moderate: 'bg-orange-500', severe: 'bg-red-500',
+}
+
+const SCALE_ICON: Record<ScaleKey, React.ComponentType<{ className?: string }>> = {
+  autism: Brain,
+  adhd: Activity,
+  'attention-domains': Eye,
+  'learning-difficulties': BookOpen,
 }
 
 function localeFor(lang: Lang) {
@@ -605,61 +613,86 @@ export default function SpecialistToolkitPage() {
               </div>
 
               {/* Printable report */}
-              <div className="bg-white rounded-2xl border border-gray-100 p-8 print:border-0 print:p-10 print:rounded-none space-y-7">
+              <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden print:border-0 print:rounded-none">
 
-                {/* Letterhead */}
-                <div className="flex items-start justify-between border-b border-gray-100 pb-5">
-                  <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-teal-400 to-teal-700 flex items-center justify-center shadow-sm flex-shrink-0">
-                      <Stethoscope className="w-5 h-5 text-white" />
+                {/* Hero letterhead */}
+                <div
+                  className="px-8 py-7 print:px-10 print:py-8 text-white"
+                  style={{ background: 'linear-gradient(135deg,#0f3a3c 0%,#0d9488 55%,#2dd4bf 100%)', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}
+                >
+                  <div className="flex items-start justify-between gap-4 flex-wrap">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-2xl bg-white/15 flex items-center justify-center flex-shrink-0">
+                        <Stethoscope className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <p className="font-black text-lg leading-tight">{t.reportBrand}</p>
+                        <p className="text-[11px] text-white/55 mt-0.5">{t.reportTagline}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-black text-gray-900">{t.reportBrand}</p>
-                      <p className="text-xs text-gray-400">{t.reportTitle}</p>
+                    <div className="text-right">
+                      <span className="inline-block bg-white/15 rounded-full px-3.5 py-1 text-xs font-bold">{t.reportTypeBadge}</span>
+                      <p className="text-[11px] text-white/50 mt-1.5 ltr-num">{t.generatedOnLabel}: {today}</p>
                     </div>
                   </div>
-                  <p className="text-xs text-gray-400 ltr-num">{t.generatedOnLabel}: {today}</p>
                 </div>
 
-                {/* Child info */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
-                  <div>
-                    <p className="text-xs text-gray-400 font-bold">{t.childLabel}</p>
-                    <p className="font-black text-gray-900">{name}</p>
+                <div className="p-8 print:p-10 space-y-7">
+
+                {/* Child info card */}
+                <div className="flex items-center gap-4 flex-wrap bg-gray-50 rounded-2xl p-5 print:rounded-none">
+                  <div
+                    className="w-12 h-12 rounded-2xl flex items-center justify-center text-white font-black text-lg flex-shrink-0"
+                    style={{ background: 'linear-gradient(135deg,#0d9488,#0f766e)', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}
+                  >
+                    {name?.[0]?.toUpperCase() ?? '?'}
                   </div>
-                  <div>
-                    <p className="text-xs text-gray-400 font-bold">{t.ageLabel.replace(' *', '')}</p>
-                    <p className="font-black text-gray-900 ltr-num">{t.ageValueLabel(age)}</p>
+                  <div className="flex-1 min-w-[140px]">
+                    <p className="font-black text-gray-900">{name}</p>
+                    <p className="text-xs text-gray-500 ltr-num">{t.ageValueLabel(age)}</p>
                   </div>
                   {parentName && (
                     <div>
-                      <p className="text-xs text-gray-400 font-bold">{t.parentLabel}</p>
-                      <p className="font-black text-gray-900">{parentName}</p>
+                      <p className="text-[11px] text-gray-400 font-bold">{t.parentLabel}</p>
+                      <p className="text-sm font-bold text-gray-700">{parentName}</p>
                     </div>
                   )}
                   {therapistName && (
                     <div>
-                      <p className="text-xs text-gray-400 font-bold">{t.therapistNameLabel}</p>
-                      <p className="font-black text-gray-900">{therapistName}</p>
+                      <p className="text-[11px] text-gray-400 font-bold">{t.therapistNameLabel}</p>
+                      <p className="text-sm font-bold text-gray-700">{therapistName}</p>
                     </div>
                   )}
                 </div>
+
+                {parentName && (
+                  <p className="text-sm text-amber-800 leading-relaxed bg-amber-50 border border-amber-100 rounded-xl p-4">
+                    {t.parentSalutation(name)}
+                  </p>
+                )}
 
                 <p className="text-sm text-gray-600 leading-relaxed bg-teal-50/60 border border-teal-100 rounded-xl p-4">
                   {t.narrativeIntro(name)}
                 </p>
 
                 {/* Per-assessment sections */}
-                {results.map(result => (
+                {results.map(result => {
+                  const ScaleIcon = SCALE_ICON[result.type as ScaleKey]
+                  return (
                   <div key={result.id} className="space-y-3 break-inside-avoid">
                     <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="font-black text-gray-900">{t.scaleNames[result.type as ScaleKey]}</h3>
-                        {scaleSource[result.type as ScaleKey] && (
-                          <p className="text-[11px] text-gray-400 mt-0.5">
-                            {t.sourceReportLabel}: {t.sourceOptions[scaleSource[result.type as ScaleKey] as ScaleSource]}
-                          </p>
-                        )}
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-xl bg-teal-50 flex items-center justify-center flex-shrink-0">
+                          <ScaleIcon className="w-4 h-4 text-teal-600" />
+                        </div>
+                        <div>
+                          <h3 className="font-black text-gray-900">{t.scaleNames[result.type as ScaleKey]}</h3>
+                          {scaleSource[result.type as ScaleKey] && (
+                            <p className="text-[11px] text-gray-400 mt-0.5">
+                              {t.sourceReportLabel}: {t.sourceOptions[scaleSource[result.type as ScaleKey] as ScaleSource]}
+                            </p>
+                          )}
+                        </div>
                       </div>
                       <span className={`text-xs font-black px-3 py-1 rounded-full flex-shrink-0 ${SEVERITY_BADGE[result.severity]}`}>
                         {t.severityLabels[result.severity]}
@@ -704,7 +737,8 @@ export default function SpecialistToolkitPage() {
                       </div>
                     )}
                   </div>
-                ))}
+                  )
+                })}
 
                 {/* Cross-domain red flags */}
                 {redFlags.length > 0 && (
@@ -750,10 +784,27 @@ export default function SpecialistToolkitPage() {
                   </div>
                 )}
 
-                {/* Disclaimer */}
-                <p className="text-[11px] text-gray-400 border-t border-gray-100 pt-4">{t.disclaimerText}</p>
+                {/* Footer signature + disclaimer (kept together so print pagination can't split or drop them) */}
+                <div className="break-inside-avoid space-y-4">
+                  <div className="flex items-center justify-between border-t border-gray-100 pt-5 flex-wrap gap-3">
+                    <div>
+                      <p className="text-xs font-black text-gray-700">{t.reportBrand}</p>
+                      <p className="text-[10px] text-gray-400 mt-0.5">{t.footerConfidentialLabel}</p>
+                    </div>
+                    {therapistName && (
+                      <div className="text-right">
+                        <p className="text-[10px] text-gray-400">{t.footerSignatureLabel}</p>
+                        <p className="text-sm font-bold text-gray-700 mt-3">{therapistName}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Disclaimer */}
+                  <p className="text-[11px] text-gray-400 border-t border-gray-100 pt-4">{t.disclaimerText}</p>
+                </div>
                 {/* Trailing print buffer: avoids the browser clipping the disclaimer when it misjudges the last page's content height */}
-                <div className="hidden print:block print:h-24" aria-hidden="true" />
+                <div className="hidden print:block print:h-48" aria-hidden="true" />
+                </div>
               </div>
             </>
           )}

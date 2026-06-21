@@ -148,8 +148,6 @@ body {
 /* ── Print ───────────────────────────────────────────────────── */
 @media print {
   .no-print { display: none !important; }
-  body > * { display: none !important; }
-  .print-visible { display: block !important; position: fixed !important; inset: 0 !important; background: white !important; }
   @page { margin: 0; size: A4 portrait; }
 }
 

@@ -5,7 +5,7 @@ import { useLang, tr, type Lang } from '@/lib/i18n'
 import type { ProgressReport, Student } from '@/lib/types'
 
 function localeFor(lang: Lang) {
-  return lang === 'en' ? 'en-US' : 'fr-FR'
+  return lang === 'en' ? 'en-US' : lang === 'fr' ? 'fr-FR' : 'ar'
 }
 
 const TYPE_BADGE: Record<string, string> = {

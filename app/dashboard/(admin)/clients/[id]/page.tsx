@@ -13,7 +13,7 @@ import AIPatternAnalysis from '@/components/dashboard/AIPatternAnalysis'
 import { useLang, tr, type Lang } from '@/lib/i18n'
 
 function localeFor(lang: Lang) {
-  return lang === 'en' ? 'en-US' : 'fr-FR'
+  return lang === 'en' ? 'en-US' : lang === 'fr' ? 'fr-FR' : 'ar'
 }
 
 const STATUS_COLORS = {

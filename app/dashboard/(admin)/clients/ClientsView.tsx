@@ -5,7 +5,7 @@ import { useLang, tr, type Lang } from '@/lib/i18n'
 import type { getAllParents } from '@/lib/db'
 
 function localeFor(lang: Lang) {
-  return lang === 'en' ? 'en-US' : 'fr-FR'
+  return lang === 'en' ? 'en-US' : lang === 'fr' ? 'fr-FR' : 'ar'
 }
 
 const AVATAR_COLORS = [

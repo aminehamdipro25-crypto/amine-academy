@@ -7,7 +7,7 @@ import { useLang, tr, type Lang } from '@/lib/i18n'
 interface AIMsg { role: 'user' | 'assistant'; text: string; time: string }
 
 function localeFor(lang: Lang) {
-  return lang === 'en' ? 'en-US' : 'fr-FR'
+  return lang === 'en' ? 'en-US' : lang === 'fr' ? 'fr-FR' : 'ar'
 }
 
 function nowTime(lang: Lang) {

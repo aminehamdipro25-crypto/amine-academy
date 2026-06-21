@@ -50,7 +50,7 @@ const SEVERITY_BAR: Record<AssessmentResult['severity'], string> = {
 }
 
 function localeFor(lang: Lang) {
-  return lang === 'en' ? 'en-US' : 'fr-FR'
+  return lang === 'en' ? 'en-US' : lang === 'fr' ? 'fr-FR' : 'ar'
 }
 
 const DRAFT_KEY = 'specialist-toolkit-draft-v1'

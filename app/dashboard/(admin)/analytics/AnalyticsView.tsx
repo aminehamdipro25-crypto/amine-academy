@@ -4,7 +4,7 @@ import { useLang, tr, type Lang } from '@/lib/i18n'
 import type { getAllParents, getAllExercises, getAllAppointments, getAllPendingPayments } from '@/lib/db'
 
 function localeFor(lang: Lang) {
-  return lang === 'en' ? 'en-US' : 'fr-FR'
+  return lang === 'en' ? 'en-US' : lang === 'fr' ? 'fr-FR' : 'ar'
 }
 
 function Bar({ label, value, max, color }: { label: string; value: number; max: number; color: string }) {

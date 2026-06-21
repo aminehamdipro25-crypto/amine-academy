@@ -5,7 +5,7 @@ import { useLang, tr, type Lang } from '@/lib/i18n'
 import type { getAllParents, getAllPendingPayments, getAllExercises } from '@/lib/db'
 
 function localeFor(lang: Lang) {
-  return lang === 'en' ? 'en-US' : lang === 'fr' ? 'fr-FR' : 'fr-FR'
+  return lang === 'en' ? 'en-US' : lang === 'fr' ? 'fr-FR' : 'ar'
 }
 
 export default function AdminDashboardView({ parents, payments, exercises, redisError }: {

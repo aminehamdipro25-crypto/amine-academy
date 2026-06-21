@@ -6,26 +6,15 @@ import {
   LayoutDashboard, Users, Dumbbell, Calendar,
   BarChart3, FileText, LogOut, Brain,
   ClipboardList, BookOpen, Settings, CreditCard, MessageSquare,
-  Zap, UserCog,
+  Zap, UserCog, Stethoscope,
 } from 'lucide-react'
-
-const NAV = [
-  { href: '/dashboard',                        label: 'الرئيسية',       icon: LayoutDashboard, ownerOnly: false },
-  { href: '/dashboard/clients',                label: 'المشتركون',      icon: Users, ownerOnly: false },
-  { href: '/dashboard/payments',               label: 'المدفوعات',      icon: CreditCard, ownerOnly: true },
-  { href: '/dashboard/appointments',           label: 'المواعيد',       icon: Calendar, ownerOnly: false },
-  { href: '/dashboard/programs',               label: 'البرامج',        icon: ClipboardList, ownerOnly: false },
-  { href: '/dashboard/exercises',              label: 'التمارين',       icon: Dumbbell, ownerOnly: false },
-  { href: '/dashboard/reports',                label: 'التقارير',       icon: FileText, ownerOnly: false },
-  { href: '/dashboard/messages',               label: 'الرسائل',        icon: MessageSquare, ownerOnly: false },
-  { href: '/dashboard/learning-difficulties',  label: 'صعوبات التعلم', icon: BookOpen, ownerOnly: false },
-  { href: '/dashboard/analytics',              label: 'الإحصائيات',    icon: BarChart3, ownerOnly: true },
-  { href: '/dashboard/staff',                  label: 'فريق العمل',    icon: UserCog, ownerOnly: true },
-  { href: '/dashboard/settings',               label: 'الإعدادات',     icon: Settings, ownerOnly: true },
-]
+import { useLang, tr } from '@/lib/i18n'
 
 export default function AdminSidebar({ onClose, unreadMessages = 0 }: { onClose?: () => void; unreadMessages?: number }) {
   const pathname = usePathname()
+  const { lang } = useLang()
+  const t = tr[lang].adminChrome
+  const navT = tr[lang].adminNav
   const [actor, setActor] = useState<{ role: 'owner' | 'staff'; name: string } | null>(null)
 
   useEffect(() => {
@@ -33,6 +22,22 @@ export default function AdminSidebar({ onClose, unreadMessages = 0 }: { onClose?
   }, [])
 
   const isOwner = actor?.role === 'owner'
+
+  const NAV = [
+    { href: '/dashboard',                        label: navT.home, icon: LayoutDashboard, ownerOnly: false },
+    { href: '/dashboard/clients',                label: navT.clients, icon: Users, ownerOnly: false },
+    { href: '/dashboard/payments',               label: navT.payments, icon: CreditCard, ownerOnly: true },
+    { href: '/dashboard/appointments',           label: navT.appointments, icon: Calendar, ownerOnly: false },
+    { href: '/dashboard/programs',               label: navT.programs, icon: ClipboardList, ownerOnly: false },
+    { href: '/dashboard/exercises',              label: navT.exercises, icon: Dumbbell, ownerOnly: false },
+    { href: '/dashboard/reports',                label: navT.reports, icon: FileText, ownerOnly: false },
+    { href: '/dashboard/messages',               label: navT.messages, icon: MessageSquare, ownerOnly: false },
+    { href: '/dashboard/learning-difficulties',  label: navT.learningDifficulties, icon: BookOpen, ownerOnly: false },
+    { href: '/dashboard/specialist-toolkit',     label: navT.specialistToolkit, icon: Stethoscope, ownerOnly: false },
+    { href: '/dashboard/analytics',              label: navT.analytics, icon: BarChart3, ownerOnly: true },
+    { href: '/dashboard/staff',                  label: navT.staff, icon: UserCog, ownerOnly: true },
+    { href: '/dashboard/settings',               label: navT.settings, icon: Settings, ownerOnly: true },
+  ]
   const visibleNav = NAV.filter(item => !item.ownerOnly || isOwner)
 
   return (
@@ -60,7 +65,7 @@ export default function AdminSidebar({ onClose, unreadMessages = 0 }: { onClose?
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
         {/* Group label */}
-        <p className="text-white/20 text-[10px] font-black uppercase tracking-widest px-3 mb-3">القائمة الرئيسية</p>
+        <p className="text-white/20 text-[10px] font-black uppercase tracking-widest px-3 mb-3">{t.mainMenuLabel}</p>
 
         {visibleNav.map(({ href, label, icon: Icon }) => {
           const active = href === '/dashboard'
@@ -116,11 +121,11 @@ export default function AdminSidebar({ onClose, unreadMessages = 0 }: { onClose?
         {/* Admin info */}
         <div className="flex items-center gap-3 px-3 py-2.5 mb-1">
           <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-brand-400 to-brand-700 flex items-center justify-center text-white font-black text-sm shadow-lg flex-shrink-0">
-            {(actor?.name || 'أ').charAt(0)}
+            {(actor?.name || t.unknownActorInitial).charAt(0)}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-white text-xs font-black truncate">{actor?.name || 'الأستاذ أمين'}</p>
-            <p className="text-white/30 text-[10px] truncate">{isOwner ? 'مشرف النظام' : 'فريق العمل'}</p>
+            <p className="text-white text-xs font-black truncate">{actor?.name || tr[lang].portal.common.coachName}</p>
+            <p className="text-white/30 text-[10px] truncate">{isOwner ? t.ownerRole : t.staffRole}</p>
           </div>
         </div>
 
@@ -132,7 +137,7 @@ export default function AdminSidebar({ onClose, unreadMessages = 0 }: { onClose?
             <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center">
               <LogOut className="w-3.5 h-3.5" />
             </div>
-            تسجيل الخروج
+            {t.logoutLabel}
           </button>
         </form>
       </div>

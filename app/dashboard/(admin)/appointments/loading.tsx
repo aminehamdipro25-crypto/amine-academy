@@ -1,6 +1,6 @@
 export default function AppointmentsLoading() {
   return (
-    <div className="space-y-6" dir="rtl">
+    <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-2">
           <div className="h-7 w-36 bg-gray-200 rounded-xl animate-pulse" />

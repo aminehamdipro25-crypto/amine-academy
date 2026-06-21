@@ -1,6 +1,6 @@
 export default function StudentPortalLoading() {
   return (
-    <div className="p-4 md:p-6 space-y-5 animate-pulse" dir="rtl">
+    <div className="p-4 md:p-6 space-y-5 animate-pulse">
       <div className="h-7 w-40 bg-purple-100 rounded-xl" />
       <div className="grid grid-cols-2 gap-3">
         {[...Array(4)].map((_, i) => (

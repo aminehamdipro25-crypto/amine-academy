@@ -4,6 +4,8 @@ import { Bell, Menu, Globe, MessageSquare, X, ChevronLeft } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useRouter } from 'next/navigation'
+import { useLang, tr } from '@/lib/i18n'
+import LangToggle from '@/components/shared/LangToggle'
 
 interface Thread {
   parentId: string
@@ -13,24 +15,12 @@ interface Thread {
   unreadForAdmin: number
 }
 
-const PAGE_TITLES: Record<string, string> = {
-  '/dashboard':                   'الرئيسية',
-  '/dashboard/clients':           'المشتركون',
-  '/dashboard/programs':          'البرامج',
-  '/dashboard/exercises':         'التمارين',
-  '/dashboard/appointments':      'المواعيد',
-  '/dashboard/learning-difficulties': 'صعوبات التعلم',
-  '/dashboard/reports':           'التقارير',
-  '/dashboard/payments':          'المدفوعات',
-  '/dashboard/messages':          'الرسائل',
-  '/dashboard/settings':          'الإعدادات',
-  '/dashboard/analytics':         'الإحصائيات',
-  '/dashboard/staff':             'فريق العمل',
-}
-
 export default function AdminHeader({ onMenuToggle, onUnreadChange }: { onMenuToggle?: () => void; onUnreadChange?: (n: number) => void }) {
   const pathname = usePathname()
   const router   = useRouter()
+  const { lang } = useLang()
+  const t = tr[lang].adminChrome
+  const navT = tr[lang].adminNav
   const [totalUnread, setTotalUnread] = useState(0)
   const [threads, setThreads]         = useState<Thread[]>([])
   const [open, setOpen]               = useState(false)
@@ -42,9 +32,25 @@ export default function AdminHeader({ onMenuToggle, onUnreadChange }: { onMenuTo
     fetch('/api/auth/me').then(r => r.ok ? r.json() : null).then(data => { if (data) setActor(data) }).catch(() => {})
   }, [])
 
+  const PAGE_TITLES: Record<string, string> = {
+    '/dashboard':                   navT.home,
+    '/dashboard/clients':           navT.clients,
+    '/dashboard/programs':          navT.programs,
+    '/dashboard/exercises':         navT.exercises,
+    '/dashboard/appointments':      navT.appointments,
+    '/dashboard/learning-difficulties': navT.learningDifficulties,
+    '/dashboard/specialist-toolkit': navT.specialistToolkit,
+    '/dashboard/reports':           navT.reports,
+    '/dashboard/payments':          navT.payments,
+    '/dashboard/messages':          navT.messages,
+    '/dashboard/settings':          navT.settings,
+    '/dashboard/analytics':         navT.analytics,
+    '/dashboard/staff':             navT.staff,
+  }
+
   const pageTitle = Object.entries(PAGE_TITLES).find(([k]) =>
     pathname === k || pathname.startsWith(k + '/')
-  )?.[1] ?? 'لوحة التحكم'
+  )?.[1] ?? t.defaultPageTitle
 
   const fetchUnread = useCallback(async () => {
     try {
@@ -87,11 +93,11 @@ export default function AdminHeader({ onMenuToggle, onUnreadChange }: { onMenuTo
   function timeAgo(iso: string) {
     const diff = Date.now() - new Date(iso).getTime()
     const m = Math.floor(diff / 60000)
-    if (m < 1)  return 'الآن'
-    if (m < 60) return `منذ ${m} د`
+    if (m < 1)  return t.justNow
+    if (m < 60) return t.minutesAgoSuffix(m)
     const h = Math.floor(m / 60)
-    if (h < 24) return `منذ ${h} س`
-    return `منذ ${Math.floor(h / 24)} ي`
+    if (h < 24) return t.hoursAgoSuffix(h)
+    return t.daysAgoSuffix(Math.floor(h / 24))
   }
 
   return (
@@ -108,7 +114,7 @@ export default function AdminHeader({ onMenuToggle, onUnreadChange }: { onMenuTo
 
         <div className="min-w-0">
           <h1 className="text-base font-black text-gray-900 leading-none truncate">{pageTitle}</h1>
-          <p className="hidden sm:block text-xs text-gray-400 mt-0.5">أكاديمية أمين — لوحة المشرف</p>
+          <p className="hidden sm:block text-xs text-gray-400 mt-0.5">{t.panelSubtitle}</p>
         </div>
       </div>
 
@@ -120,7 +126,7 @@ export default function AdminHeader({ onMenuToggle, onUnreadChange }: { onMenuTo
           onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true }))}
           className="hidden md:flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 font-medium transition-colors border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50"
         >
-          <span>بحث</span>
+          <span>{t.searchLabel}</span>
           <kbd className="bg-gray-100 text-gray-500 px-1 py-0.5 rounded text-[9px] font-mono">⌘K</kbd>
         </button>
 
@@ -128,8 +134,11 @@ export default function AdminHeader({ onMenuToggle, onUnreadChange }: { onMenuTo
         <Link href="/" target="_blank"
           className="hidden sm:flex items-center gap-1.5 text-xs text-gray-500 hover:text-brand-600 font-medium transition-colors border border-gray-200 px-3 py-1.5 rounded-lg hover:border-brand-300 hover:bg-brand-50">
           <Globe className="w-3.5 h-3.5" />
-          الموقع
+          {t.viewSiteLabel}
         </Link>
+
+        {/* Language switcher */}
+        <LangToggle variant="light" className="hidden sm:flex" />
 
         {/* Notification bell */}
         <div ref={dropRef} className="relative">
@@ -138,7 +147,7 @@ export default function AdminHeader({ onMenuToggle, onUnreadChange }: { onMenuTo
             className={`relative w-9 h-9 flex items-center justify-center rounded-xl transition-colors ${
               open ? 'bg-brand-50 text-brand-600' : 'hover:bg-gray-100 text-gray-500'
             }`}
-            aria-label="الإشعارات"
+            aria-label={t.notificationsAria}
           >
             <Bell className="w-4.5 h-4.5" style={{ width: 18, height: 18 }} />
             {totalUnread > 0 && (
@@ -155,10 +164,10 @@ export default function AdminHeader({ onMenuToggle, onUnreadChange }: { onMenuTo
               <div className="flex items-center justify-between px-4 py-3 border-b border-gray-50">
                 <div className="flex items-center gap-2">
                   <Bell className="w-4 h-4 text-brand-600" />
-                  <span className="font-black text-gray-900 text-sm">الإشعارات</span>
+                  <span className="font-black text-gray-900 text-sm">{t.notificationsTitle}</span>
                   {totalUnread > 0 && (
                     <span className="bg-red-100 text-red-600 text-xs font-black px-2 py-0.5 rounded-full">
-                      {totalUnread} جديد
+                      {totalUnread} {t.newBadgeSuffix}
                     </span>
                   )}
                 </div>
@@ -175,7 +184,7 @@ export default function AdminHeader({ onMenuToggle, onUnreadChange }: { onMenuTo
               ) : threads.length === 0 ? (
                 <div className="py-10 text-center">
                   <MessageSquare className="w-8 h-8 text-gray-200 mx-auto mb-2" />
-                  <p className="text-sm text-gray-400 font-medium">لا توجد رسائل جديدة</p>
+                  <p className="text-sm text-gray-400 font-medium">{t.noNewMessages}</p>
                 </div>
               ) : (
                 <div className="divide-y divide-gray-50 max-h-72 overflow-y-auto">
@@ -212,7 +221,7 @@ export default function AdminHeader({ onMenuToggle, onUnreadChange }: { onMenuTo
                   onClick={() => setOpen(false)}
                   className="flex items-center justify-center gap-1.5 text-sm font-bold text-brand-600 hover:text-brand-700 transition-colors py-0.5"
                 >
-                  عرض كل الرسائل
+                  {t.viewAllMessages}
                   <ChevronLeft className="w-4 h-4" />
                 </Link>
               </div>
@@ -223,11 +232,11 @@ export default function AdminHeader({ onMenuToggle, onUnreadChange }: { onMenuTo
         {/* Admin avatar */}
         <div className="flex items-center gap-2 pr-1 border-r border-gray-100 mr-0.5">
           <div className="w-8 h-8 bg-gradient-to-br from-brand-500 to-brand-700 rounded-full flex items-center justify-center text-white font-black text-sm flex-shrink-0 shadow-sm">
-            {(actor?.name || 'أ').charAt(0)}
+            {(actor?.name || t.unknownActorInitial).charAt(0)}
           </div>
           <div className="hidden md:block">
-            <div className="text-sm font-black text-gray-900 leading-none">{actor?.name || 'الأستاذ أمين'}</div>
-            <div className="text-[10px] text-gray-400 mt-0.5">{actor?.role === 'staff' ? 'فريق العمل' : 'مشرف النظام'}</div>
+            <div className="text-sm font-black text-gray-900 leading-none">{actor?.name || tr[lang].portal.common.coachName}</div>
+            <div className="text-[10px] text-gray-400 mt-0.5">{actor?.role === 'staff' ? t.staffRole : t.ownerRole}</div>
           </div>
         </div>
 

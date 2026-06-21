@@ -10,21 +10,19 @@ import {
 import type { Parent, Student, Appointment, SessionLog, StudentAssessmentProfile, DifficultyLevel, Program } from '@/lib/types'
 import { DIFFICULTY_LABELS_AR } from '@/lib/game-mapping'
 import AIPatternAnalysis from '@/components/dashboard/AIPatternAnalysis'
+import { useLang, tr, type Lang } from '@/lib/i18n'
 
-const STATUS_CONFIG = {
-  active:    { label: 'نشط',             color: 'bg-green-100 text-green-700 border-green-200' },
-  pending:   { label: 'في الانتظار',     color: 'bg-orange-100 text-orange-700 border-orange-200' },
-  suspended: { label: 'موقوف',           color: 'bg-red-100 text-red-700 border-red-200' },
-  cancelled: { label: 'ملغى',            color: 'bg-gray-100 text-gray-600 border-gray-200' },
-  expired:   { label: 'منتهي الصلاحية',  color: 'bg-yellow-100 text-yellow-700 border-yellow-200' },
+function localeFor(lang: Lang) {
+  return lang === 'en' ? 'en-US' : 'fr-FR'
 }
 
-const PLAN_LABELS = {
-  basic: 'أساسي', standard: 'قياسي', premium: 'مميز',
-  session: 'حصة مفردة', weekly: 'الباقة الأسبوعية', monthly: 'الباقة الشهرية',
+const STATUS_COLORS = {
+  active:    'bg-green-100 text-green-700 border-green-200',
+  pending:   'bg-orange-100 text-orange-700 border-orange-200',
+  suspended: 'bg-red-100 text-red-700 border-red-200',
+  cancelled: 'bg-gray-100 text-gray-600 border-gray-200',
+  expired:   'bg-yellow-100 text-yellow-700 border-yellow-200',
 }
-const DIAG_LABELS: Record<string, string> = { ADHD: 'ADHD', AUTISM: 'توحد', 'ADHD+AUTISM': 'ADHD + توحد', OTHER: 'أخرى' }
-const SEVERITY_LABELS = { 1: 'خفيف', 2: 'متوسط', 3: 'شديد' }
 
 interface ClientData {
   parent: Parent
@@ -35,6 +33,8 @@ interface ClientData {
 export default function ClientDetailPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
+  const { lang } = useLang()
+  const t = tr[lang].adminClientDetail
   const [data, setData] = useState<ClientData | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -142,12 +142,12 @@ export default function ClientDetailPage() {
         }),
       })
       if (res.ok) {
-        setMsg({ type: 'ok', text: 'تم الحفظ بنجاح ✓' })
+        setMsg({ type: 'ok', text: t.messages.saveSuccess })
         setEditingNotes(false)
         await load()
       } else {
         const d = await res.json()
-        setMsg({ type: 'err', text: d.error || 'حدث خطأ' })
+        setMsg({ type: 'err', text: d.error || t.messages.genericError })
       }
     } finally {
       setSaving(false)
@@ -164,10 +164,10 @@ export default function ClientDetailPage() {
         body: JSON.stringify({ subscriptionStatus: status === 'suspended' ? 'active' : 'suspended' }),
       })
       if (res.ok) {
-        setMsg({ type: 'ok', text: status === 'suspended' ? 'تم تفعيل الحساب ✓' : 'تم إيقاف الحساب ✓' })
+        setMsg({ type: 'ok', text: status === 'suspended' ? t.messages.accountActivated : t.messages.accountSuspended })
         await load()
       } else {
-        setMsg({ type: 'err', text: 'فشل تغيير الحالة' })
+        setMsg({ type: 'err', text: t.messages.statusChangeFailed })
       }
     } finally {
       setSuspending(false)
@@ -181,12 +181,12 @@ export default function ClientDetailPage() {
       if (res.ok) {
         router.push('/dashboard/clients')
       } else {
-        setMsg({ type: 'err', text: 'فشل حذف الحساب' })
+        setMsg({ type: 'err', text: t.messages.deleteFailed })
         setDeleting(false)
         setConfirmDelete(false)
       }
     } catch {
-      setMsg({ type: 'err', text: 'حدث خطأ' })
+      setMsg({ type: 'err', text: t.messages.genericError })
       setDeleting(false)
       setConfirmDelete(false)
     }
@@ -194,7 +194,7 @@ export default function ClientDetailPage() {
 
   async function saveNewPassword() {
     if (newPwd.length < 8) {
-      setMsg({ type: 'err', text: 'كلمة المرور يجب أن تكون 8 أحرف على الأقل' })
+      setMsg({ type: 'err', text: t.messages.pwdTooShort })
       return
     }
     setPwdSaving(true)
@@ -206,15 +206,15 @@ export default function ClientDetailPage() {
         body: JSON.stringify({ newPassword: newPwd }),
       })
       if (res.ok) {
-        setMsg({ type: 'ok', text: 'تم تغيير كلمة المرور بنجاح ✓' })
+        setMsg({ type: 'ok', text: t.messages.pwdChangeSuccess })
         setNewPwd('')
         setShowPwdForm(false)
       } else {
         const d = await res.json()
-        setMsg({ type: 'err', text: d.error || 'فشل تغيير كلمة المرور' })
+        setMsg({ type: 'err', text: d.error || t.messages.pwdChangeFailed })
       }
     } catch {
-      setMsg({ type: 'err', text: 'خطأ في الاتصال' })
+      setMsg({ type: 'err', text: t.messages.connectionError })
     } finally {
       setPwdSaving(false)
     }
@@ -232,10 +232,10 @@ export default function ClientDetailPage() {
         window.open('/parent/dashboard', '_blank', 'noopener')
       } else {
         const d = await res.json()
-        setMsg({ type: 'err', text: d.error || 'فشل الدخول' })
+        setMsg({ type: 'err', text: d.error || t.messages.enterFailed })
       }
     } catch {
-      setMsg({ type: 'err', text: 'خطأ في الاتصال' })
+      setMsg({ type: 'err', text: t.messages.connectionError })
     } finally {
       setImpersonating(false)
     }
@@ -247,9 +247,7 @@ export default function ClientDetailPage() {
       const res = await fetch(`/api/admin/reset-parent-link/${id}`, { method: 'POST' })
       const d = await res.json()
       if (res.ok && d.ok) {
-        const waText = encodeURIComponent(
-          `مرحباً ${d.parentName}، يمكنك إعادة تعيين كلمة مرور حسابك في أكاديمية أمين من خلال هذا الرابط:\n${d.resetUrl}\n(الرابط صالح لمدة ساعة واحدة)`
-        )
+        const waText = encodeURIComponent(t.resetLinkWaMessage(d.parentName, d.resetUrl))
         const phone = d.whatsappPhone || ''
         setResetLinkData({
           url: d.resetUrl,
@@ -258,11 +256,11 @@ export default function ClientDetailPage() {
         })
         setResetLinkState('done')
       } else {
-        setMsg({ type: 'err', text: d.error || 'فشل إنشاء الرابط' })
+        setMsg({ type: 'err', text: d.error || t.messages.resetLinkFailed })
         setResetLinkState('idle')
       }
     } catch {
-      setMsg({ type: 'err', text: 'خطأ في الاتصال' })
+      setMsg({ type: 'err', text: t.messages.connectionError })
       setResetLinkState('idle')
     }
   }
@@ -307,12 +305,13 @@ export default function ClientDetailPage() {
 
   if (!data) return (
     <div className="text-center py-20">
-      <p className="text-gray-500">المشترك غير موجود</p>
+      <p className="text-gray-500">{t.notFound}</p>
     </div>
   )
 
   const { parent, students, appointments } = data
-  const statusCfg = STATUS_CONFIG[parent.subscriptionStatus as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.pending
+  const statusColor = STATUS_COLORS[parent.subscriptionStatus as keyof typeof STATUS_COLORS] ?? STATUS_COLORS.pending
+  const statusLabel = t.statusOptions[parent.subscriptionStatus as keyof typeof t.statusOptions] ?? t.statusOptions.pending
   const upcoming = appointments.filter(a => a.status === 'scheduled')
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
   const past = appointments.filter(a => a.status !== 'scheduled')
@@ -324,7 +323,7 @@ export default function ClientDetailPage() {
       <button onClick={() => router.push('/dashboard/clients')}
         className="flex items-center gap-2 text-gray-500 hover:text-gray-900 transition-colors text-sm font-medium">
         <ArrowRight className="w-4 h-4" />
-        العودة للمشتركين
+        {t.backButton}
       </button>
 
       {msg && (
@@ -345,18 +344,18 @@ export default function ClientDetailPage() {
           <div className="flex-1 min-w-0">
             <div className="flex items-center flex-wrap gap-3">
               <h1 className="font-black text-xl text-gray-900">{parent.firstName} {parent.lastName}</h1>
-              <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${statusCfg.color}`}>
-                {statusCfg.label}
+              <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${statusColor}`}>
+                {statusLabel}
               </span>
               <span className="text-xs bg-brand-50 text-brand-700 font-bold px-2.5 py-1 rounded-full">
-                {PLAN_LABELS[parent.subscriptionPlan as keyof typeof PLAN_LABELS] || parent.subscriptionPlan}
+                {t.planOptions[parent.subscriptionPlan as keyof typeof t.planOptions] || parent.subscriptionPlan}
               </span>
             </div>
             <div className="mt-2 flex flex-wrap gap-4 text-sm text-gray-500">
               <span className="flex items-center gap-1"><Mail className="w-3.5 h-3.5" />{parent.email}</span>
               {parent.phone && <span className="flex items-center gap-1 ltr-num"><Phone className="w-3.5 h-3.5" />{parent.phone}</span>}
               {parent.country && <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" />{parent.country}</span>}
-              <span className="flex items-center gap-1 ltr-num"><Calendar className="w-3.5 h-3.5" />{new Date(parent.createdAt).toLocaleDateString('fr-FR')}</span>
+              <span className="flex items-center gap-1 ltr-num"><Calendar className="w-3.5 h-3.5" />{new Date(parent.createdAt).toLocaleDateString(localeFor(lang))}</span>
             </div>
           </div>
           <div className="flex flex-wrap gap-2 flex-shrink-0">
@@ -364,33 +363,33 @@ export default function ClientDetailPage() {
               <a href={`https://wa.me/${parent.phone.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer"
                 className="flex items-center gap-1.5 bg-green-50 text-green-700 font-bold text-xs px-3 py-2 rounded-xl hover:bg-green-100 transition-colors">
                 <Phone className="w-3.5 h-3.5" />
-                واتساب
+                {t.whatsappButton}
               </a>
             )}
             <a href={`mailto:${parent.email}`}
               className="flex items-center gap-1.5 bg-brand-50 text-brand-700 font-bold text-xs px-3 py-2 rounded-xl hover:bg-brand-100 transition-colors">
               <Mail className="w-3.5 h-3.5" />
-              بريد
+              {t.emailButton}
             </a>
             <button
               onClick={enterAsParent}
               disabled={impersonating}
-              title="افتح بوابة الولي كما يراها هو"
+              title={t.enterAsParentTitle}
               className="flex items-center gap-1.5 bg-purple-50 text-purple-700 font-bold text-xs px-3 py-2 rounded-xl hover:bg-purple-100 transition-colors disabled:opacity-50">
               {impersonating
                 ? <div className="w-3.5 h-3.5 border-2 border-purple-700 border-t-transparent rounded-full animate-spin" />
                 : <LogIn className="w-3.5 h-3.5" />}
-              دخول كالولي
+              {t.enterAsParentButton}
             </button>
             <button
               onClick={generateResetLink}
               disabled={resetLinkState === 'loading'}
-              title="أنشئ رابط إعادة تعيين كلمة المرور وأرسله للولي"
+              title={t.resetLinkTitle}
               className="flex items-center gap-1.5 bg-orange-50 text-orange-700 font-bold text-xs px-3 py-2 rounded-xl hover:bg-orange-100 transition-colors disabled:opacity-50">
               {resetLinkState === 'loading'
                 ? <div className="w-3.5 h-3.5 border-2 border-orange-700 border-t-transparent rounded-full animate-spin" />
                 : <RotateCcw className="w-3.5 h-3.5" />}
-              رابط كلمة المرور
+              {t.resetLinkButton}
             </button>
           </div>
         </div>
@@ -402,7 +401,7 @@ export default function ClientDetailPage() {
           <div className="flex items-center justify-between">
             <p className="font-black text-orange-800 text-sm flex items-center gap-2">
               <RotateCcw className="w-4 h-4" />
-              رابط إعادة تعيين كلمة المرور (صالح ساعة واحدة)
+              {t.resetLinkPanelTitle}
             </p>
             <button onClick={() => { setResetLinkState('idle'); setResetLinkData(null) }}
               className="text-orange-400 hover:text-orange-700">
@@ -425,7 +424,7 @@ export default function ClientDetailPage() {
                 rel="noopener noreferrer"
                 className="flex items-center gap-1.5 bg-green-600 hover:bg-green-700 text-white font-bold text-sm px-4 py-2.5 rounded-xl transition-colors">
                 <Phone className="w-4 h-4" />
-                إرسال عبر واتساب
+                {t.sendViaWhatsappButton}
               </a>
             )}
             <a
@@ -434,7 +433,7 @@ export default function ClientDetailPage() {
               rel="noopener noreferrer"
               className="flex items-center gap-1.5 bg-orange-600 hover:bg-orange-700 text-white font-bold text-sm px-4 py-2.5 rounded-xl transition-colors">
               <ExternalLink className="w-4 h-4" />
-              فتح الرابط
+              {t.openLinkButton}
             </a>
           </div>
         </div>
@@ -445,53 +444,53 @@ export default function ClientDetailPage() {
         <div className="bg-white rounded-2xl border border-gray-100 p-6 space-y-4">
           <h2 className="font-black text-gray-900 flex items-center gap-2">
             <Star className="w-4 h-4 text-brand-500" />
-            إدارة الاشتراك
+            {t.subscriptionMgmtTitle}
           </h2>
 
           <div>
-            <label className="block text-xs font-bold text-gray-500 mb-1.5">الحالة</label>
+            <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.statusLabel}</label>
             <select value={status} onChange={e => setStatus(e.target.value)}
               className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-brand-300 focus:outline-none">
-              {Object.entries(STATUS_CONFIG).map(([val, { label }]) => (
+              {Object.entries(t.statusOptions).map(([val, label]) => (
                 <option key={val} value={val}>{label}</option>
               ))}
             </select>
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-gray-500 mb-1.5">الباقة</label>
+            <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.planLabel}</label>
             <select value={plan} onChange={e => setPlan(e.target.value)}
               className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-brand-300 focus:outline-none">
-              <option value="session">حصة مفردة</option>
-              <option value="weekly">الباقة الأسبوعية</option>
-              <option value="monthly">الباقة الشهرية</option>
-              <option value="basic">أساسي</option>
-              <option value="standard">قياسي</option>
-              <option value="premium">مميز</option>
+              <option value="session">{t.planOptions.session}</option>
+              <option value="weekly">{t.planOptions.weekly}</option>
+              <option value="monthly">{t.planOptions.monthly}</option>
+              <option value="basic">{t.planOptions.basic}</option>
+              <option value="standard">{t.planOptions.standard}</option>
+              <option value="premium">{t.planOptions.premium}</option>
             </select>
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-gray-500 mb-1.5">تاريخ انتهاء الاشتراك</label>
+            <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.expiryLabel}</label>
             <input type="date" value={expiry} onChange={e => setExpiry(e.target.value)}
               className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-brand-300 focus:outline-none ltr-num" />
           </div>
 
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="text-xs font-bold text-gray-500">ملاحظات الأستاذ</label>
+              <label className="text-xs font-bold text-gray-500">{t.notesLabel}</label>
               <button onClick={() => setEditingNotes(!editingNotes)} className="text-xs text-brand-600 font-bold flex items-center gap-1">
                 {editingNotes ? <X className="w-3 h-3" /> : <Edit2 className="w-3 h-3" />}
-                {editingNotes ? 'إلغاء' : 'تعديل'}
+                {editingNotes ? t.cancelButton : t.editButton}
               </button>
             </div>
             {editingNotes ? (
               <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={4}
                 className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-brand-300 focus:outline-none resize-none"
-                placeholder="أدخل ملاحظاتك هنا..." />
+                placeholder={t.notesPlaceholder} />
             ) : (
               <p className="text-sm text-gray-600 bg-gray-50 rounded-xl px-3 py-2 min-h-[80px] whitespace-pre-wrap">
-                {notes || <span className="text-gray-400 italic">لا توجد ملاحظات بعد</span>}
+                {notes || <span className="text-gray-400 italic">{t.noNotesYet}</span>}
               </p>
             )}
           </div>
@@ -500,7 +499,7 @@ export default function ClientDetailPage() {
             className="w-full bg-brand-600 text-white font-black py-3 rounded-xl text-sm flex items-center justify-center gap-2 hover:bg-brand-700 disabled:opacity-50 transition-colors">
             {saving ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
               : <Save className="w-4 h-4" />}
-            حفظ التغييرات
+            {t.saveChangesButton}
           </button>
 
           {/* Direct password reset */}
@@ -509,7 +508,7 @@ export default function ClientDetailPage() {
               onClick={() => { setShowPwdForm(p => !p); setNewPwd('') }}
               className="w-full flex items-center justify-between text-xs font-bold text-gray-500 hover:text-gray-800 transition-colors py-1"
             >
-              <span className="flex items-center gap-1.5"><Lock className="w-3.5 h-3.5" /> تغيير كلمة المرور مباشرة</span>
+              <span className="flex items-center gap-1.5"><Lock className="w-3.5 h-3.5" /> {t.changePwdDirectlyButton}</span>
               <span>{showPwdForm ? '▲' : '▼'}</span>
             </button>
             {showPwdForm && (
@@ -519,7 +518,7 @@ export default function ClientDetailPage() {
                     type={showNewPwd ? 'text' : 'password'}
                     value={newPwd}
                     onChange={e => setNewPwd(e.target.value)}
-                    placeholder="كلمة مرور جديدة (8 أحرف+)"
+                    placeholder={t.newPwdPlaceholder}
                     className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm pr-3 pl-9 focus:ring-2 focus:ring-brand-300 focus:outline-none"
                   />
                   <button type="button" onClick={() => setShowNewPwd(p => !p)}
@@ -535,7 +534,7 @@ export default function ClientDetailPage() {
                   {pwdSaving
                     ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                     : <Lock className="w-4 h-4" />}
-                  تعيين كلمة المرور
+                  {t.setPwdButton}
                 </button>
               </div>
             )}
@@ -551,28 +550,28 @@ export default function ClientDetailPage() {
               }`}>
               {suspending ? <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
                 : <PauseCircle className="w-4 h-4" />}
-              {parent.subscriptionStatus === 'suspended' ? 'إعادة تفعيل الحساب' : 'إيقاف الحساب مؤقتاً'}
+              {parent.subscriptionStatus === 'suspended' ? t.reactivateButton : t.suspendButton}
             </button>
 
             {isOwner && (!confirmDelete ? (
               <button onClick={() => setConfirmDelete(true)}
                 className="w-full bg-red-50 text-red-700 font-bold py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 hover:bg-red-100 transition-colors">
                 <Trash2 className="w-4 h-4" />
-                حذف العميل نهائياً
+                {t.deletePermanentlyButton}
               </button>
             ) : (
               <div className="bg-red-50 border border-red-200 rounded-xl p-3 space-y-2">
-                <p className="text-xs font-bold text-red-700 text-center">هل أنت متأكد؟ سيُحذف كل البيانات نهائياً!</p>
+                <p className="text-xs font-bold text-red-700 text-center">{t.confirmDeleteText}</p>
                 <div className="flex gap-2">
                   <button onClick={() => setConfirmDelete(false)}
                     className="flex-1 bg-white border border-gray-200 text-gray-600 font-bold py-2 rounded-lg text-xs">
-                    إلغاء
+                    {t.cancelButton}
                   </button>
                   <button onClick={deleteAccount} disabled={deleting}
                     className="flex-1 bg-red-600 text-white font-black py-2 rounded-lg text-xs flex items-center justify-center gap-1">
                     {deleting ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
                       : <Trash2 className="w-3 h-3" />}
-                    تأكيد الحذف
+                    {t.confirmDeleteButton}
                   </button>
                 </div>
               </div>
@@ -588,11 +587,11 @@ export default function ClientDetailPage() {
             <div className="px-6 py-4 border-b border-gray-50">
               <h2 className="font-black text-gray-900 flex items-center gap-2">
                 <User className="w-4 h-4 text-brand-500" />
-                الأطفال ({students.length})
+                {t.childrenTitle(students.length)}
               </h2>
             </div>
             {students.length === 0 ? (
-              <div className="py-10 text-center text-gray-400 text-sm">لا يوجد أطفال مسجلون</div>
+              <div className="py-10 text-center text-gray-400 text-sm">{t.noChildren}</div>
             ) : (
               <div className="divide-y divide-gray-50">
                 {students.map(s => (
@@ -605,29 +604,29 @@ export default function ClientDetailPage() {
                         <div>
                           <div className="font-bold text-gray-900 text-sm">{s.firstName} {s.lastName}</div>
                           <div className="text-gray-500 text-xs mt-0.5 flex flex-wrap gap-2">
-                            <span className="ltr-num">{s.ageGroup} سنة</span>
+                            <span className="ltr-num">{s.ageGroup} {t.yearsUnit}</span>
                             <span>•</span>
-                            <span>{DIAG_LABELS[s.diagnosis] || s.diagnosis}</span>
+                            <span>{t.diagnosisLabels[s.diagnosis as keyof typeof t.diagnosisLabels] || s.diagnosis}</span>
                             <span>•</span>
-                            <span>{SEVERITY_LABELS[s.severityLevel] || s.severityLevel}</span>
+                            <span>{t.severityLabels[s.severityLevel as keyof typeof t.severityLabels] || s.severityLevel}</span>
                           </div>
                         </div>
                       </div>
                       <div className="text-left text-xs text-gray-400 ltr-num flex-shrink-0">
-                        <div>🌟 {s.totalPoints} نقطة</div>
-                        <div>🔥 {s.streak} يوم</div>
+                        <div>🌟 {s.totalPoints} {t.pointsUnit}</div>
+                        <div>🔥 {s.streak} {t.streakUnit}</div>
                       </div>
                     </div>
                     <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
                       {[
-                        ['بصري', s.sensoryProfile.visualSensitivity],
-                        ['سمعي', s.sensoryProfile.audioSensitivity],
-                        ['لمسي', s.sensoryProfile.touchSensitivity],
+                        [t.sensoryLabels.visual, s.sensoryProfile.visualSensitivity],
+                        [t.sensoryLabels.audio, s.sensoryProfile.audioSensitivity],
+                        [t.sensoryLabels.touch, s.sensoryProfile.touchSensitivity],
                       ].map(([label, val]) => {
                         const color = val === 'high' ? 'bg-red-50 text-red-600' : val === 'low' ? 'bg-green-50 text-green-600' : 'bg-gray-50 text-gray-500'
                         return (
                           <div key={label} className={`rounded-lg px-2 py-1 text-center font-medium ${color}`}>
-                            {label}: {val === 'high' ? 'عالي' : val === 'low' ? 'منخفض' : 'متوسط'}
+                            {label}: {val === 'high' ? t.sensitivityHigh : val === 'low' ? t.sensitivityLow : t.sensitivityMedium}
                           </div>
                         )
                       })}
@@ -648,7 +647,7 @@ export default function ClientDetailPage() {
                           onClick={() => generateStudentCode(s.id)}
                           className="flex items-center gap-1.5 text-xs font-bold text-brand-600 bg-brand-50 px-3 py-2 rounded-xl hover:bg-brand-100 transition-colors">
                           <Key className="w-3.5 h-3.5" />
-                          إنشاء رمز دخول
+                          {t.generateCodeButton}
                         </button>
                       )}
                     </div>
@@ -664,23 +663,19 @@ export default function ClientDetailPage() {
               <div className="px-6 py-4 border-b border-gray-50 flex items-center justify-between">
                 <h2 className="font-black text-gray-900 flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-brand-500" />
-                  البرنامج الأسبوعي الحالي
+                  {t.currentProgramTitle}
                 </h2>
                 <a
                   href="/dashboard/programs"
                   className="text-xs font-bold text-brand-600 bg-brand-50 px-3 py-1.5 rounded-lg hover:bg-brand-100 transition-colors"
                 >
-                  + إنشاء / تعديل برنامج
+                  {t.createEditProgramLink}
                 </a>
               </div>
               <div className="divide-y divide-gray-50">
                 {(data.students || []).map(s => {
                   const prog = programs[s.id]
                   if (!prog) return null
-                  const DAYS_AR: Record<string, string> = {
-                    monday: 'الإثنين', tuesday: 'الثلاثاء', wednesday: 'الأربعاء',
-                    thursday: 'الخميس', friday: 'الجمعة', saturday: 'السبت', sunday: 'الأحد',
-                  }
                   return (
                     <div key={s.id} className="px-6 py-4">
                       <div className="flex items-start justify-between mb-3">
@@ -693,11 +688,11 @@ export default function ClientDetailPage() {
                         <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${
                           prog.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
                         }`}>
-                          {prog.status === 'active' ? 'نشط' : prog.status}
+                          {prog.status === 'active' ? t.programActiveStatus : prog.status}
                         </span>
                       </div>
                       <div className="grid grid-cols-7 gap-1">
-                        {Object.entries(DAYS_AR).map(([key, label]) => {
+                        {Object.entries(t.days).map(([key, label]) => {
                           const exercises = prog.weeklySchedule?.[key as keyof typeof prog.weeklySchedule] || []
                           const count = exercises.length
                           return (
@@ -717,7 +712,7 @@ export default function ClientDetailPage() {
                         })}
                       </div>
                       <p className="text-xs text-gray-400 mt-2">
-                        إجمالي التمارين الأسبوعية: <strong className="text-gray-700">{Object.values(prog.weeklySchedule || {}).flat().length}</strong> تمرين
+                        {t.totalWeeklyExercisesPrefix} <strong className="text-gray-700">{Object.values(prog.weeklySchedule || {}).flat().length}</strong> {t.exerciseUnit}
                       </p>
                     </div>
                   )
@@ -730,14 +725,14 @@ export default function ClientDetailPage() {
           {!programsLoading && (data.students || []).length > 0 && (data.students || []).every(s => !programs[s.id]) && (
             <div className="bg-amber-50 border border-amber-200 rounded-2xl px-6 py-4 flex items-center justify-between">
               <div>
-                <p className="font-black text-amber-800 text-sm">⚠️ لا يوجد برنامج مخصص لهذا المشترك بعد</p>
-                <p className="text-xs text-amber-600 mt-0.5">أنشئ برنامجاً أسبوعياً لتبدأ الجلسات</p>
+                <p className="font-black text-amber-800 text-sm">{t.noProgramTitle}</p>
+                <p className="text-xs text-amber-600 mt-0.5">{t.noProgramSubtitle}</p>
               </div>
               <a
                 href="/dashboard/programs"
                 className="flex-shrink-0 text-sm font-black bg-amber-600 text-white px-4 py-2 rounded-xl hover:bg-amber-700 transition-colors"
               >
-                إنشاء برنامج
+                {t.createProgramButton}
               </a>
             </div>
           )}
@@ -748,7 +743,7 @@ export default function ClientDetailPage() {
               <div className="px-6 py-4 border-b border-gray-50">
                 <h2 className="font-black text-gray-900 flex items-center gap-2">
                   <Brain className="w-4 h-4 text-purple-500" />
-                  الملف التشخيصي
+                  {t.assessmentProfileTitle}
                 </h2>
               </div>
               <div className="divide-y divide-gray-50">
@@ -772,7 +767,7 @@ export default function ClientDetailPage() {
                           className="text-xs font-bold text-brand-600 bg-brand-50 px-3 py-1.5 rounded-lg hover:bg-brand-100 transition-colors flex items-center gap-1"
                         >
                           <Edit2 className="w-3 h-3" />
-                          {isEditing ? 'إلغاء' : 'تعديل'}
+                          {isEditing ? t.cancelButton : t.editButton}
                         </button>
                       </div>
 
@@ -787,10 +782,10 @@ export default function ClientDetailPage() {
                                 }`}>
                                   {DIFFICULTY_LABELS_AR[k as keyof typeof DIFFICULTY_LABELS_AR]}
                                   {' '}
-                                  {v === 'mild' ? '(خفيف)' : v === 'moderate' ? '(متوسط)' : '(شديد)'}
+                                  {t.severitySuffix[v as keyof typeof t.severitySuffix]}
                                 </span>
                               ))
-                            : <span className="text-gray-400 text-xs">لم يُحدَّد ملف تشخيصي بعد</span>
+                            : <span className="text-gray-400 text-xs">{t.noProfileYet}</span>
                           }
                         </div>
                       )}
@@ -814,7 +809,7 @@ export default function ClientDetailPage() {
                                         : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
                                     }`}
                                   >
-                                    {level === 'none' ? 'لا يوجد' : level === 'mild' ? 'خفيف' : level === 'moderate' ? 'متوسط' : 'شديد'}
+                                    {t.difficultyLevelOptions[level]}
                                   </button>
                                 ))}
                               </div>
@@ -826,7 +821,7 @@ export default function ClientDetailPage() {
                             className="mt-2 w-full bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white font-black py-2 rounded-xl text-sm transition-colors flex items-center justify-center gap-2"
                           >
                             <Save className="w-4 h-4" />
-                            {profileSaving ? 'جاري الحفظ...' : 'حفظ الملف التشخيصي'}
+                            {profileSaving ? t.savingText : t.saveProfileButton}
                           </button>
                         </div>
                       )}
@@ -853,7 +848,7 @@ export default function ClientDetailPage() {
               <div className="px-6 py-4 border-b border-gray-50">
                 <h2 className="font-black text-gray-900 flex items-center gap-2">
                   <Clock className="w-4 h-4 text-blue-500" />
-                  المواعيد القادمة ({upcoming.length})
+                  {t.upcomingApptsTitle(upcoming.length)}
                 </h2>
               </div>
               <div className="divide-y divide-gray-50">
@@ -861,7 +856,7 @@ export default function ClientDetailPage() {
                   <div key={a.id} className="px-6 py-3 flex items-center justify-between">
                     <div>
                       <div className="text-sm font-bold text-gray-800 ltr-num">
-                        {new Date(a.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                        {new Date(a.date).toLocaleDateString(localeFor(lang), { weekday: 'long', day: 'numeric', month: 'long' })}
                         {' '}{a.timeSlot}
                       </div>
                       <div className="text-xs text-gray-500 mt-0.5">{a.notes || '—'}</div>
@@ -870,7 +865,7 @@ export default function ClientDetailPage() {
                       <a href={a.meetingUrl} target="_blank" rel="noopener noreferrer"
                         className="flex items-center gap-1 text-xs font-bold text-green-600 bg-green-50 px-3 py-1.5 rounded-lg hover:bg-green-100 transition-colors">
                         <Video className="w-3 h-3" />
-                        انضمام
+                        {t.joinLabel}
                       </a>
                     )}
                   </div>
@@ -885,7 +880,7 @@ export default function ClientDetailPage() {
               <div className="px-6 py-4 border-b border-gray-50">
                 <h2 className="font-black text-gray-900 flex items-center gap-2">
                   <Brain className="w-4 h-4 text-gray-500" />
-                  سجل الجلسات ({past.length})
+                  {t.sessionLogTitle(past.length)}
                 </h2>
               </div>
               <div className="divide-y divide-gray-50">
@@ -908,12 +903,12 @@ export default function ClientDetailPage() {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
                               <span className="text-sm font-bold text-gray-800 ltr-num">
-                                {new Date(a.date).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
+                                {new Date(a.date).toLocaleDateString(localeFor(lang), { weekday: 'short', day: 'numeric', month: 'short' })}
                                 {' '}{a.timeSlot}
                               </span>
                               {log?.durationSeconds > 0 && (
                                 <span className="text-xs text-gray-400 ltr-num">
-                                  ⏱ {Math.round(log.durationSeconds / 60)} دقيقة
+                                  ⏱ {Math.round(log.durationSeconds / 60)} {t.durationMinutesSuffix}
                                 </span>
                               )}
                             </div>
@@ -922,7 +917,7 @@ export default function ClientDetailPage() {
                               <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                                 {log.exercises?.length > 0 && (
                                   <span className="text-xs bg-brand-100 text-brand-700 font-bold px-2 py-0.5 rounded-full ltr-num">
-                                    {log.exercises.length} تمرين
+                                    {log.exercises.length} {t.exerciseUnit}
                                   </span>
                                 )}
                                 {avgScore !== null && (
@@ -931,7 +926,7 @@ export default function ClientDetailPage() {
                                     avgScore >= 60 ? 'bg-yellow-100 text-yellow-700' :
                                     'bg-red-100 text-red-700'
                                   }`}>
-                                    متوسط {avgScore}٪
+                                    {t.avgScorePrefix} {avgScore}٪
                                   </span>
                                 )}
                                 <div className="flex items-center gap-1.5">
@@ -958,7 +953,7 @@ export default function ClientDetailPage() {
                               isCompleted ? 'bg-green-100 text-green-700' :
                               isCancelled ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'
                             }`}>
-                              {isCompleted ? 'مكتمل' : isCancelled ? (a.status === 'no-show' ? 'لم يحضر' : 'ملغى') : a.status}
+                              {isCompleted ? t.apptStatusCompleted : isCancelled ? (a.status === 'no-show' ? t.apptStatusNoShow : t.apptStatusCancelled) : a.status}
                             </span>
                             {log && (isExpanded
                               ? <ChevronUp className="w-4 h-4 text-gray-400" />
@@ -972,14 +967,14 @@ export default function ClientDetailPage() {
                         <div className="px-6 pb-5 space-y-3">
                           {/* Behavioral observations */}
                           <div className="bg-gray-50 rounded-xl px-4 py-3">
-                            <p className="text-xs font-bold text-gray-500 mb-2">ملاحظات سلوكية</p>
+                            <p className="text-xs font-bold text-gray-500 mb-2">{t.behavioralObservationsTitle}</p>
                             <div className="grid grid-cols-5 gap-2">
                               {([
-                                ['attention',   'الانتباه'],
-                                ['cooperation', 'التعاون'],
-                                ['energy',      'الطاقة'],
-                                ['mood',        'المزاج'],
-                                ['anxiety',     'القلق'],
+                                ['attention',   t.observationLabels.attention],
+                                ['cooperation', t.observationLabels.cooperation],
+                                ['energy',      t.observationLabels.energy],
+                                ['mood',        t.observationLabels.mood],
+                                ['anxiety',     t.observationLabels.anxiety],
                               ] as [keyof typeof log.observations, string][]).map(([key, label]) => (
                                 <div key={key} className="text-center">
                                   <div className="text-[10px] text-gray-400 mb-1">{label}</div>
@@ -999,7 +994,7 @@ export default function ClientDetailPage() {
                           {/* Exercise results */}
                           {log.exercises?.length > 0 && (
                             <div className="space-y-2">
-                              <p className="text-xs font-bold text-gray-500">نتائج التمارين</p>
+                              <p className="text-xs font-bold text-gray-500">{t.exerciseResultsTitle}</p>
                               {log.exercises.map((ex, i) => (
                                 <div key={i} className="bg-gray-50 rounded-xl px-4 py-2.5 flex items-center gap-3">
                                   <div className="flex-1 min-w-0">
@@ -1019,7 +1014,7 @@ export default function ClientDetailPage() {
                                     <div className={`text-sm font-black ltr-num ${
                                       ex.score >= 80 ? 'text-green-600' : ex.score >= 60 ? 'text-yellow-600' : 'text-red-500'
                                     }`}>{ex.score}٪</div>
-                                    <div className="text-[10px] text-gray-400 ltr-num">{Math.round(ex.duration / 60)}د</div>
+                                    <div className="text-[10px] text-gray-400 ltr-num">{Math.round(ex.duration / 60)}{t.minuteAbbrev}</div>
                                   </div>
                                 </div>
                               ))}
@@ -1029,7 +1024,7 @@ export default function ClientDetailPage() {
                           {/* Therapist notes */}
                           {log.therapistNotes && (
                             <div className="bg-blue-50 rounded-xl px-4 py-3">
-                              <p className="text-xs font-bold text-blue-600 mb-1">ملاحظات الأستاذ</p>
+                              <p className="text-xs font-bold text-blue-600 mb-1">{t.notesLabel}</p>
                               <p className="text-xs text-gray-700 whitespace-pre-wrap">{log.therapistNotes}</p>
                             </div>
                           )}
@@ -1037,7 +1032,7 @@ export default function ClientDetailPage() {
                           {/* Session highlights */}
                           {log.highlights?.length > 0 && (
                             <div className="bg-yellow-50 rounded-xl px-4 py-3">
-                              <p className="text-xs font-bold text-yellow-700 mb-1.5">أبرز اللحظات</p>
+                              <p className="text-xs font-bold text-yellow-700 mb-1.5">{t.highlightsTitle}</p>
                               <ul className="space-y-0.5">
                                 {log.highlights.map((h, i) => (
                                   <li key={i} className="text-xs text-gray-700">• {h}</li>

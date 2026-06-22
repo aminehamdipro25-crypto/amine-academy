@@ -234,7 +234,9 @@ ${exList}
       if (e.status === 429) {
         return NextResponse.json({ error: 'تجاوز حساب AI حدّه (rate limit) أو انتهى الرصيد — حاول بعد قليل' }, { status: 500 })
       }
-      return NextResponse.json({ error: `خطأ من خدمة AI (${e.status ?? 'unknown'}) — حاول مرة أخرى` }, { status: 500 })
+      // Include the API's own message (e.g. which request field is invalid) — the status code
+      // alone wasn't enough to diagnose a 400, and this detail only ever reaches the dashboard.
+      return NextResponse.json({ error: `خطأ من خدمة AI (${e.status ?? 'unknown'}): ${e.message || 'بدون تفاصيل'}` }, { status: 500 })
     }
     return NextResponse.json({ error: 'حدث خطأ في توليد البرنامج' }, { status: 500 })
   }

@@ -222,6 +222,8 @@ export interface AssessmentResult {
   answers:       AssessmentAnswer[]
   completedAt:   string
   createdAt:     string
+  assessedByName?:     string  // free-text specialist name, shown in reports/timelines
+  assessedByActorId?:  string  // 'owner' or 'staff:<id>' — server-derived, for audit trail
 }
 
 export interface LearningDifficultyProfile {

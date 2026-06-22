@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { isDashboardUser } from '@/lib/auth'
+import { isDashboardUser, getDashboardActorId } from '@/lib/auth'
 import { redis } from '@/lib/redis'
 import type { AssessmentResult } from '@/lib/types'
 
@@ -40,6 +40,8 @@ export async function POST(req: NextRequest) {
       answers: Array.isArray(body.answers) ? body.answers : [],
       completedAt: new Date().toISOString(),
       createdAt: new Date().toISOString(),
+      assessedByName: typeof body.assessedByName === 'string' ? body.assessedByName.trim().slice(0, 120) : undefined,
+      assessedByActorId: (await getDashboardActorId()) ?? undefined,
     }
     await redis.pipeline([
       ['SET', `assessment:${id}`, JSON.stringify(result), 'EX', String(365 * 24 * 3600)],

@@ -164,6 +164,15 @@ export default function SpecialistToolkitPage() {
   const [savedResultIds, setSavedResultIds] = useState<Set<string>>(new Set())
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
 
+  // Default the therapist field to the logged-in dashboard user's name — still editable,
+  // and never overwrites a name already set (e.g. restored from a draft)
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => { if (d?.name) setTherapistName(prev => prev || d.name) })
+      .catch(() => {})
+  }, [])
+
   // Local draft recovery — protects an in-progress walk-in assessment from tab refresh/crash
   const [pendingDraft, setPendingDraft] = useState<Draft | null>(null)
   const [lastSavedAt, setLastSavedAt] = useState<number | null>(null)
@@ -287,6 +296,7 @@ export default function SpecialistToolkitPage() {
           severity: r.severity,
           recommendations: r.recommendations,
           answers: r.answers,
+          assessedByName: therapistName,
         }),
       })
       return { id: r.id, ok: res.ok }
@@ -297,7 +307,7 @@ export default function SpecialistToolkitPage() {
       setSaveStatus(outcomes.every(o => o.ok) ? 'saved' : 'error')
     }).catch(() => { if (!cancelled) setSaveStatus('error') })
     return () => { cancelled = true }
-  }, [step, results, studentId, savedResultIds])
+  }, [step, results, studentId, savedResultIds, therapistName])
 
   function toggleConcern(c: ConcernKey) {
     setConcerns(prev => {

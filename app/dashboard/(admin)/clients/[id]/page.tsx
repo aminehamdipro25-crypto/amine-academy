@@ -5,9 +5,9 @@ import {
   ArrowRight, Mail, Phone, MapPin, Calendar, CheckCircle, Clock, XCircle,
   AlertCircle, Video, User, Brain, Star, Edit2, Save, X, Key, Copy,
   PauseCircle, Trash2, LogIn, RotateCcw, ExternalLink, Eye, EyeOff, Lock,
-  ChevronDown, ChevronUp,
+  ChevronDown, ChevronUp, ClipboardList,
 } from 'lucide-react'
-import type { Parent, Student, Appointment, SessionLog, StudentAssessmentProfile, DifficultyLevel, Program } from '@/lib/types'
+import type { Parent, Student, Appointment, SessionLog, StudentAssessmentProfile, DifficultyLevel, Program, AssessmentResult } from '@/lib/types'
 import { DIFFICULTY_LABELS_AR } from '@/lib/game-mapping'
 import AIPatternAnalysis from '@/components/dashboard/AIPatternAnalysis'
 import { useLang, tr, type Lang } from '@/lib/i18n'
@@ -35,6 +35,7 @@ export default function ClientDetailPage() {
   const router = useRouter()
   const { lang } = useLang()
   const t = tr[lang].adminClientDetail
+  const tToolkit = tr[lang].adminSpecialistToolkit
   const [data, setData] = useState<ClientData | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -63,6 +64,7 @@ export default function ClientDetailPage() {
   const [profileSaving, setProfileSaving] = useState(false)
   const [programs, setPrograms] = useState<Record<string, Program | null>>({})
   const [programsLoading, setProgramsLoading] = useState(false)
+  const [walkInAssessments, setWalkInAssessments] = useState<Record<string, AssessmentResult[]>>({})
   const [isOwner, setIsOwner] = useState(false)
 
   useEffect(() => {
@@ -125,6 +127,20 @@ export default function ClientDetailPage() {
       results.forEach(r => { map[r.id] = r.program })
       setPrograms(map)
     }).finally(() => setProgramsLoading(false))
+
+    // Fetch specialist-toolkit quick assessments for each student
+    Promise.all(
+      students.map(s =>
+        fetch(`/api/assessments?studentId=${encodeURIComponent(s.id)}`)
+          .then(r => r.ok ? r.json() : null)
+          .then(d => ({ id: s.id, results: (d?.results ?? []) as AssessmentResult[] }))
+          .catch(() => ({ id: s.id, results: [] as AssessmentResult[] }))
+      )
+    ).then(results => {
+      const map: Record<string, AssessmentResult[]> = {}
+      results.forEach(r => { map[r.id] = r.results })
+      setWalkInAssessments(map)
+    })
   }, [data])
 
   async function save() {
@@ -824,6 +840,49 @@ export default function ClientDetailPage() {
                             {profileSaving ? t.savingText : t.saveProfileButton}
                           </button>
                         </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Specialist toolkit quick assessments */}
+          {(data.students || []).length > 0 && (
+            <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-50">
+                <h2 className="font-black text-gray-900 flex items-center gap-2">
+                  <ClipboardList className="w-4 h-4 text-teal-500" />
+                  {t.walkInAssessmentsTitle}
+                </h2>
+              </div>
+              <div className="divide-y divide-gray-50">
+                {(data.students || []).map(student => {
+                  const studentResults = walkInAssessments[student.id] || []
+                  return (
+                    <div key={student.id} className="px-6 py-4">
+                      <span className="font-black text-gray-800 text-sm">{student.firstName} {student.lastName}</span>
+                      {studentResults.length === 0 ? (
+                        <p className="text-gray-400 text-xs mt-1.5">{t.walkInAssessmentsEmpty}</p>
+                      ) : (
+                        <ul className="mt-2 space-y-1.5">
+                          {studentResults.map(r => (
+                            <li key={r.id} className="flex items-center justify-between gap-2 text-xs flex-wrap">
+                              <span className="font-bold text-gray-700">{tToolkit.scaleNames[r.type as keyof typeof tToolkit.scaleNames] ?? r.type}</span>
+                              <span className="text-gray-400 ltr-num">{new Date(r.completedAt).toLocaleDateString(localeFor(lang))}</span>
+                              {r.assessedByName && <span className="text-gray-400">{t.assessedByLabel}: {r.assessedByName}</span>}
+                              <span className={`px-2 py-0.5 rounded-full font-black ${
+                                r.severity === 'severe'   ? 'bg-red-50 text-red-700 ring-1 ring-red-200' :
+                                r.severity === 'moderate' ? 'bg-orange-50 text-orange-700 ring-1 ring-orange-200' :
+                                r.severity === 'mild'     ? 'bg-amber-50 text-amber-700 ring-1 ring-amber-200' :
+                                                             'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200'
+                              }`}>
+                                {tToolkit.severityLabels[r.severity]}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
                       )}
                     </div>
                   )

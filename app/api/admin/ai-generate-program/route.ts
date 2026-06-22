@@ -224,6 +224,18 @@ ${exList}
 
   } catch (e) {
     console.error('[ai-generate-program]', e)
+    // Surface the real cause when it's the Anthropic API itself (bad/expired key, out of
+    // credit, rate-limited, overloaded) — these need a different fix than a code bug, and
+    // the generic message was indistinguishable from one in the dashboard.
+    if (e instanceof Anthropic.APIError) {
+      if (e.status === 401 || e.status === 403) {
+        return NextResponse.json({ error: 'مفتاح AI غير صالح أو منتهي الصلاحية — راجع ANTHROPIC_API_KEY' }, { status: 500 })
+      }
+      if (e.status === 429) {
+        return NextResponse.json({ error: 'تجاوز حساب AI حدّه (rate limit) أو انتهى الرصيد — حاول بعد قليل' }, { status: 500 })
+      }
+      return NextResponse.json({ error: `خطأ من خدمة AI (${e.status ?? 'unknown'}) — حاول مرة أخرى` }, { status: 500 })
+    }
     return NextResponse.json({ error: 'حدث خطأ في توليد البرنامج' }, { status: 500 })
   }
 }

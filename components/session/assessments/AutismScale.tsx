@@ -65,6 +65,10 @@ const RECS: Record<ASDDomain, string> = {
   selfRegulation: 'تمارين تنظيم ذاتي وتهدئة حسية (منطقة هدوء، تمارين تنفس مصورة)',
 }
 
+// Internal screening heuristic, not a validated clinical cutoff. Uses a stricter
+// 20/45/70 split; ADHDScale.tsx and AttentionDomainsScale.tsx use an even quartile
+// split (25/50/75) instead — kept separate per-scale rather than unified since
+// changing either is a clinical-content decision, not a code cleanup.
 function severity(score: number): AssessmentResult['severity'] {
   if (score < 20) return 'none'
   if (score < 45) return 'mild'
@@ -134,10 +138,12 @@ export default function AutismScale({ studentId, onComplete, onCancel }: Props) 
           </h3>
           {section.items.map(item => (
             <div key={item.id} className="bg-white/5 rounded-xl p-4">
-              <p className="text-white/90 text-sm mb-3 leading-relaxed">{item.text}</p>
-              <div className="flex gap-2">
+              <p className="text-white/90 text-sm mb-3 leading-relaxed" id={`label-${item.id}`}>{item.text}</p>
+              <div className="flex gap-2" role="radiogroup" aria-labelledby={`label-${item.id}`}>
                 {RATINGS.map((label, val) => (
                   <button key={val}
+                    role="radio"
+                    aria-checked={answers[item.id] === val}
                     onClick={() => setAnswer(item.id, val as 0 | 1 | 2 | 3)}
                     className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${
                       answers[item.id] === val

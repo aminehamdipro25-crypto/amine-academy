@@ -224,6 +224,7 @@ export interface AssessmentResult {
   createdAt:     string
   assessedByName?:     string  // free-text specialist name, shown in reports/timelines
   assessedByActorId?:  string  // 'owner' or 'staff:<id>' — server-derived, for audit trail
+  clinicalNotes?:      string  // free-text observations captured during the scale run
 }
 
 export interface LearningDifficultyProfile {

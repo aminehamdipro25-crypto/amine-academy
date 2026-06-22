@@ -868,18 +868,23 @@ export default function ClientDetailPage() {
                       ) : (
                         <ul className="mt-2 space-y-1.5">
                           {studentResults.map(r => (
-                            <li key={r.id} className="flex items-center justify-between gap-2 text-xs flex-wrap">
-                              <span className="font-bold text-gray-700">{tToolkit.scaleNames[r.type as keyof typeof tToolkit.scaleNames] ?? r.type}</span>
-                              <span className="text-gray-400 ltr-num">{new Date(r.completedAt).toLocaleDateString(localeFor(lang))}</span>
-                              {r.assessedByName && <span className="text-gray-400">{t.assessedByLabel}: {r.assessedByName}</span>}
-                              <span className={`px-2 py-0.5 rounded-full font-black ${
-                                r.severity === 'severe'   ? 'bg-red-50 text-red-700 ring-1 ring-red-200' :
-                                r.severity === 'moderate' ? 'bg-orange-50 text-orange-700 ring-1 ring-orange-200' :
-                                r.severity === 'mild'     ? 'bg-amber-50 text-amber-700 ring-1 ring-amber-200' :
-                                                             'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200'
-                              }`}>
-                                {tToolkit.severityLabels[r.severity]}
-                              </span>
+                            <li key={r.id} className="text-xs">
+                              <div className="flex items-center justify-between gap-2 flex-wrap">
+                                <span className="font-bold text-gray-700">{tToolkit.scaleNames[r.type as keyof typeof tToolkit.scaleNames] ?? r.type}</span>
+                                <span className="text-gray-400 ltr-num">{new Date(r.completedAt).toLocaleDateString(localeFor(lang))}</span>
+                                {r.assessedByName && <span className="text-gray-400">{t.assessedByLabel}: {r.assessedByName}</span>}
+                                <span className={`px-2 py-0.5 rounded-full font-black ${
+                                  r.severity === 'severe'   ? 'bg-red-50 text-red-700 ring-1 ring-red-200' :
+                                  r.severity === 'moderate' ? 'bg-orange-50 text-orange-700 ring-1 ring-orange-200' :
+                                  r.severity === 'mild'     ? 'bg-amber-50 text-amber-700 ring-1 ring-amber-200' :
+                                                               'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200'
+                                }`}>
+                                  {tToolkit.severityLabels[r.severity]}
+                                </span>
+                              </div>
+                              {r.clinicalNotes && (
+                                <p className="text-gray-400 mt-0.5 truncate" title={r.clinicalNotes}>{r.clinicalNotes}</p>
+                              )}
                             </li>
                           ))}
                         </ul>

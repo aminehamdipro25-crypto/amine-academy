@@ -42,6 +42,7 @@ export async function POST(req: NextRequest) {
       createdAt: new Date().toISOString(),
       assessedByName: typeof body.assessedByName === 'string' ? body.assessedByName.trim().slice(0, 120) : undefined,
       assessedByActorId: (await getDashboardActorId()) ?? undefined,
+      clinicalNotes: typeof body.clinicalNotes === 'string' ? body.clinicalNotes.trim().slice(0, 2000) : undefined,
     }
     await redis.pipeline([
       ['SET', `assessment:${id}`, JSON.stringify(result), 'EX', String(365 * 24 * 3600)],

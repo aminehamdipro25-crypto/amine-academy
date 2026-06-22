@@ -32,6 +32,8 @@ const SCALE_COMPONENT: Record<ScaleKey, React.ComponentType<{
   studentId: string
   onComplete: (result: AssessmentResult) => void
   onCancel: () => void
+  initialAnswers?: Record<string, 0|1|2|3>
+  onProgress?: (answers: Record<string, 0|1|2|3>) => void
 }>> = {
   autism: AutismScale,
   adhd: ADHDScale,
@@ -94,6 +96,7 @@ interface Draft {
   runOrder: ScaleKey[]; currentIndex: number; results: AssessmentResult[]
   clinicalNotes: Partial<Record<ScaleKey, string>>
   scaleSource: Partial<Record<ScaleKey, ScaleSource>>
+  partialAnswers: Partial<Record<ScaleKey, Record<string, 0|1|2|3>>>
   therapistName: string; studentId: string
   savedResultIds: string[]
   savedAt: number
@@ -156,6 +159,7 @@ export default function SpecialistToolkitPage() {
   const [results, setResults] = useState<AssessmentResult[]>([])
   const [clinicalNotes, setClinicalNotes] = useState<Partial<Record<ScaleKey, string>>>({})
   const [scaleSource, setScaleSource] = useState<Partial<Record<ScaleKey, ScaleSource>>>({})
+  const [partialAnswers, setPartialAnswers] = useState<Partial<Record<ScaleKey, Record<string, 0|1|2|3>>>>({})
   const [studentId, setStudentId] = useState(() => `temp-${Date.now().toString(36)}`)
   const [secondsLeft, setSecondsLeft] = useState(0)
   const [timerResetNonce, setTimerResetNonce] = useState(0)
@@ -164,6 +168,7 @@ export default function SpecialistToolkitPage() {
   const [therapistName, setTherapistName] = useState('')
   const [savedResultIds, setSavedResultIds] = useState<Set<string>>(new Set())
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+  const [retryNonce, setRetryNonce] = useState(0)
 
   // Default the therapist field to the logged-in dashboard user's name — still editable,
   // and never overwrites a name already set (e.g. restored from a draft)
@@ -200,7 +205,7 @@ export default function SpecialistToolkitPage() {
     const draft: Draft = {
       step, name, age, gender, parentName,
       concerns: [...concerns], selectedScales: [...selectedScales],
-      runOrder, currentIndex, results, clinicalNotes, scaleSource, therapistName, studentId,
+      runOrder, currentIndex, results, clinicalNotes, scaleSource, partialAnswers, therapistName, studentId,
       savedResultIds: [...savedResultIds],
       savedAt: Date.now(),
     }
@@ -208,7 +213,7 @@ export default function SpecialistToolkitPage() {
       localStorage.setItem(DRAFT_KEY, JSON.stringify(draft))
       setLastSavedAt(draft.savedAt)
     } catch { /* storage unavailable — printing/report still works without autosave */ }
-  }, [pendingDraft, step, name, age, gender, parentName, concerns, selectedScales, runOrder, currentIndex, results, clinicalNotes, scaleSource, therapistName, studentId, savedResultIds])
+  }, [pendingDraft, step, name, age, gender, parentName, concerns, selectedScales, runOrder, currentIndex, results, clinicalNotes, scaleSource, partialAnswers, therapistName, studentId, savedResultIds])
 
   function restoreDraft() {
     if (!pendingDraft) return
@@ -218,6 +223,7 @@ export default function SpecialistToolkitPage() {
     setRunOrder(pendingDraft.runOrder); setCurrentIndex(pendingDraft.currentIndex); setResults(pendingDraft.results)
     setClinicalNotes(pendingDraft.clinicalNotes ?? {})
     setScaleSource(pendingDraft.scaleSource ?? {})
+    setPartialAnswers(pendingDraft.partialAnswers ?? {})
     setTherapistName(pendingDraft.therapistName); setStudentId(pendingDraft.studentId)
     setSavedResultIds(new Set(pendingDraft.savedResultIds ?? []))
     setLastSavedAt(pendingDraft.savedAt)
@@ -322,7 +328,7 @@ export default function SpecialistToolkitPage() {
       setSaveStatus(outcomes.every(o => o.ok) ? 'saved' : 'error')
     }).catch(() => { if (!cancelled) setSaveStatus('error') })
     return () => { cancelled = true }
-  }, [step, results, studentId, savedResultIds, therapistName, clinicalNotes])
+  }, [step, results, studentId, savedResultIds, therapistName, clinicalNotes, retryNonce])
 
   function toggleConcern(c: ConcernKey) {
     setConcerns(prev => {
@@ -370,12 +376,22 @@ export default function SpecialistToolkitPage() {
     else setStep('report')
   }
 
+  function clearPartialAnswers(scaleKey: ScaleKey) {
+    setPartialAnswers(prev => {
+      const next = { ...prev }
+      delete next[scaleKey]
+      return next
+    })
+  }
+
   function handleScaleComplete(result: AssessmentResult) {
     setResults(prev => [...prev, result])
+    clearPartialAnswers(result.type as ScaleKey)
     advance()
   }
 
   function handleScaleSkip() {
+    clearPartialAnswers(runOrder[currentIndex])
     advance()
   }
 
@@ -385,7 +401,7 @@ export default function SpecialistToolkitPage() {
     setStep('info')
     setName(''); setAge(''); setGender('unspecified'); setParentName('')
     setConcerns(new Set()); setSelectedScales(new Set()); setWarmupOpen(true)
-    setRunOrder([]); setCurrentIndex(0); setResults([]); setClinicalNotes({}); setScaleSource({}); setTherapistName('')
+    setRunOrder([]); setCurrentIndex(0); setResults([]); setClinicalNotes({}); setScaleSource({}); setPartialAnswers({}); setTherapistName('')
     setStudentId(`temp-${Date.now().toString(36)}`)
     setSavedResultIds(new Set()); setSaveStatus('idle')
     setChildQuery(''); setChildPickerOpen(false); setPastAssessments([])
@@ -780,7 +796,13 @@ export default function SpecialistToolkitPage() {
               <p className="text-xs font-bold text-amber-600 mb-3">{t.timeUpLabel}</p>
             )}
             <div className="bg-gray-900 rounded-3xl overflow-hidden">
-              <CurrentScale studentId={studentId} onComplete={handleScaleComplete} onCancel={handleScaleSkip} />
+              <CurrentScale
+                studentId={studentId}
+                onComplete={handleScaleComplete}
+                onCancel={handleScaleSkip}
+                initialAnswers={partialAnswers[currentScaleKey]}
+                onProgress={answers => setPartialAnswers(prev => ({ ...prev, [currentScaleKey]: answers }))}
+              />
             </div>
             <div className="mt-3">
               <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.sourceLabel}</label>
@@ -796,12 +818,24 @@ export default function SpecialistToolkitPage() {
               </div>
             </div>
             <div className="mt-3">
-              <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.clinicalNotesLabel}</label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-bold text-gray-500">{t.clinicalNotesLabel}</label>
+                <span className={`text-[11px] font-bold ltr-num ${
+                  (clinicalNotes[currentScaleKey]?.length ?? 0) >= 2000
+                    ? 'text-red-500'
+                    : (clinicalNotes[currentScaleKey]?.length ?? 0) >= 1800
+                      ? 'text-amber-500'
+                      : 'text-gray-400'
+                }`}>
+                  {t.clinicalNotesCharCount(clinicalNotes[currentScaleKey]?.length ?? 0, 2000)}
+                </span>
+              </div>
               <textarea
                 value={clinicalNotes[currentScaleKey] ?? ''}
-                onChange={e => setClinicalNotes(prev => ({ ...prev, [currentScaleKey]: e.target.value }))}
+                onChange={e => setClinicalNotes(prev => ({ ...prev, [currentScaleKey]: e.target.value.slice(0, 2000) }))}
                 placeholder={t.clinicalNotesPlaceholder}
                 rows={3}
+                maxLength={2000}
                 className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-brand-300 focus:outline-none resize-none"
               />
             </div>
@@ -848,6 +882,12 @@ export default function SpecialistToolkitPage() {
                   {saveStatus === 'saving' && t.savingToRecordLabel}
                   {saveStatus === 'saved' && t.savedToRecordLabel(name)}
                   {saveStatus === 'error' && t.saveFailedLabel}
+                  {saveStatus === 'error' && (
+                    <button type="button" onClick={() => setRetryNonce(n => n + 1)}
+                      className="text-teal-600 font-black hover:text-teal-700 transition-colors underline">
+                      {t.retryLabel}
+                    </button>
+                  )}
                 </p>
               ) : (
                 <p className="print:hidden flex items-center gap-1.5 text-xs font-bold text-amber-600">

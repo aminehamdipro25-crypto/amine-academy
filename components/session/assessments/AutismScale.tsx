@@ -80,16 +80,20 @@ interface Props {
   studentId: string
   onComplete: (result: AssessmentResult) => void
   onCancel: () => void
+  initialAnswers?: Record<string, 0 | 1 | 2 | 3>
+  onProgress?: (answers: Record<string, 0 | 1 | 2 | 3>) => void
 }
 
-export default function AutismScale({ studentId, onComplete, onCancel }: Props) {
-  const [answers, setAnswers] = useState<Record<string, 0 | 1 | 2 | 3>>({})
+export default function AutismScale({ studentId, onComplete, onCancel, initialAnswers, onProgress }: Props) {
+  const [answers, setAnswers] = useState<Record<string, 0 | 1 | 2 | 3>>(initialAnswers ?? {})
   const allItems = Object.values(SECTIONS).flatMap(s => s.items)
   const answered = allItems.filter(i => i.id in answers).length
   const total = allItems.length
 
   function setAnswer(id: string, val: 0 | 1 | 2 | 3) {
-    setAnswers(a => ({ ...a, [id]: val }))
+    const next = { ...answers, [id]: val }
+    setAnswers(next)
+    onProgress?.(next)
   }
 
   function submit() {

@@ -65,6 +65,16 @@ function isLinkedStudentId(id: string) {
   return !id.startsWith('temp-')
 }
 
+// Normalizes common Arabic spelling variants (hamza forms, alef maksura, taa marbuta)
+// so a search for "احمد" still matches a name stored as "أحمد".
+function normalizeArabic(text: string) {
+  return text
+    .toLowerCase()
+    .replace(/[أإآٱ]/g, 'ا')
+    .replace(/ى/g, 'ي')
+    .replace(/ة/g, 'ه')
+}
+
 function ageFromBirthDate(birthDate: string): string {
   const d = new Date(birthDate)
   if (isNaN(d.getTime())) return ''
@@ -218,13 +228,13 @@ export default function SpecialistToolkitPage() {
   }, [])
 
   const childMatches = useMemo(() => {
-    const q = childQuery.trim().toLowerCase()
+    const q = normalizeArabic(childQuery.trim())
     if (!q) return []
     const all = clients.flatMap(c => c.students.map(s => ({ student: s, parent: c })))
     return all
       .filter(({ student, parent }) =>
-        `${student.firstName} ${student.lastName}`.toLowerCase().includes(q) ||
-        `${parent.firstName} ${parent.lastName}`.toLowerCase().includes(q)
+        normalizeArabic(`${student.firstName} ${student.lastName}`).includes(q) ||
+        normalizeArabic(`${parent.firstName} ${parent.lastName}`).includes(q)
       )
       .slice(0, 8)
   }, [clients, childQuery])

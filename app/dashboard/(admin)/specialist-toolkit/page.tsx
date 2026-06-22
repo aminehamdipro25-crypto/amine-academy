@@ -1,7 +1,7 @@
 'use client'
 import { useState, useMemo, useEffect } from 'react'
 import { useLang, tr, type Lang } from '@/lib/i18n'
-import type { AssessmentResult, Exercise, Program, WeeklySchedule } from '@/lib/types'
+import type { AssessmentResult, Exercise, Program, WeeklySchedule, AgeGroup, Diagnosis } from '@/lib/types'
 import { getRecommendedCategories, findMatchingExercises } from '@/lib/domain-exercise-map'
 import {
   PersonStanding, ArrowRight, ArrowLeft, Printer, RotateCcw,
@@ -66,6 +66,32 @@ function localeFor(lang: Lang) {
 
 function isLinkedStudentId(id: string) {
   return !id.startsWith('temp-')
+}
+
+// Ad-hoc profile inference for unlinked walk-ins — there's no registered Student record to
+// read ageGroup/diagnosis/severityLevel from, so derive best-effort values from what the
+// toolkit already collected (declared concerns + the scales actually run) for the AI prompt.
+function inferAgeGroup(ageStr: string): AgeGroup {
+  const n = parseInt(ageStr, 10)
+  if (!Number.isFinite(n)) return '5-11'
+  if (n <= 11) return '5-11'
+  if (n <= 17) return '12-17'
+  return '18-22'
+}
+
+function inferDiagnosis(concerns: Set<ConcernKey>): Diagnosis {
+  const hasAutism = concerns.has('autism')
+  const hasAdhd = concerns.has('adhd')
+  if (hasAutism && hasAdhd) return 'ADHD+AUTISM'
+  if (hasAutism) return 'AUTISM'
+  if (hasAdhd) return 'ADHD'
+  return 'OTHER'
+}
+
+function inferSeverityLevel(results: AssessmentResult[]): 1 | 2 | 3 {
+  if (results.some(r => r.severity === 'severe')) return 3
+  if (results.some(r => r.severity === 'moderate')) return 2
+  return 1
 }
 
 // Normalizes common Arabic spelling variants (hamza forms, alef maksura, taa marbuta)
@@ -268,16 +294,29 @@ export default function SpecialistToolkitPage() {
   }, [])
 
   async function generateProgram() {
-    if (!isLinkedStudentId(studentId)) return
     setProgramGenerating(true)
     setProgramError('')
     setGeneratedProgram(null)
     setProgramSaved(false)
     try {
+      // Linked: the API re-derives the full profile + history from the real student record.
+      // Unlinked walk-in: there's no record to read, so send the best-effort profile + the
+      // in-memory results from this session instead — the program just won't be persisted.
+      const body = isLinkedStudentId(studentId)
+        ? { studentId }
+        : {
+            profile: {
+              name: name.trim() || undefined,
+              ageGroup: inferAgeGroup(age),
+              diagnosis: inferDiagnosis(concerns),
+              severityLevel: inferSeverityLevel(results),
+            },
+            assessments: results,
+          }
       const res = await fetch('/api/admin/ai-generate-program', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ studentId }),
+        body: JSON.stringify(body),
       })
       const data = await res.json()
       if (res.ok) setGeneratedProgram({ title: data.title, rationale: data.rationale, schedule: data.schedule })
@@ -978,7 +1017,10 @@ export default function SpecialistToolkitPage() {
                 </p>
               )}
 
-              {isLinkedStudentId(studentId) && (
+              {(() => {
+                const linked = isLinkedStudentId(studentId)
+                const canGenerate = linked ? saveStatus === 'saved' : results.length > 0
+                return (
                 <div className="print:hidden bg-white rounded-2xl border border-gray-100 p-5 space-y-3">
                   <div className="flex items-center justify-between gap-3 flex-wrap">
                     <div>
@@ -986,9 +1028,9 @@ export default function SpecialistToolkitPage() {
                         <Wand2 className="w-4 h-4 text-purple-600 flex-shrink-0" />
                         {t.programGenerateTitle}
                       </p>
-                      <p className="text-xs text-gray-400 mt-0.5">{t.programGenerateSubtitle}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">{linked ? t.programGenerateSubtitle : t.programGenerateSubtitleUnlinked}</p>
                     </div>
-                    <button type="button" onClick={generateProgram} disabled={programGenerating || saveStatus !== 'saved'}
+                    <button type="button" onClick={generateProgram} disabled={programGenerating || !canGenerate}
                       className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-teal-600 text-white font-black px-5 py-2.5 rounded-xl text-sm hover:opacity-90 disabled:opacity-40 transition-all whitespace-nowrap flex-shrink-0">
                       {programGenerating
                         ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -997,7 +1039,7 @@ export default function SpecialistToolkitPage() {
                     </button>
                   </div>
 
-                  {saveStatus !== 'saved' && (
+                  {linked && saveStatus !== 'saved' && (
                     <p className="text-[11px] font-bold text-amber-600">{t.programNeedsSavedNotice}</p>
                   )}
                   {programError && <p className="text-xs font-bold text-red-600">{programError}</p>}
@@ -1023,18 +1065,26 @@ export default function SpecialistToolkitPage() {
                           </div>
                         ))}
                       </div>
-                      <button type="button" onClick={saveProgram} disabled={programSaving || programSaved}
-                        className="w-full bg-teal-600 text-white font-black py-2.5 rounded-xl text-sm hover:bg-teal-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2">
-                        {programSaving
-                          ? t.programSaving
-                          : programSaved
-                            ? <><CheckCircle2 className="w-4 h-4" />{t.programSavedLabel}</>
-                            : t.programSaveButton}
-                      </button>
+                      {linked ? (
+                        <button type="button" onClick={saveProgram} disabled={programSaving || programSaved}
+                          className="w-full bg-teal-600 text-white font-black py-2.5 rounded-xl text-sm hover:bg-teal-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2">
+                          {programSaving
+                            ? t.programSaving
+                            : programSaved
+                              ? <><CheckCircle2 className="w-4 h-4" />{t.programSavedLabel}</>
+                              : t.programSaveButton}
+                        </button>
+                      ) : (
+                        <p className="text-[11px] font-bold text-amber-600 flex items-center gap-1.5">
+                          <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+                          {t.programUnlinkedPrintNotice}
+                        </p>
+                      )}
                     </div>
                   )}
                 </div>
-              )}
+                )
+              })()}
 
               {/* Printable report */}
               <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden print:border-0 print:rounded-none">
@@ -1239,6 +1289,35 @@ export default function SpecialistToolkitPage() {
                         </li>
                       ))}
                     </ul>
+                  </div>
+                )}
+
+                {/* AI-generated weekly program — rendered here (not print:hidden) so an unlinked
+                    walk-in's program survives in the PDF even though it has nowhere to be saved */}
+                {generatedProgram && (
+                  <div className="bg-purple-50 border border-purple-100 rounded-2xl p-5 space-y-3 break-inside-avoid print:rounded-none">
+                    <h3 className="font-black text-purple-800 flex items-center gap-2">
+                      <Wand2 className="w-4 h-4" />
+                      {generatedProgram.title}
+                    </h3>
+                    {generatedProgram.rationale && (
+                      <p className="text-sm text-purple-700/90">{generatedProgram.rationale}</p>
+                    )}
+                    <div className="grid grid-cols-1 sm:grid-cols-5 gap-2">
+                      {(['monday', 'tuesday', 'wednesday', 'thursday', 'friday'] as const).map(day => (
+                        <div key={day} className="bg-white rounded-lg p-2 border border-purple-100 min-w-0 break-inside-avoid">
+                          <p className="text-xs font-bold text-gray-600 mb-1">{t.dayLabels[day]}</p>
+                          {(generatedProgram.schedule[day] ?? []).map(exId => {
+                            const ex = allExercises.find(e => e.id === exId)
+                            return (
+                              <p key={exId} className="text-[11px] text-gray-500" title={ex?.titleAr || ex?.title || exId}>
+                                {ex?.titleAr || ex?.title || exId}
+                              </p>
+                            )
+                          })}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
 

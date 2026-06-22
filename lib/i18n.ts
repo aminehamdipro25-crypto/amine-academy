@@ -1137,6 +1137,7 @@ export const tr = {
       notScheduledYetBadge: 'غير مُدرج في أي برنامج حالياً',
       programGenerateTitle: 'تحويل هذا التقييم إلى برنامج أسبوعي',
       programGenerateSubtitle: 'يستخدم الذكاء الاصطناعي نتائج هذا التقييم لتوليد جدول أسبوعي من تمارين الحقيبة التدريبية الحقيقية',
+      programGenerateSubtitleUnlinked: 'يستخدم الذكاء الاصطناعي نتائج هذا التقييم لتوليد جدول أسبوعي مقترح — لن يُحفظ في أي سجل لأن هذا الطفل غير مسجل، لكنه سيظهر ضمن هذا التقرير',
       programGenerateButton: 'أنشئ برنامجاً أسبوعياً الآن',
       programGenerating: 'جارٍ التوليد...',
       programNeedsSavedNotice: 'احفظ التقييم في سجل الطفل أولاً لتفعيل توليد البرنامج',
@@ -1145,6 +1146,7 @@ export const tr = {
       programSaving: 'جارٍ الحفظ...',
       programSavedLabel: '✓ تم حفظ البرنامج في سجل الطفل',
       programSaveError: 'تعذّر حفظ البرنامج — حاول مرة أخرى',
+      programUnlinkedPrintNotice: 'هذا الطفل غير مسجل — البرنامج لن يُحفظ في أي سجل، وسيظهر فقط ضمن هذا التقرير المطبوع',
       dayLabels: { monday: 'الاثنين', tuesday: 'الثلاثاء', wednesday: 'الأربعاء', thursday: 'الخميس', friday: 'الجمعة' },
       frequencyPlanTitle: 'وتيرة الجلسات الموصى بها',
       frequencyPlanOptions: {
@@ -2322,6 +2324,7 @@ export const tr = {
       notScheduledYetBadge: 'Not yet scheduled in any program',
       programGenerateTitle: 'Turn this assessment into a weekly program',
       programGenerateSubtitle: "Uses AI to read this assessment's results and generate a weekly schedule from the real exercise catalog",
+      programGenerateSubtitleUnlinked: "Uses AI to generate a suggested weekly schedule — it won't be saved to any record since this child isn't registered, but it will appear in this report",
       programGenerateButton: 'Generate a weekly program now',
       programGenerating: 'Generating...',
       programNeedsSavedNotice: "Save the assessment to the child's record first to enable program generation",
@@ -2330,6 +2333,7 @@ export const tr = {
       programSaving: 'Saving...',
       programSavedLabel: '✓ Program saved to the child\'s record',
       programSaveError: 'Could not save the program — try again',
+      programUnlinkedPrintNotice: "This child isn't registered — the program won't be saved to any record, and will only appear in this printed report",
       dayLabels: { monday: 'Monday', tuesday: 'Tuesday', wednesday: 'Wednesday', thursday: 'Thursday', friday: 'Friday' },
       frequencyPlanTitle: 'Recommended session frequency',
       frequencyPlanOptions: {
@@ -3507,6 +3511,7 @@ export const tr = {
       notScheduledYetBadge: "Pas encore programmé dans un programme",
       programGenerateTitle: 'Transformer cette évaluation en programme hebdomadaire',
       programGenerateSubtitle: "Utilise l'IA pour lire les résultats de cette évaluation et générer un programme hebdomadaire à partir du vrai catalogue d'exercices",
+      programGenerateSubtitleUnlinked: "Utilise l'IA pour générer un programme hebdomadaire suggéré — il ne sera enregistré dans aucun dossier car cet enfant n'est pas inscrit, mais il apparaîtra dans ce rapport",
       programGenerateButton: 'Générer un programme hebdomadaire maintenant',
       programGenerating: 'Génération en cours...',
       programNeedsSavedNotice: "Enregistrez d'abord l'évaluation dans le dossier de l'enfant pour activer la génération du programme",
@@ -3515,6 +3520,7 @@ export const tr = {
       programSaving: 'Enregistrement...',
       programSavedLabel: '✓ Programme enregistré dans le dossier de l\'enfant',
       programSaveError: "Impossible d'enregistrer le programme — réessayez",
+      programUnlinkedPrintNotice: "Cet enfant n'est pas inscrit — le programme ne sera enregistré dans aucun dossier et n'apparaîtra que dans ce rapport imprimé",
       dayLabels: { monday: 'Lundi', tuesday: 'Mardi', wednesday: 'Mercredi', thursday: 'Jeudi', friday: 'Vendredi' },
       frequencyPlanTitle: 'Fréquence de séances recommandée',
       frequencyPlanOptions: {

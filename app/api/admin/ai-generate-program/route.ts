@@ -3,7 +3,10 @@ import { isDashboardUser, getDashboardActorId } from '@/lib/auth'
 import { getStudent, getAllExercises } from '@/lib/db'
 import { redis } from '@/lib/redis'
 import Anthropic from '@anthropic-ai/sdk'
-import type { AssessmentResult } from '@/lib/types'
+import type { AssessmentResult, AgeGroup, Diagnosis } from '@/lib/types'
+
+const VALID_AGE_GROUPS: AgeGroup[] = ['5-11', '12-17', '18-22']
+const VALID_DIAGNOSES: Diagnosis[] = ['ADHD', 'AUTISM', 'ADHD+AUTISM', 'OTHER']
 
 export const runtime = 'nodejs'
 
@@ -62,21 +65,52 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'مفتاح AI غير مُعدّ في المتغيرات البيئية' }, { status: 500 })
     }
 
-    const { studentId } = await req.json().catch(() => ({}))
-    if (!studentId) return NextResponse.json({ error: 'studentId مطلوب' }, { status: 400 })
+    const body = await req.json().catch(() => ({}))
+    const { studentId } = body
 
-    const [student, allExercises, assessments] = await Promise.all([
-      getStudent(studentId),
-      getAllExercises(),
-      getStudentAssessments(studentId),
-    ])
+    // Linked: re-derive the full profile + assessment history from the real student record.
+    // Unlinked walk-in: there's no record — use the best-effort profile + in-session results
+    // the client sent instead, so the toolkit stays usable end-to-end without forcing a link.
+    let fullName: string
+    let ageGroup: AgeGroup
+    let diagnosis: Diagnosis
+    let severityLevel: 1 | 2 | 3
+    let sensoryLabels: { visual: string; audio: string; touch: string }
+    let assessments: AssessmentResult[]
 
-    if (!student) return NextResponse.json({ error: 'الطالب غير موجود' }, { status: 404 })
+    if (studentId) {
+      const student = await getStudent(studentId)
+      if (!student) return NextResponse.json({ error: 'الطالب غير موجود' }, { status: 404 })
+      fullName = `${student.firstName} ${student.lastName}`.trim()
+      ageGroup = student.ageGroup
+      diagnosis = student.diagnosis
+      severityLevel = student.severityLevel
+      sensoryLabels = {
+        visual: SENS_AR[student.sensoryProfile.visualSensitivity],
+        audio: SENS_AR[student.sensoryProfile.audioSensitivity],
+        touch: SENS_AR[student.sensoryProfile.touchSensitivity],
+      }
+      assessments = await getStudentAssessments(studentId)
+    } else {
+      const { profile, assessments: inlineAssessments } = body
+      if (!profile || !VALID_AGE_GROUPS.includes(profile.ageGroup) || !VALID_DIAGNOSES.includes(profile.diagnosis)) {
+        return NextResponse.json({ error: 'studentId أو بيانات الطفل (profile) مطلوبة' }, { status: 400 })
+      }
+      fullName = typeof profile.name === 'string' && profile.name.trim() ? profile.name.trim() : 'الطفل'
+      ageGroup = profile.ageGroup
+      diagnosis = profile.diagnosis
+      severityLevel = [1, 2, 3].includes(profile.severityLevel) ? profile.severityLevel : 2
+      // No formal sensory profile is collected for an unlinked walk-in — assume medium across the board
+      sensoryLabels = { visual: SENS_AR.medium, audio: SENS_AR.medium, touch: SENS_AR.medium }
+      assessments = Array.isArray(inlineAssessments) ? inlineAssessments.slice(0, 6) : []
+    }
 
-    // Filter exercises relevant to this student
+    const allExercises = await getAllExercises()
+
+    // Filter exercises relevant to this child
     const relevant = allExercises.filter(ex =>
-      ex.ageGroups.includes(student.ageGroup) &&
-      (ex.diagnoses.includes(student.diagnosis) || ex.diagnoses.includes('OTHER') ||
+      ex.ageGroups.includes(ageGroup) &&
+      (ex.diagnoses.includes(diagnosis) || ex.diagnoses.includes('OTHER') ||
        ex.diagnoses.length === 0)
     )
 
@@ -89,13 +123,13 @@ export async function POST(req: NextRequest) {
     const prompt = `أنت خبير متخصص في برامج الرياضة المعدلة وعلم النفس لأطفال ADHD وطيف التوحد. مهمتك إنشاء برنامج أسبوعي علمي ومخصص بناءً على ملف الطفل الكامل بما يشمل نتائج التقييمات الرسمية.
 
 ## ملف الطفل:
-- الاسم: ${student.firstName} ${student.lastName}
-- الفئة العمرية: ${AGE_AR[student.ageGroup] || student.ageGroup}
-- التشخيص: ${DIAG_AR[student.diagnosis] || student.diagnosis}
-- درجة الشدة: ${SEV_AR[student.severityLevel] || student.severityLevel}
-- الحساسية البصرية: ${SENS_AR[student.sensoryProfile.visualSensitivity]}
-- الحساسية السمعية: ${SENS_AR[student.sensoryProfile.audioSensitivity]}
-- الحساسية اللمسية: ${SENS_AR[student.sensoryProfile.touchSensitivity]}
+- الاسم: ${fullName}
+- الفئة العمرية: ${AGE_AR[ageGroup] || ageGroup}
+- التشخيص: ${DIAG_AR[diagnosis] || diagnosis}
+- درجة الشدة: ${SEV_AR[severityLevel] || severityLevel}
+- الحساسية البصرية: ${sensoryLabels.visual}
+- الحساسية السمعية: ${sensoryLabels.audio}
+- الحساسية اللمسية: ${sensoryLabels.touch}
 
 ## نتائج التقييمات السريرية:
 ${assessmentSummary}
@@ -120,7 +154,7 @@ ${exList}
 
 ## الرد المطلوب (JSON فقط، بدون أي نص إضافي):
 {
-  "title": "برنامج ${student.firstName} التطوري",
+  "title": "برنامج ${fullName.split(' ')[0]} التطوري",
   "rationale": "جملتان تشرحان المنطق العلمي للبرنامج مع ذكر نتائج التقييم إن وُجدت",
   "schedule": {
     "monday": ["id1", "id2", "id3"],
@@ -183,7 +217,7 @@ ${exList}
     }
 
     return NextResponse.json({
-      title: result.title || `برنامج ${student.firstName} التطوري`,
+      title: result.title || `برنامج ${fullName.split(' ')[0]} التطوري`,
       rationale: result.rationale || '',
       schedule: result.schedule,
     })

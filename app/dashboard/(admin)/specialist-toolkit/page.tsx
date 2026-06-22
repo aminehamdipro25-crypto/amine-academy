@@ -1,11 +1,12 @@
 'use client'
 import { useState, useMemo, useEffect } from 'react'
 import { useLang, tr, type Lang } from '@/lib/i18n'
-import type { AssessmentResult } from '@/lib/types'
+import type { AssessmentResult, Exercise, WeeklySchedule } from '@/lib/types'
+import { getRecommendedCategories, findMatchingExercises } from '@/lib/domain-exercise-map'
 import {
   PersonStanding, ArrowRight, ArrowLeft, Printer, RotateCcw,
   CheckCircle2, Sparkles, ClipboardList, Save, Clock, TimerReset, AlertTriangle, CalendarClock,
-  Brain, Activity, Eye, BookOpen,
+  Brain, Activity, Eye, BookOpen, Wand2,
 } from 'lucide-react'
 import ADHDScale from '@/components/session/assessments/ADHDScale'
 import AttentionDomainsScale from '@/components/session/assessments/AttentionDomainsScale'
@@ -170,6 +171,15 @@ export default function SpecialistToolkitPage() {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [retryNonce, setRetryNonce] = useState(0)
 
+  // Closes the loop between a completed walk-in assessment and a real, schedulable program —
+  // reuses the existing AI generator + program-persistence endpoints rather than duplicating them
+  const [allExercises, setAllExercises] = useState<Exercise[]>([])
+  const [programGenerating, setProgramGenerating] = useState(false)
+  const [programError, setProgramError] = useState('')
+  const [generatedProgram, setGeneratedProgram] = useState<{ title: string; rationale: string; schedule: WeeklySchedule } | null>(null)
+  const [programSaving, setProgramSaving] = useState(false)
+  const [programSaved, setProgramSaved] = useState(false)
+
   // Default the therapist field to the logged-in dashboard user's name — still editable,
   // and never overwrites a name already set (e.g. restored from a draft)
   useEffect(() => {
@@ -244,6 +254,61 @@ export default function SpecialistToolkitPage() {
       .catch(() => setClientsLoadError(true))
   }
   useEffect(() => { loadClients() }, [])
+
+  // Powers both the "matched exercises" hints on the report and the program-generation preview
+  useEffect(() => {
+    fetch('/api/exercises')
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => { if (d?.exercises) setAllExercises(d.exercises) })
+      .catch(() => {})
+  }, [])
+
+  async function generateProgram() {
+    if (!isLinkedStudentId(studentId)) return
+    setProgramGenerating(true)
+    setProgramError('')
+    setGeneratedProgram(null)
+    setProgramSaved(false)
+    try {
+      const res = await fetch('/api/admin/ai-generate-program', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ studentId }),
+      })
+      const data = await res.json()
+      if (res.ok) setGeneratedProgram({ title: data.title, rationale: data.rationale, schedule: data.schedule })
+      else setProgramError(data.error || t.programGenerateError)
+    } catch {
+      setProgramError(t.programGenerateError)
+    } finally {
+      setProgramGenerating(false)
+    }
+  }
+
+  async function saveProgram() {
+    if (!generatedProgram || !isLinkedStudentId(studentId)) return
+    setProgramSaving(true)
+    setProgramError('')
+    try {
+      const startDate = new Date().toISOString().slice(0, 10)
+      const endDate = new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString().slice(0, 10)
+      const res = await fetch('/api/admin/programs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ studentId, title: generatedProgram.title, startDate, endDate, weeklySchedule: generatedProgram.schedule }),
+      })
+      if (res.ok) {
+        setProgramSaved(true)
+      } else {
+        const d = await res.json().catch(() => ({}))
+        setProgramError(d.error || t.programSaveError)
+      }
+    } catch {
+      setProgramError(t.programSaveError)
+    } finally {
+      setProgramSaving(false)
+    }
+  }
 
   const childMatches = useMemo(() => {
     const q = normalizeArabic(childQuery.trim())
@@ -405,6 +470,7 @@ export default function SpecialistToolkitPage() {
     setStudentId(`temp-${Date.now().toString(36)}`)
     setSavedResultIds(new Set()); setSaveStatus('idle')
     setChildQuery(''); setChildPickerOpen(false); setPastAssessments([])
+    setProgramError(''); setGeneratedProgram(null); setProgramSaved(false)
     setError('')
   }
 
@@ -896,6 +962,64 @@ export default function SpecialistToolkitPage() {
                 </p>
               )}
 
+              {isLinkedStudentId(studentId) && (
+                <div className="print:hidden bg-white rounded-2xl border border-gray-100 p-5 space-y-3">
+                  <div className="flex items-center justify-between gap-3 flex-wrap">
+                    <div>
+                      <p className="font-black text-gray-900 text-sm flex items-center gap-2">
+                        <Wand2 className="w-4 h-4 text-purple-600 flex-shrink-0" />
+                        {t.programGenerateTitle}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-0.5">{t.programGenerateSubtitle}</p>
+                    </div>
+                    <button type="button" onClick={generateProgram} disabled={programGenerating || saveStatus !== 'saved'}
+                      className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-teal-600 text-white font-black px-5 py-2.5 rounded-xl text-sm hover:opacity-90 disabled:opacity-40 transition-all whitespace-nowrap flex-shrink-0">
+                      {programGenerating
+                        ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        : <Sparkles className="w-4 h-4" />}
+                      {programGenerating ? t.programGenerating : t.programGenerateButton}
+                    </button>
+                  </div>
+
+                  {saveStatus !== 'saved' && (
+                    <p className="text-[11px] font-bold text-amber-600">{t.programNeedsSavedNotice}</p>
+                  )}
+                  {programError && <p className="text-xs font-bold text-red-600">{programError}</p>}
+
+                  {generatedProgram && (
+                    <div className="bg-gray-50 rounded-xl p-4 space-y-3">
+                      <p className="font-black text-gray-900 text-sm">{generatedProgram.title}</p>
+                      {generatedProgram.rationale && (
+                        <p className="text-xs text-gray-500 leading-relaxed">{generatedProgram.rationale}</p>
+                      )}
+                      <div className="grid grid-cols-1 sm:grid-cols-5 gap-2">
+                        {(['monday', 'tuesday', 'wednesday', 'thursday', 'friday'] as const).map(day => (
+                          <div key={day} className="bg-white rounded-lg p-2 border border-gray-100 min-w-0">
+                            <p className="text-xs font-bold text-gray-600 mb-1">{t.dayLabels[day]}</p>
+                            {(generatedProgram.schedule[day] ?? []).map(exId => {
+                              const ex = allExercises.find(e => e.id === exId)
+                              return (
+                                <p key={exId} className="text-[11px] text-gray-500 truncate" title={ex?.titleAr || ex?.title || exId}>
+                                  {ex?.titleAr || ex?.title || exId}
+                                </p>
+                              )
+                            })}
+                          </div>
+                        ))}
+                      </div>
+                      <button type="button" onClick={saveProgram} disabled={programSaving || programSaved}
+                        className="w-full bg-teal-600 text-white font-black py-2.5 rounded-xl text-sm hover:bg-teal-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2">
+                        {programSaving
+                          ? t.programSaving
+                          : programSaved
+                            ? <><CheckCircle2 className="w-4 h-4" />{t.programSavedLabel}</>
+                            : t.programSaveButton}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Printable report */}
               <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden print:border-0 print:rounded-none">
 
@@ -1011,6 +1135,30 @@ export default function SpecialistToolkitPage() {
                     ) : (
                       <p className="text-sm text-gray-400">{t.noRecommendations}</p>
                     )}
+
+                    {(() => {
+                      const categories = getRecommendedCategories(result)
+                      if (categories.length === 0) return null
+                      const matched = findMatchingExercises(categories, allExercises)
+                      return (
+                        <div className="bg-teal-50/60 border border-teal-100 rounded-xl p-3 print:rounded-none">
+                          <p className="text-xs font-bold text-teal-700 mb-1.5">{t.matchedExercisesTitle}</p>
+                          {matched.length > 0 ? (
+                            <ul className="text-xs text-gray-600 space-y-1">
+                              {matched.map(ex => (
+                                <li key={ex.id} className="flex items-center gap-1.5">
+                                  <span className="text-teal-500">•</span>
+                                  <span>{ex.titleAr || ex.title}</span>
+                                  <span className="text-gray-400 ltr-num flex-shrink-0">({ex.durationMinutes}{t.minuteUnit})</span>
+                                </li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <p className="text-xs font-bold text-amber-600">{t.noMatchedExercisesNotice}</p>
+                          )}
+                        </div>
+                      )
+                    })()}
 
                     {clinicalNotes[result.type as ScaleKey]?.trim() && (
                       <div className="bg-gray-50 rounded-xl p-3 print:rounded-none">

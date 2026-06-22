@@ -1452,4 +1452,38 @@ export const DEFAULT_EXERCISES: Omit<Exercise, 'id' | 'createdAt'>[] = [
     psychologyObjective: 'Rhythmic entrainment synchronises neural oscillations across cerebellum, basal ganglia, and prefrontal cortex — Thaut et al. (2015) demonstrate significant attention improvements in ADHD following rhythm-based motor training',
     psychologyObjectiveAr: 'الإقران الإيقاعي يُزامن التذبذبات العصبية عبر المخيخ والعقدة القاعدية والقشرة الجبهية — ثاوت وآخرون (2015) يُوثّقون تحسّناً ملحوظاً في الانتباه لدى ADHD بعد تدريب حركي إيقاعي',
   },
+
+  // ══════════════════════════════════════════════════════════════
+  // ㉝ بروتوكول CPT بالحركة — الانتباه المستمر (Movement-Based CPT)
+  // ══════════════════════════════════════════════════════════════
+  {
+    title: 'Movement-Based CPT (Continuous Performance Task)',
+    titleAr: 'بروتوكول CPT بالحركة (اختبار الأداء المستمر)',
+    description: 'Movement-paired Continuous Performance Task — child responds physically to a target cue and withholds the response to a non-target cue over a sustained period, mirroring the classic CPT structure used in attention assessment',
+    descriptionAr: 'اختبار أداء مستمر مقرون بالحركة — يستجيب الطفل جسدياً لمؤشر مستهدف ويكبح الاستجابة عند مؤشر غير مستهدف على مدى فترة مستمرة، بما يحاكي بنية اختبار CPT الكلاسيكي المستخدم في تقييم الانتباه',
+    category: 'focus',
+    ageGroups: ['5-11', '12-17'],
+    diagnoses: ['ADHD', 'ADHD+AUTISM', 'OTHER'],
+    difficulty: 'intermediate',
+    durationMinutes: 10,
+    points: 45,
+    instructions: [
+      'Agree on a target cue (e.g., "GO" card or green light) and a non-target cue ("NO-GO" card or red light)',
+      'Child stands ready; adult shows cues at random, irregular intervals',
+      'On the target cue, child must immediately jump once; on the non-target cue, child must freeze and do nothing',
+      'Run for 10 minutes, mixing target and non-target cues roughly 70/30 to build genuine inhibition demand',
+      'Track 3 numbers: hits (correct jumps), omissions (missed target), false alarms (jumped on non-target) — review with the child at the end',
+    ],
+    instructionsAr: [
+      'اتفق مع الطفل على مؤشر مستهدف (بطاقة "انطلق" أو ضوء أخضر) ومؤشر غير مستهدف (بطاقة "توقف" أو ضوء أحمر)',
+      'يقف الطفل جاهزاً؛ يعرض المشرف المؤشرات بشكل عشوائي وبفترات غير منتظمة',
+      'عند المؤشر المستهدف يجب أن يقفز الطفل فوراً مرة واحدة؛ وعند المؤشر غير المستهدف يجب أن يتجمد دون أي حركة',
+      'استمر لمدة 10 دقائق مع مزج المؤشرات المستهدفة وغير المستهدفة بنسبة تقريبية 70/30 لبناء تحدٍ حقيقي للكبح',
+      'تتبع 3 أرقام: إصابات (قفزات صحيحة)، إغفالات (تفويت مؤشر مستهدف)، إنذارات كاذبة (قفز عند مؤشر غير مستهدف) — راجعها مع الطفل في النهاية',
+    ],
+    equipment: ['"GO" / "NO-GO" cards or a red/green light source'],
+    contraindications: ['severe motor coordination impairment'],
+    psychologyObjective: 'Direct movement-based analogue of the Continuous Performance Test (CPT) used in clinical sustained-attention assessment — pairs the same go/no-go inhibition demand with gross-motor output to keep dopaminergic engagement high across the full sustained-attention window',
+    psychologyObjectiveAr: 'نسخة حركية مباشرة من اختبار الأداء المستمر CPT المستخدم في التقييم السريري للانتباه المستمر — يجمع نفس متطلب الكبح (استجب/لا تستجب) مع الإخراج الحركي الكبير للحفاظ على إثارة الدوبامين مرتفعة طوال نافذة الانتباه المستمر',
+  },
 ]

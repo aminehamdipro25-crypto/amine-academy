@@ -1,7 +1,7 @@
 'use client'
 import { useState, useMemo, useEffect } from 'react'
 import { useLang, tr, type Lang } from '@/lib/i18n'
-import type { AssessmentResult, Exercise, WeeklySchedule } from '@/lib/types'
+import type { AssessmentResult, Exercise, Program, WeeklySchedule } from '@/lib/types'
 import { getRecommendedCategories, findMatchingExercises } from '@/lib/domain-exercise-map'
 import {
   PersonStanding, ArrowRight, ArrowLeft, Printer, RotateCcw,
@@ -180,6 +180,10 @@ export default function SpecialistToolkitPage() {
   const [programSaving, setProgramSaving] = useState(false)
   const [programSaved, setProgramSaved] = useState(false)
 
+  // The linked child's current real program — lets the report flag which action-plan
+  // exercises are already scheduled instead of just suggesting them blindly
+  const [currentProgram, setCurrentProgram] = useState<Program | null>(null)
+
   // Default the therapist field to the logged-in dashboard user's name — still editable,
   // and never overwrites a name already set (e.g. restored from a draft)
   useEffect(() => {
@@ -298,6 +302,8 @@ export default function SpecialistToolkitPage() {
         body: JSON.stringify({ studentId, title: generatedProgram.title, startDate, endDate, weeklySchedule: generatedProgram.schedule }),
       })
       if (res.ok) {
+        const data = await res.json().catch(() => ({}))
+        if (data.program) setCurrentProgram(data.program)
         setProgramSaved(true)
       } else {
         const d = await res.json().catch(() => ({}))
@@ -334,6 +340,7 @@ export default function SpecialistToolkitPage() {
   function unlinkChild() {
     setStudentId(`temp-${Date.now().toString(36)}`)
     setPastAssessments([])
+    setCurrentProgram(null)
   }
 
   // Same-type assessments already on this linked child's record within the last 24h —
@@ -356,6 +363,15 @@ export default function SpecialistToolkitPage() {
       .then(data => setPastAssessments(data.results ?? []))
       .catch(() => setPastAssessments([]))
       .finally(() => setPastAssessmentsLoading(false))
+  }, [studentId])
+
+  // Pull this child's current real program — powers the "already scheduled" badges on the report
+  useEffect(() => {
+    if (!isLinkedStudentId(studentId)) { setCurrentProgram(null); return }
+    fetch(`/api/admin/programs?studentId=${encodeURIComponent(studentId)}`)
+      .then(r => (r.ok ? r.json() : { program: null }))
+      .then(data => setCurrentProgram(data.program ?? null))
+      .catch(() => setCurrentProgram(null))
   }, [studentId])
 
   // Persist newly completed results to the linked child's permanent record
@@ -1145,13 +1161,23 @@ export default function SpecialistToolkitPage() {
                           <p className="text-xs font-bold text-teal-700 mb-1.5">{t.matchedExercisesTitle}</p>
                           {matched.length > 0 ? (
                             <ul className="text-xs text-gray-600 space-y-1">
-                              {matched.map(ex => (
-                                <li key={ex.id} className="flex items-center gap-1.5">
-                                  <span className="text-teal-500">•</span>
-                                  <span>{ex.titleAr || ex.title}</span>
-                                  <span className="text-gray-400 ltr-num flex-shrink-0">({ex.durationMinutes}{t.minuteUnit})</span>
-                                </li>
-                              ))}
+                              {matched.map(ex => {
+                                const scheduled = currentProgram?.exerciseIds.includes(ex.id) ?? false
+                                return (
+                                  <li key={ex.id} className="flex items-center gap-1.5 flex-wrap">
+                                    <span className="text-teal-500">•</span>
+                                    <span>{ex.titleAr || ex.title}</span>
+                                    <span className="text-gray-400 ltr-num flex-shrink-0">({ex.durationMinutes}{t.minuteUnit})</span>
+                                    {isLinkedStudentId(studentId) && (
+                                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 ${
+                                        scheduled ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-600'
+                                      }`}>
+                                        {scheduled ? t.alreadyScheduledBadge : t.notScheduledYetBadge}
+                                      </span>
+                                    )}
+                                  </li>
+                                )
+                              })}
                             </ul>
                           ) : (
                             <p className="text-xs font-bold text-amber-600">{t.noMatchedExercisesNotice}</p>

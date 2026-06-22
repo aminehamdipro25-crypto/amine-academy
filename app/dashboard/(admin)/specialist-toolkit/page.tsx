@@ -61,6 +61,20 @@ function localeFor(lang: Lang) {
   return lang === 'en' ? 'en-US' : lang === 'fr' ? 'fr-FR' : 'ar'
 }
 
+function isLinkedStudentId(id: string) {
+  return !id.startsWith('temp-')
+}
+
+function ageFromBirthDate(birthDate: string): string {
+  const d = new Date(birthDate)
+  if (isNaN(d.getTime())) return ''
+  const years = Math.floor((Date.now() - d.getTime()) / (365.25 * 24 * 3600 * 1000))
+  return years >= 0 ? String(years) : ''
+}
+
+interface ClientListStudent { id: string; firstName: string; lastName: string; birthDate: string }
+interface ClientListItem { id: string; firstName: string; lastName: string; students: ClientListStudent[] }
+
 const DRAFT_KEY = 'specialist-toolkit-draft-v1'
 
 interface Draft {
@@ -71,6 +85,7 @@ interface Draft {
   clinicalNotes: Partial<Record<ScaleKey, string>>
   scaleSource: Partial<Record<ScaleKey, ScaleSource>>
   therapistName: string; studentId: string
+  savedResultIds: string[]
   savedAt: number
 }
 
@@ -113,6 +128,13 @@ export default function SpecialistToolkitPage() {
   const [parentName, setParentName] = useState('')
   const [concerns, setConcerns] = useState<Set<ConcernKey>>(new Set())
 
+  // Linking to an already-registered child — lets the assessment persist to that child's permanent record
+  const [clients, setClients] = useState<ClientListItem[]>([])
+  const [childQuery, setChildQuery] = useState('')
+  const [childPickerOpen, setChildPickerOpen] = useState(false)
+  const [pastAssessments, setPastAssessments] = useState<AssessmentResult[]>([])
+  const [pastAssessmentsLoading, setPastAssessmentsLoading] = useState(false)
+
   // Step 2 — battery
   const [selectedScales, setSelectedScales] = useState<Set<ScaleKey>>(new Set())
   const [warmupOpen, setWarmupOpen] = useState(false)
@@ -129,6 +151,8 @@ export default function SpecialistToolkitPage() {
 
   // Step 4 — report
   const [therapistName, setTherapistName] = useState('')
+  const [savedResultIds, setSavedResultIds] = useState<Set<string>>(new Set())
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
 
   // Local draft recovery — protects an in-progress walk-in assessment from tab refresh/crash
   const [pendingDraft, setPendingDraft] = useState<Draft | null>(null)
@@ -157,13 +181,14 @@ export default function SpecialistToolkitPage() {
       step, name, age, gender, parentName,
       concerns: [...concerns], selectedScales: [...selectedScales],
       runOrder, currentIndex, results, clinicalNotes, scaleSource, therapistName, studentId,
+      savedResultIds: [...savedResultIds],
       savedAt: Date.now(),
     }
     try {
       localStorage.setItem(DRAFT_KEY, JSON.stringify(draft))
       setLastSavedAt(draft.savedAt)
     } catch { /* storage unavailable — printing/report still works without autosave */ }
-  }, [pendingDraft, step, name, age, gender, parentName, concerns, selectedScales, runOrder, currentIndex, results, clinicalNotes, scaleSource, therapistName, studentId])
+  }, [pendingDraft, step, name, age, gender, parentName, concerns, selectedScales, runOrder, currentIndex, results, clinicalNotes, scaleSource, therapistName, studentId, savedResultIds])
 
   function restoreDraft() {
     if (!pendingDraft) return
@@ -174,6 +199,7 @@ export default function SpecialistToolkitPage() {
     setClinicalNotes(pendingDraft.clinicalNotes ?? {})
     setScaleSource(pendingDraft.scaleSource ?? {})
     setTherapistName(pendingDraft.therapistName); setStudentId(pendingDraft.studentId)
+    setSavedResultIds(new Set(pendingDraft.savedResultIds ?? []))
     setLastSavedAt(pendingDraft.savedAt)
     setPendingDraft(null)
   }
@@ -182,6 +208,86 @@ export default function SpecialistToolkitPage() {
     localStorage.removeItem(DRAFT_KEY)
     setPendingDraft(null)
   }
+
+  // Fetch registered clients once, to power the "link to existing child" search
+  useEffect(() => {
+    fetch('/api/admin/clients-list')
+      .then(r => (r.ok ? r.json() : null))
+      .then(data => { if (data?.clients) setClients(data.clients) })
+      .catch(() => { /* picker just stays empty — manual entry still works */ })
+  }, [])
+
+  const childMatches = useMemo(() => {
+    const q = childQuery.trim().toLowerCase()
+    if (!q) return []
+    const all = clients.flatMap(c => c.students.map(s => ({ student: s, parent: c })))
+    return all
+      .filter(({ student, parent }) =>
+        `${student.firstName} ${student.lastName}`.toLowerCase().includes(q) ||
+        `${parent.firstName} ${parent.lastName}`.toLowerCase().includes(q)
+      )
+      .slice(0, 8)
+  }, [clients, childQuery])
+
+  function linkChild(student: ClientListStudent, parent: ClientListItem) {
+    setStudentId(student.id)
+    setName(`${student.firstName} ${student.lastName}`.trim())
+    setAge(ageFromBirthDate(student.birthDate))
+    setParentName(`${parent.firstName} ${parent.lastName}`.trim())
+    setChildQuery('')
+    setChildPickerOpen(false)
+  }
+
+  function unlinkChild() {
+    setStudentId(`temp-${Date.now().toString(36)}`)
+    setPastAssessments([])
+  }
+
+  // Pull this child's previously saved assessments once linked, for context before running new scales
+  useEffect(() => {
+    if (!isLinkedStudentId(studentId)) { setPastAssessments([]); return }
+    setPastAssessmentsLoading(true)
+    fetch(`/api/assessments?studentId=${encodeURIComponent(studentId)}`)
+      .then(r => (r.ok ? r.json() : { results: [] }))
+      .then(data => setPastAssessments(data.results ?? []))
+      .catch(() => setPastAssessments([]))
+      .finally(() => setPastAssessmentsLoading(false))
+  }, [studentId])
+
+  // Persist newly completed results to the linked child's permanent record
+  useEffect(() => {
+    if (step !== 'report' || !isLinkedStudentId(studentId)) return
+    const unsaved = results.filter(r => !savedResultIds.has(r.id))
+    if (unsaved.length === 0) {
+      if (results.length > 0) setSaveStatus('saved')
+      return
+    }
+    let cancelled = false
+    setSaveStatus('saving')
+    Promise.all(unsaved.map(async r => {
+      const res = await fetch('/api/assessments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          studentId,
+          type: r.type,
+          subtype: r.subtype,
+          domainScores: r.domainScores,
+          totalScore: r.totalScore,
+          severity: r.severity,
+          recommendations: r.recommendations,
+          answers: r.answers,
+        }),
+      })
+      return { id: r.id, ok: res.ok }
+    })).then(outcomes => {
+      if (cancelled) return
+      const newlySaved = outcomes.filter(o => o.ok).map(o => o.id)
+      if (newlySaved.length > 0) setSavedResultIds(prev => new Set([...prev, ...newlySaved]))
+      setSaveStatus(outcomes.every(o => o.ok) ? 'saved' : 'error')
+    }).catch(() => { if (!cancelled) setSaveStatus('error') })
+    return () => { cancelled = true }
+  }, [step, results, studentId, savedResultIds])
 
   function toggleConcern(c: ConcernKey) {
     setConcerns(prev => {
@@ -246,6 +352,8 @@ export default function SpecialistToolkitPage() {
     setConcerns(new Set()); setSelectedScales(new Set()); setWarmupOpen(false)
     setRunOrder([]); setCurrentIndex(0); setResults([]); setClinicalNotes({}); setScaleSource({}); setTherapistName('')
     setStudentId(`temp-${Date.now().toString(36)}`)
+    setSavedResultIds(new Set()); setSaveStatus('idle')
+    setChildQuery(''); setChildPickerOpen(false); setPastAssessments([])
     setError('')
   }
 
@@ -390,6 +498,63 @@ export default function SpecialistToolkitPage() {
       {step === 'info' && (
         <div className="bg-white rounded-2xl border border-gray-100 p-6 space-y-5">
           <h2 className="font-black text-gray-900">{t.childInfoTitle}</h2>
+
+          <div>
+            <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.linkChildLabel}</label>
+            {isLinkedStudentId(studentId) ? (
+              <div className="flex items-center justify-between gap-3 bg-teal-50 border border-teal-100 rounded-xl px-3.5 py-2.5">
+                <p className="text-sm font-bold text-teal-700">{t.linkChildLinkedBadge(name)}</p>
+                <button type="button" onClick={unlinkChild}
+                  className="text-xs font-bold text-gray-500 hover:text-gray-700 flex-shrink-0 transition-colors">
+                  {t.unlinkChildButton}
+                </button>
+              </div>
+            ) : (
+              <div className="relative">
+                <input value={childQuery}
+                  onChange={e => { setChildQuery(e.target.value); setChildPickerOpen(true) }}
+                  onFocus={() => setChildPickerOpen(true)}
+                  onBlur={() => setTimeout(() => setChildPickerOpen(false), 150)}
+                  placeholder={t.linkChildSearchPlaceholder}
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-brand-300 focus:outline-none" />
+                {childPickerOpen && childQuery.trim() && (
+                  <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg max-h-56 overflow-y-auto">
+                    {childMatches.length === 0 ? (
+                      <p className="px-3.5 py-2.5 text-xs text-gray-400">{t.linkChildNoResults}</p>
+                    ) : childMatches.map(({ student, parent }) => (
+                      <button key={student.id} type="button"
+                        onMouseDown={() => linkChild(student, parent)}
+                        className="w-full text-right px-3.5 py-2.5 hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0">
+                        <p className="text-sm font-bold text-gray-800">{student.firstName} {student.lastName}</p>
+                        <p className="text-xs text-gray-400 mt-0.5">{parent.firstName} {parent.lastName}</p>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {isLinkedStudentId(studentId) && (
+            <div className="bg-gray-50 rounded-xl p-3.5 space-y-2">
+              <p className="text-xs font-bold text-gray-500">{t.pastAssessmentsTitle}</p>
+              {pastAssessmentsLoading ? (
+                <p className="text-xs text-gray-400">{t.pastAssessmentsLoading}</p>
+              ) : pastAssessments.length === 0 ? (
+                <p className="text-xs text-gray-400">{t.pastAssessmentsEmpty}</p>
+              ) : (
+                <ul className="space-y-1.5">
+                  {pastAssessments.map(r => (
+                    <li key={r.id} className="flex items-center justify-between gap-2 text-xs">
+                      <span className="font-bold text-gray-700 flex-1">{t.scaleNames[r.type as ScaleKey] ?? r.type}</span>
+                      <span className="text-gray-400 ltr-num flex-shrink-0">{new Date(r.completedAt).toLocaleDateString(localeFor(lang))}</span>
+                      <span className={`px-2 py-0.5 rounded-full font-black flex-shrink-0 ${SEVERITY_BADGE[r.severity]}`}>{t.severityLabels[r.severity]}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
@@ -611,6 +776,24 @@ export default function SpecialistToolkitPage() {
                   {t.newAssessmentButton}
                 </button>
               </div>
+
+              {isLinkedStudentId(studentId) ? (
+                <p className={`print:hidden flex items-center gap-1.5 text-xs font-bold ${
+                  saveStatus === 'error' ? 'text-red-600' : saveStatus === 'saved' ? 'text-emerald-600' : 'text-gray-400'
+                }`}>
+                  {saveStatus === 'error'
+                    ? <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+                    : <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />}
+                  {saveStatus === 'saving' && t.savingToRecordLabel}
+                  {saveStatus === 'saved' && t.savedToRecordLabel(name)}
+                  {saveStatus === 'error' && t.saveFailedLabel}
+                </p>
+              ) : (
+                <p className="print:hidden flex items-center gap-1.5 text-xs font-bold text-amber-600">
+                  <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+                  {t.notLinkedNotice}
+                </p>
+              )}
 
               {/* Printable report */}
               <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden print:border-0 print:rounded-none">

@@ -2,7 +2,7 @@
 import { motion } from 'framer-motion'
 import { BarChart3, Users, TrendingUp, Calendar, Dumbbell, Globe, Brain, AlertCircle, DollarSign } from 'lucide-react'
 import { useLang, tr, type Lang } from '@/lib/i18n'
-import type { getAllParents, getAllExercises, getAllAppointments, getAllPendingPayments } from '@/lib/db'
+import type { AnalyticsData } from './page'
 import { staggerContainer, fadeUp, popIn, liftHover } from '@/lib/motion'
 import { ACountUp } from '@/components/ui'
 
@@ -28,83 +28,32 @@ function Bar({ label, value, max, color }: { label: string; value: number; max: 
   )
 }
 
-export default function AnalyticsView({ parents, exercises, appointments, payments, error }: {
-  parents: Awaited<ReturnType<typeof getAllParents>>
-  exercises: Awaited<ReturnType<typeof getAllExercises>>
-  appointments: Awaited<ReturnType<typeof getAllAppointments>>
-  payments: Awaited<ReturnType<typeof getAllPendingPayments>>
-  error: boolean
-}) {
+const EMPTY_DATA: AnalyticsData = {
+  totalClients: 0,
+  totalExercises: 0,
+  totalAppointments: 0,
+  revenueByCurrency: {},
+  revenueLast30dByCurrency: {},
+  hasConfirmedPayments: false,
+  statusCounts: { active: 0, pending: 0, suspended: 0, expired: 0, cancelled: 0 },
+  planCounts: { basic: 0, standard: 0, premium: 0, session: 0, weekly: 0, monthly: 0 },
+  topCountries: [],
+  catCounts: {},
+  months: [],
+  apptStats: { scheduled: 0, completed: 0, cancelled: 0 },
+}
+
+export default function AnalyticsView({ data, error }: { data: AnalyticsData | null; error: boolean }) {
   const { lang } = useLang()
   const t = tr[lang].adminAnalytics
   const adminT = tr[lang].adminChrome
   const catLabels = tr[lang].portal.common.categoryLabels
 
-  // ── Revenue (confirmed payments only) ───────────────────────
-  const confirmedPayments = payments.filter(p => p.status === 'confirmed')
-  const revenueByCurrency: Record<string, number> = {}
-  confirmedPayments.forEach(p => {
-    revenueByCurrency[p.currency] = (revenueByCurrency[p.currency] ?? 0) + p.amount
-  })
-  const now30 = Date.now() - 30 * 24 * 3600 * 1000
-  const revenueLast30dByCurrency: Record<string, number> = {}
-  confirmedPayments
-    .filter(p => new Date(p.createdAt).getTime() >= now30)
-    .forEach(p => {
-      revenueLast30dByCurrency[p.currency] = (revenueLast30dByCurrency[p.currency] ?? 0) + p.amount
-    })
+  const d = data ?? EMPTY_DATA
+  const { totalClients, totalExercises, totalAppointments, revenueByCurrency, revenueLast30dByCurrency,
+    hasConfirmedPayments, statusCounts, planCounts, topCountries, catCounts, months, apptStats } = d
 
-  // ── Subscription breakdown ──────────────────────────────────
-  const statusCounts = {
-    active:    parents.filter(p => p.subscriptionStatus === 'active').length,
-    pending:   parents.filter(p => p.subscriptionStatus === 'pending').length,
-    suspended: parents.filter(p => p.subscriptionStatus === 'suspended').length,
-    expired:   parents.filter(p => p.subscriptionStatus === 'expired').length,
-    cancelled: parents.filter(p => p.subscriptionStatus === 'cancelled').length,
-  }
-
-  const planCounts = {
-    basic:    parents.filter(p => p.subscriptionPlan === 'basic').length,
-    standard: parents.filter(p => p.subscriptionPlan === 'standard').length,
-    premium:  parents.filter(p => p.subscriptionPlan === 'premium').length,
-  }
-
-  // ── Country distribution ────────────────────────────────────
-  const countryCounts: Record<string, number> = {}
-  parents.forEach(p => {
-    const c = p.country || t.unspecifiedCountry
-    countryCounts[c] = (countryCounts[c] ?? 0) + 1
-  })
-  const topCountries = Object.entries(countryCounts)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 6)
-
-  // ── Exercise category breakdown ─────────────────────────────
-  const catCounts: Record<string, number> = {}
-  exercises.forEach(e => {
-    catCounts[e.category] = (catCounts[e.category] ?? 0) + 1
-  })
-
-  // ── Monthly registrations (last 6 months) ──────────────────
-  const now = new Date()
-  const months: Array<{ label: string; count: number }> = []
-  for (let i = 5; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
-    const label = d.toLocaleDateString(localeFor(lang), { month: 'short', year: '2-digit' })
-    const count = parents.filter(p => {
-      const created = new Date(p.createdAt)
-      return created.getFullYear() === d.getFullYear() && created.getMonth() === d.getMonth()
-    }).length
-    months.push({ label, count })
-  }
   const maxMonthCount = Math.max(...months.map(m => m.count), 1)
-
-  // ── Appointment stats ───────────────────────────────────────
-  const apptStats = {
-    scheduled: appointments.filter(a => a.status === 'scheduled').length,
-    completed: appointments.filter(a => a.status === 'completed').length,
-    cancelled: appointments.filter(a => a.status === 'cancelled').length,
-  }
 
   return (
     <motion.div className="space-y-6" variants={staggerContainer} initial="hidden" animate="show">
@@ -128,9 +77,9 @@ export default function AnalyticsView({ parents, exercises, appointments, paymen
       {/* ── KPI Strip ── */}
       <motion.div className="grid grid-cols-2 lg:grid-cols-4 gap-3" variants={staggerContainer}>
         {[
-          { label: t.kpiTotalClients,      value: parents.length,      bg: 'bg-brand-600',   glow: 'shadow-brand-500/20',   icon: Users },
+          { label: t.kpiTotalClients,      value: totalClients,        bg: 'bg-brand-600',   glow: 'shadow-brand-500/20',   icon: Users },
           { label: t.kpiActiveSubs,        value: statusCounts.active, bg: 'bg-emerald-600', glow: 'shadow-emerald-500/20', icon: TrendingUp },
-          { label: t.kpiTotalExercises,    value: exercises.length,    bg: 'bg-violet-600',  glow: 'shadow-violet-500/20',  icon: Dumbbell },
+          { label: t.kpiTotalExercises,    value: totalExercises,      bg: 'bg-violet-600',  glow: 'shadow-violet-500/20',  icon: Dumbbell },
           { label: t.kpiCompletedSessions, value: apptStats.completed, bg: 'bg-orange-500',  glow: 'shadow-orange-500/20',  icon: Calendar },
         ].map(({ label, value, bg, glow, icon: Icon }) => (
           <motion.div
@@ -154,7 +103,7 @@ export default function AnalyticsView({ parents, exercises, appointments, paymen
           <DollarSign className="w-4 h-4 text-emerald-500" />
           {t.revenueTitle}
         </h2>
-        {confirmedPayments.length === 0 ? (
+        {!hasConfirmedPayments ? (
           <p className="text-gray-300 text-sm text-center py-4">{t.noConfirmedPayments}</p>
         ) : (
           <motion.div className="grid grid-cols-2 sm:grid-cols-4 gap-4" variants={staggerContainer} initial="hidden" animate="show">
@@ -182,11 +131,11 @@ export default function AnalyticsView({ parents, exercises, appointments, paymen
             {t.subscriptionStatusTitle}
           </h2>
           <div className="space-y-3.5">
-            <Bar label={t.statusActive}    value={statusCounts.active}    max={parents.length} color="bg-emerald-500" />
-            <Bar label={t.statusPending}    value={statusCounts.pending}   max={parents.length} color="bg-amber-400" />
-            <Bar label={t.statusSuspended}  value={statusCounts.suspended} max={parents.length} color="bg-red-400" />
-            <Bar label={t.statusExpired}    value={statusCounts.expired}   max={parents.length} color="bg-orange-400" />
-            <Bar label={t.statusCancelled}  value={statusCounts.cancelled} max={parents.length} color="bg-gray-300" />
+            <Bar label={t.statusActive}    value={statusCounts.active}    max={totalClients} color="bg-emerald-500" />
+            <Bar label={t.statusPending}    value={statusCounts.pending}   max={totalClients} color="bg-amber-400" />
+            <Bar label={t.statusSuspended}  value={statusCounts.suspended} max={totalClients} color="bg-red-400" />
+            <Bar label={t.statusExpired}    value={statusCounts.expired}   max={totalClients} color="bg-orange-400" />
+            <Bar label={t.statusCancelled}  value={statusCounts.cancelled} max={totalClients} color="bg-gray-300" />
           </div>
         </motion.div>
 
@@ -200,26 +149,26 @@ export default function AnalyticsView({ parents, exercises, appointments, paymen
               { key: 'basic',    label: t.planBasic,    color: 'bg-gray-400',    value: planCounts.basic },
               { key: 'standard', label: t.planStandard, color: 'bg-brand-500',   value: planCounts.standard },
               { key: 'premium',  label: t.planPremium,  color: 'bg-violet-500',  value: planCounts.premium },
-              { key: 'session',  label: t.planSession,  color: 'bg-teal-500',    value: parents.filter(p => (p.subscriptionPlan as string) === 'session').length },
-              { key: 'weekly',   label: t.planWeekly,   color: 'bg-blue-400',    value: parents.filter(p => (p.subscriptionPlan as string) === 'weekly').length },
-              { key: 'monthly',  label: t.planMonthly,  color: 'bg-emerald-500', value: parents.filter(p => (p.subscriptionPlan as string) === 'monthly').length },
+              { key: 'session',  label: t.planSession,  color: 'bg-teal-500',    value: planCounts.session },
+              { key: 'weekly',   label: t.planWeekly,   color: 'bg-blue-400',    value: planCounts.weekly },
+              { key: 'monthly',  label: t.planMonthly,  color: 'bg-emerald-500', value: planCounts.monthly },
             ].filter(x => x.value > 0).map(({ label, color, value }) => (
               <div key={label}>
                 <div className="flex justify-between text-xs mb-1.5">
                   <span className="font-bold text-gray-700">{label}</span>
-                  <span className="text-gray-400 ltr-num">{value} ({parents.length > 0 ? Math.round(value/parents.length*100) : 0}%)</span>
+                  <span className="text-gray-400 ltr-num">{value} ({totalClients > 0 ? Math.round(value/totalClients*100) : 0}%)</span>
                 </div>
                 <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
                   <motion.div
                     className={`h-full rounded-full ${color}`}
                     initial={{ width: 0 }}
-                    animate={{ width: `${parents.length > 0 ? (value/parents.length)*100 : 0}%` }}
+                    animate={{ width: `${totalClients > 0 ? (value/totalClients)*100 : 0}%` }}
                     transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
                   />
                 </div>
               </div>
             ))}
-            {parents.length === 0 && (
+            {totalClients === 0 && (
               <p className="text-gray-300 text-sm text-center py-4">{t.noDataYet}</p>
             )}
           </div>
@@ -238,7 +187,7 @@ export default function AnalyticsView({ parents, exercises, appointments, paymen
           ) : (
             <div className="space-y-3.5">
               {topCountries.map(([country, count]) => (
-                <Bar key={country} label={country} value={count} max={parents.length} color="bg-brand-400" />
+                <Bar key={country || '__unspecified'} label={country || t.unspecifiedCountry} value={count} max={totalClients} color="bg-brand-400" />
               ))}
             </div>
           )}
@@ -250,20 +199,23 @@ export default function AnalyticsView({ parents, exercises, appointments, paymen
             {t.monthlyRegistrationsTitle}
           </h2>
           <div className="flex items-end gap-2 h-36">
-            {months.map(({ label, count }, i) => (
-              <div key={`${label}-${i}`} className="flex-1 flex flex-col items-center gap-1">
-                <span className="text-xs font-black text-gray-700 ltr-num">{count || ''}</span>
-                <div className="w-full">
-                  <motion.div
-                    className="bg-gradient-to-t from-brand-600 to-brand-400 rounded-t-lg w-full"
-                    initial={{ height: 0 }}
-                    animate={{ height: `${Math.max((count / maxMonthCount) * 90, count > 0 ? 8 : 2)}px` }}
-                    transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1], delay: i * 0.05 }}
-                  />
+            {months.map(({ year, month, count }, i) => {
+              const label = new Date(year, month, 1).toLocaleDateString(localeFor(lang), { month: 'short', year: '2-digit' })
+              return (
+                <div key={`${year}-${month}-${i}`} className="flex-1 flex flex-col items-center gap-1">
+                  <span className="text-xs font-black text-gray-700 ltr-num">{count || ''}</span>
+                  <div className="w-full">
+                    <motion.div
+                      className="bg-gradient-to-t from-brand-600 to-brand-400 rounded-t-lg w-full"
+                      initial={{ height: 0 }}
+                      animate={{ height: `${Math.max((count / maxMonthCount) * 90, count > 0 ? 8 : 2)}px` }}
+                      transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1], delay: i * 0.05 }}
+                    />
+                  </div>
+                  <span className="text-[10px] text-gray-400 text-center leading-tight">{label}</span>
                 </div>
-                <span className="text-[10px] text-gray-400 text-center leading-tight">{label}</span>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </motion.div>
       </div>
@@ -272,9 +224,9 @@ export default function AnalyticsView({ parents, exercises, appointments, paymen
       <motion.div variants={fadeUp} className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
         <h2 className="font-black text-gray-900 mb-5 flex items-center gap-2 text-sm">
           <Brain className="w-4 h-4 text-violet-500" />
-          {t.exerciseLibraryTitle(exercises.length)}
+          {t.exerciseLibraryTitle(totalExercises)}
         </h2>
-        {exercises.length === 0 ? (
+        {totalExercises === 0 ? (
           <div className="text-center py-8">
             <p className="text-gray-300 text-sm">{t.exercisesNotLoaded}</p>
             <a href="/dashboard/exercises" className="text-brand-600 text-sm font-bold hover:underline mt-2 inline-block">
@@ -285,7 +237,7 @@ export default function AnalyticsView({ parents, exercises, appointments, paymen
           <motion.div className="grid grid-cols-3 sm:grid-cols-6 gap-3" variants={staggerContainer} initial="hidden" animate="show">
             {(['motor','focus','balance','energy','sensory','social'] as const).map((key) => {
               const count = catCounts[key] ?? 0
-              const pct = exercises.length > 0 ? Math.round(count/exercises.length*100) : 0
+              const pct = totalExercises > 0 ? Math.round(count/totalExercises*100) : 0
               return (
                 <motion.div key={key} variants={popIn} {...liftHover} className="text-center bg-gray-50 rounded-2xl p-4">
                   <div className="text-2xl font-black text-gray-900"><ACountUp value={count} /></div>
@@ -302,7 +254,7 @@ export default function AnalyticsView({ parents, exercises, appointments, paymen
       <motion.div variants={fadeUp} className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
         <h2 className="font-black text-gray-900 mb-5 flex items-center gap-2 text-sm">
           <Calendar className="w-4 h-4 text-blue-500" />
-          {t.sessionsTitle(appointments.length)}
+          {t.sessionsTitle(totalAppointments)}
         </h2>
         <motion.div className="grid grid-cols-3 gap-3" variants={staggerContainer} initial="hidden" animate="show">
           {[

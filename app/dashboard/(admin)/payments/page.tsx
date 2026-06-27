@@ -1,10 +1,13 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { CheckCircle2, XCircle, Clock, RefreshCw, CreditCard, AlertTriangle, BadgeCheck } from 'lucide-react'
 import type { PendingPayment, PaymentStatus } from '@/lib/types'
 import { useToast } from '@/components/ui/Toast'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { ACountUp } from '@/components/ui'
+import { staggerContainer, fadeUp, popIn, liftHover, tapOnly } from '@/lib/motion'
 
 const METHOD_LABELS: Record<string, string> = {
   fawran:           'فوران',
@@ -97,10 +100,10 @@ export default function AdminPaymentsPage() {
   ]
 
   return (
-    <div className="space-y-6" dir="rtl">
+    <motion.div className="space-y-6" dir="rtl" variants={staggerContainer} initial="hidden" animate="show">
 
       {/* ── Header ── */}
-      <div className="flex items-start justify-between gap-4">
+      <motion.div variants={fadeUp} className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-black text-gray-900 flex items-center gap-2">
             <CreditCard className="w-6 h-6 text-brand-500" />
@@ -108,21 +111,24 @@ export default function AdminPaymentsPage() {
           </h1>
           <p className="text-gray-400 text-sm mt-1">مراجعة وتأكيد طلبات الاشتراك</p>
         </div>
-        <button
+        <motion.button
+          {...tapOnly}
           onClick={fetchPayments}
           disabled={loading}
           className="flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm shadow-brand-500/20 disabled:opacity-60"
         >
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           تحديث
-        </button>
-      </div>
+        </motion.button>
+      </motion.div>
 
       {/* ── Stats Strip ── */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <motion.div variants={staggerContainer} className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {TABS.map(({ key, label, icon: Icon, bg, glow }) => (
-          <button
+          <motion.button
             key={key}
+            variants={popIn}
+            {...liftHover}
             onClick={() => setFilter(key)}
             className={`bg-white rounded-2xl p-4 border text-right transition-all hover:shadow-md ${
               filter === key ? 'border-brand-300 ring-2 ring-brand-200 shadow-md' : 'border-gray-100 shadow-sm'
@@ -131,20 +137,20 @@ export default function AdminPaymentsPage() {
             <div className={`w-10 h-10 ${bg} rounded-xl flex items-center justify-center shadow-lg ${glow} mb-3`}>
               <Icon className="w-5 h-5 text-white" />
             </div>
-            <div className="text-3xl font-black text-gray-900 ltr-num">{counts[key]}</div>
+            <div className="text-3xl font-black text-gray-900 ltr-num"><ACountUp value={counts[key]} /></div>
             <div className="text-gray-400 text-xs mt-0.5 font-medium">{label}</div>
-          </button>
+          </motion.button>
         ))}
-      </div>
+      </motion.div>
 
       {/* ── Pending alert ── */}
       {counts.pending > 0 && (
-        <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-2xl px-5 py-3">
+        <motion.div variants={fadeUp} className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-2xl px-5 py-3">
           <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0" />
           <p className="text-amber-800 text-sm font-bold">
             {counts.pending} طلب{counts.pending > 1 ? 'ات تنتظر' : ' ينتظر'} مراجعتك — راجعها الآن
           </p>
-        </div>
+        </motion.div>
       )}
 
       {/* ── Cards ── */}
@@ -167,15 +173,16 @@ export default function AdminPaymentsPage() {
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="bg-white rounded-3xl border border-gray-100 py-24 text-center shadow-sm">
+        <motion.div variants={fadeUp} className="bg-white rounded-3xl border border-gray-100 py-24 text-center shadow-sm">
           <div className="text-6xl mb-4">💳</div>
           <p className="text-gray-900 font-black text-lg">لا توجد مدفوعات</p>
           <p className="text-gray-400 text-sm mt-1">
             {filter === 'all' ? 'ستظهر هنا عند استلام أول طلب دفع' : `لا توجد مدفوعات ${TABS.find(t => t.key === filter)?.label}`}
           </p>
-        </div>
+        </motion.div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <motion.div layout className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          <AnimatePresence mode="popLayout">
           {filtered.map(payment => {
             const isProcessing = processingId === payment.id
             const date = new Date(payment.createdAt).toLocaleDateString('fr-FR', {
@@ -202,9 +209,15 @@ export default function AdminPaymentsPage() {
             const methodColor = METHOD_COLORS[payment.method] ?? 'bg-gray-100 text-gray-600'
 
             return (
-              <div
+              <motion.div
                 key={payment.id}
-                className="group bg-white rounded-3xl border border-gray-100 p-5 shadow-sm hover:shadow-xl hover:border-brand-200 hover:-translate-y-0.5 transition-all duration-200"
+                layout
+                variants={popIn}
+                initial="hidden"
+                animate="show"
+                exit={{ opacity: 0, scale: 0.92, transition: { duration: 0.2 } }}
+                {...liftHover}
+                className="group bg-white rounded-3xl border border-gray-100 p-5 shadow-sm hover:shadow-xl hover:border-brand-200 transition-all duration-200"
               >
                 {/* Top row */}
                 <div className="flex items-start justify-between mb-4">
@@ -229,7 +242,7 @@ export default function AdminPaymentsPage() {
                   <div>
                     <p className="text-[10px] text-gray-400 font-medium mb-0.5">المبلغ</p>
                     <p className="text-2xl font-black text-brand-700 ltr-num">
-                      {payment.amount} <span className="text-sm font-bold">{payment.currency === 'QAR' ? 'ر.ق' : 'د.ت'}</span>
+                      <ACountUp value={payment.amount} /> <span className="text-sm font-bold">{payment.currency === 'QAR' ? 'ر.ق' : 'د.ت'}</span>
                     </p>
                   </div>
                   <div className="text-right">
@@ -269,7 +282,8 @@ export default function AdminPaymentsPage() {
                 <div className="pt-3 border-t border-gray-50">
                   {payment.status === 'pending' && (
                     <div className="flex gap-2">
-                      <button
+                      <motion.button
+                        {...tapOnly}
                         onClick={() => updateStatus(payment.id, 'confirmed')}
                         disabled={isProcessing}
                         className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-black rounded-xl transition-colors disabled:opacity-50"
@@ -278,15 +292,16 @@ export default function AdminPaymentsPage() {
                           ? <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                           : <CheckCircle2 className="w-3.5 h-3.5" />}
                         تأكيد
-                      </button>
-                      <button
+                      </motion.button>
+                      <motion.button
+                        {...tapOnly}
                         onClick={() => setConfirm({ id: payment.id, name: payment.guestName ?? '' })}
                         disabled={isProcessing}
                         className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-black rounded-xl transition-colors disabled:opacity-50"
                       >
                         <XCircle className="w-3.5 h-3.5" />
                         رفض
-                      </button>
+                      </motion.button>
                     </div>
                   )}
                   {payment.status === 'confirmed' && (
@@ -296,19 +311,21 @@ export default function AdminPaymentsPage() {
                     </div>
                   )}
                   {payment.status === 'rejected' && (
-                    <button
+                    <motion.button
+                      {...tapOnly}
                       onClick={() => updateStatus(payment.id, 'pending')}
                       disabled={isProcessing}
                       className="w-full py-2 text-xs text-gray-500 hover:text-gray-800 font-bold underline transition-colors"
                     >
                       إعادة فتح للمراجعة
-                    </button>
+                    </motion.button>
                   )}
                 </div>
-              </div>
+              </motion.div>
             )
           })}
-        </div>
+          </AnimatePresence>
+        </motion.div>
       )}
 
       <ConfirmDialog
@@ -319,6 +336,6 @@ export default function AdminPaymentsPage() {
         onConfirm={() => { const id = confirm?.id; setConfirm(null); if (id) updateStatus(id, 'rejected') }}
         onCancel={() => setConfirm(null)}
       />
-    </div>
+    </motion.div>
   )
 }

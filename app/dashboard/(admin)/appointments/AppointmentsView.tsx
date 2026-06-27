@@ -1,6 +1,9 @@
 'use client'
 import { Calendar, Clock, Video, AlertCircle, CheckCircle2, XCircle, User, Plus, MonitorPlay, ChevronLeft, MessageCircle } from 'lucide-react'
 import Link from 'next/link'
+import { motion, AnimatePresence } from 'framer-motion'
+import { staggerContainer, fadeUp, popIn, liftHover, tapOnly } from '@/lib/motion'
+import { ACountUp } from '@/components/ui'
 import { useLang, tr, type Lang } from '@/lib/i18n'
 import type { getAllAppointments, getAllParents } from '@/lib/db'
 
@@ -65,10 +68,10 @@ export default function AppointmentsView({ appointments, parents, error }: {
   ]
 
   return (
-    <div className="space-y-6">
+    <motion.div className="space-y-6" variants={staggerContainer} initial="hidden" animate="show">
 
       {/* ── Header ── */}
-      <div className="flex items-start justify-between gap-4">
+      <motion.div variants={fadeUp} className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-black text-gray-900 flex items-center gap-2">
             <Calendar className="w-6 h-6 text-brand-500" />
@@ -76,104 +79,108 @@ export default function AppointmentsView({ appointments, parents, error }: {
           </h1>
           <p className="text-gray-400 text-sm mt-1">{t.pageSubtitle}</p>
         </div>
-        <Link
-          href="/dashboard/appointments/new"
-          className="flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm shadow-brand-500/20 hover:shadow-md hover:shadow-brand-500/30"
-        >
-          <Plus className="w-4 h-4" />
-          {t.newApptButton}
-        </Link>
-      </div>
+        <motion.div {...tapOnly}>
+          <Link
+            href="/dashboard/appointments/new"
+            className="flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm shadow-brand-500/20 hover:shadow-md hover:shadow-brand-500/30"
+          >
+            <Plus className="w-4 h-4" />
+            {t.newApptButton}
+          </Link>
+        </motion.div>
+      </motion.div>
 
       {error && (
-        <div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-2xl p-4">
+        <motion.div variants={fadeUp} className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-2xl p-4">
           <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
           <p className="text-red-700 text-sm font-medium">{adminT.dbConnectionError}</p>
-        </div>
+        </motion.div>
       )}
 
       {/* ── Stats Strip ── */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <motion.div className="grid grid-cols-2 md:grid-cols-4 gap-3" variants={staggerContainer}>
         {[
           { label: t.statTotal,            value: appointments.length, bg: 'bg-brand-600',   glow: 'shadow-brand-500/20',   icon: Calendar },
           { label: t.statUpcoming,         value: upcoming.length,     bg: 'bg-blue-600',    glow: 'shadow-blue-500/20',    icon: Clock },
           { label: t.statCompleted,        value: completed.length,    bg: 'bg-emerald-600', glow: 'shadow-emerald-500/20', icon: CheckCircle2 },
           { label: t.statCancelledNoShow,  value: cancelled.length,    bg: 'bg-gray-500',    glow: 'shadow-gray-500/20',    icon: XCircle },
         ].map(({ label, value, bg, glow, icon: Icon }) => (
-          <div key={label} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+          <motion.div key={label} variants={popIn} {...liftHover} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
             <div className={`w-10 h-10 ${bg} rounded-xl flex items-center justify-center shadow-lg ${glow} mb-3`}>
               <Icon className="w-5 h-5 text-white" />
             </div>
-            <div className="text-3xl font-black text-gray-900 ltr-num">{value}</div>
+            <div className="text-3xl font-black text-gray-900"><ACountUp value={value} /></div>
             <div className="text-gray-400 text-xs mt-0.5 font-medium">{label}</div>
-          </div>
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
 
       {/* ── Upcoming spotlight ── */}
       {upcoming.length > 0 && (
-        <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl p-5 text-white">
+        <motion.div variants={fadeUp} className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl p-5 text-white">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-black flex items-center gap-2">
               <Clock className="w-4 h-4 text-blue-200" />
               {t.upcomingSpotlightTitle}
             </h2>
-            <span className="bg-white/20 text-white text-xs font-black px-2.5 py-1 rounded-full">{upcoming.length}</span>
+            <span className="bg-white/20 text-white text-xs font-black px-2.5 py-1 rounded-full"><ACountUp value={upcoming.length} /></span>
           </div>
-          <div className="space-y-2">
-            {upcoming.slice(0, 3).map((appt, idx) => {
-              const parent = parentMap[appt.parentId]
-              const type = TYPE_CFG[appt.type]
-              const gradient = AVATAR_GRADIENTS[idx % AVATAR_GRADIENTS.length]
-              const wa = parent ? waReminderLink(parent.phone, parent.firstName, appt.date, appt.timeSlot) : null
-              return (
-                <div key={appt.id} className="bg-white/10 backdrop-blur-sm rounded-2xl px-4 py-3 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center text-white font-black text-sm shadow-md flex-shrink-0`}>
-                      {parent ? parent.firstName[0] : <User className="w-4 h-4" />}
+          <motion.div className="space-y-2" variants={staggerContainer}>
+            <AnimatePresence initial={false}>
+              {upcoming.slice(0, 3).map((appt, idx) => {
+                const parent = parentMap[appt.parentId]
+                const type = TYPE_CFG[appt.type]
+                const gradient = AVATAR_GRADIENTS[idx % AVATAR_GRADIENTS.length]
+                const wa = parent ? waReminderLink(parent.phone, parent.firstName, appt.date, appt.timeSlot) : null
+                return (
+                  <motion.div key={appt.id} variants={fadeUp} {...liftHover} className="bg-white/10 backdrop-blur-sm rounded-2xl px-4 py-3 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center text-white font-black text-sm shadow-md flex-shrink-0`}>
+                        {parent ? parent.firstName[0] : <User className="w-4 h-4" />}
+                      </div>
+                      <div>
+                        <p className="font-black text-sm text-white">
+                          {parent ? `${parent.firstName} ${parent.lastName}` : '—'}
+                        </p>
+                        <p className="text-blue-200 text-[11px] ltr-num">
+                          {new Date(appt.date).toLocaleDateString(localeFor(lang), { weekday: 'short', month: 'short', day: 'numeric' })}
+                          {' · '}{appt.timeSlot}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-black text-sm text-white">
-                        {parent ? `${parent.firstName} ${parent.lastName}` : '—'}
-                      </p>
-                      <p className="text-blue-200 text-[11px] ltr-num">
-                        {new Date(appt.date).toLocaleDateString(localeFor(lang), { weekday: 'short', month: 'short', day: 'numeric' })}
-                        {' · '}{appt.timeSlot}
-                      </p>
+                    <div className="flex items-center gap-2">
+                      {type && (
+                        <span className="bg-white/20 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                          {type.label}
+                        </span>
+                      )}
+                      {wa && (
+                        <a href={wa} target="_blank" rel="noopener noreferrer"
+                          title={t.waReminderTitle}
+                          className="flex items-center gap-1 bg-emerald-400/20 text-emerald-200 hover:bg-emerald-400/30 text-[11px] font-bold px-2.5 py-1 rounded-xl transition-colors">
+                          <MessageCircle className="w-3 h-3" />
+                          {t.reminderLabel}
+                        </a>
+                      )}
+                      {appt.meetingUrl && (
+                        <a href={appt.meetingUrl} target="_blank" rel="noopener noreferrer"
+                          className="flex items-center gap-1 bg-green-400/20 text-green-200 hover:bg-green-400/30 text-[11px] font-bold px-2.5 py-1 rounded-xl transition-colors">
+                          <Video className="w-3 h-3" />
+                          {t.joinLabel}
+                        </a>
+                      )}
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {type && (
-                      <span className="bg-white/20 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
-                        {type.label}
-                      </span>
-                    )}
-                    {wa && (
-                      <a href={wa} target="_blank" rel="noopener noreferrer"
-                        title={t.waReminderTitle}
-                        className="flex items-center gap-1 bg-emerald-400/20 text-emerald-200 hover:bg-emerald-400/30 text-[11px] font-bold px-2.5 py-1 rounded-xl transition-colors">
-                        <MessageCircle className="w-3 h-3" />
-                        {t.reminderLabel}
-                      </a>
-                    )}
-                    {appt.meetingUrl && (
-                      <a href={appt.meetingUrl} target="_blank" rel="noopener noreferrer"
-                        className="flex items-center gap-1 bg-green-400/20 text-green-200 hover:bg-green-400/30 text-[11px] font-bold px-2.5 py-1 rounded-xl transition-colors">
-                        <Video className="w-3 h-3" />
-                        {t.joinLabel}
-                      </a>
-                    )}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
+                  </motion.div>
+                )
+              })}
+            </AnimatePresence>
+          </motion.div>
+        </motion.div>
       )}
 
       {/* ── All appointments cards ── */}
       {appointments.length === 0 && !error ? (
-        <div className="bg-white rounded-3xl border border-gray-100 py-24 text-center shadow-sm">
+        <motion.div variants={fadeUp} className="bg-white rounded-3xl border border-gray-100 py-24 text-center shadow-sm">
           <div className="text-6xl mb-4">📅</div>
           <p className="text-gray-900 font-black text-lg">{t.emptyTitle}</p>
           <p className="text-gray-400 text-sm mt-1 mb-6">{t.emptySubtitle}</p>
@@ -182,9 +189,10 @@ export default function AppointmentsView({ appointments, parents, error }: {
             <Plus className="w-4 h-4" />
             {t.addApptNowButton}
           </Link>
-        </div>
+        </motion.div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <motion.div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" variants={staggerContainer}>
+          <AnimatePresence initial={false}>
           {allSorted.map((appt, idx) => {
             const parent = parentMap[appt.parentId]
             const status = STATUS_CFG[appt.status] ?? { label: appt.status, dot: 'bg-gray-400', badge: 'bg-gray-100 text-gray-600 ring-1 ring-gray-200', icon: Clock }
@@ -195,9 +203,12 @@ export default function AppointmentsView({ appointments, parents, error }: {
             const wa = appt.status === 'scheduled' && parent ? waReminderLink(parent.phone, parent.firstName, appt.date, appt.timeSlot) : null
 
             return (
-              <div
+              <motion.div
                 key={appt.id}
-                className="group bg-white rounded-3xl border border-gray-100 p-5 shadow-sm hover:shadow-xl hover:border-brand-200 hover:-translate-y-0.5 transition-all duration-200"
+                variants={fadeUp}
+                {...liftHover}
+                exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.2 } }}
+                className="group bg-white rounded-3xl border border-gray-100 p-5 shadow-sm hover:shadow-xl hover:border-brand-200 transition-shadow duration-200"
               >
                 {/* Top row */}
                 <div className="flex items-start justify-between mb-4">
@@ -277,12 +288,13 @@ export default function AppointmentsView({ appointments, parents, error }: {
                     </div>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             )
           })}
-        </div>
+          </AnimatePresence>
+        </motion.div>
       )}
 
-    </div>
+    </motion.div>
   )
 }

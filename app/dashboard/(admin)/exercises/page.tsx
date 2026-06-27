@@ -1,7 +1,10 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Dumbbell, RefreshCw, Plus, Clock, Star, Target, Brain, Zap, Users, Eye, Activity, Edit2, X, Save, ChevronDown, Search } from 'lucide-react'
+import { ASegmentedPills, ACountUp } from '@/components/ui'
+import { staggerContainer, fadeUp, popIn, liftHover } from '@/lib/motion'
 
 interface Exercise {
   id: string
@@ -145,10 +148,10 @@ export default function ExercisesPage() {
   }))
 
   return (
-    <div className="space-y-6" dir="rtl">
+    <motion.div className="space-y-6" dir="rtl" variants={staggerContainer} initial="hidden" animate="show">
 
       {/* ── Header ── */}
-      <div className="flex items-start justify-between gap-4 flex-wrap">
+      <motion.div variants={fadeUp} className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-black text-gray-900 flex items-center gap-2">
             <Dumbbell className="w-6 h-6 text-brand-500" />
@@ -176,17 +179,19 @@ export default function ExercisesPage() {
             </button>
           ))}
         </div>
-      </div>
+      </motion.div>
 
       {seedMsg && (
-        <div className="bg-brand-50 border border-brand-200 text-brand-700 rounded-2xl px-5 py-3 text-sm font-bold">{seedMsg}</div>
+        <motion.div variants={fadeUp} className="bg-brand-50 border border-brand-200 text-brand-700 rounded-2xl px-5 py-3 text-sm font-bold">{seedMsg}</motion.div>
       )}
 
       {/* ── Category stats ── */}
-      <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+      <motion.div className="grid grid-cols-3 sm:grid-cols-6 gap-3" variants={staggerContainer}>
         {categoryStats.map(({ key, label, count, bg, glow, icon: Icon }) => (
-          <button
+          <motion.button
             key={key}
+            variants={popIn}
+            {...liftHover}
             onClick={() => setFilterCategory(filterCategory === key ? 'all' : key)}
             className={`bg-white rounded-2xl p-4 border text-right transition-all hover:shadow-md ${
               filterCategory === key ? 'border-brand-300 ring-2 ring-brand-200 shadow-md' : 'border-gray-100 shadow-sm'
@@ -195,14 +200,14 @@ export default function ExercisesPage() {
             <div className={`w-9 h-9 ${bg} rounded-xl flex items-center justify-center shadow-lg ${glow} mb-2 mx-auto`}>
               <Icon className="w-4 h-4 text-white" />
             </div>
-            <div className="text-xl font-black text-gray-900 text-center ltr-num">{count}</div>
+            <div className="text-xl font-black text-gray-900 text-center"><ACountUp value={count} /></div>
             <div className="text-[10px] text-gray-400 text-center mt-0.5 font-medium">{label}</div>
-          </button>
+          </motion.button>
         ))}
-      </div>
+      </motion.div>
 
       {/* ── Search + filter bar ── */}
-      <div className="flex items-center gap-3 flex-wrap">
+      <motion.div variants={fadeUp} className="flex items-center gap-3 flex-wrap">
         <div className="relative flex-1 min-w-48">
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
           <input
@@ -212,23 +217,16 @@ export default function ExercisesPage() {
             className="w-full border border-gray-200 rounded-xl pr-9 pl-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300 bg-white"
           />
         </div>
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <button
-            onClick={() => setFilterCategory('all')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${filterCategory === 'all' ? 'bg-brand-600 text-white shadow-sm shadow-brand-500/30' : 'bg-white border border-gray-200 text-gray-600 hover:border-brand-300'}`}
-          >
-            الكل ({exercises.length})
-          </button>
-          {Object.entries(CATEGORY_CONFIG).map(([key, { label }]) => (
-            <button key={key}
-              onClick={() => setFilterCategory(filterCategory === key ? 'all' : key)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${filterCategory === key ? 'bg-brand-600 text-white shadow-sm shadow-brand-500/30' : 'bg-white border border-gray-200 text-gray-600 hover:border-brand-300'}`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      </div>
+        <ASegmentedPills
+          groupId="exercises-category-filter"
+          value={filterCategory}
+          onChange={setFilterCategory}
+          options={[
+            { value: 'all', label: 'الكل', count: exercises.length },
+            ...Object.entries(CATEGORY_CONFIG).map(([key, { label }]) => ({ value: key, label })),
+          ]}
+        />
+      </motion.div>
 
       {/* ── Grid ── */}
       {loading ? (
@@ -248,7 +246,7 @@ export default function ExercisesPage() {
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="bg-white rounded-3xl border border-gray-100 py-24 text-center shadow-sm">
+        <motion.div variants={fadeUp} className="bg-white rounded-3xl border border-gray-100 py-24 text-center shadow-sm">
           <div className="text-6xl mb-4">🏃</div>
           <p className="text-gray-900 font-black text-lg">لا توجد تمارين</p>
           {exercises.length === 0 ? (
@@ -265,88 +263,105 @@ export default function ExercisesPage() {
           ) : (
             <p className="text-gray-400 text-sm mt-1">جرّب تغيير الفلتر أو البحث</p>
           )}
-        </div>
+        </motion.div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map((ex) => {
-            const cat = CATEGORY_CONFIG[ex.category]
-            const diff = DIFFICULTY_CONFIG[ex.difficulty]
-            const cardGrad = CARD_GRADIENTS[ex.category] ?? 'from-gray-50 to-gray-50 border-gray-100'
-            const CatIcon = cat?.icon ?? Dumbbell
-            return (
-              <div
-                key={ex.id}
-                onClick={() => setViewEx(ex)}
-                className={`group relative bg-gradient-to-br ${cardGrad} rounded-3xl border p-5 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 cursor-pointer`}
-              >
-                {/* Edit button */}
-                <button
-                  onClick={e => { e.stopPropagation(); openEdit(ex) }}
-                  className="absolute top-4 left-4 p-2 rounded-xl bg-white/80 hover:bg-white text-gray-400 hover:text-brand-600 shadow-sm opacity-0 group-hover:opacity-100 transition-all"
-                  title="تعديل"
+        <motion.div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" variants={staggerContainer} initial="hidden" animate="show">
+          <AnimatePresence mode="popLayout">
+            {filtered.map((ex) => {
+              const cat = CATEGORY_CONFIG[ex.category]
+              const diff = DIFFICULTY_CONFIG[ex.difficulty]
+              const cardGrad = CARD_GRADIENTS[ex.category] ?? 'from-gray-50 to-gray-50 border-gray-100'
+              const CatIcon = cat?.icon ?? Dumbbell
+              return (
+                <motion.div
+                  key={ex.id}
+                  layout
+                  variants={fadeUp}
+                  initial="hidden"
+                  animate="show"
+                  exit={{ opacity: 0, scale: 0.92, transition: { duration: 0.15 } }}
+                  {...liftHover}
+                  onClick={() => setViewEx(ex)}
+                  className={`group relative bg-gradient-to-br ${cardGrad} rounded-3xl border p-5 hover:shadow-xl transition-shadow duration-200 cursor-pointer`}
                 >
-                  <Edit2 className="w-3.5 h-3.5" />
-                </button>
+                  {/* Edit button */}
+                  <button
+                    onClick={e => { e.stopPropagation(); openEdit(ex) }}
+                    className="absolute top-4 left-4 p-2 rounded-xl bg-white/80 hover:bg-white text-gray-400 hover:text-brand-600 shadow-sm opacity-0 group-hover:opacity-100 transition-all"
+                    title="تعديل"
+                  >
+                    <Edit2 className="w-3.5 h-3.5" />
+                  </button>
 
-                {/* Category icon + difficulty */}
-                <div className="flex items-start justify-between mb-4">
-                  <div className={`w-11 h-11 ${cat?.bg ?? 'bg-gray-500'} rounded-2xl flex items-center justify-center shadow-lg ${cat?.glow ?? ''} flex-shrink-0`}>
-                    <CatIcon className="w-5 h-5 text-white" />
-                  </div>
-                  <span className={`text-[11px] font-black px-2.5 py-1 rounded-full ${diff?.color ?? 'bg-gray-100 text-gray-500'}`}>
-                    {diff?.label}
-                  </span>
-                </div>
-
-                {/* Title + desc */}
-                <h3 className="font-black text-gray-900 text-sm mb-1.5">{ex.titleAr}</h3>
-                <p className="text-gray-500 text-xs line-clamp-2 mb-4 leading-relaxed">{ex.descriptionAr}</p>
-
-                {/* Stats */}
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="flex items-center gap-1 bg-white/70 rounded-xl px-2.5 py-1">
-                    <Clock className="w-3 h-3 text-gray-400" />
-                    <span className="text-xs font-black text-gray-700 ltr-num">{ex.durationMinutes}</span>
-                    <span className="text-[10px] text-gray-400">د</span>
-                  </div>
-                  <div className="flex items-center gap-1 bg-white/70 rounded-xl px-2.5 py-1">
-                    <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
-                    <span className="text-xs font-black text-gray-700 ltr-num">{ex.points}</span>
-                  </div>
-                </div>
-
-                {/* Tags */}
-                <div className="flex flex-wrap gap-1">
-                  {ex.ageGroups?.map(a => (
-                    <span key={a} className="bg-white/80 text-gray-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-white">
-                      {a}س
+                  {/* Category icon + difficulty */}
+                  <div className="flex items-start justify-between mb-4">
+                    <div className={`w-11 h-11 ${cat?.bg ?? 'bg-gray-500'} rounded-2xl flex items-center justify-center shadow-lg ${cat?.glow ?? ''} flex-shrink-0`}>
+                      <CatIcon className="w-5 h-5 text-white" />
+                    </div>
+                    <span className={`text-[11px] font-black px-2.5 py-1 rounded-full ${diff?.color ?? 'bg-gray-100 text-gray-500'}`}>
+                      {diff?.label}
                     </span>
-                  ))}
-                  {ex.diagnoses?.map(d => (
-                    <span key={d} className="bg-gray-800/10 text-gray-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                      {d}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )
-          })}
-        </div>
+                  </div>
+
+                  {/* Title + desc */}
+                  <h3 className="font-black text-gray-900 text-sm mb-1.5">{ex.titleAr}</h3>
+                  <p className="text-gray-500 text-xs line-clamp-2 mb-4 leading-relaxed">{ex.descriptionAr}</p>
+
+                  {/* Stats */}
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="flex items-center gap-1 bg-white/70 rounded-xl px-2.5 py-1">
+                      <Clock className="w-3 h-3 text-gray-400" />
+                      <span className="text-xs font-black text-gray-700 ltr-num">{ex.durationMinutes}</span>
+                      <span className="text-[10px] text-gray-400">د</span>
+                    </div>
+                    <div className="flex items-center gap-1 bg-white/70 rounded-xl px-2.5 py-1">
+                      <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
+                      <span className="text-xs font-black text-gray-700 ltr-num">{ex.points}</span>
+                    </div>
+                  </div>
+
+                  {/* Tags */}
+                  <div className="flex flex-wrap gap-1">
+                    {ex.ageGroups?.map(a => (
+                      <span key={a} className="bg-white/80 text-gray-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-white">
+                        {a}س
+                      </span>
+                    ))}
+                    {ex.diagnoses?.map(d => (
+                      <span key={d} className="bg-gray-800/10 text-gray-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                        {d}
+                      </span>
+                    ))}
+                  </div>
+                </motion.div>
+              )
+            })}
+          </AnimatePresence>
+        </motion.div>
       )}
 
       {/* ── Detail View Modal ── */}
-      {viewEx && !editEx && (() => {
+      <AnimatePresence>
+        {viewEx && !editEx && (() => {
         const cat   = CATEGORY_CONFIG[viewEx.category]
         const diff  = DIFFICULTY_CONFIG[viewEx.difficulty]
         const CatIcon = cat?.icon ?? Dumbbell
         const steps = viewEx.instructionsAr ?? viewEx.instructions ?? []
         const equip = (viewEx.equipment ?? []).filter(e => e && e !== 'none')
         return (
-          <div
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18 }}
             className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-start justify-center p-4 overflow-y-auto"
             onClick={() => setViewEx(null)}
           >
-            <div
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 12 }}
+              transition={{ type: 'spring', stiffness: 360, damping: 30 }}
               className="bg-white rounded-3xl w-full max-w-lg my-8 shadow-2xl overflow-hidden"
               onClick={e => e.stopPropagation()}
             >
@@ -457,15 +472,26 @@ export default function ExercisesPage() {
                   <Edit2 className="w-4 h-4" /> تعديل
                 </button>
               </div>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         )
       })()}
+      </AnimatePresence>
 
       {/* ── Edit Modal ── */}
-      {editEx && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-start justify-center p-4 overflow-y-auto" onClick={() => setEditEx(null)}>
-          <div
+      <AnimatePresence>
+        {editEx && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.18 }}
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-start justify-center p-4 overflow-y-auto" onClick={() => setEditEx(null)}>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 12 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 12 }}
+            transition={{ type: 'spring', stiffness: 360, damping: 30 }}
             className="bg-white rounded-3xl w-full max-w-xl my-8 shadow-2xl"
             onClick={e => e.stopPropagation()}
           >
@@ -618,9 +644,10 @@ export default function ExercisesPage() {
                 </button>
               </div>
             </div>
-          </div>
-        </div>
-      )}
-    </div>
+          </motion.div>
+        </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   )
 }

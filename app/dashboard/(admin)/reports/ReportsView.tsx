@@ -1,8 +1,11 @@
 'use client'
+import { motion } from 'framer-motion'
 import { FileText, TrendingUp, Brain, Plus, AlertCircle, Star, User } from 'lucide-react'
 import Link from 'next/link'
 import { useLang, tr, type Lang } from '@/lib/i18n'
 import type { ProgressReport, Student } from '@/lib/types'
+import { staggerContainer, fadeUp, popIn, liftHover } from '@/lib/motion'
+import { ACountUp } from '@/components/ui'
 
 function localeFor(lang: Lang) {
   return lang === 'en' ? 'en-US' : lang === 'fr' ? 'fr-FR' : 'ar'
@@ -30,7 +33,12 @@ function ScoreBar({ score, label }: { score: number; label: string }) {
         <span className="font-black text-gray-800 ltr-num">{score}/5</span>
       </div>
       <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-        <div className={`h-full rounded-full transition-all ${color}`} style={{ width: `${pct}%` }} />
+        <motion.div
+          className={`h-full rounded-full ${color}`}
+          initial={{ width: 0 }}
+          animate={{ width: `${pct}%` }}
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+        />
       </div>
     </div>
   )
@@ -50,10 +58,10 @@ export default function ReportsView({ allReports, error }: {
   const uniqueStudents = new Set(allReports.map(r => r.student.id)).size
 
   return (
-    <div className="space-y-6">
+    <motion.div className="space-y-6" variants={staggerContainer} initial="hidden" animate="show">
 
       {/* ── Header ── */}
-      <div className="flex items-start justify-between gap-4">
+      <motion.div variants={fadeUp} className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-black text-gray-900 flex items-center gap-2">
             <FileText className="w-6 h-6 text-brand-500" />
@@ -61,42 +69,44 @@ export default function ReportsView({ allReports, error }: {
           </h1>
           <p className="text-gray-400 text-sm mt-1">{t.pageSubtitle}</p>
         </div>
-        <Link
-          href="/dashboard/reports/new"
-          className="flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm shadow-brand-500/20"
-        >
-          <Plus className="w-4 h-4" />
-          {t.newReportButton}
-        </Link>
-      </div>
+        <motion.div {...liftHover}>
+          <Link
+            href="/dashboard/reports/new"
+            className="flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm shadow-brand-500/20"
+          >
+            <Plus className="w-4 h-4" />
+            {t.newReportButton}
+          </Link>
+        </motion.div>
+      </motion.div>
 
       {error && (
-        <div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-2xl p-4">
+        <motion.div variants={fadeUp} className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-2xl p-4">
           <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
           <p className="text-red-700 text-sm font-medium">{adminT.dbConnectionError}</p>
-        </div>
+        </motion.div>
       )}
 
       {/* ── Stats Strip ── */}
-      <div className="grid grid-cols-3 gap-3">
+      <motion.div variants={staggerContainer} className="grid grid-cols-3 gap-3">
         {[
           { label: t.statTotalReports,         value: allReports.length,                                         bg: 'bg-brand-600',   glow: 'shadow-brand-500/20',   icon: FileText },
           { label: t.statMonthlyReports,        value: allReports.filter(r => r.report.type === 'monthly').length, bg: 'bg-emerald-600', glow: 'shadow-emerald-500/20', icon: TrendingUp },
           { label: t.statChildrenWithReports, value: uniqueStudents,                                             bg: 'bg-violet-600',  glow: 'shadow-violet-500/20',  icon: Brain },
         ].map(({ label, value, bg, glow, icon: Icon }) => (
-          <div key={label} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+          <motion.div key={label} variants={popIn} {...liftHover} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
             <div className={`w-10 h-10 ${bg} rounded-xl flex items-center justify-center shadow-lg ${glow} mb-3`}>
               <Icon className="w-5 h-5 text-white" />
             </div>
-            <div className="text-3xl font-black text-gray-900 ltr-num">{value}</div>
+            <div className="text-3xl font-black text-gray-900 ltr-num"><ACountUp value={value} /></div>
             <div className="text-gray-400 text-xs mt-0.5 font-medium">{label}</div>
-          </div>
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
 
       {/* ── Reports ── */}
       {allReports.length === 0 && !error ? (
-        <div className="bg-white rounded-3xl border border-gray-100 py-24 text-center shadow-sm">
+        <motion.div variants={fadeUp} className="bg-white rounded-3xl border border-gray-100 py-24 text-center shadow-sm">
           <div className="text-6xl mb-4">📊</div>
           <p className="text-gray-900 font-black text-lg">{t.emptyTitle}</p>
           <p className="text-gray-400 text-sm mt-1 mb-6 max-w-sm mx-auto">
@@ -107,9 +117,9 @@ export default function ReportsView({ allReports, error }: {
             <Plus className="w-4 h-4" />
             {t.createFirstReportButton}
           </Link>
-        </div>
+        </motion.div>
       ) : (
-        <div className="space-y-4">
+        <motion.div variants={staggerContainer} className="space-y-4">
           {allReports.map(({ report, student, parentName, parentIdx }) => {
             const completionPct = report.totalExercises > 0
               ? Math.round((report.completedExercises / report.totalExercises) * 100)
@@ -121,7 +131,12 @@ export default function ReportsView({ allReports, error }: {
             const barColor = completionPct >= 80 ? 'bg-emerald-500' : completionPct >= 50 ? 'bg-amber-400' : 'bg-red-400'
 
             return (
-              <div key={report.id} className="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-lg hover:border-brand-200 transition-all">
+              <motion.div
+                key={report.id}
+                variants={fadeUp}
+                {...liftHover}
+                className="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm hover:border-brand-200 transition-colors"
+              >
 
                 {/* Report header */}
                 <div className="px-6 py-4 border-b border-gray-50 flex items-center justify-between flex-wrap gap-3">
@@ -152,15 +167,20 @@ export default function ReportsView({ allReports, error }: {
                   <div className="bg-gray-50 rounded-2xl p-4">
                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">{t.completedExercisesLabel}</p>
                     <div className="flex items-end gap-2 mb-3">
-                      <span className="text-4xl font-black text-gray-900 ltr-num">{completionPct}%</span>
+                      <span className="text-4xl font-black text-gray-900 ltr-num"><ACountUp value={completionPct} suffix="%" /></span>
                       <span className="text-gray-400 text-sm mb-1 ltr-num">{report.completedExercises}/{report.totalExercises}</span>
                     </div>
                     <div className="h-2.5 bg-gray-200 rounded-full overflow-hidden mb-3">
-                      <div className={`h-full rounded-full ${barColor} transition-all`} style={{ width: `${completionPct}%` }} />
+                      <motion.div
+                        className={`h-full rounded-full ${barColor}`}
+                        initial={{ width: 0 }}
+                        animate={{ width: `${completionPct}%` }}
+                        transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+                      />
                     </div>
                     <div className="flex items-center gap-1.5">
                       <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                      <span className="font-black text-gray-900 text-sm ltr-num">{report.pointsEarned}</span>
+                      <span className="font-black text-gray-900 text-sm ltr-num"><ACountUp value={report.pointsEarned} /></span>
                       <span className="text-gray-400 text-xs">{t.pointEarnedSuffix}</span>
                     </div>
                     {avgRating && (
@@ -204,11 +224,11 @@ export default function ReportsView({ allReports, error }: {
                   </div>
                 )}
 
-              </div>
+              </motion.div>
             )
           })}
-        </div>
+        </motion.div>
       )}
-    </div>
+    </motion.div>
   )
 }

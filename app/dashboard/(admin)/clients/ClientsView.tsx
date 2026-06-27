@@ -1,8 +1,13 @@
 'use client'
 import { Users, CheckCircle, Clock, XCircle, AlertCircle, Phone, Mail, MapPin, UserPlus, ChevronLeft, AlertTriangle } from 'lucide-react'
 import Link from 'next/link'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useLang, tr, type Lang } from '@/lib/i18n'
 import type { getAllParents } from '@/lib/db'
+import { ACountUp } from '@/components/ui'
+import { staggerContainer, fadeUp, popIn, liftHover } from '@/lib/motion'
+
+const MotionLink = motion(Link)
 
 function localeFor(lang: Lang) {
   return lang === 'en' ? 'en-US' : lang === 'fr' ? 'fr-FR' : 'ar'
@@ -45,10 +50,10 @@ export default function ClientsView({ parents, error }: {
   const sortedParents  = [...parents].reverse()
 
   return (
-    <div className="space-y-6">
+    <motion.div className="space-y-6" variants={staggerContainer} initial="hidden" animate="show">
 
       {/* ── Page Header ── */}
-      <div className="flex items-start justify-between gap-4">
+      <motion.div className="flex items-start justify-between gap-4" variants={fadeUp}>
         <div>
           <h1 className="text-2xl font-black text-gray-900 flex items-center gap-2">
             <Users className="w-6 h-6 text-brand-500" />
@@ -63,36 +68,36 @@ export default function ClientsView({ parents, error }: {
           <UserPlus className="w-4 h-4" />
           {t.addClientButton}
         </Link>
-      </div>
+      </motion.div>
 
       {error && (
-        <div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-2xl p-4">
+        <motion.div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-2xl p-4" variants={fadeUp}>
           <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
           <p className="text-red-700 text-sm font-medium">{adminT.dbConnectionError}</p>
-        </div>
+        </motion.div>
       )}
 
       {/* ── Stats Strip ── */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <motion.div className="grid grid-cols-2 md:grid-cols-4 gap-3" variants={staggerContainer}>
         {[
           { label: t.statsTotal,    value: parents.length, icon: Users,        bg: 'bg-brand-600',  glow: 'shadow-brand-500/20' },
           { label: t.statsActive,   value: activeCount,    icon: CheckCircle,  bg: 'bg-emerald-600',glow: 'shadow-emerald-500/20' },
           { label: t.statsPending,  value: pendingCount,   icon: Clock,        bg: 'bg-amber-500',  glow: 'shadow-amber-500/20' },
           { label: t.statsInactive, value: inactiveCount,  icon: XCircle,      bg: 'bg-gray-500',   glow: 'shadow-gray-500/20' },
         ].map(({ label, value, icon: Icon, bg, glow }) => (
-          <div key={label} className={`bg-white rounded-2xl p-4 border border-gray-100 shadow-sm hover:shadow-md transition-shadow`}>
+          <motion.div key={label} className={`bg-white rounded-2xl p-4 border border-gray-100 shadow-sm hover:shadow-md transition-shadow`} variants={popIn}>
             <div className={`w-10 h-10 ${bg} rounded-xl flex items-center justify-center shadow-lg ${glow} mb-3`}>
               <Icon className="w-5 h-5 text-white" />
             </div>
-            <div className="text-3xl font-black text-gray-900 ltr-num">{value}</div>
+            <div className="text-3xl font-black text-gray-900"><ACountUp value={value} /></div>
             <div className="text-gray-400 text-xs mt-0.5 font-medium">{label}</div>
-          </div>
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
 
       {/* ── Client Cards ── */}
       {sortedParents.length === 0 && !error ? (
-        <div className="bg-white rounded-3xl border border-gray-100 py-24 text-center shadow-sm">
+        <motion.div className="bg-white rounded-3xl border border-gray-100 py-24 text-center shadow-sm" variants={fadeUp}>
           <div className="text-6xl mb-4">👥</div>
           <p className="text-gray-900 font-black text-lg">{t.emptyTitle}</p>
           <p className="text-gray-400 text-sm mt-1 mb-6">{t.emptySubtitle}</p>
@@ -101,9 +106,10 @@ export default function ClientsView({ parents, error }: {
             <UserPlus className="w-4 h-4" />
             {t.addClientNowButton}
           </Link>
-        </div>
+        </motion.div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <motion.div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" variants={staggerContainer}>
+          <AnimatePresence initial={false}>
           {sortedParents.map((parent, idx) => {
             const status = STATUS[parent.subscriptionStatus] ?? { label: parent.subscriptionStatus, dot: 'bg-gray-400', badge: 'bg-gray-100 text-gray-600 ring-1 ring-gray-200' }
             const gradient = AVATAR_COLORS[idx % AVATAR_COLORS.length]
@@ -116,10 +122,12 @@ export default function ClientsView({ parents, error }: {
               : false
 
             return (
-              <Link
+              <MotionLink
                 key={parent.id}
                 href={`/dashboard/clients/${parent.id}`}
-                className="group bg-white rounded-3xl border border-gray-100 p-5 shadow-sm hover:shadow-xl hover:border-brand-200 hover:-translate-y-0.5 transition-all duration-200"
+                variants={fadeUp}
+                {...liftHover}
+                className="group bg-white rounded-3xl border border-gray-100 p-5 shadow-sm hover:shadow-xl hover:border-brand-200 transition-all duration-200"
               >
                 {/* Top row */}
                 <div className="flex items-start justify-between mb-4">
@@ -195,12 +203,13 @@ export default function ClientsView({ parents, error }: {
                     <ChevronLeft className="w-4 h-4 text-gray-300 group-hover:text-brand-500 transition-colors" />
                   </div>
                 </div>
-              </Link>
+              </MotionLink>
             )
           })}
-        </div>
+          </AnimatePresence>
+        </motion.div>
       )}
 
-    </div>
+    </motion.div>
   )
 }

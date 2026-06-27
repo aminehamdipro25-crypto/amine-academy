@@ -1,10 +1,12 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   UserCog, Plus, X, Trash2, KeyRound, CheckCircle, AlertCircle,
   RefreshCw, Eye, EyeOff, Power, Mail, Calendar,
 } from 'lucide-react'
+import { staggerContainer, fadeUp, popIn, liftHover } from '@/lib/motion'
 
 interface StaffMember {
   id: string
@@ -124,9 +126,9 @@ export default function StaffManagementPage() {
   }
 
   return (
-    <div className="space-y-6" dir="rtl">
+    <motion.div className="space-y-6" dir="rtl" variants={staggerContainer} initial="hidden" animate="show">
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
+      <motion.div variants={fadeUp} className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-black text-gray-900 flex items-center gap-2">
             <UserCog className="w-6 h-6 text-brand-500" />
@@ -134,25 +136,33 @@ export default function StaffManagementPage() {
           </h1>
           <p className="text-gray-500 text-sm mt-1">إدارة حسابات المعالجين — صلاحيات محدودة، لا يمكنهم حذف العملاء أو الوصول للمدفوعات والإعدادات</p>
         </div>
-        <button
+        <motion.button
+          {...liftHover}
           onClick={() => { setShowCreate(true); setCreateError('') }}
           className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand-600 text-white text-sm font-bold hover:bg-brand-700 transition-colors"
         >
           <Plus className="w-4 h-4" />
           إضافة معالج
-        </button>
-      </div>
+        </motion.button>
+      </motion.div>
 
       {error && (
-        <div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-2xl p-4">
+        <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-2xl p-4">
           <AlertCircle className="w-5 h-5 text-red-500" />
           <p className="text-red-800 text-sm font-medium">{error}</p>
-        </div>
+        </motion.div>
       )}
 
       {/* Create form */}
-      {showCreate && (
-        <div className="bg-white rounded-2xl border border-gray-100 p-6">
+      <AnimatePresence>
+        {showCreate && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+            className="bg-white rounded-2xl border border-gray-100 p-6"
+          >
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-black text-gray-900 text-lg">حساب معالج جديد</h2>
             <button onClick={() => setShowCreate(false)} className="text-gray-400 hover:text-gray-600">
@@ -207,11 +217,12 @@ export default function StaffManagementPage() {
               </button>
             </div>
           </form>
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Staff list */}
-      <div className="bg-white rounded-2xl border border-gray-100">
+      <motion.div variants={fadeUp} className="bg-white rounded-2xl border border-gray-100">
         {loading ? (
           <div className="p-6 space-y-3 animate-pulse">
             {[1, 2, 3].map(i => <div key={i} className="h-16 bg-gray-100 rounded-xl" />)}
@@ -222,9 +233,10 @@ export default function StaffManagementPage() {
             <p className="text-sm font-medium">لا يوجد فريق عمل بعد — أضف أول معالج للبدء</p>
           </div>
         ) : (
-          <div className="divide-y divide-gray-100">
+          <motion.div className="divide-y divide-gray-100" variants={staggerContainer} initial="hidden" animate="show">
+            <AnimatePresence initial={false}>
             {staff.map(member => (
-              <div key={member.id} className="p-5">
+              <motion.div key={member.id} variants={popIn} exit={{ opacity: 0, scale: 0.95 }} {...liftHover} className="p-5">
                 <div className="flex items-center justify-between flex-wrap gap-3">
                   <div className="flex items-center gap-3 min-w-0">
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white font-black text-sm flex-shrink-0 ${member.isActive ? 'bg-gradient-to-br from-brand-400 to-brand-700' : 'bg-gray-300'}`}>
@@ -289,37 +301,48 @@ export default function StaffManagementPage() {
                   </div>
                 </div>
 
-                {pwdEditId === member.id && (
-                  <div className="mt-4 bg-gray-50 rounded-xl p-4 flex flex-wrap items-end gap-3">
-                    <div className="flex-1 min-w-[200px]">
-                      <label className="block text-xs font-bold text-gray-600 mb-1.5">كلمة مرور جديدة</label>
-                      <div className="relative">
-                        <input
-                          type={showNewPwd ? 'text' : 'password'} value={newPwd} onChange={e => setNewPwd(e.target.value)}
-                          placeholder="8 أحرف على الأقل" dir="ltr"
-                          className="w-full border border-gray-200 rounded-xl px-4 py-2 pl-10 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-400"
-                        />
-                        <button type="button" onClick={() => setShowNewPwd(s => !s)} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                          {showNewPwd ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </button>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => handlePasswordReset(member.id)}
-                      disabled={pwdSaving}
-                      className="flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-600 text-white text-sm font-bold hover:bg-brand-700 transition-colors disabled:opacity-60"
+                <AnimatePresence>
+                  {pwdEditId === member.id && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                      className="overflow-hidden"
                     >
-                      {pwdSaving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
-                      حفظ
-                    </button>
-                    {pwdError && <p className="text-red-600 text-xs font-medium w-full">{pwdError}</p>}
-                  </div>
-                )}
-              </div>
+                    <div className="mt-4 bg-gray-50 rounded-xl p-4 flex flex-wrap items-end gap-3">
+                      <div className="flex-1 min-w-[200px]">
+                        <label className="block text-xs font-bold text-gray-600 mb-1.5">كلمة مرور جديدة</label>
+                        <div className="relative">
+                          <input
+                            type={showNewPwd ? 'text' : 'password'} value={newPwd} onChange={e => setNewPwd(e.target.value)}
+                            placeholder="8 أحرف على الأقل" dir="ltr"
+                            className="w-full border border-gray-200 rounded-xl px-4 py-2 pl-10 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-400"
+                          />
+                          <button type="button" onClick={() => setShowNewPwd(s => !s)} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                            {showNewPwd ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handlePasswordReset(member.id)}
+                        disabled={pwdSaving}
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-600 text-white text-sm font-bold hover:bg-brand-700 transition-colors disabled:opacity-60"
+                      >
+                        {pwdSaving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+                        حفظ
+                      </button>
+                      {pwdError && <p className="text-red-600 text-xs font-medium w-full">{pwdError}</p>}
+                    </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
             ))}
-          </div>
+            </AnimatePresence>
+          </motion.div>
         )}
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   )
 }

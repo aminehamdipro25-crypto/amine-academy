@@ -1,5 +1,6 @@
 'use client'
 import { useState, useMemo, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useLang, tr, type Lang } from '@/lib/i18n'
 import type { AssessmentResult, Exercise, Program, WeeklySchedule, AgeGroup, Diagnosis } from '@/lib/types'
 import { getRecommendedCategories, findMatchingExercises } from '@/lib/domain-exercise-map'
@@ -13,6 +14,8 @@ import AttentionDomainsScale from '@/components/session/assessments/AttentionDom
 import LearningDifficultiesScale from '@/components/session/assessments/LearningDifficultiesScale'
 import AutismScale from '@/components/session/assessments/AutismScale'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { ACountUp } from '@/components/ui'
+import { staggerContainer, fadeUp, popIn, liftHover, tapOnly } from '@/lib/motion'
 
 type ConcernKey = 'autism' | 'adhd' | 'attention' | 'learning'
 type ScaleKey = 'autism' | 'adhd' | 'attention-domains' | 'learning-difficulties'
@@ -607,10 +610,10 @@ export default function SpecialistToolkitPage() {
   const today = new Date().toLocaleDateString(localeFor(lang), { year: 'numeric', month: 'long', day: 'numeric' })
 
   return (
-    <div className="max-w-3xl space-y-6">
+    <motion.div className="max-w-3xl space-y-6" variants={staggerContainer} initial="hidden" animate="show">
 
       {/* Header — hidden when printing the report */}
-      <div className="print:hidden">
+      <motion.div variants={fadeUp} className="print:hidden">
         <div className="flex items-center gap-3 mb-1">
           <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-teal-400 to-teal-700 flex items-center justify-center shadow-lg flex-shrink-0">
             <PersonStanding className="w-5 h-5 text-white" />
@@ -625,9 +628,10 @@ export default function SpecialistToolkitPage() {
         <div className="flex items-center gap-2 mt-5 text-xs font-bold">
           {(['info', 'battery', 'running', 'report'] as Step[]).map((s, i) => (
             <div key={s} className="flex items-center gap-2">
-              <span className={`w-6 h-6 rounded-full flex items-center justify-center ltr-num ${
+              <motion.span layout transition={{ type: 'spring', stiffness: 400, damping: 32 }}
+                className={`w-6 h-6 rounded-full flex items-center justify-center ltr-num ${
                 step === s ? 'bg-teal-600 text-white' : 'bg-gray-100 text-gray-400'
-              }`}>{i + 1}</span>
+              }`}>{i + 1}</motion.span>
               <span className={step === s ? 'text-teal-700' : 'text-gray-400'}>{t.steps[s]}</span>
               {i < 3 && <span className="w-4 h-px bg-gray-200 mx-1" />}
             </div>
@@ -640,10 +644,10 @@ export default function SpecialistToolkitPage() {
             {t.autosavedLabel(new Date(lastSavedAt).toLocaleTimeString(localeFor(lang), { hour: '2-digit', minute: '2-digit' }))}
           </p>
         )}
-      </div>
+      </motion.div>
 
       {pendingDraft && (
-        <div className="print:hidden bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3">
+        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="print:hidden bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3">
           <Save className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0">
             <p className="font-black text-amber-900 text-sm">{t.draftFoundTitle}</p>
@@ -659,28 +663,31 @@ export default function SpecialistToolkitPage() {
               </button>
             </div>
           </div>
-        </div>
+        </motion.div>
       )}
 
       {error && (
-        <div className="print:hidden bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-red-700 text-sm font-bold">{error}</div>
+        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="print:hidden bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-red-700 text-sm font-bold">{error}</motion.div>
       )}
 
+      <AnimatePresence mode="wait">
       {/* ── Step 1: child info ── */}
       {step === 'info' && (
-        <div className="bg-white rounded-2xl border border-gray-100 p-6 space-y-5">
+        <motion.div key="info" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+          className="bg-white rounded-2xl border border-gray-100 p-6 space-y-5">
           <h2 className="font-black text-gray-900">{t.childInfoTitle}</h2>
 
           <div>
             <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.linkChildLabel}</label>
             {isLinkedStudentId(studentId) ? (
-              <div className="flex items-center justify-between gap-3 bg-teal-50 border border-teal-100 rounded-xl px-3.5 py-2.5">
+              <motion.div initial={{ opacity: 0, scale: 0.92 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+                className="flex items-center justify-between gap-3 bg-teal-50 border border-teal-100 rounded-xl px-3.5 py-2.5">
                 <p className="text-sm font-bold text-teal-700">{t.linkChildLinkedBadge(name)}</p>
                 <button type="button" onClick={unlinkChild}
                   className="text-xs font-bold text-gray-500 hover:text-gray-700 flex-shrink-0 transition-colors">
                   {t.unlinkChildButton}
                 </button>
-              </div>
+              </motion.div>
             ) : (
               <div className="relative">
                 <input value={childQuery}
@@ -690,21 +697,28 @@ export default function SpecialistToolkitPage() {
                   placeholder={t.linkChildSearchPlaceholder}
                   role="combobox" aria-expanded={childPickerOpen && !!childQuery.trim()} aria-controls="child-picker-listbox" aria-autocomplete="list"
                   className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-brand-300 focus:outline-none" />
+                <AnimatePresence>
                 {childPickerOpen && childQuery.trim() && (
-                  <div id="child-picker-listbox" role="listbox" aria-label={t.linkChildLabel}
+                  <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.15 }}
+                    id="child-picker-listbox" role="listbox" aria-label={t.linkChildLabel}
                     className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg max-h-56 overflow-y-auto">
                     {childMatches.length === 0 ? (
                       <p className="px-3.5 py-2.5 text-xs text-gray-400">{t.linkChildNoResults}</p>
-                    ) : childMatches.map(({ student, parent }) => (
-                      <button key={student.id} type="button" role="option" aria-selected={false}
-                        onMouseDown={() => linkChild(student, parent)}
-                        className="w-full text-right px-3.5 py-2.5 hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0">
-                        <p className="text-sm font-bold text-gray-800">{student.firstName} {student.lastName}</p>
-                        <p className="text-xs text-gray-400 mt-0.5">{parent.firstName} {parent.lastName}</p>
-                      </button>
-                    ))}
-                  </div>
+                    ) : (
+                      <motion.div variants={staggerContainer} initial="hidden" animate="show">
+                        {childMatches.map(({ student, parent }) => (
+                          <motion.button key={student.id} variants={fadeUp} type="button" role="option" aria-selected={false}
+                            onMouseDown={() => linkChild(student, parent)}
+                            className="w-full text-right px-3.5 py-2.5 hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0">
+                            <p className="text-sm font-bold text-gray-800">{student.firstName} {student.lastName}</p>
+                            <p className="text-xs text-gray-400 mt-0.5">{parent.firstName} {parent.lastName}</p>
+                          </motion.button>
+                        ))}
+                      </motion.div>
+                    )}
+                  </motion.div>
                 )}
+                </AnimatePresence>
               </div>
             )}
             {clientsLoadError && (
@@ -728,9 +742,9 @@ export default function SpecialistToolkitPage() {
               ) : pastAssessments.length === 0 ? (
                 <p className="text-xs text-gray-400">{t.pastAssessmentsEmpty}</p>
               ) : (
-                <ul className="space-y-1.5">
+                <motion.ul className="space-y-1.5" variants={staggerContainer} initial="hidden" animate="show">
                   {pastAssessments.map(r => (
-                    <li key={r.id} className="text-xs">
+                    <motion.li key={r.id} variants={fadeUp} className="text-xs">
                       <div className="flex items-center justify-between gap-2">
                         <span className="font-bold text-gray-700 flex-1">{t.scaleNames[r.type as ScaleKey] ?? r.type}</span>
                         <span className="text-gray-400 ltr-num flex-shrink-0">{new Date(r.completedAt).toLocaleDateString(localeFor(lang))}</span>
@@ -739,9 +753,9 @@ export default function SpecialistToolkitPage() {
                       {r.clinicalNotes && (
                         <p className="text-gray-400 mt-0.5 truncate" title={r.clinicalNotes}>{r.clinicalNotes}</p>
                       )}
-                    </li>
+                    </motion.li>
                   ))}
-                </ul>
+                </motion.ul>
               )}
             </div>
           )}
@@ -782,9 +796,9 @@ export default function SpecialistToolkitPage() {
 
           <div>
             <label className="block text-xs font-bold text-gray-500 mb-2">{t.concernsLabel}</label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <motion.div className="grid grid-cols-1 sm:grid-cols-2 gap-3" variants={staggerContainer} initial="hidden" animate="show">
               {(['autism', 'adhd', 'attention', 'learning'] as ConcernKey[]).map(c => (
-                <button key={c} type="button" onClick={() => toggleConcern(c)}
+                <motion.button key={c} variants={popIn} {...liftHover} type="button" onClick={() => toggleConcern(c)}
                   className={`text-right p-3.5 rounded-xl border-2 transition-all ${
                     concerns.has(c) ? 'border-teal-400 bg-teal-50' : 'border-gray-200 bg-gray-50 hover:border-gray-300'
                   }`}>
@@ -795,9 +809,9 @@ export default function SpecialistToolkitPage() {
                     <span className="font-bold text-sm text-gray-900">{t.concernsOptions[c].label}</span>
                   </div>
                   <p className="text-xs text-gray-500 mt-1 mr-6">{t.concernsOptions[c].desc}</p>
-                </button>
+                </motion.button>
               ))}
-            </div>
+            </motion.div>
           </div>
 
           <button onClick={goToBattery}
@@ -805,12 +819,13 @@ export default function SpecialistToolkitPage() {
             {t.continueButton}
             <ArrowLeft className="w-4 h-4" />
           </button>
-        </div>
+        </motion.div>
       )}
 
       {/* ── Step 2: battery selection ── */}
       {step === 'battery' && (
-        <div className="bg-white rounded-2xl border border-gray-100 p-6 space-y-5">
+        <motion.div key="battery" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+          className="bg-white rounded-2xl border border-gray-100 p-6 space-y-5">
           <div>
             <h2 className="font-black text-gray-900">{t.batteryTitle}</h2>
             <p className="text-gray-500 text-sm mt-1">{t.batterySubtitle}</p>
@@ -851,10 +866,10 @@ export default function SpecialistToolkitPage() {
             )}
           </div>
 
-          <div className="space-y-2.5">
+          <motion.div className="space-y-2.5" variants={staggerContainer} initial="hidden" animate="show">
             {SCALE_ORDER.map(s => (
-              <div key={s}>
-                <button type="button" onClick={() => toggleScale(s)}
+              <motion.div key={s} variants={popIn}>
+                <motion.button {...liftHover} type="button" onClick={() => toggleScale(s)}
                   className={`w-full text-right flex items-center gap-3 p-4 rounded-xl border-2 transition-all ${
                     selectedScales.has(s) ? 'border-teal-400 bg-teal-50' : 'border-gray-200 bg-gray-50 hover:border-gray-300'
                   }`}>
@@ -863,16 +878,16 @@ export default function SpecialistToolkitPage() {
                     : <span className="w-5 h-5 rounded-full border-2 border-gray-300 flex-shrink-0" />}
                   <span className="flex-1 font-bold text-sm text-gray-900">{t.scaleNames[s]}</span>
                   <span className="text-xs text-gray-400 ltr-num">~{SCALE_DURATION[s]} {t.minuteUnit}</span>
-                </button>
+                </motion.button>
                 {recentDuplicateTypes.has(s) && (
                   <p className="flex items-center gap-1.5 text-[11px] font-bold text-amber-600 mt-1 mr-1">
                     <AlertTriangle className="w-3 h-3 flex-shrink-0" />
                     {t.duplicateRecentWarning}
                   </p>
                 )}
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
 
           <p className="text-sm font-bold text-gray-600 ltr-num">{t.estimatedDuration(totalMinutes)}</p>
 
@@ -888,7 +903,7 @@ export default function SpecialistToolkitPage() {
               {t.startButton}
             </button>
           </div>
-        </div>
+        </motion.div>
       )}
 
       {/* ── Step 3: running ── */}
@@ -896,7 +911,7 @@ export default function SpecialistToolkitPage() {
         const currentScaleKey = runOrder[currentIndex]
         const CurrentScale = SCALE_COMPONENT[currentScaleKey]
         return (
-          <div>
+          <motion.div key={`running-${currentIndex}`} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}>
             <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
               <p className="text-sm font-bold text-teal-700 ltr-num">
                 {t.progressLabel(currentIndex + 1, runOrder.length, t.scaleNames[currentScaleKey])}
@@ -960,13 +975,14 @@ export default function SpecialistToolkitPage() {
                 className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-brand-300 focus:outline-none resize-none"
               />
             </div>
-          </div>
+          </motion.div>
         )
       })()}
 
       {/* ── Step 4: report ── */}
       {step === 'report' && (
-        <div className="space-y-4">
+        <motion.div key="report" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+          className="space-y-4">
           {results.length === 0 ? (
             <div className="bg-white rounded-2xl border border-gray-100 p-8 text-center space-y-4">
               <ClipboardList className="w-10 h-10 text-gray-300 mx-auto" />
@@ -981,20 +997,21 @@ export default function SpecialistToolkitPage() {
               <div className="print:hidden flex gap-3">
                 <input value={therapistName} onChange={e => setTherapistName(e.target.value)} placeholder={t.therapistNamePlaceholder}
                   className="flex-1 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-brand-300 focus:outline-none" />
-                <button onClick={() => window.print()}
+                <motion.button {...tapOnly} onClick={() => window.print()}
                   className="flex items-center gap-2 bg-gray-900 text-white font-bold px-5 py-2.5 rounded-xl hover:bg-gray-800 transition-colors text-sm flex-shrink-0">
                   <Printer className="w-4 h-4" />
                   {t.printButton}
-                </button>
-                <button onClick={() => setConfirmReset(true)}
+                </motion.button>
+                <motion.button {...tapOnly} onClick={() => setConfirmReset(true)}
                   className="flex items-center gap-2 border border-gray-200 text-gray-600 font-bold px-5 py-2.5 rounded-xl hover:bg-gray-50 transition-colors text-sm flex-shrink-0">
                   <RotateCcw className="w-4 h-4" />
                   {t.newAssessmentButton}
-                </button>
+                </motion.button>
               </div>
 
               {isLinkedStudentId(studentId) ? (
-                <p className={`print:hidden flex items-center gap-1.5 text-xs font-bold ${
+                <motion.p key={saveStatus} initial={{ opacity: 0, scale: 0.92 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+                  className={`print:hidden flex items-center gap-1.5 text-xs font-bold ${
                   saveStatus === 'error' ? 'text-red-600' : saveStatus === 'saved' ? 'text-emerald-600' : 'text-gray-400'
                 }`}>
                   {saveStatus === 'error'
@@ -1009,7 +1026,7 @@ export default function SpecialistToolkitPage() {
                       {t.retryLabel}
                     </button>
                   )}
-                </p>
+                </motion.p>
               ) : (
                 <p className="print:hidden flex items-center gap-1.5 text-xs font-bold text-amber-600">
                   <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
@@ -1045,7 +1062,8 @@ export default function SpecialistToolkitPage() {
                   {programError && <p className="text-xs font-bold text-red-600">{programError}</p>}
 
                   {generatedProgram && (
-                    <div className="bg-gray-50 rounded-xl p-4 space-y-3">
+                    <motion.div initial={{ opacity: 0, scale: 0.92 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+                      className="bg-gray-50 rounded-xl p-4 space-y-3">
                       <p className="font-black text-gray-900 text-sm">{generatedProgram.title}</p>
                       {generatedProgram.rationale && (
                         <p className="text-xs text-gray-500 leading-relaxed">{generatedProgram.rationale}</p>
@@ -1080,7 +1098,7 @@ export default function SpecialistToolkitPage() {
                           {t.programUnlinkedPrintNotice}
                         </p>
                       )}
-                    </div>
+                    </motion.div>
                   )}
                 </div>
                 )
@@ -1150,10 +1168,12 @@ export default function SpecialistToolkitPage() {
                 </p>
 
                 {/* Per-assessment sections */}
-                {results.map(result => {
+                {results.map((result, resultIndex) => {
                   const ScaleIcon = SCALE_ICON[result.type as ScaleKey]
                   return (
-                  <div key={result.id} className="space-y-3 break-inside-avoid">
+                  <motion.div key={result.id} initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1], delay: resultIndex * 0.08 }}
+                    className="space-y-3 break-inside-avoid">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2.5">
                         <div className="w-8 h-8 rounded-xl bg-teal-50 flex items-center justify-center flex-shrink-0">
@@ -1180,10 +1200,11 @@ export default function SpecialistToolkitPage() {
                             <span className="text-gray-500 font-medium">
                               {(t.domainLabels as Record<string, string>)[domain] ?? domain}
                             </span>
-                            <span className="font-black text-gray-800 ltr-num">{score}%</span>
+                            <span className="font-black text-gray-800 ltr-num"><ACountUp value={score} suffix="%" /></span>
                           </div>
                           <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                            <div className={`h-full rounded-full ${SEVERITY_BAR[result.severity]}`} style={{ width: `${score}%` }} />
+                            <motion.div initial={{ width: 0 }} animate={{ width: `${score}%` }} transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+                              className={`h-full rounded-full ${SEVERITY_BAR[result.severity]}`} />
                           </div>
                         </div>
                       ))}
@@ -1244,13 +1265,14 @@ export default function SpecialistToolkitPage() {
                         </p>
                       </div>
                     )}
-                  </div>
+                  </motion.div>
                   )
                 })}
 
                 {/* Cross-domain red flags */}
                 {redFlags.length > 0 && (
-                  <div className="bg-red-50 border border-red-100 rounded-2xl p-5 space-y-2 break-inside-avoid print:rounded-none">
+                  <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                    className="bg-red-50 border border-red-100 rounded-2xl p-5 space-y-2 break-inside-avoid print:rounded-none">
                     <h3 className="font-black text-red-700 flex items-center gap-2">
                       <AlertTriangle className="w-4 h-4" />
                       {t.redFlagsTitle}
@@ -1263,23 +1285,25 @@ export default function SpecialistToolkitPage() {
                         </li>
                       ))}
                     </ul>
-                  </div>
+                  </motion.div>
                 )}
 
                 {/* Recommended session frequency */}
                 {recommendedFrequency && (
-                  <div className="bg-teal-50 border border-teal-100 rounded-2xl p-5 space-y-2 break-inside-avoid print:rounded-none">
+                  <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                    className="bg-teal-50 border border-teal-100 rounded-2xl p-5 space-y-2 break-inside-avoid print:rounded-none">
                     <h3 className="font-black text-teal-800 flex items-center gap-2">
                       <CalendarClock className="w-4 h-4" />
                       {t.frequencyPlanTitle}
                     </h3>
                     <p className="text-sm text-teal-700/90">{t.frequencyPlanOptions[recommendedFrequency]}</p>
-                  </div>
+                  </motion.div>
                 )}
 
                 {/* Action plan */}
                 {actionPlan.length > 0 && (
-                  <div className="bg-gray-50 rounded-2xl p-5 space-y-2 print:rounded-none">
+                  <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                    className="bg-gray-50 rounded-2xl p-5 space-y-2 print:rounded-none">
                     <h3 className="font-black text-gray-900 break-inside-avoid">{t.actionPlanTitle}</h3>
                     <ul className="text-sm text-gray-600 space-y-1.5">
                       {actionPlan.map((r, i) => (
@@ -1289,13 +1313,14 @@ export default function SpecialistToolkitPage() {
                         </li>
                       ))}
                     </ul>
-                  </div>
+                  </motion.div>
                 )}
 
                 {/* AI-generated weekly program — rendered here (not print:hidden) so an unlinked
                     walk-in's program survives in the PDF even though it has nowhere to be saved */}
                 {generatedProgram && (
-                  <div className="bg-purple-50 border border-purple-100 rounded-2xl p-5 space-y-3 break-inside-avoid print:rounded-none">
+                  <motion.div initial={{ opacity: 0, scale: 0.92 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+                    className="bg-purple-50 border border-purple-100 rounded-2xl p-5 space-y-3 break-inside-avoid print:rounded-none">
                     <h3 className="font-black text-purple-800 flex items-center gap-2">
                       <Wand2 className="w-4 h-4" />
                       {generatedProgram.title}
@@ -1318,7 +1343,7 @@ export default function SpecialistToolkitPage() {
                         </div>
                       ))}
                     </div>
-                  </div>
+                  </motion.div>
                 )}
 
                 {/* Footer signature + disclaimer (kept together so print pagination can't split or drop them) */}
@@ -1345,8 +1370,9 @@ export default function SpecialistToolkitPage() {
               </div>
             </>
           )}
-        </div>
+        </motion.div>
       )}
+      </AnimatePresence>
 
       <ConfirmDialog
         open={confirmReset}
@@ -1359,6 +1385,6 @@ export default function SpecialistToolkitPage() {
         onConfirm={() => { setConfirmReset(false); resetAll() }}
         onCancel={() => setConfirmReset(false)}
       />
-    </div>
+    </motion.div>
   )
 }

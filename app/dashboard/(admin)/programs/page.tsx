@@ -1,8 +1,11 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Calendar, Dumbbell, Save, ChevronDown, ChevronUp, Plus, X, Sparkles, Loader2 } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Calendar, Dumbbell, Save, ChevronDown, Plus, X, Sparkles, Loader2 } from 'lucide-react'
 import type { Parent, Student, Exercise } from '@/lib/types'
+import { staggerContainer, fadeUp, popIn, liftHover, tapOnly } from '@/lib/motion'
+import { ASegmentedPills, ACountUp } from '@/components/ui'
 
 interface ParentWithStudents extends Parent { students: Student[] }
 
@@ -143,17 +146,31 @@ export default function ProgramsPage() {
   )
 
   return (
-    <div className="space-y-6 max-w-4xl">
-      <div>
+    <motion.div className="space-y-6 max-w-4xl" variants={staggerContainer} initial="hidden" animate="show">
+      <motion.div variants={fadeUp}>
         <h1 className="text-2xl font-black text-gray-900">إنشاء برنامج أسبوعي</h1>
         <p className="text-gray-500 text-sm mt-1">خصص جدولاً أسبوعياً من التمارين لكل طفل</p>
-      </div>
+      </motion.div>
 
-      {error && <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-red-700 text-sm font-bold">{error}</div>}
-      {success && <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-green-700 text-sm font-bold">{success}</div>}
+      <AnimatePresence>
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
+            className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-red-700 text-sm font-bold">
+            {error}
+          </motion.div>
+        )}
+        {success && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
+            className="bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-green-700 text-sm font-bold">
+            {success}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Basic info */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-6 space-y-4">
+      <motion.div variants={fadeUp} className="bg-white rounded-2xl border border-gray-100 p-6 space-y-4">
         <h2 className="font-black text-gray-900">معلومات البرنامج</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
@@ -202,44 +219,48 @@ export default function ProgramsPage() {
               <p className="text-xs font-bold text-gray-700">توليد ذكي بالـ AI</p>
               <p className="text-xs text-gray-400 mt-0.5">يحلل Claude حالة الطفل ويختار التمارين المناسبة تلقائياً</p>
             </div>
-            <button
+            <motion.button
+              {...tapOnly}
+              whileHover={{ scale: 1.03 }}
               onClick={generateWithAI}
               disabled={!studentId || aiLoading}
               className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-brand-600 text-white font-black px-5 py-2.5 rounded-xl text-sm hover:opacity-90 disabled:opacity-40 transition-all shadow-md whitespace-nowrap">
               {aiLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
               {aiLoading ? 'جارٍ التوليد...' : 'توليد بالذكاء الاصطناعي'}
-            </button>
+            </motion.button>
           </div>
-          {aiRationale && (
-            <div className="mt-3 bg-purple-50 border border-purple-200 rounded-xl px-4 py-3 text-xs text-purple-800 font-medium">
-              🧠 {aiRationale}
-            </div>
-          )}
+          <AnimatePresence>
+            {aiRationale && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+                className="mt-3 bg-purple-50 border border-purple-200 rounded-xl px-4 py-3 text-xs text-purple-800 font-medium overflow-hidden">
+                🧠 {aiRationale}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
-      </div>
+      </motion.div>
 
       {/* Weekly schedule builder */}
-      <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+      <motion.div variants={fadeUp} className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-50 flex items-center justify-between">
           <h2 className="font-black text-gray-900 flex items-center gap-2">
             <Calendar className="w-4 h-4 text-brand-500" />
             الجدول الأسبوعي
           </h2>
           <span className="text-xs text-gray-500 bg-brand-50 text-brand-600 font-bold px-2 py-1 rounded-full ltr-num">
-            {totalAssigned} تمرين محدد
+            <ACountUp value={totalAssigned} /> تمرين محدد
           </span>
         </div>
 
         {/* Exercise category filter */}
-        <div className="px-6 py-3 border-b border-gray-50 flex gap-2 overflow-x-auto">
-          {cats.map(cat => (
-            <button key={cat} onClick={() => setFilterCat(cat)}
-              className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap transition-colors ${
-                filterCat === cat ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}>
-              {cat === 'all' ? 'الكل' : CAT_LABELS[cat] || cat}
-            </button>
-          ))}
+        <div className="px-6 py-3 border-b border-gray-50 overflow-x-auto">
+          <ASegmentedPills
+            groupId="programs-cat-filter"
+            value={filterCat}
+            onChange={setFilterCat}
+            options={cats.map(cat => ({ value: cat, label: cat === 'all' ? 'الكل' : CAT_LABELS[cat] || cat }))}
+          />
         </div>
 
         <div className="divide-y divide-gray-50">
@@ -256,7 +277,7 @@ export default function ProgramsPage() {
                     <span className="font-bold text-gray-900 text-sm">{DAYS_AR[day]}</span>
                     {dayExs.length > 0 && (
                       <span className="text-xs bg-brand-100 text-brand-700 font-black px-2 py-0.5 rounded-full ltr-num">
-                        {dayExs.length} تمارين
+                        <ACountUp value={dayExs.length} /> تمارين
                       </span>
                     )}
                   </div>
@@ -267,57 +288,80 @@ export default function ProgramsPage() {
                         مسح
                       </button>
                     )}
-                    {isExpanded ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+                    <motion.span animate={{ rotate: isExpanded ? 180 : 0 }} transition={{ duration: 0.25 }}>
+                      <ChevronDown className="w-4 h-4 text-gray-400" />
+                    </motion.span>
                   </div>
                 </button>
 
-                {isExpanded && (
-                  <div className="px-6 pb-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {filteredExercises.map(ex => {
-                        const isSelected = dayExs.includes(ex.id)
-                        return (
-                          <button
-                            key={ex.id}
-                            onClick={() => toggleExercise(day, ex.id)}
-                            className={`flex items-center gap-3 p-3 rounded-xl border-2 text-right transition-all ${
-                              isSelected ? 'border-brand-400 bg-brand-50' : 'border-gray-100 bg-gray-50 hover:border-gray-200'
-                            }`}
-                          >
-                            <div className={`w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 transition-all ${
-                              isSelected ? 'bg-brand-600' : 'bg-gray-200'
-                            }`}>
-                              {isSelected
-                                ? <X className="w-3 h-3 text-white" />
-                                : <Plus className="w-3 h-3 text-gray-500" />
-                              }
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="text-xs font-bold text-gray-900 truncate">{ex.titleAr || ex.title}</div>
-                              <div className="flex items-center gap-2 mt-0.5">
-                                <span className="text-[10px] text-gray-400 ltr-num">{ex.durationMinutes}د</span>
-                                <span className="text-[10px] text-amber-500">⭐ {ex.points}</span>
-                              </div>
-                            </div>
-                          </button>
-                        )
-                      })}
-                    </div>
-                  </div>
-                )}
+                <AnimatePresence initial={false}>
+                  {isExpanded && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                      className="overflow-hidden"
+                    >
+                      <div className="px-6 pb-4">
+                        <motion.div
+                          className="grid grid-cols-1 sm:grid-cols-2 gap-2"
+                          variants={staggerContainer}
+                          initial="hidden"
+                          animate="show"
+                        >
+                          {filteredExercises.map(ex => {
+                            const isSelected = dayExs.includes(ex.id)
+                            return (
+                              <motion.button
+                                key={ex.id}
+                                variants={popIn}
+                                {...liftHover}
+                                onClick={() => toggleExercise(day, ex.id)}
+                                className={`flex items-center gap-3 p-3 rounded-xl border-2 text-right transition-all ${
+                                  isSelected ? 'border-brand-400 bg-brand-50' : 'border-gray-100 bg-gray-50 hover:border-gray-200'
+                                }`}
+                              >
+                                <div className={`w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 transition-all ${
+                                  isSelected ? 'bg-brand-600' : 'bg-gray-200'
+                                }`}>
+                                  {isSelected
+                                    ? <X className="w-3 h-3 text-white" />
+                                    : <Plus className="w-3 h-3 text-gray-500" />
+                                  }
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="text-xs font-bold text-gray-900 truncate">{ex.titleAr || ex.title}</div>
+                                  <div className="flex items-center gap-2 mt-0.5">
+                                    <span className="text-[10px] text-gray-400 ltr-num">{ex.durationMinutes}د</span>
+                                    <span className="text-[10px] text-amber-500">⭐ {ex.points}</span>
+                                  </div>
+                                </div>
+                              </motion.button>
+                            )
+                          })}
+                        </motion.div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             )
           })}
         </div>
-      </div>
+      </motion.div>
 
-      <button onClick={submit} disabled={saving || !studentId}
+      <motion.button
+        variants={fadeUp}
+        {...tapOnly}
+        whileHover={{ scale: 1.01 }}
+        onClick={submit} disabled={saving || !studentId}
         className="w-full bg-brand-600 text-white font-black py-4 rounded-2xl flex items-center justify-center gap-2 hover:bg-brand-700 disabled:opacity-50 transition-colors text-lg">
         {saving
           ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
           : <><Save className="w-5 h-5" />{' '}حفظ البرنامج</>
         }
-      </button>
-    </div>
+      </motion.button>
+    </motion.div>
   )
 }

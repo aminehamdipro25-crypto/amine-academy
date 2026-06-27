@@ -1,7 +1,10 @@
 'use client'
+import { motion } from 'framer-motion'
 import { BarChart3, Users, TrendingUp, Calendar, Dumbbell, Globe, Brain, AlertCircle, DollarSign } from 'lucide-react'
 import { useLang, tr, type Lang } from '@/lib/i18n'
 import type { getAllParents, getAllExercises, getAllAppointments, getAllPendingPayments } from '@/lib/db'
+import { staggerContainer, fadeUp, popIn, liftHover } from '@/lib/motion'
+import { ACountUp } from '@/components/ui'
 
 function localeFor(lang: Lang) {
   return lang === 'en' ? 'en-US' : lang === 'fr' ? 'fr-FR' : 'ar'
@@ -13,7 +16,12 @@ function Bar({ label, value, max, color }: { label: string; value: number; max: 
     <div className="flex items-center gap-3">
       <span className="text-xs text-gray-500 font-medium w-28 text-right shrink-0">{label}</span>
       <div className="flex-1 h-2.5 bg-gray-100 rounded-full overflow-hidden">
-        <div className={`h-full rounded-full transition-all ${color}`} style={{ width: `${pct}%` }} />
+        <motion.div
+          className={`h-full rounded-full ${color}`}
+          initial={{ width: 0 }}
+          animate={{ width: `${pct}%` }}
+          transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+        />
       </div>
       <span className="text-sm font-black text-gray-800 ltr-num w-8 text-left">{value}</span>
     </div>
@@ -99,44 +107,49 @@ export default function AnalyticsView({ parents, exercises, appointments, paymen
   }
 
   return (
-    <div className="space-y-6">
+    <motion.div className="space-y-6" variants={staggerContainer} initial="hidden" animate="show">
 
       {/* ── Header ── */}
-      <div>
+      <motion.div variants={fadeUp}>
         <h1 className="text-2xl font-black text-gray-900 flex items-center gap-2">
           <BarChart3 className="w-6 h-6 text-brand-500" />
           {t.pageTitle}
         </h1>
         <p className="text-gray-400 text-sm mt-1">{t.pageSubtitle}</p>
-      </div>
+      </motion.div>
 
       {error && (
-        <div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-2xl p-4">
+        <motion.div variants={fadeUp} className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-2xl p-4">
           <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
           <p className="text-red-700 text-sm font-medium">{adminT.dbConnectionError}</p>
-        </div>
+        </motion.div>
       )}
 
       {/* ── KPI Strip ── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <motion.div className="grid grid-cols-2 lg:grid-cols-4 gap-3" variants={staggerContainer}>
         {[
           { label: t.kpiTotalClients,      value: parents.length,      bg: 'bg-brand-600',   glow: 'shadow-brand-500/20',   icon: Users },
           { label: t.kpiActiveSubs,        value: statusCounts.active, bg: 'bg-emerald-600', glow: 'shadow-emerald-500/20', icon: TrendingUp },
           { label: t.kpiTotalExercises,    value: exercises.length,    bg: 'bg-violet-600',  glow: 'shadow-violet-500/20',  icon: Dumbbell },
           { label: t.kpiCompletedSessions, value: apptStats.completed, bg: 'bg-orange-500',  glow: 'shadow-orange-500/20',  icon: Calendar },
         ].map(({ label, value, bg, glow, icon: Icon }) => (
-          <div key={label} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+          <motion.div
+            key={label}
+            variants={popIn}
+            {...liftHover}
+            className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm"
+          >
             <div className={`w-10 h-10 ${bg} rounded-xl flex items-center justify-center shadow-lg ${glow} mb-3`}>
               <Icon className="w-5 h-5 text-white" />
             </div>
-            <div className="text-3xl font-black text-gray-900 ltr-num">{value}</div>
+            <div className="text-3xl font-black text-gray-900"><ACountUp value={value} /></div>
             <div className="text-gray-400 text-xs mt-0.5 font-medium">{label}</div>
-          </div>
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
 
       {/* ── Revenue ── */}
-      <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
+      <motion.div variants={fadeUp} className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
         <h2 className="font-black text-gray-900 mb-5 flex items-center gap-2 text-sm">
           <DollarSign className="w-4 h-4 text-emerald-500" />
           {t.revenueTitle}
@@ -144,26 +157,26 @@ export default function AnalyticsView({ parents, exercises, appointments, paymen
         {confirmedPayments.length === 0 ? (
           <p className="text-gray-300 text-sm text-center py-4">{t.noConfirmedPayments}</p>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <motion.div className="grid grid-cols-2 sm:grid-cols-4 gap-4" variants={staggerContainer} initial="hidden" animate="show">
             {Object.entries(revenueByCurrency).map(([currency, total]) => (
-              <div key={`total-${currency}`} className="bg-emerald-50 rounded-2xl p-4 text-center">
-                <div className="text-2xl font-black text-emerald-700 ltr-num">{total.toLocaleString('en-US')}</div>
+              <motion.div key={`total-${currency}`} variants={popIn} className="bg-emerald-50 rounded-2xl p-4 text-center">
+                <div className="text-2xl font-black text-emerald-700"><ACountUp value={total} /></div>
                 <div className="text-emerald-600 text-xs mt-0.5 font-bold">{currency} — {t.totalSuffix}</div>
-              </div>
+              </motion.div>
             ))}
             {Object.entries(revenueLast30dByCurrency).map(([currency, total]) => (
-              <div key={`30d-${currency}`} className="bg-gray-50 rounded-2xl p-4 text-center">
-                <div className="text-2xl font-black text-gray-800 ltr-num">{total.toLocaleString('en-US')}</div>
+              <motion.div key={`30d-${currency}`} variants={popIn} className="bg-gray-50 rounded-2xl p-4 text-center">
+                <div className="text-2xl font-black text-gray-800"><ACountUp value={total} /></div>
                 <div className="text-gray-400 text-xs mt-0.5 font-bold">{currency} — {t.last30dSuffix}</div>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         )}
-      </div>
+      </motion.div>
 
       {/* ── Subscriptions + Plans ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
+        <motion.div variants={fadeUp} className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
           <h2 className="font-black text-gray-900 mb-5 flex items-center gap-2 text-sm">
             <TrendingUp className="w-4 h-4 text-brand-500" />
             {t.subscriptionStatusTitle}
@@ -175,9 +188,9 @@ export default function AnalyticsView({ parents, exercises, appointments, paymen
             <Bar label={t.statusExpired}    value={statusCounts.expired}   max={parents.length} color="bg-orange-400" />
             <Bar label={t.statusCancelled}  value={statusCounts.cancelled} max={parents.length} color="bg-gray-300" />
           </div>
-        </div>
+        </motion.div>
 
-        <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
+        <motion.div variants={fadeUp} className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
           <h2 className="font-black text-gray-900 mb-5 flex items-center gap-2 text-sm">
             <BarChart3 className="w-4 h-4 text-violet-500" />
             {t.planDistributionTitle}
@@ -197,8 +210,12 @@ export default function AnalyticsView({ parents, exercises, appointments, paymen
                   <span className="text-gray-400 ltr-num">{value} ({parents.length > 0 ? Math.round(value/parents.length*100) : 0}%)</span>
                 </div>
                 <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
-                  <div className={`h-full rounded-full ${color} transition-all`}
-                    style={{ width: `${parents.length > 0 ? (value/parents.length)*100 : 0}%` }} />
+                  <motion.div
+                    className={`h-full rounded-full ${color}`}
+                    initial={{ width: 0 }}
+                    animate={{ width: `${parents.length > 0 ? (value/parents.length)*100 : 0}%` }}
+                    transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+                  />
                 </div>
               </div>
             ))}
@@ -206,12 +223,12 @@ export default function AnalyticsView({ parents, exercises, appointments, paymen
               <p className="text-gray-300 text-sm text-center py-4">{t.noDataYet}</p>
             )}
           </div>
-        </div>
+        </motion.div>
       </div>
 
       {/* ── Countries + Monthly trend ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
+        <motion.div variants={fadeUp} className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
           <h2 className="font-black text-gray-900 mb-5 flex items-center gap-2 text-sm">
             <Globe className="w-4 h-4 text-emerald-500" />
             {t.geoDistributionTitle}
@@ -225,9 +242,9 @@ export default function AnalyticsView({ parents, exercises, appointments, paymen
               ))}
             </div>
           )}
-        </div>
+        </motion.div>
 
-        <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
+        <motion.div variants={fadeUp} className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
           <h2 className="font-black text-gray-900 mb-5 flex items-center gap-2 text-sm">
             <Users className="w-4 h-4 text-orange-500" />
             {t.monthlyRegistrationsTitle}
@@ -237,20 +254,22 @@ export default function AnalyticsView({ parents, exercises, appointments, paymen
               <div key={`${label}-${i}`} className="flex-1 flex flex-col items-center gap-1">
                 <span className="text-xs font-black text-gray-700 ltr-num">{count || ''}</span>
                 <div className="w-full">
-                  <div
-                    className="bg-gradient-to-t from-brand-600 to-brand-400 rounded-t-lg w-full transition-all"
-                    style={{ height: `${Math.max((count / maxMonthCount) * 90, count > 0 ? 8 : 2)}px` }}
+                  <motion.div
+                    className="bg-gradient-to-t from-brand-600 to-brand-400 rounded-t-lg w-full"
+                    initial={{ height: 0 }}
+                    animate={{ height: `${Math.max((count / maxMonthCount) * 90, count > 0 ? 8 : 2)}px` }}
+                    transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1], delay: i * 0.05 }}
                   />
                 </div>
                 <span className="text-[10px] text-gray-400 text-center leading-tight">{label}</span>
               </div>
             ))}
           </div>
-        </div>
+        </motion.div>
       </div>
 
       {/* ── Exercise breakdown ── */}
-      <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
+      <motion.div variants={fadeUp} className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
         <h2 className="font-black text-gray-900 mb-5 flex items-center gap-2 text-sm">
           <Brain className="w-4 h-4 text-violet-500" />
           {t.exerciseLibraryTitle(exercises.length)}
@@ -263,43 +282,43 @@ export default function AnalyticsView({ parents, exercises, appointments, paymen
             </a>
           </div>
         ) : (
-          <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+          <motion.div className="grid grid-cols-3 sm:grid-cols-6 gap-3" variants={staggerContainer} initial="hidden" animate="show">
             {(['motor','focus','balance','energy','sensory','social'] as const).map((key) => {
               const count = catCounts[key] ?? 0
               const pct = exercises.length > 0 ? Math.round(count/exercises.length*100) : 0
               return (
-                <div key={key} className="text-center bg-gray-50 rounded-2xl p-4 hover:bg-brand-50 transition-colors">
-                  <div className="text-2xl font-black text-gray-900 ltr-num">{count}</div>
+                <motion.div key={key} variants={popIn} {...liftHover} className="text-center bg-gray-50 rounded-2xl p-4">
+                  <div className="text-2xl font-black text-gray-900"><ACountUp value={count} /></div>
                   <div className="text-xs text-gray-500 mt-0.5 font-medium">{catLabels[key]}</div>
                   <div className="text-[10px] text-gray-300 mt-0.5 ltr-num">{pct}%</div>
-                </div>
+                </motion.div>
               )
             })}
-          </div>
+          </motion.div>
         )}
-      </div>
+      </motion.div>
 
       {/* ── Sessions ── */}
-      <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
+      <motion.div variants={fadeUp} className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
         <h2 className="font-black text-gray-900 mb-5 flex items-center gap-2 text-sm">
           <Calendar className="w-4 h-4 text-blue-500" />
           {t.sessionsTitle(appointments.length)}
         </h2>
-        <div className="grid grid-cols-3 gap-3">
+        <motion.div className="grid grid-cols-3 gap-3" variants={staggerContainer} initial="hidden" animate="show">
           {[
             { label: t.apptScheduled, value: apptStats.scheduled, bg: 'bg-blue-600',    glow: 'shadow-blue-500/20' },
             { label: t.apptCompleted, value: apptStats.completed, bg: 'bg-emerald-600', glow: 'shadow-emerald-500/20' },
             { label: t.apptCancelled, value: apptStats.cancelled, bg: 'bg-red-500',     glow: 'shadow-red-500/20' },
           ].map(({ label, value, bg, glow }) => (
-            <div key={label} className="bg-gray-50 rounded-2xl p-5 text-center hover:shadow-md transition-shadow">
+            <motion.div key={label} variants={popIn} {...liftHover} className="bg-gray-50 rounded-2xl p-5 text-center">
               <div className={`w-8 h-8 ${bg} rounded-xl flex items-center justify-center shadow-lg ${glow} mb-3 mx-auto`}>
                 <Calendar className="w-4 h-4 text-white" />
               </div>
-              <div className="text-3xl font-black text-gray-900 ltr-num">{value}</div>
+              <div className="text-3xl font-black text-gray-900"><ACountUp value={value} /></div>
               <div className="text-gray-400 text-xs mt-0.5 font-medium">{label}</div>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
         {(apptStats.completed + apptStats.cancelled) > 0 && (
           <p className="text-gray-400 text-xs mt-4 text-center">
             {t.cancellationRatePrefix}{' '}
@@ -309,7 +328,7 @@ export default function AnalyticsView({ parents, exercises, appointments, paymen
             {t.cancellationRateSuffix}
           </p>
         )}
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   )
 }

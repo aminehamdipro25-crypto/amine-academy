@@ -1,12 +1,14 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   Settings, Save, RefreshCw, CheckCircle, AlertCircle,
   DollarSign, Tag, Clock, Phone, TrendingDown, BarChart2,
   Mail, Send, ExternalLink, DatabaseBackup, Download,
 } from 'lucide-react'
 import type { SiteSettings } from '@/lib/site-settings'
+import { staggerContainer, fadeUp, liftHover, tapOnly } from '@/lib/motion'
 
 interface EnvStatus {
   gmailConfigured: boolean
@@ -334,9 +336,9 @@ export default function AdminSettingsPage() {
   }
 
   return (
-    <div className="space-y-6" dir="rtl">
+    <motion.div className="space-y-6" dir="rtl" variants={staggerContainer} initial="hidden" animate="show">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <motion.div variants={fadeUp} className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-black text-gray-900 flex items-center gap-2">
             <Settings className="w-6 h-6 text-brand-500" />
@@ -345,15 +347,17 @@ export default function AdminSettingsPage() {
           <p className="text-gray-500 text-sm mt-1">تحكم في الأسعار والعروض والإعدادات العامة</p>
         </div>
         <div className="flex items-center gap-3">
-          <button
+          <motion.button
+            {...tapOnly}
             onClick={fetchSettings}
             disabled={saving}
             className="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50"
           >
             <RefreshCw className="w-4 h-4" />
             تحديث
-          </button>
-          <button
+          </motion.button>
+          <motion.button
+            {...tapOnly}
             onClick={handleSave}
             disabled={saving}
             className="flex items-center gap-2 px-5 py-2 rounded-xl bg-brand-600 text-white text-sm font-bold hover:bg-brand-700 transition-colors disabled:opacity-60"
@@ -364,26 +368,40 @@ export default function AdminSettingsPage() {
               <Save className="w-4 h-4" />
             )}
             {saving ? 'جاري الحفظ…' : 'حفظ الإعدادات'}
-          </button>
+          </motion.button>
         </div>
-      </div>
+      </motion.div>
 
       {/* Status banner */}
-      {status === 'success' && (
-        <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-2xl p-4">
-          <CheckCircle className="w-5 h-5 text-green-500" />
-          <p className="text-green-800 text-sm font-medium">تم حفظ الإعدادات بنجاح</p>
-        </div>
-      )}
-      {status === 'error' && (
-        <div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-2xl p-4">
-          <AlertCircle className="w-5 h-5 text-red-500" />
-          <p className="text-red-800 text-sm font-medium">{errorMsg}</p>
-        </div>
-      )}
+      <AnimatePresence>
+        {status === 'success' && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+            className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-2xl p-4"
+          >
+            <CheckCircle className="w-5 h-5 text-green-500" />
+            <p className="text-green-800 text-sm font-medium">تم حفظ الإعدادات بنجاح</p>
+          </motion.div>
+        )}
+        {status === 'error' && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+            className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-2xl p-4"
+          >
+            <AlertCircle className="w-5 h-5 text-red-500" />
+            <p className="text-red-800 text-sm font-medium">{errorMsg}</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Prices section */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-6">
+      <motion.div variants={fadeUp} className="bg-white rounded-2xl border border-gray-100 p-6">
         <h2 className="font-black text-gray-900 mb-1 flex items-center gap-2 text-lg">
           <DollarSign className="w-5 h-5 text-brand-500" />
           أسعار الاشتراك
@@ -427,10 +445,10 @@ export default function AdminSettingsPage() {
             )
           })}
         </div>
-      </div>
+      </motion.div>
 
       {/* Discount section */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-6">
+      <motion.div variants={fadeUp} className="bg-white rounded-2xl border border-gray-100 p-6">
         <h2 className="font-black text-gray-900 mb-5 flex items-center gap-2 text-lg">
           <TrendingDown className="w-5 h-5 text-red-500" />
           إعدادات الخصم
@@ -507,10 +525,10 @@ export default function AdminSettingsPage() {
             </div>
           </div>
         )}
-      </div>
+      </motion.div>
 
       {/* Countdown / offer duration */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-6">
+      <motion.div variants={fadeUp} className="bg-white rounded-2xl border border-gray-100 p-6">
         <h2 className="font-black text-gray-900 mb-5 flex items-center gap-2 text-lg">
           <Clock className="w-5 h-5 text-orange-500" />
           مدة العرض (العد التنازلي)
@@ -543,10 +561,10 @@ export default function AdminSettingsPage() {
             العد التنازلي سيبدأ من تاريخ أول زيارة للمستخدم وينتهي بعد {settings.offerDurationDays} أيام.
           </p>
         </div>
-      </div>
+      </motion.div>
 
       {/* WhatsApp */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-6">
+      <motion.div variants={fadeUp} className="bg-white rounded-2xl border border-gray-100 p-6">
         <h2 className="font-black text-gray-900 mb-5 flex items-center gap-2 text-lg">
           <Phone className="w-5 h-5 text-green-500" />
           رقم واتساب التواصل
@@ -564,10 +582,10 @@ export default function AdminSettingsPage() {
             مثال: <span className="font-mono ltr-num">+9741234567</span>
           </p>
         </div>
-      </div>
+      </motion.div>
 
       {/* Sessions per package */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-6">
+      <motion.div variants={fadeUp} className="bg-white rounded-2xl border border-gray-100 p-6">
         <h2 className="font-black text-gray-900 mb-1 flex items-center gap-2 text-lg">
           <Clock className="w-5 h-5 text-brand-500" />
           عدد الحصص في كل حزمة
@@ -617,10 +635,10 @@ export default function AdminSettingsPage() {
             </div>
           </Field>
         </div>
-      </div>
+      </motion.div>
 
       {/* Landing page stats */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-6">
+      <motion.div variants={fadeUp} className="bg-white rounded-2xl border border-gray-100 p-6">
         <h2 className="font-black text-gray-900 mb-2 flex items-center gap-2 text-lg">
           <BarChart2 className="w-5 h-5 text-brand-500" />
           إحصائيات الصفحة الرئيسية
@@ -668,10 +686,10 @@ export default function AdminSettingsPage() {
         <p className="text-xs text-amber-600 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2 mt-4">
           ⚠️ ضع أرقاماً حقيقية فقط — الأرقام الوهمية تضر بثقة العملاء وقد تعرّضك لمشاكل قانونية.
         </p>
-      </div>
+      </motion.div>
 
       {/* Email & System diagnostics */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-6">
+      <motion.div variants={fadeUp} className="bg-white rounded-2xl border border-gray-100 p-6">
         <h2 className="font-black text-gray-900 mb-5 flex items-center gap-2 text-lg">
           <Mail className="w-5 h-5 text-blue-500" />
           تشخيص البريد الإلكتروني والبيئة
@@ -738,7 +756,8 @@ export default function AdminSettingsPage() {
               className="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
               dir="ltr"
             />
-            <button
+            <motion.button
+              {...tapOnly}
               onClick={sendTestEmail}
               disabled={testEmailState === 'sending'}
               className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl transition-colors disabled:opacity-60"
@@ -747,25 +766,39 @@ export default function AdminSettingsPage() {
                 ? <RefreshCw className="w-4 h-4 animate-spin" />
                 : <Send className="w-4 h-4" />}
               إرسال
-            </button>
+            </motion.button>
           </div>
-          {testEmailState === 'ok' && (
-            <div className="flex items-center gap-2 text-green-700 text-sm bg-green-50 border border-green-200 rounded-xl px-4 py-3">
-              <CheckCircle className="w-4 h-4" />
-              {testEmailMsg}
-            </div>
-          )}
-          {testEmailState === 'error' && (
-            <div className="flex items-start gap-2 text-red-700 text-sm bg-red-50 border border-red-200 rounded-xl px-4 py-3">
-              <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-              <span className="break-all">{testEmailMsg}</span>
-            </div>
-          )}
+          <AnimatePresence>
+            {testEmailState === 'ok' && (
+              <motion.div
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.2 }}
+                className="flex items-center gap-2 text-green-700 text-sm bg-green-50 border border-green-200 rounded-xl px-4 py-3"
+              >
+                <CheckCircle className="w-4 h-4" />
+                {testEmailMsg}
+              </motion.div>
+            )}
+            {testEmailState === 'error' && (
+              <motion.div
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.2 }}
+                className="flex items-start gap-2 text-red-700 text-sm bg-red-50 border border-red-200 rounded-xl px-4 py-3"
+              >
+                <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                <span className="break-all">{testEmailMsg}</span>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
-      </div>
+      </motion.div>
 
       {/* Data backup */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-6">
+      <motion.div variants={fadeUp} className="bg-white rounded-2xl border border-gray-100 p-6">
         <h2 className="font-black text-gray-900 mb-1 flex items-center gap-2 text-lg">
           <DatabaseBackup className="w-5 h-5 text-brand-500" />
           نسخة احتياطية للبيانات
@@ -774,30 +807,42 @@ export default function AdminSettingsPage() {
           كل بيانات العملاء والمدفوعات والتقييمات محفوظة فقط في قاعدة بيانات واحدة (Redis) بدون نسخ احتياطي تلقائي.
           نزّل نسخة كاملة (JSON) بشكل دوري واحفظها في مكان آمن خارج الموقع.
         </p>
-        <button
+        <motion.button
+          {...liftHover}
           onClick={handleExport}
           disabled={exportState === 'loading'}
           className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gray-900 text-white text-sm font-bold hover:bg-gray-800 transition-colors disabled:opacity-60"
         >
           {exportState === 'loading' ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
           {exportState === 'loading' ? 'جاري التصدير…' : 'تنزيل نسخة احتياطية كاملة'}
-        </button>
-        {exportState === 'error' && (
-          <p className="text-red-600 text-xs font-medium mt-2">{exportError}</p>
-        )}
-      </div>
+        </motion.button>
+        <AnimatePresence>
+          {exportState === 'error' && (
+            <motion.p
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.2 }}
+              className="text-red-600 text-xs font-medium mt-2"
+            >
+              {exportError}
+            </motion.p>
+          )}
+        </AnimatePresence>
+      </motion.div>
 
       {/* Sticky save bar on mobile */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200 z-50">
-        <button
+        <motion.button
+          {...tapOnly}
           onClick={handleSave}
           disabled={saving}
           className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-brand-600 text-white font-bold transition-colors disabled:opacity-60"
         >
           {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
           {saving ? 'جاري الحفظ…' : 'حفظ الإعدادات'}
-        </button>
+        </motion.button>
       </div>
-    </div>
+    </motion.div>
   )
 }

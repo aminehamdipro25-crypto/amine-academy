@@ -250,6 +250,7 @@ export const tr = {
     parentDashboard: {
       loading: 'جاري التحميل...',
       loadError: 'حدث خطأ، حاول مجدداً.',
+      liveLabel: 'مباشر',
       greetingNight: 'ليلة طيبة',
       greetingMorning: 'صباح الخير',
       greetingAfternoon: 'مساء الخير',
@@ -809,6 +810,7 @@ export const tr = {
       retryButton: 'حاول مجدداً',
     },
     adminDashboardHome: {
+      liveLabel: 'مباشر',
       greeting: (name: string) => `مرحباً، ${name} 👋`,
       subtitleActive: (n: number) => `لديك ${n} اشتراك نشط`,
       subtitlePendingSuffix: (n: number) => ` و${n} دفعة تنتظر المراجعة`,
@@ -1437,6 +1439,7 @@ export const tr = {
     parentDashboard: {
       loading: 'Loading...',
       loadError: 'An error occurred, please try again.',
+      liveLabel: 'Live',
       greetingNight: 'Good night',
       greetingMorning: 'Good morning',
       greetingAfternoon: 'Good afternoon',
@@ -1996,6 +1999,7 @@ export const tr = {
       retryButton: 'Try Again',
     },
     adminDashboardHome: {
+      liveLabel: 'Live',
       greeting: (name: string) => `Welcome, ${name} 👋`,
       subtitleActive: (n: number) => `You have ${n} active subscription${n === 1 ? '' : 's'}`,
       subtitlePendingSuffix: (n: number) => ` and ${n} payment${n === 1 ? '' : 's'} awaiting review`,
@@ -2624,6 +2628,7 @@ export const tr = {
     parentDashboard: {
       loading: 'Chargement...',
       loadError: "Une erreur est survenue, veuillez réessayer.",
+      liveLabel: 'En direct',
       greetingNight: 'Bonne nuit',
       greetingMorning: 'Bonjour',
       greetingAfternoon: 'Bon après-midi',
@@ -3183,6 +3188,7 @@ export const tr = {
       retryButton: 'Réessayer',
     },
     adminDashboardHome: {
+      liveLabel: 'En direct',
       greeting: (name: string) => `Bienvenue, ${name} 👋`,
       subtitleActive: (n: number) => `Vous avez ${n} abonnement${n > 1 ? 's' : ''} actif${n > 1 ? 's' : ''}`,
       subtitlePendingSuffix: (n: number) => ` et ${n} paiement${n > 1 ? 's' : ''} en attente de révision`,

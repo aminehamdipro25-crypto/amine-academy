@@ -44,6 +44,10 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  if (!await isDashboardUser()) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   try {
     const homework = await redis.get<HomeworkAssignment>(`homework:${params.id}`)
     return NextResponse.json({ homework: homework ?? null })

@@ -245,6 +245,11 @@ const EXERCISES = [
   { id:'body-percussion',  labelAr:'الإيقاع الجسدي',        icon:'🥁', category:'رياضي', color:'bg-purple-900/40 border-purple-500',   ageMin:5,  ageMax:22 },
 ]
 
+// Exercises whose component renders its own post-completion results screen
+// (score, feedback, "play again"/"finish") and should stay mounted until the
+// user dismisses it, instead of being closed the instant onComplete fires.
+const SELF_CLOSING_RESULTS = new Set(['picture-word-cards'])
+
 // ── مكتبة الفيديو ──────────────────────────────────────────────────────────
 const VIDEO_LIBRARY: Record<string, { desc: string; tips: string[]; videoId?: string }> = {
   'breathing':           { videoId: '9zXVFK6RTnw', desc: 'يُهدّئ الجهاز العصبي ويقلل الاندفاعية والقلق ويُحسّن التركيز.', tips: ['استنشق 4 عدّات من الأنف', 'حبس 4 عدّات', 'زفير بطيء 6 عدّات', 'كرر 3-5 مرات'] },
@@ -1268,7 +1273,13 @@ ${notes ? `
       }
       return newResults
     })
-    setActiveView(null)
+    // Exercises with their own results screen (score/feedback + "play again"/"finish"
+    // buttons) stay mounted so the child/specialist actually sees it; they call
+    // onCancel themselves when dismissed. Everything else keeps the old instant-close
+    // behavior. Kiosk queue mode always auto-advances regardless.
+    if (queueActive || !SELF_CLOSING_RESULTS.has(result.exerciseType)) {
+      setActiveView(null)
+    }
     playSound('success')
 
     // Save game result for longitudinal tracking
@@ -3928,6 +3939,10 @@ ${notes ? `
         const currentUrl = videoUrls[videoModal] || ''
         const customId = extractYoutubeId(currentUrl)
         const activeVideoId = customId || entry.videoId || null
+        // Bundled library clips are curated to be short; hard-cap playback at 30s
+        // so a long source video can never run past that, even if mis-tagged.
+        // A specialist's own pasted link is their deliberate choice — left uncapped.
+        const isLibraryClip = !customId && !!entry.videoId
         return (
           <div
             className="fixed inset-0 z-[150] flex items-center justify-center"
@@ -3971,14 +3986,21 @@ ${notes ? `
 
               {/* Video embed */}
               {activeVideoId ? (
-                <div className="mx-5 mb-4 rounded-2xl overflow-hidden" style={{ aspectRatio: '16/9', background: '#000' }}>
-                  <iframe
-                    key={activeVideoId}
-                    src={`https://www.youtube.com/embed/${activeVideoId}?rel=0&modestbranding=1`}
-                    className="w-full h-full"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                  />
+                <div className="mx-5 mb-4">
+                  {isLibraryClip && (
+                    <div className="flex items-center gap-1.5 mb-2 text-[10px] font-bold text-brand-300">
+                      <span>⏱ مقطع مختصر — 30 ثانية كحد أقصى</span>
+                    </div>
+                  )}
+                  <div className="rounded-2xl overflow-hidden" style={{ aspectRatio: '16/9', background: '#000' }}>
+                    <iframe
+                      key={activeVideoId}
+                      src={`https://www.youtube.com/embed/${activeVideoId}?rel=0&modestbranding=1${isLibraryClip ? '&end=30' : ''}`}
+                      className="w-full h-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  </div>
                 </div>
               ) : (
                 <div

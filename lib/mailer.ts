@@ -159,6 +159,40 @@ export function appointmentReminderEmail(
   `)
 }
 
+function escHtml(s: string): string {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+}
+
+export function newMessageAdminEmail(senderName: string, preview: string): string {
+  return wrap('#7C5CFC', `
+    <h2 style="color:#1e293b;font-size:20px;margin:0 0 16px">💬 رسالة جديدة من ${escHtml(senderName)}</h2>
+    <div style="background:#F3EEFF;border-right:4px solid #7C5CFC;padding:16px;border-radius:8px;margin:16px 0">
+      <p style="margin:0;color:#374151;line-height:1.8;white-space:pre-wrap">${escHtml(preview)}</p>
+    </div>
+    <div style="text-align:center;margin:24px 0">
+      <a href="${process.env.NEXT_PUBLIC_BASE_URL || 'https://amine-academy.com'}/dashboard/messages"
+        style="display:inline-block;background:#7C5CFC;color:white;text-decoration:none;font-size:15px;font-weight:700;padding:12px 32px;border-radius:12px">
+        فتح المحادثة
+      </a>
+    </div>
+  `)
+}
+
+export function newMessageParentEmail(specialistName: string, preview: string): string {
+  return wrap('#5b6ef2', `
+    <h2 style="color:#1e293b;font-size:20px;margin:0 0 16px">💬 رسالة جديدة من ${escHtml(specialistName)}</h2>
+    <div style="background:#f0f4ff;border-right:4px solid #5b6ef2;padding:16px;border-radius:8px;margin:16px 0">
+      <p style="margin:0;color:#374151;line-height:1.8;white-space:pre-wrap">${escHtml(preview)}</p>
+    </div>
+    <div style="text-align:center;margin:24px 0">
+      <a href="${process.env.NEXT_PUBLIC_BASE_URL || 'https://amine-academy.com'}/parent/chat"
+        style="display:inline-block;background:#5b6ef2;color:white;text-decoration:none;font-size:15px;font-weight:700;padding:12px 32px;border-radius:12px">
+        فتح المحادثة
+      </a>
+    </div>
+  `)
+}
+
 export function weeklyProgressEmail(
   parentName: string,
   studentProgress: Array<{

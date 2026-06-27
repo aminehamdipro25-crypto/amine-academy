@@ -5,6 +5,7 @@ import { cookies } from 'next/headers'
 import { verifyToken } from '@/lib/auth'
 import { sendMessage, getThreadMessages, markThreadRead, getUnreadCount } from '@/lib/db'
 import { getParent } from '@/lib/db'
+import { sendEmail, newMessageAdminEmail } from '@/lib/mailer'
 
 export async function GET(req: NextRequest) {
   try {
@@ -61,6 +62,15 @@ export async function POST(req: NextRequest) {
       content,
       read: false,
     })
+
+    const adminEmail = process.env.ADMIN_EMAIL || process.env.GMAIL_USER
+    if (adminEmail) {
+      sendEmail({
+        to: adminEmail,
+        subject: `💬 رسالة جديدة من ${senderName} — أكاديمية أمين`,
+        html: newMessageAdminEmail(senderName, content.slice(0, 300)),
+      }).catch(e => console.error('[api/messages POST] admin notify email failed', e))
+    }
 
     return NextResponse.json({ message })
   } catch (err) {

@@ -10,6 +10,7 @@ import {
   getParent,
   getStaff,
 } from '@/lib/db'
+import { sendEmail, newMessageParentEmail } from '@/lib/mailer'
 
 async function requireAdmin(): Promise<boolean> {
   return isDashboardUser()
@@ -85,6 +86,15 @@ export async function POST(req: NextRequest) {
       content,
       read: false,
     })
+
+    getParent(threadId).then(parent => {
+      if (!parent?.email) return
+      sendEmail({
+        to: parent.email,
+        subject: `💬 رسالة جديدة من ${senderName} — أكاديمية أمين`,
+        html: newMessageParentEmail(senderName, content.slice(0, 300)),
+      }).catch(e => console.error('[api/admin/messages POST] parent notify email failed', e))
+    }).catch(e => console.error('[api/admin/messages POST] getParent for notify failed', e))
 
     return NextResponse.json({ message })
   } catch (err) {

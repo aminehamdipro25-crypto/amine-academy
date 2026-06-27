@@ -72,8 +72,8 @@ export default function AdminMessagesPage() {
     fetchThreads()
   }, [fetchThreads])
 
-  const fetchThread = useCallback(async (parentId: string) => {
-    setLoadingMessages(true)
+  const fetchThread = useCallback(async (parentId: string, opts?: { silent?: boolean }) => {
+    if (!opts?.silent) setLoadingMessages(true)
     try {
       const res = await fetch(`/api/admin/messages?threadId=${parentId}`)
       if (res.ok) {
@@ -88,7 +88,7 @@ export default function AdminMessagesPage() {
     } catch (e) {
       console.error('[AdminMessages] fetchThread error', e)
     } finally {
-      setLoadingMessages(false)
+      if (!opts?.silent) setLoadingMessages(false)
     }
   }, [])
 
@@ -97,6 +97,15 @@ export default function AdminMessagesPage() {
       fetchThread(selectedThreadId)
     }
   }, [selectedThreadId, fetchThread])
+
+  // Poll in the background so a parent's reply shows up without a manual refresh
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchThreads()
+      if (selectedThreadId) fetchThread(selectedThreadId, { silent: true })
+    }, 20000)
+    return () => clearInterval(interval)
+  }, [fetchThreads, fetchThread, selectedThreadId])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })

@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
       read: false,
     })
 
-    const adminEmail = process.env.ADMIN_EMAIL || process.env.GMAIL_USER
+    const adminEmail = process.env.NOTIFY_EMAIL || process.env.ADMIN_EMAIL || process.env.GMAIL_USER
     if (adminEmail) {
       sendEmail({
         to: adminEmail,

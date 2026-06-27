@@ -3,6 +3,7 @@ import { createParent, getParentByEmail, createStudent, updateParent, createActi
 import { hashPassword } from '@/lib/password'
 import { sendEmail, welcomeParentEmail } from '@/lib/mailer'
 import { tg, tgEsc } from '@/lib/telegram'
+import { isRateLimited, getClientIp } from '@/lib/rateLimit'
 import type { AgeGroup, Diagnosis } from '@/lib/types'
 
 export const runtime = 'nodejs'
@@ -17,6 +18,14 @@ function calcAgeGroup(birthDate: string): AgeGroup {
 export async function POST(req: NextRequest) {
   let step = 'parse'
   try {
+    const ip = getClientIp(req)
+    const rl = await isRateLimited(`register:${ip}`, 10, 3600)
+    if (rl.limited) {
+      return rl.unavailable
+        ? NextResponse.json({ error: 'الخدمة غير متوفرة مؤقتًا، يرجى المحاولة بعد قليل' }, { status: 503 })
+        : NextResponse.json({ error: 'حاول مجدداً بعد ساعة' }, { status: 429 })
+    }
+
     const body = await req.json().catch(() => null)
     if (!body) return NextResponse.json({ error: 'بيانات غير صالحة' }, { status: 400 })
     const { parent, child, plan } = body
@@ -109,10 +118,6 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     const msg = (err as Error).message || String(err)
     console.error(`[register] failed at step="${step}":`, msg)
-    return NextResponse.json({
-      error: `حدث خطأ في الخادم — الخطوة: ${step} — ${msg}`,
-      step,
-      detail: msg,
-    }, { status: 500 })
+    return NextResponse.json({ error: 'حدث خطأ في الخادم، حاول مجدداً' }, { status: 500 })
   }
 }

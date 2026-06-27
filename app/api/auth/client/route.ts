@@ -65,8 +65,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ error: 'طلب غير صالح' }, { status: 400 })
   } catch (err) {
-    const msg = (err as Error).message || 'unknown'
-    console.error('[client-auth]', msg)
-    return NextResponse.json({ error: `خطأ في الخادم: ${msg}` }, { status: 500 })
+    console.error('[client-auth]', (err as Error).message || err)
+    return NextResponse.json({ error: 'خطأ في الخادم، حاول مجدداً' }, { status: 500 })
   }
 }

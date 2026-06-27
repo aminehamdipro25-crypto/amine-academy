@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isDashboardUser } from '@/lib/auth'
 import { redis } from '@/lib/redis'
+import { updateAppointment } from '@/lib/db'
 import type { SessionLog } from '@/lib/types'
 
 export const runtime = 'nodejs'
@@ -60,6 +61,11 @@ export async function POST(
     await redis.set(`session-log:${params.appointmentId}`, log, { ex: 365 * 24 * 3600 })
     if (studentId) {
       await redis.pipeline([['LPUSH', `sessions:student:${studentId}`, params.appointmentId]])
+    }
+    try {
+      await updateAppointment(params.appointmentId, { status: 'completed' })
+    } catch (e) {
+      console.error('[session-log POST] failed to mark appointment completed', e)
     }
     return NextResponse.json({ ok: true, id })
   } catch (err) {

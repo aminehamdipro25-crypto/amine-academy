@@ -20,13 +20,21 @@ const ALL: Q[] = [
   { text:'العسل حلو مثل الليمون',             correct:'حامض',     wrong:['مالح',    'مرّ']     },
   { text:'السيارة تسير مثل الطائرة',          correct:'تطير',     wrong:['تسبح',    'تحفر']    },
   { text:'الأسد ملك الغابة مثل الصقر ملك',  correct:'السماء',   wrong:['البحر',   'الأرض']   },
+  { text:'الفرن للخبز مثل الثلاجة لـ',       correct:'التبريد',  wrong:['الغسل',   'القراءة'] },
+  { text:'الأذن للسمع مثل العين لـ',         correct:'الرؤية',   wrong:['الشم',    'اللمس']   },
+  { text:'النحلة تصنع العسل مثل العنكبوت يصنع', correct:'الشبكة', wrong:['الحليب',  'الصوف']   },
+  { text:'المفتاح يفتح الباب مثل كلمة السر تفتح', correct:'الحاسوب', wrong:['النافذة', 'الكتاب']  },
+  { text:'الشتاء بارد مثل الصيف',            correct:'حار',      wrong:['ممل',     'قصير']    },
+  { text:'السمكة تسبح مثل الضفدع',           correct:'يسبح',     wrong:['يطير',    'يحفر']    },
+  { text:'القاموس للكلمات مثل الخريطة لـ',  correct:'الأماكن',  wrong:['الأرقام', 'الألوان'] },
+  { text:'المظلة تحمي من المطر مثل النظارة الشمسية تحمي من', correct:'الشمس', wrong:['البرد', 'الرياح'] },
 ]
 
 function shuffle<T>(arr: T[]): T[] { return [...arr].sort(() => Math.random() - 0.5) }
 
 export default function AnalogiesGame({ onComplete, onCancel, difficulty = 1 }: Props) {
-  const count     = difficulty === 1 ? 4 : difficulty === 2 ? 6 : 8
-  const questions = ALL.slice(0, count)
+  const count          = difficulty === 1 ? 5 : difficulty === 2 ? 8 : 12
+  const [questions]    = useState<Q[]>(() => shuffle(ALL).slice(0, count))
 
   const [idx,     setIdx]     = useState(0)
   const [chosen,  setChosen]  = useState<string | null>(null)

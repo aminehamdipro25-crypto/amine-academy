@@ -53,13 +53,49 @@ const ALL: Q[] = [
     order:'asc',
     items:[{emoji:'🥚',label:'بيضة',value:1},{emoji:'🐣',label:'كتكوت',value:2},{emoji:'🐥',label:'فرخ',value:3},{emoji:'🐔',label:'دجاجة',value:4}],
   },
+  {
+    prompt:'رتّب من الأقصر للأطول',
+    orderAr:'الأقصر ← الأطول',
+    order:'asc',
+    items:[{emoji:'🐛',label:'دودة',value:1},{emoji:'🐍',label:'ثعبان',value:2},{emoji:'🪜',label:'سلم',value:3},{emoji:'🚂',label:'قطار',value:4}],
+  },
+  {
+    prompt:'رتّب من الأبرد للأسخن',
+    orderAr:'الأبرد ← الأسخن',
+    order:'asc',
+    items:[{emoji:'🧊',label:'ثلج',value:1},{emoji:'💧',label:'ماء',value:2},{emoji:'☕',label:'شاي',value:3},{emoji:'🔥',label:'نار',value:4}],
+  },
+  {
+    prompt:'رتّب من الأهدأ للأعلى صوتاً',
+    orderAr:'الأهدأ ← الأعلى',
+    order:'asc',
+    items:[{emoji:'🤫',label:'صمت',value:1},{emoji:'🗣️',label:'حديث',value:2},{emoji:'📢',label:'مكبر صوت',value:3},{emoji:'🚀',label:'صاروخ',value:4}],
+  },
+  {
+    prompt:'رتّب من الأقرب للأبعد',
+    orderAr:'الأقرب ← الأبعد',
+    order:'asc',
+    items:[{emoji:'🏠',label:'بيت',value:1},{emoji:'🏞️',label:'حديقة',value:2},{emoji:'🏙️',label:'مدينة',value:3},{emoji:'🌕',label:'قمر',value:4}],
+  },
+  {
+    prompt:'رتّب من الأقل سعراً للأعلى',
+    orderAr:'الأقل ← الأعلى',
+    order:'asc',
+    items:[{emoji:'🍬',label:'حلوى',value:1},{emoji:'📕',label:'كتاب',value:2},{emoji:'📱',label:'هاتف',value:3},{emoji:'🚗',label:'سيارة',value:4}],
+  },
+  {
+    prompt:'رتّب من الأصغر عمراً للأكبر',
+    orderAr:'الأصغر ← الأكبر',
+    order:'asc',
+    items:[{emoji:'👶',label:'رضيع',value:1},{emoji:'🧒',label:'طفل',value:2},{emoji:'🧑',label:'شاب',value:3},{emoji:'👴',label:'كبير السن',value:4}],
+  },
 ]
 
 function shuffle<T>(arr: T[]): T[] { return [...arr].sort(() => Math.random() - 0.5) }
 
 export default function LogicSort({ onComplete, onCancel, difficulty = 1 }: Props) {
-  const count = difficulty === 1 ? 3 : difficulty === 2 ? 4 : 6
-  const qs    = ALL.slice(0, count)
+  const count = difficulty === 1 ? 4 : difficulty === 2 ? 6 : 9
+  const [qs]  = useState<Q[]>(() => shuffle(ALL).slice(0, count))
 
   const [idx,    setIdx]    = useState(0)
   const [slots,  setSlots]  = useState<number[]>([])   // values in placed order

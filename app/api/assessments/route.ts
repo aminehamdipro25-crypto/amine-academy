@@ -21,6 +21,10 @@ export async function POST(req: NextRequest) {
     if (!body.studentId || !body.type) {
       return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
     }
+    const studentId = String(body.studentId).trim().replace(/[^a-zA-Z0-9-_]/g, '')
+    if (!studentId) {
+      return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
+    }
     if (!VALID_TYPES.includes(body.type)) {
       return NextResponse.json({ error: 'نوع التقييم غير صالح' }, { status: 400 })
     }
@@ -30,7 +34,7 @@ export async function POST(req: NextRequest) {
     const id = `AR-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`
     const result: AssessmentResult = {
       id,
-      studentId: String(body.studentId).trim(),
+      studentId,
       type: body.type,
       subtype: body.subtype,
       domainScores: body.domainScores || {},

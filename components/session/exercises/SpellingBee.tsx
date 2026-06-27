@@ -22,13 +22,23 @@ const ALL: Q[] = [
   { word:'سيارة',emoji:'🚗', choices:['سيارة','سياره','صيارة']},
   { word:'مدرسة',emoji:'🏫', choices:['مدرسة','مدرسه','مدرصة']},
   { word:'طيارة',emoji:'✈️', choices:['طيارة','طياره','طيارا']},
+  { word:'زرافة', emoji:'🦒', choices:['زرافة','زرفة','ذرافة']  },
+  { word:'فراشة', emoji:'🦋', choices:['فراشة','فرشة','فراصة']  },
+  { word:'نافذة', emoji:'🪟', choices:['نافذة','نافزة','نفاذة'] },
+  { word:'مفتاح', emoji:'🔑', choices:['مفتاح','مفتاخ','مفتاج'] },
+  { word:'ساعة',  emoji:'⌚', choices:['ساعة','صاعة','سعاة']    },
+  { word:'مقص',   emoji:'✂️', choices:['مقص','مقس','مغص']      },
+  { word:'حقيبة', emoji:'🎒', choices:['حقيبة','حقيبه','حقيقة'] },
+  { word:'برتقال',emoji:'🍊', choices:['برتقال','برتغال','برتقان']},
+  { word:'دجاجة', emoji:'🐔', choices:['دجاجة','دجاجه','ضجاجة'] },
+  { word:'مظلة',  emoji:'☂️', choices:['مظلة','مضلة','مظلت']    },
 ]
 
 function shuffle<T>(arr: T[]): T[] { return [...arr].sort(() => Math.random() - 0.5) }
 
 export default function SpellingBee({ onComplete, onCancel, difficulty = 1 }: Props) {
-  const count = difficulty === 1 ? 5 : difficulty === 2 ? 8 : 10
-  const qs    = ALL.slice(0, count)
+  const count = difficulty === 1 ? 6 : difficulty === 2 ? 10 : 14
+  const [qs]  = useState<Q[]>(() => shuffle(ALL).slice(0, count))
 
   const [idx,     setIdx]     = useState(0)
   const [chosen,  setChosen]  = useState<string | null>(null)

@@ -22,13 +22,19 @@ const ALL_EMOTIONS: Emotion[] = [
   { emoji: '😤', label: 'محبط',     distractors: ['غاضب', 'حزين'] },
   { emoji: '😌', label: 'هادئ',     distractors: ['سعيد', 'متعب'] },
   { emoji: '🥳', label: 'متحمس',    distractors: ['سعيد', 'مندهش'] },
+  { emoji: '😕', label: 'محتار',    distractors: ['حزين', 'هادئ'] },
+  { emoji: '🤩', label: 'منبهر',    distractors: ['سعيد', 'مندهش'] },
+  { emoji: '😳', label: 'محرج',     distractors: ['خائف', 'محبط'] },
+  { emoji: '🥱', label: 'ضجران',    distractors: ['متعب', 'هادئ'] },
+  { emoji: '😱', label: 'مرعوب',    distractors: ['خائف', 'مندهش'] },
+  { emoji: '🤗', label: 'ودود',     distractors: ['سعيد', 'هادئ'] },
 ]
 
 function shuffle<T>(arr: T[]): T[] { return [...arr].sort(() => Math.random() - 0.5) }
 
 export default function EmotionMirror({ onComplete, onCancel, difficulty = 1 }: Props) {
-  const count    = difficulty === 1 ? 6 : difficulty === 2 ? 8 : 10
-  const questions = ALL_EMOTIONS.slice(0, count)
+  const count           = difficulty === 1 ? 8 : difficulty === 2 ? 12 : 16
+  const [questions]     = useState<Emotion[]>(() => shuffle(ALL_EMOTIONS).slice(0, count))
 
   const [idx,      setIdx]      = useState(0)
   const [chosen,   setChosen]   = useState<string | null>(null)

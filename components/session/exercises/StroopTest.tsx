@@ -7,10 +7,12 @@ const TOTAL = 16
 interface Props { onComplete: (r: ExerciseResult) => void; onCancel: () => void; studentAge: number; difficulty?: 1|2|3 }
 
 const COLORS = [
-  { nameAr: 'أحمر', hex: '#ef4444', bg: 'bg-red-500',    shadow: 'shadow-red-500/40'   },
-  { nameAr: 'أزرق', hex: '#3b82f6', bg: 'bg-blue-500',   shadow: 'shadow-blue-500/40'  },
-  { nameAr: 'أخضر', hex: '#22c55e', bg: 'bg-green-500',  shadow: 'shadow-green-500/40' },
-  { nameAr: 'أصفر', hex: '#eab308', bg: 'bg-yellow-500', shadow: 'shadow-yellow-500/40'},
+  { nameAr: 'أحمر',    hex: '#ef4444', bg: 'bg-red-500',    shadow: 'shadow-red-500/40'    },
+  { nameAr: 'أزرق',    hex: '#3b82f6', bg: 'bg-blue-500',   shadow: 'shadow-blue-500/40'   },
+  { nameAr: 'أخضر',    hex: '#22c55e', bg: 'bg-green-500',  shadow: 'shadow-green-500/40'  },
+  { nameAr: 'أصفر',    hex: '#eab308', bg: 'bg-yellow-500', shadow: 'shadow-yellow-500/40' },
+  { nameAr: 'بنفسجي',  hex: '#a855f7', bg: 'bg-purple-500', shadow: 'shadow-purple-500/40' },
+  { nameAr: 'برتقالي', hex: '#f97316', bg: 'bg-orange-500', shadow: 'shadow-orange-500/40' },
 ]
 
 function makeTrial() {
@@ -200,7 +202,7 @@ export default function StroopTest({ onComplete, onCancel, difficulty = 1 }: Pro
       </div>
 
       {/* Color buttons */}
-      <div className="grid grid-cols-2 gap-3 px-5 pb-3">
+      <div className="grid grid-cols-3 gap-3 px-5 pb-3">
         {COLORS.map((c, i) => (
           <button key={c.nameAr} onClick={() => answer(i)} disabled={feedback !== null}
             className={`py-5 rounded-2xl font-black text-2xl text-white shadow-lg transition-all active:scale-95 ${c.bg} ${c.shadow}

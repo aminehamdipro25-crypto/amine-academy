@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useLang, tr, type Lang } from '@/lib/i18n'
 import type { getAllParents, getAllPendingPayments, getAllExercises } from '@/lib/db'
+import type { Parent } from '@/lib/types'
 import { ACountUp } from '@/components/ui'
 import { staggerContainer, fadeUp, popIn, liftHover } from '@/lib/motion'
 
@@ -14,7 +15,7 @@ function localeFor(lang: Lang) {
 }
 
 export default function AdminDashboardView({ parents, payments, exercises, redisError }: {
-  parents: Awaited<ReturnType<typeof getAllParents>>
+  parents: Omit<Parent, 'passwordHash'>[]
   payments: Awaited<ReturnType<typeof getAllPendingPayments>>
   exercises: Awaited<ReturnType<typeof getAllExercises>>
   redisError: boolean

@@ -6,6 +6,7 @@ import { staggerContainer, fadeUp, popIn, liftHover, tapOnly } from '@/lib/motio
 import { ACountUp } from '@/components/ui'
 import { useLang, tr, type Lang } from '@/lib/i18n'
 import type { getAllAppointments, getAllParents } from '@/lib/db'
+import type { Parent } from '@/lib/types'
 
 function localeFor(lang: Lang) {
   return lang === 'en' ? 'en-US' : lang === 'fr' ? 'fr-FR' : 'ar'
@@ -22,7 +23,7 @@ const AVATAR_GRADIENTS = [
 
 export default function AppointmentsView({ appointments, parents, error }: {
   appointments: Awaited<ReturnType<typeof getAllAppointments>>
-  parents: Awaited<ReturnType<typeof getAllParents>>
+  parents: Omit<Parent, 'passwordHash'>[]
   error: boolean
 }) {
   const { lang } = useLang()

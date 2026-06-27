@@ -20,5 +20,9 @@ export default async function AdminDashboardPage() {
     redisError = true
   }
 
-  return <AdminDashboardView parents={parents} payments={payments} exercises={exercises} redisError={redisError} />
+  // Strip passwordHash before it reaches the RSC payload — the client component
+  // never needs it, but a raw prop is serialized to the browser regardless.
+  const safeParents = parents.map(({ passwordHash, ...rest }) => rest)
+
+  return <AdminDashboardView parents={safeParents} payments={payments} exercises={exercises} redisError={redisError} />
 }

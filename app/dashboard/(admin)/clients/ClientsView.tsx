@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useLang, tr, type Lang } from '@/lib/i18n'
 import type { getAllParents } from '@/lib/db'
+import type { Parent } from '@/lib/types'
 import { ACountUp } from '@/components/ui'
 import { staggerContainer, fadeUp, popIn, liftHover } from '@/lib/motion'
 
@@ -23,7 +24,7 @@ const AVATAR_COLORS = [
 ]
 
 export default function ClientsView({ parents, error }: {
-  parents: Awaited<ReturnType<typeof getAllParents>>
+  parents: Omit<Parent, 'passwordHash'>[]
   error: boolean
 }) {
   const { lang } = useLang()

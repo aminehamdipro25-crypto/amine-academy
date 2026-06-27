@@ -15,5 +15,9 @@ export default async function AppointmentsPage() {
     error = true
   }
 
-  return <AppointmentsView appointments={appointments} parents={parents} error={error} />
+  // Strip passwordHash before it reaches the RSC payload — the client component
+  // never needs it, but a raw prop is serialized to the browser regardless.
+  const safeParents = parents.map(({ passwordHash, ...rest }) => rest)
+
+  return <AppointmentsView appointments={appointments} parents={safeParents} error={error} />
 }

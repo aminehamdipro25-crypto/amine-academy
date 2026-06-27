@@ -1,9 +1,15 @@
 'use client'
 import { useEffect, useState, useCallback, useRef } from 'react'
 import dynamic from 'next/dynamic'
+import { motion } from 'framer-motion'
 import { Clock, CheckCircle, Play, X, Info, Volume2, Trophy, Flame, Zap } from 'lucide-react'
 import type { Exercise, Student, ExerciseResult } from '@/lib/types'
 import { useLang, tr } from '@/lib/i18n'
+
+// ── Category orbit geometry ────────────────────────────────────
+const ALL_ICON  = '✨'
+const ORBIT_R   = 96   // circle radius (px)
+const ORBIT_BTN = 44   // pill diameter (px)
 
 // ── Lazy-load interactive game components ─────────────────────
 const BreathingGuide   = dynamic(() => import('@/components/session/exercises/BreathingGuide'),   { ssr: false })
@@ -701,21 +707,46 @@ export default function ExercisesPage() {
         ))}
       </div>
 
-      {/* ── Category pills ── */}
-      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-        {cats.map(cat => {
-          const active = filter === cat
-          const cfg    = CAT_CFG[cat]
-          return (
-            <button key={cat} onClick={() => setFilter(cat)}
-              className="px-4 py-2 rounded-full text-xs font-black whitespace-nowrap flex-shrink-0 transition-all"
-              style={active
-                ? { background: cfg?.gradient || '#6B46F0', color: '#FFF', boxShadow: `0 2px 8px ${cfg?.shadow || 'rgba(124,92,252,0.3)'}` }
-                : { background: '#FFF', color: '#9CA3AF', border: '1.5px solid #E5E7EB' }}>
-              {cat === 'all' ? t.allCategoriesLabel : `${cfg?.icon} ${catLabels[cat as keyof typeof catLabels]}`}
-            </button>
-          )
-        })}
+      {/* ── Category orbit — small pills drifting in a smooth circular arc ── */}
+      <div className="relative" style={{ height: ORBIT_R + ORBIT_BTN / 2, overflow: 'hidden' }}>
+        <motion.div
+          className="absolute"
+          style={{ width: ORBIT_R * 2, height: ORBIT_R * 2, left: '50%', top: 0, marginLeft: -ORBIT_R }}
+          animate={{ rotate: 360 }}
+          transition={{ duration: 34, repeat: Infinity, ease: 'linear' }}
+        >
+          {cats.map((cat, i) => {
+            const active = filter === cat
+            const cfg    = CAT_CFG[cat]
+            const angle  = (i * 360) / cats.length - 90
+            const rad    = (angle * Math.PI) / 180
+            const x = ORBIT_R + ORBIT_R * Math.cos(rad) - ORBIT_BTN / 2
+            const y = ORBIT_R + ORBIT_R * Math.sin(rad) - ORBIT_BTN / 2
+            return (
+              <motion.button
+                key={cat}
+                onClick={() => setFilter(cat)}
+                className="absolute rounded-full flex items-center justify-center text-base"
+                style={{
+                  width: ORBIT_BTN, height: ORBIT_BTN, left: x, top: y,
+                  background: active ? (cfg?.gradient || '#6B46F0') : '#FFF',
+                  border: active ? 'none' : '1.5px solid #E5E7EB',
+                  boxShadow: active ? `0 4px 14px ${cfg?.shadow || 'rgba(124,92,252,0.35)'}` : '0 1px 3px rgba(0,0,0,0.05)',
+                  zIndex: active ? 2 : 1,
+                }}
+                animate={{ rotate: -360, scale: active ? 1.15 : 1 }}
+                transition={{ rotate: { duration: 34, repeat: Infinity, ease: 'linear' }, scale: { duration: 0.25 } }}
+              >
+                {cat === 'all' ? ALL_ICON : cfg?.icon}
+              </motion.button>
+            )
+          })}
+        </motion.div>
+      </div>
+      <div className="text-center -mt-2 mb-1">
+        <span className="text-xs font-black px-3 py-1 rounded-full" style={{ background: '#F3EEFF', color: '#5A32D9' }}>
+          {filter === 'all' ? t.allCategoriesLabel : `${CAT_CFG[filter]?.icon} ${catLabels[filter as keyof typeof catLabels]}`}
+        </span>
       </div>
 
       {/* ── Exercise grid ── */}

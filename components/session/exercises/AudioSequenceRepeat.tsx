@@ -127,7 +127,7 @@ export default function AudioSequenceRepeat({ onComplete, onCancel, difficulty =
         </div>
         <h2 className="text-xl font-black text-white">تسلسل الأصوات</h2>
         <div className="text-center">
-          <div className="text-2xl font-black text-green-400">{Math.round(totalScore / Math.max(round, 1))}%</div>
+          <div className="text-2xl font-black text-green-400">{Math.min(100, Math.round(totalScore / ROUNDS))}%</div>
           <div className="text-xs text-white/50">دقة</div>
         </div>
       </div>

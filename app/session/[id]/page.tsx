@@ -39,6 +39,7 @@ import VisualSearch          from '@/components/session/exercises/VisualSearch'
 import OddOneOut             from '@/components/session/exercises/OddOneOut'
 import SustainedAttention    from '@/components/session/exercises/SustainedAttention'
 import FlashCount            from '@/components/session/exercises/FlashCount'
+import NumberSearch          from '@/components/session/exercises/NumberSearch'
 import GoNoGo                from '@/components/session/exercises/GoNoGo'
 import BalloonControl        from '@/components/session/exercises/BalloonControl'
 import TrafficLight          from '@/components/session/exercises/TrafficLight'
@@ -196,6 +197,7 @@ const EXERCISES = [
   { id:'odd-one-out',           labelAr:'الغريب في المجموعة',      icon:'🤔', category:'انتباه',           color:'bg-indigo-900/40 border-indigo-400',   ageMin:5,  ageMax:17 },
   { id:'sustained-attention',   labelAr:'الانتباه المستمر',        icon:'👁️', category:'انتباه',           color:'bg-blue-900/40 border-blue-400',       ageMin:6,  ageMax:22 },
   { id:'flash-count',           labelAr:'عدّ السريع',              icon:'⚡', category:'انتباه',           color:'bg-yellow-900/40 border-yellow-400',   ageMin:5,  ageMax:22 },
+  { id:'number-search',         labelAr:'البحث عن الأرقام',        icon:'🔍', category:'انتباه',           color:'bg-teal-900/40 border-teal-500',       ageMin:6,  ageMax:22 },
   // ── اندفاعية ─────────────────────────────────────
   { id:'go-no-go',              labelAr:'اضغط / لا تضغط',         icon:'🚦', category:'اندفاعية',         color:'bg-orange-900/40 border-orange-400',   ageMin:6,  ageMax:22 },
   { id:'balloon-control',       labelAr:'البالون الهادئ',          icon:'🎈', category:'اندفاعية',         color:'bg-red-900/40 border-red-400',         ageMin:5,  ageMax:14 },
@@ -3013,6 +3015,31 @@ ${notes ? `
 
             return (
               <div className="w-full max-w-sm mx-auto px-4" dir="rtl">
+                {/* Pre-session phase duration control */}
+                <div
+                  className="mb-4 flex items-center gap-2 rounded-2xl px-4 py-2.5"
+                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+                >
+                  <span className="text-white/30 text-[10px] font-black flex-shrink-0">مراحل الجلسة</span>
+                  <div className="flex items-center gap-1.5 flex-1 overflow-x-auto">
+                    {SESSION_PHASES.map((ph, i) => (
+                      <span
+                        key={ph.id}
+                        className="flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-lg flex-shrink-0 ltr-num"
+                        style={{ background: `${ph.color}18`, color: ph.color }}
+                      >
+                        {ph.icon} {phaseDurations[i]}د
+                      </span>
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => setShowPhaseEdit(true)}
+                    className="text-white/40 hover:text-white/70 text-[11px] font-black flex-shrink-0 px-1.5 transition-colors"
+                    title="تعديل مدة المراحل قبل البدء"
+                  >
+                    ⚙ تعديل
+                  </button>
+                </div>
                 {!readyDone ? (
                   <div
                     className="rounded-3xl overflow-hidden shadow-2xl"
@@ -3248,6 +3275,7 @@ ${notes ? `
               {activeView.id === 'odd-one-out'           && <OddOneOut             onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
               {activeView.id === 'sustained-attention'   && <SustainedAttention    onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
               {activeView.id === 'flash-count'           && <FlashCount            onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'number-search'         && <NumberSearch          onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
               {activeView.id === 'go-no-go'              && <GoNoGo                onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
               {activeView.id === 'balloon-control'       && <BalloonControl        onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
               {activeView.id === 'traffic-light'         && <TrafficLight          onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}

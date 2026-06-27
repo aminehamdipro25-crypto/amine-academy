@@ -41,15 +41,6 @@ export default function BodyScan({ onComplete, onCancel, difficulty = 1 }: Props
             const next = idx + 1
             if (next >= count) {
               setDone(true)
-              onComplete({
-                exerciseType:    'body-scan',
-                exerciseLabelAr: 'فحص الجسم',
-                score: 100, accuracy: 100,
-                duration: Math.round((Date.now() - startMs) / 1000),
-                errors: 0,
-                metadata: { steps: count },
-                completedAt: new Date().toISOString(),
-              })
             } else {
               setIdx(next)
               setPhase('tense')
@@ -65,7 +56,27 @@ export default function BodyScan({ onComplete, onCancel, difficulty = 1 }: Props
 
   const step = steps[idx]
 
-  if (done) return null
+  if (done) return (
+    <div className="flex flex-col items-center justify-center h-full gap-5 px-6 text-center" dir="rtl">
+      <div className="text-7xl">🧘</div>
+      <h2 className="text-white font-black text-2xl">أحسنت! اكتمل الفحص</h2>
+      <p className="text-white/50 text-sm">شعرت بجسمك يرتخي خطوة بخطوة</p>
+      <button
+        onClick={() => onComplete({
+          exerciseType:    'body-scan',
+          exerciseLabelAr: 'فحص الجسم',
+          score: 100, accuracy: 100,
+          duration: Math.round((Date.now() - startMs) / 1000),
+          errors: 0,
+          metadata: { steps: count },
+          completedAt: new Date().toISOString(),
+        })}
+        className="bg-brand-600 hover:bg-brand-700 text-white font-black px-8 py-3 rounded-xl transition-colors"
+      >
+        متابعة →
+      </button>
+    </div>
+  )
 
   return (
     <div className="flex flex-col items-center gap-6 p-6 select-none" dir="rtl">

@@ -15,6 +15,7 @@ export default function NBackTask({ onComplete, onCancel, difficulty = 1 }: Prop
   const correctRef = useRef(0)
   const wrongRef   = useRef(0)
   const respondRef = useRef(false)
+  const itiTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const [phase, setPhase]       = useState<'intro'|'show'|'iti'|'done'>('intro')
   const [trial, setTrial]       = useState(0)
@@ -63,11 +64,13 @@ export default function NBackTask({ onComplete, onCancel, difficulty = 1 }: Prop
       }
       setCurrent(null)
       setPhase('iti')
-      setTimeout(() => runTrial(trial + 1), itiMs)
+      itiTimerRef.current = setTimeout(() => runTrial(trial + 1), itiMs)
     }, displayMs)
-    return () => clearTimeout(timer)
+    return () => { clearTimeout(timer); if (itiTimerRef.current) clearTimeout(itiTimerRef.current) }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, trial])
+
+  useEffect(() => () => { if (itiTimerRef.current) clearTimeout(itiTimerRef.current) }, [])
 
   function respond(answer: boolean) {
     if (phase !== 'show' || respondRef.current) return

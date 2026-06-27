@@ -123,9 +123,9 @@ const SCENARIOS: Scenario[] = [
   },
 ]
 
-const TOTAL_SCENARIOS = 3
+export default function SocialScenarios({ onComplete, onCancel, studentAge, difficulty = 1 }: Props) {
+  const totalScenariosTarget = difficulty === 1 ? 2 : difficulty === 2 ? 3 : 4
 
-export default function SocialScenarios({ onComplete, onCancel, studentAge }: Props) {
   const available = SCENARIOS.filter(s =>
     (!s.minAge || s.minAge <= studentAge) &&
     (!s.maxAge || s.maxAge >= studentAge)
@@ -133,13 +133,14 @@ export default function SocialScenarios({ onComplete, onCancel, studentAge }: Pr
 
   const [queue] = useState<Scenario[]>(() => {
     const shuffled = [...available].sort(() => Math.random() - 0.5)
-    return shuffled.slice(0, Math.min(TOTAL_SCENARIOS, shuffled.length))
+    return shuffled.slice(0, Math.min(totalScenariosTarget, shuffled.length))
   })
 
   const [idx, setIdx] = useState(0)
   const [selected, setSelected] = useState<Choice | null>(null)
   const [showDiscussion, setShowDiscussion] = useState(false)
   const [scores, setScores] = useState<number[]>([])
+  const [poorChoices, setPoorChoices] = useState(0)
   const startRef = useRef(Date.now())
 
   const scenario = queue[idx]
@@ -150,6 +151,7 @@ export default function SocialScenarios({ onComplete, onCancel, studentAge }: Pr
     setSelected(choice)
     const score = choice.type === 'assertive' || choice.type === 'prosocial' ? 100 : choice.type === 'passive' ? 50 : 25
     setScores(prev => [...prev, score])
+    if (choice.type === 'passive' || choice.type === 'aggressive') setPoorChoices(c => c + 1)
   }
 
   function next() {
@@ -164,8 +166,8 @@ export default function SocialScenarios({ onComplete, onCancel, studentAge }: Pr
         score: avg,
         accuracy: avg,
         duration: dur,
-        errors: 0,
-        metadata: { scores, totalScenarios },
+        errors: poorChoices,
+        metadata: { scores, totalScenarios, difficulty },
         completedAt: new Date().toISOString(),
       })
     } else {

@@ -42,14 +42,16 @@ export default function TrafficLight({ onComplete, onCancel, difficulty = 1 }: P
       setFeedback(null)
       const next = round + 1
       if (next >= ROUNDS) {
-        const finalScore = Math.max(0, Math.round(((score + (result === 'hit' ? 1 : 0)) / ROUNDS) * 100) - falseStarts * 10)
+        const finalFalseStarts = falseStarts + (result === 'false' ? 1 : 0)
+        const finalHits = score + (result === 'hit' ? 1 : 0)
+        const finalScore = Math.max(0, Math.round((finalHits / ROUNDS) * 100) - finalFalseStarts * 10)
         onComplete({
           exerciseType:    'traffic-light',
           exerciseLabelAr: 'إشارة المرور',
           score:           finalScore,
           accuracy:        finalScore,
           duration:        Math.round((Date.now() - startMs) / 1000),
-          errors:          falseStarts + (result === 'miss' ? 1 : 0),
+          errors:          finalFalseStarts + (result === 'miss' ? 1 : 0),
           metadata:        { rounds: ROUNDS, difficulty },
           completedAt:     new Date().toISOString(),
         })

@@ -57,12 +57,12 @@ export default function WordRecall({ onComplete, onCancel, studentAge: _studentA
     const hits = Array.from(selected).filter(w => targetWords.includes(w)).length
     const falseAlarms = Array.from(selected).filter(w => !targetWords.includes(w)).length
     const dur = Math.round((Date.now() - startRef.current) / 1000)
-    const acc = Math.round((hits / wordCount) * 100)
+    const acc = Math.max(0, Math.round(((hits - falseAlarms) / wordCount) * 100))
     setPhase('done')
     onComplete({
       exerciseType: 'word-recall',
       exerciseLabelAr: 'تذكر الكلمات',
-      score: Math.max(0, acc - falseAlarms * 10),
+      score: acc,
       accuracy: acc,
       duration: dur,
       errors: falseAlarms,

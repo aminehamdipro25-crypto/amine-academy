@@ -41,9 +41,16 @@ export default function StroopTest({ onComplete, onCancel, difficulty = 1 }: Pro
   useEffect(() => {
     if (!started || feedback !== null || result) return
     trialStart.current = Date.now()
-    const id = setInterval(() => setTrialMs(Date.now() - trialStart.current), 50)
+    const id = setInterval(() => {
+      const elapsed = Date.now() - trialStart.current
+      setTrialMs(elapsed)
+      if (elapsed >= timeLimit) {
+        clearInterval(id)
+        timeoutAnswer()
+      }
+    }, 50)
     return () => clearInterval(id)
-  }, [started, feedback, result, trial])
+  }, [started, feedback, result, trial]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function start() {
     startRef.current = Date.now()
@@ -52,11 +59,9 @@ export default function StroopTest({ onComplete, onCancel, difficulty = 1 }: Pro
     setStarted(true)
   }
 
-  function answer(colorIdx: number) {
+  function settle(isCorrect: boolean, rt: number) {
     if (feedback !== null) return
-    const rt = Date.now() - trialStart.current
     rtsRef.current.push(rt)
-    const isCorrect = colorIdx === current.inkIdx
     if (isCorrect) { correctRef.current++; setCorrect(correctRef.current) }
     else           { errRef.current++;     setErrors(errRef.current) }
     setFeedback(isCorrect ? 'correct' : 'wrong')
@@ -81,6 +86,16 @@ export default function StroopTest({ onComplete, onCancel, difficulty = 1 }: Pro
         setCurrent(makeTrial())
       }
     }, difficulty === 3 ? 350 : 550)
+  }
+
+  function answer(colorIdx: number) {
+    if (feedback !== null) return
+    settle(colorIdx === current.inkIdx, Date.now() - trialStart.current)
+  }
+
+  function timeoutAnswer() {
+    if (feedback !== null) return
+    settle(false, timeLimit)
   }
 
   // Intro

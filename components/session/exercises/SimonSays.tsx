@@ -24,8 +24,10 @@ export default function SimonSays({ onComplete, onCancel, studentAge, difficulty
   const [playerSeq, setPlayerSeq] = useState<number[]>([])
   const [level, setLevel] = useState(1)
   const [errors, setErrors] = useState(0)
-  const [maxLevel, setMaxLevel] = useState(0)
   const startRef = useRef(Date.now())
+  const errRef = useRef(0)
+  const maxLevelRef = useRef(0)
+  const correctTapsRef = useRef(0)
 
   const flashSequence = useCallback(async (seq: number[]) => {
     setPhase('watch')
@@ -47,6 +49,24 @@ export default function SimonSays({ onComplete, onCancel, studentAge, difficulty
     setTimeout(() => flashSequence(seq), 500)
   }, [level, startLen, flashSequence])
 
+  function finish() {
+    const dur = Math.round((Date.now() - startRef.current) / 1000)
+    const totalTaps = correctTapsRef.current + errRef.current
+    const accuracy = totalTaps > 0 ? Math.round((correctTapsRef.current / totalTaps) * 100) : 0
+    const score = Math.max(0, Math.min(100, maxLevelRef.current * 10 - errRef.current * 5))
+    setPhase('done')
+    onComplete({
+      exerciseType: 'simon-says',
+      exerciseLabelAr: 'سايمون يقول — تسلسل الألوان',
+      score,
+      accuracy,
+      duration: dur,
+      errors: errRef.current,
+      metadata: { maxLevel: maxLevelRef.current, difficulty },
+      completedAt: new Date().toISOString(),
+    })
+  }
+
   function press(id: number) {
     if (phase !== 'input') return
     setActiveBtn(id)
@@ -55,42 +75,25 @@ export default function SimonSays({ onComplete, onCancel, studentAge, difficulty
     setPlayerSeq(newSeq)
     const pos = newSeq.length - 1
     if (sequence[pos] !== id) {
-      setErrors(e => e + 1)
+      errRef.current++
+      setErrors(errRef.current)
       setPhase('wrong')
-      if (level > maxLevel) setMaxLevel(level)
-      if (errors >= 2) {
-        const dur = Math.round((Date.now() - startRef.current) / 1000)
-        onComplete({
-          exerciseType: 'simon-says',
-          exerciseLabelAr: 'سايمون يقول — تسلسل الألوان',
-          score: Math.min(100, maxLevel * 12),
-          accuracy: Math.round(((level - 1) / (level - 1 + errors + 1)) * 100),
-          duration: dur,
-          errors,
-          metadata: { maxLevel, difficulty },
-          completedAt: new Date().toISOString(),
-        })
+      if (level > maxLevelRef.current) maxLevelRef.current = level
+      if (errRef.current >= 3) {
+        finish()
         return
       }
       setTimeout(() => flashSequence(sequence), 1200)
-    } else if (newSeq.length === sequence.length) {
-      if (level > maxLevel) setMaxLevel(level)
-      if (level >= 10) {
-        const dur = Math.round((Date.now() - startRef.current) / 1000)
-        setPhase('done')
-        onComplete({
-          exerciseType: 'simon-says',
-          exerciseLabelAr: 'سايمون يقول — تسلسل الألوان',
-          score: 100,
-          accuracy: Math.round((level / (level + errors)) * 100),
-          duration: dur,
-          errors,
-          metadata: { maxLevel: level, difficulty },
-          completedAt: new Date().toISOString(),
-        })
-        return
+    } else {
+      correctTapsRef.current++
+      if (newSeq.length === sequence.length) {
+        if (level > maxLevelRef.current) maxLevelRef.current = level
+        if (level >= 10) {
+          finish()
+          return
+        }
+        setTimeout(() => setLevel(l => l + 1), 800)
       }
-      setTimeout(() => setLevel(l => l + 1), 800)
     }
   }
 

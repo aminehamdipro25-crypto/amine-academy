@@ -1,5 +1,5 @@
 'use client'
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import type { ExerciseResult } from '@/lib/types'
 
 interface Props {
@@ -35,6 +35,9 @@ export default function SpellingBee({ onComplete, onCancel, difficulty = 1 }: Pr
   const [correct, setCorrect] = useState(0)
   const [errors,  setErrors]  = useState(0)
   const [startMs]             = useState(Date.now())
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current) }, [])
 
   const speak = useCallback((text: string) => {
     window.speechSynthesis.cancel()
@@ -53,7 +56,7 @@ export default function SpellingBee({ onComplete, onCancel, difficulty = 1 }: Pr
     if (isCorrect) { setCorrect(v => v + 1); speak('ممتاز') }
     else           { setErrors(v => v + 1);  speak('حاول مرة أخرى') }
 
-    setTimeout(() => {
+    timerRef.current = setTimeout(() => {
       const next = idx + 1
       if (next >= count) {
         const nc = correct + (isCorrect ? 1 : 0)

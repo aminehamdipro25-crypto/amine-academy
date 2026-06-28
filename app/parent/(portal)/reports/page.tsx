@@ -6,6 +6,99 @@ import { useLang, tr } from '@/lib/i18n'
 
 interface ChildReports { child: Student; reports: ProgressReport[] }
 
+interface ParentSessionSummary {
+  appointmentId: string
+  date: string
+  timeSlot: string
+  durationSeconds: number
+  highlights: string[]
+  exercises: { exerciseLabelAr: string; score: number; accuracy: number }[]
+  observations: { attention: number; cooperation: number; energy: number; mood: number; anxiety: number }
+  therapistNotes: string
+  createdAt: string
+}
+interface ChildSessions { child: Student; sessions: ParentSessionSummary[] }
+
+function RecentSessions({ sessions }: { sessions: ParentSessionSummary[] }) {
+  const { lang } = useLang()
+  const t = tr[lang].parentReports
+  const locale = lang === 'ar' ? 'fr-FR' : lang === 'fr' ? 'fr-FR' : 'en-US'
+
+  if (sessions.length === 0) return null
+
+  return (
+    <div className="space-y-3">
+      <div>
+        <h2 className="font-black text-gray-900 text-sm">{t.recentSessionsTitle}</h2>
+        <p className="text-gray-400 text-xs mt-0.5">{t.recentSessionsSubtitle}</p>
+      </div>
+      <div className="space-y-3">
+        {sessions.map(s => (
+          <div key={s.appointmentId} className="bg-white rounded-2xl p-4" style={{ border: '1.5px solid #E0E7FF' }}>
+            <div className="flex items-center justify-between gap-2 flex-wrap mb-3">
+              <span className="text-sm font-bold text-gray-800 ltr-num">
+                {new Date(s.date).toLocaleDateString(locale, { year: 'numeric', month: 'long', day: 'numeric' })}
+                {s.timeSlot ? ` · ${s.timeSlot}` : ''}
+              </span>
+              {s.durationSeconds > 0 && (
+                <span className="text-xs text-gray-400 ltr-num">
+                  {Math.round(s.durationSeconds / 60)} {t.sessionDurationSuffix}
+                </span>
+              )}
+            </div>
+
+            {/* Observations */}
+            <div className="grid grid-cols-5 gap-1.5 mb-3">
+              {(['attention', 'cooperation', 'energy', 'mood', 'anxiety'] as const).map(key => (
+                <div key={key} className="text-center bg-gray-50 rounded-lg py-1.5">
+                  <div className="text-[10px] text-gray-400">{t.observationLabels[key]}</div>
+                  <div className="text-xs font-black text-indigo-600 ltr-num">{s.observations?.[key] ?? '—'}/5</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Exercises */}
+            {s.exercises.length > 0 && (
+              <div className="mb-3">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-1.5">{t.sessionExercisesLabel}</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {s.exercises.map((e, i) => (
+                    <span key={i} className="text-xs bg-indigo-50 text-indigo-700 rounded-full px-2.5 py-1 font-medium">
+                      {e.exerciseLabelAr} · <span className="ltr-num font-bold">{e.score}%</span>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Highlights */}
+            {s.highlights.length > 0 && (
+              <div className="mb-3">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-1.5">{t.sessionHighlightsLabel}</p>
+                <ul className="space-y-1">
+                  {s.highlights.map((h, i) => (
+                    <li key={i} className="text-xs text-gray-600 flex items-start gap-1.5">
+                      <span className="text-amber-500 flex-shrink-0">✨</span>{h}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Therapist notes */}
+            {s.therapistNotes && (
+              <div>
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-1.5">{t.sessionNotesLabel}</p>
+                <p className="text-xs text-gray-600 bg-gray-50 rounded-xl p-3 leading-relaxed">{s.therapistNotes}</p>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 const METRIC_ICONS: Record<string, string> = {
   attention:            '🎯',
   impulse_control:      '🛑',
@@ -367,6 +460,7 @@ export default function ReportsPage() {
   const t = tr[lang].parentReports
   const coachName = tr[lang].portal.common.coachName
   const [data, setData] = useState<ChildReports[]>([])
+  const [sessionData, setSessionData] = useState<ChildSessions[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedChild, setSelectedChild] = useState('')
 
@@ -378,6 +472,10 @@ export default function ReportsPage() {
         if (d.reportsPerChild?.[0]) setSelectedChild(d.reportsPerChild[0].child.id)
       })
       .finally(() => setLoading(false))
+    fetch('/api/parent/sessions')
+      .then(r => r.json())
+      .then(d => setSessionData(d.sessionsPerChild || []))
+      .catch(() => {})
   }, [])
 
   if (loading) return (
@@ -391,6 +489,7 @@ export default function ReportsPage() {
 
   const current = data.find(d => d.child.id === selectedChild)
   const reports  = current?.reports ?? []
+  const currentSessions = sessionData.find(d => d.child.id === selectedChild)?.sessions ?? []
 
   return (
     <div className="space-y-6">
@@ -421,6 +520,9 @@ export default function ReportsPage() {
           ))}
         </div>
       )}
+
+      {/* ── Recent session summaries ── */}
+      <RecentSessions sessions={currentSessions} />
 
       {/* ── Report count strip ── */}
       {reports.length > 0 && (

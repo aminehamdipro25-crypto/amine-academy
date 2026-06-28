@@ -164,85 +164,85 @@ const SESSION_PHASES: SessionPhase[] = [
 ]
 
 const EXERCISES = [
-  { id:'memory-cards',      labelAr:'مطابقة البطاقات',         icon:'🃏', category:'ذاكرة',          color:'bg-purple-900/40 border-purple-500',  ageMin:5,  ageMax:22 },
-  { id:'sequence-memory',   labelAr:'تذكر التسلسل',            icon:'🔢', category:'ذاكرة',          color:'bg-blue-900/40 border-blue-500',       ageMin:6,  ageMax:17 },
-  { id:'n-back',            labelAr:'ذاكرة N-Back',             icon:'🧩', category:'ذاكرة',          color:'bg-indigo-900/40 border-indigo-500',   ageMin:8,  ageMax:22 },
-  { id:'word-recall',       labelAr:'تذكر الكلمات',             icon:'📝', category:'ذاكرة',          color:'bg-violet-900/40 border-violet-500',   ageMin:6,  ageMax:17 },
-  { id:'breathing',         labelAr:'تمارين التنفس',            icon:'🌬️', category:'تنظيم',          color:'bg-cyan-900/40 border-cyan-500',        ageMin:5,  ageMax:22 },
-  { id:'tap-target',        labelAr:'التناسق الحركي',           icon:'🎯', category:'حركي',           color:'bg-orange-900/40 border-orange-500',   ageMin:5,  ageMax:22 },
-  { id:'simon-says',        labelAr:'سايمون يقول',              icon:'🎨', category:'إدراكي',         color:'bg-green-900/40 border-green-500',     ageMin:5,  ageMax:17 },
-  { id:'letter-match',      labelAr:'مطابقة الحروف',            icon:'🔤', category:'تعلّم',           color:'bg-amber-900/40 border-amber-500',     ageMin:5,  ageMax:11 },
-  { id:'reaction-game',     labelAr:'سرعة رد الفعل',            icon:'⚡', category:'حركي',           color:'bg-yellow-900/40 border-yellow-500',   ageMin:5,  ageMax:22 },
-  { id:'stroop-test',       labelAr:'ستروب — كبح الاستجابة',   icon:'🔵', category:'انتباه',          color:'bg-rose-900/40 border-rose-500',       ageMin:10, ageMax:22 },
-  { id:'stop-signal',       labelAr:'توقف أو اكمل',             icon:'🛑', category:'اندفاعية',       color:'bg-red-900/40 border-red-500',         ageMin:8,  ageMax:22 },
-  { id:'emotion-cards',     labelAr:'التعرف على المشاعر',       icon:'🎭', category:'اجتماعي',        color:'bg-pink-900/40 border-pink-500',       ageMin:5,  ageMax:17 },
-  { id:'token-board',       labelAr:'لوح التعزيز',              icon:'🏅', category:'تعديل السلوك',   color:'bg-emerald-900/40 border-emerald-500', ageMin:5,  ageMax:22 },
-  { id:'self-rating',       labelAr:'تقييم الذات',              icon:'🪞', category:'تعديل السلوك',   color:'bg-teal-900/40 border-teal-500',       ageMin:7,  ageMax:22 },
-  { id:'verbal-fluency',    labelAr:'الطلاقة اللفظية',          icon:'🗣️', category:'معرفي',          color:'bg-sky-900/40 border-sky-500',         ageMin:5,  ageMax:22 },
-  { id:'social-scenarios',  labelAr:'المواقف الاجتماعية',       icon:'🤝', category:'اجتماعي',        color:'bg-fuchsia-900/40 border-fuchsia-500', ageMin:5,  ageMax:22 },
-  { id:'behavior-contract', labelAr:'عقد الجلسة',               icon:'📋', category:'تعديل السلوك',   color:'bg-lime-900/40 border-lime-500',       ageMin:7,  ageMax:22 },
-  { id:'color-grid',             labelAr:'لوحة الألوان',            icon:'🎨', category:'إدراكي',       color:'bg-pink-900/40 border-pink-500',       ageMin:5,  ageMax:14 },
-  { id:'pattern-match',          labelAr:'مطابقة الأنماط',          icon:'🔍', category:'إدراكي',       color:'bg-violet-900/40 border-violet-500',   ageMin:5,  ageMax:16 },
-  { id:'word-builder',           labelAr:'بناء الكلمة',             icon:'🔤', category:'تعلّم',         color:'bg-emerald-900/40 border-emerald-400', ageMin:5,  ageMax:14 },
-  { id:'auditory-memory',        labelAr:'الذاكرة السمعية',         icon:'🎧', category:'سمعي',          color:'bg-purple-900/40 border-purple-400',   ageMin:5,  ageMax:22 },
-  { id:'listening-comprehension',labelAr:'فهم الاستماع',            icon:'🔊', category:'سمعي',          color:'bg-blue-900/40 border-blue-400',       ageMin:5,  ageMax:18 },
-  { id:'picture-word-cards',     labelAr:'بطاقات الصورة والكلمة',  icon:'🖼️', category:'تعلّم',         color:'bg-teal-900/40 border-teal-400',       ageMin:4,  ageMax:14 },
-  { id:'number-sequence',        labelAr:'تسلسل الأرقام',           icon:'🔢', category:'معرفي',          color:'bg-blue-900/40 border-blue-300',       ageMin:4,  ageMax:22 },
-  { id:'shadow-match',           labelAr:'مطابقة الظلال',           icon:'🌑', category:'إدراكي',         color:'bg-gray-800/60 border-gray-400',       ageMin:4,  ageMax:12 },
-  { id:'story-sequencing',       labelAr:'ترتيب القصة',             icon:'📖', category:'تفكير',          color:'bg-amber-900/40 border-amber-300',     ageMin:5,  ageMax:14 },
-  { id:'waiting-game',           labelAr:'لعبة الانتظار',           icon:'⏳', category:'اندفاعية',      color:'bg-red-900/40 border-red-300',         ageMin:5,  ageMax:14 },
-  { id:'social-problem-solving', labelAr:'كيف أتعامل؟',            icon:'😤', category:'اجتماعي',        color:'bg-pink-900/40 border-pink-300',       ageMin:6,  ageMax:18 },
+  { id:'memory-cards',      labelAr:'مطابقة البطاقات',         icon:'🃏', category:'ذاكرة',          color:'bg-purple-50 border-purple-200',  ageMin:5,  ageMax:22 },
+  { id:'sequence-memory',   labelAr:'تذكر التسلسل',            icon:'🔢', category:'ذاكرة',          color:'bg-blue-50 border-blue-200',       ageMin:6,  ageMax:17 },
+  { id:'n-back',            labelAr:'ذاكرة N-Back',             icon:'🧩', category:'ذاكرة',          color:'bg-indigo-50 border-indigo-200',   ageMin:8,  ageMax:22 },
+  { id:'word-recall',       labelAr:'تذكر الكلمات',             icon:'📝', category:'ذاكرة',          color:'bg-violet-50 border-violet-200',   ageMin:6,  ageMax:17 },
+  { id:'breathing',         labelAr:'تمارين التنفس',            icon:'🌬️', category:'تنظيم',          color:'bg-cyan-50 border-cyan-200',        ageMin:5,  ageMax:22 },
+  { id:'tap-target',        labelAr:'التناسق الحركي',           icon:'🎯', category:'حركي',           color:'bg-orange-50 border-orange-200',   ageMin:5,  ageMax:22 },
+  { id:'simon-says',        labelAr:'سايمون يقول',              icon:'🎨', category:'إدراكي',         color:'bg-green-50 border-green-200',     ageMin:5,  ageMax:17 },
+  { id:'letter-match',      labelAr:'مطابقة الحروف',            icon:'🔤', category:'تعلّم',           color:'bg-amber-50 border-amber-200',     ageMin:5,  ageMax:11 },
+  { id:'reaction-game',     labelAr:'سرعة رد الفعل',            icon:'⚡', category:'حركي',           color:'bg-yellow-50 border-yellow-200',   ageMin:5,  ageMax:22 },
+  { id:'stroop-test',       labelAr:'ستروب — كبح الاستجابة',   icon:'🔵', category:'انتباه',          color:'bg-rose-50 border-rose-200',       ageMin:10, ageMax:22 },
+  { id:'stop-signal',       labelAr:'توقف أو اكمل',             icon:'🛑', category:'اندفاعية',       color:'bg-red-50 border-red-200',         ageMin:8,  ageMax:22 },
+  { id:'emotion-cards',     labelAr:'التعرف على المشاعر',       icon:'🎭', category:'اجتماعي',        color:'bg-pink-50 border-pink-200',       ageMin:5,  ageMax:17 },
+  { id:'token-board',       labelAr:'لوح التعزيز',              icon:'🏅', category:'تعديل السلوك',   color:'bg-emerald-50 border-emerald-200', ageMin:5,  ageMax:22 },
+  { id:'self-rating',       labelAr:'تقييم الذات',              icon:'🪞', category:'تعديل السلوك',   color:'bg-teal-50 border-teal-200',       ageMin:7,  ageMax:22 },
+  { id:'verbal-fluency',    labelAr:'الطلاقة اللفظية',          icon:'🗣️', category:'معرفي',          color:'bg-sky-50 border-sky-200',         ageMin:5,  ageMax:22 },
+  { id:'social-scenarios',  labelAr:'المواقف الاجتماعية',       icon:'🤝', category:'اجتماعي',        color:'bg-fuchsia-50 border-fuchsia-200', ageMin:5,  ageMax:22 },
+  { id:'behavior-contract', labelAr:'عقد الجلسة',               icon:'📋', category:'تعديل السلوك',   color:'bg-lime-50 border-lime-200',       ageMin:7,  ageMax:22 },
+  { id:'color-grid',             labelAr:'لوحة الألوان',            icon:'🎨', category:'إدراكي',       color:'bg-pink-50 border-pink-200',       ageMin:5,  ageMax:14 },
+  { id:'pattern-match',          labelAr:'مطابقة الأنماط',          icon:'🔍', category:'إدراكي',       color:'bg-violet-50 border-violet-200',   ageMin:5,  ageMax:16 },
+  { id:'word-builder',           labelAr:'بناء الكلمة',             icon:'🔤', category:'تعلّم',         color:'bg-emerald-50 border-emerald-200', ageMin:5,  ageMax:14 },
+  { id:'auditory-memory',        labelAr:'الذاكرة السمعية',         icon:'🎧', category:'سمعي',          color:'bg-purple-50 border-purple-200',   ageMin:5,  ageMax:22 },
+  { id:'listening-comprehension',labelAr:'فهم الاستماع',            icon:'🔊', category:'سمعي',          color:'bg-blue-50 border-blue-200',       ageMin:5,  ageMax:18 },
+  { id:'picture-word-cards',     labelAr:'بطاقات الصورة والكلمة',  icon:'🖼️', category:'تعلّم',         color:'bg-teal-50 border-teal-200',       ageMin:4,  ageMax:14 },
+  { id:'number-sequence',        labelAr:'تسلسل الأرقام',           icon:'🔢', category:'معرفي',          color:'bg-blue-50 border-blue-200',       ageMin:4,  ageMax:22 },
+  { id:'shadow-match',           labelAr:'مطابقة الظلال',           icon:'🌑', category:'إدراكي',         color:'bg-gray-100 border-gray-300',       ageMin:4,  ageMax:12 },
+  { id:'story-sequencing',       labelAr:'ترتيب القصة',             icon:'📖', category:'تفكير',          color:'bg-amber-50 border-amber-200',     ageMin:5,  ageMax:14 },
+  { id:'waiting-game',           labelAr:'لعبة الانتظار',           icon:'⏳', category:'اندفاعية',      color:'bg-red-50 border-red-200',         ageMin:5,  ageMax:14 },
+  { id:'social-problem-solving', labelAr:'كيف أتعامل؟',            icon:'😤', category:'اجتماعي',        color:'bg-pink-50 border-pink-200',       ageMin:6,  ageMax:18 },
   // ── انتباه ───────────────────────────────────────
-  { id:'visual-search',         labelAr:'البحث البصري',            icon:'🔎', category:'انتباه',           color:'bg-cyan-900/40 border-cyan-400',       ageMin:5,  ageMax:22 },
-  { id:'odd-one-out',           labelAr:'الغريب في المجموعة',      icon:'🤔', category:'انتباه',           color:'bg-indigo-900/40 border-indigo-400',   ageMin:5,  ageMax:17 },
-  { id:'sustained-attention',   labelAr:'الانتباه المستمر',        icon:'👁️', category:'انتباه',           color:'bg-blue-900/40 border-blue-400',       ageMin:6,  ageMax:22 },
-  { id:'flash-count',           labelAr:'عدّ السريع',              icon:'⚡', category:'انتباه',           color:'bg-yellow-900/40 border-yellow-400',   ageMin:5,  ageMax:22 },
-  { id:'number-search',         labelAr:'البحث عن الأرقام',        icon:'🔍', category:'انتباه',           color:'bg-teal-900/40 border-teal-500',       ageMin:6,  ageMax:22 },
+  { id:'visual-search',         labelAr:'البحث البصري',            icon:'🔎', category:'انتباه',           color:'bg-cyan-50 border-cyan-200',       ageMin:5,  ageMax:22 },
+  { id:'odd-one-out',           labelAr:'الغريب في المجموعة',      icon:'🤔', category:'انتباه',           color:'bg-indigo-50 border-indigo-200',   ageMin:5,  ageMax:17 },
+  { id:'sustained-attention',   labelAr:'الانتباه المستمر',        icon:'👁️', category:'انتباه',           color:'bg-blue-50 border-blue-200',       ageMin:6,  ageMax:22 },
+  { id:'flash-count',           labelAr:'عدّ السريع',              icon:'⚡', category:'انتباه',           color:'bg-yellow-50 border-yellow-200',   ageMin:5,  ageMax:22 },
+  { id:'number-search',         labelAr:'البحث عن الأرقام',        icon:'🔍', category:'انتباه',           color:'bg-teal-50 border-teal-200',       ageMin:6,  ageMax:22 },
   // ── اندفاعية ─────────────────────────────────────
-  { id:'go-no-go',              labelAr:'اضغط / لا تضغط',         icon:'🚦', category:'اندفاعية',         color:'bg-orange-900/40 border-orange-400',   ageMin:6,  ageMax:22 },
-  { id:'balloon-control',       labelAr:'البالون الهادئ',          icon:'🎈', category:'اندفاعية',         color:'bg-red-900/40 border-red-400',         ageMin:5,  ageMax:14 },
-  { id:'traffic-light',         labelAr:'إشارة المرور',            icon:'🚦', category:'اندفاعية',         color:'bg-green-900/40 border-green-400',     ageMin:5,  ageMax:22 },
+  { id:'go-no-go',              labelAr:'اضغط / لا تضغط',         icon:'🚦', category:'اندفاعية',         color:'bg-orange-50 border-orange-200',   ageMin:6,  ageMax:22 },
+  { id:'balloon-control',       labelAr:'البالون الهادئ',          icon:'🎈', category:'اندفاعية',         color:'bg-red-50 border-red-200',         ageMin:5,  ageMax:14 },
+  { id:'traffic-light',         labelAr:'إشارة المرور',            icon:'🚦', category:'اندفاعية',         color:'bg-green-50 border-green-200',     ageMin:5,  ageMax:22 },
   // ── اجتماعي ──────────────────────────────────────
-  { id:'emotion-mirror',        labelAr:'مرآة المشاعر',            icon:'🪞', category:'اجتماعي',          color:'bg-fuchsia-900/40 border-fuchsia-400', ageMin:5,  ageMax:18 },
-  { id:'conversation-starter',  labelAr:'كيف أبدأ الحديث؟',       icon:'💬', category:'اجتماعي',          color:'bg-teal-900/40 border-teal-400',       ageMin:6,  ageMax:22 },
+  { id:'emotion-mirror',        labelAr:'مرآة المشاعر',            icon:'🪞', category:'اجتماعي',          color:'bg-fuchsia-50 border-fuchsia-200', ageMin:5,  ageMax:18 },
+  { id:'conversation-starter',  labelAr:'كيف أبدأ الحديث؟',       icon:'💬', category:'اجتماعي',          color:'bg-teal-50 border-teal-200',       ageMin:6,  ageMax:22 },
   // ── سمعي ─────────────────────────────────────────
-  { id:'sound-discrimination',  labelAr:'تمييز الأصوات',           icon:'👂', category:'سمعي',             color:'bg-violet-900/40 border-violet-400',   ageMin:5,  ageMax:22 },
-  { id:'rhyme-detection',       labelAr:'اكتشاف القافية',          icon:'🎵', category:'سمعي',             color:'bg-pink-900/40 border-pink-400',       ageMin:5,  ageMax:14 },
-  { id:'audio-sequence',        labelAr:'تسلسل الأصوات',           icon:'🔁', category:'سمعي',             color:'bg-indigo-900/40 border-indigo-300',   ageMin:5,  ageMax:17 },
+  { id:'sound-discrimination',  labelAr:'تمييز الأصوات',           icon:'👂', category:'سمعي',             color:'bg-violet-50 border-violet-200',   ageMin:5,  ageMax:22 },
+  { id:'rhyme-detection',       labelAr:'اكتشاف القافية',          icon:'🎵', category:'سمعي',             color:'bg-pink-50 border-pink-200',       ageMin:5,  ageMax:14 },
+  { id:'audio-sequence',        labelAr:'تسلسل الأصوات',           icon:'🔁', category:'سمعي',             color:'bg-indigo-50 border-indigo-200',   ageMin:5,  ageMax:17 },
   // ── حركي ─────────────────────────────────────────
-  { id:'sequence-tap',          labelAr:'النقر بالتسلسل',          icon:'🟣', category:'حركي',             color:'bg-purple-900/40 border-purple-300',   ageMin:5,  ageMax:22 },
-  { id:'target-tracking',       labelAr:'تتبع الهدف',              icon:'🎯', category:'حركي',             color:'bg-emerald-900/40 border-emerald-400', ageMin:5,  ageMax:17 },
-  { id:'finger-gym',            labelAr:'جمباز الأصابع',           icon:'🥁', category:'حركي',             color:'bg-amber-900/40 border-amber-400',     ageMin:5,  ageMax:22 },
+  { id:'sequence-tap',          labelAr:'النقر بالتسلسل',          icon:'🟣', category:'حركي',             color:'bg-purple-50 border-purple-200',   ageMin:5,  ageMax:22 },
+  { id:'target-tracking',       labelAr:'تتبع الهدف',              icon:'🎯', category:'حركي',             color:'bg-emerald-50 border-emerald-200', ageMin:5,  ageMax:17 },
+  { id:'finger-gym',            labelAr:'جمباز الأصابع',           icon:'🥁', category:'حركي',             color:'bg-amber-50 border-amber-200',     ageMin:5,  ageMax:22 },
   // ── معرفي ────────────────────────────────────────
-  { id:'category-sort',         labelAr:'تصنيف الأشياء',           icon:'🗂️', category:'معرفي',            color:'bg-sky-900/40 border-sky-400',         ageMin:4,  ageMax:14 },
-  { id:'math-flash',            labelAr:'الحساب السريع',           icon:'🔢', category:'معرفي',            color:'bg-blue-900/40 border-blue-300',       ageMin:6,  ageMax:22 },
-  { id:'analogies',             labelAr:'العلاقات والقياسات',      icon:'🧩', category:'معرفي',            color:'bg-teal-900/40 border-teal-300',       ageMin:7,  ageMax:22 },
+  { id:'category-sort',         labelAr:'تصنيف الأشياء',           icon:'🗂️', category:'معرفي',            color:'bg-sky-50 border-sky-200',         ageMin:4,  ageMax:14 },
+  { id:'math-flash',            labelAr:'الحساب السريع',           icon:'🔢', category:'معرفي',            color:'bg-blue-50 border-blue-200',       ageMin:6,  ageMax:22 },
+  { id:'analogies',             labelAr:'العلاقات والقياسات',      icon:'🧩', category:'معرفي',            color:'bg-teal-50 border-teal-200',       ageMin:7,  ageMax:22 },
   // ── تنظيم ────────────────────────────────────────
-  { id:'body-scan',             labelAr:'فحص الجسم',               icon:'🫁', category:'تنظيم',            color:'bg-cyan-900/40 border-cyan-400',       ageMin:6,  ageMax:22 },
-  { id:'mood-meter',            labelAr:'مقياس المزاج',            icon:'🌡️', category:'تنظيم',            color:'bg-amber-900/40 border-amber-400',     ageMin:5,  ageMax:22 },
-  { id:'calm-corner',           labelAr:'ركن الهدوء',              icon:'🧘', category:'تنظيم',            color:'bg-teal-900/40 border-teal-400',       ageMin:5,  ageMax:22 },
-  { id:'emotion-volume',        labelAr:'حجم الانفعال',            icon:'📊', category:'تنظيم',            color:'bg-orange-900/40 border-orange-400',   ageMin:6,  ageMax:22 },
+  { id:'body-scan',             labelAr:'فحص الجسم',               icon:'🫁', category:'تنظيم',            color:'bg-cyan-50 border-cyan-200',       ageMin:6,  ageMax:22 },
+  { id:'mood-meter',            labelAr:'مقياس المزاج',            icon:'🌡️', category:'تنظيم',            color:'bg-amber-50 border-amber-200',     ageMin:5,  ageMax:22 },
+  { id:'calm-corner',           labelAr:'ركن الهدوء',              icon:'🧘', category:'تنظيم',            color:'bg-teal-50 border-teal-200',       ageMin:5,  ageMax:22 },
+  { id:'emotion-volume',        labelAr:'حجم الانفعال',            icon:'📊', category:'تنظيم',            color:'bg-orange-50 border-orange-200',   ageMin:6,  ageMax:22 },
   // ── تعديل السلوك ──────────────────────────────────
-  { id:'daily-goals',           labelAr:'أهدافي اليوم',            icon:'🎯', category:'تعديل السلوك',    color:'bg-green-900/40 border-green-400',     ageMin:5,  ageMax:22 },
-  { id:'choice-board',          labelAr:'لوح الاختيارات',          icon:'🗳️', category:'تعديل السلوك',    color:'bg-violet-900/40 border-violet-400',   ageMin:4,  ageMax:14 },
+  { id:'daily-goals',           labelAr:'أهدافي اليوم',            icon:'🎯', category:'تعديل السلوك',    color:'bg-green-50 border-green-200',     ageMin:5,  ageMax:22 },
+  { id:'choice-board',          labelAr:'لوح الاختيارات',          icon:'🗳️', category:'تعديل السلوك',    color:'bg-violet-50 border-violet-200',   ageMin:4,  ageMax:14 },
   // ── تفكير ────────────────────────────────────────
-  { id:'pattern-puzzle',        labelAr:'أكمل النمط',              icon:'🔮', category:'تفكير',            color:'bg-indigo-900/40 border-indigo-400',   ageMin:4,  ageMax:14 },
-  { id:'if-then',               labelAr:'ماذا سيحدث؟',            icon:'🔗', category:'تفكير',            color:'bg-sky-900/40 border-sky-400',         ageMin:5,  ageMax:17 },
-  { id:'problem-solver',        labelAr:'حل المشكلة',              icon:'💡', category:'تفكير',            color:'bg-yellow-900/40 border-yellow-400',   ageMin:6,  ageMax:22 },
+  { id:'pattern-puzzle',        labelAr:'أكمل النمط',              icon:'🔮', category:'تفكير',            color:'bg-indigo-50 border-indigo-200',   ageMin:4,  ageMax:14 },
+  { id:'if-then',               labelAr:'ماذا سيحدث؟',            icon:'🔗', category:'تفكير',            color:'bg-sky-50 border-sky-200',         ageMin:5,  ageMax:17 },
+  { id:'problem-solver',        labelAr:'حل المشكلة',              icon:'💡', category:'تفكير',            color:'bg-yellow-50 border-yellow-200',   ageMin:6,  ageMax:22 },
   // ── تعلّم ─────────────────────────────────────────
-  { id:'spelling-bee',          labelAr:'الإملاء',                 icon:'🐝', category:'تعلّم',            color:'bg-rose-900/40 border-rose-400',       ageMin:5,  ageMax:14 },
-  { id:'reading-cards',         labelAr:'بطاقات القراءة',          icon:'📖', category:'تعلّم',            color:'bg-blue-900/40 border-blue-300',       ageMin:5,  ageMax:14 },
-  { id:'span-extension',        labelAr:'امتداد الذاكرة',           icon:'🔢', category:'ذاكرة',            color:'bg-indigo-900/40 border-indigo-300',   ageMin:6,  ageMax:22 },
-  { id:'direction-follow',      labelAr:'اتباع الاتجاهات',         icon:'🧭', category:'إدراكي',           color:'bg-cyan-900/40 border-cyan-300',       ageMin:5,  ageMax:17 },
-  { id:'logic-sort',            labelAr:'الترتيب المنطقي',         icon:'📊', category:'تفكير',            color:'bg-emerald-900/40 border-emerald-300', ageMin:5,  ageMax:17 },
+  { id:'spelling-bee',          labelAr:'الإملاء',                 icon:'🐝', category:'تعلّم',            color:'bg-rose-50 border-rose-200',       ageMin:5,  ageMax:14 },
+  { id:'reading-cards',         labelAr:'بطاقات القراءة',          icon:'📖', category:'تعلّم',            color:'bg-blue-50 border-blue-200',       ageMin:5,  ageMax:14 },
+  { id:'span-extension',        labelAr:'امتداد الذاكرة',           icon:'🔢', category:'ذاكرة',            color:'bg-indigo-50 border-indigo-200',   ageMin:6,  ageMax:22 },
+  { id:'direction-follow',      labelAr:'اتباع الاتجاهات',         icon:'🧭', category:'إدراكي',           color:'bg-cyan-50 border-cyan-200',       ageMin:5,  ageMax:17 },
+  { id:'logic-sort',            labelAr:'الترتيب المنطقي',         icon:'📊', category:'تفكير',            color:'bg-emerald-50 border-emerald-200', ageMin:5,  ageMax:17 },
   // ── رياضي ──────────────────────────────────────────
-  { id:'jumping-jacks',    labelAr:'قفز النجمة',           icon:'⭐', category:'رياضي', color:'bg-green-900/40 border-green-500',     ageMin:5,  ageMax:22 },
-  { id:'obstacle-circuit', labelAr:'دائرة الحواجز',         icon:'🏅', category:'رياضي', color:'bg-orange-900/40 border-orange-500',   ageMin:5,  ageMax:17 },
-  { id:'balance-walk',     labelAr:'خط التوازن',            icon:'⚖️', category:'رياضي', color:'bg-blue-900/40 border-blue-500',       ageMin:5,  ageMax:22 },
-  { id:'tiger-crawl',      labelAr:'الزحف المتقاطع',        icon:'🐆', category:'رياضي', color:'bg-amber-900/40 border-amber-500',     ageMin:5,  ageMax:17 },
-  { id:'ball-throw',       labelAr:'رمي الكرة والتقاطها',  icon:'⚽', category:'رياضي', color:'bg-emerald-900/40 border-emerald-500', ageMin:5,  ageMax:22 },
-  { id:'stretching',       labelAr:'تمارين التمدد',         icon:'🧘', category:'رياضي', color:'bg-teal-900/40 border-teal-500',       ageMin:5,  ageMax:22 },
-  { id:'body-percussion',  labelAr:'الإيقاع الجسدي',        icon:'🥁', category:'رياضي', color:'bg-purple-900/40 border-purple-500',   ageMin:5,  ageMax:22 },
+  { id:'jumping-jacks',    labelAr:'قفز النجمة',           icon:'⭐', category:'رياضي', color:'bg-green-50 border-green-200',     ageMin:5,  ageMax:22 },
+  { id:'obstacle-circuit', labelAr:'دائرة الحواجز',         icon:'🏅', category:'رياضي', color:'bg-orange-50 border-orange-200',   ageMin:5,  ageMax:17 },
+  { id:'balance-walk',     labelAr:'خط التوازن',            icon:'⚖️', category:'رياضي', color:'bg-blue-50 border-blue-200',       ageMin:5,  ageMax:22 },
+  { id:'tiger-crawl',      labelAr:'الزحف المتقاطع',        icon:'🐆', category:'رياضي', color:'bg-amber-50 border-amber-200',     ageMin:5,  ageMax:17 },
+  { id:'ball-throw',       labelAr:'رمي الكرة والتقاطها',  icon:'⚽', category:'رياضي', color:'bg-emerald-50 border-emerald-200', ageMin:5,  ageMax:22 },
+  { id:'stretching',       labelAr:'تمارين التمدد',         icon:'🧘', category:'رياضي', color:'bg-teal-50 border-teal-200',       ageMin:5,  ageMax:22 },
+  { id:'body-percussion',  labelAr:'الإيقاع الجسدي',        icon:'🥁', category:'رياضي', color:'bg-purple-50 border-purple-200',   ageMin:5,  ageMax:22 },
 ]
 
 // Exercises whose component renders its own post-completion results screen
@@ -287,9 +287,9 @@ function extractYoutubeId(url: string): string | null {
 }
 
 const ASSESSMENTS = [
-  { id:'adhd',               labelAr:'مقياس ADHD',              icon:'⚡', color:'bg-blue-900/40 border-blue-500'    },
-  { id:'attention-domains',  labelAr:'أنماط الانتباه — SNAP-IV', icon:'🧠', color:'bg-purple-900/40 border-purple-500' },
-  { id:'learning-difficulties', labelAr:'صعوبات التعلم',        icon:'📚', color:'bg-amber-900/40 border-amber-500'  },
+  { id:'adhd',               labelAr:'مقياس ADHD',              icon:'⚡', color:'bg-blue-50 border-blue-200'    },
+  { id:'attention-domains',  labelAr:'أنماط الانتباه — SNAP-IV', icon:'🧠', color:'bg-purple-50 border-purple-200' },
+  { id:'learning-difficulties', labelAr:'صعوبات التعلم',        icon:'📚', color:'bg-amber-50 border-amber-200'  },
 ]
 
 const SESSION_TYPE_CFG: Record<string, { label: string; color: string; isAssessment?: boolean }> = {
@@ -2056,9 +2056,9 @@ ${notes ? `
       <div className="flex flex-1 overflow-hidden" style={{ position: 'relative' }}>
 
         {/* Sidebar */}
-        {!focusMode && !sessionLocked && <aside className="hidden lg:flex w-72 bg-gray-900 border-l border-white/10 flex-col">
+        {!focusMode && !sessionLocked && <aside className="hidden lg:flex w-72 bg-white border-l border-brand-100 flex-col">
           {/* Tabs */}
-          <div className="flex border-b border-white/10">
+          <div className="flex border-b border-brand-100">
             {([
               { key: 'exercises',   icon: '🎮', label: 'تمارين' },
               { key: 'assessments', icon: '📊', label: 'تقييم'  },
@@ -2067,7 +2067,7 @@ ${notes ? `
             ] as const).map(({ key: t, icon, label }) => (
               <button key={t} onClick={() => setTab(t)}
                 className={`flex-1 py-2 flex flex-col items-center gap-0.5 text-[10px] font-bold transition-colors ${
-                  tab === t ? 'text-brand-400 border-b-2 border-brand-500' : 'text-white/40 hover:text-white/70'
+                  tab === t ? 'text-brand-600 border-b-2 border-brand-500' : 'text-gray-400 hover:text-gray-600'
                 }`}>
                 <span className="text-sm leading-none">{icon}</span>
                 {label}
@@ -2092,7 +2092,7 @@ ${notes ? `
                         className={`text-[10px] font-black px-2 py-0.5 rounded-full transition-colors ${
                           categoryFilter === cat
                             ? 'bg-brand-600 text-white'
-                            : 'bg-white/10 text-white/50 hover:bg-white/20'
+                            : 'bg-surface-page text-gray-500 hover:bg-brand-50'
                         }`}
                       >
                         {cat}
@@ -2112,7 +2112,7 @@ ${notes ? `
                           </div>
                         )}
                         {categoryFilter === 'الكل' && !isTop && idx === topGames.length && topGames.length > 0 && (
-                          <div className="border-t border-white/10 my-1" />
+                          <div className="border-t border-brand-100 my-1" />
                         )}
                         <div className="relative group">
                           <button
@@ -2122,33 +2122,33 @@ ${notes ? `
                             }}
                             className={`w-full flex items-center gap-3 p-3 rounded-xl border text-right transition-all
                               ${ex.color} hover:scale-[1.02]
-                              ${isActive ? 'scale-[1.02] ring-1 ring-white/30' : ''}
+                              ${isActive ? 'scale-[1.02] ring-1 ring-brand-300' : ''}
                               ${isTop ? 'ring-1 ring-brand-400/50' : ''}
                               ${!ageOk ? 'opacity-40' : ''}
                             `}>
                             <span className="text-xl">{ex.icon}</span>
                             <div className="text-right flex-1 min-w-0">
                               <div className="flex items-center justify-between gap-1">
-                                <div className="text-white font-bold text-xs truncate">{ex.labelAr}</div>
+                                <div className="text-gray-900 font-bold text-xs truncate">{ex.labelAr}</div>
                                 <div className="flex items-center gap-1 flex-shrink-0">
                                   {exerciseDiffOverrides[ex.id] && exerciseDiffOverrides[ex.id] !== difficulty && (
-                                    <span className="text-[9px] font-black px-1 py-0.5 rounded bg-brand-600/70 text-brand-200">
+                                    <span className="text-[9px] font-black px-1 py-0.5 rounded bg-brand-100 text-brand-700">
                                       {exerciseDiffOverrides[ex.id] === 1 ? 'سهل' : exerciseDiffOverrides[ex.id] === 2 ? 'وسط' : 'صعب'}
                                     </span>
                                   )}
                                   {!exerciseDiffOverrides[ex.id] && suggestedDifficulty(ex.id, difficulty) !== difficulty && (
-                                    <span className="text-[9px] font-black px-1 py-0.5 rounded bg-emerald-600/70 text-emerald-200" title="مقترح تلقائياً حسب الأداء السابق">
+                                    <span className="text-[9px] font-black px-1 py-0.5 rounded bg-emerald-100 text-emerald-700" title="مقترح تلقائياً حسب الأداء السابق">
                                       🤖 {suggestedDifficulty(ex.id, difficulty) === 1 ? 'سهل' : suggestedDifficulty(ex.id, difficulty) === 2 ? 'وسط' : 'صعب'}
                                     </span>
                                   )}
-                                  {isTop && <Star className="w-3 h-3 text-brand-400 flex-shrink-0" />}
+                                  {isTop && <Star className="w-3 h-3 text-brand-500 flex-shrink-0" />}
                                 </div>
                               </div>
                               <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                                <span className="text-white/40 text-[10px]">{ex.category}</span>
-                                <span className="text-white/25 text-[9px] ltr-num">{ex.ageMin}-{ex.ageMax}س</span>
+                                <span className="text-gray-400 text-[10px]">{ex.category}</span>
+                                <span className="text-gray-300 text-[9px] ltr-num">{ex.ageMin}-{ex.ageMax}س</span>
                                 {(gameUsageCounts[ex.id] ?? 0) > 0 && (
-                                  <span className="text-[9px] bg-white/10 text-white/40 px-1 py-0.5 rounded-full font-bold ltr-num">
+                                  <span className="text-[9px] bg-surface-page text-gray-400 px-1 py-0.5 rounded-full font-bold ltr-num">
                                     ×{gameUsageCounts[ex.id]} مرة
                                   </span>
                                 )}
@@ -2157,7 +2157,7 @@ ${notes ? `
                           </button>
                           <button
                             onClick={(e) => { e.stopPropagation(); setExerciseConfigId(ex.id) }}
-                            className="absolute top-1 left-1 w-6 h-6 flex items-center justify-center rounded-lg text-white/30 hover:text-white hover:bg-black/50 transition-all opacity-0 group-hover:opacity-100 text-[11px] z-10"
+                            className="absolute top-1 left-1 w-6 h-6 flex items-center justify-center rounded-lg text-gray-300 hover:text-gray-700 hover:bg-white/70 transition-all opacity-0 group-hover:opacity-100 text-[11px] z-10"
                             title={`إعدادات ${ex.labelAr}`}
                           >
                             ⚙
@@ -2173,11 +2173,11 @@ ${notes ? `
             {tab === 'assessments' && (
               <div className="space-y-2">
                 {SESSION_TYPE_CFG[appointmentType]?.isAssessment && (
-                  <div className="bg-amber-900/30 border border-amber-500/40 rounded-xl p-3">
-                    <p className="text-amber-300 text-xs font-black flex items-center gap-1.5">
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-3">
+                    <p className="text-amber-700 text-xs font-black flex items-center gap-1.5">
                       <ClipboardList className="w-3.5 h-3.5" /> جلسة تقييمية
                     </p>
-                    <p className="text-amber-300/70 text-[10px] mt-1 leading-relaxed">
+                    <p className="text-amber-600/80 text-[10px] mt-1 leading-relaxed">
                       ابدأ بتطبيق المقاييس أدناه لتوثيق الحالة، ثم انتقل للتمارين بعد الانتهاء.
                     </p>
                   </div>
@@ -2187,13 +2187,13 @@ ${notes ? `
                     onClick={() => setActiveView({ type: 'assessment', id: as.id })}
                     className={`w-full flex items-center gap-3 p-3 rounded-xl border text-right transition-all ${as.color} hover:scale-[1.02]`}>
                     <span className="text-2xl">{as.icon}</span>
-                    <div className="text-white font-bold text-sm">{as.labelAr}</div>
+                    <div className="text-gray-900 font-bold text-sm">{as.labelAr}</div>
                   </button>
                 ))}
 
                 {/* Observation ratings */}
-                <div className="mt-4 bg-white/5 rounded-xl p-3">
-                  <h3 className="font-black text-white/70 text-xs mb-3">ملاحظات الجلسة</h3>
+                <div className="mt-4 bg-surface-page rounded-xl p-3">
+                  <h3 className="font-black text-gray-600 text-xs mb-3">ملاحظات الجلسة</h3>
                   {(Object.keys(observations) as (keyof SessionObservations)[]).map(key => (
                     <div key={key} className="mb-2">
                       <div className="flex items-center justify-between mb-1">
@@ -2202,13 +2202,13 @@ ${notes ? `
                             <button key={v}
                               onClick={() => setObservations(o => ({ ...o, [key]: v }))}
                               className={`w-5 h-5 rounded text-xs font-bold transition-colors ${
-                                observations[key] >= v ? 'bg-brand-500 text-white' : 'bg-white/10 text-white/30'
+                                observations[key] >= v ? 'bg-brand-500 text-white' : 'bg-white text-gray-300'
                               }`}>
                               {v}
                             </button>
                           ))}
                         </div>
-                        <span className="text-white/50 text-xs">{observationLabels[key]}</span>
+                        <span className="text-gray-500 text-xs">{observationLabels[key]}</span>
                       </div>
                     </div>
                   ))}
@@ -2219,22 +2219,22 @@ ${notes ? `
             {tab === 'log' && (
               <div className="space-y-2">
                 {results.length === 0 && assessments.length === 0 && obsLog.length === 0 && (
-                  <p className="text-white/30 text-sm text-center py-4">لم تبدأ أي نشاط بعد</p>
+                  <p className="text-gray-300 text-sm text-center py-4">لم تبدأ أي نشاط بعد</p>
                 )}
 
                 {/* Observation log entries */}
                 {obsLog.length > 0 && (
-                  <div className="bg-white/5 rounded-xl p-3">
+                  <div className="bg-surface-page rounded-xl p-3">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-white/40 text-[10px] font-black uppercase tracking-wider">ملاحظات فورية</span>
-                      <span className="text-white/30 text-[10px]">{obsLog.length} ملاحظة</span>
+                      <span className="text-gray-400 text-[10px] font-black uppercase tracking-wider">ملاحظات فورية</span>
+                      <span className="text-gray-300 text-[10px]">{obsLog.length} ملاحظة</span>
                     </div>
                     <div className="space-y-1.5">
                       {obsLog.map((e, i) => (
                         <div key={i} className="flex items-center gap-2">
                           <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: e.color }} />
-                          <span className="text-white/80 text-xs flex-1">{e.text}</span>
-                          <span className="text-white/30 text-[10px] font-mono ltr-num flex-shrink-0">{e.ts}</span>
+                          <span className="text-gray-700 text-xs flex-1">{e.text}</span>
+                          <span className="text-gray-300 text-[10px] font-mono ltr-num flex-shrink-0">{e.ts}</span>
                         </div>
                       ))}
                     </div>
@@ -2243,40 +2243,40 @@ ${notes ? `
 
                 {/* ABC Behavior Log entries */}
                 {abcLog.length > 0 && (
-                  <div className="bg-amber-900/20 border border-amber-500/20 rounded-xl p-3">
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-3">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-amber-400 text-[10px] font-black uppercase tracking-wider">🔗 سجل ABC</span>
-                      <span className="text-amber-400/50 text-[10px]">{abcLog.length} حوادث</span>
+                      <span className="text-amber-700 text-[10px] font-black uppercase tracking-wider">🔗 سجل ABC</span>
+                      <span className="text-amber-600/70 text-[10px]">{abcLog.length} حوادث</span>
                     </div>
                     <div className="space-y-3">
                       {abcLog.map((e, i) => (
-                        <div key={i} className="bg-white/5 rounded-xl p-2.5">
+                        <div key={i} className="bg-white rounded-xl p-2.5">
                           <div className="flex items-center justify-between mb-1.5">
-                            <span className="text-white/30 text-[9px] ltr-num font-mono">{e.ts}</span>
+                            <span className="text-gray-300 text-[9px] ltr-num font-mono">{e.ts}</span>
                             <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full ${
-                              e.intensity === 1 ? 'bg-green-900/60 text-green-400' :
-                              e.intensity === 2 ? 'bg-amber-900/60 text-amber-400' :
-                              'bg-red-900/60 text-red-400'
+                              e.intensity === 1 ? 'bg-green-50 text-green-700' :
+                              e.intensity === 2 ? 'bg-amber-50 text-amber-700' :
+                              'bg-red-50 text-red-700'
                             }`}>
                               {e.intensity === 1 ? 'خفيف' : e.intensity === 2 ? 'متوسط' : 'شديد'}
                             </span>
                           </div>
                           {e.antecedent && (
                             <div className="flex gap-1.5 mb-1">
-                              <span className="text-blue-400 text-[9px] font-black flex-shrink-0">A:</span>
-                              <span className="text-white/70 text-[10px]">{e.antecedent}</span>
+                              <span className="text-blue-600 text-[9px] font-black flex-shrink-0">A:</span>
+                              <span className="text-gray-600 text-[10px]">{e.antecedent}</span>
                             </div>
                           )}
                           {e.behavior && (
                             <div className="flex gap-1.5 mb-1">
-                              <span className="text-amber-400 text-[9px] font-black flex-shrink-0">B:</span>
-                              <span className="text-white/70 text-[10px]">{e.behavior}</span>
+                              <span className="text-amber-600 text-[9px] font-black flex-shrink-0">B:</span>
+                              <span className="text-gray-600 text-[10px]">{e.behavior}</span>
                             </div>
                           )}
                           {e.consequence && (
                             <div className="flex gap-1.5">
-                              <span className="text-green-400 text-[9px] font-black flex-shrink-0">C:</span>
-                              <span className="text-white/70 text-[10px]">{e.consequence}</span>
+                              <span className="text-green-600 text-[9px] font-black flex-shrink-0">C:</span>
+                              <span className="text-gray-600 text-[10px]">{e.consequence}</span>
                             </div>
                           )}
                         </div>
@@ -2287,27 +2287,27 @@ ${notes ? `
 
                 {/* Session summary header when results exist */}
                 {results.length > 0 && (
-                  <div className="bg-white/5 rounded-xl p-3 mb-1">
+                  <div className="bg-surface-page rounded-xl p-3 mb-1">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-white/40 text-[10px] font-black uppercase tracking-wider">ملخص الجلسة</span>
-                      <span className="text-white/40 text-[10px]">{results.length} تمارين</span>
+                      <span className="text-gray-400 text-[10px] font-black uppercase tracking-wider">ملخص الجلسة</span>
+                      <span className="text-gray-400 text-[10px]">{results.length} تمارين</span>
                     </div>
                     <div className="flex gap-3">
                       <div className="flex-1 text-center">
-                        <div className={`font-black text-lg ${avgScore >= 80 ? 'text-emerald-400' : avgScore >= 60 ? 'text-amber-400' : 'text-red-400'}`}>
+                        <div className={`font-black text-lg ${avgScore >= 80 ? 'text-emerald-600' : avgScore >= 60 ? 'text-amber-600' : 'text-red-600'}`}>
                           {avgScore}%
                         </div>
-                        <div className="text-white/30 text-[10px]">متوسط</div>
+                        <div className="text-gray-400 text-[10px]">متوسط</div>
                       </div>
                       <div className="flex-1 text-center">
-                        <div className="font-black text-lg text-brand-400">
+                        <div className="font-black text-lg text-brand-600">
                           {results.filter(r => r.score >= 80).length}
                         </div>
-                        <div className="text-white/30 text-[10px]">ممتاز</div>
+                        <div className="text-gray-400 text-[10px]">ممتاز</div>
                       </div>
                       <div className="flex-1 text-center">
-                        <div className="font-black text-lg text-amber-400">{formatTime(elapsed)}</div>
-                        <div className="text-white/30 text-[10px]">المدة</div>
+                        <div className="font-black text-lg text-amber-600">{formatTime(elapsed)}</div>
+                        <div className="text-gray-400 text-[10px]">المدة</div>
                       </div>
                     </div>
                   </div>
@@ -2317,12 +2317,12 @@ ${notes ? `
                 {results.map((r, i) => {
                   const exInfo = EXERCISES.find(e => e.id === r.exerciseType)
                   return (
-                    <div key={i} className="bg-white/5 hover:bg-white/8 rounded-xl p-3 transition-colors">
+                    <div key={i} className="bg-surface-page hover:bg-brand-50 rounded-xl p-3 transition-colors">
                       {/* Game name + icon row */}
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2 min-w-0">
                           <span className="text-base flex-shrink-0">{exInfo?.icon ?? '🎮'}</span>
-                          <span className="text-white/80 text-xs font-bold truncate">{r.exerciseLabelAr}</span>
+                          <span className="text-gray-700 text-xs font-bold truncate">{r.exerciseLabelAr}</span>
                         </div>
                         {/* Colored score pill */}
                         <span className={`text-xs font-black px-2 py-0.5 rounded-full flex-shrink-0 ml-1 ${
@@ -2342,25 +2342,25 @@ ${notes ? `
                       />
                       {/* Accuracy + duration */}
                       <div className="flex justify-between mt-1.5">
-                        <span className="text-white/30 text-[10px]">{r.duration}ث</span>
-                        <span className="text-white/30 text-[10px]">دقة: {r.accuracy}%</span>
+                        <span className="text-gray-400 text-[10px]">{r.duration}ث</span>
+                        <span className="text-gray-400 text-[10px]">دقة: {r.accuracy}%</span>
                       </div>
                     </div>
                   )
                 })}
 
                 {assessments.map((a, i) => (
-                  <div key={i} className="bg-amber-900/20 border border-amber-500/30 rounded-xl p-3">
+                  <div key={i} className="bg-amber-50 border border-amber-200 rounded-xl p-3">
                     <div className="flex items-center justify-between">
                       <span className={`text-xs font-black px-2 py-0.5 rounded-full ${
-                        a.severity === 'none' ? 'bg-green-900/50 text-green-400' :
-                        a.severity === 'mild' ? 'bg-amber-900/50 text-amber-400' :
-                        a.severity === 'moderate' ? 'bg-orange-900/50 text-orange-400' :
-                        'bg-red-900/50 text-red-400'
+                        a.severity === 'none' ? 'bg-green-50 text-green-700' :
+                        a.severity === 'mild' ? 'bg-amber-50 text-amber-700' :
+                        a.severity === 'moderate' ? 'bg-orange-50 text-orange-700' :
+                        'bg-red-50 text-red-700'
                       }`}>
                         {a.severity === 'none' ? 'طبيعي' : a.severity === 'mild' ? 'خفيف' : a.severity === 'moderate' ? 'متوسط' : 'شديد'}
                       </span>
-                      <span className="text-white/70 text-xs font-bold">
+                      <span className="text-gray-600 text-xs font-bold">
                         {a.type === 'adhd' ? 'تقييم ADHD' : 'صعوبات التعلم'}
                       </span>
                     </div>
@@ -2371,7 +2371,7 @@ ${notes ? `
 
             {tab === 'videos' && (
               <div className="space-y-2" dir="rtl">
-                <p className="text-white/30 text-[10px] px-1 pb-1">انقر على أي تمرين لعرض وصفه وطريقة تطبيقه والبحث عن فيديو تعليمي</p>
+                <p className="text-gray-400 text-[10px] px-1 pb-1">انقر على أي تمرين لعرض وصفه وطريقة تطبيقه والبحث عن فيديو تعليمي</p>
                 {EXERCISES.filter(ex => VIDEO_LIBRARY[ex.id]).map(ex => {
                   const entry = VIDEO_LIBRARY[ex.id]
                   const hasUrl = !!videoUrls[ex.id]
@@ -2383,12 +2383,12 @@ ${notes ? `
                     >
                       <span className="text-xl flex-shrink-0">{ex.icon}</span>
                       <div className="flex-1 min-w-0">
-                        <div className="text-white font-bold text-xs">{ex.labelAr}</div>
-                        <div className="text-white/40 text-[10px] truncate">{entry.desc.slice(0, 50)}…</div>
+                        <div className="text-gray-900 font-bold text-xs">{ex.labelAr}</div>
+                        <div className="text-gray-400 text-[10px] truncate">{entry.desc.slice(0, 50)}…</div>
                       </div>
                       {hasUrl
-                        ? <Play className="w-4 h-4 text-brand-400 flex-shrink-0" />
-                        : <Youtube className="w-4 h-4 text-white/20 flex-shrink-0" />
+                        ? <Play className="w-4 h-4 text-brand-500 flex-shrink-0" />
+                        : <Youtube className="w-4 h-4 text-gray-300 flex-shrink-0" />
                       }
                     </button>
                   )
@@ -2398,12 +2398,12 @@ ${notes ? `
           </div>
 
           {/* Notes */}
-          <div className="p-3 border-t border-white/10">
+          <div className="p-3 border-t border-brand-100">
             <textarea
               value={notes}
               onChange={e => setNotes(e.target.value)}
               placeholder="ملاحظات الأستاذ..."
-              className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm text-white placeholder-white/30 resize-none focus:outline-none focus:border-brand-500"
+              className="w-full bg-surface-page border border-brand-100 rounded-xl p-3 text-sm text-gray-700 placeholder-gray-300 resize-none focus:outline-none focus:border-brand-500"
               rows={3}
               dir="rtl"
             />
@@ -2427,7 +2427,7 @@ ${notes ? `
               style={{
                 bottom: 'calc(56px + env(safe-area-inset-bottom, 0px))',
                 maxHeight: '72vh',
-                background: 'rgba(12,10,28,0.97)',
+                background: 'rgba(255,255,255,0.98)',
                 border: '1px solid rgba(124,92,252,0.15)',
                 borderBottom: 'none',
                 backdropFilter: 'blur(24px)',
@@ -2436,11 +2436,11 @@ ${notes ? `
             >
               {/* Handle */}
               <button onClick={() => setShowMobilePanel(false)} className="w-full flex justify-center pt-3 pb-2">
-                <div className="w-12 h-1 rounded-full" style={{ background: 'rgba(255,255,255,0.15)' }} />
+                <div className="w-12 h-1 rounded-full bg-brand-100" />
               </button>
 
               {/* Tabs */}
-              <div className="flex border-b mx-3 mb-1" style={{ borderColor: 'rgba(255,255,255,0.07)' }}>
+              <div className="flex border-b border-brand-100 mx-3 mb-1">
                 {([
                   { key: 'exercises',   labelAr: 'تمارين', Icon: Gamepad2    },
                   { key: 'assessments', labelAr: 'تقييم',  Icon: BarChart3   },
@@ -2449,7 +2449,7 @@ ${notes ? `
                 ] as const).map(({ key: t, labelAr, Icon }) => (
                   <button key={t} onClick={() => setTab(t)}
                     className={`flex-1 py-2.5 flex items-center justify-center gap-1 text-[11px] font-bold transition-all relative ${
-                      tab === t ? 'text-brand-400' : 'text-white/30 hover:text-white/60'
+                      tab === t ? 'text-brand-600' : 'text-gray-400 hover:text-gray-600'
                     }`}
                   >
                     {tab === t && (
@@ -2471,7 +2471,7 @@ ${notes ? `
                       <div className="flex flex-wrap gap-1 pb-1">
                         {allCats.map(cat => (
                           <button key={cat} onClick={() => setCategoryFilter(cat)}
-                            className={`text-[10px] font-black px-2 py-0.5 rounded-full transition-colors ${categoryFilter === cat ? 'bg-brand-600 text-white' : 'bg-white/10 text-white/50 hover:bg-white/20'}`}>
+                            className={`text-[10px] font-black px-2 py-0.5 rounded-full transition-colors ${categoryFilter === cat ? 'bg-brand-600 text-white' : 'bg-surface-page text-gray-500 hover:bg-brand-50'}`}>
                             {cat}
                           </button>
                         ))}
@@ -2482,11 +2482,11 @@ ${notes ? `
                         return (
                           <button key={ex.id}
                             onClick={() => { if (!running) startSession(); setActiveView({ type: 'exercise', id: ex.id }); setShowMobilePanel(false) }}
-                            className={`w-full flex items-center gap-3 p-3 rounded-xl border text-right transition-all ${ex.color} hover:scale-[1.02] ${isActive ? 'ring-1 ring-white/30' : ''} ${!ageOk ? 'opacity-40' : ''}`}>
+                            className={`w-full flex items-center gap-3 p-3 rounded-xl border text-right transition-all ${ex.color} hover:scale-[1.02] ${isActive ? 'ring-1 ring-brand-300' : ''} ${!ageOk ? 'opacity-40' : ''}`}>
                             <span className="text-xl">{ex.icon}</span>
                             <div className="flex-1 text-right">
-                              <div className="text-white font-bold text-xs">{ex.labelAr}</div>
-                              <div className="text-white/40 text-[10px]">{ex.category}</div>
+                              <div className="text-gray-900 font-bold text-xs">{ex.labelAr}</div>
+                              <div className="text-gray-400 text-[10px]">{ex.category}</div>
                             </div>
                           </button>
                         )
@@ -2502,7 +2502,7 @@ ${notes ? `
                         onClick={() => { setActiveView({ type: 'assessment', id: as.id }); setShowMobilePanel(false) }}
                         className={`w-full flex items-center gap-3 p-3 rounded-xl border text-right transition-all ${as.color}`}>
                         <span className="text-2xl">{as.icon}</span>
-                        <div className="text-white font-bold text-sm">{as.labelAr}</div>
+                        <div className="text-gray-900 font-bold text-sm">{as.labelAr}</div>
                       </button>
                     ))}
                   </div>
@@ -2510,16 +2510,16 @@ ${notes ? `
 
                 {tab === 'log' && (
                   <div className="space-y-2">
-                    {results.length === 0 && <p className="text-white/30 text-sm text-center py-4">لم تبدأ أي نشاط بعد</p>}
+                    {results.length === 0 && <p className="text-gray-300 text-sm text-center py-4">لم تبدأ أي نشاط بعد</p>}
                     {results.map((r, i) => {
                       const exInfo = EXERCISES.find(e => e.id === r.exerciseType)
                       return (
-                        <div key={i} className="bg-white/5 rounded-xl p-3">
+                        <div key={i} className="bg-surface-page rounded-xl p-3">
                           <div className="flex items-center justify-between">
-                            <span className={`text-xs font-black px-2 py-0.5 rounded-full ${r.score >= 80 ? 'bg-emerald-900/50 text-emerald-400' : r.score >= 60 ? 'bg-amber-900/50 text-amber-400' : 'bg-red-900/50 text-red-400'}`}>{r.score}%</span>
+                            <span className={`text-xs font-black px-2 py-0.5 rounded-full ${r.score >= 80 ? 'bg-emerald-50 text-emerald-700' : r.score >= 60 ? 'bg-amber-50 text-amber-700' : 'bg-red-50 text-red-700'}`}>{r.score}%</span>
                             <div className="flex items-center gap-2">
                               <span className="text-base">{exInfo?.icon ?? '🎮'}</span>
-                              <span className="text-white/80 text-xs">{r.exerciseLabelAr}</span>
+                              <span className="text-gray-700 text-xs">{r.exerciseLabelAr}</span>
                             </div>
                           </div>
                         </div>
@@ -2530,7 +2530,7 @@ ${notes ? `
 
                 {tab === 'videos' && (
                   <div className="space-y-2" dir="rtl">
-                    <p className="text-white/30 text-[10px] px-1 pb-1">انقر على أي تمرين للاطلاع على طريقة التطبيق وفتح فيديو تعليمي</p>
+                    <p className="text-gray-400 text-[10px] px-1 pb-1">انقر على أي تمرين للاطلاع على طريقة التطبيق وفتح فيديو تعليمي</p>
                     {EXERCISES.filter(ex => VIDEO_LIBRARY[ex.id]).map(ex => {
                       const entry = VIDEO_LIBRARY[ex.id]
                       const hasUrl = !!videoUrls[ex.id]
@@ -2542,12 +2542,12 @@ ${notes ? `
                         >
                           <span className="text-xl flex-shrink-0">{ex.icon}</span>
                           <div className="flex-1 min-w-0">
-                            <div className="text-white font-bold text-xs">{ex.labelAr}</div>
-                            <div className="text-white/40 text-[10px] truncate">{entry.desc.slice(0, 48)}…</div>
+                            <div className="text-gray-900 font-bold text-xs">{ex.labelAr}</div>
+                            <div className="text-gray-400 text-[10px] truncate">{entry.desc.slice(0, 48)}…</div>
                           </div>
                           {hasUrl
-                            ? <Play className="w-4 h-4 text-brand-400 flex-shrink-0" />
-                            : <ExternalLink className="w-3.5 h-3.5 text-white/20 flex-shrink-0" />
+                            ? <Play className="w-4 h-4 text-brand-500 flex-shrink-0" />
+                            : <ExternalLink className="w-3.5 h-3.5 text-gray-300 flex-shrink-0" />
                           }
                         </button>
                       )
@@ -2557,12 +2557,12 @@ ${notes ? `
               </div>
 
               {/* Notes textarea */}
-              <div className="p-3 border-t border-white/10">
+              <div className="p-3 border-t border-brand-100">
                 <textarea
                   value={notes}
                   onChange={e => setNotes(e.target.value)}
                   placeholder="ملاحظات الأستاذ..."
-                  className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm text-white placeholder-white/30 resize-none focus:outline-none focus:border-brand-500"
+                  className="w-full bg-surface-page border border-brand-100 rounded-xl p-3 text-sm text-gray-700 placeholder-gray-300 resize-none focus:outline-none focus:border-brand-500"
                   rows={2}
                   dir="rtl"
                 />
@@ -2573,8 +2573,8 @@ ${notes ? `
             <div
               className="lg:hidden fixed bottom-0 inset-x-0 z-[80] px-3 pt-1.5"
               style={{
-                background: 'rgba(6,5,15,0.95)',
-                borderTop: '1px solid rgba(255,255,255,0.06)',
+                background: 'rgba(255,255,255,0.97)',
+                borderTop: '1px solid rgba(124,92,252,0.12)',
                 backdropFilter: 'blur(28px)',
                 paddingBottom: 'max(8px, env(safe-area-inset-bottom, 8px))',
               }}
@@ -2596,26 +2596,26 @@ ${notes ? `
                       }}
                       className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-2xl transition-all duration-200 active:scale-95 relative overflow-hidden"
                       style={isActive ? {
-                        background: 'rgba(124,92,252,0.18)',
-                        border: '1px solid rgba(124,92,252,0.35)',
-                        boxShadow: '0 4px 16px rgba(124,92,252,0.15)',
+                        background: 'rgba(124,92,252,0.1)',
+                        border: '1px solid rgba(124,92,252,0.3)',
+                        boxShadow: '0 4px 16px rgba(124,92,252,0.1)',
                       } : {
-                        background: 'rgba(255,255,255,0.04)',
-                        border: '1px solid rgba(255,255,255,0.06)',
+                        background: '#FFF8F0',
+                        border: '1px solid rgba(124,92,252,0.08)',
                       }}
                     >
                       <Icon
                         style={{
                           width: 16,
                           height: 16,
-                          color: isActive ? '#A78BFA' : 'rgba(255,255,255,0.35)',
+                          color: isActive ? '#7C5CFC' : '#9CA3AF',
                           transition: 'color 0.2s',
                         }}
                       />
                       <span
                         className="text-xs font-bold"
                         style={{
-                          color: isActive ? '#C4B5FD' : 'rgba(255,255,255,0.35)',
+                          color: isActive ? '#7C5CFC' : '#9CA3AF',
                           transition: 'color 0.2s',
                         }}
                       >
@@ -3842,10 +3842,9 @@ ${notes ? `
             className="fixed inset-0 z-[200] flex items-center justify-center"
             onClick={() => setExerciseConfigId(null)}
           >
-            <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+            <div className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm" />
             <div
-              className="relative rounded-2xl p-5 w-full max-w-sm mx-4 shadow-2xl"
-              style={{ background: '#0F172A', border: '1.5px solid rgba(255,255,255,0.12)' }}
+              className="relative rounded-2xl p-5 w-full max-w-sm mx-4 shadow-2xl bg-white border border-brand-100"
               onClick={e => e.stopPropagation()}
               dir="rtl"
             >
@@ -3855,15 +3854,15 @@ ${notes ? `
                   {ex.icon}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-white font-black text-sm">{ex.labelAr}</div>
-                  <div className="text-white/40 text-xs mt-0.5">{ex.category} • {ex.ageMin}–{ex.ageMax} سنة</div>
+                  <div className="text-gray-900 font-black text-sm">{ex.labelAr}</div>
+                  <div className="text-gray-400 text-xs mt-0.5">{ex.category} • {ex.ageMin}–{ex.ageMax} سنة</div>
                 </div>
-                <button onClick={() => setExerciseConfigId(null)} className="text-white/40 hover:text-white text-2xl leading-none flex-shrink-0">×</button>
+                <button onClick={() => setExerciseConfigId(null)} className="text-gray-400 hover:text-gray-700 text-2xl leading-none flex-shrink-0">×</button>
               </div>
 
               {/* Difficulty override */}
               <div className="mb-4">
-                <div className="text-white/40 text-[10px] font-black mb-2 uppercase tracking-wider">الصعوبة لهذا التمرين</div>
+                <div className="text-gray-400 text-[10px] font-black mb-2 uppercase tracking-wider">الصعوبة لهذا التمرين</div>
                 <div className="grid grid-cols-3 gap-2">
                   {([1,2,3] as const).map(d => (
                     <button
@@ -3872,11 +3871,11 @@ ${notes ? `
                       className="py-2.5 rounded-xl text-xs font-black transition-all"
                       style={{
                         background: overrideDiff === d
-                          ? d === 1 ? 'rgba(22,163,74,0.25)' : d === 2 ? 'rgba(217,119,6,0.25)' : 'rgba(220,38,38,0.25)'
-                          : 'rgba(255,255,255,0.07)',
+                          ? d === 1 ? '#F0FDF4' : d === 2 ? '#FFFBEB' : '#FEF2F2'
+                          : '#FFF8F0',
                         color: overrideDiff === d
-                          ? d === 1 ? '#4ade80' : d === 2 ? '#fbbf24' : '#f87171'
-                          : 'rgba(255,255,255,0.35)',
+                          ? d === 1 ? '#16a34a' : d === 2 ? '#d97706' : '#dc2626'
+                          : '#9CA3AF',
                         border: overrideDiff === d
                           ? `1px solid ${d === 1 ? '#16a34a55' : d === 2 ? '#d9770655' : '#dc262655'}`
                           : '1px solid transparent',
@@ -3893,7 +3892,7 @@ ${notes ? `
                       delete next[exerciseConfigId]
                       return next
                     })}
-                    className="mt-2 text-white/30 hover:text-white/60 text-[10px] font-bold transition-colors"
+                    className="mt-2 text-gray-300 hover:text-gray-500 text-[10px] font-bold transition-colors"
                   >
                     ← العودة للمستوى العام ({difficulty === 1 ? 'سهل' : difficulty === 2 ? 'متوسط' : 'صعب'})
                   </button>
@@ -3901,10 +3900,10 @@ ${notes ? `
                 {!exerciseDiffOverrides[exerciseConfigId] && suggestedDifficulty(exerciseConfigId, difficulty) !== difficulty && (
                   <button
                     onClick={() => setExerciseDiffOverrides(prev => ({ ...prev, [exerciseConfigId]: suggestedDifficulty(exerciseConfigId, difficulty) }))}
-                    className="mt-2 w-full flex items-center justify-between bg-emerald-500/10 border border-emerald-500/25 rounded-xl px-3 py-2 text-[11px] font-bold text-emerald-300 hover:bg-emerald-500/20 transition-colors"
+                    className="mt-2 w-full flex items-center justify-between bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2 text-[11px] font-bold text-emerald-700 hover:bg-emerald-100 transition-colors"
                   >
                     <span>🤖 مقترح بناءً على متوسط {gameHistoryByGame[exerciseConfigId]?.avgScore}%: {suggestedDifficulty(exerciseConfigId, difficulty) === 1 ? 'سهل' : suggestedDifficulty(exerciseConfigId, difficulty) === 2 ? 'متوسط' : 'صعب'}</span>
-                    <span className="text-emerald-200">تطبيق ←</span>
+                    <span className="text-emerald-600">تطبيق ←</span>
                   </button>
                 )}
               </div>
@@ -3914,24 +3913,24 @@ ${notes ? `
                 <div className="grid grid-cols-2 gap-2 mb-4">
                   {sessionResults.length > 0 && (
                     <>
-                      <div className="bg-white/5 rounded-xl p-3 text-center">
-                        <div className="font-black text-xl text-brand-400 ltr-num">{sessionResults.length}</div>
-                        <div className="text-white/35 text-[10px] mt-0.5">مرة الجلسة الحالية</div>
+                      <div className="bg-surface-page rounded-xl p-3 text-center">
+                        <div className="font-black text-xl text-brand-600 ltr-num">{sessionResults.length}</div>
+                        <div className="text-gray-400 text-[10px] mt-0.5">مرة الجلسة الحالية</div>
                       </div>
                       {avgSessionScore !== null && (
-                        <div className="bg-white/5 rounded-xl p-3 text-center">
-                          <div className={`font-black text-xl ltr-num ${avgSessionScore >= 80 ? 'text-emerald-400' : avgSessionScore >= 60 ? 'text-amber-400' : 'text-red-400'}`}>
+                        <div className="bg-surface-page rounded-xl p-3 text-center">
+                          <div className={`font-black text-xl ltr-num ${avgSessionScore >= 80 ? 'text-emerald-600' : avgSessionScore >= 60 ? 'text-amber-600' : 'text-red-600'}`}>
                             {avgSessionScore}%
                           </div>
-                          <div className="text-white/35 text-[10px] mt-0.5">متوسط الدرجات</div>
+                          <div className="text-gray-400 text-[10px] mt-0.5">متوسط الدرجات</div>
                         </div>
                       )}
                     </>
                   )}
                   {(gameUsageCounts[exerciseConfigId] ?? 0) > 0 && sessionResults.length === 0 && (
-                    <div className="col-span-2 bg-white/5 rounded-xl p-3 flex items-center justify-between">
-                      <span className="text-white/40 text-xs">الجلسات السابقة</span>
-                      <span className="text-brand-400 font-black text-sm ltr-num">{gameUsageCounts[exerciseConfigId]} مرة</span>
+                    <div className="col-span-2 bg-surface-page rounded-xl p-3 flex items-center justify-between">
+                      <span className="text-gray-400 text-xs">الجلسات السابقة</span>
+                      <span className="text-brand-600 font-black text-sm ltr-num">{gameUsageCounts[exerciseConfigId]} مرة</span>
                     </div>
                   )}
                 </div>

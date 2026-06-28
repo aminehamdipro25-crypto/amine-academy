@@ -1751,7 +1751,7 @@ ${notes ? `
       {/* ── Toolbar strip ── */}
       <div
         ref={toolbarRef}
-        className={`bg-gray-900/95 border-b border-white/[0.08] px-3 py-1.5 flex items-center gap-1.5 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden ${sessionLocked ? 'hidden' : ''}`}>
+        className={`bg-white border-b border-brand-100 px-3 py-1.5 flex items-center gap-1.5 overflow-x-auto shadow-sm [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden ${sessionLocked ? 'hidden' : ''}`}>
 
         {/* Group 1 — Camera */}
         {jitsiUrl && (
@@ -1760,7 +1760,7 @@ ${notes ? `
             className={`flex items-center gap-1.5 font-black px-2.5 py-1.5 rounded-lg text-xs transition-all flex-shrink-0 ${
               jitsiEmbedded
                 ? 'bg-green-600 text-white ring-1 ring-green-400/50'
-                : 'bg-white/10 hover:bg-white/20 text-white/60'
+                : 'bg-surface-page hover:bg-brand-50 text-gray-500'
             }`}
             title="المقابلة المرئية"
           >
@@ -1769,7 +1769,7 @@ ${notes ? `
           </button>
         )}
 
-        <div className="w-px h-5 bg-white/15 flex-shrink-0" />
+        <div className="w-px h-5 bg-brand-100 flex-shrink-0" />
 
         {/* Group 2 — Drawing & Cards & Timer */}
         <button
@@ -1777,7 +1777,7 @@ ${notes ? `
           className={`flex items-center gap-1.5 font-black px-2.5 py-1.5 rounded-lg text-xs transition-all flex-shrink-0 ${
             showWhiteboard
               ? 'bg-amber-500 text-white ring-1 ring-amber-400/50'
-              : 'bg-white/10 hover:bg-white/20 text-white/60'
+              : 'bg-surface-page hover:bg-brand-50 text-gray-500'
           }`}
           title="السبورة التفاعلية"
         >
@@ -1791,7 +1791,7 @@ ${notes ? `
             className={`flex items-center gap-1.5 font-black px-2.5 py-1.5 rounded-lg text-xs transition-all ${
               promptPickerOpen
                 ? 'bg-purple-500 text-white ring-1 ring-purple-400/50'
-                : 'bg-white/10 hover:bg-white/20 text-white/60'
+                : 'bg-surface-page hover:bg-brand-50 text-gray-500'
             }`}
             title="بطاقات التحفيز"
           >
@@ -1800,18 +1800,18 @@ ${notes ? `
         </div>
         <ToolbarPopover anchorRef={promptBtnRef} open={promptPickerOpen}>
           <div
-            className="rounded-2xl overflow-hidden shadow-2xl"
-            style={{ background: '#111827', border: '1.5px solid rgba(255,255,255,0.12)', minWidth: 200 }}
+            className="rounded-2xl overflow-hidden shadow-2xl bg-white border border-brand-100"
+            style={{ minWidth: 200 }}
             dir="rtl"
           >
             {PROMPT_CARDS.map(card => (
               <button
                 key={card.id}
                 onClick={() => { setPromptCard(card); setPromptPickerOpen(false) }}
-                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/10 transition-colors text-right"
+                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-brand-50 transition-colors text-right"
               >
                 <span className="text-2xl">{card.emoji}</span>
-                <span className="text-white font-black text-sm">{card.text}</span>
+                <span className="text-gray-800 font-black text-sm">{card.text}</span>
               </button>
             ))}
           </div>
@@ -1823,7 +1823,7 @@ ${notes ? `
             className={`flex items-center gap-1.5 font-black px-2.5 py-1.5 rounded-lg text-xs transition-all ${
               showStudentTimer
                 ? 'bg-orange-500 text-white ring-1 ring-orange-400/50'
-                : 'bg-white/10 hover:bg-white/20 text-white/60'
+                : 'bg-surface-page hover:bg-brand-50 text-gray-500'
             }`}
             title="مؤقت الطالب"
           >
@@ -1832,18 +1832,17 @@ ${notes ? `
         </div>
         <ToolbarPopover anchorRef={timerBtnRef} open={timerPickerOpen}>
           <div
-            className="rounded-2xl p-3 shadow-2xl"
-            style={{ background: '#111827', border: '1.5px solid rgba(255,255,255,0.12)', minWidth: 180 }}
+            className="rounded-2xl p-3 shadow-2xl bg-white border border-brand-100"
+            style={{ minWidth: 180 }}
             dir="rtl"
           >
-            <p className="text-white/40 text-[10px] font-black mb-2">اختر مدة المؤقت</p>
+            <p className="text-gray-400 text-[10px] font-black mb-2">اختر مدة المؤقت</p>
             <div className="grid grid-cols-2 gap-1.5 mb-2">
               {[[60,'1 دقيقة'],[120,'2 دقيقة'],[180,'3 دقائق'],[300,'5 دقائق']].map(([s,l]) => (
                 <button
                   key={s}
                   onClick={() => startStudentTimer(s as number)}
-                  className="py-2 rounded-xl text-xs font-black text-white transition-all hover:ring-1 hover:ring-orange-400"
-                  style={{ background: 'rgba(255,255,255,0.08)' }}
+                  className="py-2 rounded-xl text-xs font-black text-gray-700 bg-surface-page transition-all hover:ring-1 hover:ring-orange-400"
                 >
                   {l as string}
                 </button>
@@ -1852,8 +1851,7 @@ ${notes ? `
             {showStudentTimer && (
               <button
                 onClick={() => { setShowStudentTimer(false); setStudentTimerRunning(false); setTimerPickerOpen(false) }}
-                className="w-full py-1.5 rounded-xl text-[10px] font-black text-red-400 transition-all"
-                style={{ background: 'rgba(239,68,68,0.1)' }}
+                className="w-full py-1.5 rounded-xl text-[10px] font-black text-red-500 bg-red-50 transition-all"
               >
                 إيقاف المؤقت
               </button>
@@ -1868,7 +1866,7 @@ ${notes ? `
             className={`flex items-center gap-1.5 font-black px-2.5 py-1.5 rounded-lg text-xs transition-all ${
               noiseRunning
                 ? 'bg-cyan-600 text-white ring-1 ring-cyan-400/50'
-                : 'bg-white/10 hover:bg-white/20 text-white/60'
+                : 'bg-surface-page hover:bg-brand-50 text-gray-500'
             }`}
             title="موسيقى وترددات الاسترخاء والتركيز"
           >
@@ -1877,12 +1875,12 @@ ${notes ? `
         </div>
         <ToolbarPopover anchorRef={noiseBtnRef} open={showNoisePanel}>
           <div
-            className="rounded-2xl p-3 shadow-2xl"
-            style={{ background: '#0f172a', border: '1.5px solid rgba(6,182,212,0.25)', minWidth: 230 }}
+            className="rounded-2xl p-3 shadow-2xl bg-white border border-cyan-100"
+            style={{ minWidth: 230 }}
             dir="rtl"
           >
-            <p className="text-white/40 text-[10px] font-black mb-2.5 flex items-center gap-1">
-              🎵 صوت الجلسة <span className="text-cyan-400">(5 دقائق)</span>
+            <p className="text-gray-400 text-[10px] font-black mb-2.5 flex items-center gap-1">
+              🎵 صوت الجلسة <span className="text-cyan-600">(5 دقائق)</span>
             </p>
 
             {/* Mode selector */}
@@ -1900,9 +1898,8 @@ ${notes ? `
                   className={`py-2 px-1 rounded-xl text-[10px] font-black text-center transition-all leading-tight ${
                     noiseMode === m.key
                       ? 'bg-cyan-600 text-white'
-                      : 'text-white/50 hover:text-white/80'
+                      : 'text-gray-500 hover:text-gray-700 bg-surface-page'
                   }`}
-                  style={{ background: noiseMode === m.key ? undefined : 'rgba(255,255,255,0.07)' }}
                 >
                   <div className="text-base mb-0.5">{m.emoji}</div>
                   <div>{m.label}</div>
@@ -1913,8 +1910,8 @@ ${notes ? `
             {/* Countdown */}
             {noiseRunning && (
               <div className="text-center mb-3">
-                <div className="text-cyan-400 font-black text-xl ltr-num">{formatTime(noiseSecsLeft)}</div>
-                <div className="h-1.5 bg-white/10 rounded-full mt-1.5 overflow-hidden">
+                <div className="text-cyan-600 font-black text-xl ltr-num">{formatTime(noiseSecsLeft)}</div>
+                <div className="h-1.5 bg-surface-page rounded-full mt-1.5 overflow-hidden">
                   <div
                     className="h-full bg-gradient-to-l from-cyan-400 to-cyan-600 rounded-full transition-all duration-1000"
                     style={{ width: `${((5 * 60 - noiseSecsLeft) / (5 * 60)) * 100}%` }}
@@ -1927,13 +1924,13 @@ ${notes ? `
               onClick={() => noiseRunning ? stopNoise() : startNoise()}
               className={`w-full py-2.5 rounded-xl text-sm font-black transition-all ${
                 noiseRunning
-                  ? 'bg-red-600/80 hover:bg-red-600 text-white'
+                  ? 'bg-red-500 hover:bg-red-600 text-white'
                   : 'bg-cyan-600 hover:bg-cyan-500 text-white'
               }`}
             >
               {noiseRunning ? '⏹ إيقاف' : '▶ تشغيل'}
             </button>
-            <p className="text-white/20 text-[9px] mt-2 text-center leading-relaxed">
+            <p className="text-gray-400 text-[9px] mt-2 text-center leading-relaxed">
               {{
                 calm:  'نغمات هادئة متجانسة بتذبذب يحاكي التنفس البطيء (~6 أنفاس/د) — مستوحى من أبحاث الموسيقى المهدئة للدماغ',
                 theta: 'نبضة ثنائية (binaural) بتردد ~6Hz (ثيتا) مرتبطة بالاسترخاء العميق — يلزم استخدام سماعات الرأس',
@@ -1945,7 +1942,7 @@ ${notes ? `
           </div>
         </ToolbarPopover>
 
-        <div className="w-px h-5 bg-white/15 flex-shrink-0" />
+        <div className="w-px h-5 bg-brand-100 flex-shrink-0" />
 
         {/* Group 3 — Modes */}
         <button
@@ -1953,7 +1950,7 @@ ${notes ? `
           className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg font-black text-xs transition-all flex-shrink-0 ${
             kidMode
               ? 'bg-gradient-to-r from-[#7C5CFC] to-[#9A7BFD] text-white shadow-[0_4px_12px_-2px_rgba(124,92,252,0.4)]'
-              : 'bg-white/10 text-white/60 hover:bg-white/20'
+              : 'bg-surface-page text-gray-500 hover:bg-brand-50'
           }`}
           title="وضع الطفل"
         >
@@ -1965,21 +1962,21 @@ ${notes ? `
           className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg font-black text-xs transition-all flex-shrink-0 ${
             focusMode
               ? 'bg-gradient-to-r from-[#FF8C65] to-[#FFBA44] text-white shadow-[0_4px_12px_-2px_rgba(255,140,101,0.4)]'
-              : 'bg-white/10 text-white/60 hover:bg-white/20'
+              : 'bg-surface-page text-gray-500 hover:bg-brand-50'
           }`}
           title="وضع التركيز"
         >
           🎯 {focusMode ? 'تركيز ●' : 'تركيز'}
         </button>
 
-        <div className="w-px h-5 bg-white/15 flex-shrink-0" />
+        <div className="w-px h-5 bg-brand-100 flex-shrink-0" />
 
         {/* Group 4 — Difficulty */}
         <div className="flex items-center gap-1 flex-shrink-0">
           {([1,2,3] as const).map(d => (
             <button key={d} onClick={() => setDifficulty(d)}
               className={`px-2 py-1 rounded-lg text-xs font-bold transition-colors ${
-                difficulty === d ? 'bg-brand-600 text-white' : 'bg-white/10 text-white/50 hover:bg-white/20'
+                difficulty === d ? 'bg-brand-600 text-white' : 'bg-surface-page text-gray-400 hover:bg-brand-50'
               }`}>
               {d === 1 ? 'سهل' : d === 2 ? 'متوسط' : 'صعب'}
             </button>
@@ -1992,7 +1989,7 @@ ${notes ? `
         {results.length > 0 && (
           <button
             onClick={printSessionReport}
-            className="flex items-center gap-1.5 font-black px-2.5 py-1.5 rounded-lg text-xs transition-all bg-white/10 text-white/60 hover:bg-white/20 flex-shrink-0"
+            className="flex items-center gap-1.5 font-black px-2.5 py-1.5 rounded-lg text-xs transition-all bg-surface-page hover:bg-brand-50 text-gray-500 flex-shrink-0"
             title="طباعة تقرير الجلسة"
           >
             📄 تقرير
@@ -2002,7 +1999,7 @@ ${notes ? `
         {/* Lock session button */}
         <button
           onClick={lockSession}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg font-black text-xs transition-all flex-shrink-0 bg-white/10 text-white/60 hover:bg-amber-500/20 hover:text-amber-400"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg font-black text-xs transition-all flex-shrink-0 bg-surface-page text-gray-500 hover:bg-amber-50 hover:text-amber-600"
           title="قفل الجلسة — يخفي أدوات المعالج حتى لا يتشتت الطفل"
         >
           🔒 قفل

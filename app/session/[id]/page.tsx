@@ -2011,8 +2011,8 @@ ${notes ? `
 
       {/* ── Session Phase Progress Bar ── */}
       {running && !sessionLocked && (
-        <div ref={phaseBarRef} className="bg-gray-900 border-b border-white/10 px-4 py-2 flex items-center gap-3" dir="rtl">
-          <span className="text-white/30 text-[10px] font-black flex-shrink-0">مراحل</span>
+        <div ref={phaseBarRef} className="bg-white border-b border-brand-100 px-4 py-2 flex items-center gap-3 shadow-sm" dir="rtl">
+          <span className="text-gray-400 text-[10px] font-black flex-shrink-0">مراحل</span>
           <div className="flex items-center gap-2 flex-1">
             {SESSION_PHASES.map((ph, i) => {
               const isActive = i === phaseIdx
@@ -2027,17 +2027,17 @@ ${notes ? `
                 <button
                   key={ph.id}
                   onClick={() => { setPhaseIdx(i); setPhaseToast(null) }}
-                  className="flex-1 flex flex-col items-center gap-1 rounded-xl px-2 py-1 transition-all"
+                  className={`flex-1 flex flex-col items-center gap-1 rounded-xl px-2 py-1 transition-all ${isActive ? 'animate-pop' : ''}`}
                   style={{
-                    background: isActive ? `${ph.color}18` : 'transparent',
-                    border: isActive ? `1px solid ${ph.color}40` : '1px solid transparent',
+                    background: isActive ? `${ph.color}16` : 'transparent',
+                    border: isActive ? `1px solid ${ph.color}55` : '1px solid transparent',
                   }}
                 >
                   <div className="flex items-center gap-1 w-full">
                     <span className="text-[11px]">{ph.icon}</span>
                     <span
                       className="text-[10px] font-black truncate"
-                      style={{ color: isActive ? ph.color : isDone ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.2)' }}
+                      style={{ color: isActive ? ph.color : isDone ? '#9CA3AF' : '#D1D5DB' }}
                     >
                       {ph.label}
                     </span>
@@ -2046,9 +2046,9 @@ ${notes ? `
                         {formatTime(phaseElapsed)}/{phaseDurations[i]}د
                       </span>
                     )}
-                    {isDone && <span className="text-[9px] mr-auto" style={{ color: 'rgba(255,255,255,0.25)' }}>✓</span>}
+                    {isDone && <span className="text-[9px] mr-auto text-calm-teal">✓</span>}
                   </div>
-                  <div className="w-full h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                  <div className="w-full h-1 rounded-full overflow-hidden bg-surface-page">
                     <div
                       className="h-full rounded-full transition-all duration-1000"
                       style={{ width: `${progress}%`, background: ph.color, opacity: isDone ? 0.4 : 1 }}
@@ -2061,7 +2061,7 @@ ${notes ? `
           {/* Phase duration edit — simple inline inputs */}
           <button
             onClick={() => setShowPhaseEdit(e => !e)}
-            className="text-white/25 hover:text-white/50 text-[10px] font-bold flex-shrink-0 transition-colors px-1"
+            className="text-gray-300 hover:text-brand-600 text-[10px] font-bold flex-shrink-0 transition-colors px-1"
             title="تعديل مدة المراحل"
           >
             ⚙

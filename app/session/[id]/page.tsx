@@ -293,12 +293,12 @@ const ASSESSMENTS = [
 ]
 
 const SESSION_TYPE_CFG: Record<string, { label: string; color: string; isAssessment?: boolean }> = {
-  assessment:   { label: 'جلسة تقييمية',       color: 'bg-amber-500/20 text-amber-200 border-amber-500/50',  isAssessment: true },
-  followup:     { label: 'جلسة متابعة',         color: 'bg-blue-500/20 text-blue-200 border-blue-500/50' },
-  emergency:    { label: 'استشارة طارئة',       color: 'bg-red-500/20 text-red-200 border-red-500/50' },
-  consultation: { label: 'استشارة الوالدين',   color: 'bg-purple-500/20 text-purple-200 border-purple-500/50' },
-  training:     { label: 'جلسة تدريبية مكثفة', color: 'bg-green-500/20 text-green-200 border-green-500/50' },
-  review:       { label: 'مراجعة البرنامج',     color: 'bg-cyan-500/20 text-cyan-200 border-cyan-500/50' },
+  assessment:   { label: 'جلسة تقييمية',       color: 'bg-amber-50 text-amber-700 border-amber-200',  isAssessment: true },
+  followup:     { label: 'جلسة متابعة',         color: 'bg-blue-50 text-blue-700 border-blue-200' },
+  emergency:    { label: 'استشارة طارئة',       color: 'bg-red-50 text-red-700 border-red-200' },
+  consultation: { label: 'استشارة الوالدين',   color: 'bg-purple-50 text-purple-700 border-purple-200' },
+  training:     { label: 'جلسة تدريبية مكثفة', color: 'bg-green-50 text-green-700 border-green-200' },
+  review:       { label: 'مراجعة البرنامج',     color: 'bg-cyan-50 text-cyan-700 border-cyan-200' },
 }
 
 const DIAG_LABELS: Record<string, string> = {
@@ -1539,17 +1539,12 @@ ${notes ? `
       {/* ── Header row ── */}
       <header
         ref={headerRef}
-        className={`border-b flex items-center gap-2 px-3 py-2 flex-shrink-0 relative z-[60] ${sessionLocked ? 'hidden' : ''}`}
-        style={{
-          background: 'rgba(8,8,18,0.97)',
-          borderColor: 'rgba(255,255,255,0.07)',
-          backdropFilter: 'blur(20px)',
-        }}
+        className={`border-b border-brand-100 bg-white/90 backdrop-blur-sm flex items-center gap-2 px-3 py-2 flex-shrink-0 relative z-[60] ${sessionLocked ? 'hidden' : ''}`}
       >
         {/* Close */}
         <button
           onClick={() => router.back()}
-          className="w-8 h-8 flex items-center justify-center rounded-xl flex-shrink-0 transition-colors hover:bg-white/10 text-white/40 hover:text-white"
+          className="w-8 h-8 flex items-center justify-center rounded-xl flex-shrink-0 transition-colors hover:bg-brand-50 text-gray-400 hover:text-gray-700"
         >
           <X className="w-4 h-4" />
         </button>
@@ -1567,27 +1562,27 @@ ${notes ? `
             >
               {(studentName || 'ج').charAt(0).toUpperCase()}
             </div>
-            <span className="text-white font-black text-sm truncate">
+            <span className="text-gray-900 font-black text-sm truncate">
               <span className="sm:hidden">{(() => { const n = (studentName || 'جلسة').split(' ')[0]; return n.charAt(0).toUpperCase() + n.slice(1); })()}</span>
               <span className="hidden sm:inline">{studentName || 'جلسة تفاعلية'}</span>
             </span>
-            <ChevronDown className={`w-3 h-3 text-white/30 flex-shrink-0 transition-transform ${profileOpen ? 'rotate-180' : ''}`} />
+            <ChevronDown className={`w-3 h-3 text-gray-300 flex-shrink-0 transition-transform ${profileOpen ? 'rotate-180' : ''}`} />
           </button>
 
           {/* Badges — hidden on mobile */}
           <div className="hidden sm:flex items-center gap-1.5 mt-0.5">
             {studentDiagnosis && (
-              <span className="text-[10px] bg-brand-900/60 text-brand-300 border border-brand-500/40 px-1.5 py-0.5 rounded-full font-bold">
+              <span className="text-[10px] bg-brand-50 text-brand-600 border border-brand-200 px-1.5 py-0.5 rounded-full font-bold">
                 {DIAG_LABELS[studentDiagnosis] || studentDiagnosis}
               </span>
             )}
             {studentSeverity > 0 && (
-              <span className="text-[10px] bg-white/10 text-white/50 px-1.5 py-0.5 rounded-full font-bold">
+              <span className="text-[10px] bg-surface-page text-gray-500 px-1.5 py-0.5 rounded-full font-bold">
                 {SEVERITY_LABELS[studentSeverity]}
               </span>
             )}
             {sessionCount > 0 && (
-              <span className="text-[10px] bg-white/10 text-white/40 px-1.5 py-0.5 rounded-full font-bold">
+              <span className="text-[10px] bg-surface-page text-gray-400 px-1.5 py-0.5 rounded-full font-bold">
                 ج.{sessionCount} سابقة
               </span>
             )}
@@ -1602,32 +1597,26 @@ ${notes ? `
           {/* ── Quick Profile Card ── */}
           {profileOpen && (
             <div
-              className="absolute top-full mt-2 right-0 sm:left-0 sm:right-auto z-[70] rounded-2xl p-4 w-[min(288px,calc(100vw-24px))] shadow-2xl"
-              style={{
-                background: 'rgba(10,9,24,0.96)',
-                border: '1.5px solid rgba(124,92,252,0.2)',
-                boxShadow: '0 24px 64px rgba(0,0,0,0.8), 0 0 0 1px rgba(124,92,252,0.08)',
-                backdropFilter: 'blur(24px)',
-              }}
+              className="absolute top-full mt-2 right-0 sm:left-0 sm:right-auto z-[70] rounded-2xl p-4 w-[min(288px,calc(100vw-24px))] shadow-2xl bg-white border border-brand-100"
               dir="rtl"
             >
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 rounded-2xl bg-brand-900/60 border border-brand-500/30 flex items-center justify-center flex-shrink-0">
-                  <User className="w-6 h-6 text-brand-400" />
+                <div className="w-12 h-12 rounded-2xl bg-brand-50 border border-brand-200 flex items-center justify-center flex-shrink-0">
+                  <User className="w-6 h-6 text-brand-600" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-white font-black text-sm truncate">{studentName || '—'}</div>
-                  <div className="text-white/50 text-xs mt-0.5">
+                  <div className="text-gray-900 font-black text-sm truncate">{studentName || '—'}</div>
+                  <div className="text-gray-400 text-xs mt-0.5">
                     {studentAge} سنة • {DIAG_LABELS[studentDiagnosis] || studentDiagnosis || 'لا يوجد تشخيص'}
                   </div>
                   <div className="flex items-center gap-1.5 mt-1">
                     {studentSeverity > 0 && (
-                      <span className="text-[10px] bg-brand-900/60 text-brand-300 border border-brand-500/30 px-1.5 py-0.5 rounded-full font-bold">
+                      <span className="text-[10px] bg-brand-50 text-brand-600 border border-brand-200 px-1.5 py-0.5 rounded-full font-bold">
                         {SEVERITY_LABELS[studentSeverity]}
                       </span>
                     )}
                     {sessionCount > 0 && (
-                      <span className="text-[10px] text-white/35 font-medium">{sessionCount} جلسة سابقة</span>
+                      <span className="text-[10px] text-gray-400 font-medium">{sessionCount} جلسة سابقة</span>
                     )}
                   </div>
                 </div>
@@ -1635,11 +1624,11 @@ ${notes ? `
 
               {pastSessions.length > 0 && (
                 <div className="mb-3">
-                  <div className="text-white/35 text-[10px] font-black mb-2 uppercase tracking-wider">آخر 3 جلسات</div>
+                  <div className="text-gray-400 text-[10px] font-black mb-2 uppercase tracking-wider">آخر 3 جلسات</div>
                   <div className="space-y-1.5">
                     {pastSessions.map((s, i) => (
                       <div key={i} className="flex items-center gap-2">
-                        <div className="flex-1 bg-white/10 rounded-full h-1.5 overflow-hidden">
+                        <div className="flex-1 bg-surface-page rounded-full h-1.5 overflow-hidden">
                           <div
                             className="h-full rounded-full"
                             style={{
@@ -1648,8 +1637,8 @@ ${notes ? `
                             }}
                           />
                         </div>
-                        <span className="text-white/60 text-[10px] font-black ltr-num w-8 text-left">{s.score}%</span>
-                        <span className="text-white/25 text-[9px] ltr-num flex-shrink-0">{s.date}</span>
+                        <span className="text-gray-600 text-[10px] font-black ltr-num w-8 text-left">{s.score}%</span>
+                        <span className="text-gray-300 text-[9px] ltr-num flex-shrink-0">{s.date}</span>
                       </div>
                     ))}
                   </div>
@@ -1657,16 +1646,16 @@ ${notes ? `
               )}
 
               {profile && Object.entries(profile.diagnosedDifficulties).some(([, v]) => v !== 'none') && (
-                <div className="border-t border-white/10 pt-3 mb-3">
-                  <div className="text-white/35 text-[10px] font-black mb-2 uppercase tracking-wider">صعوبات موثقة</div>
+                <div className="border-t border-brand-100 pt-3 mb-3">
+                  <div className="text-gray-400 text-[10px] font-black mb-2 uppercase tracking-wider">صعوبات موثقة</div>
                   <div className="flex flex-wrap gap-1">
                     {Object.entries(profile.diagnosedDifficulties)
                       .filter(([, v]) => v !== 'none')
                       .map(([k, v]) => (
                         <span key={k} className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${
-                          v === 'severe'   ? 'bg-red-900/50 text-red-300 border-red-500/30' :
-                          v === 'moderate' ? 'bg-orange-900/50 text-orange-300 border-orange-500/30' :
-                                             'bg-yellow-900/50 text-yellow-300 border-yellow-500/30'
+                          v === 'severe'   ? 'bg-red-50 text-red-600 border-red-200' :
+                          v === 'moderate' ? 'bg-orange-50 text-orange-600 border-orange-200' :
+                                             'bg-yellow-50 text-yellow-700 border-yellow-200'
                         }`}>
                           {DIFFICULTY_LABELS_AR[k as keyof typeof DIFFICULTY_LABELS_AR]}
                         </span>
@@ -1676,18 +1665,18 @@ ${notes ? `
                 </div>
               )}
 
-              <div className={`${(profile && Object.entries(profile.diagnosedDifficulties).some(([, v]) => v !== 'none')) || pastSessions.length > 0 ? 'border-t border-white/10 pt-3' : ''}`}>
-                <div className="text-white/35 text-[10px] font-black mb-1 uppercase tracking-wider">ملاحظات</div>
+              <div className={`${(profile && Object.entries(profile.diagnosedDifficulties).some(([, v]) => v !== 'none')) || pastSessions.length > 0 ? 'border-t border-brand-100 pt-3' : ''}`}>
+                <div className="text-gray-400 text-[10px] font-black mb-1 uppercase tracking-wider">ملاحظات</div>
                 {notes ? (
-                  <p className="text-white/50 text-[10px] leading-relaxed line-clamp-3">{notes}</p>
+                  <p className="text-gray-600 text-[10px] leading-relaxed line-clamp-3">{notes}</p>
                 ) : (
-                  <p className="text-white/25 text-[10px] italic">لا توجد ملاحظات بعد</p>
+                  <p className="text-gray-300 text-[10px] italic">لا توجد ملاحظات بعد</p>
                 )}
               </div>
 
               <button
                 onClick={() => setProfileOpen(false)}
-                className="mt-3 w-full text-white/30 hover:text-white/60 text-[10px] font-bold transition-colors pt-2 border-t border-white/10"
+                className="mt-3 w-full text-gray-400 hover:text-gray-600 text-[10px] font-bold transition-colors pt-2 border-t border-brand-100"
               >
                 إغلاق ✕
               </button>
@@ -1697,14 +1686,12 @@ ${notes ? `
 
         {/* Session Timer */}
         <div
-          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl flex-shrink-0 ${running ? 'border' : 'border'}`}
-          style={running
-            ? { background: 'rgba(22,163,74,0.12)', borderColor: 'rgba(34,197,94,0.3)' }
-            : { background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.08)' }
-          }
+          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl flex-shrink-0 border ${
+            running ? 'bg-emerald-50 border-emerald-200' : 'bg-surface-page border-brand-100'
+          }`}
         >
-          <Clock className="w-3.5 h-3.5" style={{ color: running ? '#4ade80' : 'rgba(255,255,255,0.3)' }} />
-          <span className="font-black text-base ltr-num" style={{ color: running ? '#4ade80' : 'rgba(255,255,255,0.6)' }}>
+          <Clock className={`w-3.5 h-3.5 ${running ? 'text-emerald-600' : 'text-gray-300'}`} />
+          <span className={`font-black text-base ltr-num ${running ? 'text-emerald-600' : 'text-gray-400'}`}>
             {formatTime(elapsed)}
           </span>
         </div>
@@ -1712,8 +1699,8 @@ ${notes ? `
         {/* Average score — hidden on mobile */}
         {results.length > 0 && (
           <div className="hidden sm:block text-center flex-shrink-0">
-            <div className="font-black text-brand-400 text-lg ltr-num">{avgScore}%</div>
-            <div className="text-white/40 text-[10px]">متوسط</div>
+            <div className="font-black text-brand-600 text-lg ltr-num">{avgScore}%</div>
+            <div className="text-gray-400 text-[10px]">متوسط</div>
           </div>
         )}
 
@@ -1733,14 +1720,14 @@ ${notes ? `
           onClick={saveSession}
           disabled={saving}
           title={saveFailed ? 'فشل الحفظ — البيانات محفوظة محليًا مؤقتًا، اضغط لإعادة المحاولة' : undefined}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-xl font-black text-xs flex-shrink-0 transition-all active:scale-95"
-          style={saveFailed
-            ? { background: 'rgba(220,38,38,0.2)', color: '#f87171', border: '1px solid rgba(239,68,68,0.4)' }
-            : saved
-            ? { background: 'rgba(22,163,74,0.2)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.3)' }
-            : saving
-            ? { background: 'rgba(124,92,252,0.2)', color: 'rgba(255,255,255,0.5)' }
-            : { background: 'linear-gradient(135deg,#7C5CFC,#9A7BFD)', color: '#fff', boxShadow: '0 4px 16px rgba(124,92,252,0.35)' }
+          className={`flex items-center gap-1.5 px-3 py-2 rounded-xl font-black text-xs flex-shrink-0 transition-all active:scale-95 ${
+            saveFailed ? 'bg-red-50 text-red-600 border border-red-200' :
+            saved ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' :
+            saving ? 'bg-brand-50 text-gray-400' : 'text-white'
+          }`}
+          style={!saveFailed && !saved && !saving
+            ? { background: 'linear-gradient(135deg,#7C5CFC,#9A7BFD)', boxShadow: '0 4px 16px rgba(124,92,252,0.35)' }
+            : undefined
           }
         >
           <Save className="w-3.5 h-3.5" />

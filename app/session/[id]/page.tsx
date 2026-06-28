@@ -3026,7 +3026,7 @@ ${notes ? `
             const READY_COLORS = ['#EF4444','#F97316','#F59E0B','#22C55E','#3B82F6']
 
             return (
-              <div className="absolute inset-0 overflow-hidden flex items-center justify-center">
+              <div className="absolute inset-0 overflow-y-auto">
                 {/* Warm decorative background — replaces the dark console look for this child-facing screen */}
                 <div
                   className="absolute inset-0"
@@ -3038,6 +3038,9 @@ ${notes ? `
                   <div className="absolute text-4xl opacity-25 animate-float" style={{ bottom: '24%', right: '13%', animationDelay: '0.7s' }}>✨</div>
                 </div>
 
+                {/* min-h-full (not items-center on the scroll container itself) so tall content
+                    grows the box instead of being centered-and-clipped above the scrollable area */}
+                <div className="relative min-h-full flex items-center justify-center py-4">
                 <div className="relative w-full max-w-sm mx-auto px-4" dir="rtl">
                   {/* Pre-session phase duration control */}
                   <div
@@ -3216,6 +3219,7 @@ ${notes ? `
                       </button>
                     </div>
                   )}
+                </div>
                 </div>
               </div>
             )

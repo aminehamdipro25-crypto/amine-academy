@@ -11,6 +11,29 @@ function clamp(n: number): 1 | 2 | 3 | 4 | 5 {
   return v as 1 | 2 | 3 | 4 | 5
 }
 
+function sanitizeObservationLog(input: unknown): SessionLog['observationLog'] {
+  if (!Array.isArray(input)) return []
+  return input.slice(0, 500).map(e => ({
+    text:     String(e?.text ?? '').slice(0, 300),
+    category: String(e?.category ?? '').slice(0, 60),
+    color:    String(e?.color ?? '').slice(0, 20),
+    elapsed:  Number(e?.elapsed) || 0,
+    ts:       String(e?.ts ?? '').slice(0, 20),
+  }))
+}
+
+function sanitizeAbcLog(input: unknown): SessionLog['abcLog'] {
+  if (!Array.isArray(input)) return []
+  return input.slice(0, 500).map(e => ({
+    antecedent:  String(e?.antecedent ?? '').slice(0, 500),
+    behavior:    String(e?.behavior ?? '').slice(0, 500),
+    consequence: String(e?.consequence ?? '').slice(0, 500),
+    intensity:   ([1, 2, 3].includes(Number(e?.intensity)) ? Number(e?.intensity) : 1) as 1 | 2 | 3,
+    ts:          String(e?.ts ?? '').slice(0, 20),
+    elapsed:     Number(e?.elapsed) || 0,
+  }))
+}
+
 async function requireAdmin(): Promise<boolean> {
   return isDashboardUser()
 }
@@ -56,6 +79,8 @@ export async function POST(
       exercises: Array.isArray(body.exercises) ? body.exercises : [],
       durationSeconds: Number(body.durationSeconds) || 0,
       highlights: Array.isArray(body.highlights) ? body.highlights : [],
+      observationLog: sanitizeObservationLog(body.observationLog),
+      abcLog: sanitizeAbcLog(body.abcLog),
       createdAt: new Date().toISOString(),
     }
     await redis.set(`session-log:${params.appointmentId}`, log, { ex: 365 * 24 * 3600 })
@@ -106,6 +131,12 @@ export async function PATCH(
       durationSeconds: body.durationSeconds !== undefined
         ? Number(body.durationSeconds)
         : existing.durationSeconds,
+      observationLog: body.observationLog !== undefined
+        ? sanitizeObservationLog(body.observationLog)
+        : (existing.observationLog ?? []),
+      abcLog: body.abcLog !== undefined
+        ? sanitizeAbcLog(body.abcLog)
+        : (existing.abcLog ?? []),
     }
     await redis.set(`session-log:${params.appointmentId}`, updated, { ex: 365 * 24 * 3600 })
     return NextResponse.json({ ok: true })

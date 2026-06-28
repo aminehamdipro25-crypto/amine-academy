@@ -191,6 +191,23 @@ export interface SessionObservations {
   anxiety:      1|2|3|4|5
 }
 
+export interface SessionObservationLogEntry {
+  text:     string
+  category: string
+  color:    string
+  elapsed:  number   // seconds since session start
+  ts:       string    // HH:MM
+}
+
+export interface SessionABCLogEntry {
+  antecedent:  string
+  behavior:    string
+  consequence: string
+  intensity:   1|2|3
+  ts:          string
+  elapsed:     number
+}
+
 export interface SessionLog {
   id:              string
   appointmentId:   string
@@ -200,6 +217,8 @@ export interface SessionLog {
   exercises:       ExerciseResult[]
   durationSeconds: number
   highlights:      string[]
+  observationLog:  SessionObservationLogEntry[]
+  abcLog:          SessionABCLogEntry[]
   createdAt:       string
 }
 
@@ -213,6 +232,7 @@ export interface AssessmentAnswer {
 export interface AssessmentResult {
   id:            string
   studentId:     string
+  sessionId?:    string  // linked appointment/session id, when run during a live session
   type:          AssessmentType
   subtype?:      string
   domainScores:  Record<string, number>

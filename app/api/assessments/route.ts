@@ -32,9 +32,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'مستوى الشدة غير صالح' }, { status: 400 })
     }
     const id = `AR-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`
+    const sessionId = typeof body.sessionId === 'string'
+      ? body.sessionId.trim().replace(/[^a-zA-Z0-9-_]/g, '').slice(0, 100)
+      : ''
     const result: AssessmentResult = {
       id,
       studentId,
+      sessionId: sessionId || undefined,
       type: body.type,
       subtype: body.subtype,
       domainScores: body.domainScores || {},

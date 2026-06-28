@@ -448,6 +448,8 @@ export default function SessionPage() {
   const [difficulty, setDifficulty] = useState<1|2|3>(1)
   const [saved, setSaved] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [saveFailed, setSaveFailed] = useState(false)
+  const [assessmentSaveFailed, setAssessmentSaveFailed] = useState(false)
   const [studentAge, setStudentAge] = useState(8)
   const [studentName, setStudentName] = useState('')
   const [observations, setObservations] = useState<SessionObservations>({
@@ -1328,18 +1330,24 @@ ${notes ? `
   const handleAssessmentComplete = useCallback((result: AssessmentResult) => {
     setAssessments(a => [...a, result])
     setActiveView(null)
-    // Save assessment to API
+    // Save assessment to API, linked to this session
     fetch('/api/assessments', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(result),
-    }).catch(() => {})
-  }, [])
+      body: JSON.stringify({ ...result, sessionId: id }),
+    }).then(res => {
+      if (!res.ok) throw new Error(String(res.status))
+    }).catch(() => {
+      setAssessmentSaveFailed(true)
+      setTimeout(() => setAssessmentSaveFailed(false), 5000)
+    })
+  }, [id])
 
   async function saveSession() {
     setSaving(true)
+    setSaveFailed(false)
     try {
-      await fetch(`/api/sessions/${id}`, {
+      const res = await fetch(`/api/sessions/${id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1353,9 +1361,15 @@ ${notes ? `
           abcLog,
         }),
       })
+      if (!res.ok) throw new Error(String(res.status))
       setSaved(true)
       sessionStorage.removeItem(`session_draft_${id}`)
       playSound('complete')
+    } catch (err) {
+      console.error('[saveSession] failed to save session log', err)
+      setSaved(false)
+      setSaveFailed(true)
+      setTimeout(() => setSaveFailed(false), 5000)
     } finally {
       setSaving(false)
     }
@@ -1718,8 +1732,11 @@ ${notes ? `
         <button
           onClick={saveSession}
           disabled={saving}
+          title={saveFailed ? 'فشل الحفظ — البيانات محفوظة محليًا مؤقتًا، اضغط لإعادة المحاولة' : undefined}
           className="flex items-center gap-1.5 px-3 py-2 rounded-xl font-black text-xs flex-shrink-0 transition-all active:scale-95"
-          style={saved
+          style={saveFailed
+            ? { background: 'rgba(220,38,38,0.2)', color: '#f87171', border: '1px solid rgba(239,68,68,0.4)' }
+            : saved
             ? { background: 'rgba(22,163,74,0.2)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.3)' }
             : saving
             ? { background: 'rgba(124,92,252,0.2)', color: 'rgba(255,255,255,0.5)' }
@@ -1727,7 +1744,7 @@ ${notes ? `
           }
         >
           <Save className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">{saving ? '...' : saved ? '✓ محفوظ' : 'حفظ'}</span>
+          <span className="hidden sm:inline">{saving ? '...' : saveFailed ? '⚠ فشل، أعد المحاولة' : saved ? '✓ محفوظ' : 'حفظ'}</span>
         </button>
       </header>
 
@@ -3661,6 +3678,23 @@ ${notes ? `
             <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: obsToast.color }} />
             <span className="text-white font-bold text-sm">{obsToast.text}</span>
             <span className="text-white/40 text-xs font-mono ltr-num">{obsToast.ts}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Assessment Save Failure Toast */}
+      {assessmentSaveFailed && (
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-[90] pointer-events-none" dir="rtl">
+          <div
+            className="flex items-center gap-3 px-5 py-3 rounded-2xl shadow-2xl"
+            style={{
+              background: '#1F2937',
+              border: '1.5px solid rgba(239,68,68,0.4)',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(239,68,68,0.2)',
+            }}
+          >
+            <span className="text-rose-400">⚠</span>
+            <span className="text-white font-bold text-sm">فشل حفظ التقييم — حاول مرة أخرى من تبويب التقييمات</span>
           </div>
         </div>
       )}

@@ -3042,196 +3042,197 @@ ${notes ? `
             const READY_COLORS = ['#EF4444','#F97316','#F59E0B','#22C55E','#3B82F6']
 
             return (
-              <div className="w-full max-w-sm mx-auto px-4" dir="rtl">
-                {/* Pre-session phase duration control */}
+              <div className="absolute inset-0 overflow-hidden flex items-center justify-center">
+                {/* Warm decorative background — replaces the dark console look for this child-facing screen */}
                 <div
-                  className="mb-4 flex items-center gap-2 rounded-2xl px-4 py-2.5"
-                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+                  className="absolute inset-0"
+                  style={{ background: 'linear-gradient(160deg, #FFF8F0 0%, #FFF3E8 45%, #F3EEFF 100%)' }}
                 >
-                  <span className="text-white/30 text-[10px] font-black flex-shrink-0">مراحل الجلسة</span>
-                  <div className="flex items-center gap-1.5 flex-1 overflow-x-auto">
-                    {SESSION_PHASES.map((ph, i) => (
-                      <span
-                        key={ph.id}
-                        className="flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-lg flex-shrink-0 ltr-num"
-                        style={{ background: `${ph.color}18`, color: ph.color }}
-                      >
-                        {ph.icon} {phaseDurations[i]}د
-                      </span>
-                    ))}
-                  </div>
-                  <button
-                    onClick={() => setShowPhaseEdit(true)}
-                    className="text-white/40 hover:text-white/70 text-[11px] font-black flex-shrink-0 px-1.5 transition-colors"
-                    title="تعديل مدة المراحل قبل البدء"
-                  >
-                    ⚙ تعديل
-                  </button>
+                  <div className="absolute text-4xl opacity-40 animate-float" style={{ top: '9%', left: '8%' }}>⭐</div>
+                  <div className="absolute text-5xl opacity-30 animate-float" style={{ top: '16%', right: '9%', animationDelay: '1.1s' }}>☁️</div>
+                  <div className="absolute text-3xl opacity-35 animate-bounce-soft" style={{ bottom: '16%', left: '11%', animationDelay: '0.4s' }}>🎈</div>
+                  <div className="absolute text-4xl opacity-25 animate-float" style={{ bottom: '24%', right: '13%', animationDelay: '0.7s' }}>✨</div>
                 </div>
-                {!readyDone ? (
+
+                <div className="relative w-full max-w-sm mx-auto px-4" dir="rtl">
+                  {/* Pre-session phase duration control */}
                   <div
-                    className="rounded-3xl overflow-hidden shadow-2xl"
-                    style={{
-                      background: 'linear-gradient(160deg, #13111f 0%, #1e1a38 50%, #151228 100%)',
-                      border: '1px solid rgba(124,92,252,0.2)',
-                      boxShadow: '0 32px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(124,92,252,0.1)',
-                    }}
+                    className="mb-4 flex items-center gap-2 rounded-2xl px-4 py-2.5 bg-white/80 border border-brand-100 shadow-sm backdrop-blur-sm"
                   >
-                    {/* Top glow bar */}
-                    <div className="h-0.5" style={{ background: 'linear-gradient(90deg, #7C5CFC, #C084FC, #7C5CFC)' }} />
-
-                    <div className="p-6">
-                      {/* Header */}
-                      <div className="text-center mb-6">
-                        <div
-                          className="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-3"
-                          style={{
-                            background: 'rgba(124,92,252,0.15)',
-                            border: '1.5px solid rgba(124,92,252,0.35)',
-                            boxShadow: '0 0 28px rgba(124,92,252,0.25)',
-                          }}
+                    <span className="text-gray-400 text-[10px] font-black flex-shrink-0">مراحل الجلسة</span>
+                    <div className="flex items-center gap-1.5 flex-1 overflow-x-auto">
+                      {SESSION_PHASES.map((ph, i) => (
+                        <span
+                          key={ph.id}
+                          className="flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-lg flex-shrink-0 ltr-num"
+                          style={{ background: `${ph.color}15`, color: ph.color }}
                         >
-                          <span className="text-2xl">📋</span>
-                        </div>
-                        <h2 className="text-white font-black text-xl tracking-tight">تقييم الجاهزية</h2>
-                        <p className="text-white/35 text-xs mt-1">3 أسئلة لضبط مستوى الجلسة تلقائياً</p>
+                          {ph.icon} {phaseDurations[i]}د
+                        </span>
+                      ))}
+                    </div>
+                    <button
+                      onClick={() => setShowPhaseEdit(true)}
+                      className="text-gray-400 hover:text-brand-600 text-[11px] font-black flex-shrink-0 px-1.5 transition-colors"
+                      title="تعديل مدة المراحل قبل البدء"
+                    >
+                      ⚙ تعديل
+                    </button>
+                  </div>
+                  {!readyDone ? (
+                    <div className="rounded-[2rem] overflow-hidden bg-white shadow-brand-xl border-2 border-brand-100 animate-slide-up">
+                      {/* Top rainbow bar */}
+                      <div className="h-2" style={{ background: 'linear-gradient(90deg, #FFBA44, #FF8C65, #7C5CFC, #2ABFA3)' }} />
 
-                        {/* Progress dots */}
-                        <div className="flex justify-center gap-2 mt-3">
-                          {[readySleep, readyEnergy, readyMood].map((v, i) => (
-                            <div
-                              key={i}
-                              className="rounded-full transition-all duration-300"
-                              style={{
-                                width: v > 0 ? 20 : 8,
-                                height: 8,
-                                background: v > 0 ? 'linear-gradient(90deg,#7C5CFC,#C084FC)' : 'rgba(255,255,255,0.12)',
-                                boxShadow: v > 0 ? '0 0 8px rgba(124,92,252,0.5)' : 'none',
-                              }}
-                            />
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Questions */}
-                      {[
-                        { label: 'نوم الطفل الليلة؟',   val: readySleep,  set: setReadySleep,  icons: ['😴','😟','😐','🙂','🌟'] },
-                        { label: 'طاقة الطفل الآن؟',    val: readyEnergy, set: setReadyEnergy, icons: ['🔋','😐','🙂','⚡','🚀'] },
-                        { label: 'مزاجه عند الدخول؟',   val: readyMood,   set: setReadyMood,   icons: ['😢','😟','😐','🙂','😄'] },
-                      ].map(({ label, val, set, icons }) => (
-                        <div key={label} className="mb-5">
-                          <div className="flex items-center justify-between mb-3">
-                            <p className="text-white/75 text-sm font-bold">{label}</p>
-                            {val > 0 && (
-                              <span
-                                className="text-[10px] font-black px-2 py-0.5 rounded-full"
-                                style={{ background: `${READY_COLORS[val-1]}20`, color: READY_COLORS[val-1] }}
-                              >
-                                {val}/5
-                              </span>
-                            )}
+                      <div className="p-6">
+                        {/* Header */}
+                        <div className="text-center mb-6">
+                          <div
+                            className="inline-flex items-center justify-center w-16 h-16 rounded-3xl mb-3 animate-bounce-soft"
+                            style={{
+                              background: 'linear-gradient(135deg, #FFBA44, #FF8C65)',
+                              boxShadow: '0 10px 28px rgba(255,140,101,0.35)',
+                            }}
+                          >
+                            <span className="text-3xl">📋</span>
                           </div>
-                          <div className="flex gap-2">
-                            {icons.map((icon, i) => (
-                              <button
+                          <h2 className="text-gray-900 font-black text-xl tracking-tight">تقييم الجاهزية</h2>
+                          <p className="text-gray-400 text-xs mt-1">3 أسئلة سريعة وممتعة قبل أن نبدأ! 🌈</p>
+
+                          {/* Progress dots */}
+                          <div className="flex justify-center gap-2 mt-3">
+                            {[readySleep, readyEnergy, readyMood].map((v, i) => (
+                              <div
                                 key={i}
-                                onClick={() => set(i + 1)}
-                                className="flex-1 flex items-center justify-center rounded-2xl transition-all duration-200 active:scale-90"
+                                className="rounded-full transition-all duration-300"
                                 style={{
-                                  height: 56,
-                                  fontSize: '1.5rem',
-                                  background: val === i + 1
-                                    ? `${READY_COLORS[i]}22`
-                                    : 'rgba(255,255,255,0.05)',
-                                  border: val === i + 1
-                                    ? `1.5px solid ${READY_COLORS[i]}55`
-                                    : '1.5px solid rgba(255,255,255,0.08)',
-                                  boxShadow: val === i + 1
-                                    ? `0 0 20px ${READY_COLORS[i]}25, inset 0 1px 0 rgba(255,255,255,0.08)`
-                                    : 'none',
-                                  transform: val === i + 1 ? 'scale(1.1)' : 'scale(1)',
+                                  width: v > 0 ? 20 : 8,
+                                  height: 8,
+                                  background: v > 0 ? 'linear-gradient(90deg,#FF8C65,#FFBA44)' : '#F3EEFF',
+                                  boxShadow: v > 0 ? '0 0 8px rgba(255,140,101,0.4)' : 'none',
                                 }}
-                              >
-                                {icon}
-                              </button>
+                              />
                             ))}
                           </div>
                         </div>
-                      ))}
 
-                      {/* Result banner */}
-                      {readyComplete && (
-                        <div
-                          className="text-center py-4 px-4 rounded-2xl mb-5 transition-all duration-500"
-                          style={{
-                            background: `linear-gradient(135deg, ${readyColor}12, ${readyColor}06)`,
-                            border: `1px solid ${readyColor}30`,
-                          }}
-                        >
-                          <div className="text-3xl mb-1.5">{readyEmoji}</div>
-                          <p className="text-white font-black text-sm">
-                            {readyLevel === 'high' ? 'جاهزية ممتازة!' : readyLevel === 'medium' ? 'جاهزية جيدة' : 'يحتاج دعماً'}
-                          </p>
-                          <p className="text-white/40 text-xs mt-0.5">
-                            {readyLevel === 'high' ? 'سنبدأ بمستوى متقدم' : readyLevel === 'medium' ? 'مستوى متوسط مناسب' : 'سنبدأ بمستوى سهل'}
-                          </p>
+                        {/* Questions */}
+                        {[
+                          { label: 'نوم الطفل الليلة؟',   val: readySleep,  set: setReadySleep,  icons: ['😴','😟','😐','🙂','🌟'] },
+                          { label: 'طاقة الطفل الآن؟',    val: readyEnergy, set: setReadyEnergy, icons: ['🔋','😐','🙂','⚡','🚀'] },
+                          { label: 'مزاجه عند الدخول؟',   val: readyMood,   set: setReadyMood,   icons: ['😢','😟','😐','🙂','😄'] },
+                        ].map(({ label, val, set, icons }) => (
+                          <div key={label} className="mb-5">
+                            <div className="flex items-center justify-between mb-3">
+                              <p className="text-gray-700 text-sm font-bold">{label}</p>
+                              {val > 0 && (
+                                <span
+                                  className="text-[10px] font-black px-2 py-0.5 rounded-full"
+                                  style={{ background: `${READY_COLORS[val-1]}18`, color: READY_COLORS[val-1] }}
+                                >
+                                  {val}/5
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex gap-2">
+                              {icons.map((icon, i) => (
+                                <button
+                                  key={i}
+                                  onClick={() => set(i + 1)}
+                                  className="flex-1 flex items-center justify-center rounded-2xl transition-all duration-200 active:scale-90"
+                                  style={{
+                                    height: 60,
+                                    fontSize: '1.75rem',
+                                    background: val === i + 1
+                                      ? `linear-gradient(135deg, ${READY_COLORS[i]}26, ${READY_COLORS[i]}12)`
+                                      : '#FFF8F0',
+                                    border: val === i + 1
+                                      ? `2px solid ${READY_COLORS[i]}`
+                                      : '2px solid #F3EEFF',
+                                    boxShadow: val === i + 1
+                                      ? `0 8px 20px ${READY_COLORS[i]}35`
+                                      : 'none',
+                                    transform: val === i + 1 ? 'scale(1.12) translateY(-2px)' : 'scale(1)',
+                                  }}
+                                >
+                                  {icon}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+
+                        {/* Result banner */}
+                        {readyComplete && (
+                          <div
+                            className="text-center py-4 px-4 rounded-2xl mb-5 transition-all duration-500 animate-pop"
+                            style={{
+                              background: `linear-gradient(135deg, ${readyColor}18, ${readyColor}08)`,
+                              border: `2px solid ${readyColor}40`,
+                            }}
+                          >
+                            <div className="text-4xl mb-1.5">{readyEmoji}</div>
+                            <p className="font-black text-sm" style={{ color: readyColor }}>
+                              {readyLevel === 'high' ? 'جاهزية ممتازة!' : readyLevel === 'medium' ? 'جاهزية جيدة' : 'يحتاج دعماً'}
+                            </p>
+                            <p className="text-gray-400 text-xs mt-0.5">
+                              {readyLevel === 'high' ? 'سنبدأ بمستوى متقدم' : readyLevel === 'medium' ? 'مستوى متوسط مناسب' : 'سنبدأ بمستوى سهل'}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Action buttons */}
+                        <div className="flex gap-3">
+                          <button
+                            onClick={() => { setReadyDone(true); startSession() }}
+                            className="flex-1 py-3.5 rounded-2xl text-xs font-bold transition-all active:scale-95 bg-gray-50 text-gray-400 border border-gray-200 hover:bg-gray-100"
+                          >
+                            تخطّ ←
+                          </button>
+                          <button
+                            onClick={handleStartWithReadiness}
+                            disabled={!readyComplete}
+                            className="flex-[2] py-3.5 rounded-2xl text-sm font-black text-white transition-all duration-200 active:scale-95"
+                            style={readyComplete ? {
+                              background: 'linear-gradient(135deg, #2ABFA3, #10B981)',
+                              boxShadow: '0 8px 24px rgba(16,185,129,0.35)',
+                            } : {
+                              background: '#F3EEFF',
+                              color: '#C4B5FD',
+                            }}
+                          >
+                            {readyComplete ? '▶ ابدأ الجلسة' : 'أجب على الأسئلة أولاً'}
+                          </button>
                         </div>
-                      )}
-
-                      {/* Action buttons */}
-                      <div className="flex gap-3">
-                        <button
-                          onClick={() => { setReadyDone(true); startSession() }}
-                          className="flex-1 py-3.5 rounded-2xl text-xs font-bold transition-all active:scale-95"
-                          style={{ background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.4)', border: '1px solid rgba(255,255,255,0.08)' }}
-                        >
-                          تخطّ ←
-                        </button>
-                        <button
-                          onClick={handleStartWithReadiness}
-                          disabled={!readyComplete}
-                          className="flex-[2] py-3.5 rounded-2xl text-sm font-black text-white transition-all duration-200 active:scale-95"
-                          style={readyComplete ? {
-                            background: 'linear-gradient(135deg, #22C55E, #16A34A)',
-                            boxShadow: '0 4px 24px rgba(34,197,94,0.4)',
-                          } : {
-                            background: 'rgba(255,255,255,0.07)',
-                            color: 'rgba(255,255,255,0.2)',
-                            border: '1px solid rgba(255,255,255,0.08)',
-                          }}
-                        >
-                          {readyComplete ? '▶ ابدأ الجلسة' : 'أجب على الأسئلة أولاً'}
-                        </button>
                       </div>
                     </div>
-                  </div>
-                ) : (
-                  <div className="text-center">
-                    <div
-                      className="inline-flex items-center justify-center w-24 h-24 rounded-3xl mb-6"
-                      style={{
-                        background: 'linear-gradient(135deg, rgba(124,92,252,0.2), rgba(192,132,252,0.1))',
-                        border: '2px solid rgba(124,92,252,0.3)',
-                        boxShadow: '0 0 48px rgba(124,92,252,0.2)',
-                        fontSize: '3rem',
-                      }}
-                    >
-                      🎯
+                  ) : (
+                    <div className="text-center">
+                      <div
+                        className="inline-flex items-center justify-center w-28 h-28 rounded-[2rem] mb-6 animate-float"
+                        style={{
+                          background: 'linear-gradient(135deg, #B99AFF, #7C5CFC)',
+                          boxShadow: '0 16px 40px rgba(124,92,252,0.35)',
+                          fontSize: '3.25rem',
+                        }}
+                      >
+                        🎯
+                      </div>
+                      <h2 className="text-2xl font-black text-gray-900 mb-2">جاهز للجلسة؟ 🎉</h2>
+                      <p className="text-gray-400 text-sm mb-8">اضغط لبدء تشغيل التمارين</p>
+                      <button
+                        onClick={startSession}
+                        className="text-white font-black px-10 py-4 rounded-[1.75rem] text-lg transition-all active:scale-95 animate-bounce-soft"
+                        style={{
+                          background: 'linear-gradient(135deg, #2ABFA3, #10B981)',
+                          boxShadow: '0 12px 32px rgba(16,185,129,0.4)',
+                        }}
+                      >
+                        ▶ ابدأ الجلسة
+                      </button>
                     </div>
-                    <h2 className="text-2xl font-black text-white mb-2">جاهز للجلسة؟</h2>
-                    <p className="text-white/30 text-sm mb-8">اضغط لبدء تشغيل التمارين</p>
-                    <button
-                      onClick={startSession}
-                      className="text-white font-black px-10 py-4 rounded-2xl text-lg transition-all active:scale-95"
-                      style={{
-                        background: 'linear-gradient(135deg, #22C55E, #16A34A)',
-                        boxShadow: '0 8px 32px rgba(34,197,94,0.4)',
-                      }}
-                    >
-                      ▶ ابدأ الجلسة
-                    </button>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             )
           })()}

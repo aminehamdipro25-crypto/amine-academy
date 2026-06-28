@@ -1085,6 +1085,77 @@ export default function ClientDetailPage() {
                             </div>
                           )}
 
+                          {/* Quick observation log */}
+                          {log.observationLog?.length > 0 && (
+                            <div className="space-y-2">
+                              <p className="text-xs font-bold text-gray-500">{t.observationLogTitle}</p>
+                              <div className="flex flex-wrap gap-1.5">
+                                {log.observationLog.map((e, i) => (
+                                  <span key={i} className="inline-flex items-center gap-1.5 bg-gray-50 rounded-full px-2.5 py-1 text-xs">
+                                    <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: e.color || '#9CA3AF' }} />
+                                    <span className="text-gray-700">{e.text}</span>
+                                    <span className="text-gray-400 ltr-num">{e.ts}</span>
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* ABC behavior log */}
+                          {log.abcLog?.length > 0 && (
+                            <div className="bg-amber-50 rounded-xl px-4 py-3 space-y-2.5">
+                              <div className="flex items-center justify-between">
+                                <p className="text-xs font-bold text-amber-700">{t.abcLogTitle}</p>
+                                <span className="text-xs text-amber-600/70 ltr-num">{log.abcLog.length} {t.incidentsSuffix}</span>
+                              </div>
+                              {log.abcLog.map((e, i) => (
+                                <div key={i} className="bg-white/70 rounded-lg p-2.5 space-y-1">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-gray-400 text-[10px] ltr-num">{e.ts}</span>
+                                    <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full ${
+                                      e.intensity === 1 ? 'bg-green-100 text-green-700' :
+                                      e.intensity === 2 ? 'bg-amber-100 text-amber-700' :
+                                      'bg-red-100 text-red-700'
+                                    }`}>
+                                      {t.intensityLabels[e.intensity]}
+                                    </span>
+                                  </div>
+                                  {e.antecedent && (
+                                    <p className="text-[11px] text-gray-600"><span className="font-bold">{t.abcFieldLabels.antecedent}:</span> {e.antecedent}</p>
+                                  )}
+                                  {e.behavior && (
+                                    <p className="text-[11px] text-gray-600"><span className="font-bold">{t.abcFieldLabels.behavior}:</span> {e.behavior}</p>
+                                  )}
+                                  {e.consequence && (
+                                    <p className="text-[11px] text-gray-600"><span className="font-bold">{t.abcFieldLabels.consequence}:</span> {e.consequence}</p>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Assessments completed during this session */}
+                          {(walkInAssessments[a.studentId] || []).filter(r => r.sessionId === a.id).length > 0 && (
+                            <div className="space-y-2">
+                              <p className="text-xs font-bold text-gray-500">{t.walkInAssessmentsTitle}</p>
+                              <ul className="space-y-1.5">
+                                {(walkInAssessments[a.studentId] || []).filter(r => r.sessionId === a.id).map(r => (
+                                  <li key={r.id} className="bg-gray-50 rounded-xl px-3 py-2 flex items-center justify-between gap-2 flex-wrap text-xs">
+                                    <span className="font-bold text-gray-700">{tToolkit.scaleNames[r.type as keyof typeof tToolkit.scaleNames] ?? r.type}</span>
+                                    <span className={`px-2 py-0.5 rounded-full font-black ${
+                                      r.severity === 'severe'   ? 'bg-red-50 text-red-700 ring-1 ring-red-200' :
+                                      r.severity === 'moderate' ? 'bg-orange-50 text-orange-700 ring-1 ring-orange-200' :
+                                      r.severity === 'mild'     ? 'bg-amber-50 text-amber-700 ring-1 ring-amber-200' :
+                                                                   'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200'
+                                    }`}>
+                                      {tToolkit.severityLabels[r.severity]}
+                                    </span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+
                           {/* Therapist notes */}
                           {log.therapistNotes && (
                             <div className="bg-blue-50 rounded-xl px-4 py-3">

@@ -1446,6 +1446,22 @@ ${notes ? `
     setManualChromeOverride(null)
   }, [exerciseActive, showWhiteboard])
 
+  // The prompt-card / timer / music popovers are portaled to document.body and
+  // anchored to their toolbar button's on-screen position — they don't live
+  // inside the header DOM, so hiding the header doesn't hide them. Without this,
+  // opening one then having chrome auto-hide (exercise starts, or the specialist
+  // re-hides it manually) leaves it floating disconnected from its now-invisible
+  // button. Closing them whenever chrome hides keeps "popover open" in sync with
+  // "its button is actually on screen" — they can still be opened and used freely
+  // any time chrome is visible, including manually shown mid-exercise.
+  useEffect(() => {
+    if (chromeHidden) {
+      setPromptPickerOpen(false)
+      setTimerPickerOpen(false)
+      setShowNoisePanel(false)
+    }
+  }, [chromeHidden])
+
   return (
     <div className="h-screen bg-gray-950 text-white flex flex-col overflow-hidden">
 

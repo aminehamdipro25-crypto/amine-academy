@@ -318,8 +318,9 @@ function formatTime(s: number) {
 
 // Renders dropdown panels via a portal so the toolbar's overflow-x-auto
 // (which forces overflow-y to clip too, per the CSS overflow spec) never hides them.
-function ToolbarPopover({ anchorRef, open, children }: { anchorRef: React.RefObject<HTMLElement | null>; open: boolean; children: React.ReactNode }) {
+function ToolbarPopover({ anchorRef, open, onClose, children }: { anchorRef: React.RefObject<HTMLElement | null>; open: boolean; onClose?: () => void; children: React.ReactNode }) {
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null)
+  const popoverRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!open || !anchorRef.current) { setPos(null); return }
@@ -336,9 +337,32 @@ function ToolbarPopover({ anchorRef, open, children }: { anchorRef: React.RefObj
     }
   }, [open, anchorRef])
 
+  // Click/tap outside the popover (and its toggle button) or pressing Escape
+  // dismisses it — without this, the only way to close a popover was to
+  // re-click its own toggle or pick an item, even though it can visually sit
+  // on top of other clickable UI (e.g. the exercises sidebar).
+  useEffect(() => {
+    if (!open || !onClose) return
+    const handlePointer = (e: PointerEvent) => {
+      const target = e.target as Node
+      if (popoverRef.current?.contains(target)) return
+      if (anchorRef.current?.contains(target)) return
+      onClose()
+    }
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    document.addEventListener('pointerdown', handlePointer, true)
+    document.addEventListener('keydown', handleKey)
+    return () => {
+      document.removeEventListener('pointerdown', handlePointer, true)
+      document.removeEventListener('keydown', handleKey)
+    }
+  }, [open, onClose, anchorRef])
+
   if (!open || !pos || typeof document === 'undefined') return null
   return createPortal(
-    <div style={{ position: 'fixed', top: pos.top, left: pos.left, zIndex: 9999 }}>
+    <div ref={popoverRef} style={{ position: 'fixed', top: pos.top, left: pos.left, zIndex: 9999 }}>
       {children}
     </div>,
     document.body
@@ -466,10 +490,12 @@ export default function SessionPage() {
   const [obsLog, setObsLog] = useState<ObsEntry[]>([])
   const [obsOpen, setObsOpen] = useState(false)
   const [obsToast, setObsToast] = useState<ObsEntry | null>(null)
+  const obsToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [profile, setProfile] = useState<StudentAssessmentProfile | null>(null)
   const [kidMode, setKidMode] = useState(false)
   const [showCelebration, setShowCelebration] = useState(false)
   const [achievementToast, setAchievementToast] = useState<{ icon: string; message: string } | null>(null)
+  const achievementToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const headerRef = useRef<HTMLElement>(null)
   const toolbarRef = useRef<HTMLDivElement>(null)
   const phaseBarRef = useRef<HTMLDivElement>(null)
@@ -487,6 +513,7 @@ export default function SessionPage() {
   // Session phases
   const [phaseIdx, setPhaseIdx]         = useState(0)
   const [phaseToast, setPhaseToast]     = useState<SessionPhase | null>(null)
+  const phaseToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [phaseDurations, setPhaseDurations] = useState<number[]>(SESSION_PHASES.map(p => p.defaultMin))
   const [showPhaseEdit, setShowPhaseEdit] = useState(false)
   const [exerciseConfigId, setExerciseConfigId] = useState<string | null>(null)
@@ -526,6 +553,7 @@ export default function SessionPage() {
 
   // Before/After comparison (#10)
   const [compareToast, setCompareToast] = useState<{ prev: ExerciseResult; curr: ExerciseResult } | null>(null)
+  const compareToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Session Report (#8)
   const [showReport, setShowReport] = useState(false)
@@ -718,7 +746,8 @@ export default function SessionPage() {
       const phase = SESSION_PHASES[clamped]
       setPhaseToast(phase)
       playSound('phase')
-      setTimeout(() => setPhaseToast(null), 3000)
+      if (phaseToastTimerRef.current) clearTimeout(phaseToastTimerRef.current)
+      phaseToastTimerRef.current = setTimeout(() => setPhaseToast(null), 3000)
     }
   }, [elapsed, running, phaseDurations, phaseIdx])
 
@@ -765,7 +794,8 @@ export default function SessionPage() {
 
   const showAchievement = useCallback((icon: string, message: string) => {
     setAchievementToast({ icon, message })
-    setTimeout(() => setAchievementToast(null), 3500)
+    if (achievementToastTimerRef.current) clearTimeout(achievementToastTimerRef.current)
+    achievementToastTimerRef.current = setTimeout(() => setAchievementToast(null), 3500)
   }, [])
 
   // useMemo — getTopGames returns a new array every call; without memoizing it,
@@ -782,7 +812,8 @@ export default function SessionPage() {
     setObsLog(prev => [...prev, entry])
     setObsOpen(false)
     setObsToast(entry)
-    setTimeout(() => setObsToast(null), 2500)
+    if (obsToastTimerRef.current) clearTimeout(obsToastTimerRef.current)
+    obsToastTimerRef.current = setTimeout(() => setObsToast(null), 2500)
   }
 
   function startStudentTimer(seconds: number) {
@@ -928,6 +959,23 @@ export default function SessionPage() {
     }
     setNoiseRunning(false)
   }
+
+  // Stop the noise/binaural audio engine if the specialist navigates away
+  // mid-session — AudioContext playback isn't tied to the component being
+  // mounted, so without this the sound keeps playing audibly after leaving
+  // the page. Acts on the refs directly (no setState) since this only runs
+  // during unmount.
+  useEffect(() => {
+    return () => {
+      if (noiseSrcRef.current) { try { noiseSrcRef.current.stop() } catch { /* already stopped */ } }
+      if (noiseCtxRef.current) { noiseCtxRef.current.close().catch(() => {}) }
+      if (noiseTimerRef.current) clearInterval(noiseTimerRef.current)
+      if (phaseToastTimerRef.current) clearTimeout(phaseToastTimerRef.current)
+      if (achievementToastTimerRef.current) clearTimeout(achievementToastTimerRef.current)
+      if (obsToastTimerRef.current) clearTimeout(obsToastTimerRef.current)
+      if (compareToastTimerRef.current) clearTimeout(compareToastTimerRef.current)
+    }
+  }, [])
 
   function printSessionReport() {
     const date = new Date().toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' })
@@ -1274,10 +1322,11 @@ ${notes ? `
       // Before/After comparison: detect if same exercise was played before in this session
       const prev = r.find(x => x.exerciseType === result.exerciseType)
       if (prev) {
-        setTimeout(() => {
+        if (compareToastTimerRef.current) clearTimeout(compareToastTimerRef.current)
+        compareToastTimerRef.current = setTimeout(() => {
           setCompareToast({ prev, curr: result })
           if (result.score > prev.score) playSound('compare')
-          setTimeout(() => setCompareToast(null), 5000)
+          compareToastTimerRef.current = setTimeout(() => setCompareToast(null), 5000)
         }, 500)
       }
 
@@ -1869,7 +1918,7 @@ ${notes ? `
             🃏 بطاقة
           </button>
         </div>
-        <ToolbarPopover anchorRef={promptBtnRef} open={promptPickerOpen}>
+        <ToolbarPopover anchorRef={promptBtnRef} open={promptPickerOpen} onClose={() => setPromptPickerOpen(false)}>
           <div
             className="rounded-2xl overflow-hidden shadow-2xl bg-white border border-brand-100"
             style={{ minWidth: 200 }}
@@ -1901,7 +1950,7 @@ ${notes ? `
             ⏱ {showStudentTimer ? formatTime(studentTimerLeft) : 'مؤقت'}
           </button>
         </div>
-        <ToolbarPopover anchorRef={timerBtnRef} open={timerPickerOpen}>
+        <ToolbarPopover anchorRef={timerBtnRef} open={timerPickerOpen} onClose={() => setTimerPickerOpen(false)}>
           <div
             className="rounded-2xl p-3 shadow-2xl bg-white border border-brand-100"
             style={{ minWidth: 180 }}
@@ -1944,7 +1993,7 @@ ${notes ? `
             🎵 {noiseRunning ? formatTime(noiseSecsLeft) : 'موسيقى'}
           </button>
         </div>
-        <ToolbarPopover anchorRef={noiseBtnRef} open={showNoisePanel}>
+        <ToolbarPopover anchorRef={noiseBtnRef} open={showNoisePanel} onClose={() => setShowNoisePanel(false)}>
           <div
             className="rounded-2xl p-3 shadow-2xl bg-white border border-cyan-100"
             style={{ minWidth: 230 }}

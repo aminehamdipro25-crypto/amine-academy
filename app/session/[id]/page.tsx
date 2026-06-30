@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { useParams, useRouter } from 'next/navigation'
-import { Clock, X, Save, Video, Star, ClipboardList, PenLine, ChevronDown, User, Gamepad2, BarChart3, BookOpen, Play, Youtube, ExternalLink } from 'lucide-react'
+import { Clock, X, Save, Video, Star, ClipboardList, PenLine, ChevronDown, User, Gamepad2, BarChart3, BookOpen, Play, Youtube, ExternalLink, Maximize2, Minimize2, RotateCcw, Pause, Check } from 'lucide-react'
 import type { ExerciseResult, AssessmentResult, SessionObservations } from '@/lib/types'
 import { rankGamesForStudent, getTopGames, DIFFICULTY_LABELS_AR } from '@/lib/game-mapping'
 import type { StudentAssessmentProfile } from '@/lib/types'
@@ -486,6 +486,11 @@ export default function SessionPage() {
   const [tab, setTab] = useState<'exercises'|'assessments'|'log'|'videos'>('exercises')
   const [videoModal, setVideoModal] = useState<string | null>(null)
   const [videoUrls, setVideoUrls] = useState<Record<string, string>>({})
+  // Friendly loading state for the video embed — true from the moment a video
+  // ID is chosen until the YouTube iframe actually fires its load event, so
+  // the modal shows a spinner instead of an abrupt black/blank frame.
+  const [videoIframeLoading, setVideoIframeLoading] = useState(false)
+  useEffect(() => { if (videoModal) setVideoIframeLoading(true) }, [videoModal])
   const [categoryFilter, setCategoryFilter] = useState<string>('الكل')
   const [obsLog, setObsLog] = useState<ObsEntry[]>([])
   const [obsOpen, setObsOpen] = useState(false)
@@ -494,6 +499,11 @@ export default function SessionPage() {
   const [profile, setProfile] = useState<StudentAssessmentProfile | null>(null)
   const [kidMode, setKidMode] = useState(false)
   const [showCelebration, setShowCelebration] = useState(false)
+  // Light, ~1s star-burst shown between exercises (distinct from the big
+  // showCelebration overlay, which only fires once all Kid Mode games are
+  // done). pointer-events-none so it never blocks the next interaction.
+  const [miniCelebrate, setMiniCelebrate] = useState(false)
+  const miniCelebrateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [achievementToast, setAchievementToast] = useState<{ icon: string; message: string } | null>(null)
   const achievementToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const headerRef = useRef<HTMLElement>(null)
@@ -639,16 +649,42 @@ export default function SessionPage() {
     } catch { /* ignore */ }
   }, [id])
 
-  // Auto-save draft to sessionStorage (debounced 2s to avoid thrashing on elapsed counter)
-  useEffect(() => {
-    if (elapsed === 0 && results.length === 0 && notes === '' && obsLog.length === 0 && abcLog.length === 0) return
+  // Auto-save draft to sessionStorage.
+  const [savedFlash, setSavedFlash] = useState(false)
+  const savedFlashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  function persistDraft() {
     const key = `session_draft_${id}`
     const draft = { elapsed, running, results, assessments, notes, difficulty, obsLog, abcLog, phaseIdx, phaseDurations, savedAt: Date.now() }
-    const tid = setTimeout(() => {
-      try { sessionStorage.setItem(key, JSON.stringify(draft)) } catch { /* storage full */ }
-    }, 2000)
+    try {
+      sessionStorage.setItem(key, JSON.stringify(draft))
+      setSavedFlash(true)
+      if (savedFlashTimerRef.current) clearTimeout(savedFlashTimerRef.current)
+      savedFlashTimerRef.current = setTimeout(() => setSavedFlash(false), 1800)
+    } catch { /* storage full */ }
+  }
+  const persistDraftRef = useRef(persistDraft)
+  persistDraftRef.current = persistDraft
+
+  // Debounced save (2s of inactivity) — covers edits made while the timer
+  // isn't running, e.g. notes/observations logged on a paused session.
+  // Deliberately excludes `elapsed` from the deps: while running it ticks
+  // every 1s, which is shorter than this 2s debounce, so including it would
+  // cancel-and-reschedule the timeout forever and the draft would never
+  // actually persist during an active session — exactly the silent-failure
+  // this auto-save exists to prevent.
+  useEffect(() => {
+    if (elapsed === 0 && results.length === 0 && notes === '' && obsLog.length === 0 && abcLog.length === 0) return
+    const tid = setTimeout(() => persistDraftRef.current(), 2000)
     return () => clearTimeout(tid)
-  }, [elapsed, running, results, assessments, notes, difficulty, obsLog, abcLog, phaseIdx, phaseDurations, id])
+  }, [running, results, assessments, notes, difficulty, obsLog, abcLog, phaseIdx, phaseDurations, id])
+
+  // Periodic heartbeat save while the timer is running, so progress is never
+  // more than a few seconds stale if the tab is closed mid-session.
+  useEffect(() => {
+    if (!running) return
+    const iv = setInterval(() => persistDraftRef.current(), 5000)
+    return () => clearInterval(iv)
+  }, [running, id])
 
   // Track header + toolbar + phase-bar height so top toasts never overlap them, regardless of how many rows they take
   useEffect(() => {
@@ -977,6 +1013,8 @@ export default function SessionPage() {
       if (achievementToastTimerRef.current) clearTimeout(achievementToastTimerRef.current)
       if (obsToastTimerRef.current) clearTimeout(obsToastTimerRef.current)
       if (compareToastTimerRef.current) clearTimeout(compareToastTimerRef.current)
+      if (savedFlashTimerRef.current) clearTimeout(savedFlashTimerRef.current)
+      if (miniCelebrateTimerRef.current) clearTimeout(miniCelebrateTimerRef.current)
     }
   }, [])
 
@@ -1355,6 +1393,12 @@ ${notes ? `
     }
     playSound('success')
 
+    // Light celebratory burst between exercises — most noticeable in Kid Mode,
+    // kept brief so it never blocks the next action.
+    setMiniCelebrate(true)
+    if (miniCelebrateTimerRef.current) clearTimeout(miniCelebrateTimerRef.current)
+    miniCelebrateTimerRef.current = setTimeout(() => setMiniCelebrate(false), 900)
+
     // Save game result for longitudinal tracking
     if (currentStudentId) {
       fetch('/api/game-results', {
@@ -1636,11 +1680,11 @@ ${notes ? `
               window.localStorage.setItem(CHROME_PREF_KEY, next ? '1' : '0')
             }
           }}
-          className="fixed left-3 z-[490] flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-black shadow-lg transition-all active:scale-95 select-none"
-          style={{ top: 'calc(50% - 26px)', transform: 'translateY(-50%)', background: 'rgba(17,24,39,0.85)', color: '#FFFFFF', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.12)' }}
+          className="fixed left-3 z-[490] flex items-center justify-center w-11 h-11 rounded-full shadow-lg transition-all duration-200 active:scale-90 hover:scale-105 select-none"
+          style={{ top: 'calc(50% - 26px)', transform: 'translateY(-50%)', background: 'linear-gradient(135deg,#4F46E5,#7C3AED)', color: '#FFFFFF', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.18)', boxShadow: '0 4px 16px rgba(79,70,229,0.45)' }}
           title={chromeHidden ? 'إظهار أدوات الجلسة' : 'تكبير الشاشة — إخفاء الأدوات'}
         >
-          {chromeHidden ? '🔽 إظهار الأدوات' : '🔼 تكبير الشاشة'}
+          {chromeHidden ? <Maximize2 className="w-[18px] h-[18px]" strokeWidth={2.5} /> : <Minimize2 className="w-[18px] h-[18px]" strokeWidth={2.5} />}
         </button>
       )}
 
@@ -1824,7 +1868,7 @@ ${notes ? `
 
         {/* Session Timer */}
         <div
-          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl flex-shrink-0 border ${
+          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl flex-shrink-0 border transition-colors duration-300 ${
             running ? 'bg-emerald-50 border-emerald-200' : 'bg-surface-page border-brand-100'
           }`}
         >
@@ -1833,6 +1877,28 @@ ${notes ? `
             {formatTime(elapsed)}
           </span>
         </div>
+
+        {/* Paused indicator — only when the session had actually started before
+            (elapsed time logged or exercises completed), so it's visually distinct
+            from a fresh session that simply hasn't been started yet. Prevents the
+            ambiguity of "is this paused, or just not started?" after a draft restore. */}
+        {!running && (elapsed > 0 || results.length > 0) && (
+          <div
+            className="flex items-center gap-1 px-2 py-1 rounded-lg flex-shrink-0 border border-amber-200 bg-amber-50 animate-in fade-in duration-300"
+            title="الجلسة متوقفة مؤقتًا — اضغط ابدأ للمتابعة"
+          >
+            <Pause className="w-3 h-3 text-amber-500" />
+            <span className="text-amber-600 text-[10px] font-black hidden sm:inline">متوقفة مؤقتًا</span>
+          </div>
+        )}
+
+        {/* Saved flash — brief confirmation that the local draft autosave just ran. */}
+        {savedFlash && (
+          <div className="flex items-center gap-1 px-2 py-1 rounded-lg flex-shrink-0 border border-sky-200 bg-sky-50 animate-in fade-in duration-300 text-sky-600">
+            <Check className="w-3 h-3" />
+            <span className="text-[10px] font-black hidden sm:inline">محفوظ</span>
+          </div>
+        )}
 
         {/* Average score — hidden on mobile */}
         {results.length > 0 && (
@@ -1873,10 +1939,17 @@ ${notes ? `
         </button>
       </header>
 
-      {/* ── Toolbar strip ── */}
+      {/* ── Toolbar strip — wrapped in a grid row that animates 0fr↔1fr so
+          show/hide collapses height smoothly instead of an instant display:none
+          snap. The 3 toolbar popovers render via a portal to document.body, so
+          this wrapper's overflow-hidden never clips them. ── */}
       <div
         ref={toolbarRef}
-        className={`bg-white border-b border-brand-100 px-3 py-1.5 flex items-center gap-1.5 overflow-x-auto shadow-sm [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden ${chromeHidden ? 'hidden' : ''}`}>
+        className={`grid transition-[grid-template-rows] duration-200 ease-out ${chromeHidden ? 'grid-rows-[0fr]' : 'grid-rows-[1fr]'}`}
+      >
+      <div className="overflow-hidden min-h-0">
+      <div
+        className="bg-white border-b border-brand-100 px-3 py-1.5 flex items-center gap-1.5 overflow-x-auto shadow-sm [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
 
         {/* Group 1 — Camera */}
         {jitsiUrl && (
@@ -2130,10 +2203,12 @@ ${notes ? `
           🔒 قفل
         </button>
       </div>
+      </div>
+      </div>
 
       {/* ── Session Phase Progress Bar ── */}
       {running && !chromeHidden && (
-        <div ref={phaseBarRef} className="bg-white border-b border-brand-100 px-4 py-2 flex items-center gap-3 shadow-sm" dir="rtl">
+        <div ref={phaseBarRef} className="bg-white border-b border-brand-100 px-4 py-2 flex items-center gap-3 shadow-sm animate-in fade-in slide-in-from-top-1 duration-200" dir="rtl">
           <span className="text-gray-400 text-[10px] font-black flex-shrink-0">مراحل</span>
           <div className="flex items-center gap-2 flex-1">
             {SESSION_PHASES.map((ph, i) => {
@@ -2193,8 +2268,9 @@ ${notes ? `
 
       <div className="flex flex-1 overflow-hidden" style={{ position: 'relative' }}>
 
-        {/* Sidebar */}
-        {!chromeHidden && <aside className="hidden lg:flex w-72 bg-white border-l border-brand-100 flex-col">
+        {/* Sidebar — already conditionally mounted (not just display-toggled), so
+            it gets a fresh entrance animation every time chrome is shown again. */}
+        {!chromeHidden && <aside className="hidden lg:flex w-72 bg-white border-l border-brand-100 flex-col animate-in fade-in slide-in-from-left-2 duration-200">
           {/* Tabs */}
           <div className="flex border-b border-brand-100">
             {([
@@ -3478,11 +3554,11 @@ ${notes ? `
           {exerciseActive && !showWhiteboard && (
             <button
               onClick={() => setExerciseRestartNonce(n => n + 1)}
-              className="fixed z-[80] left-3 flex items-center gap-1.5 font-black text-xs px-4 py-2.5 rounded-2xl transition-all active:scale-95 shadow-lg"
-              style={{ top: 'calc(50% + 26px)', transform: 'translateY(-50%)', background: 'linear-gradient(135deg,#1F2937,#374151)', color: '#FFFFFF', boxShadow: '0 4px 16px rgba(0,0,0,0.4)', border: '1.5px solid rgba(255,255,255,0.1)' }}
+              className="fixed z-[80] left-3 flex items-center justify-center w-11 h-11 rounded-full transition-all duration-200 active:scale-90 hover:scale-105 shadow-lg"
+              style={{ top: 'calc(50% + 26px)', transform: 'translateY(-50%)', background: 'linear-gradient(135deg,#1F2937,#374151)', color: '#FFFFFF', boxShadow: '0 4px 16px rgba(0,0,0,0.4)', border: '1.5px solid rgba(255,255,255,0.12)' }}
               title="إعادة هذا التمرين من البداية"
             >
-              🔄 إعادة
+              <RotateCcw className="w-[18px] h-[18px]" strokeWidth={2.5} />
             </button>
           )}
 
@@ -3850,6 +3926,28 @@ ${notes ? `
         </div>
       )}
 
+      {/* Light star-burst between exercises — quick, non-blocking, most fun in Kid Mode */}
+      {miniCelebrate && (
+        <div className="fixed inset-0 z-[150] flex items-center justify-center pointer-events-none">
+          {['⭐','✨','🌟','💫','⭐','✨'].map((star, i) => {
+            const angle = (i / 6) * 360
+            const dist = 90
+            return (
+              <span
+                key={i}
+                className="absolute text-3xl animate-in fade-in zoom-in duration-700"
+                style={{
+                  transform: `translate(${Math.cos((angle * Math.PI) / 180) * dist}px, ${Math.sin((angle * Math.PI) / 180) * dist}px)`,
+                  animationDelay: `${i * 40}ms`,
+                }}
+              >
+                {star}
+              </span>
+            )
+          })}
+        </div>
+      )}
+
       {/* Before/After Comparison Toast (#10) */}
       {compareToast && (
         <div className="fixed bottom-32 left-1/2 -translate-x-1/2 z-[95] pointer-events-none" dir="rtl">
@@ -4176,13 +4274,20 @@ ${notes ? `
                       <span>⏱ مقطع مختصر — 30 ثانية كحد أقصى</span>
                     </div>
                   )}
-                  <div className="rounded-2xl overflow-hidden" style={{ aspectRatio: '16/9', background: '#000' }}>
+                  <div className="relative rounded-2xl overflow-hidden" style={{ aspectRatio: '16/9', background: '#000' }}>
+                    {videoIframeLoading && (
+                      <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-[#0a0816]">
+                        <div className="w-8 h-8 rounded-full border-2 border-brand-400/30 border-t-brand-400 animate-spin" />
+                        <span className="text-white/40 text-[11px] font-bold">جارٍ تحميل الفيديو...</span>
+                      </div>
+                    )}
                     <iframe
                       key={activeVideoId}
                       src={`https://www.youtube.com/embed/${activeVideoId}?rel=0&modestbranding=1${isLibraryClip ? '&end=30' : ''}`}
                       className="w-full h-full"
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                       allowFullScreen
+                      onLoad={() => setVideoIframeLoading(false)}
                     />
                   </div>
                 </div>

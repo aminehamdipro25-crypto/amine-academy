@@ -1408,6 +1408,13 @@ ${notes ? `
     attention: 'الانتباه', cooperation: 'التعاون', energy: 'الطاقة', mood: 'المزاج', anxiety: 'القلق',
   }
 
+  // Exercises are child-facing: as soon as one starts, all specialist chrome
+  // (top header, toolbar, phase bar, exercises panel) should collapse on its own —
+  // the same compact layout focusMode gives manually — so the game gets the screen.
+  const activeExerciseId = activeView?.type === 'exercise' ? activeView.id : null
+  const exerciseActive = activeExerciseId !== null
+  const chromeHidden = sessionLocked || focusMode || exerciseActive
+
   return (
     <div className="h-screen bg-gray-950 text-white flex flex-col overflow-hidden">
 
@@ -1539,7 +1546,7 @@ ${notes ? `
       {/* ── Header row ── */}
       <header
         ref={headerRef}
-        className={`border-b border-brand-100 bg-white/90 backdrop-blur-sm flex items-center gap-2 px-3 py-2 flex-shrink-0 relative z-[60] ${sessionLocked ? 'hidden' : ''}`}
+        className={`border-b border-brand-100 bg-white/90 backdrop-blur-sm flex items-center gap-2 px-3 py-2 flex-shrink-0 relative z-[60] ${chromeHidden ? 'hidden' : ''}`}
       >
         {/* Close */}
         <button
@@ -1738,7 +1745,7 @@ ${notes ? `
       {/* ── Toolbar strip ── */}
       <div
         ref={toolbarRef}
-        className={`bg-white border-b border-brand-100 px-3 py-1.5 flex items-center gap-1.5 overflow-x-auto shadow-sm [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden ${sessionLocked ? 'hidden' : ''}`}>
+        className={`bg-white border-b border-brand-100 px-3 py-1.5 flex items-center gap-1.5 overflow-x-auto shadow-sm [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden ${chromeHidden ? 'hidden' : ''}`}>
 
         {/* Group 1 — Camera */}
         {jitsiUrl && (
@@ -1994,7 +2001,7 @@ ${notes ? `
       </div>
 
       {/* ── Session Phase Progress Bar ── */}
-      {running && !sessionLocked && (
+      {running && !chromeHidden && (
         <div ref={phaseBarRef} className="bg-white border-b border-brand-100 px-4 py-2 flex items-center gap-3 shadow-sm" dir="rtl">
           <span className="text-gray-400 text-[10px] font-black flex-shrink-0">مراحل</span>
           <div className="flex items-center gap-2 flex-1">
@@ -2056,7 +2063,7 @@ ${notes ? `
       <div className="flex flex-1 overflow-hidden" style={{ position: 'relative' }}>
 
         {/* Sidebar */}
-        {!focusMode && !sessionLocked && <aside className="hidden lg:flex w-72 bg-white border-l border-brand-100 flex-col">
+        {!chromeHidden && <aside className="hidden lg:flex w-72 bg-white border-l border-brand-100 flex-col">
           {/* Tabs */}
           <div className="flex border-b border-brand-100">
             {([
@@ -2101,7 +2108,7 @@ ${notes ? `
                   </div>
                   {filtered.map((ex, idx) => {
                     const isTop = topGames.includes(ex.id)
-                    const isActive = activeView?.type === 'exercise' && activeView.id === ex.id
+                    const isActive = activeExerciseId === ex.id
                     const isFirst = categoryFilter === 'الكل' && topGames.length > 0 && idx === 0
                     const ageOk = studentAge >= (ex.ageMin ?? 5) && studentAge <= (ex.ageMax ?? 22)
                     return (
@@ -2411,7 +2418,7 @@ ${notes ? `
         </aside>}
 
         {/* ── Mobile nav + slide-up panel (hidden on lg+) ── */}
-        {!focusMode && !sessionLocked && !kidMode && (
+        {!chromeHidden && !kidMode && (
           <>
             {/* Backdrop */}
             {showMobilePanel && (
@@ -2477,7 +2484,7 @@ ${notes ? `
                         ))}
                       </div>
                       {filteredEx.map(ex => {
-                        const isActive = activeView?.type === 'exercise' && activeView.id === ex.id
+                        const isActive = activeExerciseId === ex.id
                         const ageOk = studentAge >= (ex.ageMin ?? 5) && studentAge <= (ex.ageMax ?? 22)
                         return (
                           <button key={ex.id}
@@ -2958,7 +2965,7 @@ ${notes ? `
 
         {/* Main exercise area */}
 
-        <main className={`flex-1 flex items-center justify-center bg-gray-950 relative overflow-auto pb-20 lg:pb-0 ${kidMode ? 'hidden' : ''}`}>
+        <main className={`flex-1 flex items-center justify-center bg-gray-950 relative overflow-auto ${chromeHidden ? '' : 'pb-20 lg:pb-0'} ${kidMode ? 'hidden' : ''}`}>
 
           {/* ── Embedded Jitsi iframe ── */}
           {jitsiEmbedded && jitsiEmbedUrl && (
@@ -3389,7 +3396,7 @@ ${notes ? `
       {/* ── ABC Behavior Log Panel ── */}
       {running && (
         <div
-          className={`fixed z-[80] bottom-20 lg:bottom-6 ${focusMode ? 'right-6' : 'right-4 lg:right-72'}`}
+          className={`fixed z-[80] bottom-20 lg:bottom-6 ${chromeHidden ? 'right-6' : 'right-4 lg:right-72'}`}
           style={{ marginRight: 190 }}
           dir="rtl"
         >
@@ -3491,7 +3498,7 @@ ${notes ? `
       {/* ── Homework Builder Panel ── */}
       {running && currentStudentId && (
         <div
-          className={`fixed z-[80] bottom-20 lg:bottom-6 ${focusMode ? 'right-6' : 'right-4 lg:right-72'}`}
+          className={`fixed z-[80] bottom-20 lg:bottom-6 ${chromeHidden ? 'right-6' : 'right-4 lg:right-72'}`}
           style={{ marginRight: 96 }}
           dir="rtl"
         >
@@ -3579,7 +3586,7 @@ ${notes ? `
       {/* ── Quick Observation Panel ── */}
       {running && (
         <div
-          className={`fixed z-[80] bottom-20 lg:bottom-6 ${focusMode ? 'right-6' : 'right-4 lg:right-72'}`}
+          className={`fixed z-[80] bottom-20 lg:bottom-6 ${chromeHidden ? 'right-6' : 'right-4 lg:right-72'}`}
           dir="rtl"
         >
           {/* Expanded panel */}

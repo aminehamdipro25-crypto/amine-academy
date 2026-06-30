@@ -3405,7 +3405,7 @@ ${notes ? `
               shown). The mid-left edge is the one spot clear in every combination of
               chrome-shown/hidden × exercise-active — see the toggle button's comment
               above for the full reasoning. */}
-          {exerciseActive && (
+          {exerciseActive && !showWhiteboard && (
             <button
               onClick={() => setExerciseRestartNonce(n => n + 1)}
               className="fixed z-[80] left-3 flex items-center gap-1.5 font-black text-xs px-4 py-2.5 rounded-2xl transition-all active:scale-95 shadow-lg"
@@ -3416,8 +3416,12 @@ ${notes ? `
             </button>
           )}
 
-          {/* ── Whiteboard ── */}
-          {showWhiteboard && !activeView && (
+          {/* ── Whiteboard — overlays on top of an active exercise (instead of
+              requiring !activeView) so opening it mid-exercise actually shows it
+              instead of leaving the exercise visible underneath unchanged. The
+              exercise component stays mounted behind the overlay, so closing the
+              whiteboard returns to it exactly where the specialist left off. ── */}
+          {showWhiteboard && (
             <div className="absolute inset-0 z-20 flex flex-col">
               <Whiteboard onClose={() => setShowWhiteboard(false)} />
             </div>

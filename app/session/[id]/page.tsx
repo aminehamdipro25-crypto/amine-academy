@@ -74,6 +74,10 @@ import ADHDScale       from '@/components/session/assessments/ADHDScale'
 import LearningDifficultiesScale from '@/components/session/assessments/LearningDifficultiesScale'
 import AttentionDomainsScale from '@/components/session/assessments/AttentionDomainsScale'
 
+// localStorage key for the specialist's remembered "prefer the bigger/compact
+// screen" choice on the idle session screen — see idleChromePreferHidden below.
+const CHROME_PREF_KEY = 'amine-academy:prefer-compact-chrome'
+
 type ActiveView =
   | { type: 'exercise'; id: string }
   | { type: 'assessment'; id: string }
@@ -535,6 +539,14 @@ export default function SessionPage() {
   // (header/toolbar/sidebar) on demand on any screen, not just during exercises.
   // null = follow the automatic rule below; true/false = specialist's explicit choice.
   const [manualChromeOverride, setManualChromeOverride] = useState<boolean | null>(null)
+  // The specialist's remembered "I prefer the bigger screen" choice, made when toggling
+  // chrome on a plain idle screen (no exercise/whiteboard/focus-mode forcing it either
+  // way already). Persisted per-browser so every new session opens already collapsed if
+  // that's what they last chose, instead of asking them to re-toggle it every time.
+  const [idleChromePreferHidden, setIdleChromePreferHidden] = useState(false)
+  useEffect(() => {
+    setIdleChromePreferHidden(window.localStorage.getItem(CHROME_PREF_KEY) === '1')
+  }, [])
   // Forces a full remount of the active exercise component to restart it mid-game.
   const [exerciseRestartNonce, setExerciseRestartNonce] = useState(0)
 
@@ -1424,7 +1436,7 @@ ${notes ? `
   // is to keep the controls out of the child's reach.
   const activeExerciseId = activeView?.type === 'exercise' ? activeView.id : null
   const exerciseActive = activeExerciseId !== null
-  const autoChromeHidden = focusMode || exerciseActive || showWhiteboard
+  const autoChromeHidden = focusMode || exerciseActive || showWhiteboard || idleChromePreferHidden
   const chromeHidden = sessionLocked || (manualChromeOverride !== null ? manualChromeOverride : autoChromeHidden)
 
   // Forget the specialist's manual choice once the context changes (exercise
@@ -1541,10 +1553,21 @@ ${notes ? `
           (header save/timer, whiteboard's own toolbar, the restart button, the focus-mode
           panel, the ABC/note buttons) lives at the top or bottom edge, so this is the one
           spot guaranteed clear in every screen state. The session lock takes priority and
-          hides this too — that's the point of locking. ── */}
+          hides this too — that's the point of locking. Toggling on the plain idle screen
+          (no exercise/whiteboard/focus forcing chrome either way already) is remembered in
+          localStorage, so the next session opens with the same screen size by default —
+          this only sets the idle baseline; it never skips the automatic auto-hide the
+          moment a new exercise starts, since exerciseActive still always forces it. ── */}
       {!sessionLocked && (
         <button
-          onClick={() => setManualChromeOverride(!chromeHidden)}
+          onClick={() => {
+            const next = !chromeHidden
+            setManualChromeOverride(next)
+            if (!focusMode && !exerciseActive && !showWhiteboard) {
+              setIdleChromePreferHidden(next)
+              window.localStorage.setItem(CHROME_PREF_KEY, next ? '1' : '0')
+            }
+          }}
           className="fixed left-3 z-[490] flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-black shadow-lg transition-all active:scale-95 select-none"
           style={{ top: 'calc(50% - 26px)', transform: 'translateY(-50%)', background: 'rgba(17,24,39,0.85)', color: '#FFFFFF', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.12)' }}
           title={chromeHidden ? 'إظهار أدوات الجلسة' : 'تكبير الشاشة — إخفاء الأدوات'}

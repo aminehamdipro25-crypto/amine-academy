@@ -621,10 +621,13 @@ export default function SessionPage() {
       }
       if (Date.now() - d.savedAt > 3 * 3600 * 1000) { sessionStorage.removeItem(key); return }
       draftRestoredRef.current = true
-      // If the session was running when the page closed, add the elapsed gap
-      const extra = d.running ? Math.floor((Date.now() - d.savedAt) / 1000) : 0
-      setElapsed((d.elapsed || 0) + extra)
-      setRunning(d.running || false)
+      // Resume exactly where the timer was left, never add the real-world
+      // wall-clock gap since the last save — otherwise closing the session
+      // (or just leaving the tab) and coming back later makes the timer
+      // silently jump forward by however long it was closed, instead of
+      // reflecting actual time spent in the session.
+      setElapsed(d.elapsed || 0)
+      setRunning(false)
       setResults(d.results || [])
       setAssessments(d.assessments || [])
       setNotes(d.notes || '')
@@ -1674,9 +1677,11 @@ ${notes ? `
         ref={headerRef}
         className={`border-b border-brand-100 bg-white/90 backdrop-blur-sm flex items-center gap-2 px-3 py-2 flex-shrink-0 relative z-[60] ${chromeHidden ? 'hidden' : ''}`}
       >
-        {/* Close */}
+        {/* Close — pause the timer before leaving so the session isn't left
+            "running" in the background; reopening it later resumes paused,
+            never silently counting the time spent away. */}
         <button
-          onClick={() => router.back()}
+          onClick={() => { setRunning(false); router.back() }}
           className="w-8 h-8 flex items-center justify-center rounded-xl flex-shrink-0 transition-colors hover:bg-brand-50 text-gray-400 hover:text-gray-700"
         >
           <X className="w-4 h-4" />

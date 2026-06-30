@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { Clock, X, Save, Video, Star, ClipboardList, PenLine, ChevronDown, User, Gamepad2, BarChart3, BookOpen, Play, Youtube, ExternalLink, Maximize2, Minimize2, RotateCcw, Pause, Check } from 'lucide-react'
+import { X, Video, Star, ClipboardList, PenLine, Gamepad2, BarChart3, BookOpen, Play, Youtube, ExternalLink, Maximize2, Minimize2, RotateCcw } from 'lucide-react'
 import type { ExerciseResult, AssessmentResult, SessionObservations } from '@/lib/types'
 import { rankGamesForStudent, getTopGames, DIFFICULTY_LABELS_AR } from '@/lib/game-mapping'
 import type { StudentAssessmentProfile } from '@/lib/types'
@@ -69,6 +69,8 @@ import DirectionFollow      from '@/components/session/exercises/DirectionFollow
 import LogicSort            from '@/components/session/exercises/LogicSort'
 import PhysicalExercise from '@/components/session/exercises/PhysicalExercise'
 import Whiteboard      from '@/components/session/Whiteboard'
+import StudentTimerDisplay from '@/components/session/StudentTimerDisplay'
+import SessionHeader   from '@/components/session/SessionHeader'
 import ADHDScale       from '@/components/session/assessments/ADHDScale'
 import LearningDifficultiesScale from '@/components/session/assessments/LearningDifficultiesScale'
 import AttentionDomainsScale from '@/components/session/assessments/AttentionDomainsScale'
@@ -1199,71 +1201,14 @@ ${notes ? `
 
       {/* ── Student Timer Large Display (#9) ── */}
       {showStudentTimer && (
-        <div
-          className="fixed z-[150] flex flex-col items-center justify-center pointer-events-none select-none"
-          style={{
-            bottom: 80, left: '50%', transform: 'translateX(-50%)',
-            background: 'rgba(0,0,0,0.85)',
-            borderRadius: 24,
-            padding: '16px 32px',
-            backdropFilter: 'blur(12px)',
-            border: `2px solid ${studentTimerLeft <= studentTimerTotal * 0.1 ? '#EF4444' : studentTimerLeft <= studentTimerTotal * 0.25 ? '#F59E0B' : '#22C55E'}55`,
-            boxShadow: `0 0 40px ${studentTimerLeft <= studentTimerTotal * 0.1 ? '#EF444420' : studentTimerLeft <= studentTimerTotal * 0.25 ? '#F59E0B20' : '#22C55E20'}`,
-            minWidth: 200,
-          }}
-        >
-          <div
-            className="font-black ltr-num"
-            style={{
-              fontSize: '3.5rem',
-              color: studentTimerLeft <= studentTimerTotal * 0.1 ? '#EF4444'
-                   : studentTimerLeft <= studentTimerTotal * 0.25 ? '#F59E0B'
-                   : '#22C55E',
-              fontVariantNumeric: 'tabular-nums',
-              letterSpacing: '0.05em',
-            }}
-          >
-            {formatTime(studentTimerLeft)}
-          </div>
-          {/* Progress bar */}
-          <div className="w-full h-1.5 rounded-full mt-2 overflow-hidden" style={{ background: 'rgba(255,255,255,0.1)' }}>
-            <div
-              className="h-full rounded-full transition-all duration-1000"
-              style={{
-                width: `${(studentTimerLeft / studentTimerTotal) * 100}%`,
-                background: studentTimerLeft <= studentTimerTotal * 0.1 ? '#EF4444'
-                           : studentTimerLeft <= studentTimerTotal * 0.25 ? '#F59E0B'
-                           : '#22C55E',
-              }}
-            />
-          </div>
-          {studentTimerLeft === 0 && (
-            <div className="text-white font-black text-sm mt-1">انتهى الوقت! ⏰</div>
-          )}
-          {/* Clickable to pause/resume */}
-          <div className="pointer-events-auto mt-2 flex gap-2">
-            <button
-              onClick={() => setStudentTimerRunning(r => !r)}
-              className="text-white/50 hover:text-white text-xs font-bold px-3 py-1 rounded-lg transition-colors"
-              style={{ background: 'rgba(255,255,255,0.08)' }}
-            >
-              {studentTimerRunning ? '⏸ إيقاف مؤقت' : '▶ استئناف'}
-            </button>
-            <button
-              onClick={() => { setStudentTimerLeft(studentTimerTotal); setStudentTimerRunning(true) }}
-              className="text-white/50 hover:text-white text-xs font-bold px-3 py-1 rounded-lg transition-colors"
-              style={{ background: 'rgba(255,255,255,0.08)' }}
-            >
-              ↺ إعادة
-            </button>
-            <button
-              onClick={() => { setShowStudentTimer(false); setStudentTimerRunning(false) }}
-              className="text-white/30 hover:text-white text-xs px-2 rounded-lg transition-colors"
-            >
-              ✕
-            </button>
-          </div>
-        </div>
+        <StudentTimerDisplay
+          left={studentTimerLeft}
+          total={studentTimerTotal}
+          running={studentTimerRunning}
+          onToggleRunning={() => setStudentTimerRunning(r => !r)}
+          onReset={() => { setStudentTimerLeft(studentTimerTotal); setStudentTimerRunning(true) }}
+          onClose={() => { setShowStudentTimer(false); setStudentTimerRunning(false) }}
+        />
       )}
 
       {/* ── Prompt Card Full-Screen Overlay ── */}
@@ -1353,227 +1298,33 @@ ${notes ? `
       )}
 
       {/* ── Header row ── */}
-      <header
-        ref={headerRef}
-        className={`border-b border-brand-100 bg-white/90 backdrop-blur-sm flex items-center gap-2 px-3 py-2 flex-shrink-0 relative z-[60] ${chromeHidden ? 'hidden' : ''}`}
-      >
-        {/* Close — pause the timer before leaving so the session isn't left
-            "running" in the background; reopening it later resumes paused,
-            never silently counting the time spent away. */}
-        <button
-          onClick={() => { setRunning(false); router.back() }}
-          className="w-8 h-8 flex items-center justify-center rounded-xl flex-shrink-0 transition-colors hover:bg-brand-50 text-gray-400 hover:text-gray-700"
-        >
-          <X className="w-4 h-4" />
-        </button>
-
-        {/* Student info — name only on mobile, full on desktop */}
-        <div className="flex-1 min-w-0 relative">
-          <button
-            onClick={() => setProfileOpen(o => !o)}
-            className="flex items-center gap-1.5 min-w-0 max-w-full"
-          >
-            {/* Avatar initial */}
-            <div
-              className="w-7 h-7 rounded-xl flex-shrink-0 flex items-center justify-center text-xs font-black text-white"
-              style={{ background: 'linear-gradient(135deg,#7C5CFC,#C084FC)' }}
-            >
-              {(studentName || 'ج').charAt(0).toUpperCase()}
-            </div>
-            <span className="text-gray-900 font-black text-sm truncate">
-              <span className="sm:hidden">{(() => { const n = (studentName || 'جلسة').split(' ')[0]; return n.charAt(0).toUpperCase() + n.slice(1); })()}</span>
-              <span className="hidden sm:inline">{studentName || 'جلسة تفاعلية'}</span>
-            </span>
-            <ChevronDown className={`w-3 h-3 text-gray-300 flex-shrink-0 transition-transform ${profileOpen ? 'rotate-180' : ''}`} />
-          </button>
-
-          {/* Badges — hidden on mobile */}
-          <div className="hidden sm:flex items-center gap-1.5 mt-0.5">
-            {studentDiagnosis && (
-              <span className="text-[10px] bg-brand-50 text-brand-600 border border-brand-200 px-1.5 py-0.5 rounded-full font-bold">
-                {DIAG_LABELS[studentDiagnosis] || studentDiagnosis}
-              </span>
-            )}
-            {studentSeverity > 0 && (
-              <span className="text-[10px] bg-surface-page text-gray-500 px-1.5 py-0.5 rounded-full font-bold">
-                {SEVERITY_LABELS[studentSeverity]}
-              </span>
-            )}
-            {sessionCount > 0 && (
-              <span className="text-[10px] bg-surface-page text-gray-400 px-1.5 py-0.5 rounded-full font-bold">
-                ج.{sessionCount} سابقة
-              </span>
-            )}
-            {appointmentType && SESSION_TYPE_CFG[appointmentType] && (
-              <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full border flex items-center gap-1 ${SESSION_TYPE_CFG[appointmentType].color}`}>
-                {SESSION_TYPE_CFG[appointmentType].isAssessment && <ClipboardList className="w-2.5 h-2.5" />}
-                {SESSION_TYPE_CFG[appointmentType].label}
-              </span>
-            )}
-          </div>
-
-          {/* ── Quick Profile Card ── */}
-          {profileOpen && (
-            <div
-              className="absolute top-full mt-2 right-0 sm:left-0 sm:right-auto z-[70] rounded-2xl p-4 w-[min(288px,calc(100vw-24px))] shadow-2xl bg-white border border-brand-100"
-              dir="rtl"
-            >
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 rounded-2xl bg-brand-50 border border-brand-200 flex items-center justify-center flex-shrink-0">
-                  <User className="w-6 h-6 text-brand-600" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-gray-900 font-black text-sm truncate">{studentName || '—'}</div>
-                  <div className="text-gray-400 text-xs mt-0.5">
-                    {studentAge} سنة • {DIAG_LABELS[studentDiagnosis] || studentDiagnosis || 'لا يوجد تشخيص'}
-                  </div>
-                  <div className="flex items-center gap-1.5 mt-1">
-                    {studentSeverity > 0 && (
-                      <span className="text-[10px] bg-brand-50 text-brand-600 border border-brand-200 px-1.5 py-0.5 rounded-full font-bold">
-                        {SEVERITY_LABELS[studentSeverity]}
-                      </span>
-                    )}
-                    {sessionCount > 0 && (
-                      <span className="text-[10px] text-gray-400 font-medium">{sessionCount} جلسة سابقة</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {pastSessions.length > 0 && (
-                <div className="mb-3">
-                  <div className="text-gray-400 text-[10px] font-black mb-2 uppercase tracking-wider">آخر 3 جلسات</div>
-                  <div className="space-y-1.5">
-                    {pastSessions.map((s, i) => (
-                      <div key={i} className="flex items-center gap-2">
-                        <div className="flex-1 bg-surface-page rounded-full h-1.5 overflow-hidden">
-                          <div
-                            className="h-full rounded-full"
-                            style={{
-                              width: `${s.score}%`,
-                              background: s.score >= 80 ? '#22C55E' : s.score >= 60 ? '#F59E0B' : '#EF4444',
-                            }}
-                          />
-                        </div>
-                        <span className="text-gray-600 text-[10px] font-black ltr-num w-8 text-left">{s.score}%</span>
-                        <span className="text-gray-300 text-[9px] ltr-num flex-shrink-0">{s.date}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {profile && Object.entries(profile.diagnosedDifficulties).some(([, v]) => v !== 'none') && (
-                <div className="border-t border-brand-100 pt-3 mb-3">
-                  <div className="text-gray-400 text-[10px] font-black mb-2 uppercase tracking-wider">صعوبات موثقة</div>
-                  <div className="flex flex-wrap gap-1">
-                    {Object.entries(profile.diagnosedDifficulties)
-                      .filter(([, v]) => v !== 'none')
-                      .map(([k, v]) => (
-                        <span key={k} className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${
-                          v === 'severe'   ? 'bg-red-50 text-red-600 border-red-200' :
-                          v === 'moderate' ? 'bg-orange-50 text-orange-600 border-orange-200' :
-                                             'bg-yellow-50 text-yellow-700 border-yellow-200'
-                        }`}>
-                          {DIFFICULTY_LABELS_AR[k as keyof typeof DIFFICULTY_LABELS_AR]}
-                        </span>
-                      ))
-                    }
-                  </div>
-                </div>
-              )}
-
-              <div className={`${(profile && Object.entries(profile.diagnosedDifficulties).some(([, v]) => v !== 'none')) || pastSessions.length > 0 ? 'border-t border-brand-100 pt-3' : ''}`}>
-                <div className="text-gray-400 text-[10px] font-black mb-1 uppercase tracking-wider">ملاحظات</div>
-                {notes ? (
-                  <p className="text-gray-600 text-[10px] leading-relaxed line-clamp-3">{notes}</p>
-                ) : (
-                  <p className="text-gray-300 text-[10px] italic">لا توجد ملاحظات بعد</p>
-                )}
-              </div>
-
-              <button
-                onClick={() => setProfileOpen(false)}
-                className="mt-3 w-full text-gray-400 hover:text-gray-600 text-[10px] font-bold transition-colors pt-2 border-t border-brand-100"
-              >
-                إغلاق ✕
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Session Timer */}
-        <div
-          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl flex-shrink-0 border transition-colors duration-300 ${
-            running ? 'bg-emerald-50 border-emerald-200' : 'bg-surface-page border-brand-100'
-          }`}
-        >
-          <Clock className={`w-3.5 h-3.5 ${running ? 'text-emerald-600' : 'text-gray-300'}`} />
-          <span className={`font-black text-base ltr-num ${running ? 'text-emerald-600' : 'text-gray-400'}`}>
-            {formatTime(elapsed)}
-          </span>
-        </div>
-
-        {/* Paused indicator — only when the session had actually started before
-            (elapsed time logged or exercises completed), so it's visually distinct
-            from a fresh session that simply hasn't been started yet. Prevents the
-            ambiguity of "is this paused, or just not started?" after a draft restore. */}
-        {!running && (elapsed > 0 || results.length > 0) && (
-          <div
-            className="flex items-center gap-1 px-2 py-1 rounded-lg flex-shrink-0 border border-amber-200 bg-amber-50 animate-in fade-in duration-300"
-            title="الجلسة متوقفة مؤقتًا — اضغط ابدأ للمتابعة"
-          >
-            <Pause className="w-3 h-3 text-amber-500" />
-            <span className="text-amber-600 text-[10px] font-black hidden sm:inline">متوقفة مؤقتًا</span>
-          </div>
-        )}
-
-        {/* Saved flash — brief confirmation that the local draft autosave just ran. */}
-        {savedFlash && (
-          <div className="flex items-center gap-1 px-2 py-1 rounded-lg flex-shrink-0 border border-sky-200 bg-sky-50 animate-in fade-in duration-300 text-sky-600">
-            <Check className="w-3 h-3" />
-            <span className="text-[10px] font-black hidden sm:inline">محفوظ</span>
-          </div>
-        )}
-
-        {/* Average score — hidden on mobile */}
-        {results.length > 0 && (
-          <div className="hidden sm:block text-center flex-shrink-0">
-            <div className="font-black text-brand-600 text-lg ltr-num">{avgScore}%</div>
-            <div className="text-gray-400 text-[10px]">متوسط</div>
-          </div>
-        )}
-
-        {/* Start */}
-        {!running && (
-          <button
-            onClick={startSession}
-            className="font-black text-white text-xs px-3 py-2 rounded-xl flex-shrink-0 transition-all active:scale-95"
-            style={{ background: 'linear-gradient(135deg,#16A34A,#22C55E)', boxShadow: '0 4px 16px rgba(34,197,94,0.3)' }}
-          >
-            ▶ ابدأ
-          </button>
-        )}
-
-        {/* Save */}
-        <button
-          onClick={saveSession}
-          disabled={saving}
-          title={saveFailed ? 'فشل الحفظ — البيانات محفوظة محليًا مؤقتًا، اضغط لإعادة المحاولة' : undefined}
-          className={`flex items-center gap-1.5 px-3 py-2 rounded-xl font-black text-xs flex-shrink-0 transition-all active:scale-95 ${
-            saveFailed ? 'bg-red-50 text-red-600 border border-red-200' :
-            saved ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' :
-            saving ? 'bg-brand-50 text-gray-400' : 'text-white'
-          }`}
-          style={!saveFailed && !saved && !saving
-            ? { background: 'linear-gradient(135deg,#7C5CFC,#9A7BFD)', boxShadow: '0 4px 16px rgba(124,92,252,0.35)' }
-            : undefined
-          }
-        >
-          <Save className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">{saving ? '...' : saveFailed ? '⚠ فشل، أعد المحاولة' : saved ? '✓ محفوظ' : 'حفظ'}</span>
-        </button>
-      </header>
+      <SessionHeader
+        headerRef={headerRef}
+        chromeHidden={chromeHidden}
+        onClose={() => { setRunning(false); router.back() }}
+        studentName={studentName}
+        studentAge={studentAge}
+        studentDiagnosis={studentDiagnosis}
+        studentSeverity={studentSeverity}
+        sessionCount={sessionCount}
+        appointmentType={appointmentType}
+        profileOpen={profileOpen}
+        onToggleProfile={() => setProfileOpen(o => !o)}
+        onCloseProfile={() => setProfileOpen(false)}
+        pastSessions={pastSessions}
+        profile={profile}
+        notes={notes}
+        running={running}
+        elapsed={elapsed}
+        results={results}
+        avgScore={avgScore}
+        savedFlash={savedFlash}
+        onStart={startSession}
+        onSave={saveSession}
+        saving={saving}
+        saved={saved}
+        saveFailed={saveFailed}
+      />
 
       {/* ── Toolbar strip — wrapped in a grid row that animates 0fr↔1fr so
           show/hide collapses height smoothly instead of an instant display:none

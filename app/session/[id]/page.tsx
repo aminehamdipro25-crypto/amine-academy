@@ -531,6 +531,13 @@ export default function SessionPage() {
   const [unlockTaps, setUnlockTaps]       = useState(0)
   const unlockTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  // Manual "bigger screen" override — lets the specialist hide/show the chrome
+  // (header/toolbar/sidebar) on demand on any screen, not just during exercises.
+  // null = follow the automatic rule below; true/false = specialist's explicit choice.
+  const [manualChromeOverride, setManualChromeOverride] = useState<boolean | null>(null)
+  // Forces a full remount of the active exercise component to restart it mid-game.
+  const [exerciseRestartNonce, setExerciseRestartNonce] = useState(0)
+
   // White noise / focus music
   const [showNoisePanel, setShowNoisePanel] = useState(false)
   const [noiseMode, setNoiseMode]           = useState<'white' | 'rain' | 'focus' | 'calm' | 'theta'>('calm')
@@ -1408,12 +1415,24 @@ ${notes ? `
     attention: 'الانتباه', cooperation: 'التعاون', energy: 'الطاقة', mood: 'المزاج', anxiety: 'القلق',
   }
 
-  // Exercises are child-facing: as soon as one starts, all specialist chrome
-  // (top header, toolbar, phase bar, exercises panel) should collapse on its own —
-  // the same compact layout focusMode gives manually — so the game gets the screen.
+  // Exercises and the whiteboard are child-facing: as soon as one is open, all
+  // specialist chrome (top header, toolbar, phase bar, exercises panel) should
+  // collapse on its own — the same compact layout focusMode gives manually — so
+  // the activity gets the full screen. The specialist can still override this in
+  // either direction at any time via the persistent corner toggle below; the lock
+  // (sessionLocked) is the one exception that always wins, since its whole point
+  // is to keep the controls out of the child's reach.
   const activeExerciseId = activeView?.type === 'exercise' ? activeView.id : null
   const exerciseActive = activeExerciseId !== null
-  const chromeHidden = sessionLocked || focusMode || exerciseActive
+  const autoChromeHidden = focusMode || exerciseActive || showWhiteboard
+  const chromeHidden = sessionLocked || (manualChromeOverride !== null ? manualChromeOverride : autoChromeHidden)
+
+  // Forget the specialist's manual choice once the context changes (exercise
+  // started/ended, whiteboard opened/closed) so each new screen starts in its
+  // sensible default state instead of carrying over a stale override.
+  useEffect(() => {
+    setManualChromeOverride(null)
+  }, [exerciseActive, showWhiteboard])
 
   return (
     <div className="h-screen bg-gray-950 text-white flex flex-col overflow-hidden">
@@ -1513,6 +1532,25 @@ ${notes ? `
             اضغط في أي مكان للإغلاق
           </div>
         </div>
+      )}
+
+      {/* ── Persistent screen-size toggle — always reachable, even while the rest of the
+          chrome is hidden, so the specialist can give the child a bigger screen on any
+          screen (whiteboard, idle, exercises) without hunting for a buried button. Pinned
+          to the vertical mid-left edge rather than a corner: every other floating control
+          (header save/timer, whiteboard's own toolbar, the restart button, the focus-mode
+          panel, the ABC/note buttons) lives at the top or bottom edge, so this is the one
+          spot guaranteed clear in every screen state. The session lock takes priority and
+          hides this too — that's the point of locking. ── */}
+      {!sessionLocked && (
+        <button
+          onClick={() => setManualChromeOverride(!chromeHidden)}
+          className="fixed left-3 z-[490] flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-black shadow-lg transition-all active:scale-95 select-none"
+          style={{ top: 'calc(50% - 26px)', transform: 'translateY(-50%)', background: 'rgba(17,24,39,0.85)', color: '#FFFFFF', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.12)' }}
+          title={chromeHidden ? 'إظهار أدوات الجلسة' : 'تكبير الشاشة — إخفاء الأدوات'}
+        >
+          {chromeHidden ? '🔽 إظهار الأدوات' : '🔼 تكبير الشاشة'}
+        </button>
       )}
 
       {/* ── Child Lock Overlay — floating indicator when session is locked ── */}
@@ -3266,7 +3304,7 @@ ${notes ? `
           )}
 
           {activeView?.type === 'exercise' && (
-            <div className="w-full max-w-2xl mx-auto py-6">
+            <div key={`${activeView.id}-${exerciseRestartNonce}`} className="w-full max-w-2xl mx-auto py-6">
               {activeView.id === 'memory-cards'    && <MemoryCards onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
               {activeView.id === 'sequence-memory' && <SequenceMemory onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
               {activeView.id === 'n-back'          && <NBackTask onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
@@ -3333,6 +3371,26 @@ ${notes ? `
                 <PhysicalExercise id={activeView.id} onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />
               )}
             </div>
+          )}
+
+          {/* ── Restart the active exercise mid-game without exiting it ──
+              Stacked just below the screen-size toggle on the vertical mid-left edge.
+              Tried top-right first, then mid-right: both collided — top-right with the
+              header's own title/close icon once the specialist used the manual toggle to
+              bring chrome back mid-exercise (header spans the full top edge), mid-right
+              with the right-side exercises sidebar (also full-height when chrome is
+              shown). The mid-left edge is the one spot clear in every combination of
+              chrome-shown/hidden × exercise-active — see the toggle button's comment
+              above for the full reasoning. */}
+          {exerciseActive && (
+            <button
+              onClick={() => setExerciseRestartNonce(n => n + 1)}
+              className="fixed z-[80] left-3 flex items-center gap-1.5 font-black text-xs px-4 py-2.5 rounded-2xl transition-all active:scale-95 shadow-lg"
+              style={{ top: 'calc(50% + 26px)', transform: 'translateY(-50%)', background: 'linear-gradient(135deg,#1F2937,#374151)', color: '#FFFFFF', boxShadow: '0 4px 16px rgba(0,0,0,0.4)', border: '1.5px solid rgba(255,255,255,0.1)' }}
+              title="إعادة هذا التمرين من البداية"
+            >
+              🔄 إعادة
+            </button>
           )}
 
           {/* ── Whiteboard ── */}

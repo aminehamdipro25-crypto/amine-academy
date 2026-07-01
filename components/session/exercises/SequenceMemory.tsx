@@ -163,7 +163,7 @@ export default function SequenceMemory({ onComplete, onCancel, difficulty = 1 }:
                   ? COLORS[i]
                   : isPressed
                     ? `${COLORS[i]}88`
-                    : `${COLORS[i]}2a`,
+                    : `${COLORS[i]}40`,
                 boxShadow: isActive ? `0 0 24px ${COLORS[i]}88` : 'none',
               }}
             />

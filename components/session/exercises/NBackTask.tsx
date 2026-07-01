@@ -187,7 +187,7 @@ export default function NBackTask({ onComplete, onCancel, difficulty = 1 }: Prop
       {/* 3×3 Grid */}
       <div className="grid grid-cols-3 gap-2.5 my-1">
         {Array.from({ length: 9 }, (_, i) => {
-          const isActive  = current === i && phase === 'show'
+          const isActive    = current === i && phase === 'show'
           const isNBackHint = nBackPos === i && phase === 'show'
           return (
             <div key={i}
@@ -195,12 +195,22 @@ export default function NBackTask({ onComplete, onCancel, difficulty = 1 }: Prop
                 isActive
                   ? 'bg-brand-500 border-brand-300 scale-110 shadow-[0_0_24px_rgba(124,92,252,0.7)]'
                   : isNBackHint
-                    ? 'bg-white/5 border-brand-900'
-                    : 'bg-white/5 border-white/10'
+                    ? 'bg-brand-900/70 border-brand-500/60'
+                    : 'bg-white/10 border-white/20'
               }`}
             />
           )
         })}
+      </div>
+
+      {/* ITI pulse — signals that the next stimulus is loading */}
+      <div className="h-5 flex items-center justify-center gap-1.5">
+        {phase === 'iti' && [0, 1, 2].map(i => (
+          <div key={i}
+            className="w-2 h-2 rounded-full bg-brand-400/60 animate-pulse"
+            style={{ animationDelay: `${i * 0.18}s` }}
+          />
+        ))}
       </div>
 
       {/* Feedback */}

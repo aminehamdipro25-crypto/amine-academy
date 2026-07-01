@@ -66,7 +66,7 @@ export default function NBackTask({ onComplete, onCancel, difficulty = 1 }: Prop
       setPhase('iti')
       itiTimerRef.current = setTimeout(() => runTrial(trial + 1), itiMs)
     }, displayMs)
-    return () => { clearTimeout(timer); if (itiTimerRef.current) clearTimeout(itiTimerRef.current) }
+    return () => { clearTimeout(timer) }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, trial])
 

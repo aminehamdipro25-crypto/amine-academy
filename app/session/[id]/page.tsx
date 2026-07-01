@@ -2411,51 +2411,6 @@ ${notes ? `
 
             </div>
 
-            {/* Full-screen map dialog */}
-            {showMapDialog && sidebarMapSessions && (
-              <div
-                className="fixed inset-0 z-[200] flex items-center justify-center p-4"
-                style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }}
-                onClick={() => setShowMapDialog(false)}
-              >
-                <div
-                  className="bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col"
-                  style={{ maxWidth: 380, width: '100%', maxHeight: '90vh' }}
-                  onClick={e => e.stopPropagation()}
-                >
-                  {/* Dialog header */}
-                  <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-                    <span className="font-black text-gray-800 text-base">🗺️ خارطة رحلة الطفل</span>
-                    <button
-                      onClick={() => setShowMapDialog(false)}
-                      className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors text-gray-500 font-black text-lg leading-none"
-                    >×</button>
-                  </div>
-                  {/* Stats row */}
-                  <div className="flex gap-4 px-5 py-3 border-b border-gray-50 text-center">
-                    <div className="flex-1">
-                      <div className="font-black text-gray-800 text-lg">{sidebarMapSessions.length}</div>
-                      <div className="text-gray-400 text-[11px]">جلسة</div>
-                    </div>
-                    <div className="flex-1">
-                      <div className="font-black text-amber-500 text-lg">{sidebarMapSessions.reduce((s,n) => s + n.stars, 0)}</div>
-                      <div className="text-gray-400 text-[11px]">نجمة</div>
-                    </div>
-                    <div className="flex-1">
-                      <div className="font-black text-indigo-600 text-lg">
-                        {Math.round(sidebarMapSessions.reduce((s,n) => s + n.avgScore, 0) / sidebarMapSessions.length)}%
-                      </div>
-                      <div className="text-gray-400 text-[11px]">متوسط</div>
-                    </div>
-                  </div>
-                  {/* Map */}
-                  <div className="overflow-y-auto flex-1 px-4 py-4">
-                    <ProgressMap sessions={sidebarMapSessions} upcomingSlots={3} />
-                  </div>
-                </div>
-              </div>
-            )}
-
             {/* ── Celebration overlay — shown when all top games are completed ── */}
             {showCelebration && (() => {
               const avgScoreCelebration = results.length
@@ -2623,6 +2578,48 @@ ${notes ? `
                 </div>
               )
             })()}
+          </div>
+        )}
+
+        {/* Full-screen map dialog — outside kidMode so it works in specialist view too */}
+        {showMapDialog && sidebarMapSessions && (
+          <div
+            className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+            style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }}
+            onClick={() => setShowMapDialog(false)}
+          >
+            <div
+              className="bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col"
+              style={{ maxWidth: 380, width: '100%', maxHeight: '90vh' }}
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+                <span className="font-black text-gray-800 text-base">🗺️ خارطة رحلة الطفل</span>
+                <button
+                  onClick={() => setShowMapDialog(false)}
+                  className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors text-gray-500 font-black text-lg leading-none"
+                >×</button>
+              </div>
+              <div className="flex gap-4 px-5 py-3 border-b border-gray-50 text-center">
+                <div className="flex-1">
+                  <div className="font-black text-gray-800 text-lg">{sidebarMapSessions.length}</div>
+                  <div className="text-gray-400 text-[11px]">جلسة</div>
+                </div>
+                <div className="flex-1">
+                  <div className="font-black text-amber-500 text-lg">{sidebarMapSessions.reduce((s,n) => s + n.stars, 0)}</div>
+                  <div className="text-gray-400 text-[11px]">نجمة</div>
+                </div>
+                <div className="flex-1">
+                  <div className="font-black text-indigo-600 text-lg">
+                    {Math.round(sidebarMapSessions.reduce((s,n) => s + n.avgScore, 0) / sidebarMapSessions.length)}%
+                  </div>
+                  <div className="text-gray-400 text-[11px]">متوسط</div>
+                </div>
+              </div>
+              <div className="overflow-y-auto flex-1 px-4 py-4">
+                <ProgressMap sessions={sidebarMapSessions} upcomingSlots={3} />
+              </div>
+            </div>
           </div>
         )}
 

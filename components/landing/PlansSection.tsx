@@ -182,7 +182,14 @@ export default function PlansSection() {
     <section
       id="plans"
       dir={isRtl ? 'rtl' : 'ltr'}
-      style={{ background: 'linear-gradient(180deg, #1A2640 0%, #0C1829 100%)', padding: '80px 0' }}
+      style={{
+        background: `
+          radial-gradient(ellipse 70% 50% at 50% 0%, rgba(245,158,11,0.12) 0%, transparent 60%),
+          radial-gradient(ellipse 50% 40% at 90% 70%, rgba(99,102,241,0.12) 0%, transparent 55%),
+          linear-gradient(180deg, #14102E 0%, #0C1020 100%)
+        `,
+        padding: '80px 0',
+      }}
     >
       <div className="max-w-7xl mx-auto px-6">
 

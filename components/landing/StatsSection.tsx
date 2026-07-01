@@ -74,7 +74,13 @@ export default function StatsSection() {
   return (
     <section
       dir={isRtl ? 'rtl' : 'ltr'}
-      style={{ background: 'linear-gradient(180deg, #121E30 0%, #1A2640 100%)', padding: '56px 0' }}
+      style={{
+        background: `
+          radial-gradient(ellipse 70% 50% at 50% 0%, rgba(59,130,246,0.14) 0%, transparent 65%),
+          linear-gradient(180deg, #07111E 0%, #0C1A2E 100%)
+        `,
+        padding: '56px 0',
+      }}
     >
       <div className="max-w-7xl mx-auto px-6">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

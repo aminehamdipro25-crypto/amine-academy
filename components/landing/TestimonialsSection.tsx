@@ -54,7 +54,14 @@ export default function TestimonialsSection() {
   return (
     <section
       dir={isRtl ? 'rtl' : 'ltr'}
-      style={{ background: 'linear-gradient(180deg, #1A2640 0%, #121E30 100%)', padding: '80px 0' }}
+      style={{
+        background: `
+          radial-gradient(ellipse 60% 45% at 50% 0%, rgba(168,85,247,0.14) 0%, transparent 60%),
+          radial-gradient(ellipse 45% 35% at 85% 60%, rgba(236,72,153,0.08) 0%, transparent 55%),
+          linear-gradient(180deg, #081A28 0%, #14102E 100%)
+        `,
+        padding: '80px 0',
+      }}
     >
       <div className="max-w-7xl mx-auto px-6">
         <div className="text-center mb-14">

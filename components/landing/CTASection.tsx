@@ -20,7 +20,12 @@ export default function CTASection() {
       dir={isRtl ? 'rtl' : 'ltr'}
       className="relative overflow-hidden"
       style={{
-        background: 'linear-gradient(150deg, #0C1829 0%, #14103E 45%, #1C1248 75%, #0C1829 100%)',
+        background: `
+          radial-gradient(ellipse 90% 70% at 50% 50%, rgba(139,92,246,0.28) 0%, rgba(99,102,241,0.15) 40%, transparent 70%),
+          radial-gradient(ellipse 60% 50% at 80% 80%, rgba(59,130,246,0.15) 0%, transparent 60%),
+          radial-gradient(ellipse 50% 40% at 20% 20%, rgba(168,85,247,0.15) 0%, transparent 55%),
+          linear-gradient(150deg, #0C1020 0%, #16103A 50%, #0C1020 100%)
+        `,
         padding: '100px 0',
       }}
     >

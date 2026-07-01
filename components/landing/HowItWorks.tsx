@@ -67,7 +67,14 @@ export default function HowItWorks() {
     <section
       id="how-it-works"
       dir={isRtl ? 'rtl' : 'ltr'}
-      style={{ background: 'linear-gradient(180deg, #121E30 0%, #1A2640 100%)', padding: '80px 0' }}
+      style={{
+        background: `
+          radial-gradient(ellipse 60% 50% at 50% 0%, rgba(139,92,246,0.15) 0%, transparent 60%),
+          radial-gradient(ellipse 40% 35% at 10% 70%, rgba(99,102,241,0.1) 0%, transparent 55%),
+          linear-gradient(180deg, #091E22 0%, #0E1230 100%)
+        `,
+        padding: '80px 0',
+      }}
     >
       <div className="max-w-7xl mx-auto px-6">
         <div className="text-center mb-14">

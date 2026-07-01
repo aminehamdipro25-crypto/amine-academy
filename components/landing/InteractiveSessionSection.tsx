@@ -99,7 +99,14 @@ export default function InteractiveSessionSection() {
     <section
       id="how-it-works"
       dir={isRtl ? 'rtl' : 'ltr'}
-      style={{ background: 'linear-gradient(180deg, #121E30 0%, #1A2640 100%)', padding: '96px 0' }}
+      style={{
+        background: `
+          radial-gradient(ellipse 60% 45% at 70% 20%, rgba(14,165,233,0.14) 0%, transparent 60%),
+          radial-gradient(ellipse 50% 40% at 30% 80%, rgba(99,102,241,0.12) 0%, transparent 55%),
+          linear-gradient(180deg, #0E1230 0%, #081A28 100%)
+        `,
+        padding: '96px 0',
+      }}
     >
       <div className="max-w-7xl mx-auto px-6">
 

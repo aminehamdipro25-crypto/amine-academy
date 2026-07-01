@@ -82,7 +82,14 @@ export default function FeaturesSection() {
     <section
       id="features"
       dir={isRtl ? 'rtl' : 'ltr'}
-      style={{ background: 'linear-gradient(180deg, #1A2640 0%, #1A2640 100%)', padding: '96px 0' }}
+      style={{
+        background: `
+          radial-gradient(ellipse 60% 40% at 80% 20%, rgba(139,92,246,0.16) 0%, transparent 60%),
+          radial-gradient(ellipse 50% 40% at 20% 80%, rgba(59,130,246,0.1) 0%, transparent 60%),
+          linear-gradient(180deg, #0C1A2E 0%, #100E2C 100%)
+        `,
+        padding: '96px 0',
+      }}
     >
       <div className="max-w-7xl mx-auto px-6">
 

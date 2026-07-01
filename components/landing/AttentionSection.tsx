@@ -104,7 +104,14 @@ export default function AttentionSection() {
     <section
       id="attention"
       dir={isRtl ? 'rtl' : 'ltr'}
-      style={{ background: 'linear-gradient(180deg, #0C1829 0%, #121E30 100%)', padding: '96px 0' }}
+      style={{
+        background: `
+          radial-gradient(ellipse 65% 45% at 20% 30%, rgba(59,130,246,0.15) 0%, transparent 60%),
+          radial-gradient(ellipse 50% 40% at 80% 70%, rgba(99,102,241,0.12) 0%, transparent 60%),
+          linear-gradient(180deg, #100E2C 0%, #081A28 100%)
+        `,
+        padding: '96px 0',
+      }}
     >
       <div className="max-w-7xl mx-auto px-6">
 

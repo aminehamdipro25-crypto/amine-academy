@@ -103,7 +103,14 @@ export default function ProgramsSection() {
     <section
       id="programs"
       dir={isRtl ? 'rtl' : 'ltr'}
-      style={{ background: 'linear-gradient(180deg, #1A2640 0%, #121E30 100%)', padding: '96px 0' }}
+      style={{
+        background: `
+          radial-gradient(ellipse 55% 45% at 50% 0%, rgba(16,185,129,0.12) 0%, transparent 60%),
+          radial-gradient(ellipse 45% 35% at 90% 80%, rgba(20,184,166,0.09) 0%, transparent 55%),
+          linear-gradient(180deg, #081A28 0%, #091E22 100%)
+        `,
+        padding: '96px 0',
+      }}
     >
       <div className="max-w-7xl mx-auto px-6">
 

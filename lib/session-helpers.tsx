@@ -69,7 +69,7 @@ export function ToolbarPopover({ anchorRef, open, onClose, children }: { anchorR
   )
 }
 
-export type SoundType = 'success' | 'complete' | 'start' | 'phase' | 'tick' | 'ding' | 'compare' | 'abc' | 'star-up'
+export type SoundType = 'success' | 'complete' | 'start' | 'phase' | 'tick' | 'ding' | 'compare' | 'abc' | 'star-up' | 'star-up-max'
 
 export function playSound(type: SoundType) {
   if (typeof window === 'undefined') return
@@ -162,6 +162,28 @@ export function playSound(type: SoundType) {
         g.gain.setValueAtTime(i === notes.length - 1 ? 0.32 : 0.22, t)
         g.gain.exponentialRampToValueAtTime(0.001, t + (i === notes.length - 1 ? 0.55 : 0.18))
         o.start(t); o.stop(t + (i === notes.length - 1 ? 0.6 : 0.2))
+      })
+    } else if (type === 'star-up-max') {
+      // 2★ → 3★: extended fanfare + triumphant chord at the end
+      const notes = [523, 659, 784, 1047, 1319]
+      notes.forEach((freq, i) => {
+        const o = ctx.createOscillator(); o.connect(g)
+        o.type = 'sine'
+        o.frequency.value = freq
+        const t = ctx.currentTime + i * 0.1
+        g.gain.setValueAtTime(0.28, t)
+        g.gain.exponentialRampToValueAtTime(0.001, t + 0.22)
+        o.start(t); o.stop(t + 0.25)
+      })
+      // Triumphant chord after the run
+      ;[784, 988, 1319].forEach(freq => {
+        const o = ctx.createOscillator(); o.connect(g)
+        o.type = 'sine'
+        o.frequency.value = freq
+        const t = ctx.currentTime + 0.55
+        g.gain.setValueAtTime(0.2, t)
+        g.gain.exponentialRampToValueAtTime(0.001, t + 0.8)
+        o.start(t); o.stop(t + 0.85)
       })
     }
   } catch { /* AudioContext blocked */ }

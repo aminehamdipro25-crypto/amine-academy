@@ -136,6 +136,7 @@ export default function SessionPage() {
   const [sidebarMapSessions, setSidebarMapSessions] = useState<SessionNode[] | null>(null)
   const [sidebarMapLoading, setSidebarMapLoading] = useState(false)
   const [mapTabFlash, setMapTabFlash] = useState(false)
+  const [showMapDialog, setShowMapDialog] = useState(false)
   const [videoModal, setVideoModal] = useState<string | null>(null)
   const [videoUrls, setVideoUrls] = useState<Record<string, string>>({})
   // Friendly loading state for the video embed — true from the moment a video
@@ -1098,7 +1099,7 @@ ${notes ? `
                 const prevCurr = prev?.find(s => s.sessionId === id)
                 const newCurr  = newSessions.find(s => s.sessionId === id)
                 if (prevCurr && newCurr && newCurr.stars > prevCurr.stars) {
-                  playSound('star-up')
+                  playSound(newCurr.stars === 3 ? 'star-up-max' : 'star-up')
                   setMapTabFlash(true)
                   setTimeout(() => setMapTabFlash(false), 2000)
                 }
@@ -1828,12 +1829,41 @@ ${notes ? `
             {tab === 'map' && (
               <div className="space-y-4" dir="rtl">
 
+                {/* Streak detection */}
+                {(() => {
+                  if (!sidebarMapSessions?.length) return null
+                  let streak = 0
+                  for (let i = sidebarMapSessions.length - 1; i >= 0; i--) {
+                    if (sidebarMapSessions[i].stars === 3) streak++
+                    else break
+                  }
+                  if (streak < 3) return null
+                  return (
+                    <div className="flex items-center justify-center gap-2 rounded-2xl py-2.5 px-4 text-sm font-black"
+                      style={{ background: 'linear-gradient(135deg,#FEF3C7,#FDE68A)', border: '1.5px solid #F59E0B', color: '#92400E' }}>
+                      🔥 سلسلة ممتازة × {streak} جلسة!
+                    </div>
+                  )
+                })()}
+
                 {/* Header */}
                 <div
                   className="rounded-2xl p-4 text-center"
                   style={{ background: 'linear-gradient(135deg,#F5F0FF,#EEF0FF)', border: '1.5px solid #E0D5FF' }}
                 >
-                  <div className="text-3xl mb-1">🗺️</div>
+                  <div className="flex items-center justify-between mb-1">
+                    <span />
+                    <span className="text-3xl">🗺️</span>
+                    <button
+                      onClick={() => setShowMapDialog(true)}
+                      className="text-indigo-400 hover:text-indigo-600 transition-colors p-1 rounded-lg hover:bg-indigo-50"
+                      title="عرض الخارطة كاملة"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
+                      </svg>
+                    </button>
+                  </div>
                   <p className="font-black text-gray-800 text-sm">خارطة رحلة الطفل</p>
                   {sidebarMapSessions && sidebarMapSessions.length > 0 && (
                     <p className="text-indigo-500 text-xs mt-1 font-bold">
@@ -1854,8 +1884,32 @@ ${notes ? `
                     ))}
                   </div>
                 ) : sidebarMapSessions && sidebarMapSessions.length > 0 ? (
-                  <div>
+                  <div className="space-y-3">
                     <ProgressMap sessions={sidebarMapSessions} upcomingSlots={2} />
+                    {/* Previous session comparison */}
+                    {(() => {
+                      const currIdx = sidebarMapSessions.findIndex(s => s.sessionId === id)
+                      if (currIdx <= 0) return null
+                      const curr = sidebarMapSessions[currIdx]
+                      const prev = sidebarMapSessions[currIdx - 1]
+                      const diff = curr.avgScore - prev.avgScore
+                      if (diff === 0) return null
+                      const improved = diff > 0
+                      return (
+                        <div className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold"
+                          style={{
+                            background: improved ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.07)',
+                            border: `1px solid ${improved ? 'rgba(16,185,129,0.25)' : 'rgba(239,68,68,0.2)'}`,
+                            color: improved ? '#065F46' : '#991B1B',
+                          }}>
+                          <span style={{ fontSize: 16 }}>{improved ? '📈' : '📉'}</span>
+                          <span>
+                            {improved ? 'تحسن' : 'انخفاض'} {improved ? '+' : ''}{diff}%
+                            <span className="font-normal opacity-70"> مقارنة بالجلسة السابقة ({prev.avgScore}%)</span>
+                          </span>
+                        </div>
+                      )
+                    })()}
                   </div>
                 ) : (
                   <div className="text-center py-8 px-4">
@@ -2356,6 +2410,51 @@ ${notes ? `
               </div>
 
             </div>
+
+            {/* Full-screen map dialog */}
+            {showMapDialog && sidebarMapSessions && (
+              <div
+                className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+                style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }}
+                onClick={() => setShowMapDialog(false)}
+              >
+                <div
+                  className="bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col"
+                  style={{ maxWidth: 380, width: '100%', maxHeight: '90vh' }}
+                  onClick={e => e.stopPropagation()}
+                >
+                  {/* Dialog header */}
+                  <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+                    <span className="font-black text-gray-800 text-base">🗺️ خارطة رحلة الطفل</span>
+                    <button
+                      onClick={() => setShowMapDialog(false)}
+                      className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors text-gray-500 font-black text-lg leading-none"
+                    >×</button>
+                  </div>
+                  {/* Stats row */}
+                  <div className="flex gap-4 px-5 py-3 border-b border-gray-50 text-center">
+                    <div className="flex-1">
+                      <div className="font-black text-gray-800 text-lg">{sidebarMapSessions.length}</div>
+                      <div className="text-gray-400 text-[11px]">جلسة</div>
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-black text-amber-500 text-lg">{sidebarMapSessions.reduce((s,n) => s + n.stars, 0)}</div>
+                      <div className="text-gray-400 text-[11px]">نجمة</div>
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-black text-indigo-600 text-lg">
+                        {Math.round(sidebarMapSessions.reduce((s,n) => s + n.avgScore, 0) / sidebarMapSessions.length)}%
+                      </div>
+                      <div className="text-gray-400 text-[11px]">متوسط</div>
+                    </div>
+                  </div>
+                  {/* Map */}
+                  <div className="overflow-y-auto flex-1 px-4 py-4">
+                    <ProgressMap sessions={sidebarMapSessions} upcomingSlots={3} />
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* ── Celebration overlay — shown when all top games are completed ── */}
             {showCelebration && (() => {

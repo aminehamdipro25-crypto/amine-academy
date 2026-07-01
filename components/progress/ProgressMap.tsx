@@ -81,6 +81,21 @@ function NodeTooltip({ data }: { data: TooltipData }) {
               <div>عدد التمارين: <span className="font-black text-white">{node.gameCount}</span></div>
               {node.date && <div className="text-white/55">{fmtDate(node.date)}</div>}
             </div>
+            {/* Progress toward next star */}
+            {!isUp && node.stars < 3 && (
+              <div className="mt-2 pt-1.5 border-t border-white/20">
+                <div className="flex justify-between text-[10px] text-white/60 mb-1">
+                  <span>نحو {node.stars === 1 ? '★★' : '★★★'}</span>
+                  <span className="font-black text-white">{node.avgScore}% / {node.stars === 1 ? 60 : 80}%</span>
+                </div>
+                <div className="w-full bg-white/20 rounded-full h-1.5 overflow-hidden">
+                  <div
+                    className="h-1.5 rounded-full bg-white/80"
+                    style={{ width: `${Math.min(100, Math.round((node.avgScore / (node.stars === 1 ? 60 : 80)) * 100))}%` }}
+                  />
+                </div>
+              </div>
+            )}
           </>
         )}
         {/* Arrow */}

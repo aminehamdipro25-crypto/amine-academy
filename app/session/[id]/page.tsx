@@ -73,6 +73,12 @@ import StudentTimerDisplay from '@/components/session/StudentTimerDisplay'
 import SessionHeader   from '@/components/session/SessionHeader'
 import SessionToolbar   from '@/components/session/SessionToolbar'
 import SessionPhaseBar  from '@/components/session/SessionPhaseBar'
+import PhaseDurationModal from '@/components/session/PhaseDurationModal'
+import ExerciseConfigModal from '@/components/session/ExerciseConfigModal'
+import VideoLibraryModal from '@/components/session/VideoLibraryModal'
+import AbcLogPanel from '@/components/session/AbcLogPanel'
+import HomeworkPanel from '@/components/session/HomeworkPanel'
+import QuickObsPanel from '@/components/session/QuickObsPanel'
 import ADHDScale       from '@/components/session/assessments/ADHDScale'
 import LearningDifficultiesScale from '@/components/session/assessments/LearningDifficultiesScale'
 import AttentionDomainsScale from '@/components/session/assessments/AttentionDomainsScale'
@@ -82,7 +88,6 @@ import {
   type ObsEntry,
   type ABCEntry,
   PROMPT_CARDS,
-  QUICK_OBS,
   type SessionPhase,
   SESSION_PHASES,
   EXERCISES,
@@ -2740,272 +2745,42 @@ ${notes ? `
         </div>
       )}
 
-      {/* ── ABC Behavior Log Panel ── */}
-      {running && (
-        <div
-          className={`fixed z-[80] bottom-20 lg:bottom-6 ${chromeHidden ? 'right-6' : 'right-4 lg:right-72'}`}
-          style={{ marginRight: 190 }}
-          dir="rtl"
-        >
-          {abcOpen && (
-            <div
-              className="mb-2 rounded-2xl p-4 w-80"
-              style={{ background: '#111827', border: '1.5px solid rgba(245,158,11,0.3)', boxShadow: '0 16px 48px rgba(0,0,0,0.6)' }}
-            >
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-amber-400 font-black text-xs">🔗 تحليل ABC</span>
-                <button onClick={() => setAbcOpen(false)} className="text-white/40 hover:text-white text-lg leading-none">×</button>
-              </div>
-              <div className="space-y-2.5">
-                <div>
-                  <label className="text-[10px] font-black text-blue-400 mb-1 block">A — السابق (ما حدث قبل)</label>
-                  <input
-                    value={abcForm.antecedent}
-                    onChange={e => setAbcForm(f => ({ ...f, antecedent: e.target.value }))}
-                    placeholder="ما الذي سبق السلوك؟"
-                    className="w-full rounded-xl px-3 py-2 text-xs focus:outline-none"
-                    style={{ background: 'rgba(255,255,255,0.1)', color: '#FFFFFF', border: '1px solid rgba(96,165,250,0.4)' }}
-                    dir="rtl"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] font-black text-amber-400 mb-1 block">B — السلوك (ما حدث)</label>
-                  <input
-                    value={abcForm.behavior}
-                    onChange={e => setAbcForm(f => ({ ...f, behavior: e.target.value }))}
-                    placeholder="صِف السلوك بدقة..."
-                    className="w-full rounded-xl px-3 py-2 text-xs focus:outline-none"
-                    style={{ background: 'rgba(255,255,255,0.1)', color: '#FFFFFF', border: '1px solid rgba(245,158,11,0.4)' }}
-                    dir="rtl"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] font-black text-green-400 mb-1 block">C — النتيجة (ردة الفعل)</label>
-                  <input
-                    value={abcForm.consequence}
-                    onChange={e => setAbcForm(f => ({ ...f, consequence: e.target.value }))}
-                    placeholder="ما الذي تلا السلوك؟"
-                    className="w-full rounded-xl px-3 py-2 text-xs focus:outline-none"
-                    style={{ background: 'rgba(255,255,255,0.1)', color: '#FFFFFF', border: '1px solid rgba(74,222,128,0.4)' }}
-                    dir="rtl"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] font-black text-white/40 mb-1 block">الحدة</label>
-                  <div className="flex gap-1.5">
-                    {([1,2,3] as const).map(v => (
-                      <button
-                        key={v}
-                        onClick={() => setAbcForm(f => ({ ...f, intensity: v }))}
-                        className="flex-1 py-1.5 rounded-xl text-xs font-black transition-all"
-                        style={{
-                          background: abcForm.intensity === v
-                            ? v === 1 ? '#22C55E' : v === 2 ? '#F59E0B' : '#EF4444'
-                            : 'rgba(255,255,255,0.08)',
-                          color: abcForm.intensity === v ? '#FFFFFF' : 'rgba(255,255,255,0.4)',
-                        }}
-                      >
-                        {v === 1 ? 'خفيف' : v === 2 ? 'متوسط' : 'شديد'}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <button
-                onClick={logABC}
-                disabled={!abcForm.antecedent && !abcForm.behavior}
-                className="mt-3 w-full py-2.5 rounded-xl font-black text-sm transition-all"
-                style={{
-                  background: (abcForm.antecedent || abcForm.behavior) ? '#F59E0B' : 'rgba(255,255,255,0.06)',
-                  color: (abcForm.antecedent || abcForm.behavior) ? '#000000' : 'rgba(255,255,255,0.2)',
-                }}
-              >
-                حفظ السجل ✓
-              </button>
-            </div>
-          )}
-          <button
-            onClick={() => { setAbcOpen(o => !o); setObsOpen(false); setHwOpen(false) }}
-            className="flex items-center gap-2 font-black text-xs px-4 py-2.5 rounded-2xl transition-all active:scale-95 shadow-lg"
-            style={abcOpen
-              ? { background: '#F59E0B', color: '#000000', boxShadow: '0 4px 16px rgba(245,158,11,0.4)' }
-              : { background: 'linear-gradient(135deg,#1F2937,#374151)', color: '#FFFFFF', boxShadow: '0 4px 16px rgba(0,0,0,0.4)', border: '1.5px solid rgba(255,255,255,0.1)' }
-            }
-          >
-            🔗 ABC
-            {abcLog.length > 0 && (
-              <span className="font-black text-[10px] px-1.5 py-0.5 rounded-full ltr-num bg-amber-500 text-black">
-                {abcLog.length}
-              </span>
-            )}
-          </button>
-        </div>
-      )}
+      <AbcLogPanel
+        running={running}
+        chromeHidden={chromeHidden}
+        abcOpen={abcOpen}
+        onToggle={() => { setAbcOpen(o => !o); setObsOpen(false); setHwOpen(false) }}
+        abcForm={abcForm}
+        onChangeForm={setAbcForm}
+        abcLog={abcLog}
+        onLog={logABC}
+      />
 
-      {/* ── Homework Builder Panel ── */}
-      {running && currentStudentId && (
-        <div
-          className={`fixed z-[80] bottom-20 lg:bottom-6 ${chromeHidden ? 'right-6' : 'right-4 lg:right-72'}`}
-          style={{ marginRight: 96 }}
-          dir="rtl"
-        >
-          {hwOpen && (
-            <div
-              className="mb-2 rounded-2xl p-4 w-80"
-              style={{ background: '#111827', border: '1.5px solid rgba(34,197,94,0.3)', boxShadow: '0 16px 48px rgba(0,0,0,0.6)' }}
-            >
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-green-400 font-black text-xs">🏠 الواجب المنزلي</span>
-                <button onClick={() => setHwOpen(false)} className="text-white/40 hover:text-white text-lg leading-none">×</button>
-              </div>
-              {hwSent ? (
-                <div className="text-center py-6">
-                  <div className="text-4xl mb-2">✅</div>
-                  <p className="text-green-400 font-black">تم الإرسال للطالب!</p>
-                </div>
-              ) : (
-                <>
-                  <p className="text-white/40 text-[10px] mb-3">اختر حتى 3 تمارين للواجب المنزلي</p>
-                  <div className="space-y-1 max-h-52 overflow-y-auto mb-3">
-                    {EXERCISES.filter(e => studentAge >= (e.ageMin ?? 5) && studentAge <= (e.ageMax ?? 22)).map(ex => {
-                      const sel = hwSelected.includes(ex.id)
-                      return (
-                        <button
-                          key={ex.id}
-                          onClick={() => {
-                            if (sel) {
-                              setHwSelected(prev => prev.filter(id => id !== ex.id))
-                            } else if (hwSelected.length < 3) {
-                              setHwSelected(prev => [...prev, ex.id])
-                            }
-                          }}
-                          className="w-full flex items-center gap-2 p-2 rounded-xl transition-all text-right"
-                          style={{
-                            background: sel ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.05)',
-                            border: sel ? '1px solid rgba(34,197,94,0.4)' : '1px solid transparent',
-                            opacity: !sel && hwSelected.length >= 3 ? 0.4 : 1,
-                          }}
-                        >
-                          <span className="text-lg">{ex.icon}</span>
-                          <span className="text-white text-xs font-bold flex-1 text-right">{ex.labelAr}</span>
-                          {sel && <span className="text-green-400 text-xs">✓</span>}
-                        </button>
-                      )
-                    })}
-                  </div>
-                  <textarea
-                    value={hwNote}
-                    onChange={e => setHwNote(e.target.value)}
-                    placeholder="ملاحظة للطالب (اختياري)..."
-                    className="w-full bg-white/8 border border-white/15 rounded-xl px-3 py-2 text-white text-xs placeholder-white/30 focus:outline-none focus:border-green-400 mb-3 resize-none"
-                    rows={2}
-                    dir="rtl"
-                  />
-                  <button
-                    onClick={sendHomework}
-                    disabled={hwSelected.length === 0 || hwSending}
-                    className="w-full py-2.5 rounded-xl font-black text-sm transition-all"
-                    style={{
-                      background: hwSelected.length > 0 ? '#22C55E' : 'rgba(255,255,255,0.06)',
-                      color: hwSelected.length > 0 ? '#000000' : 'rgba(255,255,255,0.2)',
-                    }}
-                  >
-                    {hwSending ? '...' : `إرسال (${hwSelected.length}/3) →`}
-                  </button>
-                </>
-              )}
-            </div>
-          )}
-          <button
-            onClick={() => { setHwOpen(o => !o); setAbcOpen(false); setObsOpen(false) }}
-            className="flex items-center gap-2 font-black text-xs px-4 py-2.5 rounded-2xl transition-all active:scale-95 shadow-lg"
-            style={hwOpen
-              ? { background: '#22C55E', color: '#000000', boxShadow: '0 4px 16px rgba(34,197,94,0.4)' }
-              : { background: 'linear-gradient(135deg,#1F2937,#374151)', color: '#FFFFFF', boxShadow: '0 4px 16px rgba(0,0,0,0.4)', border: '1.5px solid rgba(255,255,255,0.1)' }
-            }
-          >
-            🏠 واجب
-            {hwSent && <span className="text-green-400 text-[10px]">✓</span>}
-          </button>
-        </div>
-      )}
+      <HomeworkPanel
+        running={running}
+        currentStudentId={currentStudentId}
+        chromeHidden={chromeHidden}
+        hwOpen={hwOpen}
+        onToggle={() => { setHwOpen(o => !o); setAbcOpen(false); setObsOpen(false) }}
+        hwSelected={hwSelected}
+        setHwSelected={setHwSelected}
+        hwNote={hwNote}
+        setHwNote={setHwNote}
+        hwSent={hwSent}
+        hwSending={hwSending}
+        studentAge={studentAge}
+        onSend={sendHomework}
+      />
 
-      {/* ── Quick Observation Panel ── */}
-      {running && (
-        <div
-          className={`fixed z-[80] bottom-20 lg:bottom-6 ${chromeHidden ? 'right-6' : 'right-4 lg:right-72'}`}
-          dir="rtl"
-        >
-          {/* Expanded panel */}
-          {obsOpen && (
-            <div
-              className="mb-2 rounded-2xl p-3 w-72"
-              style={{
-                background: '#111827',
-                border: '1.5px solid rgba(255,255,255,0.12)',
-                boxShadow: '0 16px 48px rgba(0,0,0,0.6)',
-              }}
-            >
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-white font-black text-xs">📝 ملاحظة فورية</span>
-                <button
-                  onClick={() => setObsOpen(false)}
-                  className="text-white/40 hover:text-white text-lg leading-none"
-                >×</button>
-              </div>
-              <div className="space-y-2">
-                {QUICK_OBS.map(cat => (
-                  <div key={cat.category}>
-                    <div className="text-[10px] font-black mb-1.5 px-1" style={{ color: cat.color }}>
-                      {cat.category}
-                    </div>
-                    <div className="grid grid-cols-3 gap-1">
-                      {cat.items.map(item => (
-                        <button
-                          key={item.text}
-                          onClick={() => logObs(item.text, cat.category, cat.color)}
-                          className="flex flex-col items-center gap-0.5 py-2 px-1 rounded-xl text-center transition-all active:scale-95 hover:ring-1"
-                          style={{
-                            background: cat.bg,
-                            border: `1px solid ${cat.color}33`,
-                          }}
-                        >
-                          <span className="text-lg leading-none">{item.icon}</span>
-                          <span className="text-[9px] font-bold text-white/70 leading-tight text-center">{item.text}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-3 pt-2 border-t border-white/10 text-center">
-                <span className="text-white/25 text-[9px]">الوقت الحالي في الجلسة: {formatTime(elapsed)}</span>
-              </div>
-            </div>
-          )}
-
-          {/* Toggle button */}
-          <button
-            onClick={() => setObsOpen(o => !o)}
-            className="flex items-center gap-2 font-black text-xs px-4 py-2.5 rounded-2xl transition-all active:scale-95 shadow-lg"
-            style={obsOpen
-              ? { background: '#374151', color: '#FFFFFF', boxShadow: '0 4px 16px rgba(0,0,0,0.4)' }
-              : { background: 'linear-gradient(135deg,#1F2937,#374151)', color: '#FFFFFF', boxShadow: '0 4px 16px rgba(0,0,0,0.4)', border: '1.5px solid rgba(255,255,255,0.1)' }
-            }
-          >
-            📝
-            <span>ملاحظة</span>
-            {obsLog.length > 0 && (
-              <span
-                className="font-black text-[10px] px-1.5 py-0.5 rounded-full ltr-num"
-                style={{ background: '#7C5CFC', color: '#FFFFFF' }}
-              >
-                {obsLog.length}
-              </span>
-            )}
-          </button>
-        </div>
-      )}
+      <QuickObsPanel
+        running={running}
+        chromeHidden={chromeHidden}
+        obsOpen={obsOpen}
+        onToggle={() => setObsOpen(o => !o)}
+        obsLog={obsLog}
+        onLog={logObs}
+        elapsed={elapsed}
+      />
 
       {/* Observation Toast */}
       {obsToast && (
@@ -3142,319 +2917,42 @@ ${notes ? `
         </div>
       )}
 
-      {/* ── Phase Duration Edit Modal ── */}
-      {showPhaseEdit && (
-        <div
-          className="fixed inset-0 z-[200] flex items-center justify-center"
-          onClick={() => setShowPhaseEdit(false)}
-        >
-          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
-          <div
-            className="relative rounded-2xl p-6 w-full max-w-sm mx-4 shadow-2xl"
-            style={{ background: '#0F172A', border: '1.5px solid rgba(255,255,255,0.12)' }}
-            onClick={e => e.stopPropagation()}
-            dir="rtl"
-          >
-            <div className="flex items-center justify-between mb-5">
-              <h3 className="text-white font-black text-base">⚙ ضبط مراحل الجلسة</h3>
-              <button onClick={() => setShowPhaseEdit(false)} className="text-white/40 hover:text-white text-2xl leading-none">×</button>
-            </div>
-            <div className="space-y-3">
-              {SESSION_PHASES.map((ph, i) => (
-                <div
-                  key={ph.id}
-                  className="flex items-center gap-4 rounded-2xl px-4 py-3"
-                  style={{ background: `${ph.color}14`, border: `1px solid ${ph.color}35` }}
-                >
-                  <span className="text-2xl flex-shrink-0">{ph.icon}</span>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-black text-sm mb-2" style={{ color: ph.color }}>{ph.label}</div>
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={() => setPhaseDurations(prev => prev.map((d, idx) => idx === i ? Math.max(1, d - 1) : d))}
-                        className="w-9 h-9 rounded-xl font-black text-xl flex items-center justify-center transition-all active:scale-90 select-none"
-                        style={{ background: `${ph.color}25`, color: ph.color }}
-                      >−</button>
-                      <div className="flex-1 text-center">
-                        <span className="font-black text-3xl text-white ltr-num">{phaseDurations[i]}</span>
-                        <span className="text-white/40 text-sm mr-1.5">د</span>
-                      </div>
-                      <button
-                        onClick={() => setPhaseDurations(prev => prev.map((d, idx) => idx === i ? Math.min(60, d + 1) : d))}
-                        className="w-9 h-9 rounded-xl font-black text-xl flex items-center justify-center transition-all active:scale-90 select-none"
-                        style={{ background: `${ph.color}25`, color: ph.color }}
-                      >+</button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="mt-5 pt-4 border-t border-white/10 flex items-center justify-between">
-              <div className="text-white/40 text-sm">
-                المجموع: <span className="text-white font-black ltr-num">{phaseDurations.reduce((a, b) => a + b, 0)}</span> دقيقة
-              </div>
-              <button
-                onClick={() => setShowPhaseEdit(false)}
-                className="bg-brand-600 hover:bg-brand-500 text-white font-black px-6 py-2.5 rounded-xl text-sm transition-colors"
-              >
-                تأكيد ✓
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <PhaseDurationModal
+        show={showPhaseEdit}
+        onClose={() => setShowPhaseEdit(false)}
+        phases={SESSION_PHASES}
+        phaseDurations={phaseDurations}
+        onChangeDurations={setPhaseDurations}
+      />
 
-      {/* ── Exercise Config Modal ── */}
-      {exerciseConfigId && (() => {
-        const ex = EXERCISES.find(e => e.id === exerciseConfigId)
-        if (!ex) return null
-        const overrideDiff = exerciseDiffOverrides[exerciseConfigId] ?? difficulty
-        const sessionResults = results.filter(r => r.exerciseType === exerciseConfigId)
-        const avgSessionScore = sessionResults.length
-          ? Math.round(sessionResults.reduce((s, r) => s + r.score, 0) / sessionResults.length)
-          : null
-        return (
-          <div
-            className="fixed inset-0 z-[200] flex items-center justify-center"
-            onClick={() => setExerciseConfigId(null)}
-          >
-            <div className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm" />
-            <div
-              className="relative rounded-2xl p-5 w-full max-w-sm mx-4 shadow-2xl bg-white border border-brand-100"
-              onClick={e => e.stopPropagation()}
-              dir="rtl"
-            >
-              {/* Header */}
-              <div className="flex items-center gap-3 mb-5">
-                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0 border ${ex.color}`}>
-                  {ex.icon}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-gray-900 font-black text-sm">{ex.labelAr}</div>
-                  <div className="text-gray-400 text-xs mt-0.5">{ex.category} • {ex.ageMin}–{ex.ageMax} سنة</div>
-                </div>
-                <button onClick={() => setExerciseConfigId(null)} className="text-gray-400 hover:text-gray-700 text-2xl leading-none flex-shrink-0">×</button>
-              </div>
+      <ExerciseConfigModal
+        exerciseConfigId={exerciseConfigId}
+        onClose={() => setExerciseConfigId(null)}
+        difficulty={difficulty}
+        exerciseDiffOverrides={exerciseDiffOverrides}
+        onChangeDiffOverride={(id, value) => {
+          if (value === null) {
+            setExerciseDiffOverrides(prev => { const next = { ...prev }; delete next[id]; return next })
+          } else {
+            setExerciseDiffOverrides(prev => ({ ...prev, [id]: value }))
+          }
+        }}
+        results={results}
+        gameHistoryByGame={gameHistoryByGame}
+        gameUsageCounts={gameUsageCounts}
+        running={running}
+        onStart={startSession}
+        onSetActiveView={setActiveView}
+      />
 
-              {/* Difficulty override */}
-              <div className="mb-4">
-                <div className="text-gray-400 text-[10px] font-black mb-2 uppercase tracking-wider">الصعوبة لهذا التمرين</div>
-                <div className="grid grid-cols-3 gap-2">
-                  {([1,2,3] as const).map(d => (
-                    <button
-                      key={d}
-                      onClick={() => setExerciseDiffOverrides(prev => ({ ...prev, [exerciseConfigId]: d }))}
-                      className="py-2.5 rounded-xl text-xs font-black transition-all"
-                      style={{
-                        background: overrideDiff === d
-                          ? d === 1 ? '#F0FDF4' : d === 2 ? '#FFFBEB' : '#FEF2F2'
-                          : '#FFF8F0',
-                        color: overrideDiff === d
-                          ? d === 1 ? '#16a34a' : d === 2 ? '#d97706' : '#dc2626'
-                          : '#9CA3AF',
-                        border: overrideDiff === d
-                          ? `1px solid ${d === 1 ? '#16a34a55' : d === 2 ? '#d9770655' : '#dc262655'}`
-                          : '1px solid transparent',
-                      }}
-                    >
-                      {d === 1 ? '🟢 سهل' : d === 2 ? '🟡 متوسط' : '🔴 صعب'}
-                    </button>
-                  ))}
-                </div>
-                {overrideDiff !== difficulty && (
-                  <button
-                    onClick={() => setExerciseDiffOverrides(prev => {
-                      const next = { ...prev }
-                      delete next[exerciseConfigId]
-                      return next
-                    })}
-                    className="mt-2 text-gray-300 hover:text-gray-500 text-[10px] font-bold transition-colors"
-                  >
-                    ← العودة للمستوى العام ({difficulty === 1 ? 'سهل' : difficulty === 2 ? 'متوسط' : 'صعب'})
-                  </button>
-                )}
-                {!exerciseDiffOverrides[exerciseConfigId] && suggestedDifficulty(exerciseConfigId, difficulty) !== difficulty && (
-                  <button
-                    onClick={() => setExerciseDiffOverrides(prev => ({ ...prev, [exerciseConfigId]: suggestedDifficulty(exerciseConfigId, difficulty) }))}
-                    className="mt-2 w-full flex items-center justify-between bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2 text-[11px] font-bold text-emerald-700 hover:bg-emerald-100 transition-colors"
-                  >
-                    <span>🤖 مقترح بناءً على متوسط {gameHistoryByGame[exerciseConfigId]?.avgScore}%: {suggestedDifficulty(exerciseConfigId, difficulty) === 1 ? 'سهل' : suggestedDifficulty(exerciseConfigId, difficulty) === 2 ? 'متوسط' : 'صعب'}</span>
-                    <span className="text-emerald-600">تطبيق ←</span>
-                  </button>
-                )}
-              </div>
-
-              {/* Stats from this session + history */}
-              {(sessionResults.length > 0 || (gameUsageCounts[exerciseConfigId] ?? 0) > 0) && (
-                <div className="grid grid-cols-2 gap-2 mb-4">
-                  {sessionResults.length > 0 && (
-                    <>
-                      <div className="bg-surface-page rounded-xl p-3 text-center">
-                        <div className="font-black text-xl text-brand-600 ltr-num">{sessionResults.length}</div>
-                        <div className="text-gray-400 text-[10px] mt-0.5">مرة الجلسة الحالية</div>
-                      </div>
-                      {avgSessionScore !== null && (
-                        <div className="bg-surface-page rounded-xl p-3 text-center">
-                          <div className={`font-black text-xl ltr-num ${avgSessionScore >= 80 ? 'text-emerald-600' : avgSessionScore >= 60 ? 'text-amber-600' : 'text-red-600'}`}>
-                            {avgSessionScore}%
-                          </div>
-                          <div className="text-gray-400 text-[10px] mt-0.5">متوسط الدرجات</div>
-                        </div>
-                      )}
-                    </>
-                  )}
-                  {(gameUsageCounts[exerciseConfigId] ?? 0) > 0 && sessionResults.length === 0 && (
-                    <div className="col-span-2 bg-surface-page rounded-xl p-3 flex items-center justify-between">
-                      <span className="text-gray-400 text-xs">الجلسات السابقة</span>
-                      <span className="text-brand-600 font-black text-sm ltr-num">{gameUsageCounts[exerciseConfigId]} مرة</span>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Launch button */}
-              <button
-                onClick={() => {
-                  if (!running) startSession()
-                  setActiveView({ type: 'exercise', id: exerciseConfigId })
-                  setExerciseConfigId(null)
-                }}
-                className="w-full py-3 rounded-xl font-black text-sm text-white transition-all hover:-translate-y-0.5"
-                style={{ background: 'linear-gradient(135deg,#7C5CFC,#9A7BFD)', boxShadow: '0 4px 20px rgba(124,92,252,0.35)' }}
-              >
-                {ex.icon} تشغيل التمرين الآن →
-              </button>
-            </div>
-          </div>
-        )
-      })()}
-
-      {/* ── مكتبة الفيديو Modal ── */}
-      {videoModal && (() => {
-        const ex = EXERCISES.find(e => e.id === videoModal)
-        const entry = VIDEO_LIBRARY[videoModal]
-        if (!ex || !entry) return null
-        const currentUrl = videoUrls[videoModal] || ''
-        const customId = extractYoutubeId(currentUrl)
-        const activeVideoId = customId || entry.videoId || null
-        // Bundled library clips are curated to be short; hard-cap playback at 30s
-        // so a long source video can never run past that, even if mis-tagged.
-        // A specialist's own pasted link is their deliberate choice — left uncapped.
-        const isLibraryClip = !customId && !!entry.videoId
-        return (
-          <div
-            className="fixed inset-0 z-[150] flex items-center justify-center"
-            onClick={() => setVideoModal(null)}
-          >
-            <div className="absolute inset-0 bg-black/75 backdrop-blur-md" />
-            <div
-              className="relative rounded-3xl w-full max-w-xl mx-4 overflow-hidden shadow-2xl"
-              style={{
-                background: 'rgba(10,8,22,0.97)',
-                border: '1px solid rgba(124,92,252,0.2)',
-                boxShadow: '0 40px 100px rgba(0,0,0,0.8)',
-                backdropFilter: 'blur(20px)',
-              }}
-              onClick={e => e.stopPropagation()}
-              dir="rtl"
-            >
-              {/* Gradient header bar */}
-              <div className="h-1" style={{ background: 'linear-gradient(90deg,#7C5CFC,#C084FC,#7C5CFC)' }} />
-
-              {/* Header */}
-              <div className="px-5 pt-5 pb-4 flex items-center gap-4">
-                <div
-                  className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0"
-                  style={{ background: 'rgba(124,92,252,0.15)', border: '1px solid rgba(124,92,252,0.3)' }}
-                >
-                  {ex.icon}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-white font-black text-lg leading-tight">{ex.labelAr}</div>
-                  <div className="text-brand-400 text-xs font-bold mt-0.5">{ex.category}</div>
-                  <div className="text-white/50 text-xs mt-1 leading-relaxed">{entry.desc}</div>
-                </div>
-                <button
-                  onClick={() => setVideoModal(null)}
-                  className="w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-xl text-white/40 hover:text-white hover:bg-white/10 transition-colors"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              {/* Video embed */}
-              {activeVideoId ? (
-                <div className="mx-5 mb-4">
-                  {isLibraryClip && (
-                    <div className="flex items-center gap-1.5 mb-2 text-[10px] font-bold text-brand-300">
-                      <span>⏱ مقطع مختصر — 30 ثانية كحد أقصى</span>
-                    </div>
-                  )}
-                  <div className="relative rounded-2xl overflow-hidden" style={{ aspectRatio: '16/9', background: '#000' }}>
-                    {videoIframeLoading && (
-                      <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-[#0a0816]">
-                        <div className="w-8 h-8 rounded-full border-2 border-brand-400/30 border-t-brand-400 animate-spin" />
-                        <span className="text-white/40 text-[11px] font-bold">جارٍ تحميل الفيديو...</span>
-                      </div>
-                    )}
-                    <iframe
-                      key={activeVideoId}
-                      src={`https://www.youtube.com/embed/${activeVideoId}?rel=0&modestbranding=1${isLibraryClip ? '&end=30' : ''}`}
-                      className="w-full h-full"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                      onLoad={() => setVideoIframeLoading(false)}
-                    />
-                  </div>
-                </div>
-              ) : (
-                <div
-                  className="mx-5 mb-4 rounded-2xl flex flex-col items-center justify-center gap-3 py-8"
-                  style={{ background: 'rgba(255,255,255,0.03)', border: '1px dashed rgba(255,255,255,0.1)' }}
-                >
-                  <Youtube className="w-10 h-10 text-white/20" />
-                  <p className="text-white/30 text-sm">الصق رابط يوتيوب لتشغيل الفيديو هنا</p>
-                </div>
-              )}
-
-              {/* Tips */}
-              <div className="px-5 mb-4">
-                <div className="text-white/40 text-[10px] font-black uppercase tracking-wider mb-2">💡 نصائح التطبيق</div>
-                <div className="grid grid-cols-2 gap-1.5">
-                  {entry.tips.map((tip, i) => (
-                    <div key={i} className="flex items-start gap-1.5 px-2 py-1.5 rounded-lg" style={{ background: 'rgba(255,255,255,0.04)' }}>
-                      <span className="text-brand-500 text-[10px] font-black mt-0.5 flex-shrink-0">{i + 1}.</span>
-                      <span className="text-white/60 text-[10px] leading-snug">{tip}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Custom URL override */}
-              <div className="px-5 pb-5">
-                <div className="flex gap-2 items-center">
-                  <input
-                    type="text"
-                    value={currentUrl}
-                    onChange={e => setVideoUrls(prev => ({ ...prev, [videoModal]: e.target.value }))}
-                    placeholder={entry.videoId ? 'استبدل الفيديو برابط يوتيوب آخر (اختياري)' : 'الصق رابط يوتيوب هنا...'}
-                    className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-white/20 focus:outline-none focus:border-brand-500/40"
-                    dir="ltr"
-                  />
-                  {currentUrl && (
-                    <button
-                      onClick={() => setVideoUrls(prev => ({ ...prev, [videoModal]: '' }))}
-                      className="w-8 h-8 flex items-center justify-center rounded-xl text-white/30 hover:text-red-400 transition-colors flex-shrink-0"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        )
-      })()}
+      <VideoLibraryModal
+        videoModal={videoModal}
+        onClose={() => setVideoModal(null)}
+        videoUrls={videoUrls}
+        onChangeUrl={(id, url) => setVideoUrls(prev => ({ ...prev, [id]: url }))}
+        videoIframeLoading={videoIframeLoading}
+        onIframeLoad={() => setVideoIframeLoading(false)}
+      />
 
       {/* Achievement Toast */}
       {achievementToast && (() => {

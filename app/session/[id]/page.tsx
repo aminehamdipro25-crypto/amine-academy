@@ -2247,89 +2247,173 @@ ${notes ? `
             </div>
 
             {/* ── Celebration overlay — shown when all top games are completed ── */}
-            {showCelebration && (
-              <div
-                className="fixed inset-0 z-[200] flex flex-col items-center justify-center"
-                style={{ background: 'linear-gradient(160deg, #FFF0FA 0%, #EEF0FF 35%, #F0FFF8 70%, #FFFBF0 100%)' }}
-              >
-                {/* CSS Confetti — 20 colored dots */}
-                <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                  {Array.from({ length: 20 }).map((_, i) => (
-                    <div
-                      key={i}
-                      className="absolute rounded-full animate-bounce"
-                      style={{
-                        width: `${8 + (i % 4) * 4}px`,
-                        height: `${8 + (i % 4) * 4}px`,
-                        left: `${(i * 5.3) % 100}%`,
-                        top: `-20px`,
-                        backgroundColor: ['#7C5CFC', '#FF8C65', '#2ABFA3', '#FFBA44', '#FF6B6B', '#3B9EFF'][i % 6],
-                        animationDelay: `${i * 0.15}s`,
-                        animationDuration: `${1.5 + (i % 3) * 0.5}s`,
-                      }}
-                    />
-                  ))}
-                </div>
-
-                {/* Trophy emoji */}
+            {showCelebration && (() => {
+              const avgScoreCelebration = results.length
+                ? results.reduce((s, r) => s + r.score, 0) / results.length
+                : 0
+              const starsEarned = avgScoreCelebration >= 80 ? 3 : avgScoreCelebration >= 60 ? 2 : 1
+              const confettiColors = ['#7C5CFC','#FF8C65','#2ABFA3','#FFBA44','#FF6B6B','#3B9EFF','#EC4899','#10B981']
+              return (
                 <div
-                  className="text-8xl mb-4"
-                  style={{ filter: 'drop-shadow(0 8px 16px rgba(124,92,252,0.3))', animation: 'bounce 1s ease-in-out infinite' }}
+                  className="fixed inset-0 z-[200] flex flex-col items-center justify-center overflow-hidden"
+                  style={{ background: 'linear-gradient(160deg,#FFF0FA 0%,#EEF0FF 38%,#F0FFF8 72%,#FFFBF0 100%)' }}
                 >
-                  🏆
-                </div>
+                  <style>{`
+                    @keyframes celConfetti {
+                      0%   { transform: translateY(-30px) rotate(0deg);   opacity: 1; }
+                      100% { transform: translateY(110vh)  rotate(540deg); opacity: 0; }
+                    }
+                    @keyframes celStarDrop {
+                      0%   { transform: translateY(-40px) scale(0.4) rotate(-20deg); opacity: 0; }
+                      65%  { transform: translateY(6px)   scale(1.25) rotate(5deg);  opacity: 1; }
+                      100% { transform: translateY(0)     scale(1)    rotate(0deg);  opacity: 1; }
+                    }
+                    @keyframes celTrophy {
+                      0%,100% { transform: translateY(0) rotate(-3deg); }
+                      50%     { transform: translateY(-10px) rotate(3deg); }
+                    }
+                    @keyframes celNodePulse {
+                      0%,100% { transform: scale(1);    opacity: 0.45; }
+                      50%     { transform: scale(1.4);  opacity: 0; }
+                    }
+                  `}</style>
 
-                {/* Congratulations text */}
-                <h1 className="font-black text-4xl text-gray-800 mb-2">أحسنت! 🎉</h1>
-                <p className="text-gray-500 text-lg mb-8">أنهيت جلسة اليوم بنجاح</p>
-
-                {/* Per-game score cards */}
-                <div className="flex gap-3 mb-8 flex-wrap justify-center px-4">
-                  {results.slice(-topGames.length).map((r, i) => {
-                    const colors = [
-                      { bg: 'from-[#7C5CFC] to-[#9A7BFD]' },
-                      { bg: 'from-[#FF8C65] to-[#FFBA44]' },
-                      { bg: 'from-[#2ABFA3] to-[#3B9EFF]' },
-                    ]
-                    return (
+                  {/* Falling confetti */}
+                  <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                    {Array.from({ length: 28 }).map((_, i) => (
                       <div
                         key={i}
-                        className={`bg-gradient-to-br ${colors[i % 3].bg} rounded-2xl p-4 text-white text-center w-28 shadow-lg`}
-                      >
-                        <div className="text-2xl mb-1">
-                          {r.score >= 80 ? '⭐' : r.score >= 60 ? '👍' : '💪'}
+                        className="absolute"
+                        style={{
+                          width:        `${5 + (i % 5) * 3}px`,
+                          height:       `${5 + (i % 5) * 3}px`,
+                          left:         `${(i * 3.7) % 100}%`,
+                          top:          '-30px',
+                          background:   confettiColors[i % confettiColors.length],
+                          borderRadius: i % 3 === 0 ? '50%' : '3px',
+                          animation:    `celConfetti ${2.2 + (i % 4) * 0.55}s ${i * 0.09}s linear infinite`,
+                        }}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Content */}
+                  <div className="relative z-10 flex flex-col items-center px-6 text-center max-w-sm w-full">
+
+                    {/* Trophy */}
+                    <div
+                      className="text-7xl mb-3 select-none"
+                      style={{
+                        animation: 'celTrophy 2s ease-in-out infinite',
+                        filter: 'drop-shadow(0 8px 20px rgba(124,92,252,0.35))',
+                      }}
+                    >
+                      🏆
+                    </div>
+
+                    {/* Title */}
+                    <h1 className="font-black text-4xl text-gray-800 mb-1 leading-tight">أحسنت! 🎉</h1>
+                    <p className="text-gray-500 text-base mb-5">أكملت جلسة اليوم بنجاح</p>
+
+                    {/* Animated stars */}
+                    <div className="flex justify-center gap-3 mb-5">
+                      {[0, 1, 2].map(i => (
+                        <span
+                          key={i}
+                          className="text-5xl inline-block"
+                          style={{
+                            color:     i < starsEarned ? '#F59E0B' : '#E5E7EB',
+                            animation: i < starsEarned
+                              ? `celStarDrop 0.45s ${0.1 + i * 0.18}s ease-out both`
+                              : 'none',
+                            filter: i < starsEarned
+                              ? 'drop-shadow(0 2px 8px rgba(245,158,11,0.5))'
+                              : 'none',
+                          }}
+                        >
+                          ★
+                        </span>
+                      ))}
+                    </div>
+
+                    {/* Per-game score cards */}
+                    <div className="flex gap-2.5 mb-5 flex-wrap justify-center">
+                      {results.slice(-topGames.length).map((r, i) => {
+                        const cardBgs = [
+                          'linear-gradient(135deg,#7C5CFC,#9A7BFD)',
+                          'linear-gradient(135deg,#FF8C65,#FFBA44)',
+                          'linear-gradient(135deg,#2ABFA3,#3B9EFF)',
+                        ]
+                        return (
+                          <div
+                            key={i}
+                            className="rounded-2xl p-3.5 text-white text-center w-24 shadow-lg"
+                            style={{ background: cardBgs[i % 3] }}
+                          >
+                            <div className="text-xl mb-0.5">
+                              {r.score >= 80 ? '⭐' : r.score >= 60 ? '👍' : '💪'}
+                            </div>
+                            <div className="font-black text-xl ltr-num">{r.score}%</div>
+                            <div className="text-white/80 text-[10px] mt-0.5 truncate leading-tight">
+                              {r.exerciseLabelAr}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+
+                    {/* Mini journey path */}
+                    <div
+                      className="flex items-center justify-center gap-2 rounded-2xl px-4 py-3 mb-5 w-full"
+                      style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.18)' }}
+                    >
+                      <span className="text-xs font-bold text-gray-500 ml-1">رحلتك:</span>
+                      {[...Array(3)].map((_, i) => (
+                        <div
+                          key={i}
+                          className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-black"
+                          style={{ background: 'linear-gradient(135deg,#6366F1,#818CF8)' }}
+                        >
+                          ✓
                         </div>
-                        <div className="font-black text-2xl ltr-num">{r.score}%</div>
-                        <div className="text-white/80 text-xs mt-0.5 truncate">{r.exerciseLabelAr}</div>
+                      ))}
+                      <div className="w-3 h-px" style={{ borderTop: '2px dashed #C4B5FD' }} />
+                      {/* Current session — pulsing gold node */}
+                      <div
+                        className="relative w-7 h-7 rounded-full flex items-center justify-center text-white text-[11px] font-black"
+                        style={{
+                          background:  'linear-gradient(135deg,#F59E0B,#FBBF24)',
+                          boxShadow:   '0 0 0 4px rgba(245,158,11,0.22)',
+                        }}
+                      >
+                        <span
+                          className="absolute inset-0 rounded-full"
+                          style={{ border: '2px solid #F59E0B', animation: 'celNodePulse 1.5s ease-in-out infinite' }}
+                        />
+                        {starsEarned}★
                       </div>
-                    )
-                  })}
-                </div>
+                      <div className="w-3 h-px" style={{ borderTop: '2px dashed #E5E7EB' }} />
+                      <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-gray-300 text-[11px]">
+                        🔒
+                      </div>
+                      <span className="text-[10px] text-gray-400 mr-1">القادم</span>
+                    </div>
 
-                {/* Stars earned based on average score */}
-                <div className="flex gap-1 mb-8">
-                  {Array.from({ length: 3 }).map((_, i) => {
-                    const avgScoreCelebration = results.length
-                      ? results.reduce((s, r) => s + r.score, 0) / results.length
-                      : 0
-                    const filled = i < (avgScoreCelebration >= 80 ? 3 : avgScoreCelebration >= 60 ? 2 : 1)
-                    return (
-                      <span key={i} className={`text-4xl transition-all ${filled ? 'text-amber-400' : 'text-gray-200'}`}>
-                        ★
-                      </span>
-                    )
-                  })}
+                    {/* Exit button */}
+                    <button
+                      onClick={() => { setShowCelebration(false); setKidMode(false) }}
+                      className="w-full font-black text-white text-lg px-8 py-3.5 rounded-2xl transition-all hover:-translate-y-0.5 active:scale-95"
+                      style={{
+                        background:  'linear-gradient(135deg,#6366F1,#8B5CF6)',
+                        boxShadow:   '0 8px 24px rgba(99,102,241,0.4)',
+                      }}
+                    >
+                      ← وضع الأستاذ
+                    </button>
+                  </div>
                 </div>
-
-                {/* Exit to professor mode */}
-                <button
-                  onClick={() => { setShowCelebration(false); setKidMode(false) }}
-                  className="bg-brand-500 hover:bg-brand-600 text-white font-black px-8 py-3 rounded-2xl text-lg transition-all hover:-translate-y-1 shadow-brand"
-                >
-                  ← وضع الأستاذ
-                </button>
-              </div>
-            )}
+              )
+            })()}
           </div>
         )}
 

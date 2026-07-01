@@ -758,3 +758,44 @@ export async function getStudentGameHistory(studentId: string): Promise<{
 
   return { byGame, byWeek, totalPlays: results.length, totalMinutes }
 }
+
+export interface ProgressMapSession {
+  sessionId: string
+  sessionNumber: number
+  date: string
+  stars: number    // 1-3
+  avgScore: number
+  gameCount: number
+  isMilestone: boolean
+}
+
+export async function getStudentProgressMap(studentId: string): Promise<{ sessions: ProgressMapSession[] }> {
+  const results = await getStudentGameResults(studentId, 500)
+  if (results.length === 0) return { sessions: [] }
+
+  // Group by sessionId
+  const sessionMap = new Map<string, GameResult[]>()
+  for (const r of results) {
+    if (!sessionMap.has(r.sessionId)) sessionMap.set(r.sessionId, [])
+    sessionMap.get(r.sessionId)!.push(r)
+  }
+
+  // Build session entries
+  const raw = Array.from(sessionMap.entries()).map(([sessionId, games]) => {
+    const avgScore = games.reduce((s, g) => s + g.score, 0) / games.length
+    const stars = avgScore >= 80 ? 3 : avgScore >= 60 ? 2 : 1
+    const date = games.map(g => g.playedAt).sort()[0]
+    return { sessionId, date, avgScore: Math.round(avgScore), stars, gameCount: games.length }
+  })
+
+  // Sort chronologically (oldest first)
+  raw.sort((a, b) => a.date.localeCompare(b.date))
+
+  return {
+    sessions: raw.map((s, i) => ({
+      ...s,
+      sessionNumber: i + 1,
+      isMilestone: (i + 1) % 4 === 0,
+    })),
+  }
+}

@@ -7,6 +7,8 @@ import type { Parent, Student, Program } from '@/lib/types'
 import { useLang, tr } from '@/lib/i18n'
 import { ACountUp } from '@/components/ui'
 import { staggerContainer, fadeUp, popIn, liftHover } from '@/lib/motion'
+import ProgressMap from '@/components/progress/ProgressMap'
+import type { SessionNode } from '@/components/progress/ProgressMap'
 
 const MotionLink = motion(Link)
 
@@ -130,6 +132,13 @@ export default function ParentDashboardPage() {
   const [loading, setLoading] = useState(true)
   const [unreadMessages, setUnreadMessages] = useState(0)
   const [dismissedNotifs, setDismissedNotifs] = useState<number[]>([])
+  const [progressMap, setProgressMap] = useState<{
+    studentId: string
+    studentName: string
+    sessions: SessionNode[]
+    totalSessions: number
+    totalStars: number
+  }[]>([])
 
   useEffect(() => {
     fetch('/api/parent/me')
@@ -150,6 +159,11 @@ export default function ParentDashboardPage() {
     fetch('/api/messages')
       .then(r => r.ok ? r.json() : null)
       .then(d => { if (d) setUnreadMessages(d.unreadFromAdmin ?? 0) })
+      .catch(() => {})
+
+    fetch('/api/parent/progress-map')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.progressData) setProgressMap(d.progressData) })
       .catch(() => {})
   }, [])
 
@@ -358,6 +372,59 @@ export default function ParentDashboardPage() {
           </MotionLink>
         ))}
       </motion.div>
+
+      {/* ══ Journey Progress Map ══ */}
+      {progressMap.length > 0 && progressMap.some(p => p.totalSessions > 0) && (
+        <motion.div
+          variants={fadeUp}
+          className="rounded-3xl p-5 overflow-hidden"
+          style={{
+            background: 'linear-gradient(135deg,#FAFAFA,#F5F0FF)',
+            border: '1.5px solid #EDE4FF',
+            boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
+          }}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="font-black text-gray-900 text-sm">🗺️ خارطة الرحلة</h2>
+              <p className="text-gray-400 text-xs mt-0.5">
+                {progressMap[0]?.totalSessions > 0
+                  ? `${progressMap[0].totalSessions} جلسة مكتملة • ${progressMap[0].totalStars} نجمة`
+                  : 'جلساتك التفاعلية'}
+              </p>
+            </div>
+            <div className="flex items-center gap-2 text-[10px] font-bold text-gray-400">
+              <span className="inline-flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full inline-block" style={{ background: 'linear-gradient(135deg,#F59E0B,#FBBF24)' }} />
+                3★
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full inline-block" style={{ background: 'linear-gradient(135deg,#6366F1,#818CF8)' }} />
+                2★
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full inline-block" style={{ background: 'linear-gradient(135deg,#06B6D4,#38BDF8)' }} />
+                1★
+              </span>
+            </div>
+          </div>
+
+          {progressMap.map(child => (
+            <div key={child.studentId}>
+              {progressMap.length > 1 && (
+                <p className="text-xs font-bold text-gray-500 mb-2">{child.studentName}</p>
+              )}
+              {child.sessions.length > 0 ? (
+                <ProgressMap sessions={child.sessions} compact upcomingSlots={3} />
+              ) : (
+                <div className="text-center py-4 text-gray-400 text-xs">
+                  لم تبدأ الجلسات بعد — ستظهر هنا بعد أول جلسة تفاعلية 🌱
+                </div>
+              )}
+            </div>
+          ))}
+        </motion.div>
+      )}
 
       {/* ══ Upcoming appointment banner ══ */}
       {upcomingAppointment && (

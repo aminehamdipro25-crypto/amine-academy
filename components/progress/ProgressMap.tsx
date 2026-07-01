@@ -340,8 +340,9 @@ function SnakeMap({ sessions, upcomingSlots }: { sessions: SessionNode[]; upcomi
               </motion.div>
             )}
 
-            {/* Circle */}
+            {/* Circle — key includes stars so it re-animates when the score updates */}
             <motion.div
+              key={isCurr ? `curr-${node.stars}` : undefined}
               className="rounded-full flex items-center justify-center relative"
               style={{
                 width: d, height: d,
@@ -349,6 +350,9 @@ function SnakeMap({ sessions, upcomingSlots }: { sessions: SessionNode[]; upcomi
                 border:     `3px solid ${isUp ? '#E5E7EB' : (cfg?.border ?? '#D1D5DB')}`,
                 boxShadow:  cfg && !isCurr ? `0 4px 16px ${cfg.glow}` : 'none',
               }}
+              initial={isCurr ? { scale: 0.85, opacity: 0.6 } : undefined}
+              animate={isCurr ? { scale: 1, opacity: 1 } : undefined}
+              transition={isCurr ? { type: 'spring', stiffness: 400, damping: 18 } : undefined}
               whileHover={{ scale: 1.1, zIndex: 30 }}
             >
               {/* Pulsing ring — current node */}

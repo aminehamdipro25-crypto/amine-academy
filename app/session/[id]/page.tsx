@@ -1084,6 +1084,14 @@ ${notes ? `
           durationSeconds: result.duration,
           completed:       result.score > 0,
         }),
+      }).then(() => {
+        // Refresh the sidebar map so stars/score update live after each exercise
+        setTimeout(() => {
+          fetch(`/api/admin/students/${currentStudentId}/progress-map`)
+            .then(r => r.json())
+            .then(d => { if (d?.sessions) setSidebarMapSessions(d.sessions) })
+            .catch(() => {})
+        }, 800)
       }).catch(() => {})
       // Update local usage count
       setGameUsageCounts(prev => ({ ...prev, [result.exerciseType]: (prev[result.exerciseType] || 0) + 1 }))

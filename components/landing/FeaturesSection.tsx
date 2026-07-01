@@ -82,7 +82,7 @@ export default function FeaturesSection() {
     <section
       id="features"
       dir={isRtl ? 'rtl' : 'ltr'}
-      style={{ background: 'linear-gradient(180deg, #0F172A 0%, #0F172A 100%)', padding: '96px 0' }}
+      style={{ background: 'linear-gradient(180deg, #1A2640 0%, #1A2640 100%)', padding: '96px 0' }}
     >
       <div className="max-w-7xl mx-auto px-6">
 
@@ -109,7 +109,7 @@ export default function FeaturesSection() {
           >
             {pickLang(lang, 'ثلاث ركائز علمية في برنامج واحد', 'Three Scientific Pillars in One Program', 'Trois piliers scientifiques dans un seul programme')}
           </h2>
-          <p className="text-white/50 max-w-2xl mx-auto text-lg leading-relaxed">
+          <p className="text-white/65 max-w-2xl mx-auto text-lg leading-relaxed">
             {pickLang(
               lang,
               'لا يوجد في المنطقة برنامج يجمع الثلاثة معاً. كل ركيزة معتمدة بدراسات دولية — الثلاثة معاً تُعطي نتائج لا تقدر بثمن.',
@@ -128,11 +128,11 @@ export default function FeaturesSection() {
                 key={p.id}
                 className="rounded-3xl p-7 transition-all hover:-translate-y-1"
                 style={{
-                  background: 'rgba(255,255,255,0.04)',
-                  border: '1px solid rgba(255,255,255,0.09)',
+                  background: 'rgba(255,255,255,0.08)',
+                  border: '1px solid rgba(255,255,255,0.14)',
                   backdropFilter: 'blur(16px)',
                   WebkitBackdropFilter: 'blur(16px)',
-                  boxShadow: `0 16px 48px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.07)`,
+                  boxShadow: `0 16px 48px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.11)`,
                 }}
               >
                 {/* Tag + Icon */}
@@ -152,7 +152,7 @@ export default function FeaturesSection() {
                 </div>
 
                 <h3 className="font-black text-white text-xl mb-0.5">{pickLang(lang, p.title, p.titleEn, p.titleFr)}</h3>
-                <p className="text-white/30 text-xs font-medium mb-4 tracking-wide">{p.subtitle}</p>
+                <p className="text-white/45 text-xs font-medium mb-4 tracking-wide">{p.subtitle}</p>
                 <p className="text-white/60 text-sm leading-relaxed mb-5">{pickLang(lang, p.desc, p.descEn, p.descFr)}</p>
 
                 {/* Bullets */}
@@ -168,7 +168,7 @@ export default function FeaturesSection() {
                 {/* Stat */}
                 <div
                   className="rounded-2xl p-4 text-center"
-                  style={{ background: p.glowColor, border: `1px solid rgba(255,255,255,0.07)` }}
+                  style={{ background: p.glowColor, border: `1px solid rgba(255,255,255,0.11)` }}
                 >
                   <div
                     className="text-3xl font-black ltr-num"
@@ -181,7 +181,7 @@ export default function FeaturesSection() {
                   >
                     {p.stat}
                   </div>
-                  <div className="text-white/45 text-xs mt-1">{pickLang(lang, p.statLabel, p.statLabelEn, p.statLabelFr)}</div>
+                  <div className="text-white/60 text-xs mt-1">{pickLang(lang, p.statLabel, p.statLabelEn, p.statLabelFr)}</div>
                 </div>
               </div>
             )
@@ -190,11 +190,11 @@ export default function FeaturesSection() {
 
         {/* Divider */}
         <div className="flex items-center gap-4 mb-10">
-          <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.07)' }} />
-          <span className="text-white/30 text-sm font-medium whitespace-nowrap">
+          <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.11)' }} />
+          <span className="text-white/45 text-sm font-medium whitespace-nowrap">
             {pickLang(lang, 'بالإضافة إلى', 'Plus', 'En plus')}
           </span>
-          <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.07)' }} />
+          <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.11)' }} />
         </div>
 
         {/* Extra features grid */}
@@ -204,8 +204,8 @@ export default function FeaturesSection() {
               key={title}
               className="flex items-start gap-4 p-5 rounded-3xl transition-all hover:-translate-y-0.5"
               style={{
-                background: 'rgba(255,255,255,0.03)',
-                border: '1px solid rgba(255,255,255,0.07)',
+                background: 'rgba(255,255,255,0.11)',
+                border: '1px solid rgba(255,255,255,0.11)',
                 backdropFilter: 'blur(12px)',
                 WebkitBackdropFilter: 'blur(12px)',
               }}
@@ -218,7 +218,7 @@ export default function FeaturesSection() {
               </div>
               <div>
                 <h4 className="font-black text-white text-sm mb-1">{pickLang(lang, title, titleEn, titleFr)}</h4>
-                <p className="text-white/50 text-xs leading-relaxed">{pickLang(lang, desc, descEn, descFr)}</p>
+                <p className="text-white/65 text-xs leading-relaxed">{pickLang(lang, desc, descEn, descFr)}</p>
               </div>
             </div>
           ))}

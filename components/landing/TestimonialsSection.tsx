@@ -54,7 +54,7 @@ export default function TestimonialsSection() {
   return (
     <section
       dir={isRtl ? 'rtl' : 'ltr'}
-      style={{ background: 'linear-gradient(180deg, #0F172A 0%, #07111F 100%)', padding: '80px 0' }}
+      style={{ background: 'linear-gradient(180deg, #1A2640 0%, #121E30 100%)', padding: '80px 0' }}
     >
       <div className="max-w-7xl mx-auto px-6">
         <div className="text-center mb-14">
@@ -83,8 +83,8 @@ export default function TestimonialsSection() {
               key={name}
               className="rounded-3xl p-6 transition-all hover:-translate-y-1 flex flex-col"
               style={{
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.09)',
+                background: 'rgba(255,255,255,0.08)',
+                border: '1px solid rgba(255,255,255,0.14)',
                 backdropFilter: 'blur(16px)',
                 WebkitBackdropFilter: 'blur(16px)',
                 boxShadow: '0 16px 48px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06)',
@@ -115,7 +115,7 @@ export default function TestimonialsSection() {
                     {pickLang(lang, name, nameEn, nameFr)}
                     <span>{country}</span>
                   </div>
-                  <div className="text-white/40 text-xs">{pickLang(lang, role, roleEn, roleFr)}</div>
+                  <div className="text-white/55 text-xs">{pickLang(lang, role, roleEn, roleFr)}</div>
                 </div>
               </div>
             </div>

@@ -67,7 +67,7 @@ export default function HowItWorks() {
     <section
       id="how-it-works"
       dir={isRtl ? 'rtl' : 'ltr'}
-      style={{ background: 'linear-gradient(180deg, #07111F 0%, #0F172A 100%)', padding: '80px 0' }}
+      style={{ background: 'linear-gradient(180deg, #121E30 0%, #1A2640 100%)', padding: '80px 0' }}
     >
       <div className="max-w-7xl mx-auto px-6">
         <div className="text-center mb-14">
@@ -88,7 +88,7 @@ export default function HowItWorks() {
           >
             {pickLang(lang, 'كيف تعمل أكاديمية أمين؟', 'How Does Amine Academy Work?', 'Comment fonctionne Amine Academy ?')}
           </h2>
-          <p className="text-white/45 max-w-xl mx-auto">
+          <p className="text-white/60 max-w-xl mx-auto">
             {pickLang(lang, 'خمس خطوات بسيطة تحول حياة طفلك.', "Five simple steps that transform your child's life.", "Cinq étapes simples qui transforment la vie de votre enfant.")}
           </p>
         </div>
@@ -108,8 +108,8 @@ export default function HowItWorks() {
               <div
                 className="w-full rounded-3xl p-5 transition-all hover:-translate-y-1"
                 style={{
-                  background: 'rgba(255,255,255,0.04)',
-                  border: '1px solid rgba(255,255,255,0.08)',
+                  background: 'rgba(255,255,255,0.13)',
+                  border: '1px solid rgba(255,255,255,0.13)',
                   backdropFilter: 'blur(12px)',
                   WebkitBackdropFilter: 'blur(12px)',
                   boxShadow: '0 8px 24px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.06)',
@@ -127,7 +127,7 @@ export default function HowItWorks() {
                   {step.num}
                 </div>
                 <h3 className="font-black text-white text-sm mb-2">{pickLang(lang, step.title, step.titleEn, step.titleFr)}</h3>
-                <p className="text-white/45 text-xs leading-relaxed">{pickLang(lang, step.desc, step.descEn, step.descFr)}</p>
+                <p className="text-white/60 text-xs leading-relaxed">{pickLang(lang, step.desc, step.descEn, step.descFr)}</p>
               </div>
             </div>
           ))}

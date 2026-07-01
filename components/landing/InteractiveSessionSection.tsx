@@ -99,7 +99,7 @@ export default function InteractiveSessionSection() {
     <section
       id="how-it-works"
       dir={isRtl ? 'rtl' : 'ltr'}
-      style={{ background: 'linear-gradient(180deg, #07111F 0%, #0F172A 100%)', padding: '96px 0' }}
+      style={{ background: 'linear-gradient(180deg, #121E30 0%, #1A2640 100%)', padding: '96px 0' }}
     >
       <div className="max-w-7xl mx-auto px-6">
 
@@ -122,7 +122,7 @@ export default function InteractiveSessionSection() {
           >
             {pickLang(lang, 'ليست مجرد مكالمة فيديو', 'More Than Just a Video Call', "Bien plus qu'un simple appel vidéo")}
           </h2>
-          <p className="text-white/50 max-w-2xl mx-auto text-lg leading-relaxed">
+          <p className="text-white/65 max-w-2xl mx-auto text-lg leading-relaxed">
             {pickLang(
               lang,
               'كل جلسة هي تجربة تعليمية متكاملة — الطفل يتحرك، يتعلم، ويكسب نقاطاً. الوالد يخرج بخطة يومية واضحة.',
@@ -141,8 +141,8 @@ export default function InteractiveSessionSection() {
                 key={step.num}
                 className="rounded-3xl p-6 transition-all hover:-translate-y-1"
                 style={{
-                  background: 'rgba(255,255,255,0.04)',
-                  border: '1px solid rgba(255,255,255,0.08)',
+                  background: 'rgba(255,255,255,0.13)',
+                  border: '1px solid rgba(255,255,255,0.13)',
                   backdropFilter: 'blur(16px)',
                   WebkitBackdropFilter: 'blur(16px)',
                   boxShadow: '0 12px 32px rgba(0,0,0,0.25)',
@@ -155,10 +155,10 @@ export default function InteractiveSessionSection() {
                   >
                     {step.num}
                   </span>
-                  <Icon className="w-5 h-5 text-white/40" />
+                  <Icon className="w-5 h-5 text-white/55" />
                 </div>
                 <h3 className="text-white font-black text-base mb-2">{pickLang(lang, step.title, step.titleEn, step.titleFr)}</h3>
-                <p className="text-white/50 text-sm leading-relaxed">{pickLang(lang, step.desc, step.descEn, step.descFr)}</p>
+                <p className="text-white/65 text-sm leading-relaxed">{pickLang(lang, step.desc, step.descEn, step.descFr)}</p>
               </div>
             )
           })}
@@ -168,8 +168,8 @@ export default function InteractiveSessionSection() {
         <div
           className="rounded-3xl p-8 md:p-10 mb-10"
           style={{
-            background: 'rgba(255,255,255,0.04)',
-            border: '1px solid rgba(255,255,255,0.08)',
+            background: 'rgba(255,255,255,0.13)',
+            border: '1px solid rgba(255,255,255,0.13)',
             backdropFilter: 'blur(20px)',
             WebkitBackdropFilter: 'blur(20px)',
             boxShadow: '0 20px 64px rgba(0,0,0,0.3)',
@@ -187,11 +187,11 @@ export default function InteractiveSessionSection() {
                   <div key={time} className="flex items-center gap-4">
                     <div className="flex items-center gap-2 w-24 flex-shrink-0">
                       <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: gradient }} />
-                      <span className="text-white/35 text-xs ltr-num">{time}</span>
+                      <span className="text-white/50 text-xs ltr-num">{time}</span>
                     </div>
                     <div className="flex-1">
                       <span className="text-white/80 font-bold text-sm">{label}</span>
-                      <span className="text-white/30 text-xs mx-2">{note}</span>
+                      <span className="text-white/45 text-xs mx-2">{note}</span>
                     </div>
                   </div>
                 ))}
@@ -221,7 +221,7 @@ export default function InteractiveSessionSection() {
                   <p className="text-white font-black text-sm">
                     {pickLang(lang, 'جلسة تقييمية مجانية للتعارف', 'Free Assessment Session', "Séance d'évaluation gratuite")}
                   </p>
-                  <p className="text-white/45 text-xs mt-0.5">
+                  <p className="text-white/60 text-xs mt-0.5">
                     {pickLang(
                       lang,
                       '30 دقيقة مع الأستاذ أمين — بدون أي التزام',
@@ -250,7 +250,7 @@ export default function InteractiveSessionSection() {
             <Video className="w-5 h-5" />
             {pickLang(lang, 'احجز الجلسة التقييمية المجانية', 'Book Your Free Assessment Session', "Réservez votre séance d'évaluation gratuite")}
           </Link>
-          <p className="text-white/30 text-sm mt-4">
+          <p className="text-white/45 text-sm mt-4">
             {pickLang(lang, 'بدون بطاقة ائتمانية • متاح لجميع الدول', 'No credit card required • Available worldwide', 'Sans carte bancaire • Disponible partout dans le monde')}
           </p>
         </div>

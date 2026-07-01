@@ -103,7 +103,7 @@ export default function ProgramsSection() {
     <section
       id="programs"
       dir={isRtl ? 'rtl' : 'ltr'}
-      style={{ background: 'linear-gradient(180deg, #0F172A 0%, #07111F 100%)', padding: '96px 0' }}
+      style={{ background: 'linear-gradient(180deg, #1A2640 0%, #121E30 100%)', padding: '96px 0' }}
     >
       <div className="max-w-7xl mx-auto px-6">
 
@@ -126,7 +126,7 @@ export default function ProgramsSection() {
           >
             {pickLang(lang, 'برنامج مخصص لكل مرحلة عمرية', 'A Tailored Program for Every Age Group', "Un programme adapté à chaque tranche d'âge")}
           </h2>
-          <p className="text-white/50 max-w-xl mx-auto text-lg">
+          <p className="text-white/65 max-w-xl mx-auto text-lg">
             {pickLang(
               lang,
               'كل فئة عمرية تحتاج نهجاً مختلفاً. نحن لا نُعطي نفس البرنامج للجميع.',
@@ -143,8 +143,8 @@ export default function ProgramsSection() {
               key={prog.age}
               className="rounded-3xl overflow-hidden transition-all hover:-translate-y-0.5"
               style={{
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.08)',
+                background: 'rgba(255,255,255,0.13)',
+                border: '1px solid rgba(255,255,255,0.13)',
                 backdropFilter: 'blur(16px)',
                 WebkitBackdropFilter: 'blur(16px)',
                 boxShadow: '0 12px 40px rgba(0,0,0,0.25)',
@@ -168,7 +168,7 @@ export default function ProgramsSection() {
               {/* 3-column content */}
               <div
                 className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x md:divide-x-reverse"
-                style={{ borderColor: 'rgba(255,255,255,0.07)' }}
+                style={{ borderColor: 'rgba(255,255,255,0.11)' }}
               >
 
                 {/* APA */}
@@ -179,7 +179,7 @@ export default function ProgramsSection() {
                   </div>
                   <ul className="space-y-2">
                     {pickLang(lang, prog.apa, prog.apaEn, prog.apaFr).map(item => (
-                      <li key={item} className="flex items-center gap-2 text-sm text-white/55">
+                      <li key={item} className="flex items-center gap-2 text-sm text-white/70">
                         <span className="w-1.5 h-1.5 bg-blue-400 rounded-full flex-shrink-0" />
                         {item}
                       </li>
@@ -195,7 +195,7 @@ export default function ProgramsSection() {
                   </div>
                   <ul className="space-y-2">
                     {pickLang(lang, prog.aba, prog.abaEn, prog.abaFr).map(item => (
-                      <li key={item} className="flex items-center gap-2 text-sm text-white/55">
+                      <li key={item} className="flex items-center gap-2 text-sm text-white/70">
                         <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full flex-shrink-0" />
                         {item}
                       </li>
@@ -211,7 +211,7 @@ export default function ProgramsSection() {
                   </div>
                   <ul className="space-y-2">
                     {pickLang(lang, prog.cbt, prog.cbtEn, prog.cbtFr).map(item => (
-                      <li key={item} className="flex items-center gap-2 text-sm text-white/55">
+                      <li key={item} className="flex items-center gap-2 text-sm text-white/70">
                         <span className="w-1.5 h-1.5 bg-purple-400 rounded-full flex-shrink-0" />
                         {item}
                       </li>
@@ -224,17 +224,17 @@ export default function ProgramsSection() {
               {/* Outcomes footer */}
               <div
                 className="px-6 py-4 flex items-center justify-between flex-wrap gap-3"
-                style={{ borderTop: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.02)' }}
+                style={{ borderTop: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.05)' }}
               >
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-xs font-bold text-white/35">
+                  <span className="text-xs font-bold text-white/50">
                     {pickLang(lang, 'النتائج المتوقعة:', 'Expected Outcomes:', 'Résultats attendus :')}
                   </span>
                   {pickLang(lang, prog.outcomes, prog.outcomesEn, prog.outcomesFr).map(o => (
                     <span
                       key={o}
                       className="text-xs font-bold px-2.5 py-1 rounded-full text-white/70"
-                      style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }}
+                      style={{ background: 'rgba(255,255,255,0.11)', border: '1px solid rgba(255,255,255,0.1)' }}
                     >
                       {o}
                     </span>
@@ -249,7 +249,7 @@ export default function ProgramsSection() {
           ))}
         </div>
 
-        <p className="text-center text-white/35 text-sm mt-8">
+        <p className="text-center text-white/50 text-sm mt-8">
           {pickLang(
             lang,
             'كل برنامج يبدأ بتقييم أولي مجاني لتحديد نقطة البداية الدقيقة لطفلك.',

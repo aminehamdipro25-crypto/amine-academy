@@ -104,7 +104,7 @@ export default function AttentionSection() {
     <section
       id="attention"
       dir={isRtl ? 'rtl' : 'ltr'}
-      style={{ background: 'linear-gradient(180deg, #020817 0%, #07111F 100%)', padding: '96px 0' }}
+      style={{ background: 'linear-gradient(180deg, #0C1829 0%, #121E30 100%)', padding: '96px 0' }}
     >
       <div className="max-w-7xl mx-auto px-6">
 
@@ -146,7 +146,7 @@ export default function AttentionSection() {
               }}>c&apos;est un problème d&apos;entraînement neuronal</span></>
             )}
           </h2>
-          <p className="text-white/50 max-w-2xl mx-auto text-lg leading-relaxed">
+          <p className="text-white/65 max-w-2xl mx-auto text-lg leading-relaxed">
             {pickLang(
               lang,
               'دماغ ADHD لا يفتقر للذكاء — يفتقر لآلية التصفية الصحيحة. برامجنا تُعيد بناء هذه الآلية خلية عصبية في كل مرة.',
@@ -160,8 +160,8 @@ export default function AttentionSection() {
         <div
           className="rounded-3xl p-7 mb-12 flex flex-col md:flex-row items-center gap-6"
           style={{
-            background: 'rgba(255,255,255,0.04)',
-            border: '1px solid rgba(255,255,255,0.09)',
+            background: 'rgba(255,255,255,0.08)',
+            border: '1px solid rgba(255,255,255,0.14)',
             backdropFilter: 'blur(16px)',
             WebkitBackdropFilter: 'blur(16px)',
           }}
@@ -175,7 +175,7 @@ export default function AttentionSection() {
                 "4 types d'attention — 4 protocoles différents"
               )}
             </h3>
-            <p className="text-white/50 text-sm leading-relaxed">
+            <p className="text-white/65 text-sm leading-relaxed">
               {pickLang(
                 lang,
                 'الخطأ الشائع: معالجة كل مشاكل الانتباه بنفس الطريقة. نحن ندرّب كل نوع على حدة.',
@@ -189,7 +189,7 @@ export default function AttentionSection() {
               <span
                 key={b}
                 className="text-center text-white text-xs font-bold px-3 py-2 rounded-xl"
-                style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }}
+                style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.1)' }}
               >
                 ✓ {b}
               </span>
@@ -203,7 +203,7 @@ export default function AttentionSection() {
               key={item.type}
               className="rounded-3xl p-7 transition-all hover:-translate-y-0.5"
               style={{
-                background: 'rgba(255,255,255,0.04)',
+                background: 'rgba(255,255,255,0.08)',
                 border: '1px solid rgba(255,255,255,0.08)',
                 backdropFilter: 'blur(16px)',
                 WebkitBackdropFilter: 'blur(16px)',
@@ -243,28 +243,28 @@ export default function AttentionSection() {
                   >
                     {item.improvement}
                   </div>
-                  <div className="text-white/40 text-xs leading-tight mt-0.5 max-w-[80px]">
+                  <div className="text-white/55 text-xs leading-tight mt-0.5 max-w-[80px]">
                     {pickLang(lang, item.improvementLabel, item.improvementLabelEn, item.improvementLabelFr)}
                   </div>
                 </div>
               </div>
 
               <div className="mb-4">
-                <p className="text-xs font-bold text-white/30 uppercase tracking-wide mb-1.5">
+                <p className="text-xs font-bold text-white/45 uppercase tracking-wide mb-1.5">
                   {pickLang(lang, 'المشكلة', 'The Problem', 'Le problème')}
                 </p>
                 <p className="text-white/60 text-sm leading-relaxed">{pickLang(lang, item.problem, item.problemEn, item.problemFr)}</p>
               </div>
 
               <div className="mb-4">
-                <p className="text-xs font-bold text-white/30 uppercase tracking-wide mb-1.5">
+                <p className="text-xs font-bold text-white/45 uppercase tracking-wide mb-1.5">
                   {pickLang(lang, 'البروتوكول', 'The Protocol', 'Le protocole')}
                 </p>
                 <p className="text-white/60 text-sm leading-relaxed">{pickLang(lang, item.protocol, item.protocolEn, item.protocolFr)}</p>
               </div>
 
               <div>
-                <p className="text-xs font-bold text-white/30 uppercase tracking-wide mb-2">
+                <p className="text-xs font-bold text-white/45 uppercase tracking-wide mb-2">
                   {pickLang(lang, 'التمارين الأساسية', 'Core Exercises', 'Exercices fondamentaux')}
                 </p>
                 <ul className="space-y-1.5">
@@ -282,9 +282,9 @@ export default function AttentionSection() {
 
         <div
           className="mt-10 rounded-3xl p-6"
-          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
+          style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)' }}
         >
-          <p className="text-white/45 text-sm leading-relaxed max-w-2xl mx-auto text-center">
+          <p className="text-white/60 text-sm leading-relaxed max-w-2xl mx-auto text-center">
             {pickLang(
               lang,
               <>

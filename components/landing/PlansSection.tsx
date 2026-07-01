@@ -182,7 +182,7 @@ export default function PlansSection() {
     <section
       id="plans"
       dir={isRtl ? 'rtl' : 'ltr'}
-      style={{ background: 'linear-gradient(180deg, #0F172A 0%, #020817 100%)', padding: '80px 0' }}
+      style={{ background: 'linear-gradient(180deg, #1A2640 0%, #0C1829 100%)', padding: '80px 0' }}
     >
       <div className="max-w-7xl mx-auto px-6">
 
@@ -205,7 +205,7 @@ export default function PlansSection() {
           >
             {pickLang(lang, 'نفس الجودة — تختار طريقة الدفع', 'Same Quality — You Choose How to Pay', 'Même qualité — vous choisissez votre mode de paiement')}
           </h2>
-          <p className="text-white/50 max-w-xl mx-auto text-sm leading-relaxed">
+          <p className="text-white/65 max-w-xl mx-auto text-sm leading-relaxed">
             {pickLang(
               lang,
               'كل الخيارات تمنحك الجلسة التفاعلية الكاملة مع الأستاذ أمين وجميع مزايا المنصة — الفرق الوحيد هو طريقة الاشتراك.',
@@ -228,7 +228,7 @@ export default function PlansSection() {
                 className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${
                   currency === c
                     ? 'text-white'
-                    : 'text-white/50 hover:text-white/80'
+                    : 'text-white/65 hover:text-white/80'
                 }`}
                 style={currency === c ? { background: 'linear-gradient(135deg, #6366F1, #8B5CF6)' } : {}}
               >
@@ -241,9 +241,9 @@ export default function PlansSection() {
         {/* What's always included — unified features */}
         <div
           className="max-w-3xl mx-auto mb-12 rounded-3xl p-6"
-          style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+          style={{ background: 'rgba(255,255,255,0.13)', border: '1px solid rgba(255,255,255,0.13)' }}
         >
-          <p className="text-center text-sm font-black text-white/40 uppercase tracking-wider mb-5">
+          <p className="text-center text-sm font-black text-white/55 uppercase tracking-wider mb-5">
             {pickLang(lang, '✦ ما يشمله كل خيار بدون استثناء', '✦ Included in every option, no exceptions', '✦ Inclus dans chaque option, sans exception')}
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -290,7 +290,7 @@ export default function PlansSection() {
                     ? 'linear-gradient(160deg, rgba(99,102,241,0.15) 0%, rgba(139,92,246,0.1) 100%)'
                     : plan.id === 'monthly'
                     ? 'linear-gradient(160deg, rgba(245,158,11,0.1) 0%, rgba(249,115,22,0.07) 100%)'
-                    : 'rgba(255,255,255,0.04)',
+                    : 'rgba(255,255,255,0.13)',
                   border: isPopular
                     ? '1px solid rgba(99,102,241,0.35)'
                     : plan.id === 'monthly'
@@ -315,7 +315,7 @@ export default function PlansSection() {
                 <div className="p-6 pt-10">
                   <div
                     className="w-10 h-10 rounded-xl flex items-center justify-center mb-3"
-                    style={{ background: 'rgba(255,255,255,0.08)' }}
+                    style={{ background: 'rgba(255,255,255,0.13)' }}
                   >
                     <PlanIcon className="w-5 h-5 text-white/70" />
                   </div>
@@ -390,17 +390,17 @@ export default function PlansSection() {
                   </Link>
 
                   {plan.id === 'monthly' && (
-                    <p className="text-center text-xs text-white/35 mt-3">
+                    <p className="text-center text-xs text-white/50 mt-3">
                       {pickLang(lang, 'يُجدَّد تلقائياً • إلغاء في أي وقت', 'Auto-renews • Cancel anytime', 'Renouvellement automatique • Annulez à tout moment')}
                     </p>
                   )}
                   {plan.id === 'weekly' && (
-                    <p className="text-center text-xs text-white/35 mt-3">
+                    <p className="text-center text-xs text-white/50 mt-3">
                       {pickLang(lang, 'يُجدَّد أسبوعياً • إلغاء في أي وقت', 'Auto-renews weekly • Cancel anytime', 'Renouvellement automatique chaque semaine • Annulez à tout moment')}
                     </p>
                   )}
                   {plan.id === 'session' && (
-                    <p className="text-center text-xs text-white/35 mt-3">
+                    <p className="text-center text-xs text-white/50 mt-3">
                       {pickLang(lang, 'لا اشتراك — ادفع فقط عند الحجز', 'No subscription — pay only when you book', "Sans abonnement — payez uniquement lors de la réservation")}
                     </p>
                   )}
@@ -425,7 +425,7 @@ export default function PlansSection() {
             <p className="font-black text-sm mb-1">
               {pickLang(lang, 'كيف تعمل الجلسة التفاعلية؟', 'How does the interactive session work?', 'Comment fonctionne la séance interactive ?')}
             </p>
-            <p className="text-white/50 text-xs leading-relaxed">
+            <p className="text-white/65 text-xs leading-relaxed">
               {pickLang(
                 lang,
                 'اتصال فيديو مباشر مع الأستاذ أمين • الطفل يؤدي التمارين أمام الشاشة • تغذية راجعة فورية • توجيه الوالد لكيفية المتابعة اليومية في البيت',
@@ -470,7 +470,7 @@ export default function PlansSection() {
             <div key={text} className="flex flex-col items-center gap-2">
               <Icon className="w-5 h-5 text-indigo-400" />
               <p className="font-bold text-white/70 text-sm">{pickLang(lang, text, textEn, textFr)}</p>
-              <p className="text-white/35 text-xs">{pickLang(lang, sub, subEn, subFr)}</p>
+              <p className="text-white/50 text-xs">{pickLang(lang, sub, subEn, subFr)}</p>
             </div>
           ))}
         </div>

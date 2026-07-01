@@ -52,7 +52,7 @@ function CountdownUnit({ value, label }: { value: number; label: string }) {
       >
         <span className="text-white font-black text-2xl ltr-num">{String(value).padStart(2, '0')}</span>
       </div>
-      <span className="text-white/50 text-xs mt-1">{label}</span>
+      <span className="text-white/65 text-xs mt-1">{label}</span>
     </div>
   )
 }
@@ -73,7 +73,7 @@ function DashboardVisual() {
       <div
         className="relative w-80 rounded-3xl p-5 shadow-2xl"
         style={{
-          background: 'rgba(15,23,42,0.85)',
+          background: 'rgba(26,38,64,0.90)',
           border: '1px solid rgba(255,255,255,0.1)',
           backdropFilter: 'blur(24px)',
           WebkitBackdropFilter: 'blur(24px)',
@@ -84,7 +84,7 @@ function DashboardVisual() {
         <div className="flex items-center justify-between mb-4">
           <div>
             <p className="text-white font-black text-sm">لوحة المتابعة</p>
-            <p className="text-white/40 text-xs">التقدم الأسبوعي لطفلك</p>
+            <p className="text-white/55 text-xs">التقدم الأسبوعي لطفلك</p>
           </div>
           <span
             className="text-xs font-black px-2.5 py-1 rounded-full flex items-center gap-1.5"
@@ -98,7 +98,7 @@ function DashboardVisual() {
         {/* Bar chart */}
         <div
           className="rounded-2xl p-3 mb-4"
-          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}
+          style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.09)' }}
         >
           <div className="flex items-end gap-1.5 h-20">
             {scores.map((score, i) => (
@@ -201,7 +201,7 @@ export default function HeroSection() {
   return (
     <section
       className={`relative min-h-screen overflow-hidden`}
-      style={{ background: 'linear-gradient(150deg, #020817 0%, #030A1C 40%, #07111F 70%, #020817 100%)' }}
+      style={{ background: 'linear-gradient(150deg, #0C1829 0%, #101E2E 40%, #121E30 70%, #0C1829 100%)' }}
       dir={isRtl ? 'rtl' : 'ltr'}
     >
       {/* Ambient orbs */}
@@ -241,11 +241,11 @@ export default function HeroSection() {
         </div>
         <div className="flex items-center gap-3">
           <Link href="/demo"
-            className="text-white/55 hover:text-white text-sm font-medium transition-colors hidden sm:block">
+            className="text-white/70 hover:text-white text-sm font-medium transition-colors hidden sm:block">
             {t.nav.trial}
           </Link>
           <Link href="/parent/login"
-            className="text-white/55 hover:text-white text-sm font-medium transition-colors hidden sm:block">
+            className="text-white/70 hover:text-white text-sm font-medium transition-colors hidden sm:block">
             {t.nav.parents}
           </Link>
           <Link href="/register"
@@ -290,7 +290,7 @@ export default function HeroSection() {
                 <span
                   key={badge}
                   className="text-white/70 text-sm font-medium px-4 py-1.5 rounded-2xl"
-                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)' }}
+                  style={{ background: 'rgba(255,255,255,0.09)', border: '1px solid rgba(255,255,255,0.09)' }}
                 >
                   {badge}
                 </span>
@@ -308,13 +308,13 @@ export default function HeroSection() {
               }}>
                 {t.hero.h1b}
               </span>
-              <span className="block text-2xl md:text-3xl mt-3 text-white/50 font-bold">
+              <span className="block text-2xl md:text-3xl mt-3 text-white/65 font-bold">
                 {t.hero.h1c}
               </span>
             </h1>
 
             <p className="text-white/70 text-lg leading-relaxed mb-3 max-w-lg">{t.hero.desc}</p>
-            <p className="text-white/40 text-sm mb-8">{t.hero.ages}</p>
+            <p className="text-white/55 text-sm mb-8">{t.hero.ages}</p>
 
             {/* CTAs */}
             <div className="flex flex-col sm:flex-row items-start gap-4 mb-10">
@@ -343,7 +343,7 @@ export default function HeroSection() {
               {['APA Certified', 'ABA Protocol', 'CBT for Children', 'PEERS Protocol'].map(b => (
                 <span
                   key={b}
-                  className="text-white/50 text-xs font-bold px-3 py-1 rounded-full"
+                  className="text-white/65 text-xs font-bold px-3 py-1 rounded-full"
                   style={{ border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.04)' }}
                 >
                   ✓ {b}
@@ -355,9 +355,9 @@ export default function HeroSection() {
             {time && !time.expired && (
               <div
                 className="inline-flex flex-col items-center gap-3 rounded-2xl px-8 py-4 mb-8"
-                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}
+                style={{ background: 'rgba(255,255,255,0.09)', border: '1px solid rgba(255,255,255,0.1)' }}
               >
-                <p className="text-white/50 text-sm font-medium">{t.hero.offerLabel}</p>
+                <p className="text-white/65 text-sm font-medium">{t.hero.offerLabel}</p>
                 <div className="flex items-center gap-3" dir="ltr">
                   <CountdownUnit value={time.d} label={t.hero.units.d} />
                   <span className="text-white/20 text-xl font-black mb-4">:</span>
@@ -389,7 +389,7 @@ export default function HeroSection() {
                   >
                     <span className={`bg-gradient-to-r ${gradient} bg-clip-text text-transparent font-black text-2xl`}>{value}</span>
                   </div>
-                  <div className="text-white/40 text-xs leading-tight">{label}</div>
+                  <div className="text-white/55 text-xs leading-tight">{label}</div>
                 </div>
               ))}
             </div>

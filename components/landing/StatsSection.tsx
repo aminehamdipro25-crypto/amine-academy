@@ -74,7 +74,7 @@ export default function StatsSection() {
   return (
     <section
       dir={isRtl ? 'rtl' : 'ltr'}
-      style={{ background: 'linear-gradient(180deg, #07111F 0%, #0F172A 100%)', padding: '56px 0' }}
+      style={{ background: 'linear-gradient(180deg, #121E30 0%, #1A2640 100%)', padding: '56px 0' }}
     >
       <div className="max-w-7xl mx-auto px-6">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -83,8 +83,8 @@ export default function StatsSection() {
               key={stat.label}
               className="rounded-3xl p-6 text-center transition-all hover:-translate-y-1"
               style={{
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.08)',
+                background: 'rgba(255,255,255,0.14)',
+                border: '1px solid rgba(255,255,255,0.14)',
                 backdropFilter: 'blur(16px)',
                 WebkitBackdropFilter: 'blur(16px)',
                 boxShadow: '0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06)',
@@ -104,7 +104,7 @@ export default function StatsSection() {
               <div className="text-white/80 font-bold text-sm mb-0.5">
                 {pickLang(lang, stat.label, stat.labelEn, stat.labelFr)}
               </div>
-              <div className="text-white/35 text-xs">
+              <div className="text-white/50 text-xs">
                 {pickLang(lang, stat.sub, stat.subEn, stat.subFr)}
               </div>
             </div>

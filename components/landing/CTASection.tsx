@@ -20,7 +20,7 @@ export default function CTASection() {
       dir={isRtl ? 'rtl' : 'ltr'}
       className="relative overflow-hidden"
       style={{
-        background: 'linear-gradient(150deg, #020817 0%, #0D0B2E 45%, #130B32 75%, #020817 100%)',
+        background: 'linear-gradient(150deg, #0C1829 0%, #14103E 45%, #1C1248 75%, #0C1829 100%)',
         padding: '100px 0',
       }}
     >
@@ -72,7 +72,7 @@ export default function CTASection() {
           </span>
         </h2>
 
-        <p className="text-white/55 text-lg max-w-xl mx-auto mb-10 leading-relaxed">
+        <p className="text-white/70 text-lg max-w-xl mx-auto mb-10 leading-relaxed">
           {pickLang(
             lang,
             'انضم لأكثر من 200 عائلة تثق في أكاديمية أمين. ابدأ بجلسة تقييمية مجانية — بدون أي التزام.',
@@ -108,7 +108,7 @@ export default function CTASection() {
 
         <Link
           href="/demo"
-          className="inline-flex items-center gap-2 text-white/35 hover:text-white/70 text-sm font-medium transition-colors"
+          className="inline-flex items-center gap-2 text-white/50 hover:text-white/70 text-sm font-medium transition-colors"
         >
           <Play className="w-4 h-4" />
           {pickLang(lang, 'أو شاهد جولة تجريبية للمنصة أولاً', 'Or watch a demo tour of the platform first', "Ou découvrez d'abord une visite guidée de la plateforme")}

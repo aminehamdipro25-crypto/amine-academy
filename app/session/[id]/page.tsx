@@ -132,7 +132,9 @@ export default function SessionPage() {
   const [observations, setObservations] = useState<SessionObservations>({
     attention:3, cooperation:3, energy:3, mood:3, anxiety:3,
   })
-  const [tab, setTab] = useState<'exercises'|'assessments'|'log'|'videos'>('exercises')
+  const [tab, setTab] = useState<'exercises'|'assessments'|'log'|'videos'|'map'>('exercises')
+  const [sidebarMapSessions, setSidebarMapSessions] = useState<SessionNode[] | null>(null)
+  const [sidebarMapLoading, setSidebarMapLoading] = useState(false)
   const [videoModal, setVideoModal] = useState<string | null>(null)
   const [videoUrls, setVideoUrls] = useState<Record<string, string>>({})
   // Friendly loading state for the video embed — true from the moment a video
@@ -1442,8 +1444,20 @@ ${notes ? `
               { key: 'assessments', icon: '📊', label: 'تقييم'  },
               { key: 'log',         icon: '📝', label: 'سجل'    },
               { key: 'videos',      icon: '📹', label: 'فيديو'  },
+              { key: 'map',         icon: '🗺️', label: 'خارطة'  },
             ] as const).map(({ key: t, icon, label }) => (
-              <button key={t} onClick={() => setTab(t)}
+              <button key={t} onClick={() => {
+                setTab(t)
+                // Fetch progress map on first open
+                if (t === 'map' && !sidebarMapSessions && !sidebarMapLoading && currentStudentId) {
+                  setSidebarMapLoading(true)
+                  fetch(`/api/admin/students/${currentStudentId}/progress-map`)
+                    .then(r => r.ok ? r.json() : null)
+                    .then(d => { if (d?.sessions) setSidebarMapSessions(d.sessions) })
+                    .catch(() => {})
+                    .finally(() => setSidebarMapLoading(false))
+                }
+              }}
                 className={`flex-1 py-2 flex flex-col items-center gap-0.5 text-[10px] font-bold transition-colors ${
                   tab === t ? 'text-brand-600 border-b-2 border-brand-500' : 'text-gray-400 hover:text-gray-600'
                 }`}>
@@ -1778,6 +1792,61 @@ ${notes ? `
                     </button>
                   )
                 })}
+              </div>
+            )}
+
+            {/* ── Map tab ── */}
+            {tab === 'map' && (
+              <div className="space-y-4" dir="rtl">
+
+                {/* Header */}
+                <div
+                  className="rounded-2xl p-4 text-center"
+                  style={{ background: 'linear-gradient(135deg,#F5F0FF,#EEF0FF)', border: '1.5px solid #E0D5FF' }}
+                >
+                  <div className="text-3xl mb-1">🗺️</div>
+                  <p className="font-black text-gray-800 text-sm">خارطة رحلة الطفل</p>
+                  {sidebarMapSessions && sidebarMapSessions.length > 0 && (
+                    <p className="text-indigo-500 text-xs mt-1 font-bold">
+                      {sidebarMapSessions.length} جلسة • {sidebarMapSessions.reduce((s,n) => s + n.stars, 0)} ⭐
+                    </p>
+                  )}
+                </div>
+
+                {/* Map content */}
+                {sidebarMapLoading ? (
+                  <div className="flex flex-col gap-3 px-1">
+                    {[52, 44, 52, 44, 56].map((sz, i) => (
+                      <div key={i} className="flex items-center gap-3">
+                        <div className="rounded-full animate-pulse bg-indigo-100 flex-shrink-0"
+                          style={{ width: sz, height: sz, animationDelay: `${i * 0.1}s` }} />
+                        {i < 4 && <div className="h-px flex-1 border-t-2 border-dashed border-gray-200" />}
+                      </div>
+                    ))}
+                  </div>
+                ) : sidebarMapSessions && sidebarMapSessions.length > 0 ? (
+                  <div>
+                    <ProgressMap sessions={sidebarMapSessions} upcomingSlots={2} />
+                  </div>
+                ) : (
+                  <div className="text-center py-8 px-4">
+                    <div className="text-4xl mb-3">🌱</div>
+                    <p className="font-black text-gray-600 text-sm mb-1">لم تبدأ الرحلة بعد</p>
+                    <p className="text-gray-400 text-xs leading-relaxed">
+                      ستظهر هنا خارطة الجلسات بعد أول تمرين مكتمل في وضع الطفل
+                    </p>
+                  </div>
+                )}
+
+                {/* Tip for specialist */}
+                {sidebarMapSessions && sidebarMapSessions.length > 0 && (
+                  <div
+                    className="rounded-xl px-3 py-2.5 text-xs leading-relaxed"
+                    style={{ background: 'rgba(99,102,241,0.07)', border: '1px solid rgba(99,102,241,0.15)', color: '#4338CA' }}
+                  >
+                    💡 <strong>نصيحة:</strong> أظهر هذه الخارطة للطفل وقل له "انظر كم أنجزت!" قبل بدء التمارين.
+                  </div>
+                )}
               </div>
             )}
           </div>

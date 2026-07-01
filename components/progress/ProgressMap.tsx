@@ -1,5 +1,6 @@
 'use client'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
+import { useState } from 'react'
 
 export interface SessionNode {
   sessionId:     string
@@ -24,8 +25,85 @@ const STAR_CFG = {
   1: { bg: 'linear-gradient(135deg,#06B6D4,#38BDF8)', border: '#06B6D4', glow: 'rgba(6,182,212,0.45)', label: 'بداية' },
 } as const
 
+// ─── Shared helpers ───────────────────────────────────────────────────────────
+function fmtDate(iso: string) {
+  if (!iso) return ''
+  try {
+    return new Intl.DateTimeFormat('ar-TN', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(iso))
+  } catch { return iso }
+}
+
+interface TooltipData {
+  node: SessionNode
+  isUp: boolean
+  vx: number   // viewport x (for fixed positioning)
+  vy: number   // viewport y — top of the node circle
+}
+
+function NodeTooltip({ data }: { data: TooltipData }) {
+  const { node, isUp } = data
+  const cfg = (!isUp && node.stars) ? STAR_CFG[node.stars as 1|2|3] : null
+  // Place above the node; if too close to top, flip below
+  const above = data.vy > 120
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.88, y: above ? 6 : -6 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.88, y: above ? 6 : -6 }}
+      transition={{ duration: 0.15, ease: 'easeOut' }}
+      className="fixed z-[9999] pointer-events-none"
+      style={{
+        left: data.vx,
+        ...(above ? { top: data.vy - 8 } : { top: data.vy + 72 }),
+        transform: above ? 'translateX(-50%) translateY(-100%)' : 'translateX(-50%)',
+        minWidth: 148,
+      }}
+    >
+      <div
+        className="rounded-2xl px-3 py-2.5 text-white shadow-xl"
+        style={{ background: isUp ? '#374151' : (cfg?.bg ?? '#374151'), fontSize: 11 }}
+      >
+        {isUp ? (
+          <div className="font-bold text-white/90 text-center">🔒 جلسة #{node.sessionNumber}<br /><span className="font-normal text-white/60 text-[10px]">لم تُفتح بعد</span></div>
+        ) : (
+          <>
+            <div className="flex items-center gap-1.5 mb-1.5">
+              {node.isMilestone && <span>🏆</span>}
+              <span className="font-black">جلسة #{node.sessionNumber}</span>
+              {node.isMilestone && <span className="text-[9px] font-bold opacity-80">إنجاز!</span>}
+            </div>
+            <div className="flex gap-0.5 mb-1.5">
+              {[1,2,3].map(s => <span key={s} style={{ fontSize: 11, opacity: s <= node.stars ? 1 : 0.35 }}>★</span>)}
+              <span className="mr-1 opacity-80">{cfg ? cfg.label : ''}</span>
+            </div>
+            <div className="space-y-0.5 text-white/75 text-[10px]">
+              <div>متوسط النتيجة: <span className="font-black text-white">{node.avgScore}%</span></div>
+              <div>عدد التمارين: <span className="font-black text-white">{node.gameCount}</span></div>
+              {node.date && <div className="text-white/55">{fmtDate(node.date)}</div>}
+            </div>
+          </>
+        )}
+        {/* Arrow */}
+        <div className="absolute left-1/2 -translate-x-1/2"
+          style={{
+            [above ? 'bottom' : 'top']: -5,
+            width: 0, height: 0,
+            borderLeft: '5px solid transparent',
+            borderRight: '5px solid transparent',
+            ...(above
+              ? { borderTop: `5px solid ${isUp ? '#374151' : (cfg?.border ?? '#374151')}` }
+              : { borderBottom: `5px solid ${isUp ? '#374151' : (cfg?.border ?? '#374151')}` }),
+          }}
+        />
+      </div>
+    </motion.div>
+  )
+}
+
 // ─── Compact horizontal strip (celebration + parent dashboard) ────────────────
 function CompactStrip({ sessions, upcomingSlots }: { sessions: SessionNode[]; upcomingSlots: number }) {
+  const [tooltip, setTooltip] = useState<TooltipData | null>(null)
+
   const upcoming = Array.from({ length: upcomingSlots }, (_, i) => ({
     sessionId: `up-${i}`, sessionNumber: sessions.length + i + 1,
     date: '', stars: 0, avgScore: 0, gameCount: 0,
@@ -37,7 +115,8 @@ function CompactStrip({ sessions, upcomingSlots }: { sessions: SessionNode[]; up
   return (
     <div className="overflow-x-auto pb-2 -mx-1 px-1">
       <style>{`@keyframes pm-ping{0%,100%{transform:scale(1);opacity:.45}50%{transform:scale(1.5);opacity:0}}`}</style>
-      <div className="flex items-end gap-3 min-w-max py-2">
+      <div className="relative flex items-end gap-3 min-w-max py-2">
+        <AnimatePresence>{tooltip && <NodeTooltip data={tooltip} />}</AnimatePresence>
         {window.map((node, wi) => {
           const absIdx   = wi - (window.length - sessions.length - upcomingSlots)
           const isUp     = node.stars === 0
@@ -52,6 +131,14 @@ function CompactStrip({ sessions, upcomingSlots }: { sessions: SessionNode[]; up
               initial={{ scale: 0, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ type: 'spring', delay: wi * 0.06, stiffness: 280, damping: 22 }}
+              onHoverStart={e => {
+                const el = (e.target as HTMLElement).closest('[data-node]') as HTMLElement
+                const rect = el?.getBoundingClientRect()
+                if (!rect) return
+                setTooltip({ node, isUp, vx: rect.left + rect.width / 2, vy: rect.top })
+              }}
+              onHoverEnd={() => setTooltip(null)}
+              data-node
             >
               {node.isMilestone && !isUp
                 ? <motion.span animate={{ rotate: [0,-10,10,0] }} transition={{ duration: 2.4, repeat: Infinity }}>👑</motion.span>
@@ -110,6 +197,7 @@ function nodeX(i: number, isMilestone: boolean) {
 }
 
 function SnakeMap({ sessions, upcomingSlots }: { sessions: SessionNode[]; upcomingSlots: number }) {
+  const [tooltip, setTooltip] = useState<TooltipData | null>(null)
   const upcoming = Array.from({ length: upcomingSlots }, (_, i) => ({
     sessionId: `up-${i}`, sessionNumber: sessions.length + i + 1,
     date: '', stars: 0, avgScore: 0, gameCount: 0,
@@ -144,6 +232,7 @@ function SnakeMap({ sessions, upcomingSlots }: { sessions: SessionNode[]; upcomi
         @keyframes pm-ping  { 0%,100%{transform:scale(1);opacity:.45} 50%{transform:scale(1.55);opacity:0} }
         @keyframes pm-float { 0%,100%{transform:translateX(-50%) translateY(0)} 50%{transform:translateX(-50%) translateY(-4px)} }
       `}</style>
+      <AnimatePresence>{tooltip && <NodeTooltip data={tooltip} />}</AnimatePresence>
 
       {/* SVG path layer */}
       <svg className="absolute inset-0 pointer-events-none overflow-visible" width={W} height={totalH}>
@@ -217,6 +306,13 @@ function SnakeMap({ sessions, upcomingSlots }: { sessions: SessionNode[]; upcomi
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: 'spring', stiffness: 320, damping: 22, delay: (all.length - 1 - i) * 0.07 }}
+            onHoverStart={e => {
+              const el = (e.target as HTMLElement).closest('.absolute') as HTMLElement
+              const rect = el?.getBoundingClientRect()
+              if (!rect) return
+              setTooltip({ node, isUp, vx: rect.left + rect.width / 2, vy: rect.top })
+            }}
+            onHoverEnd={() => setTooltip(null)}
           >
             {/* "أنت هنا" floating badge — current node only */}
             {isCurr && (

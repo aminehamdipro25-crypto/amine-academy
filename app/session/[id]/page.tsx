@@ -79,6 +79,9 @@ import VideoLibraryModal from '@/components/session/VideoLibraryModal'
 import AbcLogPanel from '@/components/session/AbcLogPanel'
 import HomeworkPanel from '@/components/session/HomeworkPanel'
 import QuickObsPanel from '@/components/session/QuickObsPanel'
+import LiveSessionCard from '@/components/session/LiveSessionCard'
+import SessionStarCounter from '@/components/session/SessionStarCounter'
+import { computeAdaptiveDecision } from '@/lib/session-adaptive'
 import ADHDScale       from '@/components/session/assessments/ADHDScale'
 import LearningDifficultiesScale from '@/components/session/assessments/LearningDifficultiesScale'
 import AttentionDomainsScale from '@/components/session/assessments/AttentionDomainsScale'
@@ -150,6 +153,11 @@ export default function SessionPage() {
   const miniCelebrateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [achievementToast, setAchievementToast] = useState<{ icon: string; message: string } | null>(null)
   const achievementToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Adaptive difficulty toast — shown when engine auto-adjusts a level
+  const [adaptiveToast, setAdaptiveToast] = useState<{
+    label: string; oldLevel: 1|2|3; newLevel: 1|2|3; reason: 'excellent'|'struggling'; exerciseId: string
+  } | null>(null)
+  const adaptiveToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const headerRef = useRef<HTMLElement>(null)
   const toolbarRef = useRef<HTMLDivElement>(null)
   const phaseBarRef = useRef<HTMLDivElement>(null)
@@ -659,6 +667,7 @@ export default function SessionPage() {
       if (compareToastTimerRef.current) clearTimeout(compareToastTimerRef.current)
       if (savedFlashTimerRef.current) clearTimeout(savedFlashTimerRef.current)
       if (miniCelebrateTimerRef.current) clearTimeout(miniCelebrateTimerRef.current)
+      if (adaptiveToastTimerRef.current) clearTimeout(adaptiveToastTimerRef.current)
     }
   }, [])
 
@@ -1070,6 +1079,27 @@ ${notes ? `
     else if (result.score >= 80) showAchievement('⭐', `أداء ممتاز! ${result.score}%`)
     else if (result.score >= 60) showAchievement('👍', `أداء جيد! ${result.score}%`)
 
+    // Adaptive difficulty engine — runs after achievement toast so toasts don't stack
+    setTimeout(() => {
+      setResults(currentResults => {
+        const effectiveLevel: 1|2|3 = (exerciseDiffOverrides[result.exerciseType] ?? difficulty) as 1|2|3
+        const decision = computeAdaptiveDecision(result, currentResults, effectiveLevel)
+        if (decision) {
+          setExerciseDiffOverrides(prev => ({ ...prev, [decision.exerciseId]: decision.newLevel }))
+          if (adaptiveToastTimerRef.current) clearTimeout(adaptiveToastTimerRef.current)
+          setAdaptiveToast({
+            label: decision.exerciseLabel,
+            oldLevel: decision.oldLevel,
+            newLevel: decision.newLevel,
+            reason: decision.reason,
+            exerciseId: decision.exerciseId,
+          })
+          adaptiveToastTimerRef.current = setTimeout(() => setAdaptiveToast(null), 6000)
+        }
+        return currentResults
+      })
+    }, 4000)
+
     // Kiosk queue auto-advance
     if (queueActive) {
       setQueueIndex(qi => {
@@ -1084,7 +1114,7 @@ ${notes ? `
         }
       })
     }
-  }, [kidMode, topGames, currentStudentId, id, difficulty, queueActive, exerciseQueue, showAchievement])
+  }, [kidMode, topGames, currentStudentId, id, difficulty, exerciseDiffOverrides, queueActive, exerciseQueue, showAchievement])
 
   const handleAssessmentComplete = useCallback((result: AssessmentResult) => {
     setAssessments(a => [...a, result])
@@ -1553,6 +1583,13 @@ ${notes ? `
 
             {tab === 'log' && (
               <div className="space-y-2">
+                {/* Live session intelligence card — appears once first result is in */}
+                <LiveSessionCard
+                  results={results}
+                  elapsed={elapsed}
+                  gameHistoryByGame={gameHistoryByGame}
+                />
+
                 {results.length === 0 && assessments.length === 0 && obsLog.length === 0 && (
                   <p className="text-gray-300 text-sm text-center py-4">لم تبدأ أي نشاط بعد</p>
                 )}
@@ -1845,6 +1882,11 @@ ${notes ? `
 
                 {tab === 'log' && (
                   <div className="space-y-2">
+                    <LiveSessionCard
+                      results={results}
+                      elapsed={elapsed}
+                      gameHistoryByGame={gameHistoryByGame}
+                    />
                     {results.length === 0 && <p className="text-gray-300 text-sm text-center py-4">لم تبدأ أي نشاط بعد</p>}
                     {results.map((r, i) => {
                       const exInfo = EXERCISES.find(e => e.id === r.exerciseType)
@@ -2953,6 +2995,54 @@ ${notes ? `
         videoIframeLoading={videoIframeLoading}
         onIframeLoad={() => setVideoIframeLoading(false)}
       />
+
+      {/* Kid-mode star counter overlay */}
+      <SessionStarCounter
+        running={running}
+        results={results}
+        gameHistoryByGame={gameHistoryByGame}
+        kidMode={kidMode}
+      />
+
+      {/* Adaptive difficulty toast — specialist-facing, shown 4 s after exercise completion */}
+      {adaptiveToast && (
+        <div
+          className="fixed z-[110] pointer-events-auto"
+          style={{ bottom: 96, left: '50%', transform: 'translateX(-50%)' }}
+          dir="rtl"
+        >
+          <div
+            className="toast-enter flex items-center gap-3 rounded-2xl px-5 py-3.5 shadow-2xl"
+            style={{
+              background: '#111827',
+              border: `2px solid ${adaptiveToast.reason === 'excellent' ? '#22C55E' : '#F59E0B'}`,
+              boxShadow: `0 12px 40px rgba(0,0,0,0.55)`,
+              minWidth: 280,
+            }}
+          >
+            <span className="text-2xl">{adaptiveToast.reason === 'excellent' ? '🚀' : '🛟'}</span>
+            <div className="flex-1">
+              <p className="text-white font-black text-sm">{adaptiveToast.label}</p>
+              <p className="text-white/60 text-xs mt-0.5">
+                {adaptiveToast.reason === 'excellent'
+                  ? `أداء ممتاز — رُفع المستوى تلقائياً إلى ${adaptiveToast.newLevel === 2 ? 'متوسط' : 'صعب'} 📈`
+                  : `مستوى مُكيَّف — خُفِّض إلى ${adaptiveToast.newLevel === 1 ? 'سهل' : 'متوسط'} لراحة الطفل 💛`
+                }
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                setExerciseDiffOverrides(prev => { const n = { ...prev }; delete n[adaptiveToast.exerciseId]; return n })
+                setAdaptiveToast(null)
+              }}
+              className="text-white/40 hover:text-white text-xs font-bold px-2 py-1 rounded-lg transition-colors"
+              style={{ background: 'rgba(255,255,255,0.06)' }}
+            >
+              تراجع
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Achievement Toast */}
       {achievementToast && (() => {

@@ -69,7 +69,7 @@ export function ToolbarPopover({ anchorRef, open, onClose, children }: { anchorR
   )
 }
 
-export type SoundType = 'success' | 'complete' | 'start' | 'phase' | 'tick' | 'ding' | 'compare' | 'abc'
+export type SoundType = 'success' | 'complete' | 'start' | 'phase' | 'tick' | 'ding' | 'compare' | 'abc' | 'star-up'
 
 export function playSound(type: SoundType) {
   if (typeof window === 'undefined') return
@@ -150,6 +150,19 @@ export function playSound(type: SoundType) {
       g.gain.setValueAtTime(0.12, ctx.currentTime)
       g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1)
       o.start(ctx.currentTime); o.stop(ctx.currentTime + 0.1)
+
+    } else if (type === 'star-up') {
+      // Rising 5-note arpeggio — "level up" feeling
+      const notes = [523, 659, 784, 1047, 1319]
+      notes.forEach((freq, i) => {
+        const o = ctx.createOscillator(); o.connect(g)
+        o.type = i === notes.length - 1 ? 'sine' : 'triangle'
+        o.frequency.value = freq
+        const t = ctx.currentTime + i * 0.09
+        g.gain.setValueAtTime(i === notes.length - 1 ? 0.32 : 0.22, t)
+        g.gain.exponentialRampToValueAtTime(0.001, t + (i === notes.length - 1 ? 0.55 : 0.18))
+        o.start(t); o.stop(t + (i === notes.length - 1 ? 0.6 : 0.2))
+      })
     }
   } catch { /* AudioContext blocked */ }
 }

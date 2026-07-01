@@ -135,6 +135,7 @@ export default function SessionPage() {
   const [tab, setTab] = useState<'exercises'|'assessments'|'log'|'videos'|'map'>('exercises')
   const [sidebarMapSessions, setSidebarMapSessions] = useState<SessionNode[] | null>(null)
   const [sidebarMapLoading, setSidebarMapLoading] = useState(false)
+  const [mapTabFlash, setMapTabFlash] = useState(false)
   const [videoModal, setVideoModal] = useState<string | null>(null)
   const [videoUrls, setVideoUrls] = useState<Record<string, string>>({})
   // Friendly loading state for the video embed — true from the moment a video
@@ -1089,7 +1090,21 @@ ${notes ? `
         setTimeout(() => {
           fetch(`/api/admin/students/${currentStudentId}/progress-map`)
             .then(r => r.json())
-            .then(d => { if (d?.sessions) setSidebarMapSessions(d.sessions) })
+            .then(d => {
+              if (!d?.sessions) return
+              const newSessions: SessionNode[] = d.sessions
+              setSidebarMapSessions(prev => {
+                // Detect star upgrade on the current session
+                const prevCurr = prev?.find(s => s.sessionId === id)
+                const newCurr  = newSessions.find(s => s.sessionId === id)
+                if (prevCurr && newCurr && newCurr.stars > prevCurr.stars) {
+                  playSound('star-up')
+                  setMapTabFlash(true)
+                  setTimeout(() => setMapTabFlash(false), 2000)
+                }
+                return newSessions
+              })
+            })
             .catch(() => {})
         }, 800)
       }).catch(() => {})
@@ -1466,10 +1481,16 @@ ${notes ? `
                     .finally(() => setSidebarMapLoading(false))
                 }
               }}
-                className={`flex-1 py-2 flex flex-col items-center gap-0.5 text-[10px] font-bold transition-colors ${
+                className={`flex-1 py-2 flex flex-col items-center gap-0.5 text-[10px] font-bold transition-colors relative ${
                   tab === t ? 'text-brand-600 border-b-2 border-brand-500' : 'text-gray-400 hover:text-gray-600'
                 }`}>
-                <span className="text-sm leading-none">{icon}</span>
+                <span className="text-sm leading-none relative">
+                  {icon}
+                  {/* Star-upgrade flash badge on 🗺️ tab */}
+                  {t === 'map' && mapTabFlash && tab !== 'map' && (
+                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-amber-400 rounded-full border border-white animate-ping" />
+                  )}
+                </span>
                 {label}
               </button>
             ))}

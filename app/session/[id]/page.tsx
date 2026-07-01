@@ -5,6 +5,8 @@ import { X, Star, ClipboardList, Gamepad2, BarChart3, BookOpen, Play, Youtube, E
 import type { ExerciseResult, AssessmentResult, SessionObservations } from '@/lib/types'
 import { rankGamesForStudent, getTopGames, DIFFICULTY_LABELS_AR } from '@/lib/game-mapping'
 import type { StudentAssessmentProfile } from '@/lib/types'
+import ProgressMap from '@/components/progress/ProgressMap'
+import type { SessionNode } from '@/components/progress/ProgressMap'
 
 import MemoryCards     from '@/components/session/exercises/MemoryCards'
 import SequenceMemory  from '@/components/session/exercises/SequenceMemory'
@@ -146,6 +148,7 @@ export default function SessionPage() {
   const [profile, setProfile] = useState<StudentAssessmentProfile | null>(null)
   const [kidMode, setKidMode] = useState(false)
   const [showCelebration, setShowCelebration] = useState(false)
+  const [celebrationMap, setCelebrationMap] = useState<SessionNode[] | null>(null)
   // Light, ~1s star-burst shown between exercises (distinct from the big
   // showCelebration overlay, which only fires once all Kid Mode games are
   // done). pointer-events-none so it never blocks the next interaction.
@@ -488,6 +491,16 @@ export default function SessionPage() {
     if (achievementToastTimerRef.current) clearTimeout(achievementToastTimerRef.current)
     achievementToastTimerRef.current = setTimeout(() => setAchievementToast(null), 3500)
   }, [])
+
+  // Fetch the student's progress map when the end-of-session celebration opens
+  // so the child sees their real journey, not a placeholder.
+  useEffect(() => {
+    if (!showCelebration || !currentStudentId) return
+    fetch(`/api/admin/students/${currentStudentId}/progress-map`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.sessions) setCelebrationMap(d.sessions) })
+      .catch(() => {})
+  }, [showCelebration, currentStudentId])
 
   // useMemo — getTopGames returns a new array every call; without memoizing it,
   // handleExerciseComplete (which depends on topGames) gets recreated every
@@ -2362,46 +2375,45 @@ ${notes ? `
                       })}
                     </div>
 
-                    {/* Mini journey path */}
+                    {/* Journey progress map — real data if loaded, skeleton fallback */}
                     <div
-                      className="flex items-center justify-center gap-2 rounded-2xl px-4 py-3 mb-5 w-full"
-                      style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.18)' }}
+                      className="rounded-2xl px-4 py-4 mb-5 w-full"
+                      style={{ background: 'rgba(99,102,241,0.07)', border: '1px solid rgba(99,102,241,0.18)' }}
                     >
-                      <span className="text-xs font-bold text-gray-500 ml-1">رحلتك:</span>
-                      {[...Array(3)].map((_, i) => (
-                        <div
-                          key={i}
-                          className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-black"
-                          style={{ background: 'linear-gradient(135deg,#6366F1,#818CF8)' }}
-                        >
-                          ✓
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-sm font-black text-gray-700">🗺️ خارطة رحلتك</span>
+                        {celebrationMap && (
+                          <span className="text-[10px] font-bold text-indigo-400">
+                            {celebrationMap.length} جلسة مكتملة ⭐ {celebrationMap.reduce((s,n) => s + n.stars, 0)} نجمة
+                          </span>
+                        )}
+                      </div>
+
+                      {celebrationMap ? (
+                        /* Real personalised map */
+                        <ProgressMap sessions={celebrationMap} compact upcomingSlots={2} />
+                      ) : (
+                        /* Loading skeleton — 5 shimmer dots */
+                        <div className="flex items-center gap-3 py-2">
+                          {[...Array(5)].map((_, i) => (
+                            <div
+                              key={i}
+                              className="rounded-full flex-shrink-0 animate-pulse"
+                              style={{
+                                width:      i === 4 ? 28 : 44,
+                                height:     i === 4 ? 28 : 44,
+                                background: i === 4 ? '#E5E7EB' : 'rgba(99,102,241,0.15)',
+                                animationDelay: `${i * 0.1}s`,
+                              }}
+                            />
+                          ))}
                         </div>
-                      ))}
-                      <div className="w-3 h-px" style={{ borderTop: '2px dashed #C4B5FD' }} />
-                      {/* Current session — pulsing gold node */}
-                      <div
-                        className="relative w-7 h-7 rounded-full flex items-center justify-center text-white text-[11px] font-black"
-                        style={{
-                          background:  'linear-gradient(135deg,#F59E0B,#FBBF24)',
-                          boxShadow:   '0 0 0 4px rgba(245,158,11,0.22)',
-                        }}
-                      >
-                        <span
-                          className="absolute inset-0 rounded-full"
-                          style={{ border: '2px solid #F59E0B', animation: 'celNodePulse 1.5s ease-in-out infinite' }}
-                        />
-                        {starsEarned}★
-                      </div>
-                      <div className="w-3 h-px" style={{ borderTop: '2px dashed #E5E7EB' }} />
-                      <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-gray-300 text-[11px]">
-                        🔒
-                      </div>
-                      <span className="text-[10px] text-gray-400 mr-1">القادم</span>
+                      )}
                     </div>
 
                     {/* Exit button */}
                     <button
-                      onClick={() => { setShowCelebration(false); setKidMode(false) }}
+                      onClick={() => { setShowCelebration(false); setKidMode(false); setCelebrationMap(null) }}
                       className="w-full font-black text-white text-lg px-8 py-3.5 rounded-2xl transition-all hover:-translate-y-0.5 active:scale-95"
                       style={{
                         background:  'linear-gradient(135deg,#6366F1,#8B5CF6)',

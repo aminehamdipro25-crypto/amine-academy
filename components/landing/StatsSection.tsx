@@ -31,23 +31,23 @@ export default function StatsSection() {
   const stats = [
     {
       value: s.childrenCount,
-      label:   'طفل مستفيد من برامجنا',
+      label:   'طفل مستفيد',
       labelEn: 'Children in Program',
       labelFr: 'Enfants accompagnés',
       sub:     'قطر وتونس والعالم العربي',
       subEn:   'Qatar, Tunisia & Arab World',
       subFr:   'Qatar, Tunisie et monde arabe',
-      color:   'text-brand-400',
+      gradient: 'linear-gradient(135deg, #818CF8, #C084FC)',
     },
     {
       value: s.satisfactionPct,
-      label:   'رضا أولياء الأمور',
+      label:   'رضا الأولياء',
       labelEn: 'Parent Satisfaction',
       labelFr: 'Parents satisfaits',
       sub:     'بعد 3 أشهر من البرنامج',
       subEn:   'After 3 months',
       subFr:   'Après 3 mois de programme',
-      color:   'text-calm-teal',
+      gradient: 'linear-gradient(135deg, #2DD4BF, #60A5FA)',
     },
     {
       value: s.protocolsCount,
@@ -57,40 +57,54 @@ export default function StatsSection() {
       sub:     'APA + ABA + CBT',
       subEn:   'APA + ABA + CBT',
       subFr:   'APA + ABA + TCC',
-      color:   'text-purple-400',
+      gradient: 'linear-gradient(135deg, #A78BFA, #818CF8)',
     },
     {
       value: s.sessionMinutes,
-      unit:    'min',
-      label:   'جلسة تفاعلية مباشرة',
-      labelEn: 'Live Interactive Session',
-      labelFr: 'Séance interactive en direct',
+      label:   'دقيقة جلسة تفاعلية',
+      labelEn: 'Min. Live Session',
+      labelFr: 'Min. séance en direct',
       sub:     'حركة + سلوك + معرفة',
       subEn:   'Movement + Behavior + Cognition',
       subFr:   'Mouvement + comportement + cognition',
-      color:   'text-amber-400',
+      gradient: 'linear-gradient(135deg, #FBBF24, #F97316)',
     },
   ]
 
   return (
-    <section className="bg-[#FFF8F0] py-14" dir={isRtl ? 'rtl' : 'ltr'}>
+    <section
+      dir={isRtl ? 'rtl' : 'ltr'}
+      style={{ background: 'linear-gradient(180deg, #07111F 0%, #0F172A 100%)', padding: '56px 0' }}
+    >
       <div className="max-w-7xl mx-auto px-6">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {stats.map((stat) => (
-            <div key={stat.label}
-              className="bg-white rounded-3xl border border-[#F0E8FF] shadow-card p-6 text-center hover:-translate-y-1 transition-all">
-              <div className={`text-4xl font-black mb-1 ${stat.color} flex items-end justify-center gap-1`} dir="ltr">
-                <span className="ltr-num">{stat.value}</span>
-                {'unit' in stat && stat.unit && (
-                  <span className="text-base font-bold mb-0.5 opacity-80">
-                    {pickLang(lang, 'دق', stat.unit, 'min')}
-                  </span>
-                )}
+            <div
+              key={stat.label}
+              className="rounded-3xl p-6 text-center transition-all hover:-translate-y-1"
+              style={{
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.08)',
+                backdropFilter: 'blur(16px)',
+                WebkitBackdropFilter: 'blur(16px)',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06)',
+              }}
+            >
+              <div
+                className="text-4xl font-black mb-1.5 ltr-num"
+                style={{
+                  background: stat.gradient,
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                }}
+              >
+                {stat.value}
               </div>
-              <div className="text-gray-800 font-bold text-sm mb-0.5">
+              <div className="text-white/80 font-bold text-sm mb-0.5">
                 {pickLang(lang, stat.label, stat.labelEn, stat.labelFr)}
               </div>
-              <div className="text-gray-500 text-xs">
+              <div className="text-white/35 text-xs">
                 {pickLang(lang, stat.sub, stat.subEn, stat.subFr)}
               </div>
             </div>

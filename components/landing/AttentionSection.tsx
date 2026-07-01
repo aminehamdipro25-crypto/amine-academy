@@ -21,9 +21,9 @@ const ATTENTION_TYPES = [
     improvementLabel: 'في الأداء الأكاديمي',
     improvementLabelEn: 'in Academic Performance',
     improvementLabelFr: 'de performance scolaire',
-    color: 'border-blue-200 bg-blue-50',
-    tagColor: 'bg-blue-600',
-    statColor: 'text-blue-700 bg-blue-100',
+    gradient: 'linear-gradient(135deg, #3B82F6, #60A5FA)',
+    statGradient: 'linear-gradient(135deg, #60A5FA, #38BDF8)',
+    glowColor: 'rgba(59,130,246,0.1)',
   },
   {
     type: 'الانتباه المستمر',
@@ -44,9 +44,9 @@ const ATTENTION_TYPES = [
     improvementLabel: 'في مدة التركيز',
     improvementLabelEn: 'in Focus Duration',
     improvementLabelFr: 'de durée de concentration',
-    color: 'border-purple-200 bg-purple-50',
-    tagColor: 'bg-purple-600',
-    statColor: 'text-purple-700 bg-purple-100',
+    gradient: 'linear-gradient(135deg, #8B5CF6, #C084FC)',
+    statGradient: 'linear-gradient(135deg, #A78BFA, #C084FC)',
+    glowColor: 'rgba(139,92,246,0.1)',
   },
   {
     type: 'كبح التشتت',
@@ -67,9 +67,9 @@ const ATTENTION_TYPES = [
     improvementLabel: 'انخفاض الاندفاعية',
     improvementLabelEn: 'Reduction in Impulsivity',
     improvementLabelFr: "de réduction de l'impulsivité",
-    color: 'border-emerald-200 bg-emerald-50',
-    tagColor: 'bg-emerald-600',
-    statColor: 'text-emerald-700 bg-emerald-100',
+    gradient: 'linear-gradient(135deg, #10B981, #34D399)',
+    statGradient: 'linear-gradient(135deg, #34D399, #6EE7B7)',
+    glowColor: 'rgba(16,185,129,0.1)',
   },
   {
     type: 'الانتباه التنفيذي',
@@ -90,9 +90,9 @@ const ATTENTION_TYPES = [
     improvementLabel: 'تقليل أعراض ADHD (دراسة 2014)',
     improvementLabelEn: 'Reduction in ADHD Symptoms (2014 Study)',
     improvementLabelFr: 'de réduction des symptômes du TDAH (étude 2014)',
-    color: 'border-amber-200 bg-amber-50',
-    tagColor: 'bg-amber-600',
-    statColor: 'text-amber-700 bg-amber-100',
+    gradient: 'linear-gradient(135deg, #F59E0B, #FBBF24)',
+    statGradient: 'linear-gradient(135deg, #FBBF24, #FDE68A)',
+    glowColor: 'rgba(245,158,11,0.1)',
   },
 ]
 
@@ -101,33 +101,71 @@ export default function AttentionSection() {
   const isRtl = lang === 'ar'
 
   return (
-    <section className="py-24 bg-[#FFF8F0]" id="attention" dir={isRtl ? 'rtl' : 'ltr'}>
+    <section
+      id="attention"
+      dir={isRtl ? 'rtl' : 'ltr'}
+      style={{ background: 'linear-gradient(180deg, #020817 0%, #07111F 100%)', padding: '96px 0' }}
+    >
       <div className="max-w-7xl mx-auto px-6">
 
         <div className="text-center mb-16">
-          <span className="inline-block text-brand-600 font-bold text-sm bg-brand-50 px-4 py-1.5 rounded-full mb-4">
+          <span
+            className="inline-block text-sm font-bold px-4 py-1.5 rounded-full mb-4"
+            style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.22)', color: '#C4B5FD' }}
+          >
             {pickLang(lang, 'التركيز والانتباه وكبح التشتت', 'Focus, Attention & Distraction Control', 'Concentration, attention et maîtrise des distractions')}
           </span>
-          <h2 className="text-3xl md:text-5xl font-black text-gray-900 mb-5">
+          <h2
+            className="text-3xl md:text-5xl font-black mb-5"
+            style={{
+              background: 'linear-gradient(135deg, #fff 30%, rgba(255,255,255,0.65) 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+            }}
+          >
             {pickLang(
               lang,
-              <>الانتباه ليس مشكلة إرادة —<span className="block text-brand-600">إنها مشكلة تدريب عصبي</span></>,
-              <>Attention is not a willpower problem —<span className="block text-brand-600">It&apos;s a neural training problem</span></>,
-              <>L&apos;attention n&apos;est pas un problème de volonté —<span className="block text-brand-600">c&apos;est un problème d&apos;entraînement neuronal</span></>
+              <>الانتباه ليس مشكلة إرادة —<span className="block" style={{
+                background: 'linear-gradient(135deg, #C084FC, #818CF8)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+              }}>إنها مشكلة تدريب عصبي</span></>,
+              <>Attention is not a willpower problem —<span className="block" style={{
+                background: 'linear-gradient(135deg, #C084FC, #818CF8)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+              }}>It&apos;s a neural training problem</span></>,
+              <>L&apos;attention n&apos;est pas un problème de volonté —<span className="block" style={{
+                background: 'linear-gradient(135deg, #C084FC, #818CF8)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+              }}>c&apos;est un problème d&apos;entraînement neuronal</span></>
             )}
           </h2>
-          <p className="text-gray-500 max-w-2xl mx-auto text-lg leading-relaxed">
+          <p className="text-white/50 max-w-2xl mx-auto text-lg leading-relaxed">
             {pickLang(
               lang,
               'دماغ ADHD لا يفتقر للذكاء — يفتقر لآلية التصفية الصحيحة. برامجنا تُعيد بناء هذه الآلية خلية عصبية في كل مرة.',
-              'The ADHD brain doesn\'t lack intelligence — it lacks the right filtering mechanism. Our programs rebuild that mechanism one neuron at a time.',
+              "The ADHD brain doesn't lack intelligence — it lacks the right filtering mechanism. Our programs rebuild that mechanism one neuron at a time.",
               "Le cerveau TDAH ne manque pas d'intelligence — il manque du bon mécanisme de filtrage. Nos programmes reconstruisent ce mécanisme, neurone après neurone."
             )}
           </p>
         </div>
 
         {/* Science banner */}
-        <div className="bg-brand-950 rounded-3xl p-7 mb-12 flex flex-col md:flex-row items-center gap-6">
+        <div
+          className="rounded-3xl p-7 mb-12 flex flex-col md:flex-row items-center gap-6"
+          style={{
+            background: 'rgba(255,255,255,0.04)',
+            border: '1px solid rgba(255,255,255,0.09)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+          }}
+        >
           <div className="flex-1">
             <h3 className="text-white font-black text-xl mb-2">
               {pickLang(
@@ -137,18 +175,22 @@ export default function AttentionSection() {
                 "4 types d'attention — 4 protocoles différents"
               )}
             </h3>
-            <p className="text-white/60 text-sm leading-relaxed">
+            <p className="text-white/50 text-sm leading-relaxed">
               {pickLang(
                 lang,
-                'الخطأ الشائع: معالجة كل مشاكل الانتباه بنفس الطريقة. الطفل الذي يعاني من ضعف الانتباه الانتقائي يحتاج تدريباً مختلفاً عن الذي يعاني من ضعف الانتباه المستمر. نحن ندرّب كل نوع على حدة.',
-                'The common mistake: treating all attention problems the same way. A child with selective attention deficits needs different training than one with sustained attention challenges. We train each type individually.',
-                "L'erreur classique : traiter tous les troubles de l'attention de la même façon. Un enfant ayant un déficit d'attention sélective a besoin d'un entraînement différent de celui ayant des difficultés d'attention soutenue. Nous entraînons chaque type individuellement."
+                'الخطأ الشائع: معالجة كل مشاكل الانتباه بنفس الطريقة. نحن ندرّب كل نوع على حدة.',
+                'The common mistake: treating all attention problems the same way. We train each type individually.',
+                "L'erreur classique : traiter tous les troubles de l'attention de la même façon. Nous entraînons chaque type individuellement."
               )}
             </p>
           </div>
           <div className="grid grid-cols-2 gap-3 flex-shrink-0">
             {['CPT مُعدَّل', 'Go/No-Go', 'DIT بروتوكول', 'Cogmed-style'].map(b => (
-              <span key={b} className="text-center bg-white/10 text-white text-xs font-bold px-3 py-2 rounded-xl">
+              <span
+                key={b}
+                className="text-center text-white text-xs font-bold px-3 py-2 rounded-xl"
+                style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }}
+              >
                 ✓ {b}
               </span>
             ))}
@@ -157,47 +199,78 @@ export default function AttentionSection() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {ATTENTION_TYPES.map((item) => (
-            <div key={item.type} className={`rounded-3xl border-2 p-7 ${item.color}`}>
+            <div
+              key={item.type}
+              className="rounded-3xl p-7 transition-all hover:-translate-y-0.5"
+              style={{
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.08)',
+                backdropFilter: 'blur(16px)',
+                WebkitBackdropFilter: 'blur(16px)',
+                boxShadow: '0 12px 40px rgba(0,0,0,0.25)',
+              }}
+            >
               <div className="flex items-start justify-between mb-5">
                 <div className="flex items-center gap-3">
-                  <span className="text-3xl">{item.icon}</span>
+                  <div
+                    className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0"
+                    style={{ background: item.glowColor }}
+                  >
+                    {item.icon}
+                  </div>
                   <div>
-                    <span className={`text-white text-xs font-black px-2.5 py-1 rounded-full ${item.tagColor}`}>
+                    <span
+                      className="text-white text-xs font-black px-2.5 py-1 rounded-full"
+                      style={{ background: item.gradient }}
+                    >
                       {item.en}
                     </span>
-                    <h3 className="font-black text-gray-900 text-lg mt-1">{pickLang(lang, item.type, item.typeEn, item.typeFr)}</h3>
+                    <h3 className="font-black text-white text-lg mt-1">{pickLang(lang, item.type, item.typeEn, item.typeFr)}</h3>
                   </div>
                 </div>
-                <div className={`text-center px-4 py-2 rounded-2xl ${item.statColor}`}>
-                  <div className="text-2xl font-black ltr-num">{item.improvement}</div>
-                  <div className="text-xs opacity-70 leading-tight mt-0.5 max-w-[80px]">
+                <div
+                  className="text-center px-4 py-2 rounded-2xl flex-shrink-0"
+                  style={{ background: item.glowColor }}
+                >
+                  <div
+                    className="text-2xl font-black ltr-num"
+                    style={{
+                      background: item.statGradient,
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      backgroundClip: 'text',
+                    }}
+                  >
+                    {item.improvement}
+                  </div>
+                  <div className="text-white/40 text-xs leading-tight mt-0.5 max-w-[80px]">
                     {pickLang(lang, item.improvementLabel, item.improvementLabelEn, item.improvementLabelFr)}
                   </div>
                 </div>
               </div>
 
               <div className="mb-4">
-                <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">
+                <p className="text-xs font-bold text-white/30 uppercase tracking-wide mb-1.5">
                   {pickLang(lang, 'المشكلة', 'The Problem', 'Le problème')}
                 </p>
-                <p className="text-gray-700 text-sm leading-relaxed">{pickLang(lang, item.problem, item.problemEn, item.problemFr)}</p>
+                <p className="text-white/60 text-sm leading-relaxed">{pickLang(lang, item.problem, item.problemEn, item.problemFr)}</p>
               </div>
 
               <div className="mb-4">
-                <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">
+                <p className="text-xs font-bold text-white/30 uppercase tracking-wide mb-1.5">
                   {pickLang(lang, 'البروتوكول', 'The Protocol', 'Le protocole')}
                 </p>
-                <p className="text-gray-700 text-sm leading-relaxed">{pickLang(lang, item.protocol, item.protocolEn, item.protocolFr)}</p>
+                <p className="text-white/60 text-sm leading-relaxed">{pickLang(lang, item.protocol, item.protocolEn, item.protocolFr)}</p>
               </div>
 
               <div>
-                <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">
+                <p className="text-xs font-bold text-white/30 uppercase tracking-wide mb-2">
                   {pickLang(lang, 'التمارين الأساسية', 'Core Exercises', 'Exercices fondamentaux')}
                 </p>
                 <ul className="space-y-1.5">
                   {pickLang(lang, item.steps, item.stepsEn, item.stepsFr).map(s => (
-                    <li key={s} className="flex items-start gap-2 text-sm text-gray-600">
-                      <span className="text-gray-400 mt-0.5 flex-shrink-0">›</span>
+                    <li key={s} className="flex items-start gap-2 text-sm text-white/55">
+                      <span className="text-white/25 mt-0.5 flex-shrink-0">›</span>
                       {s}
                     </li>
                   ))}
@@ -207,27 +280,27 @@ export default function AttentionSection() {
           ))}
         </div>
 
-        <div className="mt-10 text-center bg-white rounded-3xl border border-[#F0E8FF] shadow-card p-6">
-          <p className="text-gray-600 text-sm leading-relaxed max-w-2xl mx-auto">
+        <div
+          className="mt-10 rounded-3xl p-6"
+          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
+        >
+          <p className="text-white/45 text-sm leading-relaxed max-w-2xl mx-auto text-center">
             {pickLang(
               lang,
               <>
-                <strong className="text-gray-900">ملاحظة علمية:</strong> جميع بروتوكولات الانتباه مُصممة لتُطبَّق عبر الحركة الجسدية،
-                لأن الأبحاث تُثبت أن النشاط البدني يرفع مستوى الدوبامين والنورإبينفرين في الفص الجبهي بنسبة تصل إلى 200% —
-                مما يجعل التمرين الجسدي أداةً علاجيةً للتركيز لا مجرد نشاط جانبي.
-                <span className="text-brand-600 font-bold"> (Ratey, 2008 — Spark: The Revolutionary New Science of Exercise and the Brain)</span>
+                <strong className="text-white/70">ملاحظة علمية:</strong> جميع بروتوكولات الانتباه مُصممة لتُطبَّق عبر الحركة الجسدية،
+                لأن الأبحاث تُثبت أن النشاط البدني يرفع مستوى الدوبامين والنورإبينفرين في الفص الجبهي بنسبة تصل إلى 200%.
+                <span style={{ color: '#818CF8' }}> (Ratey, 2008 — Spark)</span>
               </>,
               <>
-                <strong className="text-gray-900">Scientific Note:</strong> All attention protocols are designed to be implemented through physical movement,
-                because research proves that physical activity raises dopamine and norepinephrine levels in the prefrontal cortex by up to 200% —
-                making physical exercise a therapeutic tool for focus, not merely a side activity.
-                <span className="text-brand-600 font-bold"> (Ratey, 2008 — Spark: The Revolutionary New Science of Exercise and the Brain)</span>
+                <strong className="text-white/70">Scientific Note:</strong> All attention protocols are designed to be implemented through physical movement,
+                because research proves that physical activity raises dopamine and norepinephrine levels in the prefrontal cortex by up to 200%.
+                <span style={{ color: '#818CF8' }}> (Ratey, 2008 — Spark)</span>
               </>,
               <>
-                <strong className="text-gray-900">Note scientifique :</strong> tous les protocoles d&apos;attention sont conçus pour être mis en œuvre par le mouvement physique,
-                car la recherche démontre que l&apos;activité physique augmente les niveaux de dopamine et de noradrénaline dans le cortex préfrontal jusqu&apos;à 200 % —
-                faisant de l&apos;exercice physique un outil thérapeutique pour la concentration, et non une simple activité annexe.
-                <span className="text-brand-600 font-bold"> (Ratey, 2008 — Spark: The Revolutionary New Science of Exercise and the Brain)</span>
+                <strong className="text-white/70">Note scientifique :</strong> tous les protocoles d&apos;attention sont conçus pour être mis en œuvre par le mouvement physique,
+                car la recherche démontre que l&apos;activité physique augmente les niveaux de dopamine et de noradrénaline dans le cortex préfrontal jusqu&apos;à 200 %.
+                <span style={{ color: '#818CF8' }}> (Ratey, 2008 — Spark)</span>
               </>
             )}
           </p>

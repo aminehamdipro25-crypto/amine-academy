@@ -5,7 +5,7 @@ import { useLang, pickLang } from '@/lib/i18n'
 const testimonials = [
   {
     name: 'أم سارة',
-    nameEn: 'Sara\'s Mom',
+    nameEn: "Sara's Mom",
     nameFr: 'La maman de Sara',
     role: 'ولية أمر — طفلة 8 سنوات (ADHD)',
     roleEn: 'Parent — 8-year-old girl (ADHD)',
@@ -15,6 +15,7 @@ const testimonials = [
     textFr: "Après seulement deux mois, j'ai constaté une amélioration nette dans la capacité de ma fille à rester assise et à se concentrer. Le programme a vraiment transformé notre quotidien.",
     stars: 5,
     country: '🇹🇳',
+    gradient: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
   },
   {
     name: 'أبو خالد',
@@ -28,6 +29,7 @@ const testimonials = [
     textFr: "J'étais sceptique au début, mais les résultats des trois premiers mois m'ont impressionné. Les exercices de coordination motrice ont vraiment fait la différence.",
     stars: 5,
     country: '🇸🇦',
+    gradient: 'linear-gradient(135deg, #14B8A6, #6366F1)',
   },
   {
     name: 'مريم',
@@ -41,6 +43,7 @@ const testimonials = [
     textFr: "Le professeur Amine comprend exactement ce dont mon fils a besoin. Les séances hebdomadaires et les exercices personnalisés lui ont redonné confiance en lui.",
     stars: 5,
     country: '🇲🇦',
+    gradient: 'linear-gradient(135deg, #F59E0B, #EF4444)',
   },
 ]
 
@@ -49,38 +52,70 @@ export default function TestimonialsSection() {
   const isRtl = lang === 'ar'
 
   return (
-    <section className="py-20 bg-[#FFF8F0]" dir={isRtl ? 'rtl' : 'ltr'}>
+    <section
+      dir={isRtl ? 'rtl' : 'ltr'}
+      style={{ background: 'linear-gradient(180deg, #0F172A 0%, #07111F 100%)', padding: '80px 0' }}
+    >
       <div className="max-w-7xl mx-auto px-6">
         <div className="text-center mb-14">
-          <span className="text-brand-600 font-bold text-sm bg-brand-50 px-4 py-1.5 rounded-full">
+          <span
+            className="font-bold text-sm px-4 py-1.5 rounded-full"
+            style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.22)', color: '#C4B5FD' }}
+          >
             {pickLang(lang, 'قصص نجاح', 'Success Stories', 'Témoignages')}
           </span>
-          <h2 className="text-3xl md:text-4xl font-black text-gray-900 mt-4 mb-4">
+          <h2
+            className="text-3xl md:text-4xl font-black mt-4 mb-4"
+            style={{
+              background: 'linear-gradient(135deg, #fff 30%, rgba(255,255,255,0.6) 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+            }}
+          >
             {pickLang(lang, 'ماذا يقول أولياء الأمور؟', 'What Do Parents Say?', 'Que disent les parents ?')}
           </h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {testimonials.map(({ name, nameEn, nameFr, role, roleEn, roleFr, text, textEn, textFr, stars, country }) => (
-            <div key={name}
-              className="bg-white rounded-3xl border border-[#F0E8FF] shadow-card p-6 hover:-translate-y-1 transition-all">
-              {/* Large quote mark */}
-              <div className="text-brand-200 font-black text-6xl leading-none mb-2 select-none">&ldquo;</div>
+          {testimonials.map(({ name, nameEn, nameFr, role, roleEn, roleFr, text, textEn, textFr, stars, country, gradient }) => (
+            <div
+              key={name}
+              className="rounded-3xl p-6 transition-all hover:-translate-y-1 flex flex-col"
+              style={{
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.09)',
+                backdropFilter: 'blur(16px)',
+                WebkitBackdropFilter: 'blur(16px)',
+                boxShadow: '0 16px 48px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06)',
+              }}
+            >
+              {/* Stars */}
               <div className="flex items-center gap-1 mb-4">
                 {Array.from({ length: stars }).map((_, i) => (
-                  <Star key={i} className="w-4 h-4 text-gold-400 fill-gold-400" />
+                  <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />
                 ))}
               </div>
-              <p className="text-gray-700 text-sm leading-relaxed mb-5">{pickLang(lang, text, textEn, textFr)}</p>
+
+              {/* Quote */}
+              <p className="text-white/70 text-sm leading-relaxed mb-6 flex-1">
+                {pickLang(lang, text, textEn, textFr)}
+              </p>
+
+              {/* Author */}
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-brand-100 text-2xl flex items-center justify-center flex-shrink-0">
+                <div
+                  className="w-11 h-11 rounded-full flex items-center justify-center text-white font-black text-base flex-shrink-0"
+                  style={{ background: gradient }}
+                >
                   {pickLang(lang, name, nameEn, nameFr)[0]}
                 </div>
                 <div>
-                  <div className="font-bold text-gray-900 text-sm flex items-center gap-1">
-                    {pickLang(lang, name, nameEn, nameFr)} <span>{country}</span>
+                  <div className="font-bold text-white text-sm flex items-center gap-1.5">
+                    {pickLang(lang, name, nameEn, nameFr)}
+                    <span>{country}</span>
                   </div>
-                  <div className="text-gray-500 text-xs">{pickLang(lang, role, roleEn, roleFr)}</div>
+                  <div className="text-white/40 text-xs">{pickLang(lang, role, roleEn, roleFr)}</div>
                 </div>
               </div>
             </div>

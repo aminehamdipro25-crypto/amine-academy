@@ -16,36 +16,100 @@ export default function CTASection() {
   )
 
   return (
-    <section className="py-20 bg-gradient-to-l from-brand-700 via-brand-600 to-[#9A7BFD]" dir={isRtl ? 'rtl' : 'ltr'}>
-      <div className="max-w-3xl mx-auto px-6 text-center">
-        <div className="text-5xl mb-6">🌟</div>
-        <h2 className="text-3xl md:text-4xl font-black text-white mb-5">
-          {pickLang(lang, 'ابدأ رحلة طفلك اليوم', "Start Your Child's Journey Today", "Commencez dès aujourd'hui le parcours de votre enfant")}
+    <section
+      dir={isRtl ? 'rtl' : 'ltr'}
+      className="relative overflow-hidden"
+      style={{
+        background: 'linear-gradient(150deg, #020817 0%, #0D0B2E 45%, #130B32 75%, #020817 100%)',
+        padding: '100px 0',
+      }}
+    >
+      {/* Ambient orbs */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[350px] rounded-full blur-[120px]"
+          style={{ background: 'radial-gradient(ellipse, rgba(99,102,241,0.2) 0%, transparent 70%)' }}
+        />
+        <div
+          className="absolute bottom-0 right-0 w-72 h-72 rounded-full blur-[90px]"
+          style={{ background: 'radial-gradient(circle, rgba(20,184,166,0.09) 0%, transparent 70%)' }}
+        />
+      </div>
+
+      <div className="relative z-10 max-w-4xl mx-auto px-6 text-center">
+        {/* Badge */}
+        <span
+          className="inline-block text-sm font-bold px-4 py-1.5 rounded-full mb-6"
+          style={{
+            background: 'rgba(99,102,241,0.12)',
+            border: '1px solid rgba(99,102,241,0.25)',
+            color: '#C4B5FD',
+          }}
+        >
+          {pickLang(lang, 'ابدأ رحلة طفلك اليوم', "Start Your Child's Journey Today", "Commencez dès aujourd'hui")}
+        </span>
+
+        {/* Heading */}
+        <h2
+          className="text-4xl md:text-6xl font-black mb-6 leading-tight"
+        >
+          <span style={{
+            background: 'linear-gradient(135deg, #ffffff 0%, rgba(255,255,255,0.8) 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+          }}>
+            {pickLang(lang, 'كل يوم تأخير هو', 'Every Day of Delay Is', 'Chaque jour de retard est')}
+          </span>
+          <br />
+          <span style={{
+            background: 'linear-gradient(135deg, #C084FC, #818CF8, #60A5FA)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+          }}>
+            {pickLang(lang, 'يوم ضائع من التطور', 'A Lost Day of Progress', 'Un jour de progrès perdu')}
+          </span>
         </h2>
-        <p className="text-white/80 text-lg leading-relaxed mb-10">
+
+        <p className="text-white/55 text-lg max-w-xl mx-auto mb-10 leading-relaxed">
           {pickLang(
             lang,
-            'كل يوم تأخير هو يوم ضائع من التطور. انضم لأكثر من 200 عائلة تثق في أكاديمية أمين.',
-            'Every day of delay is a lost day of development. Join over 200 families who trust Amine Academy.',
-            'Chaque jour de retard est une journée de progrès perdue. Rejoignez plus de 200 familles qui font confiance à Amine Academy.'
+            'انضم لأكثر من 200 عائلة تثق في أكاديمية أمين. ابدأ بجلسة تقييمية مجانية — بدون أي التزام.',
+            'Join over 200 families who trust Amine Academy. Start with a free assessment session — no commitment required.',
+            'Rejoignez plus de 200 familles qui font confiance à Amine Academy. Commencez par une séance d\'évaluation gratuite — sans engagement.'
           )}
         </p>
+
+        {/* CTA buttons */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
-          <Link href="/register"
-            className="flex items-center gap-2 bg-white text-brand-700 font-black text-lg px-8 py-4 rounded-2xl hover:-translate-y-1 shadow-xl transition-all active:scale-95">
+          <Link
+            href="/register"
+            className="flex items-center gap-2 font-black text-lg px-8 py-4 rounded-2xl transition-all hover:-translate-y-0.5 active:scale-95"
+            style={{
+              background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
+              color: 'white',
+              boxShadow: '0 8px 40px rgba(99,102,241,0.45)',
+            }}
+          >
             {pickLang(lang, 'سجّل الآن مجاناً', 'Register Now for Free', "Inscrivez-vous gratuitement")}
             {isRtl ? <ArrowLeft className="w-5 h-5" /> : <ArrowRight className="w-5 h-5" />}
           </Link>
           <a
             href={`https://wa.me/${wa}?text=${encodeURIComponent(waMessage)}`}
             target="_blank" rel="noopener noreferrer"
-            className="flex items-center gap-2 bg-white/10 border border-white/30 text-white hover:bg-white/20 font-bold text-lg px-8 py-4 rounded-2xl transition-all">
-            <MessageCircle className="w-5 h-5 text-green-400" />
+            className="flex items-center gap-2 text-white font-bold text-lg px-8 py-4 rounded-2xl transition-all hover:bg-white/10"
+            style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)' }}
+          >
+            <MessageCircle className="w-5 h-5 text-emerald-400" />
             {pickLang(lang, 'تواصل عبر واتساب', 'Contact via WhatsApp', 'Contactez-nous sur WhatsApp')}
           </a>
         </div>
-        <Link href="/demo"
-          className="inline-flex items-center gap-2 text-white/60 hover:text-white/90 text-sm font-medium transition-colors">
+
+        <Link
+          href="/demo"
+          className="inline-flex items-center gap-2 text-white/35 hover:text-white/70 text-sm font-medium transition-colors"
+        >
           <Play className="w-4 h-4" />
           {pickLang(lang, 'أو شاهد جولة تجريبية للمنصة أولاً', 'Or watch a demo tour of the platform first', "Ou découvrez d'abord une visite guidée de la plateforme")}
         </Link>

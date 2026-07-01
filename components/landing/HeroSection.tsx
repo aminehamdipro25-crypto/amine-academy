@@ -46,88 +46,140 @@ function useCountdown(offerDays: number) {
 function CountdownUnit({ value, label }: { value: number; label: string }) {
   return (
     <div className="flex flex-col items-center">
-      <div className="bg-white/10 border border-white/20 rounded-xl px-3 py-2 min-w-[3rem] text-center">
+      <div
+        className="rounded-xl px-3 py-2 min-w-[3rem] text-center"
+        style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.13)' }}
+      >
         <span className="text-white font-black text-2xl ltr-num">{String(value).padStart(2, '0')}</span>
       </div>
-      <span className="text-white/60 text-xs mt-1">{label}</span>
+      <span className="text-white/50 text-xs mt-1">{label}</span>
     </div>
   )
 }
 
-function GameVisual() {
-  return (
-    <div className="relative flex items-center justify-center">
-      {/* Glow behind card */}
-      <div className="absolute w-72 h-72 bg-brand-400/20 rounded-full blur-3xl" />
+function DashboardVisual() {
+  const scores = [72, 85, 68, 91, 88, 95, 87]
+  const days = ['ح', 'ن', 'ث', 'ر', 'خ', 'ج', 'س']
 
-      {/* Main game card */}
-      <div className="relative w-72 bg-white/10 backdrop-blur-sm border border-white/20 rounded-3xl p-6 shadow-2xl shadow-black/30">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-5">
-          <span className="text-white/60 text-xs font-bold">جلسة اليوم</span>
-          <span className="bg-green-400/20 text-green-300 text-xs font-black px-2 py-0.5 rounded-full border border-green-400/30">
-            ● مباشر
+  return (
+    <div className="relative flex items-center justify-center py-8 lg:py-0">
+      {/* Ambient glow */}
+      <div
+        className="absolute w-80 h-80 rounded-full blur-3xl pointer-events-none"
+        style={{ background: 'radial-gradient(circle, rgba(99,102,241,0.18) 0%, transparent 70%)' }}
+      />
+
+      {/* Main dashboard card */}
+      <div
+        className="relative w-80 rounded-3xl p-5 shadow-2xl"
+        style={{
+          background: 'rgba(15,23,42,0.85)',
+          border: '1px solid rgba(255,255,255,0.1)',
+          backdropFilter: 'blur(24px)',
+          WebkitBackdropFilter: 'blur(24px)',
+          boxShadow: '0 32px 64px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.07)',
+        }}
+      >
+        {/* Header row */}
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <p className="text-white font-black text-sm">لوحة المتابعة</p>
+            <p className="text-white/40 text-xs">التقدم الأسبوعي لطفلك</p>
+          </div>
+          <span
+            className="text-xs font-black px-2.5 py-1 rounded-full flex items-center gap-1.5"
+            style={{ background: 'rgba(52,211,153,0.12)', color: '#6EE7B7', border: '1px solid rgba(52,211,153,0.2)' }}
+          >
+            <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse inline-block" />
+            مباشر
           </span>
         </div>
 
-        {/* Game character */}
-        <div className="text-center mb-5">
-          <div className="text-7xl leading-none">🧩</div>
-          <p className="text-white font-black text-lg mt-2">ذاكرة N-Back</p>
-          <p className="text-white/60 text-xs">تمرين الذاكرة العاملة</p>
+        {/* Bar chart */}
+        <div
+          className="rounded-2xl p-3 mb-4"
+          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}
+        >
+          <div className="flex items-end gap-1.5 h-20">
+            {scores.map((score, i) => (
+              <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                <div
+                  className="w-full rounded-t-sm"
+                  style={{
+                    height: `${(score / 100) * 72}px`,
+                    background: score >= 85
+                      ? 'linear-gradient(to top, #10B981, #6EE7B7)'
+                      : 'linear-gradient(to top, #6366F1, #A78BFA)',
+                    opacity: score >= 85 ? 1 : 0.65,
+                    borderRadius: '3px 3px 0 0',
+                  }}
+                />
+                <span className="text-[9px] text-white/25">{days[i]}</span>
+              </div>
+            ))}
+          </div>
         </div>
 
-        {/* Progress */}
-        <div className="bg-white/10 rounded-2xl p-4 mb-4">
-          <div className="flex justify-between text-white text-sm mb-2">
-            <span className="text-white/70">التقدم</span>
-            <span className="font-black">78%</span>
+        {/* Metrics row */}
+        <div className="grid grid-cols-2 gap-2.5 mb-4">
+          <div
+            className="rounded-xl p-3 text-center"
+            style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.18)' }}
+          >
+            <div className="font-black text-xl ltr-num" style={{ color: '#A78BFA' }}>+78%</div>
+            <div className="text-white/45 text-[10px] mt-0.5">تحسن التركيز</div>
           </div>
-          <div className="h-3 bg-white/20 rounded-full overflow-hidden">
-            <div className="h-full bg-gradient-to-r from-green-400 to-emerald-300 rounded-full transition-all" style={{ width: '78%' }} />
+          <div
+            className="rounded-xl p-3 text-center"
+            style={{ background: 'rgba(52,211,153,0.08)', border: '1px solid rgba(52,211,153,0.15)' }}
+          >
+            <div className="text-emerald-400 font-black text-xl ltr-num">4/4</div>
+            <div className="text-white/45 text-[10px] mt-0.5">جلسات الأسبوع</div>
           </div>
         </div>
 
-        {/* Stats row */}
-        <div className="grid grid-cols-3 gap-2 text-center">
-          <div className="bg-white/10 rounded-xl p-2.5">
-            <div className="text-xl">⚡</div>
-            <div className="text-white/60 text-[10px] mt-0.5">سريع</div>
+        {/* Report notification */}
+        <div
+          className="flex items-center gap-2.5 rounded-xl px-3 py-2.5"
+          style={{ background: 'rgba(251,191,36,0.07)', border: '1px solid rgba(251,191,36,0.13)' }}
+        >
+          <span className="text-base">📋</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-amber-300 font-black text-xs">التقرير الأسبوعي جاهز</p>
+            <p className="text-white/30 text-[10px]">مراجعة التقدم الآن</p>
           </div>
-          <div className="bg-white/10 rounded-xl p-2.5">
-            <div className="text-white font-black text-lg ltr-num">240</div>
-            <div className="text-white/60 text-[10px]">نقطة</div>
-          </div>
-          <div className="bg-white/10 rounded-xl p-2.5">
-            <div className="text-xl">🔥</div>
-            <div className="text-white/60 text-[10px]">5 أيام</div>
-          </div>
+          <span className="text-amber-400 text-xs font-black flex-shrink-0">عرض</span>
         </div>
       </div>
 
-      {/* Floating achievement badge — top right */}
-      <div className="absolute -top-3 -right-3 bg-white rounded-2xl shadow-xl px-3 py-2 flex items-center gap-2 animate-[bounce_3s_ease-in-out_infinite]">
-        <span className="text-2xl">🏆</span>
+      {/* Floating card — session complete */}
+      <div
+        className="absolute -top-2 -right-5 rounded-2xl px-3 py-2.5 flex items-center gap-2.5"
+        style={{
+          background: 'white',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.08)',
+        }}
+      >
+        <div className="w-7 h-7 bg-emerald-100 rounded-xl flex items-center justify-center text-sm flex-shrink-0">✅</div>
         <div>
-          <p className="text-[11px] font-black text-gray-800 leading-none">إنجاز جديد!</p>
-          <p className="text-[10px] text-gray-400 mt-0.5">بطل التركيز</p>
+          <p className="text-[11px] font-black text-gray-800 leading-none">الجلسة مكتملة</p>
+          <p className="text-[10px] text-emerald-600 font-bold mt-0.5">أداء ممتاز</p>
         </div>
       </div>
 
-      {/* Floating score — bottom left */}
-      <div className="absolute -bottom-3 -left-3 bg-white rounded-2xl shadow-xl px-3 py-2 flex items-center gap-2">
-        <span className="text-2xl">⭐</span>
+      {/* Floating card — stars earned */}
+      <div
+        className="absolute -bottom-2 -left-5 rounded-2xl px-3 py-2 flex items-center gap-2.5"
+        style={{
+          background: 'white',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.08)',
+        }}
+      >
+        <span className="text-lg">⭐</span>
         <div>
-          <p className="text-[11px] font-black text-gray-800 leading-none">تقدم رائع</p>
-          <p className="text-[10px] text-green-600 font-bold mt-0.5">+50 نقطة</p>
+          <p className="text-[11px] font-black text-gray-800 leading-none">نجوم اليوم</p>
+          <p className="text-[10px] text-amber-600 font-bold mt-0.5 ltr-num">+6 نجوم</p>
         </div>
-      </div>
-
-      {/* Floating dots */}
-      <div className="absolute top-1/3 -left-6 flex flex-col gap-2.5">
-        {[0, 1, 2].map(i => (
-          <div key={i} className={`w-3 h-3 rounded-full ${i === 1 ? 'bg-brand-400 scale-125' : 'bg-brand-300'} opacity-70`} />
-        ))}
       </div>
     </div>
   )
@@ -148,51 +200,68 @@ export default function HeroSection() {
 
   return (
     <section
-      className={`relative min-h-screen overflow-hidden ${isRtl ? 'direction-rtl' : 'direction-ltr'}`}
-      style={{ background: 'linear-gradient(135deg, #2D1B69 0%, #4A2FA3 50%, #7C5CFC 100%)' }}
+      className={`relative min-h-screen overflow-hidden`}
+      style={{ background: 'linear-gradient(150deg, #020817 0%, #030A1C 40%, #07111F 70%, #020817 100%)' }}
       dir={isRtl ? 'rtl' : 'ltr'}
     >
-      {/* Decorative blurred circles */}
+      {/* Ambient orbs */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-10 right-10 w-96 h-96 bg-brand-400/30 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 left-10 w-80 h-80 bg-orange-500/30 rounded-full blur-3xl" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 bg-teal-400/30 rounded-full blur-3xl" />
-        {/* Dot grid — decorative */}
-        <div className={`absolute top-32 ${isRtl ? 'left-24' : 'right-24'} hidden lg:grid grid-cols-5 gap-3 opacity-[0.08]`}>
-          {Array.from({ length: 25 }).map((_, i) => (
-            <div key={i} className="w-2 h-2 bg-white rounded-full" />
-          ))}
-        </div>
+        <div
+          className="absolute -top-20 right-0 w-[500px] h-[500px] rounded-full blur-[120px]"
+          style={{ background: 'radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 70%)' }}
+        />
+        <div
+          className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full blur-[100px]"
+          style={{ background: 'radial-gradient(circle, rgba(20,184,166,0.08) 0%, transparent 70%)' }}
+        />
+        <div
+          className="absolute top-1/2 left-1/3 w-[300px] h-[300px] rounded-full blur-[80px]"
+          style={{ background: 'radial-gradient(circle, rgba(139,92,246,0.07) 0%, transparent 70%)' }}
+        />
       </div>
 
-      {/* ── Navigation ── */}
+      {/* Navigation */}
       <nav className="relative z-10 flex items-center justify-between px-6 py-5 max-w-7xl mx-auto">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center text-white font-black text-lg shadow-lg">
+          <div
+            className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-black text-lg"
+            style={{
+              background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
+              boxShadow: '0 4px 16px rgba(99,102,241,0.35)',
+            }}
+          >
             A
           </div>
           <div>
             <span className="text-white font-black text-lg block leading-none">
               {pickLang(lang, 'أكاديمية أمين', 'Amine Academy', 'Amine Academy')}
             </span>
-            <span className="text-white/50 text-xs">ADHD & Autism Academy</span>
+            <span className="text-white/35 text-xs">ADHD & Autism Academy</span>
           </div>
         </div>
         <div className="flex items-center gap-3">
           <Link href="/demo"
-            className="text-white/70 hover:text-white text-sm font-medium transition-colors hidden sm:block">
+            className="text-white/55 hover:text-white text-sm font-medium transition-colors hidden sm:block">
             {t.nav.trial}
           </Link>
           <Link href="/parent/login"
-            className="text-white/70 hover:text-white text-sm font-medium transition-colors hidden sm:block">
+            className="text-white/55 hover:text-white text-sm font-medium transition-colors hidden sm:block">
             {t.nav.parents}
           </Link>
           <Link href="/register"
-            className="bg-white text-brand-700 hover:bg-brand-50 font-black text-sm px-5 py-2.5 rounded-xl transition-all shadow-lg">
+            className="font-black text-sm px-5 py-2.5 rounded-xl transition-all"
+            style={{
+              background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
+              color: 'white',
+              boxShadow: '0 4px 20px rgba(99,102,241,0.4)',
+            }}
+          >
             {t.nav.register}
           </Link>
           <Link href="/dashboard"
-            className="flex items-center gap-1.5 bg-white/10 border border-white/20 text-white hover:bg-white/20 font-bold text-xs px-3 py-2 rounded-xl transition-all">
+            className="flex items-center gap-1.5 text-white hover:bg-white/10 font-bold text-xs px-3 py-2 rounded-xl transition-all"
+            style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}
+          >
             <LayoutDashboard className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">{pickLang(lang, 'لوحة التحكم', 'Dashboard', 'Tableau de bord')}</span>
           </Link>
@@ -200,23 +269,29 @@ export default function HeroSection() {
         </div>
       </nav>
 
-      {/* ── Hero Content ── */}
+      {/* Hero Content */}
       <div className="relative z-10 max-w-7xl mx-auto px-6 pt-6 pb-24">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center min-h-[82vh]">
 
-          {/* ── Text Column ── */}
+          {/* Text Column */}
           <div className={isRtl ? 'order-1' : 'order-2'}>
             {/* Badge */}
-            <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-4 py-1.5 mb-6">
-              <Sparkles className="w-3.5 h-3.5 text-brand-300" />
-              <span className="text-white text-sm font-bold">{t.hero.badge}</span>
+            <div
+              className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-6"
+              style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.22)' }}
+            >
+              <Sparkles className="w-3.5 h-3.5" style={{ color: '#A78BFA' }} />
+              <span className="text-sm font-bold" style={{ color: '#C4B5FD' }}>{t.hero.badge}</span>
             </div>
 
-            {/* Floating info badges */}
+            {/* Info pills */}
             <div className="flex flex-wrap gap-2 mb-6">
               {['100+ طفل', 'ADHD & Autism', 'Qatar & Tunisia'].map(badge => (
-                <span key={badge}
-                  className="bg-white/10 backdrop-blur border border-white/20 rounded-2xl px-4 py-2 text-white text-sm font-medium">
+                <span
+                  key={badge}
+                  className="text-white/70 text-sm font-medium px-4 py-1.5 rounded-2xl"
+                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)' }}
+                >
                   {badge}
                 </span>
               ))}
@@ -225,29 +300,40 @@ export default function HeroSection() {
             {/* Main heading */}
             <h1 className="text-4xl md:text-6xl font-black text-white leading-tight mb-6">
               {t.hero.h1a}
-              <span className="block text-white/90 mt-1">
+              <span className="block mt-1" style={{
+                background: 'linear-gradient(135deg, #C084FC 0%, #818CF8 50%, #60A5FA 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+              }}>
                 {t.hero.h1b}
               </span>
-              <span className="block text-2xl md:text-3xl mt-3 text-white/60 font-bold">
+              <span className="block text-2xl md:text-3xl mt-3 text-white/50 font-bold">
                 {t.hero.h1c}
               </span>
             </h1>
 
-            <p className="text-white/80 text-lg leading-relaxed mb-3 max-w-lg">
-              {t.hero.desc}
-            </p>
-            <p className="text-white/50 text-sm mb-8">{t.hero.ages}</p>
+            <p className="text-white/70 text-lg leading-relaxed mb-3 max-w-lg">{t.hero.desc}</p>
+            <p className="text-white/40 text-sm mb-8">{t.hero.ages}</p>
 
             {/* CTAs */}
             <div className="flex flex-col sm:flex-row items-start gap-4 mb-10">
               <Link href="/register"
-                className="flex items-center gap-2 bg-white text-brand-700 font-black text-lg px-8 py-4 rounded-2xl hover:-translate-y-1 shadow-xl transition-all active:scale-95">
+                className="flex items-center gap-2 font-black text-lg px-8 py-4 rounded-2xl transition-all hover:-translate-y-0.5 active:scale-95"
+                style={{
+                  background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
+                  color: 'white',
+                  boxShadow: '0 8px 32px rgba(99,102,241,0.45)',
+                }}
+              >
                 {t.hero.cta1}
                 {isRtl ? <ArrowLeft className="w-5 h-5" /> : <ArrowRight className="w-5 h-5" />}
               </Link>
               <Link href="/demo"
-                className="flex items-center gap-2 bg-white/10 border border-white/30 text-white hover:bg-white/20 font-bold text-lg px-8 py-4 rounded-2xl transition-all">
-                <Play className="w-5 h-5 fill-current text-white/70" />
+                className="flex items-center gap-2 text-white hover:bg-white/10 font-bold text-lg px-8 py-4 rounded-2xl transition-all"
+                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)' }}
+              >
+                <Play className="w-5 h-5 fill-current text-white/60" />
                 {t.hero.cta2}
               </Link>
             </div>
@@ -255,8 +341,11 @@ export default function HeroSection() {
             {/* Trust badges */}
             <div className="flex items-center gap-2 flex-wrap mb-8">
               {['APA Certified', 'ABA Protocol', 'CBT for Children', 'PEERS Protocol'].map(b => (
-                <span key={b}
-                  className="text-white/60 text-xs font-bold border border-white/20 bg-white/5 px-3 py-1 rounded-full">
+                <span
+                  key={b}
+                  className="text-white/50 text-xs font-bold px-3 py-1 rounded-full"
+                  style={{ border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.04)' }}
+                >
                   ✓ {b}
                 </span>
               ))}
@@ -264,39 +353,51 @@ export default function HeroSection() {
 
             {/* Countdown */}
             {time && !time.expired && (
-              <div className="inline-flex flex-col items-center gap-3 bg-white/10 border border-white/20 rounded-2xl px-8 py-4 mb-8">
-                <p className="text-white/60 text-sm font-medium">{t.hero.offerLabel}</p>
+              <div
+                className="inline-flex flex-col items-center gap-3 rounded-2xl px-8 py-4 mb-8"
+                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}
+              >
+                <p className="text-white/50 text-sm font-medium">{t.hero.offerLabel}</p>
                 <div className="flex items-center gap-3" dir="ltr">
                   <CountdownUnit value={time.d} label={t.hero.units.d} />
-                  <span className="text-white/30 text-xl font-black mb-4">:</span>
+                  <span className="text-white/20 text-xl font-black mb-4">:</span>
                   <CountdownUnit value={time.h} label={t.hero.units.h} />
-                  <span className="text-white/30 text-xl font-black mb-4">:</span>
+                  <span className="text-white/20 text-xl font-black mb-4">:</span>
                   <CountdownUnit value={time.m} label={t.hero.units.m} />
-                  <span className="text-white/30 text-xl font-black mb-4">:</span>
+                  <span className="text-white/20 text-xl font-black mb-4">:</span>
                   <CountdownUnit value={time.s} label={t.hero.units.s} />
                 </div>
               </div>
             )}
 
             {/* Quick stats */}
-            <div className="grid grid-cols-3 gap-4 max-w-sm pt-8 border-t border-white/10">
+            <div
+              className="grid grid-cols-3 gap-4 max-w-sm pt-8"
+              style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}
+            >
               {[
-                { icon: Users, value: '+200', label: t.hero.stats.children, color: 'text-brand-300' },
-                { icon: Award, value: '+5',   label: t.hero.stats.years,    color: 'text-purple-300' },
-                { icon: Star,  value: '98%',  label: t.hero.stats.satisfaction, color: 'text-amber-400' },
-              ].map(({ icon: Icon, value, label, color }) => (
+                { icon: Users, value: '+200', label: t.hero.stats.children, gradient: 'from-violet-400 to-indigo-400' },
+                { icon: Award, value: '+5',   label: t.hero.stats.years,    gradient: 'from-purple-400 to-violet-400' },
+                { icon: Star,  value: '98%',  label: t.hero.stats.satisfaction, gradient: 'from-amber-400 to-orange-400' },
+              ].map(({ icon: Icon, value, label, gradient }) => (
                 <div key={label} className="text-center">
-                  <Icon className={`w-5 h-5 ${color} mx-auto mb-1`} />
-                  <div className="text-white font-black text-2xl ltr-num">{value}</div>
-                  <div className="text-white/50 text-xs mt-0.5 leading-tight">{label}</div>
+                  <div
+                    className="text-white font-black text-2xl ltr-num mb-1"
+                    style={{
+                      background: `linear-gradient(135deg, var(--tw-gradient-from), var(--tw-gradient-to))`,
+                    }}
+                  >
+                    <span className={`bg-gradient-to-r ${gradient} bg-clip-text text-transparent font-black text-2xl`}>{value}</span>
+                  </div>
+                  <div className="text-white/40 text-xs leading-tight">{label}</div>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* ── Visual Column ── */}
-          <div className={`${isRtl ? 'order-2' : 'order-1'} flex items-center justify-center py-12 lg:py-0`}>
-            <GameVisual />
+          {/* Visual Column */}
+          <div className={`${isRtl ? 'order-2' : 'order-1'} flex items-center justify-center`}>
+            <DashboardVisual />
           </div>
 
         </div>

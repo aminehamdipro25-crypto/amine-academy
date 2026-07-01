@@ -100,18 +100,33 @@ export default function ProgramsSection() {
   const isRtl = lang === 'ar'
 
   return (
-    <section className="py-24 bg-white" id="programs" dir={isRtl ? 'rtl' : 'ltr'}>
+    <section
+      id="programs"
+      dir={isRtl ? 'rtl' : 'ltr'}
+      style={{ background: 'linear-gradient(180deg, #0F172A 0%, #07111F 100%)', padding: '96px 0' }}
+    >
       <div className="max-w-7xl mx-auto px-6">
 
         {/* Header */}
         <div className="text-center mb-16">
-          <span className="inline-block text-brand-600 font-bold text-sm bg-brand-50 px-4 py-1.5 rounded-full mb-4">
+          <span
+            className="inline-block text-sm font-bold px-4 py-1.5 rounded-full mb-4"
+            style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.22)', color: '#C4B5FD' }}
+          >
             {pickLang(lang, 'البرامج التخصصية', 'Specialized Programs', 'Programmes spécialisés')}
           </span>
-          <h2 className="text-3xl md:text-5xl font-black text-gray-900 mb-5">
-            {pickLang(lang, 'برنامج مخصص لكل مرحلة عمرية', 'A Tailored Program for Every Age Group', 'Un programme adapté à chaque tranche d\'âge')}
+          <h2
+            className="text-3xl md:text-5xl font-black mb-5"
+            style={{
+              background: 'linear-gradient(135deg, #fff 30%, rgba(255,255,255,0.65) 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+            }}
+          >
+            {pickLang(lang, 'برنامج مخصص لكل مرحلة عمرية', 'A Tailored Program for Every Age Group', "Un programme adapté à chaque tranche d'âge")}
           </h2>
-          <p className="text-gray-500 max-w-xl mx-auto text-lg">
+          <p className="text-white/50 max-w-xl mx-auto text-lg">
             {pickLang(
               lang,
               'كل فئة عمرية تحتاج نهجاً مختلفاً. نحن لا نُعطي نفس البرنامج للجميع.',
@@ -122,10 +137,19 @@ export default function ProgramsSection() {
         </div>
 
         {/* Programs */}
-        <div className="space-y-6">
+        <div className="space-y-5">
           {PROGRAMS.map((prog) => (
-            <div key={prog.age}
-              className="bg-white rounded-3xl border border-[#F0E8FF] shadow-card overflow-hidden hover:shadow-[0_8px_32px_-4px_rgba(124,92,252,0.16)] transition-all">
+            <div
+              key={prog.age}
+              className="rounded-3xl overflow-hidden transition-all hover:-translate-y-0.5"
+              style={{
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.08)',
+                backdropFilter: 'blur(16px)',
+                WebkitBackdropFilter: 'blur(16px)',
+                boxShadow: '0 12px 40px rgba(0,0,0,0.25)',
+              }}
+            >
               {/* Top banner */}
               <div className={`bg-gradient-to-l ${prog.gradient} p-6 flex items-center gap-5`}>
                 <div className="text-5xl">{prog.emoji}</div>
@@ -142,17 +166,20 @@ export default function ProgramsSection() {
               </div>
 
               {/* 3-column content */}
-              <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x md:divide-x-reverse divide-gray-100">
+              <div
+                className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x md:divide-x-reverse"
+                style={{ borderColor: 'rgba(255,255,255,0.07)' }}
+              >
 
                 {/* APA */}
                 <div className="p-6">
                   <div className="flex items-center gap-2 mb-4">
                     <span className="bg-blue-600 text-white text-xs font-black px-2.5 py-1 rounded-full">APA</span>
-                    <span className="text-gray-700 font-bold text-sm">{pickLang(lang, 'الرياضة المعدّلة', 'Adapted Physical Activity', 'Activité physique adaptée')}</span>
+                    <span className="text-white/60 font-bold text-sm">{pickLang(lang, 'الرياضة المعدّلة', 'Adapted Physical Activity', 'Activité physique adaptée')}</span>
                   </div>
                   <ul className="space-y-2">
                     {pickLang(lang, prog.apa, prog.apaEn, prog.apaFr).map(item => (
-                      <li key={item} className="flex items-center gap-2 text-sm text-gray-600">
+                      <li key={item} className="flex items-center gap-2 text-sm text-white/55">
                         <span className="w-1.5 h-1.5 bg-blue-400 rounded-full flex-shrink-0" />
                         {item}
                       </li>
@@ -164,11 +191,11 @@ export default function ProgramsSection() {
                 <div className="p-6">
                   <div className="flex items-center gap-2 mb-4">
                     <span className="bg-emerald-600 text-white text-xs font-black px-2.5 py-1 rounded-full">ABA</span>
-                    <span className="text-gray-700 font-bold text-sm">{pickLang(lang, 'تعديل السلوك', 'Applied Behavior Analysis', 'Analyse appliquée du comportement')}</span>
+                    <span className="text-white/60 font-bold text-sm">{pickLang(lang, 'تعديل السلوك', 'Applied Behavior Analysis', 'Analyse appliquée du comportement')}</span>
                   </div>
                   <ul className="space-y-2">
                     {pickLang(lang, prog.aba, prog.abaEn, prog.abaFr).map(item => (
-                      <li key={item} className="flex items-center gap-2 text-sm text-gray-600">
+                      <li key={item} className="flex items-center gap-2 text-sm text-white/55">
                         <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full flex-shrink-0" />
                         {item}
                       </li>
@@ -180,11 +207,11 @@ export default function ProgramsSection() {
                 <div className="p-6">
                   <div className="flex items-center gap-2 mb-4">
                     <span className="bg-purple-600 text-white text-xs font-black px-2.5 py-1 rounded-full">CBT</span>
-                    <span className="text-gray-700 font-bold text-sm">{pickLang(lang, 'التدريب المعرفي', 'Cognitive Behavioral Training', 'Entraînement cognitivo-comportemental')}</span>
+                    <span className="text-white/60 font-bold text-sm">{pickLang(lang, 'التدريب المعرفي', 'Cognitive Behavioral Training', 'Entraînement cognitivo-comportemental')}</span>
                   </div>
                   <ul className="space-y-2">
                     {pickLang(lang, prog.cbt, prog.cbtEn, prog.cbtFr).map(item => (
-                      <li key={item} className="flex items-center gap-2 text-sm text-gray-600">
+                      <li key={item} className="flex items-center gap-2 text-sm text-white/55">
                         <span className="w-1.5 h-1.5 bg-purple-400 rounded-full flex-shrink-0" />
                         {item}
                       </li>
@@ -195,17 +222,26 @@ export default function ProgramsSection() {
               </div>
 
               {/* Outcomes footer */}
-              <div className={`px-6 py-4 ${prog.light} border-t ${prog.border} flex items-center justify-between flex-wrap gap-3`}>
+              <div
+                className="px-6 py-4 flex items-center justify-between flex-wrap gap-3"
+                style={{ borderTop: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.02)' }}
+              >
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-xs font-bold text-gray-500">
+                  <span className="text-xs font-bold text-white/35">
                     {pickLang(lang, 'النتائج المتوقعة:', 'Expected Outcomes:', 'Résultats attendus :')}
                   </span>
                   {pickLang(lang, prog.outcomes, prog.outcomesEn, prog.outcomesFr).map(o => (
-                    <span key={o} className={`text-xs font-bold px-2.5 py-1 rounded-full ${prog.tagBg}`}>{o}</span>
+                    <span
+                      key={o}
+                      className="text-xs font-bold px-2.5 py-1 rounded-full text-white/70"
+                      style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }}
+                    >
+                      {o}
+                    </span>
                   ))}
                 </div>
                 <Link href="/register"
-                  className={`text-xs font-black ${prog.accent} hover:underline whitespace-nowrap`}>
+                  className="text-xs font-black text-indigo-400 hover:text-indigo-300 transition-colors whitespace-nowrap">
                   {pickLang(lang, 'ابدأ هذا البرنامج ←', 'Start This Program →', 'Démarrer ce programme →')}
                 </Link>
               </div>
@@ -213,7 +249,7 @@ export default function ProgramsSection() {
           ))}
         </div>
 
-        <p className="text-center text-gray-400 text-sm mt-8">
+        <p className="text-center text-white/35 text-sm mt-8">
           {pickLang(
             lang,
             'كل برنامج يبدأ بتقييم أولي مجاني لتحديد نقطة البداية الدقيقة لطفلك.',

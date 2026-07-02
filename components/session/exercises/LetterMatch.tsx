@@ -1,5 +1,5 @@
 'use client'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import type { ExerciseResult } from '@/lib/types'
 
 const LETTER_GROUPS = [
@@ -28,12 +28,15 @@ interface Props {
 export default function LetterMatch({ onComplete, onCancel, studentAge, difficulty = 1 }: Props) {
   const totalRounds = difficulty === 1 ? 10 : difficulty === 2 ? 15 : 20
   const startRef = useRef(Date.now())
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [round, setRound] = useState(0)
   const [correct, setCorrect] = useState(0)
   const [errors, setErrors] = useState(0)
   const [feedback, setFeedback] = useState<'correct'|'wrong'|null>(null)
   const [target, setTarget] = useState(() => pickRound())
   const [done, setDone] = useState(false)
+
+  useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current) }, [])
 
   function pickRound() {
     const group = LETTER_GROUPS[Math.floor(Math.random() * LETTER_GROUPS.length)]
@@ -51,7 +54,7 @@ export default function LetterMatch({ onComplete, onCancel, studentAge, difficul
     setFeedback(isCorrect ? 'correct' : 'wrong')
     if (isCorrect) setCorrect(c => c + 1)
     else setErrors(e => e + 1)
-    setTimeout(() => {
+    timerRef.current = setTimeout(() => {
       const nextRound = round + 1
       if (nextRound >= totalRounds) {
         const dur = Math.round((Date.now() - startRef.current) / 1000)

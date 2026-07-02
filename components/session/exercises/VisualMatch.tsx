@@ -1,5 +1,5 @@
 'use client'
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import type { ExerciseResult } from '@/lib/types'
 
 const ITEMS = [
@@ -48,6 +48,10 @@ function buildRound(optionCount: number) {
 export default function VisualMatch({ onComplete, onCancel, difficulty = 1 }: Props) {
   const optionCount = difficulty === 1 ? 3 : difficulty === 2 ? 4 : 6
   const startRef = useRef(Date.now())
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current) }, [])
+
   const [round, setRound] = useState(0)
   const [correct, setCorrect] = useState(0)
   const [errors, setErrors] = useState(0)
@@ -67,7 +71,7 @@ export default function VisualMatch({ onComplete, onCancel, difficulty = 1 }: Pr
     const newErrors  = errors  + (isCorrect ? 0 : 1)
     if (isCorrect) setCorrect(newCorrect)
     else setErrors(newErrors)
-    setTimeout(() => {
+    timerRef.current = setTimeout(() => {
       const nextRound = round + 1
       if (nextRound >= TOTAL_ROUNDS) {
         onComplete({

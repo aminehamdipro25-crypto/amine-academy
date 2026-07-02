@@ -27,23 +27,28 @@ export default function BodyScan({ onComplete, onCancel, difficulty = 1 }: Props
   const [progress,setProgress]= useState(0)
   const [done,    setDone]    = useState(false)
   const [startMs]             = useState(Date.now())
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const intervalRef  = useRef<ReturnType<typeof setInterval> | null>(null)
+  const advanceRef   = useRef(false)
 
   useEffect(() => {
     setProgress(0)
+    advanceRef.current = false
     intervalRef.current = setInterval(() => {
       setProgress(p => {
         if (p >= 100) {
-          clearInterval(intervalRef.current!)
-          if (phase === 'tense') {
-            setPhase('relax')
-          } else {
-            const next = idx + 1
-            if (next >= count) {
-              setDone(true)
+          if (!advanceRef.current) {
+            advanceRef.current = true
+            clearInterval(intervalRef.current!)
+            if (phase === 'tense') {
+              setPhase('relax')
             } else {
-              setIdx(next)
-              setPhase('tense')
+              const next = idx + 1
+              if (next >= count) {
+                setDone(true)
+              } else {
+                setIdx(next)
+                setPhase('tense')
+              }
             }
           }
           return 100

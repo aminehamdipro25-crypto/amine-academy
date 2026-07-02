@@ -142,6 +142,10 @@ export default function PictureWordCards({
   difficulty = 1,
 }: Props) {
   const startRef = useRef(Date.now())
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current) }, [])
+
   const [phase, setPhase] = useState<Phase>('mode')
   const [mode, setMode] = useState<ExerciseMode | null>(null)
   const [deck, setDeck] = useState<Card[]>([])
@@ -193,7 +197,7 @@ export default function PictureWordCards({
     setRatings(newRatings)
     setAnimating(true)
 
-    setTimeout(() => {
+    timerRef.current = setTimeout(() => {
       setAnimating(false)
       const nextIdx = cardIdx + 1
       if (nextIdx >= deck.length) {
@@ -240,7 +244,7 @@ export default function PictureWordCards({
     const newAnswers = [...gameAnswers, { card: target, correct: isCorrect }]
     setGameAnswers(newAnswers)
 
-    setTimeout(() => {
+    timerRef.current = setTimeout(() => {
       setChosenEmoji(null)
       const nextIdx = cardIdx + 1
       if (nextIdx >= deck.length) {

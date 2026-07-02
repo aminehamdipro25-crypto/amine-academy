@@ -1,5 +1,5 @@
 'use client'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import type { ExerciseResult } from '@/lib/types'
 
 const SCHEDULES = [
@@ -52,6 +52,14 @@ function shuffle<T>(arr: T[]): T[] {
 export default function VisualSchedule({ onComplete, onCancel, difficulty = 1 }: Props) {
   const itemCount = difficulty === 1 ? 4 : difficulty === 2 ? 5 : 6
   const startRef = useRef(Date.now())
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const timerRef2 = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => () => {
+    if (timerRef.current) clearTimeout(timerRef.current)
+    if (timerRef2.current) clearTimeout(timerRef2.current)
+  }, [])
+
   const [scheduleData] = useState(() => {
     const s = SCHEDULES[Math.floor(Math.random() * SCHEDULES.length)]
     const items = s.items.slice(0, itemCount)
@@ -68,10 +76,10 @@ export default function VisualSchedule({ onComplete, onCancel, difficulty = 1 }:
       const newPlaced = [...placed, item]
       setFlash('ok')
       setPlaced(newPlaced)
-      setTimeout(() => setFlash(null), 500)
+      timerRef.current = setTimeout(() => setFlash(null), 500)
       if (newPlaced.length === scheduleData.items.length) {
         const score = Math.max(0, Math.round(100 - (errors / scheduleData.items.length) * 40))
-        setTimeout(() => onComplete({
+        timerRef2.current = setTimeout(() => onComplete({
           exerciseType: 'visual-schedule',
           exerciseLabelAr: 'جدولي اليومي',
           score, accuracy: score,
@@ -84,7 +92,7 @@ export default function VisualSchedule({ onComplete, onCancel, difficulty = 1 }:
     } else {
       setErrors(e => e + 1)
       setFlash('err')
-      setTimeout(() => setFlash(null), 500)
+      timerRef.current = setTimeout(() => setFlash(null), 500)
     }
   }
 

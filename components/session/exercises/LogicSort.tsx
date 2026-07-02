@@ -1,5 +1,5 @@
 'use client'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import type { ExerciseResult } from '@/lib/types'
 
 interface Props {
@@ -104,6 +104,9 @@ export default function LogicSort({ onComplete, onCancel, difficulty = 1 }: Prop
   const [correct,setCorrect]= useState(0)
   const [errors, setErrors] = useState(0)
   const [startMs]           = useState(Date.now())
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current) }, [])
 
   const q = qs[idx]
   const shuffled = useMemo(() => shuffle(q.items.map(i => i.value)), [idx]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -121,21 +124,22 @@ export default function LogicSort({ onComplete, onCancel, difficulty = 1 }: Prop
         ? [...q.items].sort((a,b) => a.value - b.value).map(i => i.value)
         : [...q.items].sort((a,b) => b.value - a.value).map(i => i.value)
       const isCorrect = newSlots.every((v, i) => v === sortedCorrect[i])
+      const nc = correct + (isCorrect ? 1 : 0)
+      const ne = errors  + (isCorrect ? 0 : 1)
       setResult(isCorrect ? 'correct' : 'wrong')
-      if (isCorrect) setCorrect(c => c + 1)
-      else           setErrors(e => e + 1)
+      if (isCorrect) setCorrect(nc)
+      else           setErrors(ne)
 
-      setTimeout(() => {
+      timerRef.current = setTimeout(() => {
         const next = idx + 1
         if (next >= count) {
-          const nc = correct + (isCorrect ? 1 : 0)
           onComplete({
             exerciseType:    'logic-sort',
             exerciseLabelAr: 'الترتيب المنطقي',
             score:    Math.round((nc / count) * 100),
             accuracy: Math.round((nc / count) * 100),
             duration: Math.round((Date.now() - startMs) / 1000),
-            errors:   errors + (isCorrect ? 0 : 1),
+            errors:   ne,
             metadata: { total: count, correct: nc },
             completedAt: new Date().toISOString(),
           })

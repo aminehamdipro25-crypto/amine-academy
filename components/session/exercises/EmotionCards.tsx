@@ -1,5 +1,5 @@
 'use client'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import type { ExerciseResult } from '@/lib/types'
 
 const TOTAL = 14
@@ -57,6 +57,9 @@ export default function EmotionCards({ onComplete, onCancel, studentAge, difficu
   const correctRef = useRef(0)
   const errRef     = useRef(0)
   const startRef   = useRef(Date.now())
+  const timerRef   = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current) }, [])
 
   function start() {
     startRef.current = Date.now()
@@ -71,7 +74,7 @@ export default function EmotionCards({ onComplete, onCancel, studentAge, difficu
     else           errRef.current++
     setFeedback(isCorrect ? 'correct' : 'wrong')
 
-    setTimeout(() => {
+    timerRef.current = setTimeout(() => {
       setFeedback(null)
       const next = trial + 1
       if (next >= TOTAL) {

@@ -1,5 +1,5 @@
 'use client'
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react'
 import type { ExerciseResult } from '@/lib/types'
 
 interface Props {
@@ -32,6 +32,9 @@ export default function ReadingCards({ onComplete, onCancel, difficulty = 1 }: P
   const [correct, setCorrect] = useState(0)
   const [errors,  setErrors]  = useState(0)
   const [startMs]             = useState(Date.now())
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current) }, [])
 
   const speak = useCallback((text: string) => {
     window.speechSynthesis.cancel()
@@ -41,7 +44,7 @@ export default function ReadingCards({ onComplete, onCancel, difficulty = 1 }: P
   }, [])
 
   const c = cards[idx]
-  const choices = shuffle([c.correct, ...c.wrong])
+  const choices = useMemo(() => shuffle([c.correct, ...c.wrong]), [idx]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleChoice(ch: string) {
     if (chosen) return
@@ -50,7 +53,7 @@ export default function ReadingCards({ onComplete, onCancel, difficulty = 1 }: P
     if (isCorrect) setCorrect(v => v + 1)
     else           setErrors(v => v + 1)
 
-    setTimeout(() => {
+    timerRef.current = setTimeout(() => {
       const next = idx + 1
       if (next >= count) {
         const nc = correct + (isCorrect ? 1 : 0)

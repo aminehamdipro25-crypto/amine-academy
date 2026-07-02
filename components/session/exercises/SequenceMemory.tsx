@@ -22,6 +22,9 @@ export default function SequenceMemory({ onComplete, onCancel, difficulty = 1 }:
   const maxLvlRef   = useRef(0)     // ref — avoids stale closure on setState
   const errRef      = useRef(0)
   const correctRef  = useRef(0)
+  const timerIds    = useRef<ReturnType<typeof setTimeout>[]>([])
+
+  useEffect(() => () => { timerIds.current.forEach(clearTimeout); timerIds.current = [] }, [])
 
   const startLen  = difficulty === 1 ? 3 : difficulty === 2 ? 4 : 5
   const MAX_ERR   = 3
@@ -85,7 +88,7 @@ export default function SequenceMemory({ onComplete, onCancel, difficulty = 1 }:
       // ── Wrong tap ──
       setTapFlash({ idx, ok: false })
       setWrongAnim(true)
-      setTimeout(() => { setTapFlash(null); setWrongAnim(false) }, 600)
+      timerIds.current.push(setTimeout(() => { setTapFlash(null); setWrongAnim(false) }, 600))
 
       const newErr = errRef.current + 1
       errRef.current = newErr
@@ -100,12 +103,12 @@ export default function SequenceMemory({ onComplete, onCancel, difficulty = 1 }:
       }
       setPhase('wrong')
       setPlayerSeq([])
-      setTimeout(() => playSequence(sequence), 1200)
+      timerIds.current.push(setTimeout(() => playSequence(sequence), 1200))
     } else {
       // ── Correct tap ──
       correctRef.current++
       setTapFlash({ idx, ok: true })
-      setTimeout(() => setTapFlash(null), 280)
+      timerIds.current.push(setTimeout(() => setTapFlash(null), 280))
       setPlayerSeq(newPlayer)
 
       if (newPlayer.length === sequence.length) {
@@ -116,7 +119,7 @@ export default function SequenceMemory({ onComplete, onCancel, difficulty = 1 }:
           endGame(MAX_LEVEL, errRef.current)
           return
         }
-        setTimeout(() => setLevel(l => l + 1), 700)
+        timerIds.current.push(setTimeout(() => setLevel(l => l + 1), 700))
       }
     }
   }

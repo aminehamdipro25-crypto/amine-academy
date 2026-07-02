@@ -21,8 +21,9 @@ export default function FingerGym({ onComplete, onCancel, difficulty = 1 }: Prop
   const [missed,    setMissed]    = useState(0)
   const [startMs]                 = useState(Date.now())
   const beatTimeRef = useRef<number>(0)
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const litRef      = useRef(false)
+  const intervalRef    = useRef<ReturnType<typeof setInterval> | null>(null)
+  const lightTimerRef  = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const litRef         = useRef(false)
   const beatIdxRef  = useRef(0)
   const accurateRef = useRef(0)
   const missedRef   = useRef(0)
@@ -66,7 +67,7 @@ export default function FingerGym({ onComplete, onCancel, difficulty = 1 }: Prop
       setBeatIdx(cur)
       beatIdxRef.current++
 
-      setTimeout(() => {
+      lightTimerRef.current = setTimeout(() => {
         if (litRef.current) {
           litRef.current = false
           setLit(false)
@@ -77,6 +78,7 @@ export default function FingerGym({ onComplete, onCancel, difficulty = 1 }: Prop
 
   useEffect(() => () => {
     if (intervalRef.current) clearInterval(intervalRef.current)
+    if (lightTimerRef.current) clearTimeout(lightTimerRef.current)
   }, [])
 
   function handleTap() {

@@ -1,5 +1,5 @@
 'use client'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import type { ExerciseResult } from '@/lib/types'
 
 interface Props {
@@ -33,6 +33,9 @@ export default function IfThen({ onComplete, onCancel, difficulty = 1 }: Props) 
   const [correct, setCorrect] = useState(0)
   const [errors,  setErrors]  = useState(0)
   const [startMs]             = useState(Date.now())
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current) }, [])
 
   const q = qs[idx]
   const choices = useMemo(() => shuffle([q.correct, ...q.wrong]), [idx]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -41,20 +44,21 @@ export default function IfThen({ onComplete, onCancel, difficulty = 1 }: Props) 
     if (chosen) return
     setChosen(c)
     const isCorrect = c === q.correct
-    if (isCorrect) setCorrect(v => v + 1)
-    else           setErrors(v => v + 1)
+    const nc = correct + (isCorrect ? 1 : 0)
+    const ne = errors  + (isCorrect ? 0 : 1)
+    if (isCorrect) setCorrect(nc)
+    else           setErrors(ne)
 
-    setTimeout(() => {
+    timerRef.current = setTimeout(() => {
       const next = idx + 1
       if (next >= count) {
-        const nc = correct + (isCorrect ? 1 : 0)
         onComplete({
           exerciseType:    'if-then',
           exerciseLabelAr: 'ماذا سيحدث؟',
           score:    Math.round((nc / count) * 100),
           accuracy: Math.round((nc / count) * 100),
           duration: Math.round((Date.now() - startMs) / 1000),
-          errors:   errors + (isCorrect ? 0 : 1),
+          errors:   ne,
           metadata: { total: count, correct: nc },
           completedAt: new Date().toISOString(),
         })

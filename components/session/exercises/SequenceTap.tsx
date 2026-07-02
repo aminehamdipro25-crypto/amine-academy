@@ -46,7 +46,7 @@ export default function SequenceTap({ onComplete, onCancel, difficulty = 1 }: Pr
   const newRound = useCallback(() => {
     const seq = Array.from({ length: SEQ_LEN }, () => Math.floor(Math.random() * COUNT))
     setSequence(seq)
-    setTimeout(() => playSequence(seq), 300)
+    timerIds.current.push(setTimeout(() => playSequence(seq), 300))
   }, [SEQ_LEN, COUNT, playSequence])
 
   useEffect(() => { newRound(); return clearAll }, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -58,33 +58,35 @@ export default function SequenceTap({ onComplete, onCancel, difficulty = 1 }: Pr
     const next    = [...tapped, idx]
 
     if (idx !== correct) {
-      setErrors(e => e + 1)
+      const ne = errors + 1
+      setErrors(ne)
       setFeedback('wrong')
       setPhase('feedback')
-      timerIds.current.push(setTimeout(() => advance(false), 1300))
+      timerIds.current.push(setTimeout(() => advance(false, score, ne), 1300))
     } else {
       setTapped(next)
       if (next.length === sequence.length) {
         setFeedback('correct')
         setPhase('feedback')
-        setScore(s => s + 1)
-        timerIds.current.push(setTimeout(() => advance(true), 1300))
+        const ns = score + 1
+        setScore(ns)
+        timerIds.current.push(setTimeout(() => advance(true, ns, errors), 1300))
       }
     }
   }
 
-  function advance(wasCorrect: boolean) {
+  function advance(wasCorrect: boolean, finalS: number, finalE: number) {
     setFeedback(null)
     const next = round + 1
     if (next >= ROUNDS) {
-      const finalScore = Math.round(((score + (wasCorrect ? 1 : 0)) / ROUNDS) * 100)
+      const finalScore = Math.round((finalS / ROUNDS) * 100)
       onComplete({
         exerciseType:    'sequence-tap',
         exerciseLabelAr: 'النقر بالتسلسل',
         score:     finalScore,
         accuracy:  finalScore,
         duration:  Math.round((Date.now() - startMs) / 1000),
-        errors,
+        errors:    finalE,
         metadata:  { rounds: ROUNDS, seqLen: SEQ_LEN },
         completedAt: new Date().toISOString(),
       })

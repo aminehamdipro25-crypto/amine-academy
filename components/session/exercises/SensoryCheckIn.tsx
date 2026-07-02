@@ -1,5 +1,5 @@
 'use client'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import type { ExerciseResult } from '@/lib/types'
 
 // Sensory Check-In — a pre-session regulatory awareness tool for autism.
@@ -31,6 +31,10 @@ interface Props {
 
 export default function SensoryCheckIn({ onComplete, onCancel }: Props) {
   const startRef  = useRef(Date.now())
+  const timerRef  = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current) }, [])
+
   const [step,    setStep]    = useState(0)
   const [answers, setAnswers] = useState<number[]>([]) // values 0/1/2
   const [chosen,  setChosen]  = useState<number | null>(null)
@@ -41,7 +45,7 @@ export default function SensoryCheckIn({ onComplete, onCancel }: Props) {
   function pick(value: number) {
     if (chosen !== null) return
     setChosen(value)
-    setTimeout(() => {
+    timerRef.current = setTimeout(() => {
       const next = [...answers, value]
       setAnswers(next)
       if (step + 1 >= AREAS.length) {

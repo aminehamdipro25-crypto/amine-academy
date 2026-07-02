@@ -67,6 +67,9 @@ export default function ListeningComprehension({
   difficulty = 1,
 }: Props) {
   const startRef = useRef(Date.now())
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current) }, [])
   const [ttsSupported, setTtsSupported] = useState(true)
   const [questions, setQuestions] = useState<Question[]>([])
   const [currentIdx, setCurrentIdx] = useState(0)
@@ -118,17 +121,17 @@ export default function ListeningComprehension({
     if (phase !== 'question' || selectedChoice !== null) return
     setSelectedChoice(idx)
     const isCorrect = idx === currentQ.ans
-    if (isCorrect) setCorrect(c => c + 1)
-    else setErrors(e => e + 1)
+    const nc = correct + (isCorrect ? 1 : 0)
+    const ne = errors  + (isCorrect ? 0 : 1)
+    if (isCorrect) setCorrect(nc)
+    else setErrors(ne)
     setPhase('feedback')
 
-    setTimeout(() => {
+    timerRef.current = setTimeout(() => {
       const nextIdx = currentIdx + 1
       if (nextIdx >= total) {
         const dur = Math.round((Date.now() - startRef.current) / 1000)
-        const finalCorrect = isCorrect ? correct + 1 : correct
-        const finalErrors = isCorrect ? errors : errors + 1
-        const score = Math.round((finalCorrect / total) * 100)
+        const score = Math.round((nc / total) * 100)
         setPhase('done')
         onComplete({
           exerciseType: 'listening-comprehension',
@@ -136,8 +139,8 @@ export default function ListeningComprehension({
           score,
           accuracy: score,
           duration: dur,
-          errors: finalErrors,
-          metadata: { correct: finalCorrect, total },
+          errors: ne,
+          metadata: { correct: nc, total },
           completedAt: new Date().toISOString(),
         })
       } else {

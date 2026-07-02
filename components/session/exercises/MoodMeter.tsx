@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import type { ExerciseResult } from '@/lib/types'
 
 interface Props {
@@ -32,11 +32,14 @@ export default function MoodMeter({ onComplete, onCancel, difficulty = 1 }: Prop
   const [chosen,  setChosen]  = useState<number | null>(null)
   const [results, setResults] = useState<number[]>([])
   const [startMs]             = useState(Date.now())
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current) }, [])
 
   function handlePick(level: number) {
     if (chosen !== null) return
     setChosen(level)
-    setTimeout(() => {
+    timerRef.current = setTimeout(() => {
       const newResults = [...results, level]
       if (idx + 1 >= rounds) {
         const avg   = newResults.reduce((a, b) => a + b, 0) / newResults.length

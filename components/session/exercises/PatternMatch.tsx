@@ -1,5 +1,5 @@
 'use client'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import type { ExerciseResult } from '@/lib/types'
 
 interface Props {
@@ -128,6 +128,9 @@ export default function PatternMatch({ onComplete, onCancel, studentAge, difficu
   const [feedback, setFeedback]  = useState<'correct' | 'wrong' | null>(null)
   const [scores, setScores]      = useState<number[]>([])
   const startRef = useRef(Date.now())
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current) }, [])
 
   function pick(idx: number) {
     if (feedback !== null) return
@@ -137,7 +140,7 @@ export default function PatternMatch({ onComplete, onCancel, studentAge, difficu
     const newScores = [...scores, isCorrect ? 100 : 0]
     setScores(newScores)
 
-    setTimeout(() => {
+    timerRef.current = setTimeout(() => {
       setFeedback(null)
       setSelected(null)
       if (round + 1 >= ROUNDS) {

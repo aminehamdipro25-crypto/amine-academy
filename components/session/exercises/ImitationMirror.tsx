@@ -1,5 +1,5 @@
 'use client'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import type { ExerciseResult } from '@/lib/types'
 
 const ACTIONS = [
@@ -32,6 +32,9 @@ export default function ImitationMirror({ onComplete, onCancel, difficulty = 1 }
   const perRound  = difficulty === 1 ? 3 : difficulty === 2 ? 4 : 5
   const ROUNDS    = 3
   const startRef  = useRef(Date.now())
+  const timerRef  = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current) }, [])
 
   const [actions] = useState(() => shuffle(ACTIONS).slice(0, perRound * ROUNDS))
   const [round,   setRound]   = useState(0)
@@ -49,7 +52,7 @@ export default function ImitationMirror({ onComplete, onCancel, difficulty = 1 }
     const w = wrong   + (ok ? 0 : 1)
     if (ok) setCorrect(c); else setWrong(w)
 
-    setTimeout(() => {
+    timerRef.current = setTimeout(() => {
       setFlash(null)
       const nextStep = step + 1
       if (nextStep >= roundActions.length) {

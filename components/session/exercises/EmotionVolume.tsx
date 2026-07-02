@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import type { ExerciseResult } from '@/lib/types'
 
 interface Props {
@@ -34,11 +34,14 @@ export default function EmotionVolume({ onComplete, onCancel, difficulty = 1 }: 
   const [chosen,  setChosen]  = useState<number | null>(null)
   const [answers, setAnswers] = useState<number[]>([])
   const [startMs]             = useState(Date.now())
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current) }, [])
 
   function handlePick(v: number) {
     if (chosen !== null) return
     setChosen(v)
-    setTimeout(() => {
+    timerRef.current = setTimeout(() => {
       const next = [...answers, v]
       if (idx + 1 >= count) {
         const avg   = next.reduce((a, b) => a + b, 0) / next.length

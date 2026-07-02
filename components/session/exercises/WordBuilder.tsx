@@ -1,5 +1,5 @@
 'use client'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import type { ExerciseResult } from '@/lib/types'
 
 interface Props {
@@ -89,6 +89,9 @@ export default function WordBuilder({ onComplete, onCancel, studentAge, difficul
   const [scores, setScores]        = useState<number[]>([])
   const [started, setStarted]      = useState(false)
   const startRef = useRef(Date.now())
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current) }, [])
 
   function pickLetter(idx: number) {
     if (feedback !== null || usedIdxs.includes(idx)) return
@@ -104,7 +107,7 @@ export default function WordBuilder({ onComplete, onCancel, studentAge, difficul
       const newScores = [...scores, isCorrect ? 100 : 0]
       setScores(newScores)
 
-      setTimeout(() => {
+      timerRef.current = setTimeout(() => {
         setFeedback(null)
         if (!isCorrect) {
           // Reset for retry

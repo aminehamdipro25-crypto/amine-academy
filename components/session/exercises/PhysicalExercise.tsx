@@ -148,18 +148,18 @@ export default function PhysicalExercise({ id, onComplete, onCancel, difficulty 
   useEffect(() => {
     if (!running || completed) return
     intervalRef.current = setInterval(() => {
-      setSecsLeft(s => {
-        if (s <= 1) {
-          clearInterval(intervalRef.current!)
-          setRunning(false)
-          setCompleted(true)
-          return 0
-        }
-        return s - 1
-      })
+      setSecsLeft(s => s <= 1 ? 0 : s - 1)
     }, 1000)
     return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
   }, [running, completed])
+
+  useEffect(() => {
+    if (secsLeft === 0 && running) {
+      if (intervalRef.current) clearInterval(intervalRef.current)
+      setRunning(false)
+      setCompleted(true)
+    }
+  }, [secsLeft, running])
 
   if (!ex) return null
 

@@ -56,21 +56,23 @@ export default function VerbalFluency({ onComplete, onCancel, studentAge, diffic
   const [running, setRunning] = useState(false)
   const [done, setDone] = useState(false)
   const startRef = useRef(Date.now())
+  const doneRef  = useRef(false)
 
   useEffect(() => {
     if (!running || timeLeft <= 0) return
     const id = setTimeout(() => {
-      setTimeLeft(t => {
-        if (t <= 1) {
-          setRunning(false)
-          setDone(true)
-          return 0
-        }
-        return t - 1
-      })
+      setTimeLeft(t => t <= 1 ? 0 : t - 1)
     }, 1000)
     return () => clearTimeout(id)
   }, [running, timeLeft])
+
+  useEffect(() => {
+    if (timeLeft === 0 && running && !doneRef.current) {
+      doneRef.current = true
+      setRunning(false)
+      setDone(true)
+    }
+  }, [timeLeft, running])
 
   function startTask(cat: Category) {
     setCategory(cat)
@@ -78,6 +80,7 @@ export default function VerbalFluency({ onComplete, onCancel, studentAge, diffic
     setTimeLeft(TIME_LIMIT)
     setCount(0)
     setWords([])
+    doneRef.current = false
     setRunning(true)
     startRef.current = Date.now()
   }

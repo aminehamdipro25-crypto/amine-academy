@@ -1,5 +1,5 @@
 'use client'
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react'
 import type { ExerciseResult } from '@/lib/types'
 
 interface Props {
@@ -57,26 +57,27 @@ export default function SpellingBee({ onComplete, onCancel, difficulty = 1 }: Pr
   }, [])
 
   const q = qs[idx]
-  const shuffledChoices = shuffle(q.choices)
+  const shuffledChoices = useMemo(() => shuffle(q.choices), [idx]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleChoice(c: string) {
     if (chosen) return
     setChosen(c)
     const isCorrect = c === q.word
-    if (isCorrect) { setCorrect(v => v + 1); speak('ممتاز') }
-    else           { setErrors(v => v + 1);  speak('حاول مرة أخرى') }
+    const nc = correct + (isCorrect ? 1 : 0)
+    const ne = errors  + (isCorrect ? 0 : 1)
+    if (isCorrect) { setCorrect(nc); speak('ممتاز') }
+    else           { setErrors(ne);  speak('حاول مرة أخرى') }
 
     timerRef.current = setTimeout(() => {
       const next = idx + 1
       if (next >= count) {
-        const nc = correct + (isCorrect ? 1 : 0)
         onComplete({
           exerciseType:    'spelling-bee',
           exerciseLabelAr: 'الإملاء',
           score:    Math.round((nc / count) * 100),
           accuracy: Math.round((nc / count) * 100),
           duration: Math.round((Date.now() - startMs) / 1000),
-          errors:   errors + (isCorrect ? 0 : 1),
+          errors:   ne,
           metadata: { total: count, correct: nc },
           completedAt: new Date().toISOString(),
         })

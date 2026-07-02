@@ -27,6 +27,7 @@ export default function TargetTracking({ onComplete, onCancel, difficulty = 1 }:
   const dotsRef  = useRef<Dot[]>([])
   const hitsRef  = useRef(0)
   const falseRef = useRef(0)
+  const doneRef  = useRef(false)
 
   const initDots = useCallback(() => {
     const count = difficulty === 1 ? 4 : difficulty === 2 ? 6 : 8
@@ -58,13 +59,7 @@ export default function TargetTracking({ onComplete, onCancel, difficulty = 1 }:
     initDots()
     rafRef.current = requestAnimationFrame(tick)
     timerRef.current = setInterval(() => {
-      setTimeLeft(t => {
-        if (t <= 1) {
-          stopGame()
-          return 0
-        }
-        return t - 1
-      })
+      setTimeLeft(t => t <= 1 ? 0 : t - 1)
     }, 1000)
   }
 
@@ -84,6 +79,13 @@ export default function TargetTracking({ onComplete, onCancel, difficulty = 1 }:
       completedAt: new Date().toISOString(),
     })
   }
+
+  useEffect(() => {
+    if (timeLeft === 0 && started && !doneRef.current) {
+      doneRef.current = true
+      stopGame()
+    }
+  }, [timeLeft, started]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => () => {
     cancelAnimationFrame(rafRef.current)

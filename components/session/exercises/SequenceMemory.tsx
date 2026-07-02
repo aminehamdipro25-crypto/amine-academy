@@ -2,182 +2,238 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import type { ExerciseResult } from '@/lib/types'
 
+// 9 vivid, clearly distinct colours — one per grid position
 const COLORS = [
-  '#5b6ef2','#2dd4bf','#f59e0b','#f472b6',
-  '#34d399','#a78bfa','#60a5fa','#fb923c','#4ade80',
+  '#EF4444', // 0 red
+  '#3B82F6', // 1 blue
+  '#22C55E', // 2 green
+  '#EAB308', // 3 yellow
+  '#A855F7', // 4 purple
+  '#F97316', // 5 orange
+  '#EC4899', // 6 pink
+  '#14B8A6', // 7 teal
+  '#6366F1', // 8 indigo
 ]
 
 interface Props { onComplete: (r: ExerciseResult) => void; onCancel: () => void; studentAge: number; difficulty?: 1|2|3 }
 
 export default function SequenceMemory({ onComplete, onCancel, difficulty = 1 }: Props) {
-  const startRef = useRef(Date.now())
-  const startLen = difficulty === 1 ? 3 : difficulty === 2 ? 4 : 5
-  const maxErrors = 3
+  const startRef    = useRef(Date.now())
+  const maxLvlRef   = useRef(0)     // ref — avoids stale closure on setState
+  const errRef      = useRef(0)
+  const correctRef  = useRef(0)
 
-  const [sequence, setSequence]   = useState<number[]>([])
+  const startLen  = difficulty === 1 ? 3 : difficulty === 2 ? 4 : 5
+  const MAX_ERR   = 3
+  const MAX_LEVEL = 8
+
+  const [sequence,  setSequence]  = useState<number[]>([])
   const [playerSeq, setPlayerSeq] = useState<number[]>([])
-  const [phase, setPhase]         = useState<'watch'|'repeat'|'wrong'|'done'>('watch')
-  const [active, setActive]       = useState<number|null>(null)
-  const [pressed, setPressed]     = useState<number|null>(null)
-  const [level, setLevel]         = useState(1)
-  const [errors, setErrors]       = useState(0)
-  const [maxLevel, setMaxLevel]   = useState(0)
+  const [phase,     setPhase]     = useState<'watch'|'repeat'|'wrong'>('watch')
+  const [active,    setActive]    = useState<number|null>(null)
+  const [tapFlash,  setTapFlash]  = useState<{idx:number; ok:boolean}|null>(null)
+  const [wrongAnim, setWrongAnim] = useState(false)
+  const [level,     setLevel]     = useState(1)
+  const [errors,    setErrors]    = useState(0)
 
   const playSequence = useCallback(async (seq: number[]) => {
     setPhase('watch')
     setActive(null)
-    await new Promise<void>(r => setTimeout(r, 900))
+    setPlayerSeq([])
+    await new Promise<void>(r => setTimeout(r, 800))
     for (const idx of seq) {
       setActive(idx)
-      await new Promise<void>(r => setTimeout(r, 650))
+      await new Promise<void>(r => setTimeout(r, 700))
       setActive(null)
-      await new Promise<void>(r => setTimeout(r, 280))
+      await new Promise<void>(r => setTimeout(r, 300))
     }
     setPhase('repeat')
-    setPlayerSeq([])
   }, [])
 
   useEffect(() => {
     const len = startLen + level - 1
     const seq = Array.from({ length: len }, () => Math.floor(Math.random() * 9))
     setSequence(seq)
-    const timer = setTimeout(() => playSequence(seq), 500)
-    return () => clearTimeout(timer)
+    const t = setTimeout(() => playSequence(seq), 600)
+    return () => clearTimeout(t)
   }, [level, startLen, playSequence])
+
+  function endGame(reachedLevel: number, totalErr: number) {
+    const dur = Math.round((Date.now() - startRef.current) / 1000)
+    const total = correctRef.current + totalErr
+    const acc   = total > 0 ? Math.round((correctRef.current / total) * 100) : 0
+    const score = Math.min(100, Math.round((reachedLevel / MAX_LEVEL) * 100))
+    onComplete({
+      exerciseType:    'sequence-memory',
+      exerciseLabelAr: 'تذكر التسلسل',
+      score,
+      accuracy: acc,
+      duration: dur,
+      errors: totalErr,
+      metadata: { maxLevel: reachedLevel, difficulty },
+      completedAt: new Date().toISOString(),
+    })
+  }
 
   function handleTap(idx: number) {
     if (phase !== 'repeat') return
-    setPressed(idx)
-    setTimeout(() => setPressed(null), 200)
+
     const newPlayer = [...playerSeq, idx]
-    setPlayerSeq(newPlayer)
     const pos = newPlayer.length - 1
 
     if (sequence[pos] !== idx) {
-      const newErrors = errors + 1
-      setErrors(newErrors)
+      // ── Wrong tap ──
+      setTapFlash({ idx, ok: false })
+      setWrongAnim(true)
+      setTimeout(() => { setTapFlash(null); setWrongAnim(false) }, 600)
+
+      const newErr = errRef.current + 1
+      errRef.current = newErr
+      setErrors(newErr)
+
+      // Update max level reached
+      if (level > maxLvlRef.current) maxLvlRef.current = level
+
+      if (newErr >= MAX_ERR) {
+        endGame(maxLvlRef.current, newErr)
+        return
+      }
       setPhase('wrong')
-      if (level > maxLevel) setMaxLevel(level)
-      if (newErrors >= maxErrors) {
-        const dur = Math.round((Date.now() - startRef.current) / 1000)
-        onComplete({
-          exerciseType: 'sequence-memory',
-          exerciseLabelAr: 'تذكر التسلسل',
-          score: Math.min(100, Math.max(0, maxLevel * 15)),
-          accuracy: Math.round(((level - 1) / Math.max(1, level - 1 + newErrors)) * 100),
-          duration: dur,
-          errors: newErrors,
-          metadata: { maxLevel, difficulty },
-          completedAt: new Date().toISOString(),
-        })
-        return
+      setPlayerSeq([])
+      setTimeout(() => playSequence(sequence), 1200)
+    } else {
+      // ── Correct tap ──
+      correctRef.current++
+      setTapFlash({ idx, ok: true })
+      setTimeout(() => setTapFlash(null), 280)
+      setPlayerSeq(newPlayer)
+
+      if (newPlayer.length === sequence.length) {
+        // Level complete
+        if (level > maxLvlRef.current) maxLvlRef.current = level
+
+        if (level >= MAX_LEVEL) {
+          endGame(MAX_LEVEL, errRef.current)
+          return
+        }
+        setTimeout(() => setLevel(l => l + 1), 700)
       }
-      setTimeout(() => playSequence(sequence), 900)
-    } else if (newPlayer.length === sequence.length) {
-      if (level > maxLevel) setMaxLevel(level)
-      if (level >= 8) {
-        const dur = Math.round((Date.now() - startRef.current) / 1000)
-        setPhase('done')
-        onComplete({
-          exerciseType: 'sequence-memory',
-          exerciseLabelAr: 'تذكر التسلسل',
-          score: 100,
-          accuracy: Math.round((level / Math.max(1, level + errors)) * 100),
-          duration: dur,
-          errors,
-          metadata: { maxLevel: level, difficulty },
-          completedAt: new Date().toISOString(),
-        })
-        return
-      }
-      setTimeout(() => setLevel(l => l + 1), 700)
     }
   }
 
-  if (phase === 'done') return null
-
-  const progress = Math.min(((level - 1) / 7) * 100, 100)
+  const progress = Math.min(((level - 1) / (MAX_LEVEL - 1)) * 100, 100)
 
   return (
     <div className="flex flex-col items-center gap-4 p-5 select-none" dir="rtl">
-      {/* Header */}
+
+      {/* ── Header ── */}
       <div className="flex items-center justify-between w-full max-w-sm">
-        <div className="bg-white/10 rounded-xl px-3 py-1.5 text-center">
+        <div className="bg-white/10 rounded-xl px-3 py-1.5 text-center min-w-[56px]">
           <div className="text-lg font-black text-brand-400">{level}</div>
           <div className="text-[10px] text-white/40">مستوى</div>
         </div>
 
         <div className={`px-4 py-1.5 rounded-full text-sm font-bold transition-all ${
-          phase === 'watch' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' :
-          phase === 'repeat' ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
-          'bg-orange-500/20 text-orange-400 border border-orange-500/30'
+          phase === 'watch'  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' :
+          phase === 'repeat' ? 'bg-green-500/20 text-green-300 border border-green-500/40' :
+                               'bg-red-500/20 text-red-300 border border-red-500/40'
         }`}>
-          {phase === 'watch' ? '👁 شاهد' : phase === 'repeat' ? '👆 كرر' : '↩ حاول مجدداً'}
+          {phase === 'watch'  ? '👁 شاهد' :
+           phase === 'repeat' ? '👆 كرر'  : '❌ خطأ!'}
         </div>
 
-        <div className="bg-white/10 rounded-xl px-3 py-1.5 text-center">
-          <div className="text-lg font-black text-red-400">{errors}/{maxErrors}</div>
+        <div className="bg-white/10 rounded-xl px-3 py-1.5 text-center min-w-[56px]">
+          <div className="text-lg font-black text-red-400">{errors}/{MAX_ERR}</div>
           <div className="text-[10px] text-white/40">أخطاء</div>
         </div>
       </div>
 
-      {/* Level progress */}
+      {/* ── Progress bar ── */}
       <div className="w-full max-w-sm bg-white/10 rounded-full h-1.5">
-        <div className="bg-brand-500 h-1.5 rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
+        <div
+          className="bg-brand-500 h-1.5 rounded-full transition-all duration-500"
+          style={{ width: `${progress}%` }}
+        />
       </div>
 
-      {/* Sequence indicator */}
-      <div className="flex gap-1.5 h-5 items-center">
-        {sequence.map((_, i) => (
-          <div key={i}
-            className={`w-2 h-2 rounded-full transition-all duration-150 ${
-              i < playerSeq.length ? 'scale-125' :
-              i === playerSeq.length && phase === 'repeat' ? 'bg-white/40 scale-110' : 'bg-white/15'
-            }`}
-            style={i < playerSeq.length ? { background: COLORS[sequence[i]] } : {}}
-          />
-        ))}
+      {/* ── Sequence step dots ── */}
+      <div className="flex gap-1 flex-wrap justify-center max-w-[280px] min-h-[22px]">
+        {sequence.map((_, i) => {
+          const done = i < playerSeq.length
+          const curr = i === playerSeq.length && phase === 'repeat'
+          return (
+            <div
+              key={i}
+              className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black transition-all duration-200 ${curr ? 'scale-125' : ''}`}
+              style={{
+                background: done
+                  ? COLORS[sequence[i]]
+                  : curr ? 'rgba(255,255,255,0.45)' : 'rgba(255,255,255,0.12)',
+                color: 'white',
+              }}
+            >
+              {i + 1}
+            </div>
+          )
+        })}
       </div>
 
-      {/* 3×3 Grid */}
-      <div className="grid grid-cols-3 gap-3">
+      {/* ── 3×3 Grid ── */}
+      <div className={`grid grid-cols-3 gap-3 transition-all duration-150 ${wrongAnim ? 'brightness-50 scale-95' : ''}`}>
         {Array.from({ length: 9 }, (_, i) => {
-          const isActive  = active === i
-          const isPressed = pressed === i
+          const isActive   = active === i
+          const isOkFlash  = tapFlash?.idx === i && tapFlash.ok
+          const isBadFlash = tapFlash?.idx === i && !tapFlash.ok
+
+          const bg = isActive
+            ? COLORS[i]
+            : isBadFlash
+              ? '#EF4444'
+              : isOkFlash
+                ? COLORS[i]
+                : phase === 'repeat'
+                  ? `${COLORS[i]}CC`   // 80% opacity — clearly visible
+                  : `${COLORS[i]}44`   // 27% opacity — dimmed during watch
+
           return (
             <button
               key={i}
               onClick={() => handleTap(i)}
               disabled={phase !== 'repeat'}
-              className={`w-24 h-24 rounded-2xl border-2 transition-all duration-150 ${
+              className={`w-24 h-24 rounded-2xl border-2 transition-all duration-150 flex items-center justify-center font-black text-2xl text-white/60 ${
                 isActive
-                  ? 'scale-115 border-white/60 shadow-lg'
-                  : isPressed
-                    ? 'scale-90 brightness-150 border-white/40'
-                    : phase === 'repeat'
-                      ? 'border-white/20 hover:scale-105 hover:border-white/35 cursor-pointer'
-                      : 'border-white/10 cursor-default'
+                  ? 'scale-110 border-white/80'
+                  : isBadFlash
+                    ? 'scale-95 border-red-300'
+                    : isOkFlash
+                      ? 'scale-105 border-white/70'
+                      : phase === 'repeat'
+                        ? 'border-white/25 hover:scale-105 hover:border-white/50 cursor-pointer'
+                        : 'border-transparent cursor-default'
               }`}
               style={{
-                backgroundColor: isActive
-                  ? COLORS[i]
-                  : isPressed
-                    ? `${COLORS[i]}88`
-                    : `${COLORS[i]}40`,
-                boxShadow: isActive ? `0 0 24px ${COLORS[i]}88` : 'none',
+                backgroundColor: bg,
+                boxShadow: isActive
+                  ? `0 0 36px ${COLORS[i]}BB, 0 0 12px ${COLORS[i]}66`
+                  : isOkFlash
+                    ? `0 0 20px ${COLORS[i]}99`
+                    : 'none',
               }}
-            />
+            >
+              {i + 1}
+            </button>
           )
         })}
       </div>
 
-      <p className="text-white/35 text-sm text-center">
+      {/* ── Instruction ── */}
+      <p className="text-white/50 text-sm text-center">
         {phase === 'watch'  ? 'شاهد التسلسل بعناية...' :
-         phase === 'repeat' ? `كرر ${sequence.length} خطوة بالترتيب` :
+         phase === 'repeat' ? `كرر التسلسل: ${sequence.length} خطوات` :
                               'خطأ! سيُعاد التسلسل...'}
       </p>
 
-      <button onClick={onCancel} className="text-white/25 hover:text-white/50 text-xs transition-colors">
+      <button onClick={onCancel} className="text-white/25 hover:text-white/55 text-xs transition-colors mt-auto">
         ← إنهاء التمرين
       </button>
     </div>

@@ -219,7 +219,7 @@ function ExercisesMockup() {
       <div className="p-3.5">
         <div className="flex gap-1.5 mb-3">
           {[{l:'الكل',a:true},{l:'APA'},{l:'ABA'},{l:'CBT'}].map(({l,a})=>(
-            <span key={l} className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${a?'bg-purple-600 text-white':'bg-gray-100 text-gray-500'}`}>{l}</span>
+            <span key={l} className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${a?'bg-purple-600 text-white':'bg-gray-100 text-white'}`}>{l}</span>
           ))}
         </div>
         <div className="space-y-2">

@@ -197,7 +197,7 @@ export default function RegisterPage() {
             <div key={s.id} className="flex items-center gap-2">
               <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-bold transition-colors ${
                 step === s.id ? 'bg-brand-600 text-white' :
-                step > s.id  ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-500'
+                step > s.id  ? 'bg-green-500 text-white' : 'bg-gray-100 text-white'
               }`}>
                 {step > s.id ? <Check className="w-3.5 h-3.5" /> : <span className="ltr-num">{s.id}</span>}
                 <span className="hidden sm:inline">{s.label}</span>

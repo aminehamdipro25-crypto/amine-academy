@@ -31,8 +31,8 @@ function shuffle<T>(arr: T[]): T[] {
 
 function buildQueue(difficulty: 1|2|3): Story[] {
   if (difficulty === 1) {
-    const threeStep = ALL_STORIES.filter(s => s.steps.length === 3)
-    return shuffle(threeStep).slice(0, 6)
+    const shortSteps = ALL_STORIES.filter(s => s.steps.length <= 4)
+    return shuffle(shortSteps).slice(0, 6)
   } else if (difficulty === 2) {
     const fourStep = ALL_STORIES.filter(s => s.steps.length === 4)
     return shuffle(fourStep).slice(0, 6)

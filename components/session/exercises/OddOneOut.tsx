@@ -73,43 +73,23 @@ export default function OddOneOut({ onComplete, onCancel, difficulty = 1 }: Prop
     if (feedback !== null) return
     const q = questions[qIndex]
     setSelectedIdx(idx)
-    if (idx === q.odd) {
-      setCorrect(c => {
-        const nc = c + 1
-        setFeedback('correct')
-        setShowExplain(true)
-        timerRef.current = setTimeout(() => {
-          setFeedback(null)
-          setSelectedIdx(null)
-          setShowExplain(false)
-          const nextQ = qIndex + 1
-          if (nextQ >= totalQuestions) {
-            finishGame(nc, errors)
-          } else {
-            setQIndex(nextQ)
-          }
-        }, 1500)
-        return nc
-      })
-    } else {
-      setErrors(e => {
-        const ne = e + 1
-        setFeedback('wrong')
-        setShowExplain(true)
-        timerRef.current = setTimeout(() => {
-          setFeedback(null)
-          setSelectedIdx(null)
-          setShowExplain(false)
-          const nextQ = qIndex + 1
-          if (nextQ >= totalQuestions) {
-            finishGame(correct, ne)
-          } else {
-            setQIndex(nextQ)
-          }
-        }, 1500)
-        return ne
-      })
-    }
+    const isCorrect = idx === q.odd
+    const nc = correct + (isCorrect ? 1 : 0)
+    const ne = errors  + (isCorrect ? 0 : 1)
+    if (isCorrect) setCorrect(nc); else setErrors(ne)
+    setFeedback(isCorrect ? 'correct' : 'wrong')
+    setShowExplain(true)
+    timerRef.current = setTimeout(() => {
+      setFeedback(null)
+      setSelectedIdx(null)
+      setShowExplain(false)
+      const nextQ = qIndex + 1
+      if (nextQ >= totalQuestions) {
+        finishGame(nc, ne)
+      } else {
+        setQIndex(nextQ)
+      }
+    }, 1500)
   }, [feedback, questions, qIndex, totalQuestions, errors, correct, finishGame])
 
   if (done) return null

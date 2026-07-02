@@ -70,6 +70,10 @@ import SpanExtension        from '@/components/session/exercises/SpanExtension'
 import DirectionFollow      from '@/components/session/exercises/DirectionFollow'
 import LogicSort            from '@/components/session/exercises/LogicSort'
 import PhysicalExercise from '@/components/session/exercises/PhysicalExercise'
+import VisualMatch      from '@/components/session/exercises/VisualMatch'
+import VisualSchedule   from '@/components/session/exercises/VisualSchedule'
+import FirstThenBoard   from '@/components/session/exercises/FirstThenBoard'
+import ImitationMirror  from '@/components/session/exercises/ImitationMirror'
 import Whiteboard      from '@/components/session/Whiteboard'
 import StudentTimerDisplay from '@/components/session/StudentTimerDisplay'
 import SessionHeader   from '@/components/session/SessionHeader'
@@ -2988,6 +2992,11 @@ ${notes ? `
               {activeView.id === 'span-extension'        && <SpanExtension         onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
               {activeView.id === 'direction-follow'      && <DirectionFollow       onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
               {activeView.id === 'logic-sort'            && <LogicSort             onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {/* ── Autism exercises ── */}
+              {activeView.id === 'visual-match'          && <VisualMatch           onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'visual-schedule'       && <VisualSchedule        onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'first-then-board'      && <FirstThenBoard        onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'imitation-mirror'      && <ImitationMirror       onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
               {/* ── Physical exercises ── */}
               {['jumping-jacks','obstacle-circuit','balance-walk','tiger-crawl','ball-throw','stretching','body-percussion'].includes(activeView.id) && (
                 <PhysicalExercise id={activeView.id} onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />

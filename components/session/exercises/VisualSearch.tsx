@@ -138,7 +138,7 @@ export default function VisualSearch({ onComplete, onCancel, difficulty = 1 }: P
       {/* Header */}
       <div className="flex items-center justify-between w-full max-w-md">
         <div className="text-center">
-          <div className="text-2xl font-black text-brand-400">{round}/{TOTAL_ROUNDS}</div>
+          <div className="text-2xl font-black text-brand-400">{round + 1}/{TOTAL_ROUNDS}</div>
           <div className="text-xs text-white/50">جولات</div>
         </div>
         <h2 className="text-xl font-black text-white">البحث البصري</h2>

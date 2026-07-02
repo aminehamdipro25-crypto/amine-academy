@@ -25,22 +25,23 @@ export default function SequenceTap({ onComplete, onCancel, difficulty = 1 }: Pr
   const [score,    setScore]    = useState(0)
   const [errors,   setErrors]   = useState(0)
   const [startMs]               = useState(Date.now())
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const timerIds = useRef<ReturnType<typeof setTimeout>[]>([])
 
-  const clear = () => { if (timerRef.current) clearTimeout(timerRef.current) }
+  const clearAll = () => { timerIds.current.forEach(clearTimeout); timerIds.current = [] }
 
   const playSequence = useCallback((seq: number[]) => {
+    clearAll()
     setPhase('showing')
     setLit(null)
     seq.forEach((idx, i) => {
-      timerRef.current = setTimeout(() => setLit(idx), i * 700)
-      timerRef.current = setTimeout(() => setLit(null), i * 700 + 500)
+      timerIds.current.push(setTimeout(() => setLit(idx), i * 700))
+      timerIds.current.push(setTimeout(() => setLit(null), i * 700 + 500))
     })
-    timerRef.current = setTimeout(() => {
+    timerIds.current.push(setTimeout(() => {
       setPhase('recall')
       setTapped([])
-    }, seq.length * 700 + 600)
-  }, [])
+    }, seq.length * 700 + 600))
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const newRound = useCallback(() => {
     const seq = Array.from({ length: SEQ_LEN }, () => Math.floor(Math.random() * COUNT))
@@ -48,7 +49,7 @@ export default function SequenceTap({ onComplete, onCancel, difficulty = 1 }: Pr
     setTimeout(() => playSequence(seq), 300)
   }, [SEQ_LEN, COUNT, playSequence])
 
-  useEffect(() => { newRound(); return clear }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { newRound(); return clearAll }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleTap(idx: number) {
     if (phase !== 'recall') return
@@ -60,14 +61,14 @@ export default function SequenceTap({ onComplete, onCancel, difficulty = 1 }: Pr
       setErrors(e => e + 1)
       setFeedback('wrong')
       setPhase('feedback')
-      timerRef.current = setTimeout(() => advance(false), 1300)
+      timerIds.current.push(setTimeout(() => advance(false), 1300))
     } else {
       setTapped(next)
       if (next.length === sequence.length) {
         setFeedback('correct')
         setPhase('feedback')
         setScore(s => s + 1)
-        timerRef.current = setTimeout(() => advance(true), 1300)
+        timerIds.current.push(setTimeout(() => advance(true), 1300))
       }
     }
   }

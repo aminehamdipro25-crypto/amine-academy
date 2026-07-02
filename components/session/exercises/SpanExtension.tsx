@@ -23,29 +23,33 @@ export default function SpanExtension({ onComplete, onCancel, difficulty = 1 }: 
   const [correct,  setCorrect]  = useState(0)
   const [errors,   setErrors]   = useState(0)
   const [startMs]               = useState(Date.now())
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
 
   const genSeq = useCallback((len: number) =>
     Array.from({ length: len }, () => Math.floor(Math.random() * 9) + 1)
   , [])
 
+  const timerIds = useRef<ReturnType<typeof setTimeout>[]>([])
+  const clearAll = () => { timerIds.current.forEach(clearTimeout); timerIds.current = [] }
+
   const playSeq = useCallback((s: number[]) => {
+    clearAll()
     setPhase('showing')
     s.forEach((n, i) => {
-      timerRef.current = setTimeout(() => setShowing(n), i * (SHOW_MS + 200))
-      timerRef.current = setTimeout(() => setShowing(null), i * (SHOW_MS + 200) + SHOW_MS)
+      timerIds.current.push(setTimeout(() => setShowing(n), i * (SHOW_MS + 200)))
+      timerIds.current.push(setTimeout(() => setShowing(null), i * (SHOW_MS + 200) + SHOW_MS))
     })
-    timerRef.current = setTimeout(() => {
+    timerIds.current.push(setTimeout(() => {
       setPhase('input')
       setInput([])
-    }, s.length * (SHOW_MS + 200) + 300)
-  }, [SHOW_MS])
+    }, s.length * (SHOW_MS + 200) + 300))
+  }, [SHOW_MS]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const s = genSeq(START_LEN)
     setSeq(s)
     playSeq(s)
-    return () => { if (timerRef.current) clearTimeout(timerRef.current) }
+    return clearAll
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleDigit(n: number) {
@@ -55,21 +59,22 @@ export default function SpanExtension({ onComplete, onCancel, difficulty = 1 }: 
     if (next.length === seq.length) {
       const target = REVERSE ? [...seq].reverse() : seq
       const isCorrect = next.every((v, i) => v === target[i])
+      const nc = correct + (isCorrect ? 1 : 0)
+      const ne = errors  + (isCorrect ? 0 : 1)
       setPhase('feedback')
-      if (isCorrect) setCorrect(c => c + 1)
-      else           setErrors(e => e + 1)
+      if (isCorrect) setCorrect(nc)
+      else           setErrors(ne)
 
-      timerRef.current = setTimeout(() => {
+      timerIds.current.push(setTimeout(() => {
         const nextRound = round + 1
         if (nextRound >= ROUNDS) {
-          const nc = correct + (isCorrect ? 1 : 0)
           onComplete({
             exerciseType:    'span-extension',
             exerciseLabelAr: 'امتداد الذاكرة',
             score:    Math.round((nc / ROUNDS) * 100),
             accuracy: Math.round((nc / ROUNDS) * 100),
             duration: Math.round((Date.now() - startMs) / 1000),
-            errors:   errors + (isCorrect ? 0 : 1),
+            errors:   ne,
             metadata: { rounds: ROUNDS, seqLen: seq.length, reverse: REVERSE },
             completedAt: new Date().toISOString(),
           })
@@ -80,7 +85,7 @@ export default function SpanExtension({ onComplete, onCancel, difficulty = 1 }: 
           setSeq(s)
           playSeq(s)
         }
-      }, 1300)
+      }, 1300))
     }
   }
 

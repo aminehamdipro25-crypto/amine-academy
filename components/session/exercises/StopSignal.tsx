@@ -210,7 +210,7 @@ export default function StopSignal({ onComplete, onCancel, difficulty = 1 }: Pro
         )}
 
         {/* Feedback overlay */}
-        {fb && phase === 'wait' && (
+        {fb && (
           <div className="absolute bottom-5 text-sm font-bold">
             {fb === 'hit'      && <span className="text-green-400">✓ ممتاز!</span>}
             {fb === 'stop-ok'  && <span className="text-blue-400">✓ تحكم رائع!</span>}

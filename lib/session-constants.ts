@@ -167,6 +167,11 @@ export const EXERCISES = [
   { id:'span-extension',        labelAr:'امتداد الذاكرة',           icon:'🔢', category:'ذاكرة',            color:'bg-indigo-50 border-indigo-200',   ageMin:6,  ageMax:22 },
   { id:'direction-follow',      labelAr:'اتباع الاتجاهات',         icon:'🧭', category:'إدراكي',           color:'bg-cyan-50 border-cyan-200',       ageMin:5,  ageMax:17 },
   { id:'logic-sort',            labelAr:'الترتيب المنطقي',         icon:'📊', category:'تفكير',            color:'bg-emerald-50 border-emerald-200', ageMin:5,  ageMax:17 },
+  // ── توحد ─────────────────────────────────────────
+  { id:'visual-match',          labelAr:'مطابقة الصور',             icon:'🔮', category:'توحد',             color:'bg-purple-50 border-purple-200',   ageMin:3,  ageMax:14 },
+  { id:'visual-schedule',       labelAr:'جدولي اليومي',             icon:'🗓️', category:'توحد',             color:'bg-blue-50 border-blue-200',       ageMin:3,  ageMax:14 },
+  { id:'first-then-board',      labelAr:'أولاً ثم',                 icon:'⬛', category:'توحد',             color:'bg-orange-50 border-orange-200',   ageMin:3,  ageMax:14 },
+  { id:'imitation-mirror',      labelAr:'التقليد الحركي',           icon:'🪞', category:'توحد',             color:'bg-teal-50 border-teal-200',       ageMin:3,  ageMax:12 },
   // ── رياضي ──────────────────────────────────────────
   { id:'jumping-jacks',    labelAr:'قفز النجمة',           icon:'⭐', category:'رياضي', color:'bg-green-50 border-green-200',     ageMin:5,  ageMax:22 },
   { id:'obstacle-circuit', labelAr:'دائرة الحواجز',         icon:'🏅', category:'رياضي', color:'bg-orange-50 border-orange-200',   ageMin:5,  ageMax:17 },

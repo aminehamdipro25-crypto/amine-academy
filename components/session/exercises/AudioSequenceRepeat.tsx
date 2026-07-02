@@ -34,7 +34,8 @@ export default function AudioSequenceRepeat({ onComplete, onCancel, difficulty =
   const [totalScore,setTotalScore]= useState(0)
   const [errors,    setErrors]    = useState(0)
   const [startMs]                 = useState(Date.now())
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const timerIds = useRef<ReturnType<typeof setTimeout>[]>([])
+  const clearAll = () => { timerIds.current.forEach(clearTimeout); timerIds.current = [] }
 
   const speak = useCallback((text: string) => {
     window.speechSynthesis.cancel()
@@ -44,18 +45,19 @@ export default function AudioSequenceRepeat({ onComplete, onCancel, difficulty =
   }, [])
 
   const playSequence = useCallback((seq: number[]) => {
+    clearAll()
     setPhase('listening')
     seq.forEach((animalIdx, i) => {
-      timerRef.current = setTimeout(() => {
+      timerIds.current.push(setTimeout(() => {
         speak(ANIMALS[animalIdx].name)
         if (i === seq.length - 1) {
-          timerRef.current = setTimeout(() => {
+          timerIds.current.push(setTimeout(() => {
             setPhase('recall')
-          }, 800)
+          }, 800))
         }
-      }, i * 900)
+      }, i * 900))
     })
-  }, [speak])
+  }, [speak]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const startRound = useCallback(() => {
     const used = shuffle(Array.from({length: ANIMALS.length}, (_, i) => i)).slice(0, SEQ_LEN)
@@ -66,7 +68,7 @@ export default function AudioSequenceRepeat({ onComplete, onCancel, difficulty =
 
   useEffect(() => {
     startRound()
-    return () => { window.speechSynthesis.cancel(); if (timerRef.current) clearTimeout(timerRef.current) }
+    return () => { window.speechSynthesis.cancel(); clearAll() }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleTap(animalIdx: number) {
@@ -82,14 +84,14 @@ export default function AudioSequenceRepeat({ onComplete, onCancel, difficulty =
       setFeedback('wrong')
       setPhase('feedback')
       speak('خطأ')
-      timerRef.current = setTimeout(() => advanceRound(0), 1400)
+      timerIds.current.push(setTimeout(() => advanceRound(0), 1400))
     } else if (newTapped.length === sequence.length) {
       // All correct
       setFeedback('correct')
       setPhase('feedback')
       setTotalScore(s => s + 100)
       speak('ممتاز')
-      timerRef.current = setTimeout(() => advanceRound(100), 1400)
+      timerIds.current.push(setTimeout(() => advanceRound(100), 1400))
     }
     // else: partial match, keep going
   }

@@ -694,10 +694,106 @@ export default function SessionPage() {
   }, [])
 
   function printSessionReport() {
-    const date = new Date().toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' })
-    const time = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+    const date = new Date().toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' })
+    const time = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
     const avgScoreVal = results.length
       ? Math.round(results.reduce((s, r) => s + r.score, 0) / results.length) : 0
+
+    // ── Per-exercise clinical reference ──
+    const EXERCISE_CLINICAL: Record<string, string> = {
+      'memory-cards':      'الذاكرة البصرية العاملة والتعرف على الأنماط',
+      'sequence-memory':   'ذاكرة التسلسل — Phonological Loop',
+      'n-back':            'تحديث المعلومات في الذاكرة العاملة — N-Back paradigm',
+      'word-recall':       'استرجاع المفردات والذاكرة الدلالية',
+      'auditory-memory':   'الذاكرة السمعية قصيرة المدى',
+      'span-extension':    'امتداد الذاكرة — Digit/Word Span',
+      'stroop-test':       'الكبح المعرفي وتجاوز الاستجابة الأوتوماتيكية — Stroop Effect',
+      'stop-signal':       'زمن ردّ الفعل الكابح — Stop-Signal Reaction Time (SSRT)',
+      'simon-says':        'الانتباه الانتقائي والكبح الحركي',
+      'tap-target':        'التناسق البصري-الحركي وسرعة المعالجة الحركية',
+      'reaction-game':     'زمن ردّ الفعل البسيط — Simple Reaction Time',
+      'emotion-cards':     'التعرف على التعبيرات العاطفية — Theory of Mind (أساسي)',
+      'emotion-mirror':    'الوعي العاطفي الذاتي ومطابقة التعبيرات — الأساس الأول للتعاطف',
+      'social-scenarios':  'التفكير الاجتماعي وحلّ المواقف التفاعلية',
+      'conversation-starter': 'بدء الحوار وإدارة الأدوار الاجتماعية',
+      'token-board':       'التعزيز الرمزي — Token Economy (تعزيز عملياتي ABA)',
+      'behavior-contract': 'التعاقد السلوكي وتحديد الأهداف الوظيفية',
+      'self-rating':       'تقييم الذات والوعي الميتامعرفي',
+      'breathing':         'تنظيم الجهاز العصبي اللاإرادي عبر التنفس الواعي',
+      'body-scan':         'الوعي الجسدي والتنظيم الذاتي الحسي',
+      'mood-meter':        'تصنيف شدة المشاعر والوعي الانفعالي — Zones of Regulation',
+      'calm-corner':       'استراتيجيات التهدئة الذاتية — Self-Calming Toolkit',
+      'verbal-fluency':    'الطلاقة المعجمية وسرعة استرجاع الكلمات',
+      'word-builder':      'الوعي الصرفي وبنية الكلمة',
+      'letter-match':      'التعرف على الحروف والمطابقة البصرية',
+      'spelling-bee':      'الذاكرة الأورثوغرافية والوعي الصوتي المنتج',
+      'picture-word-cards':'الربط بين الصورة والمفهوم اللغوي',
+      'number-search':     'الانتباه المنتشر والمسح البصري الانتقائي — Cancellation Task',
+      'visual-search':     'الانتباه المنتشر وسرعة البحث البصري',
+      'sustained-attention': 'الانتباه المستمر — Sustained Vigilance',
+      'flash-count':       'الانتباه السريع والإدراك العددي الآني',
+      'odd-one-out':       'الاستدلال التصنيفي والمرونة الإدراكية',
+      'logic-sort':        'التفكير الاستنتاجي والترتيب المنطقي',
+      'category-sort':     'التصنيف المفاهيمي والمرونة المعرفية',
+      'pattern-match':     'الاستدلال على الأنماط — Visual-Spatial Reasoning',
+      'story-sequencing':  'فهم التسلسل السببي والزمني للأحداث',
+      'if-then':           'التفكير الشرطي — Conditional Reasoning',
+      'pattern-puzzle':    'الإكمال البصري والتفكير الاستقرائي',
+      'math-flash':        'الاسترجاع الحسابي والذاكرة الإجرائية',
+      'analogies':         'التفكير القياسي — Analogical Reasoning',
+      'number-sequence':   'إدراك الأنماط العددية والتفكير الرياضي',
+      'color-grid':        'الانتباه الانتقائي والتصنيف البصري',
+      'shadow-match':      'إدراك الشكل والمطابقة الفضائية',
+      'direction-follow':  'تنفيذ التعليمات المتعددة والانتباه التنفيذي',
+      'sound-discrimination': 'التمييز السمعي الدقيق — Phonemic Awareness',
+      'rhyme-detection':   'الوعي الصوتي والقافية — Phonological Awareness',
+      'audio-sequence':    'ذاكرة التسلسل السمعي — Auditory Sequential Memory',
+      'listening-comprehension': 'الفهم الاستماعي ومعالجة اللغة',
+      'sequence-tap':      'التناسق الحركي التسلسلي والتخطيط الحركي',
+      'target-tracking':   'التتبع البصري والتنسيق العين-اليد',
+      'finger-gym':        'مهارات اليد الدقيقة — Fine Motor Skills',
+      'go-no-go':          'الكبح الحركي الثنائي — Go/No-Go Paradigm',
+      'balloon-control':   'ضبط الاندفاعية وتنظيم الاستجابة الحركية',
+      'waiting-game':      'تأجيل المكافأة وضبط الاندفاعية — Delay of Gratification',
+      'traffic-light':     'التنظيم الذاتي بنموذج الإشارة الثلاثية — Self-Regulation',
+      'social-problem-solving': 'التفكير في حلول المشكلات الاجتماعية',
+      // Autism-specific
+      'sensory-checkin':   'مسح الجاهزية الحسية قبل الجلسة — Zones of Regulation',
+      'first-then-board':  'التعزيز المشروط ABA — التسلسل السببي والامتثال للمهام',
+      'visual-schedule':   'الجدول البصري — التنبؤية والانتقال الروتيني للتوحد',
+      'visual-match':      'التمييز البصري والمطابقة غير اللفظية',
+      'imitation-mirror':  'التقليد الحركي — التعلم بالملاحظة والتوافق الحسي-حركي',
+      'choice-board':      'استقلالية القرار وتقليل سلوك المطالبة غير اللفظية',
+    }
+
+    // ── Per-exercise evidence-based recommendations ──
+    const EXERCISE_RECS: Record<string, { threshold: number; low: string; mid?: string }> = {
+      'sensory-checkin':   { threshold: 75, low: 'أشار الفحص الحسي لتحديات تنظيمية. يُوصى بإدراج 3-5 دقائق تنظيم حسي (تنفس عميق + ضغط عضلي مفاصل) في بداية كل جلسة قادمة قبل أي مهمة معرفية.', mid: 'جاهزية حسية متوسطة. راقب إشارات الإجهاد الحسي خلال الجلسة وأتح فترات استراحة حركية قصيرة.' },
+      'first-then-board':  { threshold: 75, low: 'صعوبة في التسلسل الشرطي. قلّص مهمة "أولاً" لخطوة واحدة فقط وطبّق التسلسل الأمامي (Forward Chaining) مع تعزيز فوري لكل خطوة مكتملة.', mid: 'أداء مقبول في بنية ABA. زد تعقيد مهمة "أولاً" تدريجياً وانتقل لبطاقات ثنائية المرحلة.' },
+      'visual-schedule':   { threshold: 75, low: 'صعوبة في قراءة الجدول البصري. استخدم صور فوتوغرافية حقيقية بدلاً من الرسوم التوضيحية، وعلّق الجدول في مستوى نظر الطفل طوال اليوم.' },
+      'visual-match':      { threshold: 70, low: 'ضعف في التمييز البصري. قلّص عدد البدائل إلى 3 بطاقات فقط، وكبّر حجم الصور مع تقليل الفوضى البصرية في بيئة الجلسة.' },
+      'imitation-mirror':  { threshold: 70, low: 'صعوبة في التقليد الحركي. ابدأ بحركات جسدية كبرى (رفع اليدين، الوقوف/الجلوس) قبل الانتقال للحركات الدقيقة أو تعبيرات الوجه.' },
+      'waiting-game':      { threshold: 75, low: 'عجز في تأجيل المكافأة. قلّص مدة الانتظار إلى 10 ثوانٍ فقط، عزّز كل انتظار ناجح فوراً ومحسوساً، وزد المدة تدريجياً بخطوات 5 ثوانٍ.' },
+      'emotion-cards':     { threshold: 75, low: 'صعوبة في التعرف على المشاعر. ابدأ بأربع مشاعر أساسية فقط (سعيد، حزين، غاضب، خائف) مع صور وجوه فوتوغرافية حقيقية بدلاً من الكرتون.', mid: 'تعرف جيد على المشاعر الأساسية. انتقل تدريجياً للمشاعر الثانوية (قلق، فخور، خجول).' },
+      'choice-board':      { threshold: 70, low: 'صعوبة في الاختيار من اللوح. قلّص الخيارات إلى اثنتين فقط مع صور كبيرة وواضحة، وعلّم الإشارة بالإصبع قبل الاختيار اللفظي.' },
+      'traffic-light':     { threshold: 70, low: 'صعوبة في نموذج الإشارة الثلاثية. مارس الثلاث حالات بإشارات جسدية حقيقية خارج الشاشة أولاً قبل العودة للتمرين الرقمي.' },
+      'emotion-mirror':    { threshold: 70, low: 'صعوبة في مطابقة التعبيرات العاطفية. تدرّب أمام مرآة حقيقية على 3 مشاعر أساسية قبل استخدام الشاشة.' },
+      'stroop-test':       { threshold: 70, low: 'ارتفاع تأثير Stroop يشير لضعف في الكبح المعرفي. طبّق استراتيجية التوقف المتعمد (1-2 ثانية) قبل كل إجابة، وقلّص مشتتات البيئة خلال المهام اللاحقة.' },
+      'stop-signal':       { threshold: 70, low: 'ضعف في الكبح الحركي (SSRT مرتفع). مارس تمارين "تجمّد" (freeze games) خارج الجلسة لتعزيز دائرة الكبح قبل العودة للتمرين.' },
+      'token-board':       { threshold: 70, low: 'صعوبة في نظام التعزيز الرمزي. قلّص عدد الرموز المطلوبة للمكافأة إلى 3 فقط وقصّر الفترة الزمنية بين المحاولة والمكافأة.' },
+      'number-search':     { threshold: 70, low: 'ضعف في المسح البصري الانتقائي. استخدم شبكة 4×4 مع أرقام بحجم أكبر وزمن أطول، وأزل المشتتات البيئية البصرية.' },
+      'verbal-fluency':    { threshold: 70, low: 'ضعف في الطلاقة المعجمية. استخدم إشارات دلالية مصورة (صورة الحيوان/الطعام) كمحفّز أولي، وطبّق العصف الذهني المصور.' },
+      'logic-sort':        { threshold: 70, low: 'صعوبة في الترتيب المنطقي. ابدأ بتسلسلات ثلاثية فقط (3 خطوات) مع صور توضيحية واضحة لكل خطوة.' },
+      'spelling-bee':      { threshold: 70, low: 'ضعف في الإملاء والوعي الصوتي. طبّق التجزئة الصوتية (tap-and-say: اطرق على الطاولة مع كل مقطع) مع بطاقات الكلمات المصوّرة.' },
+      'breathing':         { threshold: 70, low: 'صعوبة في التنفس المنتظم. جرّب "تنفس الفانوس" بحركات يدوية مرئية (افتح يدك عند الشهيق، اقبضها عند الزفير) بدلاً من العدّ الصوتي المجرد.' },
+      'memory-cards':      { threshold: 70, low: 'ضعف في الذاكرة البصرية. ابدأ بثلاثة أزواج فقط وزد عند الوصول لـ 90% دقة.' },
+      'sequence-memory':   { threshold: 70, low: 'ضعف في ذاكرة التسلسل. استخدم تسلسلات من 3 عناصر مع إشارة سمعية مصاحبة (صوت قصير) لكل عنصر.' },
+      'social-scenarios':  { threshold: 70, low: 'صعوبة في التفكير الاجتماعي. استخدم سيناريوهات من واقع الطالب اليومي وطبّق لعب الأدوار مباشرةً بعد كل موقف.' },
+      'category-sort':     { threshold: 70, low: 'صعوبة في التصنيف المفاهيمي. ابدأ بفئتين متباينتين تماماً (حيوانات/طعام) مع أشياء حقيقية قبل الانتقال للبطاقات.' },
+      'tap-target':        { threshold: 70, low: 'ضعف في التناسق البصري-الحركي. قلّص سرعة ظهور الأهداف وكبّر حجمها. فكّر في الإحالة لمعالج وظيفي (OT) إذا استمر الضعف.' },
+      'word-recall':       { threshold: 70, low: 'ضعف في استرجاع الكلمات. طبّق التكرار التباعدي (Spaced Repetition) مع وقفات 5 ثوانٍ بين المحاولات.' },
+      'body-scan':         { threshold: 70, low: 'صعوبة في الوعي الجسدي. قلّل نقاط الفحص لأربعة مناطق كبرى فقط (رأس/يدان/بطن/قدمان) مع إشارة لونية مرئية.' },
+    }
 
     // ── Category-level analysis ──
     type CategoryData = { label: string; scores: number[]; color: string }
@@ -709,15 +805,25 @@ export default function SessionPage() {
       motor:     { label: 'التنظيم الحركي',          scores: [], color: '#EF4444' },
       auditory:  { label: 'المعالجة السمعية',        scores: [], color: '#8B5CF6' },
       behavior:  { label: 'التنظيم السلوكي',         scores: [], color: '#EC4899' },
+      autism:    { label: 'مهارات التوحد',           scores: [], color: '#14B8A6' },
     }
     const exCat: Record<string, keyof typeof catMap> = {
-      'memory-cards':'memory','sequence-memory':'memory','n-back':'memory','word-recall':'memory','auditory-memory':'auditory',
-      'stroop-test':'attention','stop-signal':'attention','tap-target':'motor','reaction-game':'motor','n-back-2':'attention',
+      'memory-cards':'memory','sequence-memory':'memory','n-back':'memory','word-recall':'memory','auditory-memory':'auditory','span-extension':'memory',
+      'stroop-test':'attention','stop-signal':'attention','simon-says':'attention','color-grid':'attention','pattern-match':'attention',
+      'visual-search':'attention','number-search':'attention','flash-count':'attention','sustained-attention':'attention','odd-one-out':'attention',
+      'number-sequence':'attention','logic-sort':'attention','category-sort':'attention','analogies':'attention','if-then':'attention',
+      'problem-solver':'attention','pattern-puzzle':'attention','story-sequencing':'attention','direction-follow':'attention','math-flash':'attention',
+      'shadow-match':'attention',
+      'tap-target':'motor','reaction-game':'motor','sequence-tap':'motor','target-tracking':'motor','finger-gym':'motor',
       'breathing':'behavior','token-board':'behavior','self-rating':'behavior','behavior-contract':'behavior',
-      'emotion-cards':'social','social-scenarios':'social',
+      'body-scan':'behavior','mood-meter':'behavior','calm-corner':'behavior','emotion-volume':'behavior',
+      'emotion-cards':'social','social-scenarios':'social','emotion-mirror':'social','conversation-starter':'social',
+      'social-problem-solving':'social','waiting-game':'social','go-no-go':'social','balloon-control':'social','traffic-light':'social',
       'verbal-fluency':'language','word-builder':'language','letter-match':'language','picture-word-cards':'language',
-      'listening-comprehension':'auditory','sound-discrimination':'auditory',
-      'simon-says':'attention','color-grid':'attention','pattern-match':'attention',
+      'spelling-bee':'language','reading-cards':'language',
+      'listening-comprehension':'auditory','sound-discrimination':'auditory','rhyme-detection':'auditory','audio-sequence':'auditory',
+      'visual-match':'autism','visual-schedule':'autism','first-then-board':'autism','imitation-mirror':'autism',
+      'sensory-checkin':'autism','choice-board':'autism',
     }
     results.forEach(r => {
       const cat = exCat[r.exerciseType]
@@ -734,69 +840,77 @@ export default function SessionPage() {
             <span style="font-size:12px;font-weight:900;color:${barColor}">${avg}%</span>
           </div>
           <div style="height:8px;background:#f0f0f0;border-radius:4px;overflow:hidden">
-            <div style="height:100%;width:${avg}%;background:${barColor};border-radius:4px;transition:width 0.5s"></div>
+            <div style="height:100%;width:${avg}%;background:${barColor};border-radius:4px"></div>
           </div>
           <div style="font-size:10px;color:#999;margin-top:2px">${v.scores.length} تمرين</div>
         </div>`
     }).join('')
 
-    // ── Clinical recommendations ──
-    const recs: string[] = []
-    const memExs    = results.filter(r => ['memory-cards','sequence-memory','n-back','word-recall','auditory-memory'].includes(r.exerciseType))
-    const attExs    = results.filter(r => ['stroop-test','stop-signal','simon-says','color-grid','pattern-match'].includes(r.exerciseType))
-    const langExs   = results.filter(r => ['verbal-fluency','word-builder','letter-match','picture-word-cards','listening-comprehension'].includes(r.exerciseType))
-    const socialExs = results.filter(r => ['emotion-cards','social-scenarios'].includes(r.exerciseType))
-    const motorExs  = results.filter(r => ['tap-target','reaction-game'].includes(r.exerciseType))
-    const avgOf = (arr: ExerciseResult[]) => arr.length ? Math.round(arr.reduce((s,r)=>s+r.score,0)/arr.length) : -1
+    // ── Sensory check-in profile block ──
+    const sensoryResult = results.find(r => r.exerciseType === 'sensory-checkin')
+    const sensoryProfileHtml = sensoryResult?.metadata?.profile
+      ? `<div class="section">
+          <h2>🫁 ملف الجاهزية الحسية</h2>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px">
+            ${Object.entries(sensoryResult.metadata.profile as Record<string,number>).map(([label, val]) => {
+              const c = val===2?'#16a34a':val===1?'#d97706':'#dc2626'
+              const txt = val===2?'مرتاح ✓':val===1?'عادي —':'صعب ⚠'
+              return `<div style="background:${c}12;border:1.5px solid ${c}50;border-radius:8px;padding:8px 10px;text-align:center">
+                <div style="font-size:11px;font-weight:700;color:#333;margin-bottom:3px">${label}</div>
+                <div style="font-size:11px;color:${c};font-weight:900">${txt}</div>
+              </div>`
+            }).join('')}
+          </div>
+          ${(sensoryResult.metadata.difficult as string[]).length > 0
+            ? `<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 14px;font-size:11px;color:#991b1b">
+                ⚠️ مجالات حسية صعبة: <strong>${(sensoryResult.metadata.difficult as string[]).join(' • ')}</strong><br>
+                <span style="color:#b91c1c;font-size:10px">يُنصح ببدء الجلسة القادمة بنشاط تنظيمي حسي (3-5 دقائق) قبل أي مهمة معرفية.</span>
+               </div>`
+            : `<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 14px;font-size:11px;color:#166534">
+                ✅ لا مجالات حسية صعبة — الطفل في حالة تنظيمية جيدة للتعلم.
+               </div>`}
+        </div>`
+      : ''
 
-    const memAvg = avgOf(memExs)
-    if (memAvg >= 0) {
-      if (memAvg >= 80) recs.push('الذاكرة العاملة: أداء ضمن المعدل الطبيعي أو أعلى. يُنصح بالانتقال إلى تمارين N-Back من المستوى 3 لتعزيز ظرفية التخزين phonological loop.')
-      else if (memAvg >= 60) recs.push('الذاكرة العاملة: مستوى دون المتوسط. يُنصح بتكثيف تمارين التسلسل اللفظي والبصري بتردد 3 جلسات أسبوعياً، مع تقليل المشتتات البيئية.')
-      else recs.push('الذاكرة العاملة: عجز ملحوظ (< 60%). يُقترح إجراء تقييم معمّق لوظائف الفص الجبهي، ومراجعة احتمالية وجود صعوبة تعلم مصاحبة لاضطراب ADHD.')
-    }
-    const attAvg = avgOf(attExs)
-    if (attAvg >= 0) {
-      if (attAvg >= 80) recs.push('الكبح المعرفي والانتباه: أداء مناسب. يُوصى بتحديات Stroop متزايدة الصعوبة والتدريب على Task-Switching.')
-      else if (attAvg >= 60) recs.push('الكبح المعرفي: يحتاج تعزيزاً. يُوصى باستراتيجية التوقف والتفكير (Stop-Think-Act) واستخدام أجهزة ضبط الزمن المرئية خلال المهام.')
-      else recs.push('الكبح المعرفي: اضطراب جوهري. يُقترح إعادة النظر في البروتوكول العلاجي وإشراك الأسرة في برامج parent-training لإدارة الاندفاعية.')
-    }
-    const langAvg = avgOf(langExs)
-    if (langAvg >= 0) {
-      if (langAvg >= 80) recs.push('اللغة والوعي الصوتي: مستوى مناسب. يُوصى بدمج القراءة الموجّهة والتدريب على الطلاقة اللفظية بوتيرة أسرع.')
-      else if (langAvg >= 60) recs.push('اللغة: يستدعي تدخلاً. يُوصى باستخدام بطاقات الصورة والكلمة يومياً، وتقنية التكرار التباعدي (Spaced Repetition) لتحسين المفردات.')
-      else recs.push('اللغة: تأخر ملحوظ. يُنصح بإحالة الحالة لتقييم نطق وتخاطب متخصص، وبدء برنامج AAC إن كان ذا صلة.')
-    }
-    const socialAvg = avgOf(socialExs)
-    if (socialAvg >= 0) {
-      if (socialAvg < 70) recs.push('المهارات الاجتماعية: تحتاج دعماً. يُوصى بتمارين التعرف على المشاعر، ومحاكاة المواقف الاجتماعية عبر لعب الأدوار (Role-play).')
-    }
-    const motorAvg = avgOf(motorExs)
-    if (motorAvg >= 0 && motorAvg < 70) {
-      recs.push('التناسق الحركي: دون المتوسط. يُقترح استشارة معالج وظيفي، وإدراج تمارين التناسق اليدوي ضمن الخطة العلاجية.')
-    }
+    // ── Per-exercise evidence-based recommendations ──
+    const recs: string[] = []
+    results.forEach(r => {
+      const rec = EXERCISE_RECS[r.exerciseType]
+      if (!rec) return
+      if (r.score < rec.threshold) recs.push(`${r.exerciseLabelAr} (${r.score}%): ${rec.low}`)
+      else if (rec.mid && r.score < 85) recs.push(`${r.exerciseLabelAr} (${r.score}%): ${rec.mid}`)
+    })
     if (abcLog.filter(e=>e.intensity===3).length > 0) {
-      recs.push(`تحليل ABC: سُجِّل ${abcLog.filter(e=>e.intensity===3).length} حادث(ة) بحدة شديدة. يُقترح وضع خطة تدخل سلوكي وقائي (Proactive BIP) واستعراضها مع الفريق متعدد التخصصات.`)
+      recs.push(`تحليل ABC: سُجِّل ${abcLog.filter(e=>e.intensity===3).length} حادث(ة) بحدة شديدة. يُقترح وضع خطة تدخل سلوكي وقائي (Proactive BIP) ومراجعتها مع الفريق متعدد التخصصات.`)
     }
     if (recs.length === 0) {
       recs.push(avgScoreVal >= 80
-        ? 'الأداء العام ممتاز. يُوصى بالاستمرار في البرنامج الحالي مع رفع مستوى الصعوبة تدريجياً.'
+        ? 'الأداء العام ممتاز في جميع التمارين. يُوصى بالاستمرار في البرنامج الحالي مع رفع مستوى الصعوبة تدريجياً.'
         : avgScoreVal >= 60
-        ? 'الأداء العام مقبول. يُوصى بمواصلة التدريب مع التركيز على المجالات التي سجّل فيها الطالب أقل من 70%.'
-        : 'يُوصى بمراجعة شاملة للبروتوكول العلاجي وتكثيف التدخل.')
+        ? 'الأداء العام مقبول. يُوصى بمواصلة التدريب مع التركيز على التمارين التي سجّل فيها الطالب أقل من 70%.'
+        : 'يُوصى بمراجعة شاملة للبروتوكول العلاجي وتكثيف التدخل مع الأسرة.')
     }
-    const recsHtml = recs.map((r,i) => `<li style="margin-bottom:8px;padding:8px 12px;background:#f8fafc;border-right:3px solid #7C5CFC;border-radius:4px;font-size:12px;line-height:1.7">${i+1}. ${r}</li>`).join('')
+    const recsHtml = recs.map((r,i) => `<li style="margin-bottom:10px;padding:10px 14px;background:#f8fafc;border-right:3px solid #7C5CFC;border-radius:4px;font-size:12px;line-height:1.8">${i+1}. ${r}</li>`).join('')
 
-    // ── Exercise rows ──
+    // ── Exercise rows with clinical context ──
     const exerciseRows = results.map(r => {
       const grade = r.score>=80?'ممتاز':r.score>=60?'جيد':r.score>=40?'متوسط':'يحتاج دعم'
       const gradeColor = r.score>=80?'#16a34a':r.score>=60?'#d97706':r.score>=40?'#ea580c':'#dc2626'
+      const clinicalNote = EXERCISE_CLINICAL[r.exerciseType] || ''
+      const sensoryInterp = r.exerciseType === 'sensory-checkin'
+        ? (r.score >= 80 ? 'جاهزية حسية جيدة' : r.score >= 60 ? 'جاهزية حسية متوسطة' : 'تحديات حسية — انظر الملف أعلاه')
+        : ''
       return `<tr>
-        <td style="font-weight:700">${r.exerciseLabelAr}</td>
+        <td>
+          <div style="font-weight:700;font-size:12px;color:#1a1a2e">${r.exerciseLabelAr}</div>
+          ${clinicalNote ? `<div style="font-size:10px;color:#888;margin-top:2px;line-height:1.4">${clinicalNote}</div>` : ''}
+        </td>
         <td style="text-align:center;font-weight:900;font-size:15px;color:${gradeColor}">${r.score}%</td>
-        <td style="text-align:center;color:#666">${r.accuracy}%</td>
-        <td style="text-align:center;color:#666">${r.duration}ث</td>
-        <td style="text-align:center"><span style="background:${gradeColor}20;color:${gradeColor};padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700">${grade}</span></td>
+        <td style="text-align:center;color:#888;font-size:11px">${r.duration}ث</td>
+        <td style="text-align:center">
+          <span style="background:${gradeColor}20;color:${gradeColor};padding:2px 9px;border-radius:12px;font-size:11px;font-weight:700">${grade}</span>
+          ${sensoryInterp ? `<div style="font-size:10px;color:#888;margin-top:3px">${sensoryInterp}</div>` : ''}
+        </td>
       </tr>`
     }).join('')
 
@@ -921,15 +1035,16 @@ ${activeCats.length > 0 ? `
   ${catBars}
 </div>` : ''}
 
+${sensoryProfileHtml}
+
 ${results.length > 0 ? `
 <!-- Exercise table -->
 <div class="section">
-  <h2>🎮 نتائج التمارين التفصيلية</h2>
+  <h2>📋 نتائج التمارين التفصيلية</h2>
   <table>
     <thead><tr>
-      <th>التمرين</th>
+      <th>التمرين والأساس العلمي</th>
       <th style="text-align:center;width:70px">الدرجة</th>
-      <th style="text-align:center;width:70px">الدقة</th>
       <th style="text-align:center;width:60px">المدة</th>
       <th style="text-align:center;width:90px">التقدير</th>
     </tr></thead>

@@ -107,7 +107,7 @@ export const EXERCISES = [
   { id:'reaction-game',     labelAr:'سرعة رد الفعل',            icon:'⚡', category:'حركي',           color:'bg-yellow-50 border-yellow-200',   ageMin:5,  ageMax:22 },
   { id:'stroop-test',       labelAr:'ستروب — كبح الاستجابة',   icon:'🔵', category:'انتباه',          color:'bg-rose-50 border-rose-200',       ageMin:10, ageMax:22 },
   { id:'stop-signal',       labelAr:'توقف أو اكمل',             icon:'🛑', category:'اندفاعية',       color:'bg-red-50 border-red-200',         ageMin:8,  ageMax:22 },
-  { id:'emotion-cards',     labelAr:'التعرف على المشاعر',       icon:'🎭', category:'اجتماعي',        color:'bg-pink-50 border-pink-200',       ageMin:5,  ageMax:17 },
+  { id:'emotion-cards',     labelAr:'التعرف على المشاعر',       icon:'🎭', category:'اجتماعي',        color:'bg-pink-50 border-pink-200',       ageMin:5,  ageMax:17,  tags:['توحد'] },
   { id:'token-board',       labelAr:'لوح التعزيز',              icon:'🏅', category:'تعديل السلوك',   color:'bg-emerald-50 border-emerald-200', ageMin:5,  ageMax:22 },
   { id:'self-rating',       labelAr:'تقييم الذات',              icon:'🪞', category:'تعديل السلوك',   color:'bg-teal-50 border-teal-200',       ageMin:7,  ageMax:22 },
   { id:'verbal-fluency',    labelAr:'الطلاقة اللفظية',          icon:'🗣️', category:'معرفي',          color:'bg-sky-50 border-sky-200',         ageMin:5,  ageMax:22 },
@@ -122,7 +122,7 @@ export const EXERCISES = [
   { id:'number-sequence',        labelAr:'تسلسل الأرقام',           icon:'🔢', category:'معرفي',          color:'bg-blue-50 border-blue-200',       ageMin:4,  ageMax:22 },
   { id:'shadow-match',           labelAr:'مطابقة الظلال',           icon:'🌑', category:'إدراكي',         color:'bg-gray-100 border-gray-300',       ageMin:4,  ageMax:12 },
   { id:'story-sequencing',       labelAr:'ترتيب القصة',             icon:'📖', category:'تفكير',          color:'bg-amber-50 border-amber-200',     ageMin:5,  ageMax:14 },
-  { id:'waiting-game',           labelAr:'لعبة الانتظار',           icon:'⏳', category:'اندفاعية',      color:'bg-red-50 border-red-200',         ageMin:5,  ageMax:14 },
+  { id:'waiting-game',           labelAr:'لعبة الانتظار',           icon:'⏳', category:'اندفاعية',      color:'bg-red-50 border-red-200',         ageMin:5,  ageMax:14,  tags:['توحد'] },
   { id:'social-problem-solving', labelAr:'كيف أتعامل؟',            icon:'😤', category:'اجتماعي',        color:'bg-pink-50 border-pink-200',       ageMin:6,  ageMax:18 },
   // ── انتباه ───────────────────────────────────────
   { id:'visual-search',         labelAr:'البحث البصري',            icon:'🔎', category:'انتباه',           color:'bg-cyan-50 border-cyan-200',       ageMin:5,  ageMax:22 },
@@ -133,7 +133,7 @@ export const EXERCISES = [
   // ── اندفاعية ─────────────────────────────────────
   { id:'go-no-go',              labelAr:'اضغط / لا تضغط',         icon:'🚦', category:'اندفاعية',         color:'bg-orange-50 border-orange-200',   ageMin:6,  ageMax:22 },
   { id:'balloon-control',       labelAr:'البالون الهادئ',          icon:'🎈', category:'اندفاعية',         color:'bg-red-50 border-red-200',         ageMin:5,  ageMax:14 },
-  { id:'traffic-light',         labelAr:'إشارة المرور',            icon:'🚦', category:'اندفاعية',         color:'bg-green-50 border-green-200',     ageMin:5,  ageMax:22 },
+  { id:'traffic-light',         labelAr:'إشارة المرور',            icon:'🚦', category:'اندفاعية',         color:'bg-green-50 border-green-200',     ageMin:5,  ageMax:22,  tags:['توحد'] },
   // ── اجتماعي ──────────────────────────────────────
   { id:'emotion-mirror',        labelAr:'مرآة المشاعر',            icon:'🪞', category:'اجتماعي',          color:'bg-fuchsia-50 border-fuchsia-200', ageMin:5,  ageMax:18 },
   { id:'conversation-starter',  labelAr:'كيف أبدأ الحديث؟',       icon:'💬', category:'اجتماعي',          color:'bg-teal-50 border-teal-200',       ageMin:6,  ageMax:22 },
@@ -156,7 +156,7 @@ export const EXERCISES = [
   { id:'emotion-volume',        labelAr:'حجم الانفعال',            icon:'📊', category:'تنظيم',            color:'bg-orange-50 border-orange-200',   ageMin:6,  ageMax:22 },
   // ── تعديل السلوك ──────────────────────────────────
   { id:'daily-goals',           labelAr:'أهدافي اليوم',            icon:'🎯', category:'تعديل السلوك',    color:'bg-green-50 border-green-200',     ageMin:5,  ageMax:22 },
-  { id:'choice-board',          labelAr:'لوح الاختيارات',          icon:'🗳️', category:'تعديل السلوك',    color:'bg-violet-50 border-violet-200',   ageMin:4,  ageMax:14 },
+  { id:'choice-board',          labelAr:'لوح الاختيارات',          icon:'🗳️', category:'تعديل السلوك',    color:'bg-violet-50 border-violet-200',   ageMin:4,  ageMax:14,  tags:['توحد'] },
   // ── تفكير ────────────────────────────────────────
   { id:'pattern-puzzle',        labelAr:'أكمل النمط',              icon:'🔮', category:'تفكير',            color:'bg-indigo-50 border-indigo-200',   ageMin:4,  ageMax:14 },
   { id:'if-then',               labelAr:'ماذا سيحدث؟',            icon:'🔗', category:'تفكير',            color:'bg-sky-50 border-sky-200',         ageMin:5,  ageMax:17 },
@@ -172,6 +172,7 @@ export const EXERCISES = [
   { id:'visual-schedule',       labelAr:'جدولي اليومي',             icon:'🗓️', category:'توحد',             color:'bg-blue-50 border-blue-200',       ageMin:3,  ageMax:14 },
   { id:'first-then-board',      labelAr:'أولاً ثم',                 icon:'⬛', category:'توحد',             color:'bg-orange-50 border-orange-200',   ageMin:3,  ageMax:14 },
   { id:'imitation-mirror',      labelAr:'التقليد الحركي',           icon:'🪞', category:'توحد',             color:'bg-teal-50 border-teal-200',       ageMin:3,  ageMax:12 },
+  { id:'sensory-checkin',       labelAr:'فحص الحواس',               icon:'🫁', category:'توحد',             color:'bg-indigo-50 border-indigo-200',   ageMin:3,  ageMax:22 },
   // ── رياضي ──────────────────────────────────────────
   { id:'jumping-jacks',    labelAr:'قفز النجمة',           icon:'⭐', category:'رياضي', color:'bg-green-50 border-green-200',     ageMin:5,  ageMax:22 },
   { id:'obstacle-circuit', labelAr:'دائرة الحواجز',         icon:'🏅', category:'رياضي', color:'bg-orange-50 border-orange-200',   ageMin:5,  ageMax:17 },

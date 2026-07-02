@@ -74,6 +74,7 @@ import VisualMatch      from '@/components/session/exercises/VisualMatch'
 import VisualSchedule   from '@/components/session/exercises/VisualSchedule'
 import FirstThenBoard   from '@/components/session/exercises/FirstThenBoard'
 import ImitationMirror  from '@/components/session/exercises/ImitationMirror'
+import SensoryCheckIn   from '@/components/session/exercises/SensoryCheckIn'
 import Whiteboard      from '@/components/session/Whiteboard'
 import StudentTimerDisplay from '@/components/session/StudentTimerDisplay'
 import SessionHeader   from '@/components/session/SessionHeader'
@@ -1506,7 +1507,7 @@ ${notes ? `
               const allCategories = ['الكل', ...Array.from(new Set(EXERCISES.map(e => e.category)))]
               const filtered = categoryFilter === 'الكل'
                 ? sortedExercises
-                : sortedExercises.filter(e => e.category === categoryFilter)
+                : sortedExercises.filter(e => e.category === categoryFilter || (categoryFilter === 'توحد' && (e as any).tags?.includes('توحد')))
               return (
                 <>
                   {/* Category filter chips */}
@@ -2006,7 +2007,7 @@ ${notes ? `
               <div className="overflow-y-auto p-3 space-y-2" style={{ maxHeight: 'calc(70vh - 130px)' }}>
                 {tab === 'exercises' && (() => {
                   const allCats = ['الكل', ...Array.from(new Set(EXERCISES.map(e => e.category)))]
-                  const filteredEx = categoryFilter === 'الكل' ? sortedExercises : sortedExercises.filter(e => e.category === categoryFilter)
+                  const filteredEx = categoryFilter === 'الكل' ? sortedExercises : sortedExercises.filter(e => e.category === categoryFilter || (categoryFilter === 'توحد' && (e as any).tags?.includes('توحد')))
                   return (
                     <>
                       <div className="flex flex-wrap gap-1 pb-1">
@@ -3032,6 +3033,7 @@ ${notes ? `
               {activeView.id === 'visual-schedule'       && <VisualSchedule        onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
               {activeView.id === 'first-then-board'      && <FirstThenBoard        onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
               {activeView.id === 'imitation-mirror'      && <ImitationMirror       onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'sensory-checkin'      && <SensoryCheckIn        onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
               {/* ── Physical exercises ── */}
               {['jumping-jacks','obstacle-circuit','balance-walk','tiger-crawl','ball-throw','stretching','body-percussion'].includes(activeView.id) && (
                 <PhysicalExercise id={activeView.id} onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />

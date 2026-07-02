@@ -37,7 +37,7 @@ function ActivateForm() {
   }
 
   if (done) return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-white flex items-center justify-center p-4">
+    <div className="min-h-[100dvh] bg-gradient-to-br from-green-50 to-white flex items-center justify-center p-4">
       <div className="max-w-sm w-full bg-white rounded-3xl shadow-xl p-8 text-center">
         <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <CheckCircle className="w-10 h-10 text-green-600" />
@@ -53,7 +53,7 @@ function ActivateForm() {
   )
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4" dir="rtl">
+    <div className="min-h-[100dvh] bg-gray-50 flex items-center justify-center p-4" dir="rtl">
       <div className="max-w-sm w-full bg-white rounded-3xl shadow-xl p-8">
         <div className="w-14 h-14 bg-brand-100 rounded-2xl flex items-center justify-center mx-auto mb-5">
           <Mail className="w-7 h-7 text-brand-600" />
@@ -113,7 +113,7 @@ function ActivateForm() {
 export default function ActivatePage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-[100dvh] bg-gray-50 flex items-center justify-center">
         <Loader2 className="w-8 h-8 text-brand-600 animate-spin" />
       </div>
     }>

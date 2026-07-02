@@ -39,7 +39,7 @@ export default function StudentPortalLayout({ children }: { children: React.Reac
   }, [])
 
   return (
-    <div className="min-h-screen bg-[#FFF8F0]" dir={dir}>
+    <div className="min-h-[100dvh] bg-[#FFF8F0]" dir={dir}>
 
       {/* ── Sticky gradient header ── */}
       <header

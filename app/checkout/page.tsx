@@ -181,7 +181,7 @@ function CheckoutForm() {
     const waLink = `https://wa.me/${whatsappNumber.replace(/\D/g, '')}?text=${waText}`
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-brand-50 to-white flex items-center justify-center p-4" dir="rtl">
+      <div className="min-h-[100dvh] bg-gradient-to-br from-brand-50 to-white flex items-center justify-center p-4" dir="rtl">
         <div className="max-w-lg w-full bg-white rounded-3xl shadow-2xl p-8 text-center">
           <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <CheckCircle2 className="w-10 h-10 text-green-500" />
@@ -283,7 +283,7 @@ function CheckoutForm() {
 
   // ── Main Checkout Form ───────────────────────────────────────
   return (
-    <div className="min-h-screen bg-gradient-to-br from-brand-50 to-white" dir="rtl">
+    <div className="min-h-[100dvh] bg-gradient-to-br from-brand-50 to-white" dir="rtl">
       {/* Header */}
       <div className="bg-white border-b border-gray-100 sticky top-0 z-10">
         <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
@@ -703,7 +703,7 @@ function CheckoutForm() {
 export default function CheckoutPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center" dir="rtl">
+      <div className="min-h-[100dvh] bg-gray-50 flex items-center justify-center" dir="rtl">
         <div className="text-center">
           <div className="w-10 h-10 border-4 border-brand-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
           <p className="text-gray-500">جارٍ التحميل...</p>

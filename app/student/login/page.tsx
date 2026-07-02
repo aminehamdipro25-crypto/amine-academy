@@ -37,7 +37,7 @@ export default function StudentLoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-brand-400 to-calm-teal flex items-center justify-center p-4">
+    <div className="min-h-[100dvh] bg-gradient-to-br from-brand-400 to-calm-teal flex items-center justify-center p-4">
       <div className="bg-white rounded-3xl p-8 w-full max-w-sm shadow-xl text-center">
         {/* Big friendly icon */}
         <div className="text-7xl mb-4 animate-float inline-block">🌟</div>

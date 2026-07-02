@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { Play, Pause, Volume2, VolumeX, ChevronLeft, ChevronRight, BarChart2, Calendar, BookOpen, Brain } from 'lucide-react'
+import AcademyLogo from '@/components/shared/AcademyLogo'
 
 const SLIDE_DURATION = 4500
 
@@ -46,12 +47,12 @@ function createAmbientMusic(ctx: AudioContext): () => void {
 // ─── Browser frame ─────────────────────────────────────────────────────────────
 function Frame({ url, color, children }: { url: string; color: string; children: React.ReactNode }) {
   return (
-    <div style={{ borderRadius: 14, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)', boxShadow: `0 0 0 1px rgba(255,255,255,0.04), 0 30px 70px rgba(0,0,0,0.65), 0 0 80px ${color}22` }}>
-      <div style={{ background: '#16162a', padding: '9px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
+    <div style={{ borderRadius: 14, overflow: 'hidden', border: '1.5px solid rgba(124,92,252,0.12)', boxShadow: `0 0 0 1px rgba(124,92,252,0.06), 0 20px 50px rgba(0,0,0,0.12), 0 0 60px ${color}18` }}>
+      <div style={{ background: '#F1F0F5', padding: '9px 14px', display: 'flex', alignItems: 'center', gap: 10, borderBottom: '1px solid rgba(124,92,252,0.08)' }}>
         <div style={{ display: 'flex', gap: 5 }}>
           {['#FF5F57','#FEBC2E','#28C840'].map(c => <div key={c} style={{ width: 11, height: 11, borderRadius: '50%', background: c }} />)}
         </div>
-        <div style={{ flex: 1, background: '#22223a', borderRadius: 7, padding: '4px 10px', fontSize: 10, fontFamily: 'monospace', color: '#555577', textAlign: 'center', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+        <div style={{ flex: 1, background: 'white', borderRadius: 7, padding: '4px 10px', fontSize: 10, fontFamily: 'monospace', color: '#9CA3AF', textAlign: 'center', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', border: '1px solid rgba(124,92,252,0.08)' }}>
           🔒 {url}
         </div>
       </div>
@@ -276,9 +277,9 @@ function HeroVisual() {
   const items = ['🧠','⭐','🎯','🏆','💡','🌈','🎨','🔬']
   return (
     <div style={{position:'relative',width:220,height:220,display:'flex',alignItems:'center',justifyContent:'center'}}>
-      <div style={{position:'absolute',inset:0,borderRadius:'50%',background:'radial-gradient(circle,rgba(124,92,252,0.3) 0%,transparent 65%)'}}/>
-      <div style={{position:'absolute',width:190,height:190,borderRadius:'50%',border:'1px solid rgba(124,92,252,0.18)',animation:'dspin 22s linear infinite'}}/>
-      <div style={{position:'absolute',width:216,height:216,borderRadius:'50%',border:'1px dashed rgba(192,132,252,0.1)',animation:'dspin 32s linear infinite reverse'}}/>
+      <div style={{position:'absolute',inset:0,borderRadius:'50%',background:'radial-gradient(circle,rgba(124,92,252,0.15) 0%,transparent 65%)'}}/>
+      <div style={{position:'absolute',width:190,height:190,borderRadius:'50%',border:'1.5px solid rgba(124,92,252,0.2)',animation:'dspin 22s linear infinite'}}/>
+      <div style={{position:'absolute',width:216,height:216,borderRadius:'50%',border:'1px dashed rgba(124,92,252,0.1)',animation:'dspin 32s linear infinite reverse'}}/>
       {items.map((e,i)=>{
         const a=(i/items.length)*Math.PI*2-Math.PI/2, r=95
         return (
@@ -287,8 +288,8 @@ function HeroVisual() {
           </div>
         )
       })}
-      <div style={{width:84,height:84,borderRadius:28,background:'linear-gradient(135deg,#6B46F0,#9A7BFD)',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:'0 14px 45px rgba(107,70,240,0.6)',animation:'dfloat 4s ease-in-out infinite',position:'relative',zIndex:1}}>
-        <span style={{color:'white',fontWeight:900,fontSize:40,lineHeight:1}}>أ</span>
+      <div style={{animation:'dfloat 4s ease-in-out infinite',position:'relative',zIndex:1}}>
+        <AcademyLogo size={80} />
       </div>
     </div>
   )
@@ -298,7 +299,7 @@ function HeroVisual() {
 interface Slide { tag:string; title:string; sub:string; accent:string; color:string; url?:string; mockup?:React.ReactNode; isHero?:boolean }
 
 const SLIDES: Slide[] = [
-  { isHero:true, tag:'🌟 قطر • تونس • العالم العربي', title:'أكاديمية أمين', sub:'طفلك يفكّر بطريقة مختلفة — ونحن نتحدّث لغته', accent:'#C084FC', color:'#7C5CFC' },
+  { isHero:true, tag:'🌟 قطر • تونس • العالم العربي', title:'أكاديمية أمين', sub:'طفلك يفكّر بطريقة مختلفة — ونحن نتحدّث لغته', accent:'#7C5CFC', color:'#6B46F0' },
   { tag:'① التسجيل', title:'ابدأ في دقيقتين', sub:'سجّل حسابك وبيانات طفلك — مجاني تماماً بدون بطاقة بنكية', accent:'#34D399', color:'#10B981', url:'amine-academy.com/register', mockup:<RegisterMockup/> },
   { tag:'② بوابة الولي', title:'كل شيء في مكان واحد', sub:'جلساتك القادمة، تمارين طفلك اليومية، ونقاطه — انضم بنقرة واحدة', accent:'#818CF8', color:'#6366F1', url:'amine-academy.com/parent/dashboard', mockup:<DashboardMockup/> },
   { tag:'③ حجز الجلسات', title:'احجز بثوانٍ', sub:'تقويم متزامن مع الأستاذ أمين — تأكيد فوري وتذكير تلقائي قبل الجلسة', accent:'#34D399', color:'#10B981', url:'amine-academy.com/parent/appointments', mockup:<BookingMockup/> },
@@ -310,7 +311,7 @@ const SLIDES: Slide[] = [
 // ─── Demo page ─────────────────────────────────────────────────────────────────
 export default function DemoPage() {
   const [idx, setIdx]       = useState(0)
-  const [playing, setPlaying] = useState(true) // auto-start
+  const [playing, setPlaying] = useState(true)
   const [muted, setMuted]   = useState(true)
   const [progress, setProgress] = useState(0)
   const [animKey, setAnimKey] = useState(0)
@@ -329,7 +330,6 @@ export default function DemoPage() {
   const goPrev = useCallback(() => navigate('prev'), [navigate])
   const goTo   = useCallback((t: number) => { setProgress(0); setAnimKey(k=>k+1); setIdx(t) }, [])
 
-  // Auto-advance + smooth progress
   useEffect(() => {
     if (!playing) return
     const start = Date.now()
@@ -338,7 +338,6 @@ export default function DemoPage() {
     return () => { clearInterval(tick); clearTimeout(timer) }
   }, [playing, idx, goNext])
 
-  // Keyboard
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
       if (e.code==='Space') { e.preventDefault(); setPlaying(p=>!p) }
@@ -349,7 +348,6 @@ export default function DemoPage() {
     return () => window.removeEventListener('keydown', h)
   }, [goNext, goPrev])
 
-  // Music
   const toggleMusic = useCallback(async () => {
     if (muted) {
       try {
@@ -371,7 +369,7 @@ export default function DemoPage() {
   const slide = SLIDES[idx]
 
   return (
-    <div dir="rtl" style={{ minHeight:'100vh', background:'linear-gradient(160deg,#0c0818 0%,#180e38 55%,#091424 100%)', color:'white', display:'flex', flexDirection:'column' }}>
+    <div dir="rtl" style={{ minHeight:'100vh', background:'linear-gradient(160deg,#F8F6FF 0%,#F0F4FF 60%,#EEF0FF 100%)', color:'#1E293B', display:'flex', flexDirection:'column' }}>
       <style>{`
         @keyframes dfloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
         @keyframes dspin  { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
@@ -379,20 +377,18 @@ export default function DemoPage() {
       `}</style>
 
       {/* ── Progress bar (top) ── */}
-      <div style={{position:'fixed',top:0,left:0,right:0,height:3,zIndex:100,background:'rgba(255,255,255,0.06)'}}>
+      <div style={{position:'fixed',top:0,left:0,right:0,height:3,zIndex:100,background:'rgba(124,92,252,0.1)'}}>
         <div style={{height:'100%',background:`linear-gradient(90deg,${slide.color},${slide.accent})`,width:`${(idx/SLIDES.length)*100 + progress/SLIDES.length}%`,transition:'width 0.03s linear',borderRadius:'0 2px 2px 0'}}/>
       </div>
 
       {/* ── Header ── */}
-      <header style={{flexShrink:0,display:'flex',alignItems:'center',justifyContent:'space-between',padding:'14px 20px',borderBottom:'1px solid rgba(255,255,255,0.05)',marginTop:3}}>
-        <Link href="/" style={{color:'rgba(255,255,255,0.4)',fontSize:12,fontWeight:600,textDecoration:'none'}}>← الرئيسية</Link>
-        <div style={{display:'flex',alignItems:'center',gap:6}}>
-          <div style={{width:28,height:28,borderRadius:9,background:'linear-gradient(135deg,#6B46F0,#9A7BFD)',display:'flex',alignItems:'center',justifyContent:'center'}}>
-            <span style={{color:'white',fontWeight:900,fontSize:13}}>أ</span>
-          </div>
-          <span style={{fontWeight:900,fontSize:13,color:'white'}}>أكاديمية أمين</span>
+      <header style={{flexShrink:0,display:'flex',alignItems:'center',justifyContent:'space-between',padding:'14px 20px',borderBottom:'1px solid rgba(124,92,252,0.1)',marginTop:3,background:'rgba(255,255,255,0.7)',backdropFilter:'blur(12px)'}}>
+        <Link href="/" style={{color:'#94A3B8',fontSize:12,fontWeight:600,textDecoration:'none'}}>← الرئيسية</Link>
+        <div style={{display:'flex',alignItems:'center',gap:8}}>
+          <AcademyLogo size={28} />
+          <span style={{fontWeight:900,fontSize:13,color:'#1E293B'}}>أكاديمية أمين</span>
         </div>
-        <Link href="/register" style={{background:'linear-gradient(135deg,#6B46F0,#9A7BFD)',color:'white',fontWeight:900,fontSize:12,padding:'7px 16px',borderRadius:10,textDecoration:'none',boxShadow:'0 4px 16px rgba(107,70,240,.4)'}}>
+        <Link href="/register" style={{background:'linear-gradient(135deg,#6B46F0,#9A7BFD)',color:'white',fontWeight:900,fontSize:12,padding:'7px 16px',borderRadius:10,textDecoration:'none',boxShadow:'0 4px 16px rgba(107,70,240,.25)'}}>
           سجّل مجاناً ←
         </Link>
       </header>
@@ -402,17 +398,17 @@ export default function DemoPage() {
         <div key={animKey} style={{width:'100%',maxWidth:700,display:'flex',flexDirection:'column',alignItems:'center',gap:12,animation:'dappear 0.55s cubic-bezier(0.22,1,0.36,1) both'}}>
 
           {/* Tag */}
-          <div style={{fontSize:10,fontWeight:700,color:slide.accent,letterSpacing:2,textTransform:'uppercase',background:`${slide.color}18`,border:`1px solid ${slide.color}30`,padding:'4px 14px',borderRadius:20}}>
+          <div style={{fontSize:10,fontWeight:700,color:slide.color,letterSpacing:2,textTransform:'uppercase',background:`${slide.color}12`,border:`1px solid ${slide.color}30`,padding:'4px 14px',borderRadius:20}}>
             {slide.tag}
           </div>
 
           {/* Title */}
-          <h1 style={{fontSize:'clamp(24px,4.5vw,46px)',fontWeight:900,textAlign:'center',margin:0,lineHeight:1.15,color:'white'}}>
+          <h1 style={{fontSize:'clamp(24px,4.5vw,46px)',fontWeight:900,textAlign:'center',margin:0,lineHeight:1.15,color:'#1E293B'}}>
             {slide.title}
           </h1>
 
           {/* Subtitle */}
-          <p style={{fontSize:'clamp(12px,1.6vw,15px)',color:'rgba(255,255,255,0.55)',textAlign:'center',margin:0,lineHeight:1.7,maxWidth:520}}>
+          <p style={{fontSize:'clamp(12px,1.6vw,15px)',color:'#64748B',textAlign:'center',margin:0,lineHeight:1.7,maxWidth:520}}>
             {slide.sub}
           </p>
 
@@ -427,11 +423,11 @@ export default function DemoPage() {
       </main>
 
       {/* ── Controls bar ── */}
-      <footer style={{flexShrink:0,background:'rgba(0,0,0,0.5)',backdropFilter:'blur(16px)',borderTop:'1px solid rgba(255,255,255,0.05)',padding:'12px 20px 16px'}}>
+      <footer style={{flexShrink:0,background:'rgba(255,255,255,0.92)',backdropFilter:'blur(16px)',borderTop:'1px solid rgba(124,92,252,0.1)',padding:'12px 20px 16px'}}>
         {/* Dots */}
         <div style={{display:'flex',justifyContent:'center',gap:6,marginBottom:10}}>
           {SLIDES.map((_,i) => (
-            <button key={i} onClick={()=>goTo(i)} style={{height:6,width:i===idx?22:6,borderRadius:3,background:i===idx?slide.color:'rgba(255,255,255,0.2)',border:'none',cursor:'pointer',transition:'all 0.35s ease',padding:0}}/>
+            <button key={i} onClick={()=>goTo(i)} style={{height:6,width:i===idx?22:6,borderRadius:3,background:i===idx?slide.color:'rgba(124,92,252,0.2)',border:'none',cursor:'pointer',transition:'all 0.35s ease',padding:0}}/>
           ))}
         </div>
 
@@ -441,24 +437,24 @@ export default function DemoPage() {
 
           <button
             onClick={()=>setPlaying(p=>!p)}
-            style={{...CB,width:46,height:46,borderRadius:14,background:`${slide.color}30`,border:`1px solid ${slide.color}60`,color:slide.accent}}
+            style={{...CB,width:46,height:46,borderRadius:14,background:`${slide.color}15`,border:`1.5px solid ${slide.color}40`,color:slide.color}}
           >
-            {playing ? <Pause size={18}/> : <Play size={18} fill={slide.accent}/>}
+            {playing ? <Pause size={18}/> : <Play size={18} fill={slide.color}/>}
           </button>
 
           <button onClick={goNext} style={CB}><ChevronRight size={16}/></button>
 
-          <div style={{width:1,height:24,background:'rgba(255,255,255,0.1)',margin:'0 4px'}}/>
+          <div style={{width:1,height:24,background:'rgba(124,92,252,0.12)',margin:'0 4px'}}/>
 
           <button
             onClick={toggleMusic}
-            style={{...CB,color:muted?'rgba(255,255,255,0.35)':slide.accent}}
+            style={{...CB,color:muted?'#94A3B8':slide.color}}
             title={muted?'تشغيل الموسيقى':'كتم الصوت'}
           >
             {muted ? <VolumeX size={15}/> : <Volume2 size={15}/>}
           </button>
 
-          <div dir="ltr" style={{color:'rgba(255,255,255,0.3)',fontSize:11,fontWeight:700,fontFamily:'monospace',minWidth:32,textAlign:'center'}}>
+          <div dir="ltr" style={{color:'#94A3B8',fontSize:11,fontWeight:700,fontFamily:'monospace',minWidth:32,textAlign:'center'}}>
             {idx+1}/{SLIDES.length}
           </div>
         </div>
@@ -469,9 +465,9 @@ export default function DemoPage() {
 
 const CB: React.CSSProperties = {
   width:38,height:38,borderRadius:11,
-  background:'rgba(255,255,255,0.07)',
-  border:'1px solid rgba(255,255,255,0.1)',
-  color:'rgba(255,255,255,0.65)',
+  background:'rgba(124,92,252,0.06)',
+  border:'1px solid rgba(124,92,252,0.12)',
+  color:'#64748B',
   cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',
   flexShrink:0,
 }

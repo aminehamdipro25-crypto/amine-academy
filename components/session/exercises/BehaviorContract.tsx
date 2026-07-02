@@ -205,12 +205,12 @@ export default function BehaviorContract({ onComplete, onCancel, studentAge }: P
       </div>
 
       <div className="flex-1 overflow-y-auto px-6 pb-4 space-y-3">
-        {goals.filter(g => g.text).map((goal, i) => (
-          <div key={i} className="bg-white/5 rounded-2xl p-4">
-            <p className="text-white text-sm font-bold mb-3">{i + 1}. {goal.text}</p>
+        {goals.map((goal, originalIdx) => !goal.text ? null : (
+          <div key={originalIdx} className="bg-white/5 rounded-2xl p-4">
+            <p className="text-white text-sm font-bold mb-3">{goals.filter(g => g.text).indexOf(goal) + 1}. {goal.text}</p>
             <div className="flex gap-2">
               <button
-                onClick={() => markAchieved(i, true)}
+                onClick={() => markAchieved(originalIdx, true)}
                 className={`flex-1 py-3 rounded-xl font-black text-sm transition-all ${
                   goal.achieved === true
                     ? 'bg-green-600 text-white ring-2 ring-green-400'
@@ -220,7 +220,7 @@ export default function BehaviorContract({ onComplete, onCancel, studentAge }: P
                 ✓ تحقق
               </button>
               <button
-                onClick={() => markAchieved(i, false)}
+                onClick={() => markAchieved(originalIdx, false)}
                 className={`flex-1 py-3 rounded-xl font-black text-sm transition-all ${
                   goal.achieved === false
                     ? 'bg-orange-600 text-white ring-2 ring-orange-400'

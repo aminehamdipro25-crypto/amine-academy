@@ -80,11 +80,12 @@ export default function AudioSequenceRepeat({ onComplete, onCancel, difficulty =
 
     if (animalIdx !== expected) {
       // Wrong — end recall
-      setErrors(e => e + 1)
+      const newErrors = errors + 1
+      setErrors(newErrors)
       setFeedback('wrong')
       setPhase('feedback')
       speak('خطأ')
-      timerIds.current.push(setTimeout(() => advanceRound(0), 1400))
+      timerIds.current.push(setTimeout(() => advanceRound(0, newErrors), 1400))
     } else if (newTapped.length === sequence.length) {
       // All correct
       setFeedback('correct')
@@ -96,7 +97,7 @@ export default function AudioSequenceRepeat({ onComplete, onCancel, difficulty =
     // else: partial match, keep going
   }
 
-  function advanceRound(roundScore: number) {
+  function advanceRound(roundScore: number, finalErrors?: number) {
     setFeedback(null)
     const next = round + 1
     if (next >= ROUNDS) {
@@ -107,7 +108,7 @@ export default function AudioSequenceRepeat({ onComplete, onCancel, difficulty =
         score:     finalScore,
         accuracy:  finalScore,
         duration:  Math.round((Date.now() - startMs) / 1000),
-        errors,
+        errors:    finalErrors !== undefined ? finalErrors : errors,
         metadata:  { rounds: ROUNDS, seqLength: SEQ_LEN },
         completedAt: new Date().toISOString(),
       })

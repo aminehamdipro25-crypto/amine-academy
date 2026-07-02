@@ -46,21 +46,22 @@ export default function ConversationStarter({ onComplete, onCancel, difficulty =
     if (chosen) return
     setChosen(c)
     const isCorrect = c === q.correct
-    if (isCorrect) setCorrect(v => v + 1)
-    else           setErrors(v => v + 1)
+    const nc = correct + (isCorrect ? 1 : 0)
+    const ne = errors + (isCorrect ? 0 : 1)
+    setCorrect(nc)
+    setErrors(ne)
 
     setTimeout(() => {
       const next = idx + 1
       if (next >= count) {
-        const newCorrect = correct + (isCorrect ? 1 : 0)
-        const score = Math.round((newCorrect / count) * 100)
+        const score = Math.round((nc / count) * 100)
         onComplete({
           exerciseType:    'conversation-starter',
           exerciseLabelAr: 'كيف أبدأ الحديث؟',
           score, accuracy: score,
           duration: Math.round((Date.now() - startMs) / 1000),
-          errors:   errors + (isCorrect ? 0 : 1),
-          metadata: { total: count, correct: newCorrect },
+          errors:   ne,
+          metadata: { total: count, correct: nc },
           completedAt: new Date().toISOString(),
         })
       } else {

@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import type { ExerciseResult } from '@/lib/types'
 
 interface Props {
@@ -43,28 +43,31 @@ export default function EmotionMirror({ onComplete, onCancel, difficulty = 1 }: 
   const [startMs]               = useState(Date.now())
 
   const q = questions[idx]
-  const choices = shuffle([q.label, ...q.distractors])
+  const choices = useMemo(() => shuffle([q.label, ...q.distractors]), [idx]) // eslint-disable-line react-hooks/exhaustive-deps
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current) }, [])
 
   function handleChoice(label: string) {
     if (chosen) return
     setChosen(label)
     const isCorrect = label === q.label
-    if (isCorrect) setCorrect(c => c + 1)
-    else           setErrors(e => e + 1)
+    const nc = correct + (isCorrect ? 1 : 0)
+    const ne = errors + (isCorrect ? 0 : 1)
+    setCorrect(nc)
+    setErrors(ne)
 
-    setTimeout(() => {
+    timerRef.current = setTimeout(() => {
       const nextIdx = idx + 1
       if (nextIdx >= count) {
-        const newCorrect = correct + (isCorrect ? 1 : 0)
-        const score = Math.round((newCorrect / count) * 100)
+        const score = Math.round((nc / count) * 100)
         onComplete({
           exerciseType:    'emotion-mirror',
           exerciseLabelAr: 'مرآة المشاعر',
           score,
           accuracy: score,
           duration: Math.round((Date.now() - startMs) / 1000),
-          errors:   errors + (isCorrect ? 0 : 1),
-          metadata: { total: count, correct: newCorrect },
+          errors:   ne,
+          metadata: { total: count, correct: nc },
           completedAt: new Date().toISOString(),
         })
       } else {

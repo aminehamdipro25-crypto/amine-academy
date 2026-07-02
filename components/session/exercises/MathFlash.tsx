@@ -70,24 +70,26 @@ export default function MathFlash({ onComplete, onCancel, difficulty = 1 }: Prop
 
   function handleChoice(c: number) {
     if (phase === 'feedback' || chosen !== null) return
+    if (timerRef.current) clearTimeout(timerRef.current)
     setChosen(c)
     setPhase('feedback')
     const isCorrect = c === q.answer
-    if (isCorrect) setCorrect(v => v + 1)
-    else           setErrors(v => v + 1)
+    const nc = correct + (isCorrect ? 1 : 0)
+    const ne = errors + (isCorrect ? 0 : 1)
+    if (isCorrect) setCorrect(nc)
+    else           setErrors(ne)
 
     timerRef.current = setTimeout(() => {
       const next = idx + 1
       if (next >= TOTAL) {
-        const newCorrect = correct + (isCorrect ? 1 : 0)
         onComplete({
           exerciseType:    'math-flash',
           exerciseLabelAr: 'الحساب السريع',
-          score:    Math.round((newCorrect / TOTAL) * 100),
-          accuracy: Math.round((newCorrect / TOTAL) * 100),
+          score:    Math.round((nc / TOTAL) * 100),
+          accuracy: Math.round((nc / TOTAL) * 100),
           duration: Math.round((Date.now() - startMs) / 1000),
-          errors:   errors + (isCorrect ? 0 : 1),
-          metadata: { total: TOTAL, correct: newCorrect },
+          errors:   ne,
+          metadata: { total: TOTAL, correct: nc },
           completedAt: new Date().toISOString(),
         })
       } else {

@@ -45,20 +45,21 @@ export default function DirectionFollow({ onComplete, onCancel, difficulty = 1 }
     if (chosen) return
     setChosen(d)
     const isCorrect = d === q.answer
-    if (isCorrect) setCorrect(c => c + 1)
-    else           setErrors(e => e + 1)
+    const nc = correct + (isCorrect ? 1 : 0)
+    const ne = errors + (isCorrect ? 0 : 1)
+    setCorrect(nc)
+    setErrors(ne)
 
     setTimeout(() => {
       const next = idx + 1
       if (next >= TOTAL) {
-        const nc = correct + (isCorrect ? 1 : 0)
         onComplete({
           exerciseType:    'direction-follow',
           exerciseLabelAr: 'اتباع الاتجاهات',
           score:    Math.round((nc / TOTAL) * 100),
           accuracy: Math.round((nc / TOTAL) * 100),
           duration: Math.round((Date.now() - startMs) / 1000),
-          errors:   errors + (isCorrect ? 0 : 1),
+          errors:   ne,
           metadata: { total: TOTAL, correct: nc, gridSize: SIZE },
           completedAt: new Date().toISOString(),
         })

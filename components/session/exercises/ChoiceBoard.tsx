@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import type { ExerciseResult } from '@/lib/types'
 
 interface Props {
@@ -41,7 +41,7 @@ export default function ChoiceBoard({ onComplete, onCancel, difficulty = 1 }: Pr
 
   const round       = ROUNDS[idx % ROUNDS.length]
   const optionCount = round.count
-  const options     = shuffle(ALL_ACTIVITIES).slice(0, optionCount)
+  const options     = useMemo(() => shuffle(ALL_ACTIVITIES).slice(0, optionCount), [idx, optionCount])
 
   function handlePick(id: string) {
     if (chosen) return

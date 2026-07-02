@@ -135,33 +135,20 @@ export default function FlashCount({ onComplete, onCancel, difficulty = 1 }: Pro
     setLastCorrect(isCorrect)
     setPhase('feedback')
 
-    if (isCorrect) {
-      setCorrect(c => {
-        const nc = c + 1
-        timerRef.current = setTimeout(() => {
-          const nextRound = round + 1
-          if (nextRound >= TOTAL_ROUNDS) {
-            finishGame(nc, errors)
-          } else {
-            startRound(nextRound)
-          }
-        }, 900)
-        return nc
-      })
-    } else {
-      setErrors(e => {
-        const ne = e + 1
-        timerRef.current = setTimeout(() => {
-          const nextRound = round + 1
-          if (nextRound >= TOTAL_ROUNDS) {
-            finishGame(correct, ne)
-          } else {
-            startRound(nextRound)
-          }
-        }, 900)
-        return ne
-      })
-    }
+    const nc = isCorrect ? correct + 1 : correct
+    const ne = isCorrect ? errors : errors + 1
+    if (isCorrect) setCorrect(nc)
+    else setErrors(ne)
+
+    if (timerRef.current) clearTimeout(timerRef.current)
+    timerRef.current = setTimeout(() => {
+      const nextRound = round + 1
+      if (nextRound >= TOTAL_ROUNDS) {
+        finishGame(nc, ne)
+      } else {
+        startRound(nextRound)
+      }
+    }, 900)
   }, [phase, currentCount, round, errors, correct, finishGame, startRound])
 
   // Intro

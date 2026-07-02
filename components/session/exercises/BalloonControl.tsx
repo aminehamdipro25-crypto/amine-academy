@@ -28,6 +28,7 @@ export default function BalloonControl({ onComplete, onCancel, difficulty = 1 }:
   const [fbMsg,      setFbMsg]      = useState('')
   const [result,     setResult]     = useState<ExerciseResult | null>(null)
 
+  const pendingResultRef = useRef<ExerciseResult | null>(null)
   const goodPressesRef   = useRef(0)
   const tooEarlyRef      = useRef(0)
   const tooLateRef       = useRef(0)
@@ -45,9 +46,14 @@ export default function BalloonControl({ onComplete, onCancel, difficulty = 1 }:
 
   useEffect(() => () => clearAll(), [clearAll])
 
+  // Deliver result on unmount if the user left before clicking "متابعة"
+  useEffect(() => () => {
+    if (pendingResultRef.current) onComplete(pendingResultRef.current)
+  }, [onComplete])
+
   const finish = useCallback((goodPresses: number) => {
     const score = Math.round((goodPresses / TOTAL_ROUNDS) * 100)
-    setResult({
+    const resultObj: ExerciseResult = {
       exerciseType:    'balloon-control',
       exerciseLabelAr: 'البالون الهادئ',
       score,
@@ -62,7 +68,9 @@ export default function BalloonControl({ onComplete, onCancel, difficulty = 1 }:
         difficulty,
       },
       completedAt: new Date().toISOString(),
-    })
+    }
+    pendingResultRef.current = resultObj
+    setResult(resultObj)
     setPhase('result')
   }, [difficulty])
 
@@ -174,7 +182,7 @@ export default function BalloonControl({ onComplete, onCancel, difficulty = 1 }:
         </div>
         <div className="text-[#7C5CFC] font-black text-5xl">{result.score}%</div>
         <button
-          onClick={() => onComplete(result)}
+          onClick={() => { pendingResultRef.current = null; onComplete(result) }}
           className="bg-[#7C5CFC] hover:bg-[#6a4de8] text-white font-black px-8 py-3 rounded-xl transition-colors"
         >
           متابعة

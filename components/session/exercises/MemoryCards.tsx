@@ -12,8 +12,11 @@ interface Props { onComplete: (r: ExerciseResult) => void; onCancel: () => void;
 
 export default function MemoryCards({ onComplete, onCancel, difficulty = 1 }: Props) {
   const pairCount  = difficulty === 1 ? 6 : difficulty === 2 ? 8 : 10
-  const emojiSet   = useRef(EMOJI_SETS[Math.floor(Math.random() * EMOJI_SETS.length)]).current
-  const startRef   = useRef(Date.now())
+  const emojiSet        = useRef(EMOJI_SETS[Math.floor(Math.random() * EMOJI_SETS.length)]).current
+  const startRef        = useRef(Date.now())
+  const matchTimerRef   = useRef<ReturnType<typeof setTimeout>>()
+  const completeTimerRef= useRef<ReturnType<typeof setTimeout>>()
+  const mismatchTimerRef= useRef<ReturnType<typeof setTimeout>>()
 
   const [cards, setCards]         = useState<Card[]>([])
   const [flipped, setFlipped]     = useState<number[]>([])
@@ -29,6 +32,12 @@ export default function MemoryCards({ onComplete, onCancel, difficulty = 1 }: Pr
     const saved = Number(localStorage.getItem('mc-preview-speed'))
     return saved === 0.6 || saved === 1 || saved === 1.6 ? saved : 1
   })
+
+  useEffect(() => () => {
+    clearTimeout(matchTimerRef.current)
+    clearTimeout(completeTimerRef.current)
+    clearTimeout(mismatchTimerRef.current)
+  }, [])
 
   useEffect(() => {
     const emojis = emojiSet.slice(0, pairCount)
@@ -69,7 +78,7 @@ export default function MemoryCards({ onComplete, onCancel, difficulty = 1 }: Pr
       setLocked(true)
       const [a, b] = newFlipped
       if (cards[a].emoji === cards[b].emoji) {
-        setTimeout(() => {
+        matchTimerRef.current = setTimeout(() => {
           setCards(c => c.map(card => card.id === a || card.id === b ? { ...card, matched: true } : card))
           const nm = matches + 1
           setMatches(nm)
@@ -80,7 +89,7 @@ export default function MemoryCards({ onComplete, onCancel, difficulty = 1 }: Pr
             setDone(true)
             setCelebrating(true)
             const score = Math.max(10, 100 - errors * 5)
-            setTimeout(() => {
+            completeTimerRef.current = setTimeout(() => {
               onComplete({
                 exerciseType: 'memory-cards',
                 exerciseLabelAr: 'مطابقة البطاقات',
@@ -96,7 +105,7 @@ export default function MemoryCards({ onComplete, onCancel, difficulty = 1 }: Pr
         }, 350)
       } else {
         setErrors(e => e + 1)
-        setTimeout(() => {
+        mismatchTimerRef.current = setTimeout(() => {
           setCards(c => c.map(card => card.id === a || card.id === b ? { ...card, flipped: false } : card))
           setFlipped([])
           setLocked(false)

@@ -34,11 +34,14 @@ export default function StroopTest({ onComplete, onCancel, difficulty = 1 }: Pro
 
   const startRef    = useRef(Date.now())
   const trialStart  = useRef(Date.now())
+  const settleTimerRef = useRef<ReturnType<typeof setTimeout>>()
   const correctRef  = useRef(0)
   const errRef      = useRef(0)
   const rtsRef      = useRef<number[]>([])
 
   const timeLimit = difficulty === 3 ? 3000 : difficulty === 2 ? 4500 : 6000
+
+  useEffect(() => () => clearTimeout(settleTimerRef.current), [])
 
   useEffect(() => {
     if (!started || feedback !== null || result) return
@@ -67,7 +70,7 @@ export default function StroopTest({ onComplete, onCancel, difficulty = 1 }: Pro
     if (isCorrect) { correctRef.current++; setCorrect(correctRef.current) }
     else           { errRef.current++;     setErrors(errRef.current) }
     setFeedback(isCorrect ? 'correct' : 'wrong')
-    setTimeout(() => {
+    settleTimerRef.current = setTimeout(() => {
       setFeedback(null)
       const next = trial + 1
       if (next >= TOTAL) {

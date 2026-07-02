@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import type { ExerciseResult } from '@/lib/types'
 
 interface Props {
@@ -48,6 +48,9 @@ export default function ColorGrid({ onComplete, onCancel, studentAge, difficulty
   const [countdown, setCountdown] = useState(cfg.studySec)
   const [scores, setScores]   = useState<number[]>([])
   const startRef = useRef(Date.now())
+  const timerRef = useRef<ReturnType<typeof setTimeout>>()
+
+  useEffect(() => () => clearTimeout(timerRef.current), [])
 
   function startRound(r: number) {
     const grid = makeGrid(cfg.size, cfg.colors)
@@ -84,7 +87,7 @@ export default function ColorGrid({ onComplete, onCancel, studentAge, difficulty
     setPhase('feedback')
 
     if (round + 1 >= ROUNDS) {
-      setTimeout(() => {
+      timerRef.current = setTimeout(() => {
         const avg = Math.round(newScores.reduce((a, b) => a + b, 0) / newScores.length)
         const dur = Math.round((Date.now() - startRef.current) / 1000)
         onComplete({
@@ -99,7 +102,7 @@ export default function ColorGrid({ onComplete, onCancel, studentAge, difficulty
         })
       }, 2000)
     } else {
-      setTimeout(() => startRound(round + 1), 2200)
+      timerRef.current = setTimeout(() => startRound(round + 1), 2200)
     }
   }
 

@@ -70,6 +70,7 @@ export default function SustainedAttention({ onComplete, onCancel, difficulty = 
   const pressedRef = useRef(false)
   const seqRef = useRef<StimRecord[]>([])
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const startRef = useRef(Date.now())
 
   const clearTimer = useCallback(() => {
@@ -77,6 +78,7 @@ export default function SustainedAttention({ onComplete, onCancel, difficulty = 
   }, [])
 
   useEffect(() => () => clearTimer(), [clearTimer])
+  useEffect(() => () => { if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current) }, [])
 
   const finishGame = useCallback(() => {
     const hits = hitsRef.current
@@ -160,7 +162,8 @@ export default function SustainedAttention({ onComplete, onCancel, difficulty = 
       setFlashFeedback('false-alarm')
     }
     // feedback disappears after 400ms but don't clear the stimulus timer
-    setTimeout(() => setFlashFeedback(null), 400)
+    if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current)
+    feedbackTimerRef.current = setTimeout(() => setFlashFeedback(null), 400)
   }
 
   // Intro screen

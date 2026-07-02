@@ -46,7 +46,8 @@ export default function SimonSays({ onComplete, onCancel, studentAge, difficulty
     const len = startLen + level - 1
     const seq = Array.from({ length: len }, () => Math.floor(Math.random() * 4))
     setSequence(seq)
-    setTimeout(() => flashSequence(seq), 500)
+    const t = setTimeout(() => flashSequence(seq), 500)
+    return () => clearTimeout(t)
   }, [level, startLen, flashSequence])
 
   function finish() {

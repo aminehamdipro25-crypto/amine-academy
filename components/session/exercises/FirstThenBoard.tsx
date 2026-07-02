@@ -61,8 +61,9 @@ export default function FirstThenBoard({ onComplete, onCancel, difficulty = 1 }:
     setTapped(0)
     const COUNT = pair.task.count
     const spawned: { id: number; x: number; y: number; collected: boolean }[] = []
+    const ids: ReturnType<typeof setTimeout>[] = []
     for (let i = 0; i < COUNT; i++) {
-      setTimeout(() => {
+      ids.push(setTimeout(() => {
         spawned.push({
           id: i,
           x: 15 + Math.random() * 68, // % within container
@@ -70,14 +71,15 @@ export default function FirstThenBoard({ onComplete, onCancel, difficulty = 1 }:
           collected: false,
         })
         setTargets([...spawned])
-      }, i * 500)
+      }, i * 500))
     }
+    return () => ids.forEach(clearTimeout)
   }, [phase, round]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function collectTarget(id: number) {
     setTargets(prev => {
       const next = prev.map(t => t.id === id ? { ...t, collected: true } : t)
-      const newTapped = tapped + 1
+      const newTapped = next.filter(t => t.collected).length
       setTapped(newTapped)
       if (newTapped >= pair.task.count) {
         // All collected — show reward
@@ -96,11 +98,11 @@ export default function FirstThenBoard({ onComplete, onCancel, difficulty = 1 }:
       onComplete({
         exerciseType:    'first-then-board',
         exerciseLabelAr: 'أولاً ثم',
-        score:    Math.round(((correct + 1) / TOTAL) * 100),
+        score:    Math.round((correct / TOTAL) * 100),
         accuracy: 100,
         duration: Math.round((Date.now() - startRef.current) / 1000),
         errors:   0,
-        metadata: { rounds: TOTAL, completed: correct + 1 },
+        metadata: { rounds: TOTAL, completed: correct },
         completedAt: new Date().toISOString(),
       })
     } else {

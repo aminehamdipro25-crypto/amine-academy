@@ -76,6 +76,7 @@ export default function AuditoryMemory({
   const ROUNDS = 3
 
   const startRef = useRef(Date.now())
+  const completeTimerRef = useRef<ReturnType<typeof setTimeout>>()
   const [phase, setPhase] = useState<Phase>('intro')
   const [round, setRound] = useState(0) // 0-indexed
   const [ttsSupported, setTtsSupported] = useState(true)
@@ -106,6 +107,8 @@ export default function AuditoryMemory({
     sequence: [],
     choices: [],
   })
+
+  useEffect(() => () => clearTimeout(completeTimerRef.current), [])
 
   useEffect(() => {
     if (phase === 'intro') {
@@ -201,7 +204,7 @@ export default function AuditoryMemory({
       const avgScore = Math.round(newScores.reduce((a, b) => a + b, 0) / ROUNDS)
       const accuracy = Math.max(0, 100 - (newErrors / (ROUNDS * seqLen)) * 100)
       const dur = Math.round((Date.now() - startRef.current) / 1000)
-      setTimeout(() => {
+      completeTimerRef.current = setTimeout(() => {
         setPhase('done')
         onComplete({
           exerciseType: 'auditory-memory',

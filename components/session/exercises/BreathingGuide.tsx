@@ -47,6 +47,10 @@ export default function BreathingGuide({ onComplete, onCancel, studentAge }: Pro
   const [running, setRunning]   = useState(false)
   const [done, setDone]         = useState(false)
   const startRef = useRef(Date.now())
+  const doneRef = useRef(false)
+  const completionTimerRef = useRef<ReturnType<typeof setTimeout>>()
+
+  useEffect(() => () => clearTimeout(completionTimerRef.current), [])
 
   useEffect(() => {
     if (!running || !mode) return
@@ -65,13 +69,16 @@ export default function BreathingGuide({ onComplete, onCancel, studentAge }: Pro
               const dur = Math.round((Date.now() - startRef.current) / 1000)
               setRunning(false)
               setDone(true)
-              setTimeout(() => onComplete({
-                exerciseType: 'breathing',
-                exerciseLabelAr: MODES[mode].nameAr,
-                score: 100, accuracy: 100, duration: dur, errors: 0,
-                metadata: { cycles: nc, mode },
-                completedAt: new Date().toISOString(),
-              }), 1200)
+              if (!doneRef.current) {
+                doneRef.current = true
+                completionTimerRef.current = setTimeout(() => onComplete({
+                  exerciseType: 'breathing',
+                  exerciseLabelAr: MODES[mode].nameAr,
+                  score: 100, accuracy: 100, duration: dur, errors: 0,
+                  metadata: { cycles: nc, mode },
+                  completedAt: new Date().toISOString(),
+                }), 1200)
+              }
               return 0
             }
             setPhaseIdx(0)

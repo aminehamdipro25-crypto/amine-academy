@@ -25,6 +25,7 @@ export default function CalmCorner({ onComplete, onCancel, difficulty = 1 }: Pro
   const [progress, setProgress] = useState(0)
   const [startMs]               = useState(Date.now())
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const doneRef = useRef(false)
   const STEP_MS = 3000
 
   const strat = strategies[idx]
@@ -39,15 +40,18 @@ export default function CalmCorner({ onComplete, onCancel, difficulty = 1 }: Pro
           if (nextStep >= strat.steps.length) {
             const nextIdx = idx + 1
             if (nextIdx >= count) {
-              onComplete({
-                exerciseType:    'calm-corner',
-                exerciseLabelAr: 'ركن الهدوء',
-                score: 100, accuracy: 100,
-                duration: Math.round((Date.now() - startMs) / 1000),
-                errors: 0,
-                metadata: { strategies: count },
-                completedAt: new Date().toISOString(),
-              })
+              if (!doneRef.current) {
+                doneRef.current = true
+                onComplete({
+                  exerciseType:    'calm-corner',
+                  exerciseLabelAr: 'ركن الهدوء',
+                  score: 100, accuracy: 100,
+                  duration: Math.round((Date.now() - startMs) / 1000),
+                  errors: 0,
+                  metadata: { strategies: count },
+                  completedAt: new Date().toISOString(),
+                })
+              }
             } else {
               setIdx(nextIdx)
               setStepIdx(0)

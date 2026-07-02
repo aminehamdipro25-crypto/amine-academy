@@ -27,6 +27,9 @@ export default function TapTarget({ onComplete, onCancel, studentAge, difficulty
   const nextId = useRef(0)
   const startRef = useRef(Date.now())
   const areaRef = useRef<HTMLDivElement>(null)
+  const hitsRef = useRef(0)
+  const missesRef = useRef(0)
+  const finishedRef = useRef(false)
 
   const spawnTarget = useCallback(() => {
     if (!areaRef.current) return
@@ -42,7 +45,7 @@ export default function TapTarget({ onComplete, onCancel, studentAge, difficulty
     setTimeout(() => {
       setTargets(t => {
         const exists = t.find(tt => tt.id === id)
-        if (exists) { setMisses(m => m + 1) }
+        if (exists) { missesRef.current++; setMisses(missesRef.current) }
         return t.filter(tt => tt.id !== id)
       })
     }, targetLife)
@@ -54,36 +57,45 @@ export default function TapTarget({ onComplete, onCancel, studentAge, difficulty
     return () => clearInterval(spawn)
   }, [done, spawnTarget, spawnRate])
 
+  // Timer tick — deps intentionally minimal; refs used for final values at completion
   useEffect(() => {
     if (done) return
     const timer = setInterval(() => {
-      setTimeLeft(t => {
-        if (t <= 1) {
-          clearInterval(timer)
-          setDone(true)
-          const dur = Math.round((Date.now() - startRef.current) / 1000)
-          const acc = hits + misses === 0 ? 0 : Math.round((hits / (hits + misses)) * 100)
-          onComplete({
-            exerciseType: 'tap-target',
-            exerciseLabelAr: 'التناسق الحركي — اضغط الهدف',
-            score: Math.min(100, hits * (difficulty === 1 ? 5 : difficulty === 2 ? 6 : 7)),
-            accuracy: acc,
-            duration: dur,
-            errors: misses,
-            metadata: { hits, misses, difficulty },
-            completedAt: new Date().toISOString(),
-          })
-          return 0
-        }
-        return t - 1
-      })
+      setTimeLeft(t => (t <= 1 ? 0 : t - 1))
     }, 1000)
     return () => clearInterval(timer)
-  }, [done, hits, misses, difficulty, onComplete])
+  }, [done])
+
+  // Set done when timer reaches zero
+  useEffect(() => {
+    if (timeLeft === 0 && !done) setDone(true)
+  }, [timeLeft, done])
+
+  // Call onComplete once when done — reads ref values so no stale closure
+  useEffect(() => {
+    if (!done) return
+    if (finishedRef.current) return
+    finishedRef.current = true
+    const dur = Math.round((Date.now() - startRef.current) / 1000)
+    const h = hitsRef.current
+    const m = missesRef.current
+    const acc = h + m === 0 ? 0 : Math.round((h / (h + m)) * 100)
+    onComplete({
+      exerciseType: 'tap-target',
+      exerciseLabelAr: 'التناسق الحركي — اضغط الهدف',
+      score: Math.min(100, h * (difficulty === 1 ? 5 : difficulty === 2 ? 6 : 7)),
+      accuracy: acc,
+      duration: dur,
+      errors: m,
+      metadata: { hits: h, misses: m, difficulty },
+      completedAt: new Date().toISOString(),
+    })
+  }, [done, difficulty, onComplete])
 
   function hit(id: number) {
     setTargets(t => t.filter(tt => tt.id !== id))
-    setHits(h => h + 1)
+    hitsRef.current++
+    setHits(hitsRef.current)
   }
 
   return (

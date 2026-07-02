@@ -13,7 +13,7 @@ import FloatingChat from '@/components/shared/FloatingChat'
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen bg-[#FFF8F0] overflow-x-hidden">
+    <main className="min-h-[100dvh] bg-[#FFF8F0] overflow-x-hidden">
       <HeroSection />
       <StatsSection />
       <FeaturesSection />

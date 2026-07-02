@@ -138,7 +138,7 @@ function ResetPasswordForm() {
 
 export default function ResetPasswordPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-brand-50 to-white flex items-center justify-center p-4">
+    <div className="min-h-[100dvh] bg-gradient-to-br from-brand-50 to-white flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl p-8 w-full max-w-sm shadow-xl border border-gray-100">
         <Suspense fallback={<div className="text-center py-8"><Loader2 className="w-6 h-6 animate-spin mx-auto text-brand-600" /></div>}>
           <ResetPasswordForm />

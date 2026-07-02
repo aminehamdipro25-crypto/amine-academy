@@ -446,7 +446,7 @@ export default function NewReportPage() {
           type="button"
           onClick={generateAISummary}
           disabled={!selectedStudentId || generatingAI}
-          className="w-full flex items-center justify-center gap-2.5 bg-gradient-to-r from-violet-600 to-brand-600 hover:from-violet-700 hover:to-brand-700 disabled:opacity-50 text-white font-black py-3.5 px-5 rounded-2xl transition-all shadow-md shadow-violet-500/20 mb-4"
+          className="w-full flex items-center justify-center gap-2.5 bg-gradient-to-r from-brand-700 to-brand-600 hover:from-brand-800 hover:to-brand-700 disabled:opacity-50 text-white font-black py-3.5 px-5 rounded-2xl transition-all shadow-md mb-4"
         >
           {generatingAI ? (
             <>

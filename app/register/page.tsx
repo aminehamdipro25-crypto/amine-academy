@@ -183,7 +183,7 @@ export default function RegisterPage() {
   const audSens  = w2('audioSensitivity')
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-brand-50 to-white py-10 px-4">
+    <div className="min-h-[100dvh] bg-gradient-to-br from-brand-50 to-white py-10 px-4">
       <div className="max-w-xl mx-auto" ref={formTopRef}>
         {/* Header */}
         <div className="text-center mb-8">

@@ -224,7 +224,7 @@ export default function ProgramsPage() {
               whileHover={{ scale: 1.03 }}
               onClick={generateWithAI}
               disabled={!studentId || aiLoading}
-              className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-brand-600 text-white font-black px-5 py-2.5 rounded-xl text-sm hover:opacity-90 disabled:opacity-40 transition-all shadow-md whitespace-nowrap">
+              className="flex items-center gap-2 bg-gradient-to-r from-brand-700 to-brand-600 text-white font-black px-5 py-2.5 rounded-xl text-sm hover:opacity-90 disabled:opacity-40 transition-all shadow-md whitespace-nowrap">
               {aiLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
               {aiLoading ? 'جارٍ التوليد...' : 'توليد بالذكاء الاصطناعي'}
             </motion.button>

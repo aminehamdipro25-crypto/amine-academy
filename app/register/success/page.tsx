@@ -3,7 +3,7 @@ import { CheckCircle, MessageCircle, Mail } from 'lucide-react'
 
 export default function RegisterSuccessPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-brand-50 to-white flex items-center justify-center py-10 px-4">
+    <div className="min-h-[100dvh] bg-gradient-to-br from-brand-50 to-white flex items-center justify-center py-10 px-4">
       <div className="max-w-md w-full text-center">
         <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
           <CheckCircle className="w-10 h-10 text-green-600" />

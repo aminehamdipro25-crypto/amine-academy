@@ -46,8 +46,8 @@ export default function ParentLoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-brand-50 to-white flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl p-8 w-full max-w-sm shadow-xl border border-gray-100">
+    <div className="min-h-[100dvh] bg-gradient-to-br from-brand-50 to-white flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl p-8 w-full max-w-sm shadow-[0_4px_32px_rgba(0,0,0,0.06)] border border-gray-100">
         {/* Header */}
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-brand-100 rounded-2xl flex items-center justify-center mx-auto mb-4 text-3xl">

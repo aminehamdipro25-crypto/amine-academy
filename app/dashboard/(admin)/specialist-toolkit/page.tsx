@@ -1048,7 +1048,7 @@ export default function SpecialistToolkitPage() {
                       <p className="text-xs text-gray-400 mt-0.5">{linked ? t.programGenerateSubtitle : t.programGenerateSubtitleUnlinked}</p>
                     </div>
                     <button type="button" onClick={generateProgram} disabled={programGenerating || !canGenerate}
-                      className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-teal-600 text-white font-black px-5 py-2.5 rounded-xl text-sm hover:opacity-90 disabled:opacity-40 transition-all whitespace-nowrap flex-shrink-0">
+                      className="flex items-center gap-2 bg-gradient-to-r from-brand-600 to-teal-600 text-white font-black px-5 py-2.5 rounded-xl text-sm hover:opacity-90 disabled:opacity-40 transition-all whitespace-nowrap flex-shrink-0">
                       {programGenerating
                         ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                         : <Sparkles className="w-4 h-4" />}

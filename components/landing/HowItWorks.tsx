@@ -98,7 +98,7 @@ export default function HowItWorks() {
           {steps.map((step) => (
             <div key={step.num} className="relative flex flex-col items-center text-center">
               <div
-                className="relative z-10 w-14 h-14 rounded-full flex items-center justify-center mb-4 text-2xl shadow-lg"
+                className="relative z-10 w-14 h-14 rounded-full flex items-center justify-center mb-4 text-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)]"
                 style={{ background: step.gradient, boxShadow: '0 8px 24px rgba(124,92,252,0.2)' }}
               >
                 {step.icon}

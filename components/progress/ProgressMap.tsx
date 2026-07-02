@@ -103,8 +103,8 @@ function NodeTooltip({ data }: { data: TooltipData }) {
           style={{
             [above ? 'bottom' : 'top']: -5,
             width: 0, height: 0,
-            borderLeft: '5px solid transparent',
-            borderRight: '5px solid transparent',
+            borderLeft: '2px solid transparent',
+            borderRight: '2px solid transparent',
             ...(above
               ? { borderTop: `5px solid ${isUp ? '#374151' : (cfg?.border ?? '#374151')}` }
               : { borderBottom: `5px solid ${isUp ? '#374151' : (cfg?.border ?? '#374151')}` }),

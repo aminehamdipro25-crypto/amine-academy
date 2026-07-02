@@ -2621,6 +2621,41 @@ ${notes ? `
                 </div>
               </div>
               <div className="overflow-y-auto flex-1 px-4 py-4">
+                {/* Live current-session progress card */}
+                {(() => {
+                  const curr = sidebarMapSessions.find(s => s.sessionId === id)
+                  if (!curr) return null
+                  const nextThreshold = curr.stars === 1 ? 60 : curr.stars === 2 ? 80 : 100
+                  const pct = Math.min(100, Math.round((curr.avgScore / nextThreshold) * 100))
+                  return (
+                    <div
+                      className="rounded-2xl p-3 mb-4 flex gap-3 items-center"
+                      style={{ background: 'linear-gradient(135deg,rgba(99,102,241,0.08),rgba(139,92,246,0.06))', border: '1.5px solid rgba(99,102,241,0.15)' }}
+                    >
+                      <div
+                        className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-white font-black text-sm shadow"
+                        style={{ background: 'linear-gradient(135deg,#6366F1,#8B5CF6)' }}
+                      >
+                        {curr.stars}★
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs font-black text-gray-700">الجلسة الحالية</span>
+                          <span className="text-xs font-black text-indigo-600">{curr.avgScore}% • {curr.gameCount} تمرين</span>
+                        </div>
+                        <div className="h-2 rounded-full overflow-hidden" style={{ background: 'rgba(99,102,241,0.12)' }}>
+                          <div
+                            className="h-2 rounded-full transition-all duration-700"
+                            style={{ width: `${pct}%`, background: 'linear-gradient(90deg,#6366F1,#8B5CF6)' }}
+                          />
+                        </div>
+                        <div className="text-[10px] text-gray-400 mt-1">
+                          {curr.stars < 3 ? `${pct}% نحو النجمة ${curr.stars === 1 ? '★★' : '★★★'}` : '★★★ ممتاز!'}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })()}
                 <ProgressMap sessions={sidebarMapSessions} upcomingSlots={3} />
               </div>
             </div>

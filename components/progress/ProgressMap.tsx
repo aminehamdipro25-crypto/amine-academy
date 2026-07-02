@@ -387,6 +387,13 @@ function SnakeMap({ sessions, upcomingSlots }: { sessions: SessionNode[]; upcomi
                 ? <span style={{ fontSize: d * 0.38 }}>🔒</span>
                 : node.isMilestone
                 ? <span style={{ fontSize: d * 0.42 }}>🏆</span>
+                : isCurr
+                ? (
+                  <div className="flex flex-col items-center gap-0.5">
+                    <span className="font-black text-white leading-none" style={{ fontSize: d * 0.22 }}>{node.avgScore}%</span>
+                    <span className="font-bold text-white/70 leading-none" style={{ fontSize: d * 0.16 }}>{node.stars}★</span>
+                  </div>
+                )
                 : <span className="font-black text-white" style={{ fontSize: d * 0.29 }}>{node.stars}★</span>
               }
             </motion.div>
@@ -396,6 +403,32 @@ function SnakeMap({ sessions, upcomingSlots }: { sessions: SessionNode[]; upcomi
               <div className="flex gap-0.5 mt-1">
                 {[1,2,3].map(s => <span key={s} style={{ fontSize: 8, color: s <= node.stars ? '#F59E0B' : '#E5E7EB' }}>★</span>)}
               </div>
+            )}
+
+            {/* Live score progress bar — current node only */}
+            {isCurr && !isUp && node.stars < 3 && (
+              <div style={{ width: d - 6, marginTop: 3 }}>
+                <div
+                  className="rounded-full overflow-hidden"
+                  style={{ height: 4, background: 'rgba(99,102,241,0.15)' }}
+                >
+                  <div
+                    className="rounded-full transition-all duration-700"
+                    style={{
+                      height: 4,
+                      width: `${Math.min(100, Math.round((node.avgScore / (node.stars === 1 ? 60 : 80)) * 100))}%`,
+                      background: cfg?.bg ?? 'linear-gradient(90deg,#6366F1,#818CF8)',
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Exercise count — current node */}
+            {isCurr && !isUp && node.gameCount > 0 && (
+              <span style={{ fontSize: 8, color: '#6366F1', fontWeight: 700, marginTop: 1 }}>
+                {node.gameCount} تمرين
+              </span>
             )}
 
             {/* Session label */}

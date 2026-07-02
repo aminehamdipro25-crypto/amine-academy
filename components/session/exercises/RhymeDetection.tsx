@@ -245,7 +245,7 @@ export default function RhymeDetection({ onComplete, onCancel, difficulty = 1 }:
       {/* Feedback */}
       {feedback && (
         <div
-          className="text-3xl font-black animate-bounce"
+          className="text-3xl font-black"
           style={{ color: feedback === 'correct' ? '#22c55e' : '#ef4444' }}
         >
           {feedback === 'correct' ? '✅ ممتاز!' : `❌ الصحيح: ${q.correct}`}

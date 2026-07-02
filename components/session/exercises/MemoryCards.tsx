@@ -123,7 +123,7 @@ export default function MemoryCards({ onComplete, onCancel, difficulty = 1 }: Pr
     const score = Math.max(10, 100 - errors * 5)
     return (
       <div className="flex flex-col items-center justify-center h-full gap-6 p-6 text-center" dir="rtl">
-        <div className="text-8xl animate-bounce">{score >= 90 ? '🏆' : score >= 70 ? '⭐' : '💪'}</div>
+        <div className="text-8xl">{score >= 90 ? '🏆' : score >= 70 ? '⭐' : '💪'}</div>
         <h2 className="text-white font-black text-3xl">أحسنت!</h2>
         <div className="grid grid-cols-3 gap-4 w-full max-w-xs">
           <div className="bg-green-900/40 border border-green-500/40 rounded-2xl p-4">
@@ -147,7 +147,7 @@ export default function MemoryCards({ onComplete, onCancel, difficulty = 1 }: Pr
   return (
     <div className="flex flex-col items-center gap-4 p-4 select-none" dir="rtl">
       <style>{`
-        .mc-inner{transition:transform .45s cubic-bezier(.4,2,.6,1);transform-style:preserve-3d;position:relative;width:100%;height:100%}
+        .mc-inner{transition:transform .45s cubic-bezier(0.16, 1, 0.3, 1);transform-style:preserve-3d;position:relative;width:100%;height:100%}
         .mc-inner.mc-flipped{transform:rotateY(180deg)}
         .mc-front,.mc-back{position:absolute;inset:0;backface-visibility:hidden;border-radius:14px;display:flex;align-items:center;justify-content:center}
         .mc-back{transform:rotateY(180deg)}

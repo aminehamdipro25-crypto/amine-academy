@@ -18,9 +18,9 @@ const TYPE_BADGE: Record<string, string> = {
 }
 
 const AVATAR_GRADIENTS = [
-  'from-violet-500 to-purple-600', 'from-blue-500 to-cyan-600',
+  'from-brand-600 to-purple-600', 'from-blue-500 to-cyan-600',
   'from-emerald-500 to-teal-600',  'from-rose-500 to-pink-600',
-  'from-amber-500 to-orange-600',  'from-indigo-500 to-blue-600',
+  'from-amber-500 to-orange-600',  'from-brand-500 to-blue-600',
 ]
 
 function ScoreBar({ score, label }: { score: number; label: string }) {

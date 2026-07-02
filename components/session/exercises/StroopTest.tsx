@@ -197,7 +197,7 @@ export default function StroopTest({ onComplete, onCancel, difficulty = 1 }: Pro
         feedback === 'correct' ? 'bg-green-900/20' : feedback === 'wrong' ? 'bg-red-900/20' : ''
       }`}>
         {!feedback && <p className="text-white/30 text-xs mb-6">اضغط لون الحبر — ليس ما تقرأه</p>}
-        {feedback === 'correct' && <p className="text-green-400 font-black text-2xl mb-6 animate-bounce">✓ ممتاز!</p>}
+        {feedback === 'correct' && <p className="text-green-400 font-black text-2xl mb-6">✓ ممتاز!</p>}
         {feedback === 'wrong'   && <p className="text-red-400 font-black text-2xl mb-6">✗ خطأ!</p>}
         <div className="font-black text-8xl select-none" style={{ color: inkColor.hex }}>
           {word.nameAr}

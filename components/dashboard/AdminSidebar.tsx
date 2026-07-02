@@ -129,7 +129,7 @@ export default function AdminSidebar({ onClose, unreadMessages = 0 }: { onClose?
         <form action={isOwner ? '/api/auth/admin/logout' : '/api/auth/staff/logout'} method="POST">
           <button
             type="submit"
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all duration-150"
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-red-600 hover:text-red-600 hover:bg-red-50 transition-all duration-150"
           >
             <div className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center">
               <LogOut className="w-3.5 h-3.5" />

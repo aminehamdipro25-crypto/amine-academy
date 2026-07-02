@@ -355,7 +355,7 @@ export default function SessionToolbar({
       {/* Lock session button */}
       <button
         onClick={onLockSession}
-        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg font-black text-xs transition-all flex-shrink-0 bg-surface-page text-gray-500 hover:bg-amber-50 hover:text-amber-600"
+        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg font-black text-xs transition-all flex-shrink-0 bg-surface-page text-amber-700 hover:bg-amber-50 hover:text-amber-600"
         title="قفل الجلسة — يخفي أدوات المعالج حتى لا يتشتت الطفل"
       >
         🔒 قفل

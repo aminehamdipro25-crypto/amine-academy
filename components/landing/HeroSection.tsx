@@ -408,8 +408,8 @@ export default function HeroSection() {
           style={{ borderTop: '1.5px solid rgba(124,92,252,0.1)' }}
         >
           {[
-            { icon: Users, value: '+200', label: t.hero.stats.children,     gradient: 'from-violet-500 to-indigo-400' },
-            { icon: Award, value: '+5',   label: t.hero.stats.years,        gradient: 'from-purple-500 to-violet-400' },
+            { icon: Users, value: '+200', label: t.hero.stats.children,     gradient: 'from-brand-600 to-indigo-400' },
+            { icon: Award, value: '+5',   label: t.hero.stats.years,        gradient: 'from-brand-500 to-violet-400' },
             { icon: Star,  value: '98%',  label: t.hero.stats.satisfaction, gradient: 'from-amber-500 to-orange-400' },
           ].map(({ icon: Icon, value, label, gradient }) => (
             <div key={label} className="text-center">

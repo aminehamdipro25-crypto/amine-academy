@@ -215,7 +215,7 @@ export default function FirstThenBoard({ onComplete, onCancel, difficulty = 1 }:
                 background: `${pair.task.color}25`,
                 border: `3px solid ${pair.task.color}`,
                 fontSize: 28,
-                animation: 'ftb-appear 0.3s cubic-bezier(0.34,1.56,0.64,1) both',
+                animation: 'ftb-appear 0.3s cubic-bezier(0.16, 1, 0.3, 1) both',
               }}
             >
               {pair.task.emoji}
@@ -239,7 +239,7 @@ export default function FirstThenBoard({ onComplete, onCancel, difficulty = 1 }:
 
           {remaining === 0 && targets.length > 0 && (
             <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-6xl animate-bounce">🎉</span>
+              <span className="text-6xl">🎉</span>
             </div>
           )}
         </div>
@@ -273,7 +273,7 @@ export default function FirstThenBoard({ onComplete, onCancel, difficulty = 1 }:
           background: `${pair.reward.color}18`,
           border: `3px solid ${pair.reward.color}`,
           boxShadow: `0 0 40px ${pair.reward.color}40`,
-          animation: 'ftb-rewardIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both',
+          animation: 'ftb-rewardIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both',
         }}
       >
         <span className="text-white/60 font-black tracking-widest text-sm">مكافأتك ✨</span>

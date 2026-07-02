@@ -178,7 +178,7 @@ export default function AdminDashboardView({ parents, payments, exercises, redis
                       className="px-6 py-4 flex items-center justify-between group">
                       <div className="flex items-center gap-3">
                         <div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-black text-sm ${
-                          isActive ? 'bg-green-100 text-green-700' : isPending ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-500'
+                          isActive ? 'bg-green-100 text-green-700' : isPending ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-green-700'
                         }`}>
                           {parent.firstName?.[0] ?? '?'}
                         </div>

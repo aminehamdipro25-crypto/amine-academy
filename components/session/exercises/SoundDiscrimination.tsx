@@ -214,7 +214,7 @@ export default function SoundDiscrimination({ onComplete, onCancel, difficulty =
       {/* Feedback overlay */}
       {feedback && (
         <div
-          className="text-4xl font-black text-center animate-bounce"
+          className="text-4xl font-black text-center"
           style={{ color: feedback === 'correct' ? '#22c55e' : '#ef4444' }}
         >
           {feedback === 'correct' ? '✅ صحيح!' : '❌ خطأ!'}

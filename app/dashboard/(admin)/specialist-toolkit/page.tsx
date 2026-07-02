@@ -630,7 +630,7 @@ export default function SpecialistToolkitPage() {
             <div key={s} className="flex items-center gap-2">
               <motion.span layout transition={{ type: 'spring', stiffness: 400, damping: 32 }}
                 className={`w-6 h-6 rounded-full flex items-center justify-center ltr-num ${
-                step === s ? 'bg-teal-600 text-white' : 'bg-gray-100 text-gray-400'
+                step === s ? 'bg-teal-600 text-white' : 'bg-gray-100 text-white'
               }`}>{i + 1}</motion.span>
               <span className={step === s ? 'text-teal-700' : 'text-gray-400'}>{t.steps[s]}</span>
               {i < 3 && <span className="w-4 h-px bg-gray-200 mx-1" />}
@@ -780,7 +780,7 @@ export default function SpecialistToolkitPage() {
                 {(['male', 'female', 'unspecified'] as const).map(g => (
                   <button key={g} type="button" onClick={() => setGender(g)}
                     className={`py-2 rounded-xl text-xs font-bold border-2 transition-all ${
-                      gender === g ? 'border-teal-400 bg-teal-50 text-teal-700' : 'border-gray-200 bg-gray-50 text-gray-500 hover:border-gray-300'
+                      gender === g ? 'border-teal-400 bg-teal-50 text-teal-700' : 'border-gray-200 bg-gray-50 text-teal-700 hover:border-gray-300'
                     }`}>
                     {t.genderOptions[g]}
                   </button>
@@ -946,7 +946,7 @@ export default function SpecialistToolkitPage() {
                 {(['observation', 'parentReport', 'both'] as ScaleSource[]).map(src => (
                   <button key={src} type="button" onClick={() => setScaleSource(prev => ({ ...prev, [currentScaleKey]: src }))}
                     className={`py-2 rounded-xl text-xs font-bold border-2 transition-all ${
-                      scaleSource[currentScaleKey] === src ? 'border-teal-400 bg-teal-50 text-teal-700' : 'border-gray-200 bg-gray-50 text-gray-500 hover:border-gray-300'
+                      scaleSource[currentScaleKey] === src ? 'border-teal-400 bg-teal-50 text-teal-700' : 'border-gray-200 bg-gray-50 text-teal-700 hover:border-gray-300'
                     }`}>
                     {t.sourceOptions[src]}
                   </button>
@@ -1163,7 +1163,7 @@ export default function SpecialistToolkitPage() {
                   </p>
                 )}
 
-                <p className="text-sm text-gray-600 leading-relaxed bg-teal-50/60 border border-teal-100 rounded-xl p-4">
+                <p className="text-sm text-teal-700 leading-relaxed bg-teal-50/60 border border-teal-100 rounded-xl p-4">
                   {t.narrativeIntro(name)}
                 </p>
 
@@ -1321,7 +1321,7 @@ export default function SpecialistToolkitPage() {
                 {generatedProgram && (
                   <motion.div initial={{ opacity: 0, scale: 0.92 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: 'spring', stiffness: 260, damping: 20 }}
                     className="bg-purple-50 border border-purple-100 rounded-2xl p-5 space-y-3 break-inside-avoid print:rounded-none">
-                    <h3 className="font-black text-purple-800 flex items-center gap-2">
+                    <h3 className="font-black text-brand-800 flex items-center gap-2">
                       <Wand2 className="w-4 h-4" />
                       {generatedProgram.title}
                     </h3>

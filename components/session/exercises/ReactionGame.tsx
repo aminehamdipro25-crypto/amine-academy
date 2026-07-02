@@ -196,7 +196,7 @@ export default function ReactionGame({ onComplete, onCancel, difficulty = 1 }: P
         {phase === 'flash' && (
           <button
             className="absolute w-24 h-24 rounded-full bg-green-500 flex items-center justify-center text-4xl
-              shadow-2xl shadow-green-500/60 animate-bounce active:scale-90 transition-transform"
+              shadow-2xl shadow-green-500/60 active:scale-90 transition-transform"
             style={{
               left: `calc(${pos.x}% - 48px)`,
               top:  `calc(${pos.y}% - 48px)`,

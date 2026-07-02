@@ -37,7 +37,7 @@ const CATEGORY_CONFIG: Record<string, { label: string; bg: string; text: string;
 
 const CARD_GRADIENTS: Record<string, string> = {
   motor:   'from-blue-50 to-cyan-50 border-blue-100',
-  focus:   'from-violet-50 to-purple-50 border-violet-100',
+  focus:   'from-slate-50 to-purple-50 border-violet-100',
   balance: 'from-emerald-50 to-teal-50 border-emerald-100',
   energy:  'from-orange-50 to-amber-50 border-orange-100',
   sensory: 'from-pink-50 to-rose-50 border-pink-100',
@@ -443,7 +443,7 @@ export default function ExercisesPage() {
                 {(viewEx.psychologyObjectiveAr || viewEx.psychologyObjective) && (
                   <div>
                     <p className="text-xs font-black text-gray-400 uppercase tracking-wider mb-1.5">الهدف النفسي</p>
-                    <p className="text-xs text-gray-500 leading-relaxed bg-violet-50 border border-violet-100 rounded-xl p-3">
+                    <p className="text-xs text-violet-700 leading-relaxed bg-violet-50 border border-violet-100 rounded-xl p-3">
                       {viewEx.psychologyObjectiveAr || viewEx.psychologyObjective}
                     </p>
                   </div>

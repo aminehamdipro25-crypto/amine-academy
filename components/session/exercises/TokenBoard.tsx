@@ -107,7 +107,7 @@ export default function TokenBoard({ onComplete, onCancel, studentAge, difficult
   if (celebration) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-6 px-6" dir="rtl">
-        <div className="text-8xl animate-bounce">🎉</div>
+        <div className="text-8xl">🎉</div>
         <h2 className="text-white font-black text-3xl text-center">أحسنت! وصلت للهدف!</h2>
         <div className="flex gap-2 flex-wrap justify-center text-4xl">
           {Array.from({ length: Math.min(tokens, 20) }).map((_, i) => (

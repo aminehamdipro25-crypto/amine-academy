@@ -639,7 +639,7 @@ export default function ClientDetailPage() {
                         [t.sensoryLabels.audio, s.sensoryProfile.audioSensitivity],
                         [t.sensoryLabels.touch, s.sensoryProfile.touchSensitivity],
                       ].map(([label, val]) => {
-                        const color = val === 'high' ? 'bg-red-50 text-red-600' : val === 'low' ? 'bg-green-50 text-green-600' : 'bg-gray-50 text-gray-500'
+                        const color = val === 'high' ? 'bg-red-50 text-red-600' : val === 'low' ? 'bg-green-50 text-green-600' : 'bg-gray-50 text-red-700'
                         return (
                           <div key={label} className={`rounded-lg px-2 py-1 text-center font-medium ${color}`}>
                             {label}: {val === 'high' ? t.sensitivityHigh : val === 'low' ? t.sensitivityLow : t.sensitivityMedium}
@@ -702,7 +702,7 @@ export default function ClientDetailPage() {
                           </p>
                         </div>
                         <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${
-                          prog.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                          prog.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-green-700'
                         }`}>
                           {prog.status === 'active' ? t.programActiveStatus : prog.status}
                         </span>
@@ -1015,7 +1015,7 @@ export default function ClientDetailPage() {
                           <div className="flex items-center gap-2 flex-shrink-0">
                             <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${
                               isCompleted ? 'bg-green-100 text-green-700' :
-                              isCancelled ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'
+                              isCancelled ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-red-700'
                             }`}>
                               {isCompleted ? t.apptStatusCompleted : isCancelled ? (a.status === 'no-show' ? t.apptStatusNoShow : t.apptStatusCancelled) : a.status}
                             </span>

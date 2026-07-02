@@ -69,9 +69,8 @@ export default function HowItWorks() {
       dir={isRtl ? 'rtl' : 'ltr'}
       style={{
         background: `
-          radial-gradient(ellipse 60% 50% at 50% 0%, rgba(139,92,246,0.15) 0%, transparent 60%),
-          radial-gradient(ellipse 40% 35% at 10% 70%, rgba(99,102,241,0.1) 0%, transparent 55%),
-          linear-gradient(180deg, #091E22 0%, #0E1230 100%)
+          radial-gradient(ellipse 60% 50% at 50% 0%, rgba(124,92,252,0.07) 0%, transparent 60%),
+          linear-gradient(180deg, #F0F4FF 0%, #F8FAFF 100%)
         `,
         padding: '80px 0',
       }}
@@ -80,22 +79,17 @@ export default function HowItWorks() {
         <div className="text-center mb-14">
           <span
             className="inline-block text-sm font-bold px-4 py-1.5 rounded-full mb-4"
-            style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.22)', color: '#C4B5FD' }}
+            style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.16)', color: '#6D44E8' }}
           >
             {pickLang(lang, 'آلية العمل', 'How It Works', 'Comment ça marche')}
           </span>
           <h2
             className="text-3xl md:text-4xl font-black mt-4 mb-4"
-            style={{
-              background: 'linear-gradient(135deg, #fff 30%, rgba(255,255,255,0.6) 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-            }}
+            style={{ color: '#1E293B' }}
           >
             {pickLang(lang, 'كيف تعمل أكاديمية أمين؟', 'How Does Amine Academy Work?', 'Comment fonctionne Amine Academy ?')}
           </h2>
-          <p className="text-white/60 max-w-xl mx-auto">
+          <p className="max-w-xl mx-auto" style={{ color: '#64748B' }}>
             {pickLang(lang, 'خمس خطوات بسيطة تحول حياة طفلك.', "Five simple steps that transform your child's life.", "Cinq étapes simples qui transforment la vie de votre enfant.")}
           </p>
         </div>
@@ -103,23 +97,21 @@ export default function HowItWorks() {
         <div className="grid grid-cols-1 md:grid-cols-5 gap-5">
           {steps.map((step) => (
             <div key={step.num} className="relative flex flex-col items-center text-center">
-              {/* Icon circle */}
               <div
                 className="relative z-10 w-14 h-14 rounded-full flex items-center justify-center mb-4 text-2xl shadow-lg"
-                style={{ background: step.gradient, boxShadow: '0 8px 24px rgba(0,0,0,0.3)' }}
+                style={{ background: step.gradient, boxShadow: '0 8px 24px rgba(124,92,252,0.2)' }}
               >
                 {step.icon}
               </div>
 
-              {/* Step card */}
               <div
                 className="w-full rounded-3xl p-5 transition-all hover:-translate-y-1"
                 style={{
-                  background: 'rgba(255,255,255,0.13)',
-                  border: '1px solid rgba(255,255,255,0.13)',
+                  background: 'rgba(255,255,255,0.9)',
+                  border: '1.5px solid rgba(124,92,252,0.1)',
                   backdropFilter: 'blur(12px)',
                   WebkitBackdropFilter: 'blur(12px)',
-                  boxShadow: '0 8px 24px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.06)',
+                  boxShadow: '0 4px 20px rgba(124,92,252,0.07)',
                 }}
               >
                 <div
@@ -133,8 +125,8 @@ export default function HowItWorks() {
                 >
                   {step.num}
                 </div>
-                <h3 className="font-black text-white text-sm mb-2">{pickLang(lang, step.title, step.titleEn, step.titleFr)}</h3>
-                <p className="text-white/60 text-xs leading-relaxed">{pickLang(lang, step.desc, step.descEn, step.descFr)}</p>
+                <h3 className="font-black text-sm mb-2" style={{ color: '#1E293B' }}>{pickLang(lang, step.title, step.titleEn, step.titleFr)}</h3>
+                <p className="text-xs leading-relaxed" style={{ color: '#64748B' }}>{pickLang(lang, step.desc, step.descEn, step.descFr)}</p>
               </div>
             </div>
           ))}

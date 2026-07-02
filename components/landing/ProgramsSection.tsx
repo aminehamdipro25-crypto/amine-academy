@@ -9,10 +9,6 @@ const PROGRAMS = [
     ageFr: '5 — 11 ans',
     emoji: '🧸',
     gradient: 'from-orange-500 to-amber-500',
-    light: 'bg-orange-50',
-    accent: 'text-orange-600',
-    border: 'border-orange-200',
-    tagBg: 'bg-orange-100 text-orange-700',
     goal: 'بناء الأسس الحركية والتنظيم الحسي',
     goalEn: 'Building Motor Foundations & Sensory Regulation',
     goalFr: 'Construire les bases motrices et la régulation sensorielle',
@@ -39,10 +35,6 @@ const PROGRAMS = [
     ageFr: '12 — 17 ans',
     emoji: '🎯',
     gradient: 'from-brand-600 to-brand-800',
-    light: 'bg-brand-50',
-    accent: 'text-brand-600',
-    border: 'border-brand-200',
-    tagBg: 'bg-brand-100 text-brand-700',
     goal: 'الوظيفة التنفيذية والضبط الذاتي',
     goalEn: 'Executive Function & Self-Control',
     goalFr: 'Fonctions exécutives et maîtrise de soi',
@@ -69,10 +61,6 @@ const PROGRAMS = [
     ageFr: '18 — 22 ans',
     emoji: '💪',
     gradient: 'from-teal-500 to-emerald-600',
-    light: 'bg-teal-50',
-    accent: 'text-teal-700',
-    border: 'border-teal-200',
-    tagBg: 'bg-teal-100 text-teal-700',
     goal: 'الاستقلالية والتكيف في الحياة',
     goalEn: 'Independence & Life Adaptation',
     goalFr: "Autonomie et adaptation à la vie",
@@ -105,9 +93,8 @@ export default function ProgramsSection() {
       dir={isRtl ? 'rtl' : 'ltr'}
       style={{
         background: `
-          radial-gradient(ellipse 55% 45% at 50% 0%, rgba(16,185,129,0.12) 0%, transparent 60%),
-          radial-gradient(ellipse 45% 35% at 90% 80%, rgba(20,184,166,0.09) 0%, transparent 55%),
-          linear-gradient(180deg, #081A28 0%, #091E22 100%)
+          radial-gradient(ellipse 55% 45% at 50% 0%, rgba(16,185,129,0.06) 0%, transparent 60%),
+          linear-gradient(180deg, #F0FDF9 0%, #F5FFFC 100%)
         `,
         padding: '96px 0',
       }}
@@ -118,22 +105,14 @@ export default function ProgramsSection() {
         <div className="text-center mb-16">
           <span
             className="inline-block text-sm font-bold px-4 py-1.5 rounded-full mb-4"
-            style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.22)', color: '#C4B5FD' }}
+            style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.16)', color: '#6D44E8' }}
           >
             {pickLang(lang, 'البرامج التخصصية', 'Specialized Programs', 'Programmes spécialisés')}
           </span>
-          <h2
-            className="text-3xl md:text-5xl font-black mb-5"
-            style={{
-              background: 'linear-gradient(135deg, #fff 30%, rgba(255,255,255,0.65) 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-            }}
-          >
+          <h2 className="text-3xl md:text-5xl font-black mb-5" style={{ color: '#1E293B' }}>
             {pickLang(lang, 'برنامج مخصص لكل مرحلة عمرية', 'A Tailored Program for Every Age Group', "Un programme adapté à chaque tranche d'âge")}
           </h2>
-          <p className="text-white/65 max-w-xl mx-auto text-lg">
+          <p className="max-w-xl mx-auto text-lg" style={{ color: '#64748B' }}>
             {pickLang(
               lang,
               'كل فئة عمرية تحتاج نهجاً مختلفاً. نحن لا نُعطي نفس البرنامج للجميع.',
@@ -150,11 +129,9 @@ export default function ProgramsSection() {
               key={prog.age}
               className="rounded-3xl overflow-hidden transition-all hover:-translate-y-0.5"
               style={{
-                background: 'rgba(255,255,255,0.13)',
-                border: '1px solid rgba(255,255,255,0.13)',
-                backdropFilter: 'blur(16px)',
-                WebkitBackdropFilter: 'blur(16px)',
-                boxShadow: '0 12px 40px rgba(0,0,0,0.25)',
+                background: 'rgba(255,255,255,0.95)',
+                border: '1.5px solid rgba(124,92,252,0.1)',
+                boxShadow: '0 6px 24px rgba(124,92,252,0.06)',
               }}
             >
               {/* Top banner */}
@@ -165,28 +142,27 @@ export default function ProgramsSection() {
                     <h3 className="text-white font-black text-2xl ltr-num">{pickLang(lang, prog.age, prog.ageEn, prog.ageFr)}</h3>
                   </div>
                   <p className="text-white/90 font-bold text-base">{pickLang(lang, prog.goal, prog.goalEn, prog.goalFr)}</p>
-                  <p className="text-white/70 text-sm mt-1">{pickLang(lang, prog.what, prog.whatEn, prog.whatFr)}</p>
+                  <p className="text-white/75 text-sm mt-1">{pickLang(lang, prog.what, prog.whatEn, prog.whatFr)}</p>
                 </div>
                 <div className="hidden md:flex flex-col items-end gap-1 text-right">
-                  <span className="text-white/60 text-xs">{prog.diagnosis}</span>
+                  <span className="text-white/65 text-xs">{prog.diagnosis}</span>
                 </div>
               </div>
 
               {/* 3-column content */}
               <div
                 className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x md:divide-x-reverse"
-                style={{ borderColor: 'rgba(255,255,255,0.11)' }}
+                style={{ borderColor: 'rgba(124,92,252,0.08)' }}
               >
-
                 {/* APA */}
                 <div className="p-6">
                   <div className="flex items-center gap-2 mb-4">
                     <span className="bg-blue-600 text-white text-xs font-black px-2.5 py-1 rounded-full">APA</span>
-                    <span className="text-white/60 font-bold text-sm">{pickLang(lang, 'الرياضة المعدّلة', 'Adapted Physical Activity', 'Activité physique adaptée')}</span>
+                    <span className="font-bold text-sm" style={{ color: '#64748B' }}>{pickLang(lang, 'الرياضة المعدّلة', 'Adapted Physical Activity', 'Activité physique adaptée')}</span>
                   </div>
                   <ul className="space-y-2">
                     {pickLang(lang, prog.apa, prog.apaEn, prog.apaFr).map(item => (
-                      <li key={item} className="flex items-center gap-2 text-sm text-white/70">
+                      <li key={item} className="flex items-center gap-2 text-sm" style={{ color: '#475569' }}>
                         <span className="w-1.5 h-1.5 bg-blue-400 rounded-full flex-shrink-0" />
                         {item}
                       </li>
@@ -198,11 +174,11 @@ export default function ProgramsSection() {
                 <div className="p-6">
                   <div className="flex items-center gap-2 mb-4">
                     <span className="bg-emerald-600 text-white text-xs font-black px-2.5 py-1 rounded-full">ABA</span>
-                    <span className="text-white/60 font-bold text-sm">{pickLang(lang, 'تعديل السلوك', 'Applied Behavior Analysis', 'Analyse appliquée du comportement')}</span>
+                    <span className="font-bold text-sm" style={{ color: '#64748B' }}>{pickLang(lang, 'تعديل السلوك', 'Applied Behavior Analysis', 'Analyse appliquée du comportement')}</span>
                   </div>
                   <ul className="space-y-2">
                     {pickLang(lang, prog.aba, prog.abaEn, prog.abaFr).map(item => (
-                      <li key={item} className="flex items-center gap-2 text-sm text-white/70">
+                      <li key={item} className="flex items-center gap-2 text-sm" style={{ color: '#475569' }}>
                         <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full flex-shrink-0" />
                         {item}
                       </li>
@@ -214,41 +190,40 @@ export default function ProgramsSection() {
                 <div className="p-6">
                   <div className="flex items-center gap-2 mb-4">
                     <span className="bg-purple-600 text-white text-xs font-black px-2.5 py-1 rounded-full">CBT</span>
-                    <span className="text-white/60 font-bold text-sm">{pickLang(lang, 'التدريب المعرفي', 'Cognitive Behavioral Training', 'Entraînement cognitivo-comportemental')}</span>
+                    <span className="font-bold text-sm" style={{ color: '#64748B' }}>{pickLang(lang, 'التدريب المعرفي', 'Cognitive Behavioral Training', 'Entraînement cognitivo-comportemental')}</span>
                   </div>
                   <ul className="space-y-2">
                     {pickLang(lang, prog.cbt, prog.cbtEn, prog.cbtFr).map(item => (
-                      <li key={item} className="flex items-center gap-2 text-sm text-white/70">
+                      <li key={item} className="flex items-center gap-2 text-sm" style={{ color: '#475569' }}>
                         <span className="w-1.5 h-1.5 bg-purple-400 rounded-full flex-shrink-0" />
                         {item}
                       </li>
                     ))}
                   </ul>
                 </div>
-
               </div>
 
               {/* Outcomes footer */}
               <div
                 className="px-6 py-4 flex items-center justify-between flex-wrap gap-3"
-                style={{ borderTop: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.05)' }}
+                style={{ borderTop: '1px solid rgba(124,92,252,0.08)', background: 'rgba(248,246,255,0.6)' }}
               >
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-xs font-bold text-white/50">
+                  <span className="text-xs font-bold" style={{ color: '#94A3B8' }}>
                     {pickLang(lang, 'النتائج المتوقعة:', 'Expected Outcomes:', 'Résultats attendus :')}
                   </span>
                   {pickLang(lang, prog.outcomes, prog.outcomesEn, prog.outcomesFr).map(o => (
                     <span
                       key={o}
-                      className="text-xs font-bold px-2.5 py-1 rounded-full text-white/70"
-                      style={{ background: 'rgba(255,255,255,0.11)', border: '1px solid rgba(255,255,255,0.1)' }}
+                      className="text-xs font-bold px-2.5 py-1 rounded-full"
+                      style={{ background: 'rgba(124,92,252,0.08)', border: '1px solid rgba(124,92,252,0.12)', color: '#6D44E8' }}
                     >
                       {o}
                     </span>
                   ))}
                 </div>
                 <Link href="/register"
-                  className="text-xs font-black text-indigo-400 hover:text-indigo-300 transition-colors whitespace-nowrap">
+                  className="text-xs font-black text-indigo-600 hover:text-indigo-800 transition-colors whitespace-nowrap">
                   {pickLang(lang, 'ابدأ هذا البرنامج ←', 'Start This Program →', 'Démarrer ce programme →')}
                 </Link>
               </div>
@@ -256,7 +231,7 @@ export default function ProgramsSection() {
           ))}
         </div>
 
-        <p className="text-center text-white/50 text-sm mt-8">
+        <p className="text-center text-sm mt-8" style={{ color: '#94A3B8' }}>
           {pickLang(
             lang,
             'كل برنامج يبدأ بتقييم أولي مجاني لتحديد نقطة البداية الدقيقة لطفلك.',

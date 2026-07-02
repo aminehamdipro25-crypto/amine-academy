@@ -101,9 +101,9 @@ export default function InteractiveSessionSection() {
       dir={isRtl ? 'rtl' : 'ltr'}
       style={{
         background: `
-          radial-gradient(ellipse 60% 45% at 70% 20%, rgba(14,165,233,0.14) 0%, transparent 60%),
-          radial-gradient(ellipse 50% 40% at 30% 80%, rgba(99,102,241,0.12) 0%, transparent 55%),
-          linear-gradient(180deg, #0E1230 0%, #081A28 100%)
+          radial-gradient(ellipse 60% 45% at 70% 20%, rgba(14,165,233,0.06) 0%, transparent 60%),
+          radial-gradient(ellipse 50% 40% at 30% 80%, rgba(99,102,241,0.05) 0%, transparent 55%),
+          linear-gradient(180deg, #F5F8FF 0%, #EEF0FF 100%)
         `,
         padding: '96px 0',
       }}
@@ -114,22 +114,14 @@ export default function InteractiveSessionSection() {
         <div className="text-center mb-16">
           <span
             className="inline-block text-sm font-bold px-4 py-1.5 rounded-full mb-4"
-            style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.22)', color: '#C4B5FD' }}
+            style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.16)', color: '#6D44E8' }}
           >
             {pickLang(lang, 'الجلسة التفاعلية', 'The Interactive Session', 'La séance interactive')}
           </span>
-          <h2
-            className="text-3xl md:text-5xl font-black mb-5"
-            style={{
-              background: 'linear-gradient(135deg, #fff 30%, rgba(255,255,255,0.65) 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-            }}
-          >
+          <h2 className="text-3xl md:text-5xl font-black mb-5" style={{ color: '#1E293B' }}>
             {pickLang(lang, 'ليست مجرد مكالمة فيديو', 'More Than Just a Video Call', "Bien plus qu'un simple appel vidéo")}
           </h2>
-          <p className="text-white/65 max-w-2xl mx-auto text-lg leading-relaxed">
+          <p className="max-w-2xl mx-auto text-lg leading-relaxed" style={{ color: '#64748B' }}>
             {pickLang(
               lang,
               'كل جلسة هي تجربة تعليمية متكاملة — الطفل يتحرك، يتعلم، ويكسب نقاطاً. الوالد يخرج بخطة يومية واضحة.',
@@ -148,11 +140,11 @@ export default function InteractiveSessionSection() {
                 key={step.num}
                 className="rounded-3xl p-6 transition-all hover:-translate-y-1"
                 style={{
-                  background: 'rgba(255,255,255,0.13)',
-                  border: '1px solid rgba(255,255,255,0.13)',
+                  background: 'rgba(255,255,255,0.92)',
+                  border: '1.5px solid rgba(124,92,252,0.1)',
                   backdropFilter: 'blur(16px)',
                   WebkitBackdropFilter: 'blur(16px)',
-                  boxShadow: '0 12px 32px rgba(0,0,0,0.25)',
+                  boxShadow: '0 6px 24px rgba(124,92,252,0.07)',
                 }}
               >
                 <div className="flex items-center gap-3 mb-4">
@@ -162,10 +154,10 @@ export default function InteractiveSessionSection() {
                   >
                     {step.num}
                   </span>
-                  <Icon className="w-5 h-5 text-white/55" />
+                  <Icon className="w-5 h-5" style={{ color: '#94A3B8' }} />
                 </div>
-                <h3 className="text-white font-black text-base mb-2">{pickLang(lang, step.title, step.titleEn, step.titleFr)}</h3>
-                <p className="text-white/65 text-sm leading-relaxed">{pickLang(lang, step.desc, step.descEn, step.descFr)}</p>
+                <h3 className="font-black text-base mb-2" style={{ color: '#1E293B' }}>{pickLang(lang, step.title, step.titleEn, step.titleFr)}</h3>
+                <p className="text-sm leading-relaxed" style={{ color: '#64748B' }}>{pickLang(lang, step.desc, step.descEn, step.descFr)}</p>
               </div>
             )
           })}
@@ -175,18 +167,18 @@ export default function InteractiveSessionSection() {
         <div
           className="rounded-3xl p-8 md:p-10 mb-10"
           style={{
-            background: 'rgba(255,255,255,0.13)',
-            border: '1px solid rgba(255,255,255,0.13)',
+            background: 'rgba(255,255,255,0.92)',
+            border: '1.5px solid rgba(124,92,252,0.1)',
             backdropFilter: 'blur(20px)',
             WebkitBackdropFilter: 'blur(20px)',
-            boxShadow: '0 20px 64px rgba(0,0,0,0.3)',
+            boxShadow: '0 12px 40px rgba(124,92,252,0.08)',
           }}
         >
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
 
             {/* Timeline */}
             <div>
-              <h3 className="text-white font-black text-2xl mb-6">
+              <h3 className="font-black text-2xl mb-6" style={{ color: '#1E293B' }}>
                 {pickLang(lang, 'ماذا يحدث في 45 دقيقة؟', 'What Happens in 45 Minutes?', 'Que se passe-t-il en 45 minutes ?')}
               </h3>
               <div className="space-y-4">
@@ -194,11 +186,11 @@ export default function InteractiveSessionSection() {
                   <div key={time} className="flex items-center gap-4">
                     <div className="flex items-center gap-2 w-24 flex-shrink-0">
                       <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: gradient }} />
-                      <span className="text-white/50 text-xs ltr-num">{time}</span>
+                      <span className="text-xs ltr-num" style={{ color: '#94A3B8' }}>{time}</span>
                     </div>
                     <div className="flex-1">
-                      <span className="text-white/80 font-bold text-sm">{label}</span>
-                      <span className="text-white/45 text-xs mx-2">{note}</span>
+                      <span className="font-bold text-sm" style={{ color: '#374151' }}>{label}</span>
+                      <span className="text-xs mx-2" style={{ color: '#94A3B8' }}>{note}</span>
                     </div>
                   </div>
                 ))}
@@ -207,28 +199,28 @@ export default function InteractiveSessionSection() {
 
             {/* Benefits */}
             <div>
-              <h3 className="text-white font-black text-2xl mb-6">
+              <h3 className="font-black text-2xl mb-6" style={{ color: '#1E293B' }}>
                 {pickLang(lang, 'لماذا عن بُعد يعمل أفضل؟', 'Why Does Remote Work Better?', 'Pourquoi le suivi à distance fonctionne-t-il mieux ?')}
               </h3>
               <div className="grid grid-cols-2 gap-3 mb-8">
                 {benefits.map(b => (
                   <div key={b} className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                    <span className="text-white/60 text-sm">{b}</span>
+                    <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                    <span className="text-sm" style={{ color: '#475569' }}>{b}</span>
                   </div>
                 ))}
               </div>
 
               <div
                 className="flex items-center gap-4 rounded-2xl p-5"
-                style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.15)' }}
+                style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.12)' }}
               >
-                <Clock className="w-8 h-8 flex-shrink-0" style={{ color: '#818CF8' }} />
+                <Clock className="w-8 h-8 flex-shrink-0" style={{ color: '#6366F1' }} />
                 <div>
-                  <p className="text-white font-black text-sm">
+                  <p className="font-black text-sm" style={{ color: '#1E293B' }}>
                     {pickLang(lang, 'جلسة تقييمية مجانية للتعارف', 'Free Assessment Session', "Séance d'évaluation gratuite")}
                   </p>
-                  <p className="text-white/60 text-xs mt-0.5">
+                  <p className="text-xs mt-0.5" style={{ color: '#64748B' }}>
                     {pickLang(
                       lang,
                       '30 دقيقة مع الأستاذ أمين — بدون أي التزام',
@@ -251,13 +243,13 @@ export default function InteractiveSessionSection() {
             style={{
               background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
               color: 'white',
-              boxShadow: '0 8px 32px rgba(99,102,241,0.4)',
+              boxShadow: '0 8px 32px rgba(99,102,241,0.3)',
             }}
           >
             <Video className="w-5 h-5" />
             {pickLang(lang, 'احجز الجلسة التقييمية المجانية', 'Book Your Free Assessment Session', "Réservez votre séance d'évaluation gratuite")}
           </Link>
-          <p className="text-white/45 text-sm mt-4">
+          <p className="text-sm mt-4" style={{ color: '#94A3B8' }}>
             {pickLang(lang, 'بدون بطاقة ائتمانية • متاح لجميع الدول', 'No credit card required • Available worldwide', 'Sans carte bancaire • Disponible partout dans le monde')}
           </p>
         </div>

@@ -9,8 +9,8 @@ const PILLARS = [
     icon: Dumbbell,
     gradientBorder: 'linear-gradient(135deg, #3B82F6, #60A5FA)',
     gradientStat: 'linear-gradient(135deg, #60A5FA, #38BDF8)',
-    glowColor: 'rgba(59,130,246,0.12)',
-    dotColor: '#60A5FA',
+    glowColor: 'rgba(59,130,246,0.08)',
+    dotColor: '#3B82F6',
     title: 'الرياضة المعدّلة',
     titleEn: 'Adapted Physical Activity',
     titleFr: 'Activité physique adaptée',
@@ -29,8 +29,8 @@ const PILLARS = [
     icon: Target,
     gradientBorder: 'linear-gradient(135deg, #10B981, #34D399)',
     gradientStat: 'linear-gradient(135deg, #34D399, #6EE7B7)',
-    glowColor: 'rgba(16,185,129,0.1)',
-    dotColor: '#34D399',
+    glowColor: 'rgba(16,185,129,0.08)',
+    dotColor: '#10B981',
     title: 'تعديل السلوك',
     titleEn: 'Applied Behavior Analysis',
     titleFr: 'Analyse appliquée du comportement',
@@ -49,8 +49,8 @@ const PILLARS = [
     icon: Brain,
     gradientBorder: 'linear-gradient(135deg, #8B5CF6, #C084FC)',
     gradientStat: 'linear-gradient(135deg, #A78BFA, #C084FC)',
-    glowColor: 'rgba(139,92,246,0.12)',
-    dotColor: '#A78BFA',
+    glowColor: 'rgba(139,92,246,0.08)',
+    dotColor: '#8B5CF6',
     title: 'التدريب المعرفي',
     titleEn: 'Cognitive Behavioral Training',
     titleFr: 'Entraînement cognitivo-comportemental',
@@ -84,9 +84,9 @@ export default function FeaturesSection() {
       dir={isRtl ? 'rtl' : 'ltr'}
       style={{
         background: `
-          radial-gradient(ellipse 60% 40% at 80% 20%, rgba(139,92,246,0.16) 0%, transparent 60%),
-          radial-gradient(ellipse 50% 40% at 20% 80%, rgba(59,130,246,0.1) 0%, transparent 60%),
-          linear-gradient(180deg, #0C1A2E 0%, #100E2C 100%)
+          radial-gradient(ellipse 60% 40% at 80% 20%, rgba(139,92,246,0.07) 0%, transparent 60%),
+          radial-gradient(ellipse 50% 40% at 20% 80%, rgba(59,130,246,0.05) 0%, transparent 60%),
+          linear-gradient(180deg, #F8F6FF 0%, #F0F4FF 100%)
         `,
         padding: '96px 0',
       }}
@@ -98,25 +98,17 @@ export default function FeaturesSection() {
           <span
             className="inline-block text-sm font-bold px-4 py-1.5 rounded-full mb-4"
             style={{
-              background: 'rgba(99,102,241,0.12)',
-              border: '1px solid rgba(99,102,241,0.22)',
-              color: '#C4B5FD',
+              background: 'rgba(99,102,241,0.08)',
+              border: '1px solid rgba(99,102,241,0.16)',
+              color: '#6D44E8',
             }}
           >
             {pickLang(lang, 'المنهجية العلمية', 'Scientific Methodology', 'Méthodologie scientifique')}
           </span>
-          <h2
-            className="text-3xl md:text-5xl font-black mb-5"
-            style={{
-              background: 'linear-gradient(135deg, #fff 30%, rgba(255,255,255,0.65) 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-            }}
-          >
+          <h2 className="text-3xl md:text-5xl font-black mb-5" style={{ color: '#1E293B' }}>
             {pickLang(lang, 'ثلاث ركائز علمية في برنامج واحد', 'Three Scientific Pillars in One Program', 'Trois piliers scientifiques dans un seul programme')}
           </h2>
-          <p className="text-white/65 max-w-2xl mx-auto text-lg leading-relaxed">
+          <p className="max-w-2xl mx-auto text-lg leading-relaxed" style={{ color: '#64748B' }}>
             {pickLang(
               lang,
               'لا يوجد في المنطقة برنامج يجمع الثلاثة معاً. كل ركيزة معتمدة بدراسات دولية — الثلاثة معاً تُعطي نتائج لا تقدر بثمن.',
@@ -135,11 +127,11 @@ export default function FeaturesSection() {
                 key={p.id}
                 className="rounded-3xl p-7 transition-all hover:-translate-y-1"
                 style={{
-                  background: 'rgba(255,255,255,0.08)',
-                  border: '1px solid rgba(255,255,255,0.14)',
+                  background: 'rgba(255,255,255,0.92)',
+                  border: '1.5px solid rgba(124,92,252,0.1)',
                   backdropFilter: 'blur(16px)',
                   WebkitBackdropFilter: 'blur(16px)',
-                  boxShadow: `0 16px 48px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.11)`,
+                  boxShadow: '0 8px 32px rgba(124,92,252,0.07)',
                 }}
               >
                 {/* Tag + Icon */}
@@ -158,14 +150,14 @@ export default function FeaturesSection() {
                   </div>
                 </div>
 
-                <h3 className="font-black text-white text-xl mb-0.5">{pickLang(lang, p.title, p.titleEn, p.titleFr)}</h3>
-                <p className="text-white/45 text-xs font-medium mb-4 tracking-wide">{p.subtitle}</p>
-                <p className="text-white/60 text-sm leading-relaxed mb-5">{pickLang(lang, p.desc, p.descEn, p.descFr)}</p>
+                <h3 className="font-black text-xl mb-0.5" style={{ color: '#1E293B' }}>{pickLang(lang, p.title, p.titleEn, p.titleFr)}</h3>
+                <p className="text-xs font-medium mb-4 tracking-wide" style={{ color: '#94A3B8' }}>{p.subtitle}</p>
+                <p className="text-sm leading-relaxed mb-5" style={{ color: '#475569' }}>{pickLang(lang, p.desc, p.descEn, p.descFr)}</p>
 
                 {/* Bullets */}
                 <ul className="space-y-2 mb-6">
                   {pickLang(lang, p.bullets, p.bulletsEn, p.bulletsFr).map((b, idx) => (
-                    <li key={idx} className="flex items-center gap-2 text-sm text-white/70">
+                    <li key={idx} className="flex items-center gap-2 text-sm" style={{ color: '#475569' }}>
                       <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: p.dotColor }} />
                       {b}
                     </li>
@@ -175,7 +167,7 @@ export default function FeaturesSection() {
                 {/* Stat */}
                 <div
                   className="rounded-2xl p-4 text-center"
-                  style={{ background: p.glowColor, border: `1px solid rgba(255,255,255,0.11)` }}
+                  style={{ background: p.glowColor, border: `1px solid rgba(124,92,252,0.08)` }}
                 >
                   <div
                     className="text-3xl font-black ltr-num"
@@ -188,7 +180,7 @@ export default function FeaturesSection() {
                   >
                     {p.stat}
                   </div>
-                  <div className="text-white/60 text-xs mt-1">{pickLang(lang, p.statLabel, p.statLabelEn, p.statLabelFr)}</div>
+                  <div className="text-xs mt-1" style={{ color: '#64748B' }}>{pickLang(lang, p.statLabel, p.statLabelEn, p.statLabelFr)}</div>
                 </div>
               </div>
             )
@@ -197,11 +189,11 @@ export default function FeaturesSection() {
 
         {/* Divider */}
         <div className="flex items-center gap-4 mb-10">
-          <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.11)' }} />
-          <span className="text-white/45 text-sm font-medium whitespace-nowrap">
+          <div className="flex-1 h-px" style={{ background: 'rgba(124,92,252,0.12)' }} />
+          <span className="text-sm font-medium whitespace-nowrap" style={{ color: '#94A3B8' }}>
             {pickLang(lang, 'بالإضافة إلى', 'Plus', 'En plus')}
           </span>
-          <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.11)' }} />
+          <div className="flex-1 h-px" style={{ background: 'rgba(124,92,252,0.12)' }} />
         </div>
 
         {/* Extra features grid */}
@@ -211,10 +203,8 @@ export default function FeaturesSection() {
               key={title}
               className="flex items-start gap-4 p-5 rounded-3xl transition-all hover:-translate-y-0.5"
               style={{
-                background: 'rgba(255,255,255,0.11)',
-                border: '1px solid rgba(255,255,255,0.11)',
-                backdropFilter: 'blur(12px)',
-                WebkitBackdropFilter: 'blur(12px)',
+                background: 'rgba(255,255,255,0.9)',
+                border: '1.5px solid rgba(124,92,252,0.1)',
               }}
             >
               <div
@@ -224,8 +214,8 @@ export default function FeaturesSection() {
                 <Icon className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h4 className="font-black text-white text-sm mb-1">{pickLang(lang, title, titleEn, titleFr)}</h4>
-                <p className="text-white/65 text-xs leading-relaxed">{pickLang(lang, desc, descEn, descFr)}</p>
+                <h4 className="font-black text-sm mb-1" style={{ color: '#1E293B' }}>{pickLang(lang, title, titleEn, titleFr)}</h4>
+                <p className="text-xs leading-relaxed" style={{ color: '#64748B' }}>{pickLang(lang, desc, descEn, descFr)}</p>
               </div>
             </div>
           ))}

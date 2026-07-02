@@ -23,7 +23,7 @@ const ATTENTION_TYPES = [
     improvementLabelFr: 'de performance scolaire',
     gradient: 'linear-gradient(135deg, #3B82F6, #60A5FA)',
     statGradient: 'linear-gradient(135deg, #60A5FA, #38BDF8)',
-    glowColor: 'rgba(59,130,246,0.1)',
+    glowColor: 'rgba(59,130,246,0.07)',
   },
   {
     type: 'الانتباه المستمر',
@@ -46,7 +46,7 @@ const ATTENTION_TYPES = [
     improvementLabelFr: 'de durée de concentration',
     gradient: 'linear-gradient(135deg, #8B5CF6, #C084FC)',
     statGradient: 'linear-gradient(135deg, #A78BFA, #C084FC)',
-    glowColor: 'rgba(139,92,246,0.1)',
+    glowColor: 'rgba(139,92,246,0.07)',
   },
   {
     type: 'كبح التشتت',
@@ -69,7 +69,7 @@ const ATTENTION_TYPES = [
     improvementLabelFr: "de réduction de l'impulsivité",
     gradient: 'linear-gradient(135deg, #10B981, #34D399)',
     statGradient: 'linear-gradient(135deg, #34D399, #6EE7B7)',
-    glowColor: 'rgba(16,185,129,0.1)',
+    glowColor: 'rgba(16,185,129,0.07)',
   },
   {
     type: 'الانتباه التنفيذي',
@@ -92,7 +92,7 @@ const ATTENTION_TYPES = [
     improvementLabelFr: 'de réduction des symptômes du TDAH (étude 2014)',
     gradient: 'linear-gradient(135deg, #F59E0B, #FBBF24)',
     statGradient: 'linear-gradient(135deg, #FBBF24, #FDE68A)',
-    glowColor: 'rgba(245,158,11,0.1)',
+    glowColor: 'rgba(245,158,11,0.07)',
   },
 ]
 
@@ -106,9 +106,9 @@ export default function AttentionSection() {
       dir={isRtl ? 'rtl' : 'ltr'}
       style={{
         background: `
-          radial-gradient(ellipse 65% 45% at 20% 30%, rgba(59,130,246,0.15) 0%, transparent 60%),
-          radial-gradient(ellipse 50% 40% at 80% 70%, rgba(99,102,241,0.12) 0%, transparent 60%),
-          linear-gradient(180deg, #100E2C 0%, #081A28 100%)
+          radial-gradient(ellipse 65% 45% at 20% 30%, rgba(59,130,246,0.06) 0%, transparent 60%),
+          radial-gradient(ellipse 50% 40% at 80% 70%, rgba(99,102,241,0.05) 0%, transparent 60%),
+          linear-gradient(180deg, #F8F6FF 0%, #F0F4FF 100%)
         `,
         padding: '96px 0',
       }}
@@ -118,19 +118,11 @@ export default function AttentionSection() {
         <div className="text-center mb-16">
           <span
             className="inline-block text-sm font-bold px-4 py-1.5 rounded-full mb-4"
-            style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.22)', color: '#C4B5FD' }}
+            style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.16)', color: '#6D44E8' }}
           >
             {pickLang(lang, 'التركيز والانتباه وكبح التشتت', 'Focus, Attention & Distraction Control', 'Concentration, attention et maîtrise des distractions')}
           </span>
-          <h2
-            className="text-3xl md:text-5xl font-black mb-5"
-            style={{
-              background: 'linear-gradient(135deg, #fff 30%, rgba(255,255,255,0.65) 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-            }}
-          >
+          <h2 className="text-3xl md:text-5xl font-black mb-5" style={{ color: '#1E293B' }}>
             {pickLang(
               lang,
               <>الانتباه ليس مشكلة إرادة —<span className="block" style={{
@@ -153,7 +145,7 @@ export default function AttentionSection() {
               }}>c&apos;est un problème d&apos;entraînement neuronal</span></>
             )}
           </h2>
-          <p className="text-white/65 max-w-2xl mx-auto text-lg leading-relaxed">
+          <p className="max-w-2xl mx-auto text-lg leading-relaxed" style={{ color: '#64748B' }}>
             {pickLang(
               lang,
               'دماغ ADHD لا يفتقر للذكاء — يفتقر لآلية التصفية الصحيحة. برامجنا تُعيد بناء هذه الآلية خلية عصبية في كل مرة.',
@@ -167,14 +159,13 @@ export default function AttentionSection() {
         <div
           className="rounded-3xl p-7 mb-12 flex flex-col md:flex-row items-center gap-6"
           style={{
-            background: 'rgba(255,255,255,0.08)',
-            border: '1px solid rgba(255,255,255,0.14)',
-            backdropFilter: 'blur(16px)',
-            WebkitBackdropFilter: 'blur(16px)',
+            background: 'rgba(255,255,255,0.92)',
+            border: '1.5px solid rgba(124,92,252,0.1)',
+            boxShadow: '0 4px 20px rgba(124,92,252,0.06)',
           }}
         >
           <div className="flex-1">
-            <h3 className="text-white font-black text-xl mb-2">
+            <h3 className="font-black text-xl mb-2" style={{ color: '#1E293B' }}>
               {pickLang(
                 lang,
                 '4 أنواع من الانتباه — 4 بروتوكولات مختلفة',
@@ -182,7 +173,7 @@ export default function AttentionSection() {
                 "4 types d'attention — 4 protocoles différents"
               )}
             </h3>
-            <p className="text-white/65 text-sm leading-relaxed">
+            <p className="text-sm leading-relaxed" style={{ color: '#64748B' }}>
               {pickLang(
                 lang,
                 'الخطأ الشائع: معالجة كل مشاكل الانتباه بنفس الطريقة. نحن ندرّب كل نوع على حدة.',
@@ -195,8 +186,8 @@ export default function AttentionSection() {
             {['CPT مُعدَّل', 'Go/No-Go', 'DIT بروتوكول', 'Cogmed-style'].map(b => (
               <span
                 key={b}
-                className="text-center text-white text-xs font-bold px-3 py-2 rounded-xl"
-                style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.1)' }}
+                className="text-center text-xs font-bold px-3 py-2 rounded-xl"
+                style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.12)', color: '#6D44E8' }}
               >
                 ✓ {b}
               </span>
@@ -210,11 +201,9 @@ export default function AttentionSection() {
               key={item.type}
               className="rounded-3xl p-7 transition-all hover:-translate-y-0.5"
               style={{
-                background: 'rgba(255,255,255,0.08)',
-                border: '1px solid rgba(255,255,255,0.08)',
-                backdropFilter: 'blur(16px)',
-                WebkitBackdropFilter: 'blur(16px)',
-                boxShadow: '0 12px 40px rgba(0,0,0,0.25)',
+                background: 'rgba(255,255,255,0.92)',
+                border: '1.5px solid rgba(124,92,252,0.08)',
+                boxShadow: '0 6px 24px rgba(124,92,252,0.06)',
               }}
             >
               <div className="flex items-start justify-between mb-5">
@@ -232,7 +221,7 @@ export default function AttentionSection() {
                     >
                       {item.en}
                     </span>
-                    <h3 className="font-black text-white text-lg mt-1">{pickLang(lang, item.type, item.typeEn, item.typeFr)}</h3>
+                    <h3 className="font-black text-lg mt-1" style={{ color: '#1E293B' }}>{pickLang(lang, item.type, item.typeEn, item.typeFr)}</h3>
                   </div>
                 </div>
                 <div
@@ -250,34 +239,34 @@ export default function AttentionSection() {
                   >
                     {item.improvement}
                   </div>
-                  <div className="text-white/55 text-xs leading-tight mt-0.5 max-w-[80px]">
+                  <div className="text-xs leading-tight mt-0.5 max-w-[80px]" style={{ color: '#64748B' }}>
                     {pickLang(lang, item.improvementLabel, item.improvementLabelEn, item.improvementLabelFr)}
                   </div>
                 </div>
               </div>
 
               <div className="mb-4">
-                <p className="text-xs font-bold text-white/45 uppercase tracking-wide mb-1.5">
+                <p className="text-xs font-bold uppercase tracking-wide mb-1.5" style={{ color: '#94A3B8' }}>
                   {pickLang(lang, 'المشكلة', 'The Problem', 'Le problème')}
                 </p>
-                <p className="text-white/60 text-sm leading-relaxed">{pickLang(lang, item.problem, item.problemEn, item.problemFr)}</p>
+                <p className="text-sm leading-relaxed" style={{ color: '#475569' }}>{pickLang(lang, item.problem, item.problemEn, item.problemFr)}</p>
               </div>
 
               <div className="mb-4">
-                <p className="text-xs font-bold text-white/45 uppercase tracking-wide mb-1.5">
+                <p className="text-xs font-bold uppercase tracking-wide mb-1.5" style={{ color: '#94A3B8' }}>
                   {pickLang(lang, 'البروتوكول', 'The Protocol', 'Le protocole')}
                 </p>
-                <p className="text-white/60 text-sm leading-relaxed">{pickLang(lang, item.protocol, item.protocolEn, item.protocolFr)}</p>
+                <p className="text-sm leading-relaxed" style={{ color: '#475569' }}>{pickLang(lang, item.protocol, item.protocolEn, item.protocolFr)}</p>
               </div>
 
               <div>
-                <p className="text-xs font-bold text-white/45 uppercase tracking-wide mb-2">
+                <p className="text-xs font-bold uppercase tracking-wide mb-2" style={{ color: '#94A3B8' }}>
                   {pickLang(lang, 'التمارين الأساسية', 'Core Exercises', 'Exercices fondamentaux')}
                 </p>
                 <ul className="space-y-1.5">
                   {pickLang(lang, item.steps, item.stepsEn, item.stepsFr).map(s => (
-                    <li key={s} className="flex items-start gap-2 text-sm text-white/55">
-                      <span className="text-white/25 mt-0.5 flex-shrink-0">›</span>
+                    <li key={s} className="flex items-start gap-2 text-sm" style={{ color: '#64748B' }}>
+                      <span className="mt-0.5 flex-shrink-0" style={{ color: '#CBD5E1' }}>›</span>
                       {s}
                     </li>
                   ))}
@@ -289,25 +278,25 @@ export default function AttentionSection() {
 
         <div
           className="mt-10 rounded-3xl p-6"
-          style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)' }}
+          style={{ background: 'rgba(255,255,255,0.8)', border: '1px solid rgba(124,92,252,0.1)' }}
         >
-          <p className="text-white/60 text-sm leading-relaxed max-w-2xl mx-auto text-center">
+          <p className="text-sm leading-relaxed max-w-2xl mx-auto text-center" style={{ color: '#64748B' }}>
             {pickLang(
               lang,
               <>
-                <strong className="text-white/70">ملاحظة علمية:</strong> جميع بروتوكولات الانتباه مُصممة لتُطبَّق عبر الحركة الجسدية،
+                <strong style={{ color: '#374151' }}>ملاحظة علمية:</strong> جميع بروتوكولات الانتباه مُصممة لتُطبَّق عبر الحركة الجسدية،
                 لأن الأبحاث تُثبت أن النشاط البدني يرفع مستوى الدوبامين والنورإبينفرين في الفص الجبهي بنسبة تصل إلى 200%.
-                <span style={{ color: '#818CF8' }}> (Ratey, 2008 — Spark)</span>
+                <span style={{ color: '#6366F1' }}> (Ratey, 2008 — Spark)</span>
               </>,
               <>
-                <strong className="text-white/70">Scientific Note:</strong> All attention protocols are designed to be implemented through physical movement,
+                <strong style={{ color: '#374151' }}>Scientific Note:</strong> All attention protocols are designed to be implemented through physical movement,
                 because research proves that physical activity raises dopamine and norepinephrine levels in the prefrontal cortex by up to 200%.
-                <span style={{ color: '#818CF8' }}> (Ratey, 2008 — Spark)</span>
+                <span style={{ color: '#6366F1' }}> (Ratey, 2008 — Spark)</span>
               </>,
               <>
-                <strong className="text-white/70">Note scientifique :</strong> tous les protocoles d&apos;attention sont conçus pour être mis en œuvre par le mouvement physique,
+                <strong style={{ color: '#374151' }}>Note scientifique :</strong> tous les protocoles d&apos;attention sont conçus pour être mis en œuvre par le mouvement physique,
                 car la recherche démontre que l&apos;activité physique augmente les niveaux de dopamine et de noradrénaline dans le cortex préfrontal jusqu&apos;à 200 %.
-                <span style={{ color: '#818CF8' }}> (Ratey, 2008 — Spark)</span>
+                <span style={{ color: '#6366F1' }}> (Ratey, 2008 — Spark)</span>
               </>
             )}
           </p>

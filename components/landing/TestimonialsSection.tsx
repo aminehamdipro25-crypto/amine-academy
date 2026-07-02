@@ -56,9 +56,8 @@ export default function TestimonialsSection() {
       dir={isRtl ? 'rtl' : 'ltr'}
       style={{
         background: `
-          radial-gradient(ellipse 60% 45% at 50% 0%, rgba(168,85,247,0.14) 0%, transparent 60%),
-          radial-gradient(ellipse 45% 35% at 85% 60%, rgba(236,72,153,0.08) 0%, transparent 55%),
-          linear-gradient(180deg, #081A28 0%, #14102E 100%)
+          radial-gradient(ellipse 60% 45% at 50% 0%, rgba(168,85,247,0.07) 0%, transparent 60%),
+          linear-gradient(180deg, #F4F0FF 0%, #F8F6FF 100%)
         `,
         padding: '80px 0',
       }}
@@ -67,18 +66,13 @@ export default function TestimonialsSection() {
         <div className="text-center mb-14">
           <span
             className="font-bold text-sm px-4 py-1.5 rounded-full"
-            style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.22)', color: '#C4B5FD' }}
+            style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.16)', color: '#6D44E8' }}
           >
             {pickLang(lang, 'قصص نجاح', 'Success Stories', 'Témoignages')}
           </span>
           <h2
             className="text-3xl md:text-4xl font-black mt-4 mb-4"
-            style={{
-              background: 'linear-gradient(135deg, #fff 30%, rgba(255,255,255,0.6) 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-            }}
+            style={{ color: '#1E293B' }}
           >
             {pickLang(lang, 'ماذا يقول أولياء الأمور؟', 'What Do Parents Say?', 'Que disent les parents ?')}
           </h2>
@@ -90,26 +84,23 @@ export default function TestimonialsSection() {
               key={name}
               className="rounded-3xl p-6 transition-all hover:-translate-y-1 flex flex-col"
               style={{
-                background: 'rgba(255,255,255,0.08)',
-                border: '1px solid rgba(255,255,255,0.14)',
+                background: 'rgba(255,255,255,0.9)',
+                border: '1.5px solid rgba(124,92,252,0.12)',
                 backdropFilter: 'blur(16px)',
                 WebkitBackdropFilter: 'blur(16px)',
-                boxShadow: '0 16px 48px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06)',
+                boxShadow: '0 8px 32px rgba(124,92,252,0.08), inset 0 1px 0 rgba(255,255,255,0.8)',
               }}
             >
-              {/* Stars */}
               <div className="flex items-center gap-1 mb-4">
                 {Array.from({ length: stars }).map((_, i) => (
                   <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />
                 ))}
               </div>
 
-              {/* Quote */}
-              <p className="text-white/70 text-sm leading-relaxed mb-6 flex-1">
+              <p className="text-sm leading-relaxed mb-6 flex-1" style={{ color: '#475569' }}>
                 {pickLang(lang, text, textEn, textFr)}
               </p>
 
-              {/* Author */}
               <div className="flex items-center gap-3">
                 <div
                   className="w-11 h-11 rounded-full flex items-center justify-center text-white font-black text-base flex-shrink-0"
@@ -118,11 +109,11 @@ export default function TestimonialsSection() {
                   {pickLang(lang, name, nameEn, nameFr)[0]}
                 </div>
                 <div>
-                  <div className="font-bold text-white text-sm flex items-center gap-1.5">
+                  <div className="font-bold text-sm flex items-center gap-1.5" style={{ color: '#1E293B' }}>
                     {pickLang(lang, name, nameEn, nameFr)}
                     <span>{country}</span>
                   </div>
-                  <div className="text-white/55 text-xs">{pickLang(lang, role, roleEn, roleFr)}</div>
+                  <div className="text-xs" style={{ color: '#94A3B8' }}>{pickLang(lang, role, roleEn, roleFr)}</div>
                 </div>
               </div>
             </div>

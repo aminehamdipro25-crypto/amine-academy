@@ -76,8 +76,8 @@ export default function StatsSection() {
       dir={isRtl ? 'rtl' : 'ltr'}
       style={{
         background: `
-          radial-gradient(ellipse 70% 50% at 50% 0%, rgba(59,130,246,0.14) 0%, transparent 65%),
-          linear-gradient(180deg, #07111E 0%, #0C1A2E 100%)
+          radial-gradient(ellipse 70% 50% at 50% 0%, rgba(124,92,252,0.08) 0%, transparent 65%),
+          linear-gradient(180deg, #EEF0FF 0%, #F8F6FF 100%)
         `,
         padding: '56px 0',
       }}
@@ -89,11 +89,11 @@ export default function StatsSection() {
               key={stat.label}
               className="rounded-3xl p-6 text-center transition-all hover:-translate-y-1"
               style={{
-                background: 'rgba(255,255,255,0.14)',
-                border: '1px solid rgba(255,255,255,0.14)',
+                background: 'rgba(255,255,255,0.9)',
+                border: '1.5px solid rgba(124,92,252,0.12)',
                 backdropFilter: 'blur(16px)',
                 WebkitBackdropFilter: 'blur(16px)',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06)',
+                boxShadow: '0 4px 24px rgba(124,92,252,0.08), inset 0 1px 0 rgba(255,255,255,0.8)',
               }}
             >
               <div
@@ -107,10 +107,10 @@ export default function StatsSection() {
               >
                 {stat.value}
               </div>
-              <div className="text-white/80 font-bold text-sm mb-0.5">
+              <div className="font-bold text-sm mb-0.5" style={{ color: '#374151' }}>
                 {pickLang(lang, stat.label, stat.labelEn, stat.labelFr)}
               </div>
-              <div className="text-white/50 text-xs">
+              <div className="text-xs" style={{ color: '#9CA3AF' }}>
                 {pickLang(lang, stat.sub, stat.subEn, stat.subFr)}
               </div>
             </div>

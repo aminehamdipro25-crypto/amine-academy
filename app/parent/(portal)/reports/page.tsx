@@ -325,7 +325,7 @@ function ReportDocument({ report, child }: { report: ProgressReport; child: Stud
             </div>
             <div style={{ flex: 1 }}>
               <div style={{ height: 12, background: '#F3F4F6', borderRadius: 99, overflow: 'hidden', marginBottom: 8 }}>
-                <div style={{ height: '100%', width: `${pct}%`, background: pct >= 80 ? '#059669' : pct >= 50 ? '#F59E0B' : '#EF4444', borderRadius: 99, transition: 'width 1s ease' }} />
+                <div style={{ height: '100%', width: '100%', background: pct >= 80 ? '#059669' : pct >= 50 ? '#F59E0B' : '#EF4444', borderRadius: 99, transform: `scaleX(${pct / 100})`, transformOrigin: 'right', transition: 'transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)' }} />
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
                 <span style={{ color: '#6B7280' }}>{t.completedOfTotalPrefix} <strong style={{ color: '#111827' }}>{report.completedExercises}</strong> {t.completedOfTotalUnit} <strong style={{ color: '#111827' }}>{report.totalExercises}</strong></span>

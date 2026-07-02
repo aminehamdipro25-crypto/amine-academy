@@ -158,7 +158,7 @@ export default function JournalPage() {
           className="rounded-3xl p-6 text-center"
           style={{ background: 'linear-gradient(135deg,#F0FFF4,#ECFDF5)', border: '1.5px solid #A7F3D0', boxShadow: '0 4px 16px rgba(16,185,129,0.1)' }}
         >
-          <div className="text-5xl mb-3 animate-bounce-soft">{MOODS[todayEntry.mood]?.emoji}</div>
+          <div className="text-5xl mb-3">{MOODS[todayEntry.mood]?.emoji}</div>
           <p className="font-black text-green-700 text-lg">{t.savedTodayTitle}</p>
           {todayEntry.text && (
             <div

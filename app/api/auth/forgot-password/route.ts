@@ -44,12 +44,12 @@ export async function POST(req: NextRequest) {
       <h1 style="color:white;margin:0;font-size:22px;font-weight:800">🔐 أكاديمية أمين الدولية</h1>
     </div>
     <div style="padding:32px 24px">
-      <h2 style="color:#1e293b;font-size:18px;margin:0 0 16px">إعادة تعيين كلمة المرور</h2>
+      <h2 style="color:#1e293b;font-size:22px;margin:0 0 16px">إعادة تعيين كلمة المرور</h2>
       <p style="color:#475569;line-height:1.8;margin:0 0 24px">مرحباً ${parent.firstName}، تلقّينا طلباً لإعادة تعيين كلمة مرور حسابك. اضغط على الزر أدناه لإنشاء كلمة مرور جديدة.</p>
       <div style="text-align:center;margin:32px 0">
         <a href="${resetUrl}" style="display:inline-block;background:#5b6ef2;color:white;text-decoration:none;padding:14px 32px;border-radius:12px;font-weight:700;font-size:16px">إعادة تعيين كلمة المرور</a>
       </div>
-      <p style="color:#94a3b8;font-size:13px;margin:24px 0 0">الرابط صالح لمدة <strong>ساعة واحدة</strong> فقط. إذا لم تطلب هذا، تجاهل هذه الرسالة.</p>
+      <p style="color:#94a3b8;font-size:12px;margin:24px 0 0">الرابط صالح لمدة <strong>ساعة واحدة</strong> فقط. إذا لم تطلب هذا، تجاهل هذه الرسالة.</p>
     </div>
     <div style="background:#f0f4ff;padding:16px 24px;text-align:center">
       <p style="color:#6b7280;font-size:12px;margin:0">Amine Academy — أكاديمية أمين الدولية</p>

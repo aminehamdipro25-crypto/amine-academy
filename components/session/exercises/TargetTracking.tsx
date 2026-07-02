@@ -141,8 +141,8 @@ export default function TargetTracking({ onComplete, onCancel, difficulty = 1 }:
           {/* Time bar */}
           <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 4,
             background: 'rgba(255,255,255,0.1)' }}>
-            <div style={{ height: '100%', background: '#22C55E', transition: 'width 1s linear',
-              width: `${(timeLeft / DURATION) * 100}%` }} />
+            <div style={{ height: '100%', width: '100%', background: '#22C55E', transition: 'transform 1s linear',
+              transform: `scaleX(${timeLeft / DURATION})`, transformOrigin: 'left' }} />
           </div>
         </div>
       )}

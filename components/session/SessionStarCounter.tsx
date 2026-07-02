@@ -66,7 +66,7 @@ export default function SessionStarCounter({
           </div>
           {burst && newStars > 0 && (
             <div
-              className="text-amber-300 font-black text-sm animate-bounce"
+              className="text-amber-300 font-black text-sm"
             >
               +{newStars === 2 ? '⭐⭐' : '⭐'}
             </div>

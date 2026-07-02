@@ -890,7 +890,7 @@ export default function SessionPage() {
         ? 'الأداء العام مقبول. يُوصى بمواصلة التدريب مع التركيز على التمارين التي سجّل فيها الطالب أقل من 70%.'
         : 'يُوصى بمراجعة شاملة للبروتوكول العلاجي وتكثيف التدخل مع الأسرة.')
     }
-    const recsHtml = recs.map((r,i) => `<li style="margin-bottom:10px;padding:10px 14px;background:#f8fafc;border-right:3px solid #7C5CFC;border-radius:4px;font-size:12px;line-height:1.8">${i+1}. ${r}</li>`).join('')
+    const recsHtml = recs.map((r,i) => `<li style="margin-bottom:10px;padding:10px 14px;background:#f8fafc;border-left:3px solid #7C5CFC;border-radius:4px;font-size:12px;line-height:1.8">${i+1}. ${r}</li>`).join('')
 
     // ── Exercise rows with clinical context ──
     const exerciseRows = results.map(r => {
@@ -2361,8 +2361,8 @@ ${notes ? `
                     {studentName ? '😊' : '🌟'}
                   </div>
                   {/* Floating sparkles */}
-                  <div className="absolute -top-2 -right-3 text-2xl animate-bounce" style={{animationDelay:'0.1s'}}>✨</div>
-                  <div className="absolute -top-1 -left-4 text-xl animate-bounce" style={{animationDelay:'0.4s'}}>⭐</div>
+                  <div className="absolute -top-2 -right-3 text-2xl" style={{animationDelay:'0.1s'}}>✨</div>
+                  <div className="absolute -top-1 -left-4 text-xl" style={{animationDelay:'0.4s'}}>⭐</div>
                 </div>
                 <h1 className="font-black text-4xl text-gray-800 mt-3 leading-tight">
                   {studentName
@@ -2856,7 +2856,7 @@ ${notes ? `
                 >
                   <div className="absolute text-4xl opacity-40 animate-float" style={{ top: '9%', left: '8%' }}>⭐</div>
                   <div className="absolute text-5xl opacity-30 animate-float" style={{ top: '16%', right: '9%', animationDelay: '1.1s' }}>☁️</div>
-                  <div className="absolute text-3xl opacity-35 animate-bounce-soft" style={{ bottom: '16%', left: '11%', animationDelay: '0.4s' }}>🎈</div>
+                  <div className="absolute text-3xl opacity-35" style={{ bottom: '16%', left: '11%', animationDelay: '0.4s' }}>🎈</div>
                   <div className="absolute text-4xl opacity-25 animate-float" style={{ bottom: '24%', right: '13%', animationDelay: '0.7s' }}>✨</div>
                 </div>
 
@@ -2897,7 +2897,7 @@ ${notes ? `
                         {/* Header */}
                         <div className="text-center mb-6">
                           <div
-                            className="inline-flex items-center justify-center w-16 h-16 rounded-3xl mb-3 animate-bounce-soft"
+                            className="inline-flex items-center justify-center w-16 h-16 rounded-3xl mb-3"
                             style={{
                               background: 'linear-gradient(135deg, #FFBA44, #FF8C65)',
                               boxShadow: '0 10px 28px rgba(255,140,101,0.35)',
@@ -3031,7 +3031,7 @@ ${notes ? `
                       <p className="text-gray-400 text-sm mb-8">اضغط لبدء تشغيل التمارين</p>
                       <button
                         onClick={startSession}
-                        className="text-white font-black px-10 py-4 rounded-[1.75rem] text-lg transition-all active:scale-95 animate-bounce-soft"
+                        className="text-white font-black px-10 py-4 rounded-[1.75rem] text-lg transition-all active:scale-95"
                         style={{
                           background: 'linear-gradient(135deg, #2ABFA3, #10B981)',
                           boxShadow: '0 12px 32px rgba(16,185,129,0.4)',
@@ -3508,7 +3508,7 @@ ${notes ? `
                 boxShadow: `0 12px 40px rgba(0,0,0,0.55), 0 0 32px ${tierColor}66`,
               }}
             >
-              <span className="text-5xl animate-bounce">{achievementToast.icon}</span>
+              <span className="text-5xl">{achievementToast.icon}</span>
               <div>
                 <p className="text-white font-black text-xl">{achievementToast.message}</p>
                 <p className="font-bold text-sm" style={{ color: tierColor }}>إنجاز رائع! 🎉</p>

@@ -118,7 +118,7 @@ function AIChatTab() {
             >
               <div className="flex gap-1">
                 {[0, 0.15, 0.3].map((d, i) => (
-                  <div key={i} className="w-2 h-2 rounded-full animate-bounce" style={{ background: '#9CA3AF', animationDelay: `${d}s` }} />
+                  <div key={i} className="w-2 h-2 rounded-full" style={{ background: '#9CA3AF', animationDelay: `${d}s` }} />
                 ))}
               </div>
             </div>

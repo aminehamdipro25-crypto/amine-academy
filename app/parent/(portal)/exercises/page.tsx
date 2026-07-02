@@ -1081,7 +1081,7 @@ export default function ExercisesPage() {
 
                     {/* Big sense icon */}
                     <div key={step} style={{ fontSize: 96, lineHeight: 1,
-                      animation: 'popIn 0.4s cubic-bezier(.34,1.56,.64,1)',
+                      animation: 'popIn 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
                       filter: `drop-shadow(0 6px 20px ${curSense.color}50)` }}>
                       {curSense.icon}
                     </div>
@@ -1187,7 +1187,7 @@ export default function ExercisesPage() {
                       const svgIllust = !isAnimal ? StepIllustration({ text: steps[step], color: illustColor }) : null
                       if (svgIllust) return (
                         <div key={step} style={{
-                          animation: 'popIn 0.35s cubic-bezier(.34,1.56,.64,1)',
+                          animation: 'popIn 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
                           filter: `drop-shadow(0 8px 24px ${illustColor}55)`,
                           background: illustColor + '12',
                           borderRadius: 24, padding: '16px 24px',
@@ -1197,7 +1197,7 @@ export default function ExercisesPage() {
                       )
                       return (
                         <div key={step} style={{ fontSize: 110, lineHeight: 1,
-                          animation: 'popIn 0.35s cubic-bezier(.34,1.56,.64,1)',
+                          animation: 'popIn 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
                           filter: 'drop-shadow(0 8px 20px rgba(0,0,0,0.12))' }}>
                           {isAnimal
                             ? (steps[step].includes('دب') ? '🐻' : steps[step].includes('ضفدع') ? '🐸'
@@ -1301,7 +1301,7 @@ export default function ExercisesPage() {
                 style={{ background: 'linear-gradient(160deg,#1e1b4b,#312e81,#0f172a)', maxHeight: '95vh' }}>
                 <div className="flex flex-col items-center text-center px-6 py-10 gap-5">
                   {/* Trophy */}
-                  <div style={{ fontSize: 90, animation: 'popIn 0.5s cubic-bezier(.34,1.56,.64,1)' }}>🏆</div>
+                  <div style={{ fontSize: 90, animation: 'popIn 0.5s cubic-bezier(0.16, 1, 0.3, 1)' }}>🏆</div>
 
                   <div>
                     <h2 className="text-white font-black text-3xl mb-1">{t.completeTitle}</h2>

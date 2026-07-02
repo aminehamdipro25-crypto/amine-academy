@@ -153,7 +153,7 @@ function BookingMockup() {
         <div className="flex items-center gap-1.5 mb-4">
           {['اختر النوع','اختر الوقت','تأكيد'].map((s,i) => (
             <div key={s} className="flex items-center gap-1">
-              <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black ${i===1?'bg-emerald-600 text-white':i===0?'bg-gray-200 text-gray-500':'border border-gray-200 text-gray-300'}`}>{i+1}</div>
+              <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black ${i===1?'bg-emerald-600 text-white':i===0?'bg-gray-200 text-emerald-100':'border border-gray-200 text-emerald-100'}`}>{i+1}</div>
               <span className={`text-[10px] ${i===1?'text-emerald-700 font-bold':'text-gray-400'}`}>{s}</span>
               {i<2 && <div className="w-4 h-px bg-gray-200" />}
             </div>
@@ -162,12 +162,12 @@ function BookingMockup() {
         <div className="grid grid-cols-7 gap-0.5 mb-2 text-center">
           {['أح','إث','ثل','أر','خم','جم','سب'].map(d => <div key={d} className="text-[9px] text-gray-400 font-bold">{d}</div>)}
           {Array.from({length:14},(_,i)=>i+1).map(d => (
-            <div key={d} className={`text-[10px] py-1 rounded-md ${d===4?'bg-emerald-600 text-white font-black':d===5||d===6||d===12||d===13?'text-gray-300':'text-gray-700'}`}>{d}</div>
+            <div key={d} className={`text-[10px] py-1 rounded-md ${d===4?'bg-emerald-600 text-white font-black':d===5||d===6||d===12||d===13?'text-emerald-100':'text-white'}`}>{d}</div>
           ))}
         </div>
         <div className="grid grid-cols-3 gap-1 mb-3">
           {['10:00 ص','11:00 ص','02:00 م','03:00 م','05:00 م','06:00 م'].map((t,i) => (
-            <div key={t} className={`text-center py-1.5 rounded-lg text-[10px] font-bold border ${i===4?'bg-emerald-600 text-white border-emerald-600':'border-gray-200 text-gray-600'}`}>{t}</div>
+            <div key={t} className={`text-center py-1.5 rounded-lg text-[10px] font-bold border ${i===4?'bg-emerald-600 text-white border-emerald-600':'border-gray-200 text-white'}`}>{t}</div>
           ))}
         </div>
         <div className="bg-emerald-600 text-white text-center py-2 rounded-xl font-black text-xs">تأكيد الحجز ←</div>
@@ -378,7 +378,7 @@ export default function DemoPage() {
 
       {/* ── Progress bar (top) ── */}
       <div style={{position:'fixed',top:0,left:0,right:0,height:3,zIndex:100,background:'rgba(124,92,252,0.1)'}}>
-        <div style={{height:'100%',background:`linear-gradient(90deg,${slide.color},${slide.accent})`,width:`${(idx/SLIDES.length)*100 + progress/SLIDES.length}%`,transition:'width 0.03s linear',borderRadius:'0 2px 2px 0'}}/>
+        <div style={{height:'100%',background:`linear-gradient(90deg,${slide.color},${slide.accent})`,width:'100%',transform:`scaleX(${((idx/SLIDES.length)*100 + progress/SLIDES.length)/100})`,transformOrigin:'left',transition:'transform 0.03s linear',borderRadius:'0 2px 2px 0'}}/>
       </div>
 
       {/* ── Header ── */}

@@ -59,7 +59,7 @@ export default function StudentDashboardPage() {
 
   if (loading) return (
     <div className="flex flex-col items-center justify-center py-24 gap-4">
-      <div className="text-6xl animate-bounce-soft">⏳</div>
+      <div className="text-6xl">⏳</div>
       <p className="font-black text-lg" style={{ color: '#7C5CFC' }}>{t.loading}</p>
     </div>
   )

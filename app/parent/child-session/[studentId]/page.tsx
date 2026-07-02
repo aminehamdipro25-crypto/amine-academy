@@ -290,7 +290,7 @@ export default function ChildSessionPage() {
   if (loading) return (
     <div className="min-h-screen flex flex-col items-center justify-center gap-5"
       style={{ background: 'linear-gradient(135deg,#F3EEFF,#E8F4FF)' }}>
-      <div className="text-8xl" style={{ animation: 'bounce 1s infinite' }}>🎮</div>
+      <div className="text-8xl" style={{ animation: 'fadeIn 0.3s ease-out' }}>🎮</div>
       <p className="font-black text-2xl" style={{ color: '#7C5CFC' }}>{t.loadingText}</p>
     </div>
   )
@@ -336,7 +336,7 @@ export default function ChildSessionPage() {
       {showCelebration && (
         <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center"
           style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}>
-          <div className="text-center space-y-4" style={{ animation: 'badgePop 0.4s cubic-bezier(.34,1.56,.64,1)' }}>
+          <div className="text-center space-y-4" style={{ animation: 'badgePop 0.4s cubic-bezier(0.16, 1, 0.3, 1)' }}>
             <div style={{ fontSize: '8rem', lineHeight: 1 }}>🎉</div>
             <div className="text-white font-black" style={{ fontSize: '3rem' }}>{t.celebrationText}</div>
             <div className="font-black text-2xl px-10 py-3 rounded-2xl"

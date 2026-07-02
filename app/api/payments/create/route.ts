@@ -11,8 +11,8 @@ import type { PaymentMethod } from '@/lib/types'
 
 const METHOD_LABELS: Record<PaymentMethod, string> = {
   fawran:           'فوران (FAWRAN)',
-  bank_transfer_qa: 'تحويل بنكي — قطر',
-  bank_transfer_tn: 'تحويل بنكي — تونس',
+  bank_transfer_qa: 'تحويل بنكي: قطر',
+  bank_transfer_tn: 'تحويل بنكي: تونس',
   whatsapp:         'واتساب',
 }
 
@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
     try {
       await sendEmail({
         to: guestEmail,
-        subject: `تأكيد طلب الاشتراك — أكاديمية أمين | ${payment.referenceCode}`,
+        subject: `تأكيد طلب الاشتراك، أكاديمية أمين | ${payment.referenceCode}`,
         html: `<!DOCTYPE html><html dir="rtl" lang="ar">
 <head><meta charset="utf-8">
 <style>* { font-family: 'Segoe UI', Tahoma, Arial, sans-serif; box-sizing: border-box; } body { margin: 0; padding: 20px; background: #f0f4ff; direction: rtl; }</style>
@@ -122,7 +122,7 @@ export async function POST(req: NextRequest) {
         <td style="padding:10px 0;color:#1e293b;font-weight:700;text-align:left">${methodLabel}</td>
       </tr>
     </table>
-    <div style="background:#fef9ec;border-right:4px solid #f59e0b;padding:12px 16px;border-radius:8px;margin:24px 0">
+    <div style="background:#fef9ec;border-left:3px solid #f59e0b;border-radius:4px;padding:12px 16px;margin:24px 0">
       <p style="margin:0;color:#92400e;font-size:13px">⚠️ بعد إتمام الدفع، يرجى إرسال إثبات الدفع مع رمز المرجع <strong>${payment.referenceCode}</strong> عبر واتساب أو البريد الإلكتروني.</p>
     </div>
     <p style="color:#64748b;font-size:14px">سيتم تفعيل اشتراكك خلال 24 ساعة من استلام الدفع. للتواصل: <strong>${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? ''}</strong></p>
@@ -143,7 +143,7 @@ export async function POST(req: NextRequest) {
       if (adminEmail) {
         await sendEmail({
           to: adminEmail,
-          subject: `طلب اشتراك جديد — ${guestName} | ${payment.referenceCode}`,
+          subject: `طلب اشتراك جديد: ${guestName} | ${payment.referenceCode}`,
           html: `<!DOCTYPE html><html dir="rtl" lang="ar">
 <head><meta charset="utf-8">
 <style>* { font-family: 'Segoe UI', Tahoma, Arial, sans-serif; box-sizing: border-box; } body { margin: 0; padding: 20px; background: #f0f4ff; direction: rtl; }</style>

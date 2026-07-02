@@ -38,7 +38,7 @@ export default function StudentSchedulePage() {
 
   if (loading) return (
     <div className="flex flex-col items-center justify-center py-24">
-      <div className="text-5xl animate-bounce-soft mb-4">📅</div>
+      <div className="text-5xl mb-4">📅</div>
       <p className="font-black text-lg" style={{ color: '#7C5CFC' }}>{t.loading}</p>
     </div>
   )

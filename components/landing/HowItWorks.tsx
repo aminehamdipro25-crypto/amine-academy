@@ -1,4 +1,6 @@
 'use client'
+import { useRef } from 'react'
+import { motion, useInView } from 'framer-motion'
 import { useLang, pickLang } from '@/lib/i18n'
 
 const steps = [
@@ -59,9 +61,13 @@ const steps = [
   },
 ]
 
+const EASE: [number, number, number, number] = [0.25, 0.46, 0.45, 0.94]
+
 export default function HowItWorks() {
   const { lang } = useLang()
   const isRtl = lang === 'ar'
+  const ref = useRef(null)
+  const inView = useInView(ref, { once: true, margin: '-80px' })
 
   return (
     <section
@@ -76,7 +82,13 @@ export default function HowItWorks() {
       }}
     >
       <div className="max-w-7xl mx-auto px-6">
-        <div className="text-center mb-14">
+        <motion.div
+          ref={ref}
+          className="text-center mb-14"
+          initial={{ opacity: 0, y: 24 }}
+          animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 }}
+          transition={{ duration: 0.5, ease: EASE }}
+        >
           <span
             className="inline-block text-sm font-bold px-4 py-1.5 rounded-full mb-4"
             style={{ background: 'rgba(107,70,240,0.08)', border: '1px solid rgba(107,70,240,0.15)', color: '#6B46F0' }}
@@ -92,20 +104,27 @@ export default function HowItWorks() {
           <p className="max-w-xl mx-auto" style={{ color: '#64748B' }}>
             {pickLang(lang, 'خمس خطوات بسيطة تحول حياة طفلك.', "Five simple steps that transform your child's life.", "Cinq étapes simples qui transforment la vie de votre enfant.")}
           </p>
-        </div>
+        </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-5 gap-5">
-          {steps.map((step) => (
-            <div key={step.num} className="relative flex flex-col items-center text-center">
+          {steps.map((step, index) => (
+            <motion.div
+              key={step.num}
+              className="relative flex flex-col items-center text-center"
+              initial={{ opacity: 0, y: 16 }}
+              animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }}
+              transition={{ duration: 0.4, delay: index * 0.08, ease: EASE }}
+              whileHover={{ y: -2 }}
+            >
               <div
-                className="relative z-10 w-14 h-14 rounded-full flex items-center justify-center mb-4 text-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)]"
+                className="relative z-10 w-14 h-14 rounded-full flex items-center justify-center mb-4 text-2xl"
                 style={{ background: step.gradient, boxShadow: '0 4px 16px rgba(107,70,240,0.20)' }}
               >
                 {step.icon}
               </div>
 
               <div
-                className="w-full rounded-3xl p-5 transition-all hover:-translate-y-1"
+                className="w-full rounded-3xl p-5"
                 style={{
                   background: 'rgba(255,255,255,0.9)',
                   border: '1px solid rgba(0,0,0,0.06)',
@@ -128,7 +147,7 @@ export default function HowItWorks() {
                 <h3 className="font-black text-sm mb-2" style={{ color: '#1E293B' }}>{pickLang(lang, step.title, step.titleEn, step.titleFr)}</h3>
                 <p className="text-xs leading-relaxed" style={{ color: '#64748B' }}>{pickLang(lang, step.desc, step.descEn, step.descFr)}</p>
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
       </div>

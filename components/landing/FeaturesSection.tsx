@@ -1,4 +1,6 @@
 'use client'
+import { useRef } from 'react'
+import { motion, useInView } from 'framer-motion'
 import { Brain, Dumbbell, Heart, Target, Sparkles, Users, BarChart3, Video } from 'lucide-react'
 import { useLang, pickLang } from '@/lib/i18n'
 
@@ -74,9 +76,24 @@ const EXTRA = [
   { icon: Brain,     gradient: 'linear-gradient(135deg,#F59E0B,#EF4444)', title: 'صعوبات التعلم', titleEn: 'Learning Difficulties', titleFr: "Troubles de l'apprentissage", desc: 'تشخيص وتدخل متخصص لعسر القراءة والكتابة والحساب — برامج مخصصة لكل طفل', descEn: 'Specialized diagnosis & intervention for dyslexia, dysgraphia & dyscalculia', descFr: "Diagnostic et intervention spécialisés pour la dyslexie, dysgraphie et dyscalculie" },
 ]
 
+const EASE: [number, number, number, number] = [0.25, 0.46, 0.45, 0.94]
+
+const cardStyle = {
+  background: 'rgba(255,255,255,0.97)',
+  border: '1px solid rgba(0,0,0,0.06)',
+  backdropFilter: 'blur(16px)',
+  WebkitBackdropFilter: 'blur(16px)',
+  boxShadow: '0 4px 24px rgba(0,0,0,0.06)',
+}
+
 export default function FeaturesSection() {
   const { lang } = useLang()
   const isRtl = lang === 'ar'
+  const ref = useRef(null)
+  const inView = useInView(ref, { once: true, margin: '-80px' })
+
+  const apa = PILLARS[0]
+  const ApaIcon = apa.icon
 
   return (
     <section
@@ -94,7 +111,13 @@ export default function FeaturesSection() {
       <div className="max-w-7xl mx-auto px-6">
 
         {/* Header */}
-        <div className="text-center mb-16">
+        <motion.div
+          ref={ref}
+          className="text-center mb-16"
+          initial={{ opacity: 0, y: 24 }}
+          animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 }}
+          transition={{ duration: 0.5, ease: EASE }}
+        >
           <span
             className="inline-block text-sm font-bold px-4 py-1.5 rounded-full mb-4"
             style={{
@@ -116,26 +139,91 @@ export default function FeaturesSection() {
               "Aucun programme de la région ne réunit ces trois approches. Chaque pilier est validé par des études internationales — ensemble, ils produisent des résultats inestimables."
             )}
           </p>
-        </div>
+        </motion.div>
 
-        {/* 3 Pillars */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
-          {PILLARS.map((p) => {
-            const Icon = p.icon
-            return (
+        {/* Asymmetric bento: APA large (col-span-2 row-span-2), ABA + CBT stacked */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-16">
+
+          {/* APA — large hero card */}
+          <motion.div
+            className="rounded-3xl p-7 md:col-span-2 md:row-span-2 flex flex-col"
+            initial={{ opacity: 0, y: 16 }}
+            animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }}
+            transition={{ duration: 0.4, delay: 0, ease: EASE }}
+            whileHover={{ y: -2 }}
+            style={cardStyle}
+          >
+            {/* Tag + Icon */}
+            <div className="flex items-center justify-between mb-5">
+              <span
+                className="text-white text-xs font-black px-3 py-1.5 rounded-full tracking-widest"
+                style={{ background: apa.gradientBorder }}
+              >
+                {apa.tag}
+              </span>
               <div
-                key={p.id}
-                className="rounded-3xl p-7 transition-all hover:-translate-y-1"
+                className="w-11 h-11 rounded-xl flex items-center justify-center"
+                style={{ background: apa.glowColor }}
+              >
+                <ApaIcon className="w-5 h-5" style={{ color: apa.dotColor }} />
+              </div>
+            </div>
+
+            <h3 className="font-black text-2xl mb-0.5" style={{ color: '#1E293B' }}>
+              {pickLang(lang, apa.title, apa.titleEn, apa.titleFr)}
+            </h3>
+            <p className="text-xs font-medium mb-4 tracking-wide" style={{ color: '#94A3B8' }}>{apa.subtitle}</p>
+            <p className="text-sm leading-relaxed mb-6 flex-1" style={{ color: '#475569' }}>
+              {pickLang(lang, apa.desc, apa.descEn, apa.descFr)}
+            </p>
+
+            {/* Bullets — 2-column grid since the card is wide */}
+            <ul className="grid grid-cols-2 gap-x-6 gap-y-2 mb-6">
+              {pickLang(lang, apa.bullets, apa.bulletsEn, apa.bulletsFr).map((b, idx) => (
+                <li key={idx} className="flex items-center gap-2 text-sm" style={{ color: '#475569' }}>
+                  <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: apa.dotColor }} />
+                  {b}
+                </li>
+              ))}
+            </ul>
+
+            {/* Stat */}
+            <div
+              className="rounded-2xl p-4 text-center"
+              style={{ background: apa.glowColor, border: '1px solid rgba(0,0,0,0.05)' }}
+            >
+              <div
+                className="text-4xl font-black ltr-num"
                 style={{
-                  background: 'rgba(255,255,255,0.97)',
-                  border: '1px solid rgba(0,0,0,0.06)',
-                  backdropFilter: 'blur(16px)',
-                  WebkitBackdropFilter: 'blur(16px)',
-                  boxShadow: '0 4px 24px rgba(0,0,0,0.06)',
+                  background: apa.gradientStat,
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
                 }}
               >
+                {apa.stat}
+              </div>
+              <div className="text-xs mt-1" style={{ color: '#64748B' }}>
+                {pickLang(lang, apa.statLabel, apa.statLabelEn, apa.statLabelFr)}
+              </div>
+            </div>
+          </motion.div>
+
+          {/* ABA + CBT — compact cards stacked in the right column */}
+          {PILLARS.slice(1).map((p, idx) => {
+            const Icon = p.icon
+            return (
+              <motion.div
+                key={p.id}
+                className="rounded-3xl p-6 flex flex-col justify-between"
+                initial={{ opacity: 0, y: 16 }}
+                animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }}
+                transition={{ duration: 0.4, delay: (idx + 1) * 0.08, ease: EASE }}
+                whileHover={{ y: -2 }}
+                style={cardStyle}
+              >
                 {/* Tag + Icon */}
-                <div className="flex items-center justify-between mb-5">
+                <div className="flex items-center justify-between mb-4">
                   <span
                     className="text-white text-xs font-black px-3 py-1.5 rounded-full tracking-widest"
                     style={{ background: p.gradientBorder }}
@@ -143,30 +231,23 @@ export default function FeaturesSection() {
                     {p.tag}
                   </span>
                   <div
-                    className="w-11 h-11 rounded-xl flex items-center justify-center"
+                    className="w-10 h-10 rounded-xl flex items-center justify-center"
                     style={{ background: p.glowColor }}
                   >
                     <Icon className="w-5 h-5" style={{ color: p.dotColor }} />
                   </div>
                 </div>
 
-                <h3 className="font-black text-xl mb-0.5" style={{ color: '#1E293B' }}>{pickLang(lang, p.title, p.titleEn, p.titleFr)}</h3>
-                <p className="text-xs font-medium mb-4 tracking-wide" style={{ color: '#94A3B8' }}>{p.subtitle}</p>
-                <p className="text-sm leading-relaxed mb-5" style={{ color: '#475569' }}>{pickLang(lang, p.desc, p.descEn, p.descFr)}</p>
-
-                {/* Bullets */}
-                <ul className="space-y-2 mb-6">
-                  {pickLang(lang, p.bullets, p.bulletsEn, p.bulletsFr).map((b, idx) => (
-                    <li key={idx} className="flex items-center gap-2 text-sm" style={{ color: '#475569' }}>
-                      <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: p.dotColor }} />
-                      {b}
-                    </li>
-                  ))}
-                </ul>
+                <div className="flex-1">
+                  <h3 className="font-black text-lg mb-0.5" style={{ color: '#1E293B' }}>
+                    {pickLang(lang, p.title, p.titleEn, p.titleFr)}
+                  </h3>
+                  <p className="text-xs font-medium mb-3 tracking-wide" style={{ color: '#94A3B8' }}>{p.subtitle}</p>
+                </div>
 
                 {/* Stat */}
                 <div
-                  className="rounded-2xl p-4 text-center"
+                  className="rounded-2xl p-4 text-center mt-3"
                   style={{ background: p.glowColor, border: '1px solid rgba(0,0,0,0.05)' }}
                 >
                   <div
@@ -180,28 +261,39 @@ export default function FeaturesSection() {
                   >
                     {p.stat}
                   </div>
-                  <div className="text-xs mt-1" style={{ color: '#64748B' }}>{pickLang(lang, p.statLabel, p.statLabelEn, p.statLabelFr)}</div>
+                  <div className="text-xs mt-1" style={{ color: '#64748B' }}>
+                    {pickLang(lang, p.statLabel, p.statLabelEn, p.statLabelFr)}
+                  </div>
                 </div>
-              </div>
+              </motion.div>
             )
           })}
         </div>
 
         {/* Divider */}
-        <div className="flex items-center gap-4 mb-10">
+        <motion.div
+          className="flex items-center gap-4 mb-10"
+          initial={{ opacity: 0 }}
+          animate={inView ? { opacity: 1 } : { opacity: 0 }}
+          transition={{ duration: 0.4, delay: 0.28, ease: EASE }}
+        >
           <div className="flex-1 h-px" style={{ background: 'rgba(0,0,0,0.08)' }} />
           <span className="text-sm font-medium whitespace-nowrap" style={{ color: '#94A3B8' }}>
             {pickLang(lang, 'بالإضافة إلى', 'Plus', 'En plus')}
           </span>
           <div className="flex-1 h-px" style={{ background: 'rgba(0,0,0,0.08)' }} />
-        </div>
+        </motion.div>
 
         {/* Extra features grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {EXTRA.map(({ icon: Icon, gradient, title, titleEn, titleFr, desc, descEn, descFr }) => (
-            <div
+          {EXTRA.map(({ icon: Icon, gradient, title, titleEn, titleFr, desc, descEn, descFr }, index) => (
+            <motion.div
               key={title}
-              className="flex items-start gap-4 p-5 rounded-3xl transition-all hover:-translate-y-0.5"
+              className="flex items-start gap-4 p-5 rounded-3xl"
+              initial={{ opacity: 0, y: 16 }}
+              animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }}
+              transition={{ duration: 0.4, delay: 0.32 + index * 0.08, ease: EASE }}
+              whileHover={{ y: -0.5 }}
               style={{
                 background: 'rgba(255,255,255,0.97)',
                 border: '1px solid rgba(0,0,0,0.06)',
@@ -217,7 +309,7 @@ export default function FeaturesSection() {
                 <h4 className="font-black text-sm mb-1" style={{ color: '#1E293B' }}>{pickLang(lang, title, titleEn, titleFr)}</h4>
                 <p className="text-xs leading-relaxed" style={{ color: '#64748B' }}>{pickLang(lang, desc, descEn, descFr)}</p>
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
 

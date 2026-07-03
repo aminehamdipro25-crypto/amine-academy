@@ -10,24 +10,35 @@ interface Props {
 }
 
 const ALL_ACTIVITIES = [
-  { id:'draw',    emoji:'🎨', label:'الرسم'         },
-  { id:'puzzle',  emoji:'🧩', label:'الأحجية'       },
-  { id:'read',    emoji:'📖', label:'القراءة'       },
-  { id:'build',   emoji:'🏗️', label:'البناء'        },
-  { id:'move',    emoji:'🏃', label:'الحركة'        },
-  { id:'music',   emoji:'🎵', label:'الموسيقى'      },
-  { id:'write',   emoji:'✏️', label:'الكتابة'       },
-  { id:'math',    emoji:'🔢', label:'الأرقام'       },
-  { id:'nature',  emoji:'🌿', label:'الطبيعة'       },
-  { id:'cook',    emoji:'🍳', label:'الطبخ'         },
-  { id:'story',   emoji:'📝', label:'القصص'         },
-  { id:'science', emoji:'🔬', label:'العلوم'        },
+  { id:'draw',    emoji:'🎨', label:'الرسم'    },
+  { id:'puzzle',  emoji:'🧩', label:'الأحجية' },
+  { id:'read',    emoji:'📖', label:'القراءة' },
+  { id:'build',   emoji:'🏗️', label:'البناء'  },
+  { id:'move',    emoji:'🏃', label:'الحركة'  },
+  { id:'music',   emoji:'🎵', label:'الموسيقى'},
+  { id:'write',   emoji:'✏️', label:'الكتابة' },
+  { id:'math',    emoji:'🔢', label:'الأرقام' },
+  { id:'nature',  emoji:'🌿', label:'الطبيعة' },
+  { id:'cook',    emoji:'🍳', label:'الطبخ'   },
+  { id:'story',   emoji:'📝', label:'القصص'   },
+  { id:'science', emoji:'🔬', label:'العلوم'  },
+  { id:'sing',    emoji:'🎤', label:'الغناء'  },
+  { id:'dance',   emoji:'💃', label:'الرقص'   },
+  { id:'color',   emoji:'🖍️', label:'التلوين' },
+  { id:'lego',    emoji:'🧱', label:'ليگو'    },
+  { id:'sport',   emoji:'⚽', label:'الرياضة' },
+  { id:'photo',   emoji:'📸', label:'التصوير' },
 ]
 
 const ROUNDS = [
-  { prompt: 'اختر نشاطاً تحب أن تبدأ به الجلسة', count: 3 },
-  { prompt: 'اختر نشاطاً للاسترخاء بعد التعب',  count: 4 },
-  { prompt: 'اختر ما تريد تعلمه اليوم',          count: 3 },
+  { prompt: 'اختر نشاطاً تحب أن تبدأ به الجلسة',    count: 3 },
+  { prompt: 'اختر نشاطاً للاسترخاء بعد التعب',       count: 4 },
+  { prompt: 'اختر ما تريد تعلمه اليوم',               count: 3 },
+  { prompt: 'اختر نشاطاً تفعله مع صديق',              count: 3 },
+  { prompt: 'اختر كيف تكافئ نفسك بعد الإنجاز',       count: 4 },
+  { prompt: 'اختر نشاطاً لوقت الفراغ',                count: 4 },
+  { prompt: 'اختر ما يساعدك عندما تشعر بالتوتر',      count: 3 },
+  { prompt: 'اختر نشاطاً إبداعياً تفعله الآن',        count: 4 },
 ]
 
 function shuffle<T>(arr: T[]): T[] { return [...arr].sort(() => Math.random() - 0.5) }

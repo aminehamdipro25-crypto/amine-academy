@@ -16,22 +16,41 @@ interface Puzzle {
 }
 
 const ALL_PUZZLES: Puzzle[] = [
-  { sequence:['🔴','🔵','🔴','🔵','?'], answer:'🔴', choices:['🔴','🟡','🟢'] },
-  { sequence:['🌟','🌙','🌟','🌙','?'], answer:'🌟', choices:['🌟','☀️','⭐'] },
-  { sequence:['🐶','🐱','🐶','🐱','?'], answer:'🐶', choices:['🐶','🐸','🐦'] },
-  { sequence:['🍎','🍊','🍋','🍎','🍊','?'], answer:'🍋', choices:['🍋','🍇','🍓'] },
-  { sequence:['⬆️','➡️','⬇️','⬆️','➡️','?'], answer:'⬇️', choices:['⬇️','⬅️','↩️'] },
+  // AB patterns (easy)
+  { sequence:['🔴','🔵','🔴','🔵','?'],          answer:'🔴', choices:['🔴','🟡','🟢'] },
+  { sequence:['🌟','🌙','🌟','🌙','?'],          answer:'🌟', choices:['🌟','☀️','⭐'] },
+  { sequence:['🐶','🐱','🐶','🐱','?'],          answer:'🐶', choices:['🐶','🐸','🐦'] },
+  { sequence:['🔺','🔷','🔺','🔷','🔺','?'],    answer:'🔷', choices:['🔷','🔶','🔻'] },
+  { sequence:['🌧️','☀️','🌧️','☀️','?'],          answer:'🌧️', choices:['🌧️','⛅','🌪️'] },
+  { sequence:['🐘','🦁','🐘','🦁','?'],          answer:'🐘', choices:['🐘','🦒','🦓'] },
+  // ABC patterns (medium)
+  { sequence:['🍎','🍊','🍋','🍎','🍊','?'],    answer:'🍋', choices:['🍋','🍇','🍓'] },
+  { sequence:['⬆️','➡️','⬇️','⬆️','➡️','?'],  answer:'⬇️', choices:['⬇️','⬅️','↩️'] },
   { sequence:['1️⃣','2️⃣','3️⃣','1️⃣','2️⃣','?'], answer:'3️⃣', choices:['3️⃣','4️⃣','5️⃣'] },
-  { sequence:['🔺','🔷','🔺','🔷','🔺','?'], answer:'🔷', choices:['🔷','🔶','🔻'] },
-  { sequence:['😊','😊','😢','😊','😊','?'], answer:'😢', choices:['😢','😡','😮'] },
-  { sequence:['🌱','🌿','🌳','🌱','🌿','?'], answer:'🌳', choices:['🌳','🌲','🌴'] },
-  { sequence:['🐣','🐥','🐔','🐣','🐥','?'], answer:'🐔', choices:['🐔','🦆','🦅'] },
+  { sequence:['🔴','🟡','🟢','🔴','🟡','?'],    answer:'🟢', choices:['🟢','🔵','🟣'] },
+  { sequence:['🌷','🌻','🌹','🌷','🌻','?'],    answer:'🌹', choices:['🌹','🌸','🌼'] },
+  { sequence:['🐸','🐛','🦋','🐸','🐛','?'],    answer:'🦋', choices:['🦋','🐝','🐞'] },
+  // Growth/life-cycle patterns (medium)
+  { sequence:['🌱','🌿','🌳','🌱','🌿','?'],    answer:'🌳', choices:['🌳','🌲','🌴'] },
+  { sequence:['🐣','🐥','🐔','🐣','🐥','?'],    answer:'🐔', choices:['🐔','🦆','🦅'] },
+  { sequence:['🌑','🌓','🌕','🌑','🌓','?'],    answer:'🌕', choices:['🌕','🌙','⭐'] },
+  { sequence:['🥚','🐣','🐥','🥚','🐣','?'],    answer:'🐥', choices:['🐥','🐔','🦆'] },
+  // AAB / ABB patterns (medium-hard)
+  { sequence:['😊','😊','😢','😊','😊','?'],    answer:'😢', choices:['😢','😡','😮'] },
+  { sequence:['🔵','🔴','🔴','🔵','🔴','?'],    answer:'🔴', choices:['🔴','🟡','🟢'] },
+  { sequence:['🐶','🐶','🐱','🐶','🐶','?'],    answer:'🐱', choices:['🐱','🐸','🐦'] },
+  { sequence:['⭐','💫','💫','⭐','💫','?'],    answer:'💫', choices:['💫','🌟','✨'] },
+  // ABCD / complex 4-element cycles (hard)
+  { sequence:['🍁','❄️','🌸','☀️','🍁','❄️','🌸','?'], answer:'☀️', choices:['☀️','🌧️','🌪️'] },
+  { sequence:['🔴','🟡','🔵','🟢','🔴','🟡','🔵','?'], answer:'🟢', choices:['🟢','🟣','🟠'] },
+  { sequence:['1️⃣','2️⃣','4️⃣','1️⃣','2️⃣','?'],         answer:'4️⃣', choices:['4️⃣','3️⃣','5️⃣'] },
+  { sequence:['🐱','🐭','🐰','🦊','🐱','🐭','🐰','?'],  answer:'🦊', choices:['🦊','🐻','🐼'] },
 ]
 
 function shuffle<T>(arr: T[]): T[] { return [...arr].sort(() => Math.random() - 0.5) }
 
 export default function PatternPuzzle({ onComplete, onCancel, difficulty = 1 }: Props) {
-  const count = difficulty === 1 ? 4 : difficulty === 2 ? 7 : 10
+  const count = difficulty === 1 ? 6 : difficulty === 2 ? 12 : 20
   const puzzles = useMemo(() => ALL_PUZZLES.slice(0, count), [count])
 
   const [idx,     setIdx]     = useState(0)

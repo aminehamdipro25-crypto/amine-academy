@@ -24,6 +24,22 @@ const ALL_QUESTIONS: Question[] = [
   { word: 'ذهب',   correct: 'لهب',   wrong: ['قمر',   'ماء']   },
   { word: 'سماء',  correct: 'هواء',  wrong: ['أرض',   'نار']   },
   { word: 'حليب',  correct: 'قريب',  wrong: ['جبل',   'شجرة']  },
+  { word: 'نار',   correct: 'جار',   wrong: ['كتاب',  'سمك']   },
+  { word: 'قلم',   correct: 'علم',   wrong: ['باب',   'طير']   },
+  { word: 'باب',   correct: 'ناب',   wrong: ['شجر',   'بحر']   },
+  { word: 'جمل',   correct: 'عمل',   wrong: ['بيت',   'كتاب']  },
+  { word: 'فيل',   correct: 'نيل',   wrong: ['نار',   'قلم']   },
+  { word: 'زهر',   correct: 'شهر',   wrong: ['بيت',   'سمك']   },
+  { word: 'ورد',   correct: 'برد',   wrong: ['شجر',   'كتاب']  },
+  { word: 'عين',   correct: 'دين',   wrong: ['باب',   'طير']   },
+  { word: 'سهل',   correct: 'جهل',   wrong: ['حجر',   'كتاب']  },
+  { word: 'درس',   correct: 'فرس',   wrong: ['نار',   'سمك']   },
+  { word: 'مطر',   correct: 'خطر',   wrong: ['باب',   'فيل']   },
+  { word: 'فرح',   correct: 'جرح',   wrong: ['نار',   'بحر']   },
+  { word: 'نجم',   correct: 'حجم',   wrong: ['شجر',   'بيت']   },
+  { word: 'خبز',   correct: 'عجز',   wrong: ['باب',   'فيل']   },
+  { word: 'وقت',   correct: 'صمت',   wrong: ['نار',   'قلم']   },
+  { word: 'حمل',   correct: 'رمل',   wrong: ['بيت',   'كتاب']  },
 ]
 
 function getQuestions(difficulty: 1 | 2 | 3): Question[] {

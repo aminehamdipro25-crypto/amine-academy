@@ -2,6 +2,7 @@
 import Link from 'next/link'
 import { ArrowLeft, ArrowRight, Play, LayoutDashboard, Sparkles } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { motion } from 'framer-motion'
 import { useLang, tr, pickLang } from '@/lib/i18n'
 import LangToggle from '@/components/shared/LangToggle'
 import AcademyLogo from '@/components/shared/AcademyLogo'
@@ -345,7 +346,13 @@ export default function HeroSection() {
 
         {/* Visual column — LEFT in RTL, RIGHT in LTR */}
         <div className="relative flex flex-col items-stretch gap-5 lg:py-10">
-          <DashboardVisual />
+          {/* Continuous float animation */}
+          <motion.div
+            animate={{ y: [0, -10, 0] }}
+            transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+          >
+            <DashboardVisual />
+          </motion.div>
 
           {/* Countdown compact — below visual */}
           {time && !time.expired && (

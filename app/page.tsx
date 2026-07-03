@@ -1,4 +1,5 @@
 import HeroSection from '@/components/landing/HeroSection'
+import MarqueeStrip from '@/components/landing/MarqueeStrip'
 import StatsSection from '@/components/landing/StatsSection'
 import FeaturesSection from '@/components/landing/FeaturesSection'
 import AttentionSection from '@/components/landing/AttentionSection'
@@ -15,6 +16,7 @@ export default function HomePage() {
   return (
     <main className="min-h-[100dvh] bg-[#FFF8F0] overflow-x-hidden">
       <HeroSection />
+      <MarqueeStrip />
       <StatsSection />
       <FeaturesSection />
       <AttentionSection />

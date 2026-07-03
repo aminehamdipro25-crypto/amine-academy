@@ -299,7 +299,7 @@ function ReportDocument({ report, child }: { report: ProgressReport; child: Stud
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', borderBottom: '1.5px solid #F3F4F6' }}>
           {[
             { label: t.kpiCompletionRate,      val: `${pct}%`,                                 icon: '📊', color: pct >= 80 ? '#059669' : pct >= 50 ? '#D97706' : '#DC2626' },
-            { label: t.kpiCompletedExercises,  val: `${report.completedExercises}/${report.totalExercises}`, icon: '✅', color: '#4F46E5' },
+            { label: t.kpiCompletedExercises,  val: `${report.completedExercises}/${report.totalExercises}`, icon: '✅', color: '#6B46F0' },
             { label: t.kpiPointsEarned,        val: String(report.pointsEarned),               icon: '⭐', color: '#D97706' },
             { label: t.kpiAvgBehavior,         val: avg > 0 ? `${avg.toFixed(1)}/5` : '—',    icon: '🧠', color: avg >= 4 ? '#059669' : avg >= 3 ? '#D97706' : '#DC2626' },
           ].map(({ label, val, icon, color }, i) => (

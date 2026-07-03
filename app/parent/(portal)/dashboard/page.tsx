@@ -388,7 +388,7 @@ export default function ParentDashboardPage() {
                 3★
               </span>
               <span className="inline-flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full inline-block" style={{ background: 'linear-gradient(135deg,#6366F1,#818CF8)' }} />
+                <span className="w-2 h-2 rounded-full inline-block" style={{ background: 'linear-gradient(135deg,#6B46F0,#9A7BFD)' }} />
                 2★
               </span>
               <span className="inline-flex items-center gap-1">

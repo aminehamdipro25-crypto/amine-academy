@@ -84,9 +84,9 @@ export default function FeaturesSection() {
       dir={isRtl ? 'rtl' : 'ltr'}
       style={{
         background: `
-          radial-gradient(ellipse 60% 40% at 80% 20%, rgba(139,92,246,0.07) 0%, transparent 60%),
-          radial-gradient(ellipse 50% 40% at 20% 80%, rgba(59,130,246,0.05) 0%, transparent 60%),
-          linear-gradient(180deg, #F8F6FF 0%, #F0F4FF 100%)
+          radial-gradient(ellipse 60% 40% at 80% 20%, rgba(107,70,240,0.05) 0%, transparent 60%),
+          radial-gradient(ellipse 50% 40% at 20% 80%, rgba(42,191,163,0.04) 0%, transparent 60%),
+          #FFF8F0
         `,
         padding: '96px 0',
       }}
@@ -98,9 +98,9 @@ export default function FeaturesSection() {
           <span
             className="inline-block text-sm font-bold px-4 py-1.5 rounded-full mb-4"
             style={{
-              background: 'rgba(99,102,241,0.08)',
-              border: '1px solid rgba(99,102,241,0.16)',
-              color: '#6D44E8',
+              background: 'rgba(107,70,240,0.08)',
+              border: '1px solid rgba(107,70,240,0.15)',
+              color: '#6B46F0',
             }}
           >
             {pickLang(lang, 'المنهجية العلمية', 'Scientific Methodology', 'Méthodologie scientifique')}
@@ -127,11 +127,11 @@ export default function FeaturesSection() {
                 key={p.id}
                 className="rounded-3xl p-7 transition-all hover:-translate-y-1"
                 style={{
-                  background: 'rgba(255,255,255,0.92)',
-                  border: '1.5px solid rgba(124,92,252,0.1)',
+                  background: 'rgba(255,255,255,0.97)',
+                  border: '1px solid rgba(0,0,0,0.06)',
                   backdropFilter: 'blur(16px)',
                   WebkitBackdropFilter: 'blur(16px)',
-                  boxShadow: '0 8px 32px rgba(124,92,252,0.07)',
+                  boxShadow: '0 4px 24px rgba(0,0,0,0.06)',
                 }}
               >
                 {/* Tag + Icon */}
@@ -167,7 +167,7 @@ export default function FeaturesSection() {
                 {/* Stat */}
                 <div
                   className="rounded-2xl p-4 text-center"
-                  style={{ background: p.glowColor, border: `1px solid rgba(124,92,252,0.08)` }}
+                  style={{ background: p.glowColor, border: '1px solid rgba(0,0,0,0.05)' }}
                 >
                   <div
                     className="text-3xl font-black ltr-num"
@@ -189,11 +189,11 @@ export default function FeaturesSection() {
 
         {/* Divider */}
         <div className="flex items-center gap-4 mb-10">
-          <div className="flex-1 h-px" style={{ background: 'rgba(124,92,252,0.12)' }} />
+          <div className="flex-1 h-px" style={{ background: 'rgba(0,0,0,0.08)' }} />
           <span className="text-sm font-medium whitespace-nowrap" style={{ color: '#94A3B8' }}>
             {pickLang(lang, 'بالإضافة إلى', 'Plus', 'En plus')}
           </span>
-          <div className="flex-1 h-px" style={{ background: 'rgba(124,92,252,0.12)' }} />
+          <div className="flex-1 h-px" style={{ background: 'rgba(0,0,0,0.08)' }} />
         </div>
 
         {/* Extra features grid */}
@@ -203,8 +203,8 @@ export default function FeaturesSection() {
               key={title}
               className="flex items-start gap-4 p-5 rounded-3xl transition-all hover:-translate-y-0.5"
               style={{
-                background: 'rgba(255,255,255,0.9)',
-                border: '1.5px solid rgba(124,92,252,0.1)',
+                background: 'rgba(255,255,255,0.97)',
+                border: '1px solid rgba(0,0,0,0.06)',
               }}
             >
               <div

@@ -76,8 +76,8 @@ export default function StatsSection() {
       dir={isRtl ? 'rtl' : 'ltr'}
       style={{
         background: `
-          radial-gradient(ellipse 70% 50% at 50% 0%, rgba(124,92,252,0.08) 0%, transparent 65%),
-          linear-gradient(180deg, #EEF0FF 0%, #F8F6FF 100%)
+          radial-gradient(ellipse 70% 50% at 50% 0%, rgba(107,70,240,0.06) 0%, transparent 65%),
+          #FFF8F0
         `,
         padding: '56px 0',
       }}
@@ -90,10 +90,10 @@ export default function StatsSection() {
               className="rounded-3xl p-6 text-center transition-all hover:-translate-y-1"
               style={{
                 background: 'rgba(255,255,255,0.9)',
-                border: '1.5px solid rgba(124,92,252,0.12)',
+                border: '1px solid rgba(0,0,0,0.06)',
                 backdropFilter: 'blur(16px)',
                 WebkitBackdropFilter: 'blur(16px)',
-                boxShadow: '0 4px 24px rgba(124,92,252,0.08), inset 0 1px 0 rgba(255,255,255,0.8)',
+                boxShadow: '0 2px 16px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.9)',
               }}
             >
               <div

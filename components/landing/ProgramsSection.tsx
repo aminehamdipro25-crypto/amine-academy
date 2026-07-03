@@ -93,8 +93,8 @@ export default function ProgramsSection() {
       dir={isRtl ? 'rtl' : 'ltr'}
       style={{
         background: `
-          radial-gradient(ellipse 55% 45% at 50% 0%, rgba(16,185,129,0.06) 0%, transparent 60%),
-          linear-gradient(180deg, #F0FDF9 0%, #F5FFFC 100%)
+          radial-gradient(ellipse 55% 45% at 50% 0%, rgba(107,70,240,0.04) 0%, transparent 60%),
+          #FFF8F0
         `,
         padding: '96px 0',
       }}
@@ -105,7 +105,7 @@ export default function ProgramsSection() {
         <div className="text-center mb-16">
           <span
             className="inline-block text-sm font-bold px-4 py-1.5 rounded-full mb-4"
-            style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.16)', color: '#6D44E8' }}
+            style={{ background: 'rgba(107,70,240,0.08)', border: '1px solid rgba(107,70,240,0.15)', color: '#6B46F0' }}
           >
             {pickLang(lang, 'البرامج التخصصية', 'Specialized Programs', 'Programmes spécialisés')}
           </span>
@@ -129,9 +129,9 @@ export default function ProgramsSection() {
               key={prog.age}
               className="rounded-3xl overflow-hidden transition-all hover:-translate-y-0.5"
               style={{
-                background: 'rgba(255,255,255,0.95)',
-                border: '1.5px solid rgba(124,92,252,0.1)',
-                boxShadow: '0 6px 24px rgba(124,92,252,0.06)',
+                background: 'rgba(255,255,255,0.97)',
+                border: '1px solid rgba(0,0,0,0.06)',
+                boxShadow: '0 6px 24px rgba(0,0,0,0.06)',
               }}
             >
               {/* Top banner */}
@@ -152,7 +152,7 @@ export default function ProgramsSection() {
               {/* 3-column content */}
               <div
                 className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x md:divide-x-reverse"
-                style={{ borderColor: 'rgba(124,92,252,0.08)' }}
+                style={{ borderColor: 'rgba(0,0,0,0.06)' }}
               >
                 {/* APA */}
                 <div className="p-6">
@@ -206,7 +206,7 @@ export default function ProgramsSection() {
               {/* Outcomes footer */}
               <div
                 className="px-6 py-4 flex items-center justify-between flex-wrap gap-3"
-                style={{ borderTop: '1px solid rgba(124,92,252,0.08)', background: 'rgba(248,246,255,0.6)' }}
+                style={{ borderTop: '1px solid rgba(0,0,0,0.06)', background: 'rgba(255,248,240,0.6)' }}
               >
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-xs font-bold" style={{ color: '#94A3B8' }}>
@@ -216,7 +216,7 @@ export default function ProgramsSection() {
                     <span
                       key={o}
                       className="text-xs font-bold px-2.5 py-1 rounded-full"
-                      style={{ background: 'rgba(124,92,252,0.08)', border: '1px solid rgba(124,92,252,0.12)', color: '#6D44E8' }}
+                      style={{ background: 'rgba(107,70,240,0.08)', border: '1px solid rgba(107,70,240,0.12)', color: '#6B46F0' }}
                     >
                       {o}
                     </span>

@@ -11,7 +11,7 @@ export default function FooterSection() {
     <footer
       dir={isRtl ? 'rtl' : 'ltr'}
       style={{
-        background: 'linear-gradient(180deg, #EEF0FF 0%, #E8EAFF 100%)',
+        background: 'linear-gradient(180deg, #F5EEFF 0%, #EDE6FF 100%)',
         borderTop: '1px solid rgba(124,92,252,0.12)',
         padding: '48px 0',
       }}

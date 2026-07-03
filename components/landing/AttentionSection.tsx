@@ -106,9 +106,9 @@ export default function AttentionSection() {
       dir={isRtl ? 'rtl' : 'ltr'}
       style={{
         background: `
-          radial-gradient(ellipse 65% 45% at 20% 30%, rgba(59,130,246,0.06) 0%, transparent 60%),
-          radial-gradient(ellipse 50% 40% at 80% 70%, rgba(99,102,241,0.05) 0%, transparent 60%),
-          linear-gradient(180deg, #F8F6FF 0%, #F0F4FF 100%)
+          radial-gradient(ellipse 65% 45% at 20% 30%, rgba(107,70,240,0.04) 0%, transparent 60%),
+          radial-gradient(ellipse 50% 40% at 80% 70%, rgba(42,191,163,0.03) 0%, transparent 60%),
+          #FFF8F0
         `,
         padding: '96px 0',
       }}
@@ -118,7 +118,7 @@ export default function AttentionSection() {
         <div className="text-center mb-16">
           <span
             className="inline-block text-sm font-bold px-4 py-1.5 rounded-full mb-4"
-            style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.16)', color: '#6D44E8' }}
+            style={{ background: 'rgba(107,70,240,0.08)', border: '1px solid rgba(107,70,240,0.15)', color: '#6B46F0' }}
           >
             {pickLang(lang, 'التركيز والانتباه وكبح التشتت', 'Focus, Attention & Distraction Control', 'Concentration, attention et maîtrise des distractions')}
           </span>
@@ -159,9 +159,9 @@ export default function AttentionSection() {
         <div
           className="rounded-3xl p-7 mb-12 flex flex-col md:flex-row items-center gap-6"
           style={{
-            background: 'rgba(255,255,255,0.92)',
-            border: '1.5px solid rgba(124,92,252,0.1)',
-            boxShadow: '0 4px 20px rgba(124,92,252,0.06)',
+            background: 'rgba(255,255,255,0.97)',
+            border: '1px solid rgba(0,0,0,0.06)',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
           }}
         >
           <div className="flex-1">
@@ -187,7 +187,7 @@ export default function AttentionSection() {
               <span
                 key={b}
                 className="text-center text-xs font-bold px-3 py-2 rounded-xl"
-                style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.12)', color: '#6D44E8' }}
+                style={{ background: 'rgba(107,70,240,0.08)', border: '1px solid rgba(107,70,240,0.12)', color: '#6B46F0' }}
               >
                 ✓ {b}
               </span>
@@ -201,9 +201,9 @@ export default function AttentionSection() {
               key={item.type}
               className="rounded-3xl p-7 transition-all hover:-translate-y-0.5"
               style={{
-                background: 'rgba(255,255,255,0.92)',
-                border: '1.5px solid rgba(124,92,252,0.08)',
-                boxShadow: '0 6px 24px rgba(124,92,252,0.06)',
+                background: 'rgba(255,255,255,0.97)',
+                border: '1px solid rgba(0,0,0,0.06)',
+                boxShadow: '0 6px 24px rgba(0,0,0,0.06)',
               }}
             >
               <div className="flex items-start justify-between mb-5">
@@ -278,7 +278,7 @@ export default function AttentionSection() {
 
         <div
           className="mt-10 rounded-3xl p-6"
-          style={{ background: 'rgba(255,255,255,0.8)', border: '1px solid rgba(124,92,252,0.1)' }}
+          style={{ background: 'rgba(255,255,255,0.97)', border: '1px solid rgba(0,0,0,0.06)' }}
         >
           <p className="text-sm leading-relaxed max-w-2xl mx-auto text-center" style={{ color: '#64748B' }}>
             {pickLang(

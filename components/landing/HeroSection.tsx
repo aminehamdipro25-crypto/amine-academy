@@ -51,11 +51,11 @@ function CountdownUnit({ value, label }: { value: number; label: string }) {
       <div
         className="rounded-xl px-3 py-2 min-w-[3rem] text-center"
         style={{
-          background: 'linear-gradient(135deg, rgba(124,92,252,0.1), rgba(91,142,255,0.08))',
-          border: '1.5px solid rgba(124,92,252,0.18)',
+          background: 'rgba(107,70,240,0.08)',
+          border: '1.5px solid rgba(107,70,240,0.15)',
         }}
       >
-        <span className="font-black text-2xl ltr-num" style={{ color: '#6D44E8' }}>
+        <span className="font-black text-2xl ltr-num" style={{ color: '#6B46F0' }}>
           {String(value).padStart(2, '0')}
         </span>
       </div>
@@ -74,7 +74,7 @@ function DashboardVisual() {
       {/* Ambient glow */}
       <div
         className="absolute inset-0 rounded-3xl blur-3xl pointer-events-none"
-        style={{ background: 'radial-gradient(ellipse at 50% 50%, rgba(124,92,252,0.18) 0%, rgba(91,142,255,0.08) 50%, transparent 80%)' }}
+        style={{ background: 'radial-gradient(ellipse at 50% 50%, rgba(107,70,240,0.12) 0%, rgba(42,191,163,0.05) 50%, transparent 80%)' }}
       />
 
       {/* Main dashboard card */}
@@ -82,10 +82,10 @@ function DashboardVisual() {
         className="relative rounded-3xl p-6 md:p-8"
         style={{
           background: 'rgba(255,255,255,0.85)',
-          border: '1.5px solid rgba(124,92,252,0.12)',
+          border: '1px solid rgba(0,0,0,0.06)',
           backdropFilter: 'blur(24px)',
           WebkitBackdropFilter: 'blur(24px)',
-          boxShadow: '0 32px 64px rgba(100,80,200,0.12), 0 8px 24px rgba(100,80,200,0.06), inset 0 1px 0 rgba(255,255,255,0.9)',
+          boxShadow: '0 24px 48px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.9)',
         }}
       >
         {/* Header row */}
@@ -109,7 +109,7 @@ function DashboardVisual() {
           {/* Bar chart */}
           <div
             className="rounded-2xl p-4"
-            style={{ background: 'rgba(124,92,252,0.04)', border: '1px solid rgba(124,92,252,0.08)' }}
+            style={{ background: 'rgba(107,70,240,0.04)', border: '1px solid rgba(107,70,240,0.08)' }}
           >
             <p className="text-slate-400 text-xs mb-3">الأداء الأسبوعي</p>
             <div className="flex items-end gap-1.5 h-24">
@@ -136,9 +136,9 @@ function DashboardVisual() {
           <div className="flex flex-col gap-3">
             <div
               className="rounded-xl p-3 flex-1"
-              style={{ background: 'rgba(124,92,252,0.07)', border: '1px solid rgba(124,92,252,0.14)' }}
+              style={{ background: 'rgba(107,70,240,0.07)', border: '1px solid rgba(107,70,240,0.14)' }}
             >
-              <div className="font-black text-2xl ltr-num" style={{ color: '#7C5CFC' }}>+78%</div>
+              <div className="font-black text-2xl ltr-num" style={{ color: '#6B46F0' }}>+78%</div>
               <div className="text-slate-500 text-xs mt-0.5">تحسن التركيز</div>
             </div>
             <div
@@ -167,8 +167,8 @@ function DashboardVisual() {
         className="absolute -top-4 -right-4 md:-right-8 rounded-2xl px-3.5 py-2.5 flex items-center gap-2.5 z-10"
         style={{
           background: 'white',
-          boxShadow: '0 8px 32px rgba(100,80,200,0.15), 0 2px 8px rgba(0,0,0,0.06)',
-          border: '1px solid rgba(124,92,252,0.1)',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04)',
+          border: '1px solid rgba(0,0,0,0.06)',
         }}
       >
         <div className="w-7 h-7 bg-emerald-100 rounded-xl flex items-center justify-center text-sm flex-shrink-0">✅</div>
@@ -183,8 +183,8 @@ function DashboardVisual() {
         className="absolute -bottom-4 -left-4 md:-left-8 rounded-2xl px-3.5 py-2.5 flex items-center gap-2.5 z-10"
         style={{
           background: 'white',
-          boxShadow: '0 8px 32px rgba(100,80,200,0.15), 0 2px 8px rgba(0,0,0,0.06)',
-          border: '1px solid rgba(124,92,252,0.1)',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04)',
+          border: '1px solid rgba(0,0,0,0.06)',
         }}
       >
         <span className="text-xl">⭐</span>
@@ -214,15 +214,14 @@ export default function HeroSection() {
 
   return (
     <section
-      className="relative min-h-screen overflow-hidden"
+      className="relative min-h-[100dvh] overflow-hidden"
       dir={isRtl ? 'rtl' : 'ltr'}
       style={{
         background: `
-          radial-gradient(ellipse 100% 55% at 50% -5%, rgba(124,92,252,0.14) 0%, transparent 65%),
-          radial-gradient(ellipse 60% 50% at 90% 40%, rgba(91,142,255,0.10) 0%, transparent 60%),
-          radial-gradient(ellipse 50% 45% at 10% 65%, rgba(42,191,163,0.08) 0%, transparent 60%),
-          radial-gradient(ellipse 40% 35% at 50% 110%, rgba(249,115,22,0.06) 0%, transparent 60%),
-          #F8F6FF
+          radial-gradient(ellipse 100% 55% at 50% -5%, rgba(107,70,240,0.10) 0%, transparent 65%),
+          radial-gradient(ellipse 50% 45% at 10% 65%, rgba(42,191,163,0.06) 0%, transparent 60%),
+          radial-gradient(ellipse 40% 35% at 50% 110%, rgba(249,115,22,0.05) 0%, transparent 60%),
+          #FFF8F0
         `,
       }}
     >
@@ -230,7 +229,7 @@ export default function HeroSection() {
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          backgroundImage: 'radial-gradient(rgba(124,92,252,0.07) 1px, transparent 1px)',
+          backgroundImage: 'radial-gradient(rgba(107,70,240,0.05) 1px, transparent 1px)',
           backgroundSize: '28px 28px',
         }}
       />
@@ -263,8 +262,8 @@ export default function HeroSection() {
             href="/register"
             className="font-black text-sm px-5 py-2.5 rounded-xl text-white transition-all hover:opacity-90 hover:-translate-y-0.5"
             style={{
-              background: 'linear-gradient(135deg, #7C5CFC, #5B8EFF)',
-              boxShadow: '0 4px 20px rgba(124,92,252,0.35)',
+              background: '#6B46F0',
+              boxShadow: '0 4px 20px rgba(107,70,240,0.30)',
             }}
           >
             {t.nav.register}
@@ -272,7 +271,7 @@ export default function HeroSection() {
           <Link
             href="/dashboard"
             className="flex items-center gap-1.5 text-slate-600 font-bold text-xs px-3 py-2 rounded-xl transition-all hover:bg-brand-50"
-            style={{ background: 'rgba(124,92,252,0.07)', border: '1.5px solid rgba(124,92,252,0.15)' }}
+            style={{ background: 'rgba(107,70,240,0.06)', border: '1px solid rgba(107,70,240,0.12)' }}
           >
             <LayoutDashboard className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">{pickLang(lang, 'لوحة التحكم', 'Dashboard', 'Tableau de bord')}</span>
@@ -288,12 +287,12 @@ export default function HeroSection() {
         <div
           className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-6"
           style={{
-            background: 'linear-gradient(135deg, rgba(124,92,252,0.1), rgba(91,142,255,0.07))',
-            border: '1.5px solid rgba(124,92,252,0.2)',
+            background: 'rgba(107,70,240,0.08)',
+            border: '1.5px solid rgba(107,70,240,0.18)',
           }}
         >
-          <Sparkles className="w-3.5 h-3.5" style={{ color: '#7C5CFC' }} />
-          <span className="text-sm font-bold" style={{ color: '#6D44E8' }}>{t.hero.badge}</span>
+          <Sparkles className="w-3.5 h-3.5" style={{ color: '#6B46F0' }} />
+          <span className="text-sm font-bold" style={{ color: '#6B46F0' }}>{t.hero.badge}</span>
         </div>
 
         {/* Info pills */}
@@ -304,8 +303,8 @@ export default function HeroSection() {
               className="text-slate-600 text-sm font-medium px-4 py-1.5 rounded-2xl"
               style={{
                 background: 'rgba(255,255,255,0.8)',
-                border: '1.5px solid rgba(124,92,252,0.14)',
-                boxShadow: '0 2px 8px rgba(124,92,252,0.06)',
+                border: '1px solid rgba(107,70,240,0.12)',
+                boxShadow: 'none',
               }}
             >
               {badge}
@@ -341,8 +340,8 @@ export default function HeroSection() {
             href="/register"
             className="flex items-center gap-2 font-black text-lg px-10 py-4 rounded-2xl text-white transition-all hover:-translate-y-0.5 active:scale-95"
             style={{
-              background: 'linear-gradient(135deg, #7C5CFC, #5B8EFF, #2ABFA3)',
-              boxShadow: '0 8px 32px rgba(124,92,252,0.4)',
+              background: '#6B46F0',
+              boxShadow: '0 8px 32px rgba(107,70,240,0.30)',
             }}
           >
             {t.hero.cta1}
@@ -352,10 +351,10 @@ export default function HeroSection() {
             href="/demo"
             className="flex items-center gap-2 font-bold text-lg px-8 py-4 rounded-2xl transition-all hover:-translate-y-0.5"
             style={{
-              color: '#7C5CFC',
-              background: 'rgba(255,255,255,0.9)',
-              border: '1.5px solid rgba(124,92,252,0.2)',
-              boxShadow: '0 4px 16px rgba(124,92,252,0.08)',
+              color: '#6B46F0',
+              background: 'rgba(255,255,255,0.95)',
+              border: '1.5px solid rgba(107,70,240,0.20)',
+              boxShadow: '0 4px 16px rgba(107,70,240,0.08)',
             }}
           >
             <Play className="w-5 h-5 fill-current" style={{ color: '#B99AFF' }} />
@@ -371,7 +370,7 @@ export default function HeroSection() {
               className="text-slate-500 text-xs font-bold px-3 py-1 rounded-full"
               style={{
                 background: 'rgba(255,255,255,0.8)',
-                border: '1px solid rgba(124,92,252,0.12)',
+                border: '1px solid rgba(107,70,240,0.10)',
               }}
             >
               ✓ {b}
@@ -385,8 +384,8 @@ export default function HeroSection() {
             className="inline-flex flex-col items-center gap-3 rounded-2xl px-8 py-4 mb-10"
             style={{
               background: 'rgba(255,255,255,0.75)',
-              border: '1.5px solid rgba(124,92,252,0.14)',
-              boxShadow: '0 4px 24px rgba(124,92,252,0.07)',
+              border: '1.5px solid rgba(107,70,240,0.12)',
+              boxShadow: '0 4px 24px rgba(107,70,240,0.05)',
             }}
           >
             <p className="text-slate-400 text-sm font-medium">{t.hero.offerLabel}</p>
@@ -405,11 +404,11 @@ export default function HeroSection() {
         {/* Quick stats */}
         <div
           className="grid grid-cols-3 gap-6 max-w-sm mx-auto pt-8 mb-16"
-          style={{ borderTop: '1.5px solid rgba(124,92,252,0.1)' }}
+          style={{ borderTop: '1.5px solid rgba(107,70,240,0.10)' }}
         >
           {[
-            { icon: Users, value: '+200', label: t.hero.stats.children,     gradient: 'from-brand-600 to-indigo-400' },
-            { icon: Award, value: '+5',   label: t.hero.stats.years,        gradient: 'from-brand-500 to-violet-400' },
+            { icon: Users, value: '+200', label: t.hero.stats.children,     gradient: 'from-brand-600 to-brand-400' },
+            { icon: Award, value: '+5',   label: t.hero.stats.years,        gradient: 'from-brand-500 to-brand-400' },
             { icon: Star,  value: '98%',  label: t.hero.stats.satisfaction, gradient: 'from-amber-500 to-orange-400' },
           ].map(({ icon: Icon, value, label, gradient }) => (
             <div key={label} className="text-center">

@@ -56,8 +56,8 @@ export default function TestimonialsSection() {
       dir={isRtl ? 'rtl' : 'ltr'}
       style={{
         background: `
-          radial-gradient(ellipse 60% 45% at 50% 0%, rgba(168,85,247,0.07) 0%, transparent 60%),
-          linear-gradient(180deg, #F4F0FF 0%, #F8F6FF 100%)
+          radial-gradient(ellipse 60% 45% at 50% 0%, rgba(107,70,240,0.05) 0%, transparent 60%),
+          #FFF8F0
         `,
         padding: '80px 0',
       }}

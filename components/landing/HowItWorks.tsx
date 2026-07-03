@@ -69,8 +69,8 @@ export default function HowItWorks() {
       dir={isRtl ? 'rtl' : 'ltr'}
       style={{
         background: `
-          radial-gradient(ellipse 60% 50% at 50% 0%, rgba(124,92,252,0.07) 0%, transparent 60%),
-          linear-gradient(180deg, #F0F4FF 0%, #F8FAFF 100%)
+          radial-gradient(ellipse 60% 50% at 50% 0%, rgba(107,70,240,0.05) 0%, transparent 60%),
+          #FFFBF5
         `,
         padding: '80px 0',
       }}
@@ -79,7 +79,7 @@ export default function HowItWorks() {
         <div className="text-center mb-14">
           <span
             className="inline-block text-sm font-bold px-4 py-1.5 rounded-full mb-4"
-            style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.16)', color: '#6D44E8' }}
+            style={{ background: 'rgba(107,70,240,0.08)', border: '1px solid rgba(107,70,240,0.15)', color: '#6B46F0' }}
           >
             {pickLang(lang, 'آلية العمل', 'How It Works', 'Comment ça marche')}
           </span>
@@ -99,7 +99,7 @@ export default function HowItWorks() {
             <div key={step.num} className="relative flex flex-col items-center text-center">
               <div
                 className="relative z-10 w-14 h-14 rounded-full flex items-center justify-center mb-4 text-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)]"
-                style={{ background: step.gradient, boxShadow: '0 8px 24px rgba(124,92,252,0.2)' }}
+                style={{ background: step.gradient, boxShadow: '0 4px 16px rgba(107,70,240,0.20)' }}
               >
                 {step.icon}
               </div>
@@ -108,10 +108,10 @@ export default function HowItWorks() {
                 className="w-full rounded-3xl p-5 transition-all hover:-translate-y-1"
                 style={{
                   background: 'rgba(255,255,255,0.9)',
-                  border: '1.5px solid rgba(124,92,252,0.1)',
+                  border: '1px solid rgba(0,0,0,0.06)',
                   backdropFilter: 'blur(12px)',
                   WebkitBackdropFilter: 'blur(12px)',
-                  boxShadow: '0 4px 20px rgba(124,92,252,0.07)',
+                  boxShadow: '0 2px 12px rgba(0,0,0,0.05)',
                 }}
               >
                 <div

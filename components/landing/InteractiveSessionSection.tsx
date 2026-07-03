@@ -101,9 +101,9 @@ export default function InteractiveSessionSection() {
       dir={isRtl ? 'rtl' : 'ltr'}
       style={{
         background: `
-          radial-gradient(ellipse 60% 45% at 70% 20%, rgba(14,165,233,0.06) 0%, transparent 60%),
-          radial-gradient(ellipse 50% 40% at 30% 80%, rgba(99,102,241,0.05) 0%, transparent 55%),
-          linear-gradient(180deg, #F5F8FF 0%, #EEF0FF 100%)
+          radial-gradient(ellipse 60% 45% at 70% 20%, rgba(107,70,240,0.04) 0%, transparent 60%),
+          radial-gradient(ellipse 50% 40% at 30% 80%, rgba(42,191,163,0.03) 0%, transparent 55%),
+          #FFF8F0
         `,
         padding: '96px 0',
       }}
@@ -114,7 +114,7 @@ export default function InteractiveSessionSection() {
         <div className="text-center mb-16">
           <span
             className="inline-block text-sm font-bold px-4 py-1.5 rounded-full mb-4"
-            style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.16)', color: '#6D44E8' }}
+            style={{ background: 'rgba(107,70,240,0.08)', border: '1px solid rgba(107,70,240,0.15)', color: '#6B46F0' }}
           >
             {pickLang(lang, 'الجلسة التفاعلية', 'The Interactive Session', 'La séance interactive')}
           </span>
@@ -140,11 +140,11 @@ export default function InteractiveSessionSection() {
                 key={step.num}
                 className="rounded-3xl p-6 transition-all hover:-translate-y-1"
                 style={{
-                  background: 'rgba(255,255,255,0.92)',
-                  border: '1.5px solid rgba(124,92,252,0.1)',
+                  background: 'rgba(255,255,255,0.97)',
+                  border: '1px solid rgba(0,0,0,0.06)',
                   backdropFilter: 'blur(16px)',
                   WebkitBackdropFilter: 'blur(16px)',
-                  boxShadow: '0 6px 24px rgba(124,92,252,0.07)',
+                  boxShadow: '0 6px 24px rgba(0,0,0,0.06)',
                 }}
               >
                 <div className="flex items-center gap-3 mb-4">
@@ -167,11 +167,11 @@ export default function InteractiveSessionSection() {
         <div
           className="rounded-3xl p-8 md:p-10 mb-10"
           style={{
-            background: 'rgba(255,255,255,0.92)',
-            border: '1.5px solid rgba(124,92,252,0.1)',
+            background: 'rgba(255,255,255,0.97)',
+            border: '1px solid rgba(0,0,0,0.06)',
             backdropFilter: 'blur(20px)',
             WebkitBackdropFilter: 'blur(20px)',
-            boxShadow: '0 12px 40px rgba(124,92,252,0.08)',
+            boxShadow: '0 12px 40px rgba(0,0,0,0.06)',
           }}
         >
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
@@ -213,9 +213,9 @@ export default function InteractiveSessionSection() {
 
               <div
                 className="flex items-center gap-4 rounded-2xl p-5"
-                style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.12)' }}
+                style={{ background: 'rgba(107,70,240,0.06)', border: '1px solid rgba(107,70,240,0.12)' }}
               >
-                <Clock className="w-8 h-8 flex-shrink-0" style={{ color: '#6366F1' }} />
+                <Clock className="w-8 h-8 flex-shrink-0" style={{ color: '#6B46F0' }} />
                 <div>
                   <p className="font-black text-sm" style={{ color: '#1E293B' }}>
                     {pickLang(lang, 'جلسة تقييمية مجانية للتعارف', 'Free Assessment Session', "Séance d'évaluation gratuite")}

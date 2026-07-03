@@ -187,6 +187,20 @@ export const EXERCISES = [
   { id:'ball-throw',       labelAr:'رمي الكرة والتقاطها',  icon:'⚽', category:'رياضي', color:'bg-emerald-50 border-emerald-200', ageMin:5,  ageMax:22 },
   { id:'stretching',       labelAr:'تمارين التمدد',         icon:'🧘', category:'رياضي', color:'bg-teal-50 border-teal-200',       ageMin:5,  ageMax:22 },
   { id:'body-percussion',  labelAr:'الإيقاع الجسدي',        icon:'🥁', category:'رياضي', color:'bg-purple-50 border-purple-200',   ageMin:5,  ageMax:22 },
+
+  // ── بازل ──────────────────────────────────────────────────────────────────
+  { id:'picture-puzzle',   labelAr:'أكمل الأحجية',           icon:'🧩', category:'بازل',   color:'bg-purple-50 border-purple-200',  ageMin:5,  ageMax:16 },
+  { id:'matrix-puzzle',    labelAr:'أحجية المصفوفة',          icon:'🔲', category:'بازل',   color:'bg-violet-50 border-violet-200',  ageMin:6,  ageMax:22 },
+
+  // ── محاكاة ─────────────────────────────────────────────────────────────────
+  { id:'money-counter',    labelAr:'عدّ النقود',               icon:'💰', category:'محاكاة', color:'bg-yellow-50 border-yellow-200',  ageMin:5,  ageMax:18 },
+
+  // ── مهارات قرائية ──────────────────────────────────────────────────────────
+  { id:'syllable-tap',     labelAr:'تقطيع المقاطع',           icon:'👋', category:'سمعي',   color:'bg-rose-50 border-rose-200',      ageMin:5,  ageMax:14, tags:['عسر قراءة'] },
+  { id:'letter-reversal',  labelAr:'تمييز الحروف',            icon:'🔡', category:'تعلّم',  color:'bg-orange-50 border-orange-200',  ageMin:5,  ageMax:14, tags:['عسر قراءة'] },
+
+  // ── معرفي ──────────────────────────────────────────────────────────────────
+  { id:'clock-reading',    labelAr:'قراءة الساعة',            icon:'🕐', category:'معرفي',  color:'bg-sky-50 border-sky-200',        ageMin:5,  ageMax:14 },
 ]
 
 // Exercises whose component renders its own post-completion results screen

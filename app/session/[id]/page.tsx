@@ -80,6 +80,8 @@ import LetterReversal  from '@/components/session/exercises/LetterReversal'
 import SyllableTap     from '@/components/session/exercises/SyllableTap'
 import MatrixPuzzle    from '@/components/session/exercises/MatrixPuzzle'
 import ClockReading    from '@/components/session/exercises/ClockReading'
+import PicturePuzzle  from '@/components/session/exercises/PicturePuzzle'
+import MoneyCounter   from '@/components/session/exercises/MoneyCounter'
 import Whiteboard      from '@/components/session/Whiteboard'
 import StudentTimerDisplay from '@/components/session/StudentTimerDisplay'
 import SessionHeader   from '@/components/session/SessionHeader'
@@ -3140,6 +3142,8 @@ ${notes ? `
               {activeView.id === 'syllable-tap'         && <SyllableTap           onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
               {activeView.id === 'matrix-puzzle'        && <MatrixPuzzle          onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
               {activeView.id === 'clock-reading'        && <ClockReading          onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'picture-puzzle'       && <PicturePuzzle         onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'money-counter'        && <MoneyCounter          onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
               {activeView.id === 'sequence-tap'          && <SequenceTap           onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
               {activeView.id === 'target-tracking'       && <TargetTracking        onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
               {activeView.id === 'finger-gym'            && <FingerGym             onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}

@@ -81,6 +81,9 @@ import SyllableTap     from '@/components/session/exercises/SyllableTap'
 import MatrixPuzzle    from '@/components/session/exercises/MatrixPuzzle'
 import ClockReading    from '@/components/session/exercises/ClockReading'
 import PicturePuzzle  from '@/components/session/exercises/PicturePuzzle'
+import JigsawPuzzle   from '@/components/session/exercises/JigsawPuzzle'
+import PatternBoard   from '@/components/session/exercises/PatternBoard'
+import ColorSudoku    from '@/components/session/exercises/ColorSudoku'
 import MoneyCounter   from '@/components/session/exercises/MoneyCounter'
 import Whiteboard      from '@/components/session/Whiteboard'
 import StudentTimerDisplay from '@/components/session/StudentTimerDisplay'
@@ -3143,6 +3146,9 @@ ${notes ? `
               {activeView.id === 'matrix-puzzle'        && <MatrixPuzzle          onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
               {activeView.id === 'clock-reading'        && <ClockReading          onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
               {activeView.id === 'picture-puzzle'       && <PicturePuzzle         onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'jigsaw-puzzle'        && <JigsawPuzzle          onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'pattern-board'        && <PatternBoard          onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'color-sudoku'         && <ColorSudoku           onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
               {activeView.id === 'money-counter'        && <MoneyCounter          onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
               {activeView.id === 'sequence-tap'          && <SequenceTap           onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
               {activeView.id === 'target-tracking'       && <TargetTracking        onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}

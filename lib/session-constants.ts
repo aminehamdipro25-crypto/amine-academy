@@ -189,10 +189,13 @@ export const EXERCISES = [
   { id:'body-percussion',  labelAr:'الإيقاع الجسدي',        icon:'🥁', category:'رياضي', color:'bg-purple-50 border-purple-200',   ageMin:5,  ageMax:22 },
 
   // ── بازل ──────────────────────────────────────────────────────────────────
-  { id:'picture-puzzle',   labelAr:'أكمل الأحجية',           icon:'🧩', category:'بازل',   color:'bg-purple-50 border-purple-200',  ageMin:5,  ageMax:16 },
-  { id:'matrix-puzzle',    labelAr:'أحجية المصفوفة',          icon:'🔲', category:'بازل',   color:'bg-violet-50 border-violet-200',  ageMin:6,  ageMax:22 },
+  { id:'jigsaw-puzzle',    labelAr:'أكمل الصورة',             icon:'🧩', category:'بازل',   color:'bg-purple-50 border-purple-200',  ageMin:4,  ageMax:16 },
+  { id:'picture-puzzle',   labelAr:'أكمل الأحجية',            icon:'🎭', category:'بازل',   color:'bg-indigo-50 border-indigo-200',  ageMin:5,  ageMax:16 },
+  { id:'matrix-puzzle',    labelAr:'أحجية المصفوفة',           icon:'🔲', category:'بازل',   color:'bg-violet-50 border-violet-200',  ageMin:6,  ageMax:22 },
 
   // ── محاكاة ─────────────────────────────────────────────────────────────────
+  { id:'pattern-board',    labelAr:'انسخ النمط',               icon:'🎯', category:'محاكاة', color:'bg-rose-50 border-rose-200',      ageMin:4,  ageMax:18 },
+  { id:'color-sudoku',     labelAr:'سودوكو الألوان',           icon:'🎨', category:'محاكاة', color:'bg-orange-50 border-orange-200',  ageMin:5,  ageMax:22 },
   { id:'money-counter',    labelAr:'عدّ النقود',               icon:'💰', category:'محاكاة', color:'bg-yellow-50 border-yellow-200',  ageMin:5,  ageMax:18 },
 
   // ── مهارات قرائية ──────────────────────────────────────────────────────────

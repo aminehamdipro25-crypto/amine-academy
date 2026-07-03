@@ -34,7 +34,7 @@ function RecentSessions({ sessions }: { sessions: ParentSessionSummary[] }) {
       </div>
       <div className="space-y-3">
         {sessions.map(s => (
-          <div key={s.appointmentId} className="bg-white rounded-2xl p-4" style={{ border: '1.5px solid #E0E7FF' }}>
+          <div key={s.appointmentId} className="bg-white rounded-2xl p-4" style={{ border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
             <div className="flex items-center justify-between gap-2 flex-wrap mb-3">
               <span className="text-sm font-bold text-gray-800 ltr-num">
                 {new Date(s.date).toLocaleDateString(locale, { year: 'numeric', month: 'long', day: 'numeric' })}
@@ -539,7 +539,7 @@ export default function ReportsPage() {
 
       {/* ── Empty state ── */}
       {reports.length === 0 ? (
-        <div className="rounded-3xl py-20 text-center" style={{ background: '#FFFFFF', border: '2px dashed #E0E7FF' }}>
+        <div className="rounded-3xl py-20 text-center" style={{ background: '#FFFFFF', border: '2px dashed #E8DBFF' }}>
           <div className="text-5xl mb-4">📋</div>
           <h3 className="font-black text-gray-700 text-lg mb-2">{t.noReportsTitle}</h3>
           <p className="text-gray-400 text-sm max-w-xs mx-auto leading-relaxed">{t.noReportsBody(coachName)}</p>
@@ -553,7 +553,7 @@ export default function ReportsPage() {
       )}
 
       {/* ── Info note ── */}
-      <div className="rounded-2xl p-4 text-sm leading-relaxed" style={{ background: '#F5F3FF', border: '1.5px solid #DDD6FE', color: '#5B21B6' }}>
+      <div className="rounded-2xl p-4 text-sm leading-relaxed" style={{ background: '#F3EEFF', border: '1.5px solid #D8C5FF', color: '#5A32D9' }}>
         <strong>{t.infoNoteLabel}</strong>
         {t.infoNoteBody}
       </div>

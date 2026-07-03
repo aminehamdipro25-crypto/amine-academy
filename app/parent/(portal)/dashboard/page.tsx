@@ -531,10 +531,10 @@ export default function ParentDashboardPage() {
                         <div className="h-1.5 rounded-full overflow-hidden" style={{ background: '#F0E8FF' }}>
                           <motion.div
                             className="h-full rounded-full"
-                            style={{ background: '#6B46F0' }}
-                            initial={{ width: 0 }}
-                            animate={{ width: `${pct}%` }}
-                            transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+                            style={{ background: '#6B46F0', width: `${pct}%`, transformOrigin: 'right center' }}
+                            initial={{ scaleX: 0 }}
+                            animate={{ scaleX: 1 }}
+                            transition={{ duration: 0.8, ease: 'easeOut', delay: 0.3 }}
                           />
                         </div>
                       </div>

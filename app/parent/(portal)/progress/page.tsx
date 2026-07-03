@@ -8,6 +8,8 @@ import {
 } from 'recharts'
 import type { Student, ProgressReport } from '@/lib/types'
 import { useLang, tr } from '@/lib/i18n'
+import { motion } from 'framer-motion'
+import { staggerContainer, fadeUp } from '@/lib/motion'
 
 interface GameHistory {
   totalPlays: number
@@ -133,7 +135,7 @@ export default function ProgressPage() {
   const hasReportData = reports.length > 0
 
   return (
-    <div className="space-y-6">
+    <motion.div className="space-y-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.35 }}>
 
       {/* ── Header ── */}
       <div>
@@ -178,20 +180,20 @@ export default function ProgressPage() {
       {(hasGameData || hasReportData) && (
         <>
           {/* ── Quick stats ── */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <motion.div className="grid grid-cols-2 sm:grid-cols-4 gap-3" variants={staggerContainer} initial="hidden" animate="show">
             {[
               { icon: <Brain className="w-5 h-5" style={{ color: '#6B46F0' }} />, bg: '#F3EEFF', value: history?.totalPlays ?? 0, label: t.statGamesCompleted, color: '#5A32D9' },
               { icon: <Clock className="w-5 h-5" style={{ color: '#D97706' }} />, bg: '#FFFBEB', value: history?.totalMinutes ?? 0, label: t.statMinutesTrained, color: '#B45309' },
               { icon: <Zap className="w-5 h-5" style={{ color: '#EA580C' }} />, bg: '#FFF7ED', value: student?.streak ?? 0, label: t.statStreakDays, color: '#C2410C' },
               { icon: <Award className="w-5 h-5" style={{ color: '#7C3AED' }} />, bg: '#F5F3FF', value: student?.totalPoints ?? 0, label: t.statTotalPoints, color: '#6D28D9' },
             ].map((s, i) => (
-              <div key={i} className="rounded-2xl p-4 text-center" style={{ background: s.bg }}>
+              <motion.div key={i} className="rounded-2xl p-4 text-center" style={{ background: s.bg }} variants={fadeUp} whileHover={{ y: -2, transition: { duration: 0.15 } }}>
                 <div className="flex justify-center mb-1">{s.icon}</div>
                 <div className="font-black text-xl ltr-num" style={{ color: s.color }}>{s.value}</div>
                 <div className="text-xs" style={{ color: s.color, opacity: 0.8 }}>{s.label}</div>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
 
           {/* ── Tabs ── */}
           <div className="flex gap-1 rounded-2xl p-1" style={{ background: '#F3F4F6' }}>
@@ -273,12 +275,16 @@ export default function ProgressPage() {
                               <span className="text-sm font-black text-gray-900 ltr-num">{game.avgScore}%</span>
                             </div>
                             <div className="h-2.5 rounded-full overflow-hidden" style={{ background: '#F3F4F6' }}>
-                              <div
-                                className="h-full rounded-full transition-all duration-700"
+                              <motion.div
+                                className="h-full rounded-full"
                                 style={{
                                   width: `${game.avgScore}%`,
                                   background: game.avgScore >= 80 ? '#22C55E' : game.avgScore >= 60 ? '#F59E0B' : '#F87171',
+                                  transformOrigin: 'right center',
                                 }}
+                                initial={{ scaleX: 0 }}
+                                animate={{ scaleX: 1 }}
+                                transition={{ duration: 0.8, ease: 'easeOut', delay: 0.3 }}
                               />
                             </div>
                           </div>
@@ -380,9 +386,12 @@ export default function ProgressPage() {
                                 <span className="text-sm font-black text-gray-900 ltr-num">{pct}%</span>
                               </div>
                               <div className="h-2.5 rounded-full overflow-hidden" style={{ background: '#F3F4F6' }}>
-                                <div
-                                  className="h-full rounded-full transition-all duration-700"
-                                  style={{ width: `${pct}%`, background: '#7C5CFC' }}
+                                <motion.div
+                                  className="h-full rounded-full"
+                                  style={{ width: `${pct}%`, background: '#7C5CFC', transformOrigin: 'right center' }}
+                                  initial={{ scaleX: 0 }}
+                                  animate={{ scaleX: 1 }}
+                                  transition={{ duration: 0.8, ease: 'easeOut', delay: 0.3 }}
                                 />
                               </div>
                             </div>
@@ -451,6 +460,6 @@ export default function ProgressPage() {
           )}
         </>
       )}
-    </div>
+    </motion.div>
   )
 }

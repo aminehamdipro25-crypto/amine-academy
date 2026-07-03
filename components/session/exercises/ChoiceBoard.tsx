@@ -44,7 +44,7 @@ const ROUNDS = [
 function shuffle<T>(arr: T[]): T[] { return [...arr].sort(() => Math.random() - 0.5) }
 
 export default function ChoiceBoard({ onComplete, onCancel, difficulty = 1 }: Props) {
-  const totalRounds = difficulty === 1 ? 1 : difficulty === 2 ? 2 : 3
+  const totalRounds = difficulty === 1 ? 2 : difficulty === 2 ? 4 : 6
   const [idx,     setIdx]     = useState(0)
   const [picks,   setPicks]   = useState<string[]>([])
   const [chosen,  setChosen]  = useState<string | null>(null)

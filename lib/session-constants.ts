@@ -141,6 +141,12 @@ export const EXERCISES = [
   { id:'sound-discrimination',  labelAr:'تمييز الأصوات',           icon:'👂', category:'سمعي',             color:'bg-violet-50 border-violet-200',   ageMin:5,  ageMax:22 },
   { id:'rhyme-detection',       labelAr:'اكتشاف القافية',          icon:'🎵', category:'سمعي',             color:'bg-pink-50 border-pink-200',       ageMin:5,  ageMax:14 },
   { id:'audio-sequence',        labelAr:'تسلسل الأصوات',           icon:'🔁', category:'سمعي',             color:'bg-indigo-50 border-indigo-200',   ageMin:5,  ageMax:17 },
+  { id:'syllable-tap',          labelAr:'تقطيع المقاطع',           icon:'👋', category:'سمعي',             color:'bg-rose-50 border-rose-200',       ageMin:5,  ageMax:14,  tags:['عسر قراءة'] },
+  // ── عسر قراءة ─────────────────────────────────────
+  { id:'letter-reversal',       labelAr:'تمييز الحروف',            icon:'🔡', category:'تعلّم',             color:'bg-orange-50 border-orange-200',   ageMin:5,  ageMax:14,  tags:['عسر قراءة'] },
+  // ── بصري / محاكاة ─────────────────────────────────
+  { id:'matrix-puzzle',         labelAr:'أحجية المصفوفة',          icon:'🔲', category:'إدراكي',            color:'bg-violet-50 border-violet-200',   ageMin:6,  ageMax:22 },
+  { id:'clock-reading',         labelAr:'قراءة الساعة',            icon:'🕐', category:'معرفي',             color:'bg-sky-50 border-sky-200',         ageMin:5,  ageMax:14 },
   // ── حركي ─────────────────────────────────────────
   { id:'sequence-tap',          labelAr:'النقر بالتسلسل',          icon:'🟣', category:'حركي',             color:'bg-purple-50 border-purple-200',   ageMin:5,  ageMax:22 },
   { id:'target-tracking',       labelAr:'تتبع الهدف',              icon:'🎯', category:'حركي',             color:'bg-emerald-50 border-emerald-200', ageMin:5,  ageMax:17 },

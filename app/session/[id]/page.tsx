@@ -76,6 +76,10 @@ import VisualSchedule   from '@/components/session/exercises/VisualSchedule'
 import FirstThenBoard   from '@/components/session/exercises/FirstThenBoard'
 import ImitationMirror  from '@/components/session/exercises/ImitationMirror'
 import SensoryCheckIn   from '@/components/session/exercises/SensoryCheckIn'
+import LetterReversal  from '@/components/session/exercises/LetterReversal'
+import SyllableTap     from '@/components/session/exercises/SyllableTap'
+import MatrixPuzzle    from '@/components/session/exercises/MatrixPuzzle'
+import ClockReading    from '@/components/session/exercises/ClockReading'
 import Whiteboard      from '@/components/session/Whiteboard'
 import StudentTimerDisplay from '@/components/session/StudentTimerDisplay'
 import SessionHeader   from '@/components/session/SessionHeader'
@@ -3132,6 +3136,10 @@ ${notes ? `
               {activeView.id === 'sound-discrimination'  && <SoundDiscrimination   onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
               {activeView.id === 'rhyme-detection'       && <RhymeDetection        onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
               {activeView.id === 'audio-sequence'        && <AudioSequenceRepeat   onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'letter-reversal'      && <LetterReversal        onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'syllable-tap'         && <SyllableTap           onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'matrix-puzzle'        && <MatrixPuzzle          onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'clock-reading'        && <ClockReading          onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
               {activeView.id === 'sequence-tap'          && <SequenceTap           onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
               {activeView.id === 'target-tracking'       && <TargetTracking        onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
               {activeView.id === 'finger-gym'            && <FingerGym             onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}

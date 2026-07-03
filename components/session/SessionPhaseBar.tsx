@@ -71,8 +71,13 @@ export default function SessionPhaseBar({
               </div>
               <div className="w-full h-1 rounded-full overflow-hidden bg-surface-page">
                 <div
-                  className="h-full rounded-full transition-all duration-1000"
-                  style={{ width: `${progress}%`, background: ph.color, opacity: isDone ? 0.4 : 1 }}
+                  className="h-full w-full rounded-full transition-all duration-1000"
+                  style={{
+                    background: ph.color,
+                    opacity: isDone ? 0.4 : 1,
+                    transform: `scaleX(${progress / 100})`,
+                    transformOrigin: 'right center',
+                  }}
                 />
               </div>
             </button>

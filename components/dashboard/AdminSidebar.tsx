@@ -46,7 +46,7 @@ export default function AdminSidebar({ onClose, unreadMessages = 0 }: { onClose?
       {/* Logo */}
       <div className="px-5 py-5 border-b border-gray-100">
         <div className="flex items-center gap-3">
-          <div className="relative w-10 h-10 flex-shrink-0 rounded-xl bg-gradient-to-br from-brand-400 to-brand-700 flex items-center justify-center shadow-md">
+          <div className="relative w-10 h-10 flex-shrink-0 rounded-xl bg-[#6B46F0] flex items-center justify-center shadow-md">
             <Brain className="w-5 h-5 text-white" />
           </div>
           <div>
@@ -117,7 +117,7 @@ export default function AdminSidebar({ onClose, unreadMessages = 0 }: { onClose?
       <div className="px-3 py-4 border-t border-gray-100">
         {/* Admin info */}
         <div className="flex items-center gap-3 px-3 py-2.5 mb-1">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-brand-400 to-brand-700 flex items-center justify-center text-white font-black text-sm shadow-sm flex-shrink-0">
+          <div className="w-8 h-8 rounded-xl bg-[#6B46F0] flex items-center justify-center text-white font-black text-sm shadow-sm flex-shrink-0">
             {(actor?.name || t.unknownActorInitial).charAt(0)}
           </div>
           <div className="flex-1 min-w-0">

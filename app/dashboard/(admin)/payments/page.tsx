@@ -238,7 +238,7 @@ export default function AdminPaymentsPage() {
                 </div>
 
                 {/* Amount highlight */}
-                <div className="bg-gradient-to-r from-brand-50 to-violet-50 rounded-2xl px-4 py-3 mb-4 flex items-center justify-between">
+                <div className="bg-brand-50 rounded-2xl px-4 py-3 mb-4 flex items-center justify-between">
                   <div>
                     <p className="text-[10px] text-gray-400 font-medium mb-0.5">المبلغ</p>
                     <p className="text-2xl font-black text-brand-700 ltr-num">

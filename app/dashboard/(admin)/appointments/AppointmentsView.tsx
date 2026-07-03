@@ -118,13 +118,13 @@ export default function AppointmentsView({ appointments, parents, error }: {
 
       {/* ── Upcoming spotlight ── */}
       {upcoming.length > 0 && (
-        <motion.div variants={fadeUp} className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl p-5 text-white">
+        <motion.div variants={fadeUp} className="bg-white rounded-3xl border border-gray-100 border-l-4 border-l-brand-600 shadow-sm p-5">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-black flex items-center gap-2">
-              <Clock className="w-4 h-4 text-blue-200" />
+            <h2 className="font-black text-gray-900 flex items-center gap-2">
+              <Clock className="w-4 h-4 text-brand-600" />
               {t.upcomingSpotlightTitle}
             </h2>
-            <span className="bg-white/20 text-white text-xs font-black px-2.5 py-1 rounded-full"><ACountUp value={upcoming.length} /></span>
+            <span className="bg-brand-50 text-brand-600 text-xs font-black px-2.5 py-1 rounded-full"><ACountUp value={upcoming.length} /></span>
           </div>
           <motion.div className="space-y-2" variants={staggerContainer}>
             <AnimatePresence initial={false}>
@@ -134,16 +134,16 @@ export default function AppointmentsView({ appointments, parents, error }: {
                 const gradient = AVATAR_GRADIENTS[idx % AVATAR_GRADIENTS.length]
                 const wa = parent ? waReminderLink(parent.phone, parent.firstName, appt.date, appt.timeSlot) : null
                 return (
-                  <motion.div key={appt.id} variants={fadeUp} {...liftHover} className="bg-white/10 backdrop-blur-sm rounded-2xl px-4 py-3 flex items-center justify-between">
+                  <motion.div key={appt.id} variants={fadeUp} {...liftHover} className="bg-white rounded-2xl border border-gray-100 hover:border-brand-200 px-4 py-3 flex items-center justify-between transition-colors">
                     <div className="flex items-center gap-3">
                       <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center text-white font-black text-sm shadow-md flex-shrink-0`}>
                         {parent ? parent.firstName[0] : <User className="w-4 h-4" />}
                       </div>
                       <div>
-                        <p className="font-black text-sm text-white">
+                        <p className="font-black text-sm text-gray-900">
                           {parent ? `${parent.firstName} ${parent.lastName}` : '—'}
                         </p>
-                        <p className="text-blue-200 text-[11px] ltr-num">
+                        <p className="text-gray-400 text-[11px] ltr-num">
                           {new Date(appt.date).toLocaleDateString(localeFor(lang), { weekday: 'short', month: 'short', day: 'numeric' })}
                           {' · '}{appt.timeSlot}
                         </p>
@@ -151,21 +151,21 @@ export default function AppointmentsView({ appointments, parents, error }: {
                     </div>
                     <div className="flex items-center gap-2">
                       {type && (
-                        <span className="bg-white/20 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${type.color}`}>
                           {type.label}
                         </span>
                       )}
                       {wa && (
                         <a href={wa} target="_blank" rel="noopener noreferrer"
                           title={t.waReminderTitle}
-                          className="flex items-center gap-1 bg-emerald-400/20 text-emerald-200 hover:bg-emerald-400/30 text-[11px] font-bold px-2.5 py-1 rounded-xl transition-colors">
+                          className="flex items-center gap-1 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 text-[11px] font-bold px-2.5 py-1 rounded-xl transition-colors">
                           <MessageCircle className="w-3 h-3" />
                           {t.reminderLabel}
                         </a>
                       )}
                       {appt.meetingUrl && (
                         <a href={appt.meetingUrl} target="_blank" rel="noopener noreferrer"
-                          className="flex items-center gap-1 bg-green-400/20 text-green-200 hover:bg-green-400/30 text-[11px] font-bold px-2.5 py-1 rounded-xl transition-colors">
+                          className="flex items-center gap-1 bg-green-50 text-green-600 hover:bg-green-100 text-[11px] font-bold px-2.5 py-1 rounded-xl transition-colors">
                           <Video className="w-3 h-3" />
                           {t.joinLabel}
                         </a>

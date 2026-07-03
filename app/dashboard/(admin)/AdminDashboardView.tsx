@@ -39,55 +39,36 @@ export default function AdminDashboardView({ parents, payments, exercises, redis
   return (
     <motion.div className="space-y-6" variants={staggerContainer} initial="hidden" animate="show">
 
-      {/* ── Hero Welcome Banner ── */}
-      <motion.div variants={fadeUp} className="relative overflow-hidden rounded-3xl bg-gradient-to-bl from-brand-700 via-brand-600 to-indigo-700 p-6 md:p-8 text-white">
-        {/* decorative circles — slow float gives the banner a breathing, alive feel */}
-        <motion.div
-          className="pointer-events-none absolute -top-10 -left-10 w-48 h-48 bg-white/5 rounded-full"
-          animate={{ y: [0, 14, 0], x: [0, 10, 0] }}
-          transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}
-        />
-        <motion.div
-          className="pointer-events-none absolute bottom-0 left-20 w-32 h-32 bg-white/5 rounded-full"
-          animate={{ y: [0, -12, 0] }}
-          transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
-        />
-        <motion.div
-          className="pointer-events-none absolute -top-4 left-1/2 w-24 h-24 bg-white/5 rounded-full"
-          animate={{ x: [0, -10, 0] }}
-          transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-        />
-
-        <div className="relative">
-          <div className="flex items-center gap-2 mb-1">
-            <p className="text-white/60 text-xs font-medium ltr-num">{today}</p>
-            <span className="flex items-center gap-1 text-[10px] font-black text-white/70 bg-white/10 px-2 py-0.5 rounded-full">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-gentle-pulse" />
-              {t.liveLabel}
-            </span>
-          </div>
-          <h1 className="text-2xl md:text-3xl font-black mb-1">{t.greeting(coachName)}</h1>
-          <p className="text-white/70 text-sm">
-            {activeCount > 0
-              ? `${t.subtitleActive(activeCount)}${pendingPayments.length > 0 ? t.subtitlePendingSuffix(pendingPayments.length) : ''}`
-              : t.subtitleEmpty}
-          </p>
+      {/* ── Today at a Glance ── */}
+      <motion.div variants={fadeUp} className="bg-white rounded-3xl border border-gray-100 border-l-4 border-l-brand-600 shadow-sm p-6 md:p-8">
+        <div className="flex items-center gap-2 mb-1">
+          <p className="text-gray-400 text-xs font-medium ltr-num">{today}</p>
+          <span className="flex items-center gap-1 text-[10px] font-black text-brand-600 bg-brand-50 px-2 py-0.5 rounded-full">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-gentle-pulse" />
+            {t.liveLabel}
+          </span>
         </div>
+        <h1 className="text-2xl md:text-3xl font-black text-slate-900 mb-1">{t.greeting(coachName)}</h1>
+        <p className="text-gray-400 text-sm">
+          {activeCount > 0
+            ? `${t.subtitleActive(activeCount)}${pendingPayments.length > 0 ? t.subtitlePendingSuffix(pendingPayments.length) : ''}`
+            : t.subtitleEmpty}
+        </p>
+      </motion.div>
 
-        {/* mini quick-stats inside banner */}
-        <motion.div className="relative mt-6 grid grid-cols-3 gap-3" variants={staggerContainer}>
-          {[
-            { label: navT.clients, value: parents.length, icon: '👥' },
-            { label: t.statActiveLabel, value: activeCount, icon: '✅' },
-            { label: navT.exercises, value: exercises.length || 17, icon: '📚' },
-          ].map(s => (
-            <motion.div key={s.label} variants={popIn} className="bg-white/10 backdrop-blur-sm rounded-2xl px-4 py-3 text-center">
-              <div className="text-xl mb-0.5">{s.icon}</div>
-              <div className="text-2xl font-black"><ACountUp value={s.value} /></div>
-              <div className="text-white/60 text-[11px] mt-0.5">{s.label}</div>
-            </motion.div>
-          ))}
-        </motion.div>
+      {/* ── Quick Stats ── */}
+      <motion.div className="grid grid-cols-3 gap-3" variants={staggerContainer}>
+        {[
+          { label: navT.clients, value: parents.length, icon: '👥' },
+          { label: t.statActiveLabel, value: activeCount, icon: '✅' },
+          { label: navT.exercises, value: exercises.length || 17, icon: '📚' },
+        ].map(s => (
+          <motion.div key={s.label} variants={popIn} className="bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3 text-center">
+            <div className="text-xl mb-0.5">{s.icon}</div>
+            <div className="text-2xl font-black text-gray-900"><ACountUp value={s.value} /></div>
+            <div className="text-gray-400 text-[11px] mt-0.5">{s.label}</div>
+          </motion.div>
+        ))}
       </motion.div>
 
       {/* ── Redis error ── */}

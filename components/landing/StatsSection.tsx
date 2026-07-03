@@ -1,5 +1,6 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { motion, useInView } from 'framer-motion'
 import { useLang, pickLang } from '@/lib/i18n'
 
 interface DynStats {
@@ -16,10 +17,14 @@ const DEFAULTS: DynStats = {
   sessionMinutes:  '45',
 }
 
+const EASE: [number, number, number, number] = [0.25, 0.46, 0.45, 0.94]
+
 export default function StatsSection() {
   const { lang } = useLang()
   const isRtl = lang === 'ar'
   const [s, setS] = useState<DynStats>(DEFAULTS)
+  const ref = useRef(null)
+  const inView = useInView(ref, { once: true, margin: '-80px' })
 
   useEffect(() => {
     fetch('/api/public/settings')
@@ -83,11 +88,17 @@ export default function StatsSection() {
       }}
     >
       <div className="max-w-7xl mx-auto px-6">
+        {/* Invisible anchor for useInView */}
+        <div ref={ref} />
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {stats.map((stat) => (
-            <div
+          {stats.map((stat, index) => (
+            <motion.div
               key={stat.label}
-              className="rounded-3xl p-6 text-center transition-all hover:-translate-y-1"
+              className="rounded-3xl p-6 text-center"
+              initial={{ opacity: 0, y: 16 }}
+              animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }}
+              transition={{ duration: 0.4, delay: index * 0.08, ease: EASE }}
+              whileHover={{ y: -2 }}
               style={{
                 background: 'rgba(255,255,255,0.9)',
                 border: '1px solid rgba(0,0,0,0.06)',
@@ -113,7 +124,7 @@ export default function StatsSection() {
               <div className="text-xs" style={{ color: '#9CA3AF' }}>
                 {pickLang(lang, stat.sub, stat.subEn, stat.subFr)}
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
       </div>

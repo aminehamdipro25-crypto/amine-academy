@@ -1,4 +1,6 @@
 'use client'
+import { useRef } from 'react'
+import { motion, useInView } from 'framer-motion'
 import { Star } from 'lucide-react'
 import { useLang, pickLang } from '@/lib/i18n'
 
@@ -47,9 +49,13 @@ const testimonials = [
   },
 ]
 
+const EASE: [number, number, number, number] = [0.25, 0.46, 0.45, 0.94]
+
 export default function TestimonialsSection() {
   const { lang } = useLang()
   const isRtl = lang === 'ar'
+  const ref = useRef(null)
+  const inView = useInView(ref, { once: true, margin: '-80px' })
 
   return (
     <section
@@ -63,7 +69,13 @@ export default function TestimonialsSection() {
       }}
     >
       <div className="max-w-7xl mx-auto px-6">
-        <div className="text-center mb-14">
+        <motion.div
+          ref={ref}
+          className="text-center mb-14"
+          initial={{ opacity: 0, y: 24 }}
+          animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 }}
+          transition={{ duration: 0.5, ease: EASE }}
+        >
           <span
             className="font-bold text-sm px-4 py-1.5 rounded-full"
             style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.16)', color: '#6D44E8' }}
@@ -76,13 +88,17 @@ export default function TestimonialsSection() {
           >
             {pickLang(lang, 'ماذا يقول أولياء الأمور؟', 'What Do Parents Say?', 'Que disent les parents ?')}
           </h2>
-        </div>
+        </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {testimonials.map(({ name, nameEn, nameFr, role, roleEn, roleFr, text, textEn, textFr, stars, country, gradient }) => (
-            <div
+          {testimonials.map(({ name, nameEn, nameFr, role, roleEn, roleFr, text, textEn, textFr, stars, country, gradient }, index) => (
+            <motion.div
               key={name}
-              className="rounded-3xl p-6 transition-all hover:-translate-y-1 flex flex-col"
+              className="rounded-3xl p-6 flex flex-col"
+              initial={{ opacity: 0, y: 16 }}
+              animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }}
+              transition={{ duration: 0.4, delay: index * 0.08, ease: EASE }}
+              whileHover={{ y: -2 }}
               style={{
                 background: 'rgba(255,255,255,0.9)',
                 border: '1.5px solid rgba(124,92,252,0.12)',
@@ -116,7 +132,7 @@ export default function TestimonialsSection() {
                   <div className="text-xs" style={{ color: '#94A3B8' }}>{pickLang(lang, role, roleEn, roleFr)}</div>
                 </div>
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
       </div>

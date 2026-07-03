@@ -26,9 +26,9 @@ const DIAG_EMOJI: Record<string, string> = {
 const TODAY_KEY = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'][new Date().getDay()]
 
 const PLAN_COLOR: Record<string, { color: string; bg: string }> = {
-  basic:    { color: '#6B7280', bg: 'rgba(107,114,128,0.2)' },
-  standard: { color: '#FDE68A', bg: 'rgba(253,230,138,0.25)' },
-  premium:  { color: '#FDE68A', bg: 'rgba(253,230,138,0.25)' },
+  basic:    { color: '#6B7280', bg: '#F3F4F6' },
+  standard: { color: '#92400E', bg: '#FEF3C7' },
+  premium:  { color: '#78350F', bg: '#FDE68A' },
 }
 
 const MILESTONES = [500, 1000, 2000, 5000]
@@ -105,7 +105,7 @@ const NOTIF_STYLES: Record<NotifSeverity, string> = {
   warning:     'bg-red-50 border-red-100 text-red-700',
   positive:    'bg-emerald-50 border-emerald-200 text-emerald-800',
   achievement: 'bg-emerald-50 border-emerald-200 text-emerald-800',
-  info:        'bg-purple-50 border-purple-200 text-purple-800',
+  info:        'bg-[#F3EEFF] border-[#D3BBFF] text-[#5A32D9]',
 }
 
 interface GreetT {
@@ -171,13 +171,13 @@ export default function ParentDashboardPage() {
     <div className="flex flex-col items-center justify-center py-24 gap-4">
       <motion.div
         className="w-16 h-16 rounded-3xl flex items-center justify-center"
-        style={{ background: 'linear-gradient(135deg,#7C5CFC,#9A7BFD)' }}
+        style={{ background: '#F3EEFF' }}
         animate={{ rotate: [0, 8, -8, 0], scale: [1, 1.06, 1] }}
         transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
       >
         <span className="text-3xl">⭐</span>
       </motion.div>
-      <p className="font-black text-sm" style={{ color: '#7C5CFC' }}>{t.loading}</p>
+      <p className="font-black text-sm" style={{ color: '#6B46F0' }}>{t.loading}</p>
     </div>
   )
 

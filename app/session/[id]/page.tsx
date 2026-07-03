@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
 import { useParams, useRouter } from 'next/navigation'
 import { X, Star, ClipboardList, Gamepad2, BarChart3, BookOpen, Play, Youtube, ExternalLink, Maximize2, Minimize2, RotateCcw } from 'lucide-react'
 import type { ExerciseResult, AssessmentResult, SessionObservations } from '@/lib/types'
@@ -2848,7 +2849,7 @@ ${notes ? `
             const READY_COLORS = ['#EF4444','#F97316','#F59E0B','#22C55E','#3B82F6']
 
             return (
-              <div className="absolute inset-0 overflow-y-auto">
+              <div className="absolute inset-0 overflow-y-auto animate-fade-in">
                 {/* Warm decorative background — replaces the dark console look for this child-facing screen */}
                 <div
                   className="absolute inset-0"
@@ -3080,8 +3081,16 @@ ${notes ? `
             </div>
           )}
 
-          {activeView?.type === 'exercise' && (
-            <div key={`${activeView.id}-${exerciseRestartNonce}`} className="w-full max-w-2xl mx-auto py-6">
+          <AnimatePresence mode="wait">
+            {activeView?.type === 'exercise' && (
+            <motion.div
+              key={`${activeView.id}-${exerciseRestartNonce}`}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8, transition: { duration: 0.2 } }}
+              transition={{ duration: 0.25 }}
+              className="w-full max-w-2xl mx-auto py-6"
+            >
               {activeView.id === 'memory-cards'    && <MemoryCards onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
               {activeView.id === 'sequence-memory' && <SequenceMemory onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
               {activeView.id === 'n-back'          && <NBackTask onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
@@ -3153,8 +3162,9 @@ ${notes ? `
               {['jumping-jacks','obstacle-circuit','balance-walk','tiger-crawl','ball-throw','stretching','body-percussion'].includes(activeView.id) && (
                 <PhysicalExercise id={activeView.id} onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />
               )}
-            </div>
-          )}
+            </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* ── Restart the active exercise mid-game without exiting it ──
               Stacked just below the screen-size toggle on the vertical mid-left edge.
@@ -3508,7 +3518,14 @@ ${notes ? `
                 boxShadow: `0 12px 40px rgba(0,0,0,0.55), 0 0 32px ${tierColor}66`,
               }}
             >
-              <span className="text-5xl">{achievementToast.icon}</span>
+              <motion.span
+                className="text-5xl"
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: 'spring', stiffness: 200, damping: 12 }}
+              >
+                {achievementToast.icon}
+              </motion.span>
               <div>
                 <p className="text-white font-black text-xl">{achievementToast.message}</p>
                 <p className="font-bold text-sm" style={{ color: tierColor }}>إنجاز رائع! 🎉</p>

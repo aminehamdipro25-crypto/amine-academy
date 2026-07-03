@@ -107,7 +107,7 @@ export default function ProgressPage() {
       })
     : []
 
-  const TREND_COLORS = ['#7C5CFC', '#FF8C65', '#22C55E', '#F59E0B', '#3B9EFF']
+  const TREND_COLORS = ['#6B46F0', '#FF8C65', '#22C55E', '#F59E0B', '#3B9EFF']
   const trendMetrics = Object.keys(t.metricLabels).filter(m =>
     reports.some(r => r.behaviorRatings?.some(b => b.metric === m))
   )
@@ -416,25 +416,30 @@ export default function ProgressPage() {
 
                   {latest && (
                     <div
-                      className="rounded-2xl p-5 text-white"
-                      style={{ background: 'linear-gradient(to left, #6B46F0, #4A20C8)' }}
+                      className="rounded-2xl p-5"
+                      style={{
+                        background: '#FFFFFF',
+                        border: '1px solid rgba(0,0,0,0.06)',
+                        boxShadow: '0 4px 24px rgba(0,0,0,0.05)',
+                        borderRight: '4px solid #6B46F0',
+                      }}
                     >
                       <div className="flex items-center justify-between mb-3">
-                        <h2 className="font-black text-lg">{t.lastReportTitle}</h2>
-                        <span className="text-white/70 text-xs ltr-num">
+                        <h2 className="font-black text-lg text-gray-900">{t.lastReportTitle}</h2>
+                        <span className="text-gray-400 text-xs ltr-num">
                           {new Date(latest.periodEnd).toLocaleDateString('fr-FR')}
                         </span>
                       </div>
                       {latest.aiSummary && (
-                        <p className="text-white/90 text-sm leading-relaxed mb-4">{latest.aiSummary}</p>
+                        <p className="text-gray-600 text-sm leading-relaxed mb-4">{latest.aiSummary}</p>
                       )}
                       {latest.professorNotes && (
-                        <div className="rounded-xl p-3 mb-3" style={{ background: 'rgba(255,255,255,0.1)' }}>
-                          <p className="text-white/70 text-xs mb-1 font-bold">{t.professorNotesLabel(coachName)}</p>
-                          <p className="text-white text-sm leading-relaxed">{latest.professorNotes}</p>
+                        <div className="rounded-xl p-3 mb-3" style={{ background: '#F3EEFF', border: '1px solid #E0D0FF' }}>
+                          <p className="text-xs mb-1 font-bold" style={{ color: '#9A7BFD' }}>{t.professorNotesLabel(coachName)}</p>
+                          <p className="text-gray-700 text-sm leading-relaxed">{latest.professorNotes}</p>
                         </div>
                       )}
-                      <div className="flex items-center gap-4 text-white/70 text-xs">
+                      <div className="flex items-center gap-4 text-gray-400 text-xs">
                         <span>✅ {latest.completedExercises}/{latest.totalExercises} {t.exerciseUnit}</span>
                         <span>⭐ {latest.pointsEarned} {t.pointUnit}</span>
                       </div>

@@ -61,7 +61,7 @@ export default function ParentPortalLayout({ children }: { children: React.React
           <Link href="/parent/dashboard" className="flex items-center gap-2.5 flex-shrink-0">
             <div
               className="w-9 h-9 rounded-2xl flex items-center justify-center shadow-md"
-              style={{ background: 'linear-gradient(135deg,#6B46F0,#9A7BFD)' }}
+              style={{ background: '#6B46F0' }}
             >
               <span className="text-white text-base font-black">أ</span>
             </div>

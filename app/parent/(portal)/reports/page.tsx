@@ -52,7 +52,7 @@ function RecentSessions({ sessions }: { sessions: ParentSessionSummary[] }) {
               {(['attention', 'cooperation', 'energy', 'mood', 'anxiety'] as const).map(key => (
                 <div key={key} className="text-center bg-gray-50 rounded-lg py-1.5">
                   <div className="text-[10px] text-gray-400">{t.observationLabels[key]}</div>
-                  <div className="text-xs font-black text-indigo-600 ltr-num">{s.observations?.[key] ?? '—'}/5</div>
+                  <div className="text-xs font-black ltr-num" style={{ color: '#6B46F0' }}>{s.observations?.[key] ?? '—'}/5</div>
                 </div>
               ))}
             </div>
@@ -63,7 +63,7 @@ function RecentSessions({ sessions }: { sessions: ParentSessionSummary[] }) {
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-1.5">{t.sessionExercisesLabel}</p>
                 <div className="flex flex-wrap gap-1.5">
                   {s.exercises.map((e, i) => (
-                    <span key={i} className="text-xs bg-indigo-50 text-indigo-700 rounded-full px-2.5 py-1 font-medium">
+                    <span key={i} className="text-xs rounded-full px-2.5 py-1 font-medium" style={{ background: '#F3EEFF', color: '#6B46F0' }}>
                       {e.exerciseLabelAr} · <span className="ltr-num font-bold">{e.score}%</span>
                     </span>
                   ))}
@@ -200,7 +200,7 @@ function ReportDocument({ report, child }: { report: ProgressReport; child: Stud
       <div style={{ display: 'flex', justifyContent: 'flex-start', padding: '12px 20px 0', background: '#F9FAFB', borderBottom: '1px solid #F3F4F6' }}>
         <button
           onClick={handlePrint}
-          style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#6366F1', color: '#fff', border: 'none', borderRadius: 10, padding: '7px 16px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
+          style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#6B46F0', color: '#fff', border: 'none', borderRadius: 10, padding: '7px 16px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
         >
           <Printer style={{ width: 14, height: 14 }} />
           {t.printButtonLabel}
@@ -214,7 +214,7 @@ function ReportDocument({ report, child }: { report: ProgressReport; child: Stud
       <div ref={docRef}>
 
         {/* ── 1. Letterhead ── */}
-        <div style={{ background: 'linear-gradient(135deg,#1e1b4b 0%,#3730a3 55%,#6366f1 100%)', padding: '28px 32px 24px' }}>
+        <div style={{ background: 'linear-gradient(135deg, #3A1FA8 0%, #6B46F0 55%, #9A7BFD 100%)', padding: '28px 32px 24px' }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
               <div style={{ width: 52, height: 52, background: 'rgba(255,255,255,0.18)', borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, flexShrink: 0 }}>🧠</div>
@@ -250,7 +250,7 @@ function ReportDocument({ report, child }: { report: ProgressReport; child: Stud
           <div style={{ padding: '20px 28px', borderLeft: '1px solid #F3F4F6' }}>
             <div style={{ fontSize: 9, fontWeight: 800, color: '#9CA3AF', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 10 }}>{t.studentInfoLabel}</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
-              <div style={{ width: 44, height: 44, borderRadius: 12, background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 900, fontSize: 18, flexShrink: 0 }}>
+              <div style={{ width: 44, height: 44, borderRadius: 12, background: 'linear-gradient(135deg,#6B46F0,#9A7BFD)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 900, fontSize: 18, flexShrink: 0 }}>
                 {child.firstName?.[0]?.toUpperCase() ?? '?'}
               </div>
               <div>
@@ -275,7 +275,7 @@ function ReportDocument({ report, child }: { report: ProgressReport; child: Stud
           <div style={{ padding: '20px 28px' }}>
             <div style={{ fontSize: 9, fontWeight: 800, color: '#9CA3AF', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 10 }}>{t.therapistInfoLabel}</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
-              <div style={{ width: 44, height: 44, borderRadius: 12, background: 'linear-gradient(135deg,#0891b2,#6366f1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 900, fontSize: 18, flexShrink: 0 }}>{t.professorFullName[0]}</div>
+              <div style={{ width: 44, height: 44, borderRadius: 12, background: 'linear-gradient(135deg,#0EA5A0,#6B46F0)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 900, fontSize: 18, flexShrink: 0 }}>{t.professorFullName[0]}</div>
               <div>
                 <div style={{ fontWeight: 900, fontSize: 15, color: '#111827' }}>{t.professorFullName}</div>
                 <div style={{ fontSize: 11, color: '#6B7280', marginTop: 2 }}>{t.professorTitle}</div>
@@ -313,7 +313,7 @@ function ReportDocument({ report, child }: { report: ProgressReport; child: Stud
 
         {/* ── 4. Exercise Progress ── */}
         <div style={{ padding: '22px 28px', borderBottom: '1.5px solid #F3F4F6' }}>
-          <div style={{ fontSize: 10, fontWeight: 800, color: '#6366F1', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 14 }}>
+          <div style={{ fontSize: 10, fontWeight: 800, color: '#6B46F0', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 14 }}>
             {t.exerciseProgressLabel}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
@@ -343,7 +343,7 @@ function ReportDocument({ report, child }: { report: ProgressReport; child: Stud
         {/* ── 5. Behavioral Assessment Table ── */}
         {report.behaviorRatings?.length > 0 && (
           <div style={{ padding: '22px 28px', borderBottom: '1.5px solid #F3F4F6' }}>
-            <div style={{ fontSize: 10, fontWeight: 800, color: '#6366F1', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 14 }}>
+            <div style={{ fontSize: 10, fontWeight: 800, color: '#6B46F0', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 14 }}>
               {t.behavioralAssessmentLabel}
             </div>
 
@@ -382,12 +382,12 @@ function ReportDocument({ report, child }: { report: ProgressReport; child: Stud
 
             {/* Average summary */}
             {avg > 0 && (
-              <div style={{ marginTop: 14, background: 'linear-gradient(135deg,#EEF2FF,#E0E7FF)', borderRadius: 12, padding: '12px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontWeight: 700, fontSize: 13, color: '#3730A3' }}>{t.avgBehaviorOverallLabel}</span>
+              <div style={{ marginTop: 14, background: '#F3EEFF', borderRadius: 12, padding: '12px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontWeight: 700, fontSize: 13, color: '#6B46F0' }}>{t.avgBehaviorOverallLabel}</span>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-                  <span style={{ fontWeight: 900, fontSize: 24, color: '#3730A3' }}>{avg.toFixed(1)}</span>
-                  <span style={{ fontWeight: 600, fontSize: 13, color: '#6366F1' }}>/5</span>
-                  <span style={{ fontWeight: 900, fontSize: 13, color: '#4F46E5', marginRight: 6, background: 'white', padding: '2px 10px', borderRadius: 20 }}>
+                  <span style={{ fontWeight: 900, fontSize: 24, color: '#6B46F0' }}>{avg.toFixed(1)}</span>
+                  <span style={{ fontWeight: 600, fontSize: 13, color: '#9A7BFD' }}>/5</span>
+                  <span style={{ fontWeight: 900, fontSize: 13, color: '#6B46F0', marginRight: 6, background: 'white', padding: '2px 10px', borderRadius: 20 }}>
                     {t.scoreLabels[avgRounded as keyof typeof t.scoreLabels] ?? ''}
                   </span>
                 </div>
@@ -402,8 +402,8 @@ function ReportDocument({ report, child }: { report: ProgressReport; child: Stud
             <div style={{ fontSize: 10, fontWeight: 800, color: '#0891B2', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 14 }}>
               ✏️ {tr[lang].parentProgress.professorNotesLabel(coachName)}
             </div>
-            <div style={{ background: '#F8FAFF', border: '1.5px solid #E0E7FF', borderRadius: 14, padding: '18px 20px' }}>
-              <p style={{ color: '#1E3A5F', fontSize: 14, lineHeight: 1.9, fontWeight: 500 }}>{report.professorNotes}</p>
+            <div style={{ background: '#F3EEFF', border: '1.5px solid #E0D0FF', borderRadius: 14, padding: '18px 20px' }}>
+              <p style={{ color: '#3A1F70', fontSize: 14, lineHeight: 1.9, fontWeight: 500 }}>{report.professorNotes}</p>
             </div>
           </div>
         )}
@@ -496,7 +496,7 @@ export default function ReportsPage() {
 
       {/* ── Page Header ── */}
       <div className="flex items-start gap-4">
-        <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0" style={{ background: '#EEF2FF' }}>📄</div>
+        <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0" style={{ background: '#F3EEFF' }}>📄</div>
         <div>
           <h1 className="font-black text-xl text-gray-900">{t.pageTitle}</h1>
           <p className="text-gray-400 text-sm mt-0.5">{t.pageSubtitle(coachName)}</p>
@@ -512,8 +512,8 @@ export default function ReportsPage() {
               onClick={() => setSelectedChild(child.id)}
               className="px-4 py-2 rounded-full text-sm font-bold transition-all"
               style={selectedChild === child.id
-                ? { background: '#4F46E5', color: '#fff' }
-                : { background: '#F5F3FF', color: '#6B7280', border: '1.5px solid #E0E7FF' }}
+                ? { background: '#6B46F0', color: '#fff' }
+                : { background: '#F3EEFF', color: '#6B7280', border: '1.5px solid #E0D0FF' }}
             >
               {child.firstName}
             </button>
@@ -526,8 +526,8 @@ export default function ReportsPage() {
 
       {/* ── Report count strip ── */}
       {reports.length > 0 && (
-        <div className="flex items-center gap-3 text-sm text-gray-500 bg-white rounded-2xl px-5 py-3" style={{ border: '1.5px solid #E0E7FF' }}>
-          <Award className="w-4 h-4 text-indigo-500" />
+        <div className="flex items-center gap-3 text-sm text-gray-500 bg-white rounded-2xl px-5 py-3" style={{ border: '1px solid rgba(0,0,0,0.06)' }}>
+          <Award className="w-4 h-4" style={{ color: '#6B46F0' }} />
           <span>
             <strong className="text-gray-900 font-black">{reports.length}</strong> {t.reportsAvailableSuffix(current?.child.firstName ?? '')}
           </span>

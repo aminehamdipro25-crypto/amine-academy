@@ -201,40 +201,26 @@ export default function ParentDashboardPage() {
       {/* ══ Hero ══ */}
       <motion.div
         variants={fadeUp}
-        className="relative rounded-3xl overflow-hidden"
+        className="rounded-3xl overflow-hidden"
         style={{
-          background: 'linear-gradient(135deg, #5A32D9 0%, #7C5CFC 45%, #9A7BFD 100%)',
-          boxShadow: '0 12px 40px -8px rgba(124,92,252,0.45)',
+          background: '#FFFFFF',
+          border: '1px solid rgba(0,0,0,0.06)',
+          boxShadow: '0 4px 24px rgba(0,0,0,0.05)',
+          borderTop: '4px solid #6B46F0',
         }}
       >
-        {/* Decorative shapes — slow float gives the hero a breathing, alive feel */}
-        <motion.div
-          className="absolute top-0 left-0 w-56 h-56 rounded-full -translate-x-20 -translate-y-20 pointer-events-none"
-          style={{ background: 'rgba(255,255,255,0.07)', filter: 'blur(1px)' }}
-          animate={{ y: [0, 16, 0], x: [0, 10, 0] }}
-          transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}
-        />
-        <motion.div
-          className="absolute bottom-0 right-0 w-40 h-40 rounded-full translate-x-12 translate-y-12 pointer-events-none"
-          style={{ background: 'rgba(255,255,255,0.06)', filter: 'blur(1px)' }}
-          animate={{ y: [0, -14, 0], x: [0, -8, 0] }}
-          transition={{ duration: 7.5, repeat: Infinity, ease: 'easeInOut' }}
-        />
-        <div className="absolute top-6 left-8 w-2 h-2 rounded-full pointer-events-none animate-gentle-pulse" style={{ background: 'rgba(255,255,255,0.4)' }} />
-        <div className="absolute top-12 left-20 w-1 h-1 rounded-full pointer-events-none" style={{ background: 'rgba(255,255,255,0.3)' }} />
-
-        <div className="relative p-6">
+        <div className="p-6">
           {/* Top row */}
           <div className="flex items-start justify-between mb-4">
             <div>
               <div className="flex items-center gap-2">
-                <p className="text-white/60 text-sm font-medium">{greeting(t)}</p>
-                <span className="flex items-center gap-1 text-[10px] font-black text-white/70 bg-white/10 px-2 py-0.5 rounded-full">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-gentle-pulse" />
+                <p className="text-gray-400 text-sm font-medium">{greeting(t)}</p>
+                <span className="flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full" style={{ color: '#6B46F0', background: '#F3EEFF' }}>
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-gentle-pulse" />
                   {t.liveLabel}
                 </span>
               </div>
-              <h1 className="font-black text-2xl text-white mt-0.5 leading-tight">
+              <h1 className="font-black text-2xl text-gray-900 mt-0.5 leading-tight">
                 {parent.firstName} {parent.lastName}
               </h1>
               <div className="flex items-center gap-2 mt-2 flex-wrap">
@@ -243,8 +229,8 @@ export default function ParentDashboardPage() {
                 </span>
                 <span className={`text-xs font-black px-2.5 py-1 rounded-full ${
                   parent.subscriptionStatus === 'active'
-                    ? 'bg-green-400/20 text-green-200'
-                    : 'bg-amber-400/20 text-amber-200'
+                    ? 'bg-emerald-50 text-emerald-700'
+                    : 'bg-amber-50 text-amber-700'
                 }`}>
                   {parent.subscriptionStatus === 'active' ? t.statusActive :
                    parent.subscriptionStatus === 'pending' ? t.statusPending : parent.subscriptionStatus}
@@ -254,11 +240,12 @@ export default function ParentDashboardPage() {
 
             {/* Stats bubble */}
             <motion.div
-              className="flex-shrink-0 text-center bg-white/10 backdrop-blur-sm rounded-2xl px-4 py-3"
+              className="flex-shrink-0 text-center rounded-2xl px-4 py-3"
+              style={{ background: '#F3EEFF', border: '1.5px solid #E0D0FF' }}
               variants={popIn}
             >
-              <div className="font-black text-2xl text-white"><ACountUp value={totalPoints} /></div>
-              <div className="text-white/60 text-[10px] font-bold">{t.pointsTotal}</div>
+              <div className="font-black text-2xl" style={{ color: '#6B46F0' }}><ACountUp value={totalPoints} /></div>
+              <div className="text-[10px] font-bold" style={{ color: '#9A7BFD' }}>{t.pointsTotal}</div>
             </motion.div>
           </div>
 
@@ -267,30 +254,32 @@ export default function ParentDashboardPage() {
             <MotionLink
               href="/parent/reports"
               variants={fadeUp}
-              whileHover={{ backgroundColor: 'rgba(255,255,255,0.2)' }}
-              className="flex items-center gap-3 rounded-2xl px-4 py-3 mb-2"
-              style={{ background: 'rgba(255,255,255,0.12)' }}
+              className="flex items-center gap-3 rounded-2xl px-4 py-3 mb-2 transition-colors"
+              style={{ background: '#F3EEFF', border: '1px solid #E0D0FF' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = '#EDE0FF' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = '#F3EEFF' }}
             >
-              <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: '#6B46F0' }}>
                 <FileText className="w-4 h-4 text-white" />
               </div>
-              <span className="text-white text-sm font-bold flex-1">{t.newReportInline(unreadReports)}</span>
-              <ChevronLeft className="w-4 h-4 text-white/60" />
+              <span className="text-sm font-bold flex-1" style={{ color: '#5A32D9' }}>{t.newReportInline(unreadReports)}</span>
+              <ChevronLeft className="w-4 h-4" style={{ color: '#9A7BFD' }} />
             </MotionLink>
           )}
           {unreadMessages > 0 && (
             <MotionLink
               href="/parent/chat"
               variants={fadeUp}
-              whileHover={{ backgroundColor: 'rgba(255,255,255,0.2)' }}
-              className="flex items-center gap-3 rounded-2xl px-4 py-3"
-              style={{ background: 'rgba(255,255,255,0.12)' }}
+              className="flex items-center gap-3 rounded-2xl px-4 py-3 transition-colors"
+              style={{ background: '#FFF8E8', border: '1px solid #FDE68A' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = '#FFF3D4' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = '#FFF8E8' }}
             >
-              <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: '#F59E0B' }}>
                 <MessageSquare className="w-4 h-4 text-white" />
               </div>
-              <span className="text-white text-sm font-bold flex-1">{t.newMessageFromCoach(coachName)}</span>
-              <ChevronLeft className="w-4 h-4 text-white/60" />
+              <span className="text-sm font-bold flex-1 text-amber-800">{t.newMessageFromCoach(coachName)}</span>
+              <ChevronLeft className="w-4 h-4 text-amber-400" />
             </MotionLink>
           )}
         </div>
@@ -379,9 +368,9 @@ export default function ParentDashboardPage() {
           variants={fadeUp}
           className="rounded-3xl p-5 overflow-hidden"
           style={{
-            background: 'linear-gradient(135deg,#FAFAFA,#F5F0FF)',
-            border: '1.5px solid #EDE4FF',
-            boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
+            background: '#FFFFFF',
+            border: '1px solid rgba(0,0,0,0.06)',
+            boxShadow: '0 4px 24px rgba(0,0,0,0.05)',
           }}
         >
           <div className="flex items-center justify-between mb-4">
@@ -492,7 +481,7 @@ export default function ParentDashboardPage() {
             <Link
               href="/parent/children"
               className="inline-flex items-center gap-2 text-white font-black px-6 py-3 rounded-2xl text-sm transition-all"
-              style={{ background: 'linear-gradient(135deg,#6B46F0,#9A7BFD)', boxShadow: '0 4px 16px rgba(124,92,252,0.3)' }}
+              style={{ background: '#6B46F0', boxShadow: '0 4px 16px rgba(107,70,240,0.25)' }}
             >
               {t.addChildButton}
             </Link>
@@ -542,7 +531,7 @@ export default function ParentDashboardPage() {
                         <div className="h-1.5 rounded-full overflow-hidden" style={{ background: '#F0E8FF' }}>
                           <motion.div
                             className="h-full rounded-full"
-                            style={{ background: 'linear-gradient(to left, #7C5CFC, #9A7BFD)' }}
+                            style={{ background: '#6B46F0' }}
                             initial={{ width: 0 }}
                             animate={{ width: `${pct}%` }}
                             transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
@@ -639,31 +628,33 @@ export default function ParentDashboardPage() {
           href="/parent/exercises"
           variants={fadeUp}
           {...liftHover}
-          className="rounded-3xl p-5 text-white relative overflow-hidden"
+          className="rounded-3xl p-5"
           style={{
-            background: 'linear-gradient(135deg, #6B46F0 0%, #9A7BFD 100%)',
-            boxShadow: '0 8px 24px -4px rgba(124,92,252,0.4)',
+            background: '#FFFFFF',
+            border: '1px solid rgba(0,0,0,0.06)',
+            boxShadow: '0 4px 24px rgba(0,0,0,0.05)',
+            borderTop: '3px solid #6B46F0',
           }}
         >
-          <div className="absolute top-0 left-0 w-24 h-24 rounded-full -translate-x-8 -translate-y-8 pointer-events-none" style={{ background: 'rgba(255,255,255,0.1)' }} />
-          <motion.div className="text-3xl mb-2 relative" animate={{ rotate: [0, -8, 8, 0] }} transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}>🎮</motion.div>
-          <div className="font-black text-base relative">{t.gamesCardTitle}</div>
-          <div className="text-white/70 text-xs mt-1 relative">{t.gamesCardSubtitle}</div>
+          <motion.div className="text-3xl mb-2" animate={{ rotate: [0, -8, 8, 0] }} transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}>🎮</motion.div>
+          <div className="font-black text-base text-gray-900">{t.gamesCardTitle}</div>
+          <div className="text-gray-400 text-xs mt-1">{t.gamesCardSubtitle}</div>
         </MotionLink>
         <MotionLink
           href="/parent/appointments"
           variants={fadeUp}
           {...liftHover}
-          className="rounded-3xl p-5 text-white relative overflow-hidden"
+          className="rounded-3xl p-5"
           style={{
-            background: 'linear-gradient(135deg, #0EA58A 0%, #2ABFA3 100%)',
-            boxShadow: '0 8px 24px -4px rgba(14,165,138,0.4)',
+            background: '#FFFFFF',
+            border: '1px solid rgba(0,0,0,0.06)',
+            boxShadow: '0 4px 24px rgba(0,0,0,0.05)',
+            borderTop: '3px solid #10B981',
           }}
         >
-          <div className="absolute bottom-0 right-0 w-24 h-24 rounded-full translate-x-8 translate-y-8 pointer-events-none" style={{ background: 'rgba(255,255,255,0.1)' }} />
-          <motion.div className="text-3xl mb-2 relative" animate={{ y: [0, -3, 0] }} transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}>📅</motion.div>
-          <div className="font-black text-base relative">{t.bookSessionTitle}</div>
-          <div className="text-white/70 text-xs mt-1 relative">{t.bookSessionSubtitle}</div>
+          <motion.div className="text-3xl mb-2" animate={{ y: [0, -3, 0] }} transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}>📅</motion.div>
+          <div className="font-black text-base text-gray-900">{t.bookSessionTitle}</div>
+          <div className="text-gray-400 text-xs mt-1">{t.bookSessionSubtitle}</div>
         </MotionLink>
       </motion.div>
 
@@ -672,13 +663,15 @@ export default function ParentDashboardPage() {
         variants={fadeUp}
         className="rounded-3xl p-5 flex items-center gap-4"
         style={{
-          background: 'linear-gradient(135deg, #FFF8E8, #FFFBF0)',
-          border: '1.5px solid #FDE68A',
+          background: '#FFFFFF',
+          border: '1px solid #FDE68A',
+          boxShadow: '0 4px 24px rgba(0,0,0,0.04)',
+          borderRight: '4px solid #F59E0B',
         }}
       >
         <motion.div
           className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0"
-          style={{ background: 'linear-gradient(135deg,#FFBA44,#FF8C65)', boxShadow: '0 4px 12px rgba(255,186,68,0.3)' }}
+          style={{ background: '#FEF3C7', boxShadow: '0 4px 12px rgba(245,158,11,0.2)' }}
           animate={{ rotate: [0, 10, -10, 0] }}
           transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}
         >

@@ -1,5 +1,5 @@
 'use client'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import type { ExerciseResult } from '@/lib/types'
 
 interface Props {
@@ -52,6 +52,8 @@ export default function ConversationStarter({ onComplete, onCancel, difficulty =
   const [correct, setCorrect] = useState(0)
   const [errors,  setErrors]  = useState(0)
   const [startMs]             = useState(Date.now())
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current) }, [])
 
   const q = questions[idx]
   const choices = useMemo(() => shuffle([q.correct, ...q.wrong]), [idx]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -65,7 +67,7 @@ export default function ConversationStarter({ onComplete, onCancel, difficulty =
     setCorrect(nc)
     setErrors(ne)
 
-    setTimeout(() => {
+    timerRef.current = setTimeout(() => {
       const next = idx + 1
       if (next >= count) {
         const score = Math.round((nc / count) * 100)

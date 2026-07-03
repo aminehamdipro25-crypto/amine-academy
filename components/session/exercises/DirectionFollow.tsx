@@ -1,5 +1,5 @@
 'use client'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import type { ExerciseResult } from '@/lib/types'
 
 interface Props {
@@ -38,6 +38,8 @@ export default function DirectionFollow({ onComplete, onCancel, difficulty = 1 }
   const [correct, setCorrect] = useState(0)
   const [errors,  setErrors]  = useState(0)
   const [startMs]             = useState(Date.now())
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current) }, [])
 
   const choices = useMemo(() => shuffle([...DIRS]), [idx]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -50,7 +52,7 @@ export default function DirectionFollow({ onComplete, onCancel, difficulty = 1 }
     setCorrect(nc)
     setErrors(ne)
 
-    setTimeout(() => {
+    timerRef.current = setTimeout(() => {
       const next = idx + 1
       if (next >= TOTAL) {
         onComplete({

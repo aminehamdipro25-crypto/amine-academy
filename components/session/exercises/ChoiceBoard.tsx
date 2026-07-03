@@ -1,5 +1,5 @@
 'use client'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import type { ExerciseResult } from '@/lib/types'
 
 interface Props {
@@ -49,6 +49,8 @@ export default function ChoiceBoard({ onComplete, onCancel, difficulty = 1 }: Pr
   const [picks,   setPicks]   = useState<string[]>([])
   const [chosen,  setChosen]  = useState<string | null>(null)
   const [startMs]             = useState(Date.now())
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current) }, [])
 
   const round       = ROUNDS[idx % ROUNDS.length]
   const optionCount = round.count
@@ -57,7 +59,7 @@ export default function ChoiceBoard({ onComplete, onCancel, difficulty = 1 }: Pr
   function handlePick(id: string) {
     if (chosen) return
     setChosen(id)
-    setTimeout(() => {
+    timerRef.current = setTimeout(() => {
       const next = [...picks, id]
       if (idx + 1 >= totalRounds) {
         onComplete({

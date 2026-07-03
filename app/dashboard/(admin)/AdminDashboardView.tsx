@@ -1,4 +1,5 @@
 'use client'
+import { useEffect, useState } from 'react'
 import { AlertCircle, Users, TrendingUp, CreditCard, ChevronLeft } from 'lucide-react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -9,6 +10,31 @@ import { ACountUp } from '@/components/ui'
 import { staggerContainer, fadeUp, popIn, liftHover } from '@/lib/motion'
 
 const MotionLink = motion(Link)
+
+/** Counts from 0 → target on mount with easeOut cubic — gives stat tiles a "live" feel on load. */
+function AnimatedNumber({ value }: { value: number }) {
+  const [display, setDisplay] = useState(0)
+
+  useEffect(() => {
+    const duration = 800
+    const start = performance.now()
+    let raf: number
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / duration)
+      const eased = 1 - Math.pow(1 - t, 3) // easeOut cubic
+      setDisplay(Math.round(value * eased))
+      if (t < 1) {
+        raf = requestAnimationFrame(tick)
+      } else {
+        setDisplay(value)
+      }
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [value])
+
+  return <span className="ltr-num">{display}</span>
+}
 
 function localeFor(lang: Lang) {
   return lang === 'en' ? 'en-US' : lang === 'fr' ? 'fr-FR' : 'ar'
@@ -37,10 +63,21 @@ export default function AdminDashboardView({ parents, payments, exercises, redis
   })
 
   return (
-    <motion.div className="space-y-6" variants={staggerContainer} initial="hidden" animate="show">
+    <motion.div
+      className="space-y-6"
+      variants={staggerContainer}
+      initial="hidden"
+      animate="show"
+    >
 
       {/* ── Today at a Glance ── */}
-      <motion.div variants={fadeUp} className="bg-white rounded-3xl border border-gray-100 border-l-4 border-l-brand-600 shadow-sm p-6 md:p-8">
+      <motion.div
+        initial={{ scale: 0.98, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 30, delay: 0.05 }}
+        whileHover={{ scale: 1.004, transition: { duration: 0.2 } }}
+        className="bg-white rounded-3xl border border-gray-100 border-l-4 border-l-brand-600 shadow-sm p-6 md:p-8"
+      >
         <div className="flex items-center gap-2 mb-1">
           <p className="text-gray-400 text-xs font-medium ltr-num">{today}</p>
           <span className="flex items-center gap-1 text-[10px] font-black text-brand-600 bg-brand-50 px-2 py-0.5 rounded-full">
@@ -63,9 +100,14 @@ export default function AdminDashboardView({ parents, payments, exercises, redis
           { label: t.statActiveLabel, value: activeCount, icon: '✅' },
           { label: navT.exercises, value: exercises.length || 17, icon: '📚' },
         ].map(s => (
-          <motion.div key={s.label} variants={popIn} className="bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3 text-center">
+          <motion.div
+            key={s.label}
+            variants={popIn}
+            whileHover={{ y: -2, boxShadow: '0 8px 24px rgba(0,0,0,0.08)', transition: { duration: 0.15 } }}
+            className="bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3 text-center"
+          >
             <div className="text-xl mb-0.5">{s.icon}</div>
-            <div className="text-2xl font-black text-gray-900"><ACountUp value={s.value} /></div>
+            <div className="text-2xl font-black text-gray-900"><AnimatedNumber value={s.value} /></div>
             <div className="text-gray-400 text-[11px] mt-0.5">{s.label}</div>
           </motion.div>
         ))}

@@ -18,36 +18,23 @@ export default function CTASection() {
   return (
     <section
       dir={isRtl ? 'rtl' : 'ltr'}
-      className="relative overflow-hidden"
+      className=""
       style={{
         background: `
-          radial-gradient(ellipse 90% 70% at 50% 50%, rgba(124,92,252,0.12) 0%, rgba(99,102,241,0.06) 40%, transparent 70%),
-          radial-gradient(ellipse 60% 50% at 80% 80%, rgba(59,130,246,0.07) 0%, transparent 60%),
-          linear-gradient(150deg, #F0EEFF 0%, #EEF3FF 50%, #F0EEFF 100%)
+          radial-gradient(ellipse 80% 60% at 50% 40%, rgba(107,70,240,0.07) 0%, transparent 65%),
+          #FFF8F0
         `,
         padding: '100px 0',
       }}
     >
-      {/* Ambient orbs */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[350px] rounded-full blur-[120px]"
-          style={{ background: 'radial-gradient(ellipse, rgba(124,92,252,0.1) 0%, transparent 70%)' }}
-        />
-        <div
-          className="absolute bottom-0 right-0 w-72 h-72 rounded-full blur-[90px]"
-          style={{ background: 'radial-gradient(circle, rgba(20,184,166,0.05) 0%, transparent 70%)' }}
-        />
-      </div>
-
       <div className="relative z-10 max-w-4xl mx-auto px-6 text-center">
         {/* Badge */}
         <span
           className="inline-block text-sm font-bold px-4 py-1.5 rounded-full mb-6"
           style={{
-            background: 'rgba(99,102,241,0.08)',
-            border: '1px solid rgba(99,102,241,0.18)',
-            color: '#6D44E8',
+            background: 'rgba(107,70,240,0.08)',
+            border: '1px solid rgba(107,70,240,0.15)',
+            color: '#6B46F0',
           }}
         >
           {pickLang(lang, 'ابدأ رحلة طفلك اليوم', "Start Your Child's Journey Today", "Commencez dès aujourd'hui")}
@@ -59,12 +46,7 @@ export default function CTASection() {
             {pickLang(lang, 'كل يوم تأخير هو', 'Every Day of Delay Is', 'Chaque jour de retard est')}
           </span>
           <br />
-          <span style={{
-            background: 'linear-gradient(135deg, #8B5CF6, #6366F1, #3B82F6)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-          }}>
+          <span style={{ color: '#6B46F0' }}>
             {pickLang(lang, 'يوم ضائع من التطور', 'A Lost Day of Progress', 'Un jour de progrès perdu')}
           </span>
         </h2>
@@ -84,9 +66,9 @@ export default function CTASection() {
             href="/register"
             className="flex items-center gap-2 font-black text-lg px-8 py-4 rounded-2xl transition-all hover:-translate-y-0.5 active:scale-95"
             style={{
-              background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
+              background: '#6B46F0',
               color: 'white',
-              boxShadow: '0 8px 40px rgba(99,102,241,0.3)',
+              boxShadow: '0 8px 32px rgba(107,70,240,0.28)',
             }}
           >
             {pickLang(lang, 'سجّل الآن مجاناً', 'Register Now for Free', "Inscrivez-vous gratuitement")}
@@ -95,10 +77,10 @@ export default function CTASection() {
           <a
             href={`https://wa.me/${wa}?text=${encodeURIComponent(waMessage)}`}
             target="_blank" rel="noopener noreferrer"
-            className="flex items-center gap-2 font-bold text-lg px-8 py-4 rounded-2xl transition-all hover:bg-indigo-50"
+            className="flex items-center gap-2 font-bold text-lg px-8 py-4 rounded-2xl transition-all"
             style={{
-              background: 'rgba(255,255,255,0.8)',
-              border: '1.5px solid rgba(124,92,252,0.2)',
+              background: 'rgba(255,255,255,0.85)',
+              border: '1px solid rgba(107,70,240,0.15)',
               color: '#374151',
             }}
           >
@@ -109,7 +91,7 @@ export default function CTASection() {
 
         <Link
           href="/demo"
-          className="inline-flex items-center gap-2 text-sm font-medium transition-colors hover:text-indigo-600"
+          className="inline-flex items-center gap-2 text-sm font-medium transition-colors hover:text-brand-600"
           style={{ color: '#94A3B8' }}
         >
           <Play className="w-4 h-4" />

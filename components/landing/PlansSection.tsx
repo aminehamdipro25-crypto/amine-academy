@@ -167,7 +167,7 @@ export default function PlansSection() {
         <div className="text-center mb-10">
           <span
             className="font-bold text-sm px-4 py-1.5 rounded-full"
-            style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.16)', color: '#6D44E8' }}
+            style={{ background: 'rgba(107,70,240,0.08)', border: '1px solid rgba(107,70,240,0.15)', color: '#6B46F0' }}
           >
             {pickLang(lang, 'خيارات الاشتراك', 'Subscription Options', "Options d'abonnement")}
           </span>
@@ -188,7 +188,7 @@ export default function PlansSection() {
         <div className="flex justify-center mb-10">
           <div
             className="rounded-2xl p-1.5 flex gap-1"
-            style={{ background: 'rgba(255,255,255,0.8)', border: '1.5px solid rgba(124,92,252,0.14)' }}
+            style={{ background: 'rgba(255,255,255,0.8)', border: '1px solid rgba(107,70,240,0.12)' }}
           >
             {(['QAR', 'TND'] as Currency[]).map(c => (
               <button
@@ -196,7 +196,7 @@ export default function PlansSection() {
                 onClick={() => { setUserChoseCurrency(true); setCurrency(c) }}
                 className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all`}
                 style={currency === c
-                  ? { background: 'linear-gradient(135deg, #6366F1, #8B5CF6)', color: 'white' }
+                  ? { background: '#6B46F0', color: 'white' }
                   : { color: '#64748B' }
                 }
               >
@@ -211,8 +211,8 @@ export default function PlansSection() {
           className="max-w-3xl mx-auto mb-12 rounded-3xl p-6"
           style={{
             background: 'rgba(255,255,255,0.9)',
-            border: '1.5px solid rgba(124,92,252,0.1)',
-            boxShadow: '0 4px 20px rgba(124,92,252,0.06)',
+            border: '1px solid rgba(0,0,0,0.06)',
+            boxShadow: '0 4px 24px rgba(0,0,0,0.06)',
           }}
         >
           <p className="text-center text-sm font-black uppercase tracking-wider mb-5" style={{ color: '#94A3B8' }}>
@@ -260,25 +260,25 @@ export default function PlansSection() {
                 className="rounded-3xl overflow-hidden relative transition-all duration-200 hover:-translate-y-1"
                 style={{
                   background: isPopular
-                    ? 'linear-gradient(160deg, rgba(99,102,241,0.06) 0%, rgba(139,92,246,0.04) 100%)'
+                    ? 'linear-gradient(160deg, rgba(107,70,240,0.06) 0%, rgba(107,70,240,0.03) 100%)'
                     : isMonthly
                     ? 'linear-gradient(160deg, rgba(245,158,11,0.06) 0%, rgba(249,115,22,0.03) 100%)'
                     : 'rgba(255,255,255,0.95)',
                   border: isPopular
-                    ? '2px solid rgba(99,102,241,0.3)'
+                    ? '2px solid rgba(107,70,240,0.25)'
                     : isMonthly
                     ? '2px solid rgba(245,158,11,0.25)'
-                    : '1.5px solid rgba(124,92,252,0.1)',
+                    : '1px solid rgba(0,0,0,0.06)',
                   boxShadow: isPopular
-                    ? '0 12px 40px rgba(99,102,241,0.14)'
-                    : '0 4px 20px rgba(124,92,252,0.06)',
+                    ? '0 12px 40px rgba(107,70,240,0.12)'
+                    : '0 4px 20px rgba(0,0,0,0.05)',
                 }}
               >
 
                 {/* Badge */}
                 {plan.badge && (
                   <div className={`absolute top-4 ${isRtl ? 'left-4' : 'right-4'} text-xs font-black px-4 py-1.5 rounded-full text-white`}
-                    style={{ background: isPopular ? 'linear-gradient(135deg,#6366F1,#8B5CF6)' : 'linear-gradient(135deg,#F59E0B,#F97316)' }}>
+                    style={{ background: isPopular ? '#6B46F0' : 'linear-gradient(135deg,#F59E0B,#F97316)' }}>
                     {pickLang(lang, plan.badge, plan.badgeEn ?? plan.badge, plan.badgeFr ?? plan.badge)}
                   </div>
                 )}
@@ -287,22 +287,22 @@ export default function PlansSection() {
                 <div className="p-6 pt-10">
                   <div
                     className="w-10 h-10 rounded-xl flex items-center justify-center mb-3"
-                    style={{ background: 'rgba(99,102,241,0.08)' }}
+                    style={{ background: 'rgba(107,70,240,0.08)' }}
                   >
-                    <PlanIcon className="w-5 h-5" style={{ color: '#6366F1' }} />
+                    <PlanIcon className="w-5 h-5" style={{ color: '#6B46F0' }} />
                   </div>
                   <h3 className="font-black text-xl" style={{ color: '#1E293B' }}>{pickLang(lang, plan.name, plan.nameEn, plan.nameFr)}</h3>
                   <p className="text-xs mt-1" style={{ color: '#94A3B8' }}>{pickLang(lang, plan.subtitle, plan.subtitleEn, plan.subtitleFr)}</p>
                   {sessionCountLabel && !settingsLoading && (
                     <span className="inline-block mt-2 text-xs font-black px-3 py-1 rounded-full"
-                      style={{ background: 'rgba(99,102,241,0.08)', color: '#6366F1' }}>
+                      style={{ background: 'rgba(107,70,240,0.08)', color: '#6B46F0' }}>
                       📅 {sessionCountLabel}
                     </span>
                   )}
 
                   {/* Price */}
                   {settingsLoading ? (
-                    <div className="mt-4 h-10 w-32 rounded-xl animate-pulse" style={{ background: 'rgba(124,92,252,0.08)' }} />
+                    <div className="mt-4 h-10 w-32 rounded-xl animate-pulse" style={{ background: 'rgba(107,70,240,0.07)' }} />
                   ) : (
                     <div className="mt-4">
                       {discountedPrice !== null ? (
@@ -326,7 +326,7 @@ export default function PlansSection() {
                           )}
                           {plan.savingsPct && (
                             <span className="text-xs font-black px-2 py-0.5 rounded-full"
-                              style={{ background: isPopular ? 'rgba(99,102,241,0.1)' : 'rgba(245,158,11,0.1)', color: isPopular ? '#6366F1' : '#D97706' }}>
+                              style={{ background: isPopular ? 'rgba(107,70,240,0.1)' : 'rgba(245,158,11,0.1)', color: isPopular ? '#6B46F0' : '#D97706' }}>
                               {pickLang(lang, `وفّر ${plan.savingsPct}%`, `Save ${plan.savingsPct}%`, `Économisez ${plan.savingsPct}%`)}
                             </span>
                           )}
@@ -334,7 +334,7 @@ export default function PlansSection() {
                       )}
                       {discountedPrice !== null && settings?.discountLabel && (
                         <span className="inline-block mt-1.5 text-xs font-bold px-2 py-0.5 rounded-full"
-                          style={{ background: 'rgba(99,102,241,0.08)', color: '#6366F1' }}>
+                          style={{ background: 'rgba(107,70,240,0.08)', color: '#6B46F0' }}>
                           {settings.discountLabel}
                         </span>
                       )}
@@ -349,12 +349,12 @@ export default function PlansSection() {
                     className="block w-full text-center font-black py-3.5 rounded-xl transition-all hover:opacity-90 text-white"
                     style={{
                       background: isPopular
-                        ? 'linear-gradient(135deg, #6366F1, #8B5CF6)'
+                        ? '#6B46F0'
                         : isMonthly
                         ? 'linear-gradient(135deg, #F59E0B, #F97316)'
-                        : 'rgba(99,102,241,0.12)',
-                      color: isPopular || isMonthly ? 'white' : '#6366F1',
-                      border: isPopular || isMonthly ? 'none' : '1.5px solid rgba(99,102,241,0.2)',
+                        : 'rgba(107,70,240,0.10)',
+                      color: isPopular || isMonthly ? 'white' : '#6B46F0',
+                      border: isPopular || isMonthly ? 'none' : '1px solid rgba(107,70,240,0.18)',
                     }}
                   >
                     {pickLang(lang, `${plan.ctaText} ←`, `${plan.ctaTextEn} →`, `${plan.ctaTextFr} →`)}
@@ -384,11 +384,11 @@ export default function PlansSection() {
         {/* Session explainer */}
         <div
           className="max-w-2xl mx-auto mt-10 mb-2 rounded-2xl p-5 flex items-start gap-4"
-          style={{ background: 'rgba(99,102,241,0.05)', border: '1px solid rgba(99,102,241,0.12)' }}
+          style={{ background: 'rgba(107,70,240,0.05)', border: '1px solid rgba(107,70,240,0.12)' }}
         >
           <div
             className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5"
-            style={{ background: 'linear-gradient(135deg, #6366F1, #8B5CF6)' }}
+            style={{ background: '#6B46F0' }}
           >
             <Video className="w-6 h-6 text-white" />
           </div>
@@ -439,7 +439,7 @@ export default function PlansSection() {
             },
           ].map(({ icon: Icon, text, textEn, textFr, sub, subEn, subFr }) => (
             <div key={text} className="flex flex-col items-center gap-2">
-              <Icon className="w-5 h-5" style={{ color: '#6366F1' }} />
+              <Icon className="w-5 h-5" style={{ color: '#6B46F0' }} />
               <p className="font-bold text-sm" style={{ color: '#374151' }}>{pickLang(lang, text, textEn, textFr)}</p>
               <p className="text-xs" style={{ color: '#94A3B8' }}>{pickLang(lang, sub, subEn, subFr)}</p>
             </div>

@@ -38,6 +38,7 @@ export default function AudioSequenceRepeat({ onComplete, onCancel, difficulty =
   const clearAll = () => { timerIds.current.forEach(clearTimeout); timerIds.current = [] }
 
   const speak = useCallback((text: string) => {
+    if (typeof window === 'undefined' || !window.speechSynthesis) return
     window.speechSynthesis.cancel()
     const u = new SpeechSynthesisUtterance(text)
     u.lang = 'ar-SA'; u.rate = 0.85
@@ -68,7 +69,7 @@ export default function AudioSequenceRepeat({ onComplete, onCancel, difficulty =
 
   useEffect(() => {
     startRound()
-    return () => { window.speechSynthesis.cancel(); clearAll() }
+    return () => { if (typeof window !== 'undefined' && window.speechSynthesis) window.speechSynthesis.cancel(); clearAll() }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleTap(animalIdx: number) {

@@ -23,7 +23,7 @@ export function computeAdaptiveDecision(
 ): AdaptiveDecision | null {
   // Include the brand-new result
   const typeResults = [...allResults.filter(r => r.exerciseType === result.exerciseType), result]
-  if (typeResults.length < 3) return null
+  if (typeResults.length < 2) return null
 
   const last3 = typeResults.slice(-3)
   const avg   = last3.reduce((s, r) => s + r.score, 0) / 3

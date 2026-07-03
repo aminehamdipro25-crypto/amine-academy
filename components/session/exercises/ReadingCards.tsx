@@ -37,6 +37,7 @@ export default function ReadingCards({ onComplete, onCancel, difficulty = 1 }: P
   useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current) }, [])
 
   const speak = useCallback((text: string) => {
+    if (typeof window === 'undefined' || !window.speechSynthesis) return
     window.speechSynthesis.cancel()
     const u = new SpeechSynthesisUtterance(text)
     u.lang = 'ar-SA'; u.rate = 0.8

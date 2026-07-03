@@ -16,31 +16,67 @@ interface WordPair {
 }
 
 const ALL_PAIRS: WordPair[] = [
-  // Same pairs
-  { a: 'باب',   b: 'باب',   areSame: true },
-  { a: 'قلم',   b: 'قلم',   areSame: true },
-  { a: 'شمس',   b: 'شمس',   areSame: true },
-  { a: 'بيت',   b: 'بيت',   areSame: true },
-  { a: 'كلب',   b: 'كلب',   areSame: true },
-  { a: 'قط',    b: 'قط',    areSame: true },
-  // Different pairs
-  { a: 'باب',   b: 'نار',   areSame: false },
-  { a: 'قلم',   b: 'قلب',   areSame: false },
-  { a: 'شمس',   b: 'شمع',   areSame: false },
-  { a: 'بيت',   b: 'بيض',   areSame: false },
-  { a: 'كلب',   b: 'قلب',   areSame: false },
-  { a: 'قطة',   b: 'قمة',   areSame: false },
-  { a: 'سمك',   b: 'سماء',  areSame: false },
-  { a: 'حصان',  b: 'حسان',  areSame: false },
+  // Same pairs (24)
+  { a: 'باب',    b: 'باب',    areSame: true },
+  { a: 'قلم',    b: 'قلم',    areSame: true },
+  { a: 'شمس',    b: 'شمس',    areSame: true },
+  { a: 'بيت',    b: 'بيت',    areSame: true },
+  { a: 'كلب',    b: 'كلب',    areSame: true },
+  { a: 'قط',     b: 'قط',     areSame: true },
+  { a: 'نور',    b: 'نور',    areSame: true },
+  { a: 'سمك',    b: 'سمك',    areSame: true },
+  { a: 'زهرة',   b: 'زهرة',   areSame: true },
+  { a: 'ماء',    b: 'ماء',    areSame: true },
+  { a: 'طفل',    b: 'طفل',    areSame: true },
+  { a: 'قمر',    b: 'قمر',    areSame: true },
+  { a: 'جبل',    b: 'جبل',    areSame: true },
+  { a: 'نمر',    b: 'نمر',    areSame: true },
+  { a: 'ريح',    b: 'ريح',    areSame: true },
+  { a: 'حليب',   b: 'حليب',   areSame: true },
+  { a: 'درس',    b: 'درس',    areSame: true },
+  { a: 'كتاب',   b: 'كتاب',   areSame: true },
+  { a: 'ورقة',   b: 'ورقة',   areSame: true },
+  { a: 'تفاح',   b: 'تفاح',   areSame: true },
+  { a: 'رياح',   b: 'رياح',   areSame: true },
+  { a: 'صديق',   b: 'صديق',   areSame: true },
+  { a: 'بحر',    b: 'بحر',    areSame: true },
+  { a: 'قلب',    b: 'قلب',    areSame: true },
+  // Different pairs — easy (clear difference, 12)
+  { a: 'باب',    b: 'ناب',    areSame: false },
+  { a: 'قلم',    b: 'علم',    areSame: false },
+  { a: 'شمس',    b: 'شمع',    areSame: false },
+  { a: 'بيت',    b: 'بيض',    areSame: false },
+  { a: 'كلب',    b: 'كتب',    areSame: false },
+  { a: 'قط',     b: 'قد',     areSame: false },
+  { a: 'نور',    b: 'ثور',    areSame: false },
+  { a: 'سمك',    b: 'سماء',   areSame: false },
+  { a: 'زهرة',   b: 'نهرة',   areSame: false },
+  { a: 'طفل',    b: 'جفل',    areSame: false },
+  { a: 'جبل',    b: 'عبل',    areSame: false },
+  { a: 'نمر',    b: 'قمر',    areSame: false },
+  // Different pairs — hard (minimal phonemic difference, 12)
+  { a: 'قلم',    b: 'قلب',    areSame: false },
+  { a: 'كلب',    b: 'قلب',    areSame: false },
+  { a: 'حصان',   b: 'حسان',   areSame: false },
+  { a: 'سمع',    b: 'سمك',    areSame: false },
+  { a: 'درس',    b: 'دلس',    areSame: false },
+  { a: 'ريح',    b: 'ريش',    areSame: false },
+  { a: 'قمر',    b: 'قمع',    areSame: false },
+  { a: 'صديق',   b: 'صدوق',   areSame: false },
+  { a: 'بحر',    b: 'بخر',    areSame: false },
+  { a: 'حليب',   b: 'حبيب',   areSame: false },
+  { a: 'تفاح',   b: 'تفاخ',   areSame: false },
+  { a: 'كتاب',   b: 'كثاب',   areSame: false },
 ]
 
 function getPairs(difficulty: 1 | 2 | 3): WordPair[] {
-  // 50/50 same/different — d=1: 6 pairs (3+3), d=2: 10 (5+5), d=3: 14 (7+7)
-  const same = ALL_PAIRS.filter(p => p.areSame)
-  const diff = ALL_PAIRS.filter(p => !p.areSame)
-  if (difficulty === 1) return shuffle([...same.slice(0, 3), ...diff.slice(0, 3)])
-  if (difficulty === 2) return shuffle([...same.slice(0, 5), ...diff.slice(0, 5)])
-  return shuffle([...same, ...diff])
+  const same = shuffle(ALL_PAIRS.filter(p => p.areSame))
+  const easy = shuffle(ALL_PAIRS.filter(p => !p.areSame).slice(0, 12))
+  const hard  = shuffle(ALL_PAIRS.filter(p => !p.areSame).slice(12))
+  // d=1: 4 same + 4 easy = 8, d=2: 6 same + 4 easy + 4 hard = 14, d=3: 10 same + 6 easy + 8 hard = 24
+  if (difficulty === 1) return shuffle([...same.slice(0, 4), ...easy.slice(0, 4)])
+  if (difficulty === 2) return shuffle([...same.slice(0, 6), ...easy.slice(0, 4), ...hard.slice(0, 4)])
+  return shuffle([...same.slice(0, 10), ...easy.slice(0, 6), ...hard.slice(0, 8)])
 }
 
 function shuffle<T>(arr: T[]): T[] {
@@ -53,7 +89,7 @@ function shuffle<T>(arr: T[]): T[] {
 }
 
 function speak(text: string): void {
-  if (typeof window === 'undefined') return
+  if (typeof window === 'undefined' || !window.speechSynthesis) return
   window.speechSynthesis.cancel()
   const u = new SpeechSynthesisUtterance(text)
   u.lang = 'ar-SA'

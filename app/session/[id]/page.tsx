@@ -319,7 +319,7 @@ export default function SessionPage() {
       setObsLog(d.obsLog || [])
       setAbcLog(d.abcLog || [])
       setPhaseIdx(d.phaseIdx || 0)
-      if (Array.isArray(d.phaseDurations)) setPhaseDurations(d.phaseDurations)
+      if (Array.isArray(d.phaseDurations) && d.phaseDurations.length === SESSION_PHASES.length) setPhaseDurations(d.phaseDurations)
     } catch { /* ignore */ }
   }, [id])
 
@@ -803,6 +803,14 @@ export default function SessionPage() {
       'tap-target':        { threshold: 70, low: 'ضعف في التناسق البصري-الحركي. قلّص سرعة ظهور الأهداف وكبّر حجمها. فكّر في الإحالة لمعالج وظيفي (OT) إذا استمر الضعف.' },
       'word-recall':       { threshold: 70, low: 'ضعف في استرجاع الكلمات. طبّق التكرار التباعدي (Spaced Repetition) مع وقفات 5 ثوانٍ بين المحاولات.' },
       'body-scan':         { threshold: 70, low: 'صعوبة في الوعي الجسدي. قلّل نقاط الفحص لأربعة مناطق كبرى فقط (رأس/يدان/بطن/قدمان) مع إشارة لونية مرئية.' },
+      'jigsaw-puzzle':     { threshold: 70, low: 'صعوبة في التجميع المكاني. ابدأ ببزل 2×2 (4 قطع) مع صور ذات حواف واضحة ومتباينة، وعلّم استراتيجية "ابدأ بالزوايا والحواف" قبل الوسط.', mid: 'أداء جيد في التجميع المكاني. انتقل لبزل 3×3 مع صور أكثر تفاصيل وقلّص مدة الإنجاز المستهدفة.' },
+      'pattern-board':     { threshold: 70, low: 'صعوبة في استنساخ الأنماط. استخدم أنماطاً من 3 نقاط فقط أولاً، وعلّم استراتيجية المسح صفاً صفاً من اليمين لليسار ومن الأعلى للأسفل.', mid: 'تمييز بصري معقول للأنماط. أضف بُعد اللون الثالث وزد تعقيد النمط تدريجياً.' },
+      'color-sudoku':      { threshold: 70, low: 'صعوبة في قواعد الإقصاء المنطقي. علّم قاعدة واحدة فقط أولاً: "لا يتكرر اللون في الصف"، ثم أضف قاعدة العمود في الجلسة التالية بعد إتقان الأولى.', mid: 'فهم جزئي للقواعد المنطقية. أضف قاعدة المربع الداخلي وشجّع على التفكير بصوت عالٍ قبل كل اختيار.' },
+      'picture-puzzle':    { threshold: 70, low: 'صعوبة في التعرف البصري للصور المجزأة. استخدم صوراً من بيئة الطفل المألوفة (وجوه أفراد الأسرة، ألعابه) لتعزيز الدافعية وتسهيل التعرف.', mid: 'تعرف جيد على الصور المألوفة. انتقل لصور أكثر تفصيلاً وزد عدد القطع.' },
+      'matrix-puzzle':     { threshold: 70, low: 'ضعف في الاستدلال المصفوفي (الذكاء المائع). ابدأ بمصفوفات 2×2 مع قاعدة تحول واحدة فقط (اللون أو الشكل لا كليهما) وارسم القاعدة بياناً صريحاً.', mid: 'أداء متوسط في الاستدلال المصفوفي. طبّق مصفوفات 3×3 مع متغيرين.' },
+      'clock-reading':     { threshold: 70, low: 'صعوبة في قراءة الساعة. ابدأ بساعات على الساعة الكاملة فقط (12:00، 3:00)، استخدم ساعة حائط حقيقية بجانب الشاشة وعلّم الربط بالروتين اليومي للطفل.', mid: 'قراءة الساعات الكاملة مكتسبة. انتقل للنصف والربع مع التدريب على الساعة الرقمية والعقارب معاً.' },
+      'money-counter':     { threshold: 70, low: 'صعوبة في التعامل مع النقود. ابدأ بعملة واحدة فقط (مثلاً الريال/الدينار) وبنى بسيطة (1+1+1)، استخدم عملات حقيقية ملموسة قبل الانتقال للتمرين الرقمي.', mid: 'إلمام جيد بالعملات الفردية. مارس جمع العملات المختلطة ومفهوم الباقي في سيناريوهات شراء واقعية.' },
+      'letter-reversal':   { threshold: 70, low: 'صعوبة في تمييز الحروف المتشابهة (عسر القراءة البصري). استخدم الحرف المجسّم اللمسي (ورق شفرة، صنفرة)، وعلّم جملة ذاكرة لكل زوج متشابه (ب/ت/ث، د/ذ).', mid: 'تحسن في التمييز، لا يزال بطيئاً في التعرف. مارس القراءة الصوتية المزامنة (تعقّب الإصبع مع الصوت) لتعزيز الوصل البصري-السمعي.' },
     }
 
     // ── Category-level analysis ──
@@ -834,6 +842,9 @@ export default function SessionPage() {
       'listening-comprehension':'auditory','sound-discrimination':'auditory','rhyme-detection':'auditory','audio-sequence':'auditory',
       'visual-match':'autism','visual-schedule':'autism','first-then-board':'autism','imitation-mirror':'autism',
       'sensory-checkin':'autism','choice-board':'autism',
+      'jigsaw-puzzle':'attention','pattern-board':'attention','color-sudoku':'attention',
+      'picture-puzzle':'attention','matrix-puzzle':'attention','clock-reading':'attention',
+      'money-counter':'language','letter-reversal':'language',
     }
     results.forEach(r => {
       const cat = exCat[r.exerciseType]

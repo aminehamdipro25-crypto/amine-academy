@@ -89,10 +89,11 @@ export interface SessionPhase {
 }
 
 export const SESSION_PHASES: SessionPhase[] = [
-  { id: 'warmup',  label: 'تحية ودفء',   icon: '👋', defaultMin: 5,  color: '#3B82F6' },
-  { id: 'main',    label: 'نشاط رئيسي',  icon: '🎯', defaultMin: 25, color: '#7C5CFC' },
-  { id: 'assess',  label: 'تقييم',        icon: '📊', defaultMin: 10, color: '#F59E0B' },
-  { id: 'wrap',    label: 'تلخيص',        icon: '✅', defaultMin: 5,  color: '#22C55E' },
+  { id: 'checkin',  label: 'استقبال وفحص الحالة', icon: '👋', defaultMin: 5,  color: '#3B82F6' },
+  { id: 'warmup',   label: 'تدفئة',                icon: '🔥', defaultMin: 5,  color: '#F97316' },
+  { id: 'main',     label: 'نشاط علاجي',           icon: '🎯', defaultMin: 35, color: '#7C5CFC' },
+  { id: 'closure',  label: 'تعزيز وخاتمة',         icon: '🏆', defaultMin: 10, color: '#22C55E' },
+  { id: 'family',   label: 'إحاطة الأسرة',          icon: '👨‍👩‍👧', defaultMin: 5,  color: '#F59E0B' },
 ]
 
 export const EXERCISES = [

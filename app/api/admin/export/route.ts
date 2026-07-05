@@ -36,9 +36,12 @@ export async function GET() {
       Promise.all(students.map(s => getStudentGameResults(s.id))).then(r => r.flat()),
     ])
 
+    // Strip passwordHash — never include hashed credentials in a backup file
+    const sanitizedParents = parents.map(({ passwordHash: _ph, ...p }) => p)
+
     const dump = {
       exportedAt: new Date().toISOString(),
-      parents, students, exercises, appointments, payments,
+      parents: sanitizedParents, students, exercises, appointments, payments,
       reports, assessmentProfiles, gameResults,
     }
 

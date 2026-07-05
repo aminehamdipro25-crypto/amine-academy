@@ -13,12 +13,17 @@ export async function GET(
     return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
   }
 
-  const appointmentIds = await redis.lrange(`sessions:student:${params.id}`, 0, 29)
-  if (appointmentIds.length === 0) return NextResponse.json({ sessions: [], count: 0 })
+  try {
+    const appointmentIds = await redis.lrange(`sessions:student:${params.id}`, 0, 29)
+    if (appointmentIds.length === 0) return NextResponse.json({ sessions: [], count: 0 })
 
-  const logs = await Promise.all(
-    appointmentIds.map(aid => redis.get<SessionLog>(`session-log:${aid}`))
-  )
-  const sessions = logs.filter(Boolean) as SessionLog[]
-  return NextResponse.json({ sessions, count: sessions.length })
+    const logs = await Promise.all(
+      appointmentIds.map(aid => redis.get<SessionLog>(`session-log:${aid}`))
+    )
+    const sessions = logs.filter(Boolean) as SessionLog[]
+    return NextResponse.json({ sessions, count: sessions.length })
+  } catch (e) {
+    console.error('[admin/sessions/student GET]', e)
+    return NextResponse.json({ error: 'خطأ في الخادم' }, { status: 500 })
+  }
 }

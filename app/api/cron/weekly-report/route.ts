@@ -12,7 +12,13 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   }
 
-  const parents = await getAllParents()
+  let parents: Awaited<ReturnType<typeof getAllParents>>
+  try {
+    parents = await getAllParents()
+  } catch (e) {
+    console.error('[weekly-report] failed to fetch parents from Redis:', e)
+    return NextResponse.json({ error: 'db unavailable' }, { status: 503 })
+  }
   const activeParents = parents.filter(p => p.subscriptionStatus === 'active')
 
   let sent = 0

@@ -22,13 +22,18 @@ export async function POST(
   }
 
   try {
-    const { exercises, note, sessionId, difficulty } = await req.json()
-
+    const body = await req.json()
+    const rawExercises = Array.isArray(body?.exercises) ? body.exercises : []
     const homework: HomeworkAssignment = {
-      exercises,
-      note,
-      sessionId,
-      difficulty,
+      exercises: rawExercises.slice(0, 20).map((e: Record<string, unknown>) => ({
+        id:       String(e?.id       ?? '').slice(0, 60),
+        labelAr:  String(e?.labelAr  ?? '').slice(0, 120),
+        icon:     String(e?.icon     ?? '').slice(0, 10),
+        category: String(e?.category ?? '').slice(0, 60),
+      })),
+      note:       String(body?.note       ?? '').slice(0, 1000),
+      sessionId:  String(body?.sessionId  ?? '').replace(/[^a-zA-Z0-9-_]/g, '').slice(0, 60),
+      difficulty: ([1,2,3].includes(Number(body?.difficulty)) ? Number(body.difficulty) : 1) as unknown as number,
       createdAt: new Date().toISOString(),
     }
 

@@ -54,7 +54,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
     }
 
-    const studentId = new URL(req.url).searchParams.get('studentId')
+    const rawStudentId = new URL(req.url).searchParams.get('studentId')
+    const studentId = rawStudentId ? rawStudentId.replace(/[^a-zA-Z0-9-_]/g, '').slice(0, 100) : ''
     if (!studentId) return NextResponse.json({ error: 'studentId مطلوب' }, { status: 400 })
 
     const [program, allExercises] = await Promise.all([

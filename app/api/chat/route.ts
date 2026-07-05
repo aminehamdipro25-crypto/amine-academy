@@ -27,9 +27,15 @@ export async function POST(req: Request) {
     })
   }
 
-  const { messages }: { messages: Message[] } = await req.json()
+  let messages: Message[] = []
+  try {
+    const body = await req.json()
+    messages = Array.isArray(body?.messages) ? body.messages : []
+  } catch {
+    return NextResponse.json({ reply: 'حدث خطأ، حاول مجدداً.' })
+  }
 
-  if (!Array.isArray(messages) || messages.length === 0 || messages.length > 10) {
+  if (messages.length === 0 || messages.length > 10) {
     return NextResponse.json({ reply: 'حدث خطأ، حاول مجدداً.' })
   }
 

@@ -1313,6 +1313,12 @@ ${notes ? `
   }, [id])
 
   async function saveSession() {
+    if (!currentStudentId) {
+      setSaveFailed(true)
+      console.error('[saveSession] studentId is empty — session data was not loaded correctly')
+      setTimeout(() => setSaveFailed(false), 6000)
+      return
+    }
     setSaving(true)
     setSaveFailed(false)
     try {

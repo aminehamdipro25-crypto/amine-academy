@@ -11,6 +11,27 @@ function clamp(n: number): 1 | 2 | 3 | 4 | 5 {
   return v as 1 | 2 | 3 | 4 | 5
 }
 
+function sanitizeExercises(input: unknown): SessionLog['exercises'] {
+  if (!Array.isArray(input)) return []
+  return input.slice(0, 200).map(e => ({
+    exerciseType:    String(e?.exerciseType    ?? '').slice(0, 60),
+    exerciseLabelAr: String(e?.exerciseLabelAr ?? '').slice(0, 120),
+    score:           Math.min(100, Math.max(0, Number(e?.score)    || 0)),
+    accuracy:        Math.min(100, Math.max(0, Number(e?.accuracy) || 0)),
+    errors:          Math.min(999, Math.max(0, Number(e?.errors)   || 0)),
+    duration:        Math.min(3600, Math.max(0, Number(e?.duration) || 0)),
+    metadata:        (e?.metadata && typeof e.metadata === 'object' && !Array.isArray(e.metadata))
+                       ? e.metadata as Record<string, unknown>
+                       : {},
+    completedAt:     String(e?.completedAt ?? '').slice(0, 30),
+  }))
+}
+
+function sanitizeHighlights(input: unknown): string[] {
+  if (!Array.isArray(input)) return []
+  return input.slice(0, 100).map(h => String(h ?? '').slice(0, 300))
+}
+
 function sanitizeObservationLog(input: unknown): SessionLog['observationLog'] {
   if (!Array.isArray(input)) return []
   return input.slice(0, 500).map(e => ({
@@ -76,9 +97,9 @@ export async function POST(
         mood:        clamp(Number(body.observations?.mood)        || 3),
         anxiety:     clamp(Number(body.observations?.anxiety)     || 3),
       },
-      exercises: Array.isArray(body.exercises) ? body.exercises : [],
-      durationSeconds: Number(body.durationSeconds) || 0,
-      highlights: Array.isArray(body.highlights) ? body.highlights : [],
+      exercises: sanitizeExercises(body.exercises),
+      durationSeconds: Math.min(7200, Math.max(0, Number(body.durationSeconds) || 0)),
+      highlights: sanitizeHighlights(body.highlights),
       observationLog: sanitizeObservationLog(body.observationLog),
       abcLog: sanitizeAbcLog(body.abcLog),
       createdAt: new Date().toISOString(),
@@ -127,7 +148,7 @@ export async function PATCH(
             anxiety:     clamp(Number(body.observations.anxiety)     || existing.observations.anxiety),
           }
         : existing.observations,
-      highlights: Array.isArray(body.highlights) ? body.highlights : existing.highlights,
+      highlights: Array.isArray(body.highlights) ? sanitizeHighlights(body.highlights) : existing.highlights,
       durationSeconds: body.durationSeconds !== undefined
         ? Number(body.durationSeconds)
         : existing.durationSeconds,

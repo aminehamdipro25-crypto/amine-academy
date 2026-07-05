@@ -31,6 +31,9 @@ export async function POST(req: Request) {
       if (!parent || !verifyPassword(password, parent.passwordHash)) {
         return NextResponse.json({ error: 'البريد أو كلمة المرور غير صحيحة' }, { status: 401 })
       }
+      if (parent.subscriptionStatus === 'pending') {
+        return NextResponse.json({ error: 'لم يتم تفعيل حسابك بعد. تحقق من بريدك الإلكتروني وأدخل رمز التفعيل.' }, { status: 403 })
+      }
       if (parent.subscriptionStatus === 'suspended') {
         return NextResponse.json({ error: 'حسابك موقوف. تواصل مع الأكاديمية.' }, { status: 403 })
       }

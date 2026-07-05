@@ -9,6 +9,44 @@ const DONE_MESSAGES = [
   { emoji: '⭐', text: 'بطل! انتهى الوقت' },
 ]
 
+// Synthesize a cheerful applause-like burst using Web Audio API
+function playApplause() {
+  try {
+    const ctx = new AudioContext()
+    const duration = 1.8
+    const buf = ctx.createBuffer(1, ctx.sampleRate * duration, ctx.sampleRate)
+    const data = buf.getChannelData(0)
+    // White noise shaped with an envelope that mimics a clap burst then fade
+    for (let i = 0; i < data.length; i++) {
+      const t = i / ctx.sampleRate
+      // Three overlapping clap peaks
+      const env =
+        Math.exp(-12 * (t - 0.05) ** 2) +
+        Math.exp(-12 * (t - 0.55) ** 2) * 0.75 +
+        Math.exp(-12 * (t - 1.0) ** 2) * 0.55 +
+        Math.exp(-6  * (t - 1.5) ** 2) * 0.35
+      data[i] = (Math.random() * 2 - 1) * env * 0.45
+    }
+    // Bright tone for festivity
+    const osc = ctx.createOscillator()
+    const gain = ctx.createGain()
+    osc.frequency.value = 880
+    osc.type = 'sine'
+    gain.gain.setValueAtTime(0.15, ctx.currentTime)
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6)
+    osc.connect(gain)
+    gain.connect(ctx.destination)
+    osc.start()
+    osc.stop(ctx.currentTime + 0.6)
+
+    const src = ctx.createBufferSource()
+    src.buffer = buf
+    src.connect(ctx.destination)
+    src.start()
+    src.onended = () => ctx.close()
+  } catch {}
+}
+
 export default function StudentTimerDisplay({
   left,
   total,
@@ -28,6 +66,8 @@ export default function StudentTimerDisplay({
 }) {
   const [doneMsg] = useState(() => DONE_MESSAGES[Math.floor(total / 30) % DONE_MESSAGES.length])
   const [flash, setFlash] = useState(false)
+  const [stars, setStars] = useState<{ id: number; x: number; y: number; rot: number; scale: number }[]>([])
+  const applauseFiredRef = useRef(false)
 
   // Draggable position — null means "use default bottom-center"
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null)
@@ -59,13 +99,30 @@ export default function StudentTimerDisplay({
 
   const onPointerUp = useCallback(() => { dragging.current = false }, [])
 
-  // Flash border when finished
+  // Flash border + celebration when finished
   useEffect(() => {
     if (isDone) {
+      // One-shot applause + star burst
+      if (!applauseFiredRef.current) {
+        applauseFiredRef.current = true
+        playApplause()
+        setStars(
+          Array.from({ length: 9 }, (_, i) => ({
+            id: i,
+            x: 30 + Math.random() * 40,
+            y: 15 + Math.random() * 55,
+            rot: Math.random() * 360,
+            scale: 0.8 + Math.random() * 0.8,
+          }))
+        )
+        setTimeout(() => setStars([]), 2200)
+      }
       const id = setInterval(() => setFlash((f: boolean) => !f), 400)
       return () => clearInterval(id)
     } else {
+      applauseFiredRef.current = false
       setFlash(false)
+      setStars([])
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [left, total, countUp])
@@ -91,6 +148,15 @@ export default function StudentTimerDisplay({
     : { bottom: 80, left: '50%', transform: 'translateX(-50%)' }
 
   return (
+    <>
+    <style>{`
+      @keyframes starPop {
+        0%   { opacity: 0; transform: scale(0) rotate(var(--r, 0deg)); }
+        30%  { opacity: 1; transform: scale(1.4) rotate(var(--r, 0deg)); }
+        70%  { opacity: 1; transform: scale(1) rotate(var(--r, 0deg)); }
+        100% { opacity: 0; transform: scale(0.6) translateY(-20px) rotate(var(--r, 0deg)); }
+      }
+    `}</style>
     <div
       ref={widgetRef}
       onPointerDown={onPointerDown}
@@ -109,6 +175,22 @@ export default function StudentTimerDisplay({
         cursor: dragging.current ? 'grabbing' : 'grab',
       }}
     >
+      {/* ── Celebration star burst ── */}
+      {stars.map((s: { id: number; x: number; y: number; rot: number; scale: number }) => (
+        <div
+          key={s.id}
+          className="pointer-events-none absolute text-lg"
+          style={{
+            left:      `${s.x}%`,
+            top:       `${s.y}%`,
+            animation: 'starPop 2s ease-out forwards',
+            zIndex: 10,
+          }}
+        >
+          ⭐
+        </div>
+      ))}
+
       {/* ── Drag handle strip ── */}
       <div
         className="w-full flex items-center justify-center pb-1 pt-3 px-4"
@@ -184,5 +266,6 @@ export default function StudentTimerDisplay({
         </div>
       </div>
     </div>
+    </>
   )
 }

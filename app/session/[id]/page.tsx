@@ -488,10 +488,15 @@ export default function SessionPage() {
   const screenVideoRef = useRef<HTMLVideoElement>(null)
 
   async function startScreenShare() {
+    const devices = navigator.mediaDevices as MediaDevices & {
+      getDisplayMedia?: (opts?: MediaStreamConstraints) => Promise<MediaStream>
+    }
+    if (!devices.getDisplayMedia) {
+      alert('مشاركة الشاشة غير مدعومة في هذا المتصفح.\nيُرجى استخدام Chrome أو Firefox أو Edge.\n\nScreen sharing is not supported in this browser. Please use Chrome, Firefox, or Edge.')
+      return
+    }
     try {
-      const stream = await (navigator.mediaDevices as MediaDevices & {
-        getDisplayMedia: (opts?: MediaStreamConstraints) => Promise<MediaStream>
-      }).getDisplayMedia({ video: { frameRate: 30 } as MediaTrackConstraints })
+      const stream = await devices.getDisplayMedia({ video: { frameRate: 30 } as MediaTrackConstraints })
       stream.getVideoTracks()[0].addEventListener('ended', () => setScreenStream(null))
       setScreenStream(stream)
     } catch { /* user cancelled */ }
@@ -1224,6 +1229,13 @@ ${notes ? `
     const elapsedStr = `${Math.floor(elapsed / 60)}:${String(elapsed % 60).padStart(2, '0')}`
     const newEntry: IncidentEntry = { ...entry, id: crypto.randomUUID(), ts, elapsed: elapsedStr }
     setIncidentLog(prev => [...prev, newEntry])
+    // Persist immediately — crash-safe: don't wait for session save
+    const fullLog = [...incidentLog, newEntry]
+    fetch(`/api/sessions/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ incidentLog: fullLog }),
+    }).catch(() => { /* silent — will be included in final saveSession */ })
     // Also append to therapist notes for documentation
     setNotes((prev: string) => {
       const line = `[${ts}] 🚨 حادثة — ${entry.type} (شدة: ${entry.severity})${entry.notes ? ': ' + entry.notes : ''}`
@@ -1434,6 +1446,7 @@ ${notes ? `
           highlights: results.filter(r => r.score >= 80).map(r => `${r.exerciseLabelAr}: ${r.score}%`),
           observationLog: obsLog,
           abcLog,
+          incidentLog,
         }),
       })
       if (!res.ok) throw new Error(String(res.status))

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { isRateLimited, getClientIp } from '@/lib/rateLimit'
 import { createAdminSession } from '@/lib/auth'
+import { audit } from '@/lib/audit'
 
 export const runtime = 'nodejs'
 
@@ -28,6 +29,7 @@ export async function POST(req: Request) {
     }
 
     const token = await createAdminSession()
+    await audit({ action: 'login', actorId: 'admin', actorRole: 'admin', ip })
 
     const res = NextResponse.json({ ok: true })
     res.cookies.set('admin_token', token, {

@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, Users, LineChart,
-  Calendar, MessageSquare, FileText, LogOut, Dumbbell, Bell, ClipboardCheck, ChevronLeft, Sparkles,
+  Calendar, MessageSquare, FileText, LogOut, Dumbbell, Bell, ClipboardCheck, ChevronLeft, Sparkles, UserCircle,
 } from 'lucide-react'
 import { useLang, tr } from '@/lib/i18n'
 import LangToggle from '@/components/shared/LangToggle'
@@ -27,6 +27,7 @@ export default function ParentPortalLayout({ children }: { children: React.React
     { href: '/parent/reports',      label: t.parentNav.reports, icon: FileText },
     { href: '/parent/chat',         label: t.parentNav.chat,    icon: MessageSquare },
     { href: '/parent/family-challenge', label: t.parentNav.familyChallenge, icon: Sparkles },
+    { href: '/parent/account',          label: t.parentNav.account, icon: UserCircle },
   ]
 
   const bottomItems = navItems.slice(0, 5)

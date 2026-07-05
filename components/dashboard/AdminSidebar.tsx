@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Users, Dumbbell, Calendar,
   BarChart3, FileText, LogOut, Brain,
   ClipboardList, BookOpen, Settings, CreditCard, MessageSquare,
-  Zap, UserCog, PersonStanding, Target,
+  Zap, UserCog, PersonStanding, Target, ShieldAlert, ScrollText,
 } from 'lucide-react'
 import { useLang, tr } from '@/lib/i18n'
 
@@ -38,6 +38,8 @@ export default function AdminSidebar({ onClose, unreadMessages = 0 }: { onClose?
     { href: '/dashboard/analytics',              label: navT.analytics, icon: BarChart3, ownerOnly: true },
     { href: '/dashboard/staff',                  label: navT.staff, icon: UserCog, ownerOnly: true },
     { href: '/dashboard/settings',               label: navT.settings, icon: Settings, ownerOnly: true },
+    { href: '/dashboard/monitor',                label: navT.monitor, icon: ShieldAlert, ownerOnly: true },
+    { href: '/dashboard/audit',                  label: navT.audit, icon: ScrollText, ownerOnly: true },
   ]
   const visibleNav = NAV.filter(item => !item.ownerOnly || isOwner)
 

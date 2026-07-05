@@ -4,6 +4,7 @@ import { createSession } from '@/lib/auth'
 import { getParentByEmail } from '@/lib/db'
 import { verifyPassword } from '@/lib/password'
 import { redis } from '@/lib/redis'
+import { audit } from '@/lib/audit'
 
 export const runtime = 'nodejs'
 
@@ -39,6 +40,7 @@ export async function POST(req: Request) {
       }
 
       const token = await createSession(parent.id, 'parent')
+      await audit({ action: 'login', actorId: parent.id, actorRole: 'parent', ip })
       const res = NextResponse.json({ ok: true, id: parent.id })
       res.cookies.set('parent_token', token, {
         httpOnly: true,

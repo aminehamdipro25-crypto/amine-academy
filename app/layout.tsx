@@ -6,6 +6,7 @@ import { AccessibilityProvider } from '@/lib/accessibility'
 import ScrollToTop from '@/components/ScrollToTop'
 import PWARegister from '@/components/PWARegister'
 import AccessibilityWidget from '@/components/AccessibilityWidget'
+import ErrorMonitorInstaller from '@/components/ErrorMonitorInstaller'
 
 const cairo = Cairo({
   subsets: ['arabic', 'latin'],
@@ -89,6 +90,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ScrollToTop />
         <PWARegister />
         <AccessibilityWidget />
+        <ErrorMonitorInstaller />
         </AccessibilityProvider>
         {GA_ID && (
           <>

@@ -99,7 +99,7 @@ export const tr = {
       parentNav: {
         home: 'الرئيسية', children: 'أطفالي', assessment: 'التقييم', exercises: 'التمارين',
         progress: 'التطور', appointments: 'المواعيد', reports: 'التقارير', chat: 'التواصل',
-        familyChallenge: 'تحدي العائلة', practice: 'تمارين منزلية', more: 'المزيد',
+        familyChallenge: 'تحدي العائلة', practice: 'تمارين منزلية', account: 'حسابي', more: 'المزيد',
       },
       studentNav: {
         home: 'بيتي', exercises: 'تمارين', journal: 'يومياتي', achievements: 'جوائزي', schedule: 'جدولي',
@@ -788,6 +788,8 @@ export const tr = {
       analytics: 'الإحصائيات',
       staff: 'فريق العمل',
       settings: 'الإعدادات',
+      monitor: 'مراقبة الأخطاء',
+      audit: 'سجل المراجعة',
       newItem: 'إضافة جديد',
     },
     adminChrome: {
@@ -1302,7 +1304,7 @@ export const tr = {
       parentNav: {
         home: 'Home', children: 'My Children', assessment: 'Assessment', exercises: 'Exercises',
         progress: 'Progress', appointments: 'Appointments', reports: 'Reports', chat: 'Messages',
-        familyChallenge: 'Family Challenge', practice: 'Home Practice', more: 'More',
+        familyChallenge: 'Family Challenge', practice: 'Home Practice', account: 'My Account', more: 'More',
       },
       studentNav: {
         home: 'Home', exercises: 'Exercises', journal: 'Journal', achievements: 'Awards', schedule: 'Schedule',
@@ -1991,6 +1993,8 @@ export const tr = {
       analytics: 'Analytics',
       staff: 'Staff',
       settings: 'Settings',
+      monitor: 'Error Monitor',
+      audit: 'Audit Log',
       newItem: 'New',
     },
     adminChrome: {
@@ -2505,7 +2509,7 @@ export const tr = {
       parentNav: {
         home: 'Accueil', children: 'Mes enfants', assessment: 'Évaluation', exercises: 'Exercices',
         progress: 'Progrès', appointments: 'Rendez-vous', reports: 'Rapports', chat: 'Messages',
-        familyChallenge: 'Défi familial', practice: 'Pratique à domicile', more: 'Plus',
+        familyChallenge: 'Défi familial', practice: 'Pratique à domicile', account: 'Mon compte', more: 'Plus',
       },
       studentNav: {
         home: 'Accueil', exercises: 'Exercices', journal: 'Journal', achievements: 'Récompenses', schedule: 'Emploi du temps',
@@ -3194,6 +3198,8 @@ export const tr = {
       analytics: 'Statistiques',
       staff: 'Équipe',
       settings: 'Paramètres',
+      monitor: 'Surveillance erreurs',
+      audit: 'Journal d\'audit',
       newItem: 'Nouveau',
     },
     adminChrome: {

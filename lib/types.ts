@@ -208,6 +208,16 @@ export interface SessionABCLogEntry {
   elapsed:     number
 }
 
+export interface SessionIncidentEntry {
+  id:       string
+  type:     string
+  severity: 1 | 2 | 3
+  notes:    string
+  ts:       string
+  elapsed:  string
+  loggedAt: string
+}
+
 export interface SessionLog {
   id:              string
   appointmentId:   string
@@ -219,6 +229,7 @@ export interface SessionLog {
   highlights:      string[]
   observationLog:  SessionObservationLogEntry[]
   abcLog:          SessionABCLogEntry[]
+  incidentLog:     SessionIncidentEntry[]
   createdAt:       string
 }
 

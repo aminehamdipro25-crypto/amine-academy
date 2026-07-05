@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { isDashboardUser } from '@/lib/auth'
 import { redis } from '@/lib/redis'
 import { updateAppointment } from '@/lib/db'
-import type { SessionLog } from '@/lib/types'
+import type { SessionLog, SessionIncidentEntry } from '@/lib/types'
+import { audit } from '@/lib/audit'
 
 export const runtime = 'nodejs'
 
@@ -55,6 +56,20 @@ function sanitizeAbcLog(input: unknown): SessionLog['abcLog'] {
   }))
 }
 
+function sanitizeIncidentLog(input: unknown): SessionLog['incidentLog'] {
+  if (!Array.isArray(input)) return []
+  const VALID_TYPES = ['meltdown','panic','self-harm','aggression','elopement','injury','other']
+  return input.slice(0, 100).map(e => ({
+    id:       String(e?.id       ?? '').slice(0, 60),
+    type:     VALID_TYPES.includes(String(e?.type ?? '')) ? String(e.type) : 'other',
+    severity: ([1,2,3].includes(Number(e?.severity)) ? Number(e.severity) : 1) as 1|2|3,
+    notes:    String(e?.notes    ?? '').slice(0, 500),
+    ts:       String(e?.ts       ?? '').slice(0, 20),
+    elapsed:  String(e?.elapsed  ?? '').slice(0, 20),
+    loggedAt: String(e?.loggedAt ?? '').slice(0, 30) || new Date().toISOString(),
+  }))
+}
+
 async function requireAdmin(): Promise<boolean> {
   return isDashboardUser()
 }
@@ -102,6 +117,7 @@ export async function POST(
       highlights: sanitizeHighlights(body.highlights),
       observationLog: sanitizeObservationLog(body.observationLog),
       abcLog: sanitizeAbcLog(body.abcLog),
+      incidentLog: sanitizeIncidentLog(body.incidentLog),
       createdAt: new Date().toISOString(),
     }
     await redis.set(`session-log:${params.appointmentId}`, log, { ex: 365 * 24 * 3600 })
@@ -113,6 +129,7 @@ export async function POST(
     } catch (e) {
       console.error('[session-log POST] failed to mark appointment completed', e)
     }
+    await audit({ action: 'session_save', actorId: 'admin', actorRole: 'admin', targetId: studentId, meta: { appointmentId: params.appointmentId } })
     return NextResponse.json({ ok: true, id })
   } catch (err) {
     console.error('[session-log POST]', err)
@@ -158,6 +175,9 @@ export async function PATCH(
       abcLog: body.abcLog !== undefined
         ? sanitizeAbcLog(body.abcLog)
         : (existing.abcLog ?? []),
+      incidentLog: body.incidentLog !== undefined
+        ? sanitizeIncidentLog(body.incidentLog)
+        : (existing.incidentLog ?? []),
     }
     await redis.set(`session-log:${params.appointmentId}`, updated, { ex: 365 * 24 * 3600 })
     return NextResponse.json({ ok: true })

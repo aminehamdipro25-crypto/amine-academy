@@ -87,6 +87,7 @@ import ColorSudoku    from '@/components/session/exercises/ColorSudoku'
 import MoneyCounter   from '@/components/session/exercises/MoneyCounter'
 import CrossLateral    from '@/components/session/exercises/CrossLateral'
 import ReadingFluency  from '@/components/session/exercises/ReadingFluency'
+import LetterSearch    from '@/components/session/exercises/LetterSearch'
 import Whiteboard      from '@/components/session/Whiteboard'
 import StudentTimerDisplay from '@/components/session/StudentTimerDisplay'
 import SessionHeader   from '@/components/session/SessionHeader'
@@ -3239,6 +3240,7 @@ ${notes ? `
               {/* ── Learning difficulties exercises ── */}
               {activeView.id === 'cross-lateral'      && <CrossLateral       onComplete={handleExerciseComplete} onCancel={handleCancel} difficulty={activeDifficulty} />}
               {activeView.id === 'reading-fluency'    && <ReadingFluency     onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'letter-search'      && <LetterSearch       onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
               {/* ── Physical exercises ── */}
               {['jumping-jacks','obstacle-circuit','balance-walk','tiger-crawl','ball-throw','stretching','body-percussion'].includes(activeView.id) && (
                 <PhysicalExercise id={activeView.id} onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />

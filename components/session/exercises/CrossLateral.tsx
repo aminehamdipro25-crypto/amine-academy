@@ -5,12 +5,10 @@
 // tracking, the child physically reaches across the midline to tap targets on
 // a touchscreen or with a mouse, producing the same therapeutic crossing motion.
 import { useState, useRef, useEffect, useCallback } from 'react'
+import type { ExerciseResult } from '@/lib/types'
 
 interface Props {
-  onComplete: (r: {
-    score: number; errors: number; duration: number
-    accuracy: number; metadata: Record<string, unknown>
-  }) => void
+  onComplete: (r: ExerciseResult) => void
   onCancel: () => void
   difficulty?: 1 | 2 | 3
 }
@@ -59,6 +57,8 @@ export default function CrossLateral({ onComplete, onCancel, difficulty = 1 }: P
       doneRef.current = true
       const accuracy = Math.round((hitsRef.current / cfg.rounds) * 100)
       onComplete({
+        exerciseType:    'cross-lateral',
+        exerciseLabelAr: 'عبور خط المنتصف',
         score:    accuracy,
         accuracy,
         errors:   missRef.current,
@@ -69,6 +69,7 @@ export default function CrossLateral({ onComplete, onCancel, difficulty = 1 }: P
           rounds: cfg.rounds,
           technique: 'cross-lateral-tap',
         },
+        completedAt: new Date().toISOString(),
       })
       return
     }

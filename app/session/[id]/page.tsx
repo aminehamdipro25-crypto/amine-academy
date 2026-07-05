@@ -3286,11 +3286,10 @@ ${notes ? `
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8, transition: { duration: 0.2 } }}
               transition={{ duration: 0.25 }}
-              className="w-full max-w-2xl mx-auto py-6"
-              style={{ minHeight: '520px' }}
+              className="absolute inset-0"
             >
             <Suspense fallback={
-              <div className="flex items-center justify-center h-48">
+              <div className="flex items-center justify-center w-full h-full">
                 <div className="w-8 h-8 rounded-full border-4 border-brand-500 border-t-transparent animate-spin" />
               </div>
             }>

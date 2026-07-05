@@ -69,9 +69,10 @@ export default function StudentTimerDisplay({
   const [stars, setStars] = useState<{ id: number; x: number; y: number; rot: number; scale: number }[]>([])
   const applauseFiredRef = useRef(false)
 
-  // Draggable — use direct DOM manipulation during drag for 60fps smoothness.
-  // React state is only synced once on pointer-up so rendering stays minimal.
-  const [pos, setPos] = useState<{ x: number; y: number } | null>(null)
+  // Draggable — direct DOM manipulation during drag for 60fps.
+  // posRef is the single source of truth; a tiny counter triggers a re-render
+  // after pointer-up so posStyle (which reads posRef) reflects the final position.
+  const [, forceUpdate] = useState(0)
   const dragging = useRef(false)
   const dragOffset = useRef({ x: 0, y: 0 })
   const posRef = useRef<{ x: number; y: number } | null>(null)
@@ -81,28 +82,32 @@ export default function StudentTimerDisplay({
     if ((e.target as HTMLElement).closest('button')) return
     e.currentTarget.setPointerCapture(e.pointerId)
     dragging.current = true
-    const rect = e.currentTarget.getBoundingClientRect()
-    dragOffset.current = { x: e.clientX - rect.left, y: e.clientY - rect.top }
+    const el = widgetRef.current
+    if (el) {
+      // Snapshot current rendered position so drag starts from exact visual pos
+      const rect = el.getBoundingClientRect()
+      dragOffset.current = { x: e.clientX - rect.left, y: e.clientY - rect.top }
+      posRef.current = { x: rect.left, y: rect.top }
+    }
   }, [])
 
   const onPointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     if (!dragging.current || !widgetRef.current) return
-    const w = widgetRef.current.offsetWidth
-    const h = widgetRef.current.offsetHeight
-    const x = Math.max(0, Math.min(window.innerWidth  - w, e.clientX - dragOffset.current.x))
-    const y = Math.max(0, Math.min(window.innerHeight - h, e.clientY - dragOffset.current.y))
-    // Direct DOM update — bypasses React re-render entirely
-    widgetRef.current.style.left      = `${x}px`
-    widgetRef.current.style.top       = `${y}px`
-    widgetRef.current.style.bottom    = 'auto'
-    widgetRef.current.style.transform = 'none'
+    const el = widgetRef.current
+    const x = Math.max(0, Math.min(window.innerWidth  - el.offsetWidth,  e.clientX - dragOffset.current.x))
+    const y = Math.max(0, Math.min(window.innerHeight - el.offsetHeight, e.clientY - dragOffset.current.y))
+    // Direct DOM update — bypasses React re-render entirely for 60fps
+    el.style.left      = `${x}px`
+    el.style.top       = `${y}px`
+    el.style.bottom    = 'auto'
+    el.style.transform = 'none'
     posRef.current = { x, y }
   }, [])
 
   const onPointerUp = useCallback(() => {
     dragging.current = false
-    // Sync final position to React state so it survives re-renders
-    if (posRef.current) setPos(posRef.current)
+    // One forced re-render so posStyle picks up posRef.current permanently
+    if (posRef.current) forceUpdate(n => n + 1)
   }, [])
 
   // Flash border + celebration when finished
@@ -148,9 +153,10 @@ export default function StudentTimerDisplay({
     : pct <= 0.25 ? '#F59E0B'
     : '#22C55E'
 
-  // Inline position style — fixed coords when dragged, default bottom-center otherwise
-  const posStyle: React.CSSProperties = pos
-    ? { left: pos.x, top: pos.y, bottom: 'auto', transform: 'none' }
+  // posRef is always current — safe to read during React re-renders (timer ticks)
+  // without posRef, React would re-apply the old pos state and snap the widget
+  const posStyle: React.CSSProperties = posRef.current
+    ? { left: posRef.current.x, top: posRef.current.y, bottom: 'auto', transform: 'none' }
     : { bottom: 80, left: '50%', transform: 'translateX(-50%)' }
 
   return (
@@ -178,7 +184,9 @@ export default function StudentTimerDisplay({
         boxShadow: `0 0 40px ${borderColor}22`,
         minWidth: 210,
         transition: 'border-color 0.2s, box-shadow 0.2s',
-        cursor: dragging.current ? 'grabbing' : 'grab',
+        cursor: 'grab',
+        touchAction: 'none',
+        willChange: 'left, top',
       }}
     >
       {/* ── Celebration star burst ── */}

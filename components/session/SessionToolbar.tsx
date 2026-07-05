@@ -1,9 +1,6 @@
 'use client'
-// Toolbar strip below the session header (app/session/[id]/page.tsx): camera,
-// whiteboard, prompt cards, student timer, white noise, mode toggles,
-// difficulty, report and lock buttons. Extracted out of page.tsx to keep that
-// file focused on session state/behavior.
 import { Video, PenLine } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
 import type { PROMPT_CARDS } from '@/lib/session-constants'
 import { ToolbarPopover, formatTime } from '@/lib/session-helpers'
 
@@ -18,9 +15,9 @@ const NOISE_MODES = [
 ] as const
 
 const NOISE_DESCRIPTIONS: Record<NoiseMode, string> = {
-  calm:  'نغمات هادئة متجانسة بتذبذب يحاكي التنفس البطيء (~6 أنفاس/د) — مستوحى من أبحاث الموسيقى المهدئة للدماغ',
-  theta: 'نبضة ثنائية (binaural) بتردد ~6Hz (ثيتا) مرتبطة بالاسترخاء العميق — يلزم استخدام سماعات الرأس',
-  focus: 'نبضة ثنائية (binaural) بتردد 40Hz (غاما) مرتبطة باليقظة والتركيز — يلزم استخدام سماعات الرأس',
+  calm:  'نغمات هادئة متجانسة بتذبذب يحاكي التنفس البطيء (~6 أنفاس/د)',
+  theta: 'نبضة ثنائية (binaural) بتردد ~6Hz (ثيتا) — يلزم سماعات الرأس',
+  focus: 'نبضة ثنائية (binaural) بتردد 40Hz (غاما) — يلزم سماعات الرأس',
   rain:  'صوت مطر طبيعي مهدئ لتغطية المشتتات الصوتية',
   white: 'الضوضاء البيضاء تُحسّن التركيز لدى ADHD — موثّق علمياً',
 }
@@ -108,11 +105,89 @@ export default function SessionToolbar({
   onPrintReport: () => void
   onLockSession: () => void
 }) {
+  // ── Custom audio upload (local state — no session persistence needed) ──
+  const [customTrack, setCustomTrack] = useState<{ name: string; url: string } | null>(null)
+  const [customPlaying, setCustomPlaying] = useState(false)
+  const [customVolume, setCustomVolume] = useState(0.7)
+  const [customLooping, setCustomLooping] = useState(true)
+  const customAudioRef = useRef<HTMLAudioElement | null>(null)
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
+
+  // Cleanup object URL on track change or unmount
+  useEffect(() => {
+    return () => {
+      if (customTrack) URL.revokeObjectURL(customTrack.url)
+    }
+  }, [customTrack])
+
+  // Sync volume + loop to audio element
+  useEffect(() => {
+    if (customAudioRef.current) {
+      customAudioRef.current.volume = customVolume
+      customAudioRef.current.loop = customLooping
+    }
+  }, [customVolume, customLooping])
+
+  function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    // Stop old track
+    if (customAudioRef.current) {
+      customAudioRef.current.pause()
+      customAudioRef.current = null
+    }
+    if (customTrack) URL.revokeObjectURL(customTrack.url)
+    // Stop synthesis if running
+    if (noiseRunning) onStopNoise()
+
+    const url = URL.createObjectURL(file)
+    const audio = new Audio(url)
+    audio.volume = customVolume
+    audio.loop = customLooping
+    audio.addEventListener('ended', () => { if (!customLooping) setCustomPlaying(false) })
+    customAudioRef.current = audio
+    setCustomTrack({ name: file.name.replace(/\.[^.]+$/, ''), url })
+    setCustomPlaying(false)
+    // Reset input so same file can be re-selected
+    e.target.value = ''
+  }
+
+  function toggleCustomPlay() {
+    if (!customAudioRef.current) return
+    if (customPlaying) {
+      customAudioRef.current.pause()
+      setCustomPlaying(false)
+    } else {
+      // Stop synthesis when playing custom
+      if (noiseRunning) onStopNoise()
+      customAudioRef.current.play()
+      setCustomPlaying(true)
+    }
+  }
+
+  function stopCustom() {
+    if (!customAudioRef.current) return
+    customAudioRef.current.pause()
+    customAudioRef.current.currentTime = 0
+    setCustomPlaying(false)
+  }
+
+  function removeCustomTrack() {
+    stopCustom()
+    if (customTrack) URL.revokeObjectURL(customTrack.url)
+    customAudioRef.current = null
+    setCustomTrack(null)
+  }
+
+  // If synthesis starts, pause custom audio
+  useEffect(() => {
+    if (noiseRunning && customPlaying) {
+      customAudioRef.current?.pause()
+      setCustomPlaying(false)
+    }
+  }, [noiseRunning])
+
   return (
-    /* ── Toolbar strip — wrapped in a grid row that animates 0fr↔1fr so
-        show/hide collapses height smoothly instead of an instant display:none
-        snap. The 3 toolbar popovers render via a portal to document.body, so
-        this wrapper's overflow-hidden never clips them. ── */
     <div
       ref={toolbarRef}
       className={`grid transition-[grid-template-rows] duration-200 ease-out ${chromeHidden ? 'grid-rows-[0fr]' : 'grid-rows-[1fr]'}`}
@@ -206,7 +281,7 @@ export default function SessionToolbar({
         >
           <p className="text-gray-400 text-[10px] font-black mb-2">اختر مدة المؤقت</p>
           <div className="grid grid-cols-2 gap-1.5 mb-2">
-            {[[60,'1 دقيقة'],[120,'2 دقيقة'],[180,'3 دقائق'],[300,'5 دقائق']].map(([s,l]) => (
+            {([[60,'1 دقيقة'],[120,'2 دقيقة'],[180,'3 دقائق'],[300,'5 دقائق'],[600,'10 دقائق'],[900,'15 دقيقة']] as [number,string][]).map(([s,l]) => (
               <button
                 key={s}
                 onClick={() => onStartStudentTimer(s as number)}
@@ -227,74 +302,186 @@ export default function SessionToolbar({
         </div>
       </ToolbarPopover>
 
-      {/* White noise / focus music */}
+      {/* White noise / focus music + custom upload */}
       <div className="relative flex-shrink-0" ref={noiseBtnRef}>
         <button
           onClick={onToggleNoisePanel}
           className={`flex items-center gap-1.5 font-black px-2.5 py-1.5 rounded-lg text-xs transition-all ${
-            noiseRunning
+            noiseRunning || customPlaying
               ? 'bg-cyan-600 text-white ring-1 ring-cyan-400/50'
               : 'bg-surface-page hover:bg-brand-50 text-gray-500'
           }`}
           title="موسيقى وترددات الاسترخاء والتركيز"
         >
-          🎵 {noiseRunning ? formatTime(noiseSecsLeft) : 'موسيقى'}
+          🎵 {noiseRunning ? formatTime(noiseSecsLeft) : customPlaying ? '♪ يعزف' : 'موسيقى'}
         </button>
       </div>
       <ToolbarPopover anchorRef={noiseBtnRef} open={showNoisePanel} onClose={onCloseNoisePanel}>
         <div
           className="rounded-2xl p-3 shadow-2xl bg-white border border-cyan-100"
-          style={{ minWidth: 230 }}
+          style={{ minWidth: 250 }}
           dir="rtl"
         >
-          <p className="text-gray-400 text-[10px] font-black mb-2.5 flex items-center gap-1">
-            🎵 صوت الجلسة <span className="text-cyan-600">(5 دقائق)</span>
+          {/* ── Section A: Custom file upload ── */}
+          <p className="text-gray-400 text-[10px] font-black mb-2 flex items-center gap-1">
+            📁 موسيقى من جهازك
           </p>
 
-          {/* Mode selector */}
-          <div className="grid grid-cols-2 gap-1.5 mb-3">
-            {NOISE_MODES.map(m => (
+          {!customTrack ? (
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="w-full py-2.5 mb-3 rounded-xl text-xs font-black border-2 border-dashed border-cyan-200 text-cyan-600 hover:border-cyan-400 hover:bg-cyan-50 transition-all flex items-center justify-center gap-2"
+            >
+              ⬆ رفع ملف صوتي (MP3 / WAV / OGG)
+            </button>
+          ) : (
+            <div className="mb-3 bg-cyan-50 rounded-xl p-2.5 border border-cyan-100">
+              {/* Track name */}
+              <div className="text-cyan-800 font-black text-[11px] truncate mb-2" title={customTrack.name}>
+                🎵 {customTrack.name}
+              </div>
+              {/* Controls row */}
+              <div className="flex items-center gap-1.5 mb-2">
+                <button
+                  onClick={toggleCustomPlay}
+                  className={`flex-1 py-1.5 rounded-lg text-xs font-black transition-all ${
+                    customPlaying
+                      ? 'bg-cyan-600 text-white'
+                      : 'bg-white text-cyan-700 border border-cyan-200 hover:bg-cyan-100'
+                  }`}
+                >
+                  {customPlaying ? '⏸ إيقاف مؤقت' : '▶ تشغيل'}
+                </button>
+                <button
+                  onClick={stopCustom}
+                  className="py-1.5 px-2 rounded-lg text-xs font-black bg-white text-gray-500 border border-gray-200 hover:bg-gray-50 transition-all"
+                  title="إيقاف وإعادة للبداية"
+                >
+                  ⏹
+                </button>
+                <button
+                  onClick={removeCustomTrack}
+                  className="py-1.5 px-2 rounded-lg text-xs font-black bg-white text-red-400 border border-red-100 hover:bg-red-50 transition-all"
+                  title="حذف المقطع"
+                >
+                  ✕
+                </button>
+              </div>
+              {/* Volume slider */}
+              <div className="flex items-center gap-2">
+                <span className="text-[9px] text-gray-400 flex-shrink-0">🔊</span>
+                <input
+                  type="range" min={0} max={1} step={0.05}
+                  value={customVolume}
+                  onChange={e => {
+                    const v = parseFloat(e.target.value)
+                    setCustomVolume(v)
+                    if (customAudioRef.current) customAudioRef.current.volume = v
+                  }}
+                  className="flex-1 h-1 accent-cyan-500 cursor-pointer"
+                />
+                <span className="text-[9px] text-gray-400 w-7 text-left">{Math.round(customVolume * 100)}%</span>
+              </div>
+              {/* Loop toggle */}
               <button
-                key={m.key}
-                onClick={() => { onSetNoiseMode(m.key); if (noiseRunning) onStopNoise() }}
-                className={`py-2 px-1 rounded-xl text-[10px] font-black text-center transition-all leading-tight ${
-                  noiseMode === m.key
-                    ? 'bg-cyan-600 text-white'
-                    : 'text-gray-500 hover:text-gray-700 bg-surface-page'
+                onClick={() => {
+                  const next = !customLooping
+                  setCustomLooping(next)
+                  if (customAudioRef.current) customAudioRef.current.loop = next
+                }}
+                className={`mt-1.5 w-full py-1 rounded-lg text-[10px] font-black transition-all ${
+                  customLooping ? 'bg-cyan-100 text-cyan-700' : 'bg-gray-50 text-gray-400'
                 }`}
               >
-                <div className="text-base mb-0.5">{m.emoji}</div>
-                <div>{m.label}</div>
+                🔁 {customLooping ? 'تكرار مفعّل' : 'تكرار معطّل'}
               </button>
-            ))}
-          </div>
-
-          {/* Countdown */}
-          {noiseRunning && (
-            <div className="text-center mb-3">
-              <div className="text-cyan-600 font-black text-xl ltr-num">{formatTime(noiseSecsLeft)}</div>
-              <div className="h-1.5 bg-surface-page rounded-full mt-1.5 overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-l from-cyan-400 to-cyan-600 rounded-full transition-all duration-1000"
-                  style={{ width: `${((5 * 60 - noiseSecsLeft) / (5 * 60)) * 100}%` }}
-                />
-              </div>
+              {/* Change track */}
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="mt-1.5 w-full py-1 rounded-lg text-[10px] font-black text-gray-400 hover:text-gray-600 transition-all"
+              >
+                ↩ تغيير المقطع
+              </button>
             </div>
           )}
 
-          <button
-            onClick={() => noiseRunning ? onStopNoise() : onStartNoise()}
-            className={`w-full py-2.5 rounded-xl text-sm font-black transition-all ${
-              noiseRunning
-                ? 'bg-red-500 hover:bg-red-600 text-white'
-                : 'bg-cyan-600 hover:bg-cyan-500 text-white'
-            }`}
-          >
-            {noiseRunning ? '⏹ إيقاف' : '▶ تشغيل'}
-          </button>
-          <p className="text-gray-400 text-[9px] mt-2 text-center leading-relaxed">
-            {NOISE_DESCRIPTIONS[noiseMode]}
-          </p>
+          {/* Hidden file input */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="audio/*"
+            className="hidden"
+            onChange={handleFileSelect}
+          />
+
+          {/* ── Section B: Generated sounds ── */}
+          <div className="border-t border-gray-100 pt-2.5 mt-0.5">
+            <p className="text-gray-400 text-[10px] font-black mb-2 flex items-center gap-1">
+              🎵 أصوات مولّدة <span className="text-cyan-600">(5 دقائق)</span>
+            </p>
+
+            <div className="grid grid-cols-2 gap-1.5 mb-3">
+              {NOISE_MODES.map(m => (
+                <button
+                  key={m.key}
+                  onClick={() => {
+                    onSetNoiseMode(m.key)
+                    if (noiseRunning) onStopNoise()
+                    // Also stop custom if switching to synthesis
+                    if (customPlaying) {
+                      customAudioRef.current?.pause()
+                      setCustomPlaying(false)
+                    }
+                  }}
+                  className={`py-2 px-1 rounded-xl text-[10px] font-black text-center transition-all leading-tight ${
+                    noiseMode === m.key
+                      ? 'bg-cyan-600 text-white'
+                      : 'text-gray-500 hover:text-gray-700 bg-surface-page'
+                  }`}
+                >
+                  <div className="text-base mb-0.5">{m.emoji}</div>
+                  <div>{m.label}</div>
+                </button>
+              ))}
+            </div>
+
+            {noiseRunning && (
+              <div className="text-center mb-3">
+                <div className="text-cyan-600 font-black text-xl ltr-num">{formatTime(noiseSecsLeft)}</div>
+                <div className="h-1.5 bg-surface-page rounded-full mt-1.5 overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-l from-cyan-400 to-cyan-600 rounded-full transition-all duration-1000"
+                    style={{ width: `${((5 * 60 - noiseSecsLeft) / (5 * 60)) * 100}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
+            <button
+              onClick={() => {
+                if (noiseRunning) {
+                  onStopNoise()
+                } else {
+                  // Stop custom if running
+                  if (customPlaying) {
+                    customAudioRef.current?.pause()
+                    setCustomPlaying(false)
+                  }
+                  onStartNoise()
+                }
+              }}
+              className={`w-full py-2.5 rounded-xl text-sm font-black transition-all ${
+                noiseRunning
+                  ? 'bg-red-500 hover:bg-red-600 text-white'
+                  : 'bg-cyan-600 hover:bg-cyan-500 text-white'
+              }`}
+            >
+              {noiseRunning ? '⏹ إيقاف' : '▶ تشغيل'}
+            </button>
+            <p className="text-gray-400 text-[9px] mt-2 text-center leading-relaxed">
+              {NOISE_DESCRIPTIONS[noiseMode]}
+            </p>
+          </div>
         </div>
       </ToolbarPopover>
 

@@ -99,6 +99,7 @@ import VideoLibraryModal from '@/components/session/VideoLibraryModal'
 import AbcLogPanel from '@/components/session/AbcLogPanel'
 import HomeworkPanel from '@/components/session/HomeworkPanel'
 import QuickObsPanel from '@/components/session/QuickObsPanel'
+import IncidentPanel, { type IncidentEntry } from '@/components/session/IncidentPanel'
 import LiveSessionCard from '@/components/session/LiveSessionCard'
 import SessionStarCounter from '@/components/session/SessionStarCounter'
 import { computeAdaptiveDecision } from '@/lib/session-adaptive'
@@ -296,6 +297,10 @@ export default function SessionPage() {
   // Quick sticky-note overlay (#9)
   const [showQuickNote, setShowQuickNote]   = useState(false)
   const [quickNoteText, setQuickNoteText]   = useState('')
+
+  // Incident log — safety events during session
+  const [incidentLog, setIncidentLog]   = useState<IncidentEntry[]>([])
+  const [incidentOpen, setIncidentOpen] = useState(false)
 
   // ── Session draft persistence — restore on refresh ──────────
   const draftRestoredRef = useRef(false)
@@ -1183,6 +1188,19 @@ ${notes ? `
     setAbcForm({ antecedent: '', behavior: '', consequence: '', intensity: 2 })
     setAbcOpen(false)
     playSound('abc')
+  }
+
+  function logIncident(entry: Omit<IncidentEntry, 'id' | 'ts' | 'elapsed'>) {
+    const now = new Date()
+    const ts = now.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })
+    const elapsedStr = `${Math.floor(elapsed / 60)}:${String(elapsed % 60).padStart(2, '0')}`
+    const newEntry: IncidentEntry = { ...entry, id: crypto.randomUUID(), ts, elapsed: elapsedStr }
+    setIncidentLog(prev => [...prev, newEntry])
+    // Also append to therapist notes for documentation
+    setNotes((prev: string) => {
+      const line = `[${ts}] 🚨 حادثة — ${entry.type} (شدة: ${entry.severity})${entry.notes ? ': ' + entry.notes : ''}`
+      return prev ? `${prev}\n${line}` : line
+    })
   }
 
   // Cancel exercise — blocked when session is locked (child can't exit)
@@ -3473,6 +3491,16 @@ ${notes ? `
         onChangeForm={setAbcForm}
         abcLog={abcLog}
         onLog={logABC}
+      />
+
+      <IncidentPanel
+        running={running}
+        chromeHidden={chromeHidden}
+        open={incidentOpen}
+        onToggle={() => { setIncidentOpen(o => !o); setAbcOpen(false); setHwOpen(false); setObsOpen(false) }}
+        log={incidentLog}
+        elapsed={`${Math.floor(elapsed / 60)}:${String(elapsed % 60).padStart(2, '0')}`}
+        onLog={logIncident}
       />
 
       <HomeworkPanel

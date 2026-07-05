@@ -99,7 +99,7 @@ export const tr = {
       parentNav: {
         home: 'الرئيسية', children: 'أطفالي', assessment: 'التقييم', exercises: 'التمارين',
         progress: 'التطور', appointments: 'المواعيد', reports: 'التقارير', chat: 'التواصل',
-        familyChallenge: 'تحدي العائلة', more: 'المزيد',
+        familyChallenge: 'تحدي العائلة', practice: 'تمارين منزلية', more: 'المزيد',
       },
       studentNav: {
         home: 'بيتي', exercises: 'تمارين', journal: 'يومياتي', achievements: 'جوائزي', schedule: 'جدولي',
@@ -783,6 +783,7 @@ export const tr = {
       reports: 'التقارير',
       messages: 'الرسائل',
       learningDifficulties: 'صعوبات التعلم',
+      treatmentPlan: 'خطة العلاج',
       specialistToolkit: 'حقيبة المختص',
       analytics: 'الإحصائيات',
       staff: 'فريق العمل',
@@ -1301,7 +1302,7 @@ export const tr = {
       parentNav: {
         home: 'Home', children: 'My Children', assessment: 'Assessment', exercises: 'Exercises',
         progress: 'Progress', appointments: 'Appointments', reports: 'Reports', chat: 'Messages',
-        familyChallenge: 'Family Challenge', more: 'More',
+        familyChallenge: 'Family Challenge', practice: 'Home Practice', more: 'More',
       },
       studentNav: {
         home: 'Home', exercises: 'Exercises', journal: 'Journal', achievements: 'Awards', schedule: 'Schedule',
@@ -1985,6 +1986,7 @@ export const tr = {
       reports: 'Reports',
       messages: 'Messages',
       learningDifficulties: 'Learning Difficulties',
+      treatmentPlan: 'Treatment Plan',
       specialistToolkit: 'Specialist Toolkit',
       analytics: 'Analytics',
       staff: 'Staff',
@@ -2503,7 +2505,7 @@ export const tr = {
       parentNav: {
         home: 'Accueil', children: 'Mes enfants', assessment: 'Évaluation', exercises: 'Exercices',
         progress: 'Progrès', appointments: 'Rendez-vous', reports: 'Rapports', chat: 'Messages',
-        familyChallenge: 'Défi familial', more: 'Plus',
+        familyChallenge: 'Défi familial', practice: 'Pratique à domicile', more: 'Plus',
       },
       studentNav: {
         home: 'Accueil', exercises: 'Exercices', journal: 'Journal', achievements: 'Récompenses', schedule: 'Emploi du temps',
@@ -3187,6 +3189,7 @@ export const tr = {
       reports: 'Rapports',
       messages: 'Messages',
       learningDifficulties: "Difficultés d'apprentissage",
+      treatmentPlan: 'Plan de traitement',
       specialistToolkit: 'Trousse du spécialiste',
       analytics: 'Statistiques',
       staff: 'Équipe',

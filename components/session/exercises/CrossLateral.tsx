@@ -6,6 +6,7 @@
 // a touchscreen or with a mouse, producing the same therapeutic crossing motion.
 import { useState, useRef, useEffect, useCallback } from 'react'
 import type { ExerciseResult } from '@/lib/types'
+import { useVoiceInstruction } from '@/lib/hooks/useVoiceInstruction'
 
 interface Props {
   onComplete: (r: ExerciseResult) => void
@@ -34,6 +35,7 @@ function rng(lo: number, hi: number) { return lo + Math.random() * (hi - lo) }
 
 export default function CrossLateral({ onComplete, onCancel, difficulty = 1 }: Props) {
   const cfg = CFG[difficulty]
+  const { speak, stop } = useVoiceInstruction()
 
   const [phase, setPhase]         = useState<'intro' | 'playing'>('intro')
   const [round, setRound]         = useState(0)
@@ -102,6 +104,7 @@ export default function CrossLateral({ onComplete, onCancel, difficulty = 1 }: P
   }
 
   function start() {
+    stop()
     doneRef.current = false
     hitsRef.current = 0
     missRef.current = 0
@@ -119,6 +122,12 @@ export default function CrossLateral({ onComplete, onCancel, difficulty = 1 }: P
         <h2 className="text-2xl font-black text-gray-800 text-center">
           عبور خط المنتصف
         </h2>
+        <button
+          onClick={() => speak('عبور خط المنتصف. المس النجمة التي تظهر باليد المعاكسة. النجمة على اليمين؟ المسها باليد اليسرى. النجمة على اليسار؟ المسها باليد اليمنى.')}
+          className="flex items-center gap-2 text-xs font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 px-4 py-2 rounded-xl transition-colors"
+        >
+          🔊 استمع للتعليمات
+        </button>
 
         {/* Scientific context */}
         <div

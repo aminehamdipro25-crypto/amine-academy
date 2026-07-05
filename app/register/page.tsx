@@ -78,6 +78,7 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false)
   const [apiError, setApiError] = useState('')
   const [plan, setPlan]       = useState('standard')
+  const [consent, setConsent] = useState(false)
   const formTopRef = useRef<HTMLDivElement>(null)
 
   // Persist step-2 data across navigations
@@ -147,6 +148,7 @@ export default function RegisterPage() {
             audioSensitivity: c.audioSensitivity,
           },
           plan,
+          consentGivenAt: new Date().toISOString(),
         }),
       })
       const data = await res.json()
@@ -395,6 +397,45 @@ export default function RegisterPage() {
             </div>
           )}
 
+          {/* ── Consent (step 3) ── */}
+          {step === 3 && (
+            <div
+              className="mt-5 rounded-2xl border p-4 space-y-3"
+              style={{ background: '#F8FAFF', borderColor: '#DBEAFE' }}
+            >
+              <h3 className="font-black text-sm text-gray-800">الموافقة على سياسة الخصوصية</h3>
+              <p className="text-xs text-gray-500 leading-relaxed">
+                بالتسجيل، تُقرّ بأنك اطّلعت وتوافق على ما يلي:
+              </p>
+              <ul className="text-xs text-gray-500 space-y-1 list-disc pr-4">
+                <li>يتم جمع بيانات الطفل (العمر، التشخيص، نتائج التمارين) لأغراض علاجية حصراً</li>
+                <li>لا تُشارَك البيانات مع أطراف ثالثة دون إذن صريح منك</li>
+                <li>يمكنك طلب حذف بياناتك في أي وقت عبر التواصل مع الدعم</li>
+                <li>الجلسات محمية بتشفير كامل ولا يصل إليها إلا الأخصائي المختص</li>
+              </ul>
+              <label className="flex items-start gap-3 cursor-pointer group">
+                <div className="relative mt-0.5 flex-shrink-0">
+                  <input
+                    type="checkbox"
+                    checked={consent}
+                    onChange={e => setConsent(e.target.checked)}
+                    className="sr-only"
+                  />
+                  <div
+                    className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors ${
+                      consent ? 'bg-brand-600 border-brand-600' : 'border-gray-300 bg-white group-hover:border-brand-400'
+                    }`}
+                  >
+                    {consent && <Check className="w-3 h-3 text-white" />}
+                  </div>
+                </div>
+                <span className="text-xs font-bold text-gray-700 leading-tight">
+                  أوافق على سياسة الخصوصية وشروط الاستخدام وجمع البيانات بالغرض العلاجي
+                </span>
+              </label>
+            </div>
+          )}
+
           {/* API Error */}
           {apiError && (
             <div className="mt-4 bg-red-50 border border-red-200 text-red-700 text-sm font-medium px-4 py-3 rounded-xl flex items-start gap-2">
@@ -417,9 +458,9 @@ export default function RegisterPage() {
                 التالي ←
               </button>
             ) : (
-              <button type="button" onClick={handleSubmit} disabled={loading}
-                className={`flex-1 bg-brand-600 text-white font-bold py-3 rounded-xl transition-colors ${loading ? 'opacity-60 cursor-not-allowed' : 'hover:bg-brand-700'}`}>
-                {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'إكمال التسجيل ✓'}
+              <button type="button" onClick={handleSubmit} disabled={loading || !consent}
+                className={`flex-1 bg-brand-600 text-white font-bold py-3 rounded-xl transition-colors ${(loading || !consent) ? 'opacity-60 cursor-not-allowed' : 'hover:bg-brand-700'}`}>
+                {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : !consent ? 'يجب الموافقة على سياسة الخصوصية' : 'إكمال التسجيل ✓'}
               </button>
             )}
           </div>

@@ -21,6 +21,7 @@ export default function ParentPortalLayout({ children }: { children: React.React
     { href: '/parent/children',     label: t.parentNav.children, icon: Users },
     { href: '/parent/assessment',   label: t.parentNav.assessment, icon: ClipboardCheck },
     { href: '/parent/exercises',    label: t.parentNav.exercises, icon: Dumbbell },
+    { href: '/parent/practice',     label: t.parentNav.practice, icon: Sparkles },
     { href: '/parent/progress',     label: t.parentNav.progress, icon: LineChart },
     { href: '/parent/appointments', label: t.parentNav.appointments, icon: Calendar },
     { href: '/parent/reports',      label: t.parentNav.reports, icon: FileText },

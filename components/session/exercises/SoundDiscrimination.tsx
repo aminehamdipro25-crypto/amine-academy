@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import type { ExerciseResult } from '@/lib/types'
+import { speakArabic, cancelSpeech } from '@/lib/speech'
 
 interface Props {
   onComplete: (r: ExerciseResult) => void
@@ -89,13 +90,7 @@ function shuffle<T>(arr: T[]): T[] {
 }
 
 function speak(text: string): void {
-  if (typeof window === 'undefined' || !window.speechSynthesis) return
-  window.speechSynthesis.cancel()
-  const u = new SpeechSynthesisUtterance(text)
-  u.lang = 'ar-SA'
-  u.rate = 0.85
-  u.pitch = 1
-  window.speechSynthesis.speak(u)
+  speakArabic(text, 0.85)
 }
 
 type Phase = 'playing' | 'answer' | 'feedback' | 'done'
@@ -135,7 +130,7 @@ export default function SoundDiscrimination({ onComplete, onCancel, difficulty =
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current)
       if (playRef.current)  clearTimeout(playRef.current)
-      if (typeof window !== 'undefined') window.speechSynthesis.cancel()
+      cancelSpeech()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [qIdx])
@@ -145,7 +140,7 @@ export default function SoundDiscrimination({ onComplete, onCancel, difficulty =
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current)
       if (playRef.current)  clearTimeout(playRef.current)
-      if (typeof window !== 'undefined') window.speechSynthesis.cancel()
+      cancelSpeech()
     }
   }, [])
 

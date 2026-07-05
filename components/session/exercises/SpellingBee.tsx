@@ -1,6 +1,7 @@
 'use client'
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react'
 import type { ExerciseResult } from '@/lib/types'
+import { speakArabic } from '@/lib/speech'
 
 interface Props {
   onComplete: (r: ExerciseResult) => void
@@ -50,11 +51,7 @@ export default function SpellingBee({ onComplete, onCancel, difficulty = 1 }: Pr
   useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current) }, [])
 
   const speak = useCallback((text: string) => {
-    if (typeof window === 'undefined' || !window.speechSynthesis) return
-    window.speechSynthesis.cancel()
-    const u = new SpeechSynthesisUtterance(text)
-    u.lang = 'ar-SA'; u.rate = 0.8
-    window.speechSynthesis.speak(u)
+    speakArabic(text, 0.8)
   }, [])
 
   const q = qs[idx]

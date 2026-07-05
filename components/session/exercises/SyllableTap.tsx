@@ -1,6 +1,7 @@
 'use client'
 import { useState, useRef, useEffect, useMemo } from 'react'
 import type { ExerciseResult } from '@/lib/types'
+import { speakArabic, cancelSpeech } from '@/lib/speech'
 
 interface Props {
   onComplete: (r: ExerciseResult) => void
@@ -43,11 +44,7 @@ const ALL_WORDS: W[] = [
 function shuffle<T>(arr: T[]): T[] { return [...arr].sort(() => Math.random() - 0.5) }
 
 function speak(text: string) {
-  if (typeof window === 'undefined' || !window.speechSynthesis) return
-  window.speechSynthesis.cancel()
-  const u = new SpeechSynthesisUtterance(text)
-  u.lang = 'ar-SA'; u.rate = 0.65
-  window.speechSynthesis.speak(u)
+  speakArabic(text, 0.65)
 }
 
 export default function SyllableTap({ onComplete, onCancel, difficulty = 1, studentAge }: Props) {
@@ -75,13 +72,14 @@ export default function SyllableTap({ onComplete, onCancel, difficulty = 1, stud
   useEffect(() => () => {
     if (timerRef.current)    clearTimeout(timerRef.current)
     if (tapTimerRef.current) clearTimeout(tapTimerRef.current)
-    if (typeof window !== 'undefined' && window.speechSynthesis) window.speechSynthesis.cancel()
+    cancelSpeech()
   }, [])
 
   useEffect(() => {
     setTaps(0)
     setPhase('tapping')
-    timerRef.current = setTimeout(() => speak(words[idx].plain), 350)
+    // Use diacritized 'word' for TTS — guides correct pronunciation (e.g. قَلَم vs قلم)
+    timerRef.current = setTimeout(() => speak(words[idx].word), 350)
     return () => { if (timerRef.current) clearTimeout(timerRef.current) }
   }, [idx]) // eslint-disable-line
 
@@ -148,13 +146,13 @@ export default function SyllableTap({ onComplete, onCancel, difficulty = 1, stud
       <div className="flex flex-col items-center gap-3 mt-2">
         <div className="text-8xl">{w.emoji}</div>
         <button
-          onClick={() => speak(w.plain)}
+          onClick={() => speak(w.word)}
           className="text-4xl font-black text-white transition-all active:scale-95 px-8 py-3 rounded-3xl"
           style={{ background: 'rgba(124,92,252,0.2)', border: '3px solid rgba(124,92,252,0.6)' }}
         >
           {w.word}
         </button>
-        <button onClick={() => speak(w.plain)} className="text-white/40 text-xs hover:text-white/70 transition-colors">
+        <button onClick={() => speak(w.word)} className="text-white/40 text-xs hover:text-white/70 transition-colors">
           🔊 اسمع الكلمة مرة أخرى
         </button>
       </div>

@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import type { ExerciseResult } from '@/lib/types'
+import { speakArabic, cancelSpeech } from '@/lib/speech'
 
 interface Props {
   onComplete: (r: ExerciseResult) => void
@@ -52,20 +53,11 @@ export default function ReadingFluency({ onComplete, onCancel, difficulty = 1 }:
 
   // ── TTS helpers ───────────────────────────────────────────────
   const speak = useCallback((text: string) => {
-    if (typeof window === 'undefined' || !window.speechSynthesis) return
-    window.speechSynthesis.cancel()
-    const u = new SpeechSynthesisUtterance(text)
-    u.lang = 'ar-SA'
-    u.rate = 0.8
-    window.speechSynthesis.speak(u)
+    speakArabic(text, 0.8)
   }, [])
 
   // Cancel TTS on unmount
-  useEffect(() => () => {
-    if (typeof window !== 'undefined' && window.speechSynthesis) {
-      window.speechSynthesis.cancel()
-    }
-  }, [])
+  useEffect(() => () => { cancelSpeech() }, [])
 
   // Auto-speak on new word — triggered by flickerKey (changes each time wordIdx advances)
   useEffect(() => {
@@ -84,9 +76,7 @@ export default function ReadingFluency({ onComplete, onCancel, difficulty = 1 }:
     if (timeLeft === 0 && phase === 'playing' && !doneRef.current) {
       doneRef.current = true
       endMsRef.current = Date.now()
-      if (typeof window !== 'undefined' && window.speechSynthesis) {
-        window.speechSynthesis.cancel()
-      }
+      cancelSpeech()
       setPhase('done')
     }
   }, [timeLeft, phase])
@@ -108,9 +98,7 @@ export default function ReadingFluency({ onComplete, onCancel, difficulty = 1 }:
     if (doneRef.current) return
     doneRef.current = true
     endMsRef.current = Date.now()
-    if (typeof window !== 'undefined' && window.speechSynthesis) {
-      window.speechSynthesis.cancel()
-    }
+    cancelSpeech()
     setPhase('done')
   }
 

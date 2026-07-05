@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import type { ExerciseResult } from '@/lib/types'
+import { speakArabic } from '@/lib/speech'
 
 interface Props {
   onComplete: (r: ExerciseResult) => void
@@ -39,23 +40,7 @@ function shuffle<T>(arr: T[]): T[] {
 }
 
 function speakText(text: string): Promise<void> {
-  return new Promise((resolve) => {
-    if (typeof window === 'undefined' || !window.speechSynthesis) {
-      resolve()
-      return
-    }
-    try {
-      window.speechSynthesis.cancel()
-      const u = new SpeechSynthesisUtterance(text)
-      u.lang = 'ar-SA'
-      u.rate = 0.8
-      u.onend = () => resolve()
-      u.onerror = () => resolve()
-      window.speechSynthesis.speak(u)
-    } catch {
-      resolve()
-    }
-  })
+  return speakArabic(text, 0.8)
 }
 
 type Phase = 'question' | 'feedback' | 'done'

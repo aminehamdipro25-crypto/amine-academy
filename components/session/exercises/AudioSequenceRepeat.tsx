@@ -1,6 +1,7 @@
 'use client'
 import { useState, useRef, useCallback, useEffect } from 'react'
 import type { ExerciseResult } from '@/lib/types'
+import { speakArabic, cancelSpeech } from '@/lib/speech'
 
 interface Props {
   onComplete: (r: ExerciseResult) => void
@@ -38,11 +39,7 @@ export default function AudioSequenceRepeat({ onComplete, onCancel, difficulty =
   const clearAll = () => { timerIds.current.forEach(clearTimeout); timerIds.current = [] }
 
   const speak = useCallback((text: string) => {
-    if (typeof window === 'undefined' || !window.speechSynthesis) return
-    window.speechSynthesis.cancel()
-    const u = new SpeechSynthesisUtterance(text)
-    u.lang = 'ar-SA'; u.rate = 0.85
-    window.speechSynthesis.speak(u)
+    speakArabic(text, 0.85)
   }, [])
 
   const playSequence = useCallback((seq: number[]) => {
@@ -69,7 +66,7 @@ export default function AudioSequenceRepeat({ onComplete, onCancel, difficulty =
 
   useEffect(() => {
     startRound()
-    return () => { if (typeof window !== 'undefined' && window.speechSynthesis) window.speechSynthesis.cancel(); clearAll() }
+    return () => { cancelSpeech(); clearAll() }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleTap(animalIdx: number) {

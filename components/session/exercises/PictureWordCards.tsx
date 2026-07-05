@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import type { ExerciseResult } from '@/lib/types'
+import { speakArabic } from '@/lib/speech'
 
 interface Props {
   onComplete: (r: ExerciseResult) => void
@@ -98,16 +99,7 @@ function shuffle<T>(arr: T[]): T[] {
 }
 
 function speakWord(word: string): void {
-  if (typeof window === 'undefined' || !window.speechSynthesis) return
-  try {
-    window.speechSynthesis.cancel()
-    const u = new SpeechSynthesisUtterance(word)
-    u.lang = 'ar-SA'
-    u.rate = 0.75
-    window.speechSynthesis.speak(u)
-  } catch {
-    // TTS not supported — silent fail
-  }
+  speakArabic(word, 0.75)
 }
 
 function getRatingScore(r: Rating): number {

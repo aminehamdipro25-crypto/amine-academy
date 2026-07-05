@@ -4,6 +4,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { CheckCircle, Play, X, Clock, LogOut, Star, Volume2, Film, List } from 'lucide-react'
 import type { Exercise, Student } from '@/lib/types'
 import { useLang, tr } from '@/lib/i18n'
+import { speakArabic, cancelSpeech } from '@/lib/speech'
 
 // ── Video lookup by exercise English title (stable key, unlike the random AE-xxx-xxx ID) ──
 const TITLE_VIDEOS: Record<string, string> = {
@@ -153,13 +154,7 @@ function playChime(type: 'start' | 'step' | 'complete') {
 
 // ── Arabic TTS ────────────────────────────────────────────────
 function speakAr(text: string) {
-  if (typeof window === 'undefined' || !window.speechSynthesis) return
-  window.speechSynthesis.cancel()
-  const utt = new SpeechSynthesisUtterance(text)
-  utt.lang = 'ar-SA'
-  utt.rate = 0.82
-  utt.pitch = 1.1
-  window.speechSynthesis.speak(utt)
+  speakArabic(text, 0.85)
 }
 
 interface CompleteResult {
@@ -226,7 +221,7 @@ export default function ChildSessionPage() {
   }, [])
 
   function close() {
-    window.speechSynthesis?.cancel()
+    cancelSpeech()
     setSelected(null)
     setRunning(false)
     setSpeaking(false)
@@ -257,7 +252,7 @@ export default function ChildSessionPage() {
     if (!selected || saving) return
     setRunning(false)
     setSaving(true)
-    window.speechSynthesis?.cancel()
+    cancelSpeech()
     try {
       const res = await fetch(`/api/parent/child-session/${studentId}`, {
         method: 'POST',

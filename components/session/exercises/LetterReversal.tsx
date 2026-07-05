@@ -1,6 +1,7 @@
 'use client'
 import { useState, useMemo, useRef, useEffect } from 'react'
 import type { ExerciseResult } from '@/lib/types'
+import { speakArabic } from '@/lib/speech'
 
 interface Props {
   onComplete: (r: ExerciseResult) => void
@@ -69,11 +70,7 @@ const HARD_QS: Q[] = [
 function shuffle<T>(arr: T[]): T[] { return [...arr].sort(() => Math.random() - 0.5) }
 
 function speak(text: string) {
-  if (typeof window === 'undefined' || !window.speechSynthesis) return
-  window.speechSynthesis.cancel()
-  const u = new SpeechSynthesisUtterance(text)
-  u.lang = 'ar-SA'; u.rate = 0.75
-  window.speechSynthesis.speak(u)
+  speakArabic(text, 0.75)
 }
 
 export default function LetterReversal({ onComplete, onCancel, difficulty = 1, studentAge }: Props) {

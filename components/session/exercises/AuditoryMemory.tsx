@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import type { ExerciseResult } from '@/lib/types'
+import { speakArabic } from '@/lib/speech'
 
 interface Props {
   onComplete: (r: ExerciseResult) => void
@@ -37,23 +38,7 @@ function shuffle<T>(arr: T[]): T[] {
 }
 
 function speak(text: string, rate = 0.8): Promise<void> {
-  return new Promise((resolve, reject) => {
-    if (typeof window === 'undefined' || !window.speechSynthesis) {
-      reject(new Error('no-tts'))
-      return
-    }
-    try {
-      window.speechSynthesis.cancel()
-      const u = new SpeechSynthesisUtterance(text)
-      u.lang = 'ar-SA'
-      u.rate = rate
-      u.onend = () => resolve()
-      u.onerror = () => resolve() // resolve so exercise continues
-      window.speechSynthesis.speak(u)
-    } catch {
-      reject(new Error('no-tts'))
-    }
-  })
+  return speakArabic(text, rate)
 }
 
 type Phase = 'intro' | 'listen' | 'recall' | 'feedback' | 'done'
@@ -158,7 +143,7 @@ export default function AuditoryMemory({
 
     return () => {
       cancelled = true
-      try { window.speechSynthesis?.cancel() } catch {}
+      try { window.speechSynthesis?.cancel?.() } catch {}
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, roundState.sequence])

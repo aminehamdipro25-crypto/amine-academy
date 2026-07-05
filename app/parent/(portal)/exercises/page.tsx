@@ -5,6 +5,7 @@ import { motion } from 'framer-motion'
 import { Clock, CheckCircle, Play, X, Info, Volume2, Trophy, Flame, Zap } from 'lucide-react'
 import type { Exercise, Student, ExerciseResult } from '@/lib/types'
 import { useLang, tr } from '@/lib/i18n'
+import { speakArabic, cancelSpeech, arabicDigitWord } from '@/lib/speech'
 
 // ── Category orbit geometry ────────────────────────────────────
 const ALL_ICON  = '✨'
@@ -132,11 +133,7 @@ function extractTimer(text: string): number | null {
 }
 
 function speakAr(text: string) {
-  if (typeof window === 'undefined' || !window.speechSynthesis) return
-  window.speechSynthesis.cancel()
-  const utt = new SpeechSynthesisUtterance(text)
-  utt.lang = 'ar-SA'; utt.rate = 0.85; utt.pitch = 1.1
-  window.speechSynthesis.speak(utt)
+  speakArabic(text, 0.85)
 }
 
 // ── Web Audio SFX engine (no external files) ──────────────────
@@ -620,7 +617,7 @@ export default function ExercisesPage() {
     const steps = selected.instructionsAr || selected.instructions || []
     if (!steps[step]) return
     const id = setTimeout(() => speakAr(keyTitle(steps[step])), 450)
-    return () => { clearTimeout(id); window.speechSynthesis?.cancel() }
+    return () => { clearTimeout(id); cancelSpeech() }
   }, [step, phase, selected])
 
   const openExercise = useCallback((ex: Exercise) => {
@@ -649,13 +646,13 @@ export default function ExercisesPage() {
 
   function handleCancel() {
     setTimerOn(false)
-    window.speechSynthesis?.cancel()
+    cancelSpeech()
     setPhase('prestart')
   }
 
   function closeAll() {
     setTimerOn(false)
-    window.speechSynthesis?.cancel()
+    cancelSpeech()
     setSelected(null); setPhase('grid')
   }
 
@@ -1104,7 +1101,7 @@ export default function ExercisesPage() {
                               sfx.tap()
                               const newTaps = groundTaps + 1
                               setGroundTaps(newTaps)
-                              speakAr(String(newTaps))
+                              speakAr(arabicDigitWord(newTaps))
                               if (newTaps >= curSense.count) {
                                 setTimeout(() => {
                                   sfx.done()

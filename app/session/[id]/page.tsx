@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo, lazy, Suspense } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useParams, useRouter } from 'next/navigation'
 import { X, Star, ClipboardList, Gamepad2, BarChart3, BookOpen, Play, Youtube, ExternalLink, Maximize2, Minimize2, RotateCcw } from 'lucide-react'
@@ -9,85 +9,85 @@ import type { StudentAssessmentProfile } from '@/lib/types'
 import ProgressMap from '@/components/progress/ProgressMap'
 import type { SessionNode } from '@/components/progress/ProgressMap'
 
-import MemoryCards     from '@/components/session/exercises/MemoryCards'
-import SequenceMemory  from '@/components/session/exercises/SequenceMemory'
-import NBackTask       from '@/components/session/exercises/NBackTask'
-import WordRecall      from '@/components/session/exercises/WordRecall'
-import BreathingGuide  from '@/components/session/exercises/BreathingGuide'
-import TapTarget       from '@/components/session/exercises/TapTarget'
-import SimonSays       from '@/components/session/exercises/SimonSays'
-import LetterMatch     from '@/components/session/exercises/LetterMatch'
-import ReactionGame    from '@/components/session/exercises/ReactionGame'
-import StroopTest      from '@/components/session/exercises/StroopTest'
-import StopSignal      from '@/components/session/exercises/StopSignal'
-import EmotionCards    from '@/components/session/exercises/EmotionCards'
-import TokenBoard      from '@/components/session/exercises/TokenBoard'
-import SelfRating      from '@/components/session/exercises/SelfRating'
-import VerbalFluency   from '@/components/session/exercises/VerbalFluency'
-import SocialScenarios from '@/components/session/exercises/SocialScenarios'
-import BehaviorContract from '@/components/session/exercises/BehaviorContract'
-import ColorGrid        from '@/components/session/exercises/ColorGrid'
-import PatternMatch     from '@/components/session/exercises/PatternMatch'
-import WordBuilder      from '@/components/session/exercises/WordBuilder'
-import AuditoryMemory        from '@/components/session/exercises/AuditoryMemory'
-import ListeningComprehension from '@/components/session/exercises/ListeningComprehension'
-import PictureWordCards       from '@/components/session/exercises/PictureWordCards'
-import NumberSequence         from '@/components/session/exercises/NumberSequence'
-import ShadowMatch            from '@/components/session/exercises/ShadowMatch'
-import StorySequencing        from '@/components/session/exercises/StorySequencing'
-import WaitingGame            from '@/components/session/exercises/WaitingGame'
-import SocialProblemSolving   from '@/components/session/exercises/SocialProblemSolving'
-import VisualSearch          from '@/components/session/exercises/VisualSearch'
-import OddOneOut             from '@/components/session/exercises/OddOneOut'
-import SustainedAttention    from '@/components/session/exercises/SustainedAttention'
-import FlashCount            from '@/components/session/exercises/FlashCount'
-import NumberSearch          from '@/components/session/exercises/NumberSearch'
-import GoNoGo                from '@/components/session/exercises/GoNoGo'
-import BalloonControl        from '@/components/session/exercises/BalloonControl'
-import TrafficLight          from '@/components/session/exercises/TrafficLight'
-import EmotionMirror         from '@/components/session/exercises/EmotionMirror'
-import ConversationStarter   from '@/components/session/exercises/ConversationStarter'
-import SoundDiscrimination   from '@/components/session/exercises/SoundDiscrimination'
-import RhymeDetection        from '@/components/session/exercises/RhymeDetection'
-import AudioSequenceRepeat   from '@/components/session/exercises/AudioSequenceRepeat'
-import SequenceTap           from '@/components/session/exercises/SequenceTap'
-import TargetTracking        from '@/components/session/exercises/TargetTracking'
-import FingerGym             from '@/components/session/exercises/FingerGym'
-import CategorySort          from '@/components/session/exercises/CategorySort'
-import MathFlash             from '@/components/session/exercises/MathFlash'
-import AnalogiesGame         from '@/components/session/exercises/AnalogiesGame'
-import BodyScan             from '@/components/session/exercises/BodyScan'
-import MoodMeter            from '@/components/session/exercises/MoodMeter'
-import CalmCorner           from '@/components/session/exercises/CalmCorner'
-import EmotionVolume        from '@/components/session/exercises/EmotionVolume'
-import DailyGoals           from '@/components/session/exercises/DailyGoals'
-import ChoiceBoard          from '@/components/session/exercises/ChoiceBoard'
-import PatternPuzzle        from '@/components/session/exercises/PatternPuzzle'
-import IfThen               from '@/components/session/exercises/IfThen'
-import ProblemSolver        from '@/components/session/exercises/ProblemSolver'
-import SpellingBee          from '@/components/session/exercises/SpellingBee'
-import ReadingCards         from '@/components/session/exercises/ReadingCards'
-import SpanExtension        from '@/components/session/exercises/SpanExtension'
-import DirectionFollow      from '@/components/session/exercises/DirectionFollow'
-import LogicSort            from '@/components/session/exercises/LogicSort'
-import PhysicalExercise from '@/components/session/exercises/PhysicalExercise'
-import VisualMatch      from '@/components/session/exercises/VisualMatch'
-import VisualSchedule   from '@/components/session/exercises/VisualSchedule'
-import FirstThenBoard   from '@/components/session/exercises/FirstThenBoard'
-import ImitationMirror  from '@/components/session/exercises/ImitationMirror'
-import SensoryCheckIn   from '@/components/session/exercises/SensoryCheckIn'
-import LetterReversal  from '@/components/session/exercises/LetterReversal'
-import SyllableTap     from '@/components/session/exercises/SyllableTap'
-import MatrixPuzzle    from '@/components/session/exercises/MatrixPuzzle'
-import ClockReading    from '@/components/session/exercises/ClockReading'
-import PicturePuzzle  from '@/components/session/exercises/PicturePuzzle'
-import JigsawPuzzle   from '@/components/session/exercises/JigsawPuzzle'
-import PatternBoard   from '@/components/session/exercises/PatternBoard'
-import ColorSudoku    from '@/components/session/exercises/ColorSudoku'
-import MoneyCounter   from '@/components/session/exercises/MoneyCounter'
-import CrossLateral    from '@/components/session/exercises/CrossLateral'
-import ReadingFluency  from '@/components/session/exercises/ReadingFluency'
-import LetterSearch    from '@/components/session/exercises/LetterSearch'
+const MemoryCards          = lazy(() => import('@/components/session/exercises/MemoryCards'))
+const SequenceMemory       = lazy(() => import('@/components/session/exercises/SequenceMemory'))
+const NBackTask            = lazy(() => import('@/components/session/exercises/NBackTask'))
+const WordRecall           = lazy(() => import('@/components/session/exercises/WordRecall'))
+const BreathingGuide       = lazy(() => import('@/components/session/exercises/BreathingGuide'))
+const TapTarget            = lazy(() => import('@/components/session/exercises/TapTarget'))
+const SimonSays            = lazy(() => import('@/components/session/exercises/SimonSays'))
+const LetterMatch          = lazy(() => import('@/components/session/exercises/LetterMatch'))
+const ReactionGame         = lazy(() => import('@/components/session/exercises/ReactionGame'))
+const StroopTest           = lazy(() => import('@/components/session/exercises/StroopTest'))
+const StopSignal           = lazy(() => import('@/components/session/exercises/StopSignal'))
+const EmotionCards         = lazy(() => import('@/components/session/exercises/EmotionCards'))
+const TokenBoard           = lazy(() => import('@/components/session/exercises/TokenBoard'))
+const SelfRating           = lazy(() => import('@/components/session/exercises/SelfRating'))
+const VerbalFluency        = lazy(() => import('@/components/session/exercises/VerbalFluency'))
+const SocialScenarios      = lazy(() => import('@/components/session/exercises/SocialScenarios'))
+const BehaviorContract     = lazy(() => import('@/components/session/exercises/BehaviorContract'))
+const ColorGrid            = lazy(() => import('@/components/session/exercises/ColorGrid'))
+const PatternMatch         = lazy(() => import('@/components/session/exercises/PatternMatch'))
+const WordBuilder          = lazy(() => import('@/components/session/exercises/WordBuilder'))
+const AuditoryMemory       = lazy(() => import('@/components/session/exercises/AuditoryMemory'))
+const ListeningComprehension = lazy(() => import('@/components/session/exercises/ListeningComprehension'))
+const PictureWordCards     = lazy(() => import('@/components/session/exercises/PictureWordCards'))
+const NumberSequence       = lazy(() => import('@/components/session/exercises/NumberSequence'))
+const ShadowMatch          = lazy(() => import('@/components/session/exercises/ShadowMatch'))
+const StorySequencing      = lazy(() => import('@/components/session/exercises/StorySequencing'))
+const WaitingGame          = lazy(() => import('@/components/session/exercises/WaitingGame'))
+const SocialProblemSolving = lazy(() => import('@/components/session/exercises/SocialProblemSolving'))
+const VisualSearch         = lazy(() => import('@/components/session/exercises/VisualSearch'))
+const OddOneOut            = lazy(() => import('@/components/session/exercises/OddOneOut'))
+const SustainedAttention   = lazy(() => import('@/components/session/exercises/SustainedAttention'))
+const FlashCount           = lazy(() => import('@/components/session/exercises/FlashCount'))
+const NumberSearch         = lazy(() => import('@/components/session/exercises/NumberSearch'))
+const GoNoGo               = lazy(() => import('@/components/session/exercises/GoNoGo'))
+const BalloonControl       = lazy(() => import('@/components/session/exercises/BalloonControl'))
+const TrafficLight         = lazy(() => import('@/components/session/exercises/TrafficLight'))
+const EmotionMirror        = lazy(() => import('@/components/session/exercises/EmotionMirror'))
+const ConversationStarter  = lazy(() => import('@/components/session/exercises/ConversationStarter'))
+const SoundDiscrimination  = lazy(() => import('@/components/session/exercises/SoundDiscrimination'))
+const RhymeDetection       = lazy(() => import('@/components/session/exercises/RhymeDetection'))
+const AudioSequenceRepeat  = lazy(() => import('@/components/session/exercises/AudioSequenceRepeat'))
+const SequenceTap          = lazy(() => import('@/components/session/exercises/SequenceTap'))
+const TargetTracking       = lazy(() => import('@/components/session/exercises/TargetTracking'))
+const FingerGym            = lazy(() => import('@/components/session/exercises/FingerGym'))
+const CategorySort         = lazy(() => import('@/components/session/exercises/CategorySort'))
+const MathFlash            = lazy(() => import('@/components/session/exercises/MathFlash'))
+const AnalogiesGame        = lazy(() => import('@/components/session/exercises/AnalogiesGame'))
+const BodyScan             = lazy(() => import('@/components/session/exercises/BodyScan'))
+const MoodMeter            = lazy(() => import('@/components/session/exercises/MoodMeter'))
+const CalmCorner           = lazy(() => import('@/components/session/exercises/CalmCorner'))
+const EmotionVolume        = lazy(() => import('@/components/session/exercises/EmotionVolume'))
+const DailyGoals           = lazy(() => import('@/components/session/exercises/DailyGoals'))
+const ChoiceBoard          = lazy(() => import('@/components/session/exercises/ChoiceBoard'))
+const PatternPuzzle        = lazy(() => import('@/components/session/exercises/PatternPuzzle'))
+const IfThen               = lazy(() => import('@/components/session/exercises/IfThen'))
+const ProblemSolver        = lazy(() => import('@/components/session/exercises/ProblemSolver'))
+const SpellingBee          = lazy(() => import('@/components/session/exercises/SpellingBee'))
+const ReadingCards         = lazy(() => import('@/components/session/exercises/ReadingCards'))
+const SpanExtension        = lazy(() => import('@/components/session/exercises/SpanExtension'))
+const DirectionFollow      = lazy(() => import('@/components/session/exercises/DirectionFollow'))
+const LogicSort            = lazy(() => import('@/components/session/exercises/LogicSort'))
+const PhysicalExercise     = lazy(() => import('@/components/session/exercises/PhysicalExercise'))
+const VisualMatch          = lazy(() => import('@/components/session/exercises/VisualMatch'))
+const VisualSchedule       = lazy(() => import('@/components/session/exercises/VisualSchedule'))
+const FirstThenBoard       = lazy(() => import('@/components/session/exercises/FirstThenBoard'))
+const ImitationMirror      = lazy(() => import('@/components/session/exercises/ImitationMirror'))
+const SensoryCheckIn       = lazy(() => import('@/components/session/exercises/SensoryCheckIn'))
+const LetterReversal       = lazy(() => import('@/components/session/exercises/LetterReversal'))
+const SyllableTap          = lazy(() => import('@/components/session/exercises/SyllableTap'))
+const MatrixPuzzle         = lazy(() => import('@/components/session/exercises/MatrixPuzzle'))
+const ClockReading         = lazy(() => import('@/components/session/exercises/ClockReading'))
+const PicturePuzzle        = lazy(() => import('@/components/session/exercises/PicturePuzzle'))
+const JigsawPuzzle         = lazy(() => import('@/components/session/exercises/JigsawPuzzle'))
+const PatternBoard         = lazy(() => import('@/components/session/exercises/PatternBoard'))
+const ColorSudoku          = lazy(() => import('@/components/session/exercises/ColorSudoku'))
+const MoneyCounter         = lazy(() => import('@/components/session/exercises/MoneyCounter'))
+const CrossLateral         = lazy(() => import('@/components/session/exercises/CrossLateral'))
+const ReadingFluency       = lazy(() => import('@/components/session/exercises/ReadingFluency'))
+const LetterSearch         = lazy(() => import('@/components/session/exercises/LetterSearch'))
 import Whiteboard      from '@/components/session/Whiteboard'
 import StudentTimerDisplay from '@/components/session/StudentTimerDisplay'
 import SessionHeader   from '@/components/session/SessionHeader'
@@ -343,6 +343,30 @@ export default function SessionPage() {
   const persistDraftRef = useRef(persistDraft)
   persistDraftRef.current = persistDraft
 
+  // Silent server auto-save — runs every 30s while the session is active and
+  // has results. No UI feedback; it's backup insurance, not the canonical save.
+  async function silentServerSave() {
+    if (!currentStudentId || results.length === 0) return
+    try {
+      await fetch(`/api/sessions/${id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          studentId: currentStudentId,
+          therapistNotes: notes,
+          observations,
+          exercises: results,
+          durationSeconds: elapsed,
+          highlights: results.filter(r => r.score >= 80).map(r => `${r.exerciseLabelAr}: ${r.score}%`),
+          observationLog: obsLog,
+          abcLog,
+        }),
+      })
+    } catch { /* silent — manual save is still the canonical action */ }
+  }
+  const silentServerSaveRef = useRef(silentServerSave)
+  silentServerSaveRef.current = silentServerSave
+
   // Debounced save (2s of inactivity) — covers edits made while the timer
   // isn't running, e.g. notes/observations logged on a paused session.
   // Deliberately excludes `elapsed` from the deps: while running it ticks
@@ -363,6 +387,13 @@ export default function SessionPage() {
     const iv = setInterval(() => persistDraftRef.current(), 5000)
     return () => clearInterval(iv)
   }, [running, id])
+
+  // Server auto-save every 30s — guards against browser crash losing data.
+  useEffect(() => {
+    if (!running || !currentStudentId) return
+    const iv = setInterval(() => silentServerSaveRef.current(), 30_000)
+    return () => clearInterval(iv)
+  }, [running, currentStudentId, id])
 
   // Track header + toolbar + phase-bar height so top toasts never overlap them, regardless of how many rows they take
   useEffect(() => {
@@ -3161,6 +3192,11 @@ ${notes ? `
               transition={{ duration: 0.25 }}
               className="w-full max-w-2xl mx-auto py-6"
             >
+            <Suspense fallback={
+              <div className="flex items-center justify-center h-48">
+                <div className="w-8 h-8 rounded-full border-4 border-brand-500 border-t-transparent animate-spin" />
+              </div>
+            }>
               {activeView.id === 'memory-cards'    && <MemoryCards onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
               {activeView.id === 'sequence-memory' && <SequenceMemory onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
               {activeView.id === 'n-back'          && <NBackTask onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
@@ -3245,6 +3281,7 @@ ${notes ? `
               {['jumping-jacks','obstacle-circuit','balance-walk','tiger-crawl','ball-throw','stretching','body-percussion'].includes(activeView.id) && (
                 <PhysicalExercise id={activeView.id} onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />
               )}
+            </Suspense>
             </motion.div>
             )}
           </AnimatePresence>

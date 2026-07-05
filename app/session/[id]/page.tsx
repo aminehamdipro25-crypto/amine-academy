@@ -85,7 +85,8 @@ import JigsawPuzzle   from '@/components/session/exercises/JigsawPuzzle'
 import PatternBoard   from '@/components/session/exercises/PatternBoard'
 import ColorSudoku    from '@/components/session/exercises/ColorSudoku'
 import MoneyCounter   from '@/components/session/exercises/MoneyCounter'
-import CrossLateral  from '@/components/session/exercises/CrossLateral'
+import CrossLateral    from '@/components/session/exercises/CrossLateral'
+import ReadingFluency  from '@/components/session/exercises/ReadingFluency'
 import Whiteboard      from '@/components/session/Whiteboard'
 import StudentTimerDisplay from '@/components/session/StudentTimerDisplay'
 import SessionHeader   from '@/components/session/SessionHeader'
@@ -824,6 +825,8 @@ export default function SessionPage() {
       'money-counter':     { threshold: 70, low: 'صعوبة في التعامل مع النقود. ابدأ بعملة واحدة فقط (مثلاً الريال/الدينار) وبنى بسيطة (1+1+1)، استخدم عملات حقيقية ملموسة قبل الانتقال للتمرين الرقمي.', mid: 'إلمام جيد بالعملات الفردية. مارس جمع العملات المختلطة ومفهوم الباقي في سيناريوهات شراء واقعية.' },
       'letter-reversal':   { threshold: 70, low: 'صعوبة في تمييز الحروف المتشابهة (عسر القراءة البصري). استخدم الحرف المجسّم اللمسي (ورق شفرة، صنفرة)، وعلّم جملة ذاكرة لكل زوج متشابه (ب/ت/ث، د/ذ).', mid: 'تحسن في التمييز، لا يزال بطيئاً في التعرف. مارس القراءة الصوتية المزامنة (تعقّب الإصبع مع الصوت) لتعزيز الوصل البصري-السمعي.' },
       'cross-lateral':     { threshold: 65, low: 'صعوبة في تنسيق عبور الخط المنتصف — مؤشر على ضعف التواصل بين نصفي الدماغ. طبّق تمارين الزحف (crawling) على الأرض 5 دقائق يومياً، واستخدم تمرين "اللمسة المتقاطعة" يدوياً: اليد اليمنى تلمس الركبة اليسرى والعكس بإيقاع منتظم.', mid: 'تواصل بين النصفين في طور التطور. استمر بالتمرين مرتين في الأسبوع وأضف تمارين تنسيق عين-يد (رمي الكرة وإمساكها).' },
+      'reading-fluency':   { threshold: 70, low: 'سرعة القراءة دون المستوى المتوقع — طبّق مبدأ التكرار المتباعد: اقرأ نفس الكلمات يومياً على مدى أسبوع مع زيادة تدريجية في السرعة. استخدم الإصبع كدليل بصري أثناء القراءة.', mid: 'تقدم ملحوظ في الطلاقة. انتقل لنصوص أطول قليلاً وحاول القراءة الجهرية أمام المرآة لتعزيز الثقة.' },
+      'letter-search':     { threshold: 75, low: 'صعوبة في التمييز البصري بين الحروف المتشابهة — مؤشر شائع في عسر القراءة. ركّز على أزواج (ب/ت/ث) و(ع/غ) يومياً بطاقات فلاش مضيئة، وابدأ بحرف واحد لكل جلسة.', mid: 'التمييز البصري في تحسن. جرّب زيادة حجم الشبكة أو تضمين حروف متشابهة أكثر لتعميق التدريب.' },
     }
 
     // ── Category-level analysis ──
@@ -859,6 +862,7 @@ export default function SessionPage() {
       'picture-puzzle':'attention','matrix-puzzle':'attention','clock-reading':'attention',
       'money-counter':'language','letter-reversal':'language',
       'cross-lateral':'motor',
+      'reading-fluency':'language', 'letter-search':'language',
     }
     results.forEach(r => {
       const cat = exCat[r.exerciseType]
@@ -3234,6 +3238,7 @@ ${notes ? `
               {activeView.id === 'sensory-checkin'      && <SensoryCheckIn        onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
               {/* ── Learning difficulties exercises ── */}
               {activeView.id === 'cross-lateral'      && <CrossLateral       onComplete={handleExerciseComplete} onCancel={handleCancel} difficulty={activeDifficulty} />}
+              {activeView.id === 'reading-fluency'    && <ReadingFluency     onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
               {/* ── Physical exercises ── */}
               {['jumping-jacks','obstacle-circuit','balance-walk','tiger-crawl','ball-throw','stretching','body-percussion'].includes(activeView.id) && (
                 <PhysicalExercise id={activeView.id} onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />

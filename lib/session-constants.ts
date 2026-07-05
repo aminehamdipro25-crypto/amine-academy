@@ -205,6 +205,9 @@ export const EXERCISES = [
 
   // ── معرفي ──────────────────────────────────────────────────────────────────
   { id:'clock-reading',    labelAr:'قراءة الساعة',            icon:'🕐', category:'معرفي',  color:'bg-sky-50 border-sky-200',        ageMin:5,  ageMax:14 },
+
+  // ── تكامل حسي-حركي / عسر القراءة ─────────────────────────────────────────
+  { id:'cross-lateral',    labelAr:'عبور خط المنتصف',        icon:'🤸', category:'حركي',   color:'bg-violet-50 border-violet-200',  ageMin:4,  ageMax:18, tags:['عسر قراءة','تنسيق'] },
 ]
 
 // Exercises whose component renders its own post-completion results screen

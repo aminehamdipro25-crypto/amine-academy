@@ -42,6 +42,8 @@ export default function SessionToolbar({
   onCloseTimerPicker,
   showStudentTimer,
   studentTimerLeft,
+  studentTimerCountUp,
+  onToggleCountUp,
   onStartStudentTimer,
   onStopStudentTimer,
   noiseBtnRef,
@@ -83,7 +85,9 @@ export default function SessionToolbar({
   onCloseTimerPicker: () => void
   showStudentTimer: boolean
   studentTimerLeft: number
-  onStartStudentTimer: (seconds: number) => void
+  studentTimerCountUp: boolean
+  onToggleCountUp: () => void
+  onStartStudentTimer: (seconds: number, countUp?: boolean) => void
   onStopStudentTimer: () => void
   noiseBtnRef: React.RefObject<HTMLDivElement>
   showNoisePanel: boolean
@@ -280,6 +284,23 @@ export default function SessionToolbar({
           dir="rtl"
         >
           <p className="text-gray-400 text-[10px] font-black mb-2">اختر مدة المؤقت</p>
+
+          {/* Countdown / Countup toggle */}
+          <div className="flex gap-1 mb-2.5 p-0.5 bg-gray-100 rounded-xl">
+            <button
+              onClick={() => { if (studentTimerCountUp) onToggleCountUp() }}
+              className={`flex-1 py-1.5 rounded-lg text-[10px] font-black transition-all ${!studentTimerCountUp ? 'bg-orange-500 text-white shadow-sm' : 'text-gray-500'}`}
+            >
+              ↓ تنازلي
+            </button>
+            <button
+              onClick={() => { if (!studentTimerCountUp) onToggleCountUp() }}
+              className={`flex-1 py-1.5 rounded-lg text-[10px] font-black transition-all ${studentTimerCountUp ? 'bg-green-500 text-white shadow-sm' : 'text-gray-500'}`}
+            >
+              ↑ تصاعدي
+            </button>
+          </div>
+
           <div className="grid grid-cols-2 gap-1.5 mb-2">
             {([[60,'1 دقيقة'],[120,'2 دقيقة'],[180,'3 دقائق'],[300,'5 دقائق'],[600,'10 دقائق'],[900,'15 دقيقة']] as [number,string][]).map(([s,l]) => (
               <button

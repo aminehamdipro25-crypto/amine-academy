@@ -13,6 +13,7 @@ export default function StudentTimerDisplay({
   left,
   total,
   running,
+  countUp = false,
   onToggleRunning,
   onReset,
   onClose,
@@ -20,6 +21,7 @@ export default function StudentTimerDisplay({
   left: number
   total: number
   running: boolean
+  countUp?: boolean
   onToggleRunning: () => void
   onReset: () => void
   onClose: () => void
@@ -30,21 +32,28 @@ export default function StudentTimerDisplay({
   // Flash border when finished
   useEffect(() => {
     if (left === 0) {
-      const id = setInterval(() => setFlash(f => !f), 400)
+      const id = setInterval(() => setFlash((f: boolean) => !f), 400)
       return () => clearInterval(id)
     } else {
       setFlash(false)
     }
   }, [left])
 
-  const pct = left / total
-  const borderColor = left === 0
+  const pct = countUp ? left / total : left / total
+  const isDone = countUp ? left >= total : left === 0
+
+  // countUp: always green — non-anxious upward progress
+  const borderColor = isDone
     ? (flash ? '#22C55E' : '#EF4444')
+    : countUp ? '#22C55E'
     : pct <= 0.1 ? '#EF4444'
     : pct <= 0.25 ? '#F59E0B'
     : '#22C55E'
 
-  const numColor = pct <= 0.1 ? '#EF4444' : pct <= 0.25 ? '#F59E0B' : '#22C55E'
+  const numColor = countUp ? '#22C55E'
+    : pct <= 0.1 ? '#EF4444'
+    : pct <= 0.25 ? '#F59E0B'
+    : '#22C55E'
 
   return (
     <div
@@ -61,7 +70,7 @@ export default function StudentTimerDisplay({
         transition: 'border-color 0.2s, box-shadow 0.2s',
       }}
     >
-      {left === 0 ? (
+      {isDone ? (
         /* ── Done state: celebration ── */
         <div className="flex flex-col items-center gap-1">
           <div style={{ fontSize: '3rem', lineHeight: 1 }}>{doneMsg.emoji}</div>
@@ -89,16 +98,20 @@ export default function StudentTimerDisplay({
               style={{ width: `${pct * 100}%`, background: numColor }}
             />
           </div>
-          {/* Last 10s urgent label */}
-          {pct <= 0.1 && left > 0 && (
+          {/* Last 10s urgent label (countdown only) */}
+          {!countUp && pct <= 0.1 && left > 0 && (
             <div className="text-red-400 font-black text-xs mt-1 animate-pulse">يوشك الوقت على الانتهاء!</div>
+          )}
+          {/* CountUp mode label */}
+          {countUp && (
+            <div className="text-gray-400 text-[10px] mt-1">الوقت المنقضي</div>
           )}
         </>
       )}
 
       {/* Controls */}
       <div className="pointer-events-auto mt-3 flex gap-2">
-        {left > 0 && (
+        {!isDone && (
           <button
             onClick={onToggleRunning}
             className="text-white/60 hover:text-white text-xs font-bold px-3 py-1 rounded-lg transition-colors"

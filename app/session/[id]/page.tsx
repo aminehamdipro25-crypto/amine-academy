@@ -85,6 +85,7 @@ import JigsawPuzzle   from '@/components/session/exercises/JigsawPuzzle'
 import PatternBoard   from '@/components/session/exercises/PatternBoard'
 import ColorSudoku    from '@/components/session/exercises/ColorSudoku'
 import MoneyCounter   from '@/components/session/exercises/MoneyCounter'
+import CrossLateral  from '@/components/session/exercises/CrossLateral'
 import Whiteboard      from '@/components/session/Whiteboard'
 import StudentTimerDisplay from '@/components/session/StudentTimerDisplay'
 import SessionHeader   from '@/components/session/SessionHeader'
@@ -234,6 +235,7 @@ export default function SessionPage() {
   const [studentTimerRunning, setStudentTimerRunning] = useState(false)
   const [showStudentTimer, setShowStudentTimer]       = useState(false)
   const [timerPickerOpen, setTimerPickerOpen]         = useState(false)
+  const [studentTimerCountUp, setStudentTimerCountUp] = useState(false)
 
   // Before/After comparison (#10)
   const [compareToast, setCompareToast] = useState<{ prev: ExerciseResult; curr: ExerciseResult } | null>(null)
@@ -485,19 +487,27 @@ export default function SessionPage() {
       .catch(() => {})
   }, [currentStudentId])
 
-  // Student Timer countdown with audio ticks
+  // Student Timer — supports countdown and countup modes
   useEffect(() => {
-    if (!studentTimerRunning || studentTimerLeft <= 0) return
+    if (!studentTimerRunning) return
+    if (!studentTimerCountUp && studentTimerLeft <= 0) return
+    if (studentTimerCountUp && studentTimerLeft >= studentTimerTotal) return
     const t = setTimeout(() => {
       setStudentTimerLeft(l => {
-        const next = l - 1
-        if (next > 0 && next <= 5) playSound('tick')
-        if (next === 0) { playSound('ding'); setStudentTimerRunning(false) }
-        return next
+        if (studentTimerCountUp) {
+          const next = l + 1
+          if (next >= studentTimerTotal) { playSound('ding'); setStudentTimerRunning(false) }
+          return next
+        } else {
+          const next = l - 1
+          if (next > 0 && next <= 5) playSound('tick')
+          if (next === 0) { playSound('ding'); setStudentTimerRunning(false) }
+          return next
+        }
       })
     }, 1000)
     return () => clearTimeout(t)
-  }, [studentTimerRunning, studentTimerLeft])
+  }, [studentTimerRunning, studentTimerLeft, studentTimerCountUp, studentTimerTotal])
 
   function startSession() {
     setRunning(true)
@@ -539,9 +549,11 @@ export default function SessionPage() {
     obsToastTimerRef.current = setTimeout(() => setObsToast(null), 2500)
   }
 
-  function startStudentTimer(seconds: number) {
+  function startStudentTimer(seconds: number, countUp?: boolean) {
+    const isCountUp = countUp ?? studentTimerCountUp
+    setStudentTimerCountUp(isCountUp)
     setStudentTimerTotal(seconds)
-    setStudentTimerLeft(seconds)
+    setStudentTimerLeft(isCountUp ? 0 : seconds)
     setStudentTimerRunning(true)
     setShowStudentTimer(true)
     setTimerPickerOpen(false)
@@ -811,6 +823,7 @@ export default function SessionPage() {
       'clock-reading':     { threshold: 70, low: 'صعوبة في قراءة الساعة. ابدأ بساعات على الساعة الكاملة فقط (12:00، 3:00)، استخدم ساعة حائط حقيقية بجانب الشاشة وعلّم الربط بالروتين اليومي للطفل.', mid: 'قراءة الساعات الكاملة مكتسبة. انتقل للنصف والربع مع التدريب على الساعة الرقمية والعقارب معاً.' },
       'money-counter':     { threshold: 70, low: 'صعوبة في التعامل مع النقود. ابدأ بعملة واحدة فقط (مثلاً الريال/الدينار) وبنى بسيطة (1+1+1)، استخدم عملات حقيقية ملموسة قبل الانتقال للتمرين الرقمي.', mid: 'إلمام جيد بالعملات الفردية. مارس جمع العملات المختلطة ومفهوم الباقي في سيناريوهات شراء واقعية.' },
       'letter-reversal':   { threshold: 70, low: 'صعوبة في تمييز الحروف المتشابهة (عسر القراءة البصري). استخدم الحرف المجسّم اللمسي (ورق شفرة، صنفرة)، وعلّم جملة ذاكرة لكل زوج متشابه (ب/ت/ث، د/ذ).', mid: 'تحسن في التمييز، لا يزال بطيئاً في التعرف. مارس القراءة الصوتية المزامنة (تعقّب الإصبع مع الصوت) لتعزيز الوصل البصري-السمعي.' },
+      'cross-lateral':     { threshold: 65, low: 'صعوبة في تنسيق عبور الخط المنتصف — مؤشر على ضعف التواصل بين نصفي الدماغ. طبّق تمارين الزحف (crawling) على الأرض 5 دقائق يومياً، واستخدم تمرين "اللمسة المتقاطعة" يدوياً: اليد اليمنى تلمس الركبة اليسرى والعكس بإيقاع منتظم.', mid: 'تواصل بين النصفين في طور التطور. استمر بالتمرين مرتين في الأسبوع وأضف تمارين تنسيق عين-يد (رمي الكرة وإمساكها).' },
     }
 
     // ── Category-level analysis ──
@@ -845,6 +858,7 @@ export default function SessionPage() {
       'jigsaw-puzzle':'attention','pattern-board':'attention','color-sudoku':'attention',
       'picture-puzzle':'attention','matrix-puzzle':'attention','clock-reading':'attention',
       'money-counter':'language','letter-reversal':'language',
+      'cross-lateral':'motor',
     }
     results.forEach(r => {
       const cat = exCat[r.exerciseType]
@@ -1427,8 +1441,12 @@ ${notes ? `
           left={studentTimerLeft}
           total={studentTimerTotal}
           running={studentTimerRunning}
+          countUp={studentTimerCountUp}
           onToggleRunning={() => setStudentTimerRunning(r => !r)}
-          onReset={() => { setStudentTimerLeft(studentTimerTotal); setStudentTimerRunning(true) }}
+          onReset={() => {
+            setStudentTimerLeft(studentTimerCountUp ? 0 : studentTimerTotal)
+            setStudentTimerRunning(true)
+          }}
           onClose={() => { setShowStudentTimer(false); setStudentTimerRunning(false) }}
         />
       )}
@@ -1568,6 +1586,8 @@ ${notes ? `
         onCloseTimerPicker={() => setTimerPickerOpen(false)}
         showStudentTimer={showStudentTimer}
         studentTimerLeft={studentTimerLeft}
+        studentTimerCountUp={studentTimerCountUp}
+        onToggleCountUp={() => setStudentTimerCountUp(v => !v)}
         onStartStudentTimer={startStudentTimer}
         onStopStudentTimer={() => { setShowStudentTimer(false); setStudentTimerRunning(false); setTimerPickerOpen(false) }}
         noiseBtnRef={noiseBtnRef}
@@ -3193,6 +3213,8 @@ ${notes ? `
               {activeView.id === 'first-then-board'      && <FirstThenBoard        onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
               {activeView.id === 'imitation-mirror'      && <ImitationMirror       onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
               {activeView.id === 'sensory-checkin'      && <SensoryCheckIn        onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {/* ── Learning difficulties exercises ── */}
+              {activeView.id === 'cross-lateral'      && <CrossLateral       onComplete={handleExerciseComplete} onCancel={handleCancel} difficulty={activeDifficulty} />}
               {/* ── Physical exercises ── */}
               {['jumping-jacks','obstacle-circuit','balance-walk','tiger-crawl','ball-throw','stretching','body-percussion'].includes(activeView.id) && (
                 <PhysicalExercise id={activeView.id} onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />

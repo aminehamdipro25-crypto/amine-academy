@@ -1,40 +1,36 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
-import { Play, Pause, Volume2, VolumeX, ChevronLeft, ChevronRight, BarChart2, Calendar, BookOpen, Brain } from 'lucide-react'
+import { Play, Pause, ChevronLeft, ChevronRight, Star, Zap, CheckCircle } from 'lucide-react'
 import AcademyLogo from '@/components/shared/AcademyLogo'
 
-const SLIDE_DURATION = 4500
+const SLIDE_DURATION = 5500
 
 // ─── Ambient music ─────────────────────────────────────────────────────────────
 function createAmbientMusic(ctx: AudioContext): () => void {
   const master = ctx.createGain()
   master.gain.setValueAtTime(0, ctx.currentTime)
-  master.gain.linearRampToValueAtTime(0.15, ctx.currentTime + 3)
+  master.gain.linearRampToValueAtTime(0.12, ctx.currentTime + 3)
   master.connect(ctx.destination)
-
   const bass = ctx.createOscillator()
   bass.type = 'sine'; bass.frequency.value = 110
-  const bassG = ctx.createGain(); bassG.gain.value = 0.4
+  const bassG = ctx.createGain(); bassG.gain.value = 0.35
   bass.connect(bassG); bassG.connect(master); bass.start()
-
   const padFreqs = [220, 261.63, 329.63, 392]
   const padOscs = padFreqs.map(f => {
     const o = ctx.createOscillator(); o.type = 'triangle'; o.frequency.value = f
-    const g = ctx.createGain(); g.gain.value = 0.055
+    const g = ctx.createGain(); g.gain.value = 0.045
     o.connect(g); g.connect(master); o.start(); return o
   })
-
-  const arp = [523.25, 659.26, 783.99, 880, 783.99, 659.26, 523.25, 440]
+  const arp = [523.25, 659.26, 783.99, 880, 783.99, 659.26]
   let ni = 0
   const t = setInterval(() => {
     const now = ctx.currentTime
     const o = ctx.createOscillator(); o.type = 'sine'; o.frequency.value = arp[ni++ % arp.length]
     const g = ctx.createGain()
-    g.gain.setValueAtTime(0, now); g.gain.linearRampToValueAtTime(0.07, now + 0.06); g.gain.exponentialRampToValueAtTime(0.001, now + 2)
-    o.connect(g); g.connect(master); o.start(now); o.stop(now + 2.1)
-  }, 1800)
-
+    g.gain.setValueAtTime(0, now); g.gain.linearRampToValueAtTime(0.06, now + 0.08); g.gain.exponentialRampToValueAtTime(0.001, now + 2.2)
+    o.connect(g); g.connect(master); o.start(now); o.stop(now + 2.5)
+  }, 2000)
   return () => {
     clearInterval(t)
     const now = ctx.currentTime
@@ -44,268 +40,504 @@ function createAmbientMusic(ctx: AudioContext): () => void {
   }
 }
 
-// ─── Browser frame ─────────────────────────────────────────────────────────────
+// ─── Browser frame ──────────────────────────────────────────────────────────────
 function Frame({ url, color, children }: { url: string; color: string; children: React.ReactNode }) {
   return (
-    <div style={{ borderRadius: 14, overflow: 'hidden', border: '1.5px solid rgba(124,92,252,0.12)', boxShadow: `0 0 0 1px rgba(124,92,252,0.06), 0 20px 50px rgba(0,0,0,0.12), 0 0 60px ${color}18` }}>
-      <div style={{ background: '#F1F0F5', padding: '9px 14px', display: 'flex', alignItems: 'center', gap: 10, borderBottom: '1px solid rgba(124,92,252,0.08)' }}>
-        <div style={{ display: 'flex', gap: 5 }}>
-          {['#FF5F57','#FEBC2E','#28C840'].map(c => <div key={c} style={{ width: 11, height: 11, borderRadius: '50%', background: c }} />)}
+    <div style={{ borderRadius: 16, overflow: 'hidden', border: '1.5px solid rgba(124,92,252,0.13)', boxShadow: `0 24px 60px rgba(0,0,0,0.13), 0 0 0 1px rgba(124,92,252,0.06), 0 0 70px ${color}14` }}>
+      <div style={{ background: '#EDECF2', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10, borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
+        <div style={{ display: 'flex', gap: 6 }}>
+          {['#FF5F57', '#FEBC2E', '#28C840'].map(c => <div key={c} style={{ width: 12, height: 12, borderRadius: '50%', background: c }} />)}
         </div>
-        <div style={{ flex: 1, background: 'white', borderRadius: 7, padding: '4px 10px', fontSize: 10, fontFamily: 'monospace', color: '#9CA3AF', textAlign: 'center', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', border: '1px solid rgba(124,92,252,0.08)' }}>
+        <div style={{ flex: 1, background: 'white', borderRadius: 8, padding: '4px 12px', fontSize: 10, fontFamily: 'monospace', color: '#9CA3AF', textAlign: 'center', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', border: '1px solid rgba(0,0,0,0.07)' }}>
           🔒 {url}
         </div>
       </div>
-      <div style={{ maxHeight: '45vh', overflow: 'hidden' }}>{children}</div>
+      <div style={{ maxHeight: '46vh', overflow: 'hidden' }}>{children}</div>
     </div>
   )
 }
 
-// ─── Mockups ───────────────────────────────────────────────────────────────────
-function RegisterMockup() {
-  return (
-    <div style={{ background: '#F8F5FF', padding: '20px 18px' }} dir="rtl">
-      <div style={{ textAlign: 'center', marginBottom: 14 }}>
-        <div style={{ width: 44, height: 44, borderRadius: 14, background: 'linear-gradient(135deg,#6B46F0,#9A7BFD)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 8px', boxShadow: '0 6px 18px rgba(107,70,240,.35)' }}>
-          <span style={{ color: 'white', fontWeight: 900, fontSize: 20 }}>أ</span>
-        </div>
-        <div style={{ fontWeight: 900, fontSize: 15, color: '#1a1a2e', marginBottom: 2 }}>إنشاء حساب الولي</div>
-        <div style={{ fontSize: 11, color: '#9CA3AF' }}>مجاني — دقيقتان فقط</div>
-      </div>
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 4, marginBottom: 14 }}>
-        {['معلوماتك','طفلك','تأكيد'].map((s, i) => (
-          <div key={s} style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-            <div style={{ width: 20, height: 20, borderRadius: 10, background: i === 0 ? '#6B46F0' : '#E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 900, color: i === 0 ? 'white' : '#9CA3AF' }}>{i+1}</div>
-            <span style={{ fontSize: 10, color: i === 0 ? '#6B46F0' : '#9CA3AF', fontWeight: i === 0 ? 700 : 400 }}>{s}</span>
-            {i < 2 && <div style={{ width: 10, height: 1, background: '#E5E7EB' }} />}
-          </div>
-        ))}
-      </div>
-      {[{l:'الاسم الكامل',p:'مثال: محمد العمري'},{l:'البريد الإلكتروني',p:'email@example.com'},{l:'كلمة المرور',p:'••••••••'},{l:'رقم الهاتف (واتساب)',p:'+966 5X XXX XXXX'}].map(({l,p}) => (
-        <div key={l} style={{ marginBottom: 8 }}>
-          <div style={{ fontSize: 10, fontWeight: 700, color: '#374151', marginBottom: 3 }}>{l}</div>
-          <div style={{ background: 'white', border: '1.5px solid #E5E7EB', borderRadius: 9, padding: '8px 11px', fontSize: 11, color: '#9CA3AF' }}>{p}</div>
-        </div>
-      ))}
-      <div style={{ background: 'linear-gradient(135deg,#6B46F0,#9A7BFD)', color: 'white', textAlign: 'center', padding: '11px', borderRadius: 11, fontWeight: 900, fontSize: 13, marginTop: 8, boxShadow: '0 6px 18px rgba(107,70,240,.3)' }}>
-        التالي — معلومات طفلك ←
-      </div>
-    </div>
-  )
-}
-
-function DashboardMockup() {
-  return (
-    <div className="bg-gray-50" dir="rtl">
-      <div className="bg-brand-900 px-4 py-2.5 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-6 bg-white/20 rounded-lg flex items-center justify-center text-white font-black text-xs">أ</div>
-          <span className="text-white font-bold text-xs">أكاديمية أمين</span>
-        </div>
-        <div className="w-6 h-6 bg-white/10 rounded-full flex items-center justify-center">
-          <span className="text-white text-[9px] font-bold">م.ع</span>
-        </div>
-      </div>
-      <div className="flex">
-        <div className="w-36 bg-white border-l border-gray-100 p-2.5 hidden md:block">
-          {[{icon:BarChart2,label:'نظرة عامة',a:true},{icon:Calendar,label:'جلساتي'},{icon:BookOpen,label:'تمارين اليوم'}].map(({icon:Icon,label,a}) => (
-            <div key={label} className={`flex items-center gap-1.5 px-2 py-1.5 rounded-xl mb-1 ${a ? 'bg-brand-50 text-brand-700' : 'text-gray-400'}`}>
-              <Icon className="w-3 h-3" /><span className="text-[10px] font-medium">{label}</span>
-            </div>
-          ))}
-        </div>
-        <div className="flex-1 p-3">
-          <div className="mb-3">
-            <div className="font-black text-gray-900 text-sm mb-0.5">مرحباً، محمد 👋</div>
-            <div className="text-gray-400 text-[10px]">الجلسة القادمة لأمير: اليوم 5:00 م</div>
-          </div>
-          <div className="grid grid-cols-3 gap-1.5 mb-3">
-            {[{l:'الجلسات',v:'8',c:'bg-brand-50 text-brand-700'},{l:'التركيز',v:'+64%',c:'bg-emerald-50 text-emerald-700'},{l:'النقاط',v:'1,240',c:'bg-amber-50 text-amber-700'}].map(({l,v,c}) => (
-              <div key={l} className={`${c} rounded-xl p-2 text-center`}>
-                <div className="font-black text-base">{v}</div>
-                <div className="text-[9px] opacity-80">{l}</div>
-              </div>
-            ))}
-          </div>
-          <div className="bg-brand-900 text-white rounded-xl p-3">
-            <div className="flex justify-between mb-1.5">
-              <span className="text-white/60 text-[9px]">الجلسة القادمة</span>
-              <span className="bg-green-400 text-green-900 text-[9px] font-bold px-1.5 py-0.5 rounded-full">مُؤكَّدة</span>
-            </div>
-            <div className="font-black text-xs mb-1">جلسة الانتباه المستمر + APA</div>
-            <div className="flex gap-3 text-white/50 text-[9px] mb-2"><span>📅 اليوم 5:00 م</span><span>⏱ 45 دقيقة</span></div>
-            <div className="bg-white/20 rounded-lg py-1.5 text-center text-[10px] font-bold">▶ انضم للجلسة الآن</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function BookingMockup() {
-  return (
-    <div className="bg-white" dir="rtl">
-      <div className="bg-emerald-700 px-4 py-3">
-        <div className="text-white font-black text-sm">حجز جلسة جديدة</div>
-        <div className="text-white/70 text-[10px]">اختر الوقت المناسب لك</div>
-      </div>
-      <div className="p-4">
-        <div className="flex items-center gap-1.5 mb-4">
-          {['اختر النوع','اختر الوقت','تأكيد'].map((s,i) => (
-            <div key={s} className="flex items-center gap-1">
-              <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black ${i===1?'bg-emerald-600 text-white':i===0?'bg-gray-200 text-emerald-100':'border border-gray-200 text-emerald-100'}`}>{i+1}</div>
-              <span className={`text-[10px] ${i===1?'text-emerald-700 font-bold':'text-gray-400'}`}>{s}</span>
-              {i<2 && <div className="w-4 h-px bg-gray-200" />}
-            </div>
-          ))}
-        </div>
-        <div className="grid grid-cols-7 gap-0.5 mb-2 text-center">
-          {['أح','إث','ثل','أر','خم','جم','سب'].map(d => <div key={d} className="text-[9px] text-gray-400 font-bold">{d}</div>)}
-          {Array.from({length:14},(_,i)=>i+1).map(d => (
-            <div key={d} className={`text-[10px] py-1 rounded-md ${d===4?'bg-emerald-600 text-white font-black':d===5||d===6||d===12||d===13?'text-emerald-100':'text-white'}`}>{d}</div>
-          ))}
-        </div>
-        <div className="grid grid-cols-3 gap-1 mb-3">
-          {['10:00 ص','11:00 ص','02:00 م','03:00 م','05:00 م','06:00 م'].map((t,i) => (
-            <div key={t} className={`text-center py-1.5 rounded-lg text-[10px] font-bold border ${i===4?'bg-emerald-600 text-white border-emerald-600':'border-gray-200 text-white'}`}>{t}</div>
-          ))}
-        </div>
-        <div className="bg-emerald-600 text-white text-center py-2 rounded-xl font-black text-xs">تأكيد الحجز ←</div>
-      </div>
-    </div>
-  )
-}
-
-function SessionMockup() {
-  return (
-    <div className="bg-gray-900" dir="rtl">
-      <div className="bg-gray-800 px-4 py-2 flex items-center justify-between">
-        <div className="flex gap-1.5">{['bg-red-500','bg-yellow-500','bg-green-500'].map(c=><div key={c} className={`w-2 h-2 rounded-full ${c}`}/>)}</div>
-        <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"/><span className="text-white/60 text-[10px] font-mono">مباشر — 23:14</span></div>
-        <div className="bg-red-600/20 text-red-400 text-[9px] font-bold px-1.5 py-0.5 rounded">● LIVE</div>
-      </div>
-      <div className="relative bg-gradient-to-br from-brand-900 to-brand-950 flex items-center justify-center" style={{aspectRatio:'16/9'}}>
-        <div className="text-center">
-          <div className="w-14 h-14 bg-white/10 rounded-full mx-auto mb-2 flex items-center justify-center"><span className="text-2xl">👨‍⚕️</span></div>
-          <div className="text-white font-bold text-xs">الأستاذ أمين</div>
-          <div className="text-white/50 text-[10px]">يشرح تمرين التسلسل العكسي</div>
-        </div>
-        <div className="absolute top-2 right-2 bg-white/10 backdrop-blur rounded-xl p-2 max-w-[130px]">
-          <div className="text-white/70 text-[9px] mb-1 font-bold">التمرين الحالي</div>
-          <div className="text-white text-[9px] font-black leading-tight">تحدي التسلسل المعكوس</div>
-          <div className="flex gap-0.5 mt-1">{[1,2,3,4,5].map(n=><div key={n} className={`w-4 h-4 rounded flex items-center justify-center text-[8px] font-black ${n<=3?'bg-green-400 text-green-900':'bg-white/20 text-white'}`}>{n}</div>)}</div>
-        </div>
-        <div className="absolute bottom-2 left-2 w-16 h-11 bg-gray-700 rounded-lg flex items-center justify-center border border-white/20"><span className="text-xl">👦</span></div>
-        <div className="absolute top-2 left-2 bg-amber-400 text-amber-900 rounded-lg px-2 py-1 text-center">
-          <div className="font-black text-sm">+50</div><div className="text-[9px] font-bold">نقطة 🌟</div>
-        </div>
-      </div>
-      <div className="bg-gray-800 px-4 py-2 flex items-center justify-between">
-        <div className="flex gap-1.5">{['🎤','📷','🖥️','💬'].map(icon=><div key={icon} className="w-7 h-7 bg-white/10 rounded-lg flex items-center justify-center text-xs">{icon}</div>)}</div>
-        <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 bg-emerald-400 rounded-full"/><span className="text-white/60 text-[10px]">جلسة تفاعلية</span></div>
-        <div className="bg-red-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-lg">إنهاء</div>
-      </div>
-    </div>
-  )
-}
-
-function ExercisesMockup() {
-  return (
-    <div className="bg-white" dir="rtl">
-      <div className="bg-purple-700 px-4 py-3">
-        <div className="text-white font-black text-sm">مكتبة التمارين العلمية</div>
-        <div className="text-white/70 text-[10px]">+32 تمريناً — APA / ABA / CBT</div>
-      </div>
-      <div className="p-3.5">
-        <div className="flex gap-1.5 mb-3">
-          {[{l:'الكل',a:true},{l:'APA'},{l:'ABA'},{l:'CBT'}].map(({l,a})=>(
-            <span key={l} className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${a?'bg-purple-600 text-white':'bg-gray-100 text-white'}`}>{l}</span>
-          ))}
-        </div>
-        <div className="space-y-2">
-          {[{n:'Zone of Regulation',t:'ABA',c:'border-emerald-200 bg-emerald-50',g:'bg-emerald-600'},{n:'التسلسل المعكوس',t:'CBT',c:'border-purple-200 bg-purple-50',g:'bg-purple-600'},{n:'تمرين Go/No-Go',t:'APA',c:'border-blue-200 bg-blue-50',g:'bg-blue-600'},{n:'مرآة المشاعر',t:'ABA',c:'border-pink-200 bg-pink-50',g:'bg-pink-600'}].map(({n,t,c,g})=>(
-            <div key={n} className={`rounded-lg border ${c} px-2.5 py-2 flex items-center justify-between`}>
-              <div className="flex items-center gap-1.5">
-                <span className={`text-white text-[9px] font-black px-1.5 py-0.5 rounded-full ${g}`}>{t}</span>
-                <span className="text-gray-700 font-bold text-[10px]">{n}</span>
-              </div>
-              <span className="text-green-500 text-[10px]">▶</span>
-            </div>
-          ))}
-        </div>
-        <div className="mt-2.5 text-center text-purple-600 text-[10px] font-bold">عرض جميع التمارين (32+) ←</div>
-      </div>
-    </div>
-  )
-}
-
-function ProgressMockup() {
-  return (
-    <div className="bg-white" dir="rtl">
-      <div className="bg-amber-600 px-4 py-3 flex items-center justify-between">
-        <div>
-          <div className="text-white font-black text-xs">تقرير التقدم — أمير (9 سنوات)</div>
-          <div className="text-white/70 text-[10px]">الشهر الثالث من البرنامج</div>
-        </div>
-        <div className="text-center"><div className="text-white font-black text-xl">A+</div><div className="text-white/70 text-[9px]">التقييم</div></div>
-      </div>
-      <div className="p-3.5">
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-2.5 mb-3">
-          <div className="flex items-center gap-1.5 mb-1"><Brain className="w-3 h-3 text-amber-600"/><span className="text-amber-700 font-bold text-[10px]">ملخص الأستاذ أمين</span></div>
-          <p className="text-gray-700 text-[10px] leading-relaxed">أمير تحسّن في الانتباه من 3 دقائق إلى 8 دقائق. <strong className="text-amber-700">أنصح بـ Zone of Regulation.</strong></p>
-        </div>
-        <div className="space-y-2.5 mb-3">
-          {[{l:'الانتباه المستمر',v:78,c:'#6B46F0'},{l:'كبح التشتت',v:62,c:'#8B5CF6'},{l:'الضبط الذاتي',v:55,c:'#10B981'},{l:'المهارات الاجتماعية',v:70,c:'#3B82F6'}].map(({l,v,c})=>(
-            <div key={l}>
-              <div className="flex justify-between mb-0.5"><span className="text-[10px] text-gray-700">{l}</span><span className="text-[10px] font-black text-gray-900">{v}%</span></div>
-              <div className="h-2 bg-gray-100 rounded-full overflow-hidden"><div className="h-full rounded-full" style={{width:`${v}%`,background:c}}/></div>
-            </div>
-          ))}
-        </div>
-        <div className="grid grid-cols-3 gap-1.5">
-          {[{l:'الجلسات',v:'12',c:'bg-brand-50 text-brand-700'},{l:'الإنجازات',v:'+8',c:'bg-amber-50 text-amber-700'},{l:'النقاط',v:'3,240',c:'bg-emerald-50 text-emerald-700'}].map(({l,v,c})=>(
-            <div key={l} className={`${c} rounded-lg p-2 text-center`}><div className="font-black text-base">{v}</div><div className="text-[9px] font-bold">{l}</div></div>
-          ))}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// ─── Hero visual ───────────────────────────────────────────────────────────────
+// ─── Hero visual ─────────────────────────────────────────────────────────────────
 function HeroVisual() {
-  const items = ['🧠','⭐','🎯','🏆','💡','🌈','🎨','🔬']
+  const pillars = [
+    { label: 'APA', sub: 'رياضة معدّلة', emoji: '🏃', color: '#6B46F0', angle: -60 },
+    { label: 'ABA', sub: 'تعديل سلوك', emoji: '🎯', color: '#0891B2', angle: 60 },
+    { label: 'CBT', sub: 'تدريب معرفي', emoji: '🧠', color: '#16A34A', angle: 180 },
+  ]
   return (
-    <div style={{position:'relative',width:220,height:220,display:'flex',alignItems:'center',justifyContent:'center'}}>
-      <div style={{position:'absolute',inset:0,borderRadius:'50%',background:'radial-gradient(circle,rgba(124,92,252,0.15) 0%,transparent 65%)'}}/>
-      <div style={{position:'absolute',width:190,height:190,borderRadius:'50%',border:'1.5px solid rgba(124,92,252,0.2)',animation:'dspin 22s linear infinite'}}/>
-      <div style={{position:'absolute',width:216,height:216,borderRadius:'50%',border:'1px dashed rgba(124,92,252,0.1)',animation:'dspin 32s linear infinite reverse'}}/>
-      {items.map((e,i)=>{
-        const a=(i/items.length)*Math.PI*2-Math.PI/2, r=95
+    <div style={{ position: 'relative', width: 260, height: 260, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: 'radial-gradient(circle,rgba(124,92,252,0.12) 0%,transparent 70%)' }} />
+      <div style={{ position: 'absolute', width: 200, height: 200, borderRadius: '50%', border: '1.5px solid rgba(124,92,252,0.18)', animation: 'dspin 24s linear infinite' }} />
+      <div style={{ position: 'absolute', width: 245, height: 245, borderRadius: '50%', border: '1px dashed rgba(124,92,252,0.09)', animation: 'dspin 36s linear infinite reverse' }} />
+      {pillars.map(({ label, sub, emoji, color, angle }) => {
+        const r = 110
+        const rad = (angle - 90) * Math.PI / 180
         return (
-          <div key={i} style={{position:'absolute',left:'50%',top:'50%',marginLeft:Math.cos(a)*r-10,marginTop:Math.sin(a)*r-10}}>
-            <div style={{fontSize:18,animation:`dfloat ${2.5+(i%3)*0.4}s ease-in-out ${i*0.28}s infinite`}}>{e}</div>
+          <div key={label} style={{ position: 'absolute', left: '50%', top: '50%', marginLeft: Math.cos(rad) * r - 36, marginTop: Math.sin(rad) * r - 28, animation: `dfloat ${3 + Math.abs(angle) * 0.003}s ease-in-out ${angle * 0.005}s infinite` }}>
+            <div style={{ background: 'white', border: `1.5px solid ${color}30`, borderRadius: 14, padding: '6px 10px', textAlign: 'center', boxShadow: `0 4px 16px ${color}20`, minWidth: 72 }}>
+              <div style={{ fontSize: 18 }}>{emoji}</div>
+              <div style={{ fontSize: 9, fontWeight: 900, color, marginTop: 2 }}>{label}</div>
+              <div style={{ fontSize: 8, color: '#9CA3AF', marginTop: 1, whiteSpace: 'nowrap' }}>{sub}</div>
+            </div>
           </div>
         )
       })}
-      <div style={{animation:'dfloat 4s ease-in-out infinite',position:'relative',zIndex:1}}>
-        <AcademyLogo size={80} />
+      {/* Age range badge */}
+      <div style={{ position: 'absolute', bottom: 10, left: '50%', transform: 'translateX(-50%)', background: 'white', border: '1.5px solid rgba(124,92,252,0.2)', borderRadius: 20, padding: '4px 12px', fontSize: 9, fontWeight: 900, color: '#6B46F0', whiteSpace: 'nowrap', boxShadow: '0 4px 12px rgba(124,92,252,0.12)' }}>
+        5 — 22 سنة • 🇶🇦 قطر • 🇹🇳 تونس
+      </div>
+      <div style={{ animation: 'dfloat 4.5s ease-in-out infinite', position: 'relative', zIndex: 2 }}>
+        <AcademyLogo size={90} />
       </div>
     </div>
   )
 }
 
-// ─── Slide data ────────────────────────────────────────────────────────────────
-interface Slide { tag:string; title:string; sub:string; accent:string; color:string; url?:string; mockup?:React.ReactNode; isHero?:boolean }
+// ─── Session mockup — real exercise UI ─────────────────────────────────────────
+function SessionMockup() {
+  const cards = ['🐶','🐱','🦋','🌟','🐶','🐱','🦋','🌟','🎯','🌈','🎯','🌈']
+  const revealed = [0,4,1,5] // indices that are face-up (matched pairs)
+  return (
+    <div style={{ background: '#0F0F1A', fontFamily: 'inherit' }} dir="rtl">
+      {/* Session header */}
+      <div style={{ background: '#1A1A2E', borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '8px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ width: 28, height: 28, borderRadius: 9, background: '#6B46F0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <AcademyLogo size={20} />
+          </div>
+          <div>
+            <div style={{ color: 'white', fontSize: 10, fontWeight: 900 }}>جلسة أمير — الذاكرة والتركيز</div>
+            <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 8 }}>المرحلة ٢ من ٤ · التمرين ٣</div>
+          </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ background: '#7C3AED20', border: '1px solid #7C3AED50', borderRadius: 8, padding: '3px 8px' }}>
+            <span style={{ color: '#A78BFA', fontSize: 9, fontWeight: 700 }}>🎯 متوسط</span>
+          </div>
+          <div style={{ background: '#DC262620', border: '1px solid #DC262650', borderRadius: 8, padding: '3px 8px', display: 'flex', alignItems: 'center', gap: 4 }}>
+            <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#EF4444', animation: 'dpulse 1s ease-in-out infinite' }} />
+            <span style={{ color: '#FCA5A5', fontSize: 9, fontWeight: 700, fontFamily: 'monospace' }}>08:45</span>
+          </div>
+        </div>
+      </div>
+      {/* Phase bar */}
+      <div style={{ background: '#15152A', padding: '6px 14px', display: 'flex', gap: 4 }}>
+        {['تمهيد','نشاط ✓','الذاكرة ←','تهدئة'].map((p, i) => (
+          <div key={p} style={{ flex: 1, height: 4, borderRadius: 4, background: i < 2 ? '#6B46F0' : i === 2 ? '#A78BFA' : 'rgba(255,255,255,0.1)', position: 'relative' }}>
+            {i === 2 && <div style={{ position: 'absolute', top: -14, left: '50%', transform: 'translateX(-50%)', color: '#A78BFA', fontSize: 7, fontWeight: 700, whiteSpace: 'nowrap' }}>{p}</div>}
+          </div>
+        ))}
+      </div>
+      {/* Exercise area */}
+      <div style={{ padding: '14px', textAlign: 'center' }}>
+        <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 9, marginBottom: 8 }}>بطاقات الذاكرة — 6 أزواج · 3 مطابقات ✓</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6,1fr)', gap: 4, marginBottom: 10 }}>
+          {cards.map((emoji, i) => {
+            const matched = revealed.includes(i)
+            const isFlipped = i === 8 // one currently flipped
+            return (
+              <div key={i} style={{
+                aspectRatio: '1', borderRadius: 8,
+                background: matched ? 'linear-gradient(135deg,#16A34A20,#16A34A10)' : isFlipped ? '#6B46F030' : '#1E1E3A',
+                border: matched ? '1.5px solid #16A34A50' : isFlipped ? '1.5px solid #6B46F080' : '1px solid rgba(255,255,255,0.08)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13,
+                boxShadow: matched ? '0 0 8px #16A34A30' : 'none',
+              }}>
+                {matched || isFlipped ? emoji : <span style={{ color: 'rgba(255,255,255,0.15)', fontSize: 10 }}>؟</span>}
+              </div>
+            )
+          })}
+        </div>
+        {/* Score row */}
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
+          {[{l:'المطابقات',v:'3/6',c:'#16A34A'},{l:'الدقة',v:'75%',c:'#6B46F0'},{l:'النقاط',c:'#F59E0B',v:'🌟 150'}].map(({l,v,c})=>(
+            <div key={l} style={{ textAlign: 'center' }}>
+              <div style={{ color: c, fontSize: 12, fontWeight: 900 }}>{v}</div>
+              <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: 8 }}>{l}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* Specialist toolbar */}
+      <div style={{ background: '#1A1A2E', borderTop: '1px solid rgba(255,255,255,0.06)', padding: '8px 14px', display: 'flex', alignItems: 'center', gap: 6 }}>
+        {['🎙','📺','🖥','🎵','🖊','⚡'].map(icon => (
+          <div key={icon} style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>{icon}</div>
+        ))}
+        <div style={{ flex: 1 }} />
+        <div style={{ background: 'rgba(124,92,252,0.15)', border: '1px solid rgba(124,92,252,0.3)', borderRadius: 8, padding: '4px 10px', color: '#A78BFA', fontSize: 9, fontWeight: 700 }}>
+          ذكاء الجلسة: الطفل متركّز ✓
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Exercises library mockup ───────────────────────────────────────────────────
+function ExercisesMockup() {
+  const categories = [
+    { key: 'all', label: 'الكل', active: true },
+    { key: 'focus', label: '🎯 التركيز' },
+    { key: 'memory', label: '🧠 الذاكرة' },
+    { key: 'emotion', label: '💛 المشاعر' },
+    { key: 'apa', label: '🏃 APA' },
+  ]
+  const exercises = [
+    { name: 'بطاقات الذاكرة', cat: 'ذاكرة', emoji: '🃏', color: '#7C5CFC', bg: '#F3EEFF' },
+    { name: 'ضرب النجمة', cat: 'تركيز', emoji: '⭐', color: '#F59E0B', bg: '#FFFBEB' },
+    { name: 'بطاقات المشاعر', cat: 'اجتماعي', emoji: '😊', color: '#EC4899', bg: '#FDF2F8' },
+    { name: 'دليل التنفس', cat: 'استرخاء', emoji: '🌬', color: '#06B6D4', bg: '#ECFEFF' },
+    { name: 'سيمون يقول', cat: 'APA', emoji: '🟢', color: '#16A34A', bg: '#F0FDF4' },
+    { name: 'تسلسل الأصوات', cat: 'سمعي', emoji: '🔊', color: '#8B5CF6', bg: '#F5F3FF' },
+    { name: 'النطق والتهجئة', cat: 'لغة', emoji: '✏️', color: '#0891B2', bg: '#ECFEFF' },
+    { name: 'مرآة المشاعر', cat: 'اجتماعي', emoji: '🪞', color: '#E11D48', bg: '#FFF1F2' },
+  ]
+  return (
+    <div style={{ background: 'white', fontFamily: 'inherit' }} dir="rtl">
+      {/* Header */}
+      <div style={{ background: 'linear-gradient(135deg,#6B46F0,#4F46E5)', padding: '12px 14px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <AcademyLogo size={24} />
+          <div>
+            <div style={{ color: 'white', fontWeight: 900, fontSize: 11 }}>مكتبة التمارين</div>
+            <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 9 }}>67 تمريناً تفاعلياً — APA · ABA · CBT</div>
+          </div>
+        </div>
+      </div>
+      {/* Filter chips */}
+      <div style={{ padding: '8px 12px', display: 'flex', gap: 5, overflowX: 'auto', borderBottom: '1px solid #F3F4F6' }}>
+        {categories.map(c => (
+          <span key={c.key} style={{ flexShrink: 0, padding: '3px 10px', borderRadius: 20, fontSize: 9, fontWeight: 700, background: c.active ? '#6B46F0' : '#F3F4F6', color: c.active ? 'white' : '#6B7280', border: c.active ? 'none' : '1px solid #E5E7EB' }}>
+            {c.label}
+          </span>
+        ))}
+      </div>
+      {/* Exercise grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 6, padding: '10px 12px' }}>
+        {exercises.map(ex => (
+          <div key={ex.name} style={{ background: ex.bg, border: `1.5px solid ${ex.color}20`, borderRadius: 12, padding: '8px 10px', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ width: 32, height: 32, borderRadius: 10, background: `${ex.color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>{ex.emoji}</div>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontWeight: 900, fontSize: 9, color: '#1F2937', marginBottom: 2 }}>{ex.name}</div>
+              <span style={{ fontSize: 8, fontWeight: 700, color: ex.color, background: `${ex.color}15`, padding: '1px 6px', borderRadius: 10 }}>{ex.cat}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div style={{ textAlign: 'center', padding: '4px 0 10px', color: '#6B46F0', fontSize: 9, fontWeight: 700 }}>
+        + 59 تمريناً آخر ← عرض الكل
+      </div>
+    </div>
+  )
+}
+
+// ─── Progress map mockup (Duolingo-style) ──────────────────────────────────────
+function ProgressMapMockup() {
+  const steps = [
+    { label: 'التركيز الأساسي', stars: 3, done: true },
+    { label: 'الذاكرة البصرية', stars: 3, done: true },
+    { label: 'التسلسل السمعي', stars: 2, done: true },
+    { label: 'بطاقات المشاعر', stars: 0, active: true },
+    { label: 'كبح الاندفاع', stars: 0 },
+    { label: 'التفكير المنطقي', stars: 0 },
+  ]
+  return (
+    <div style={{ background: 'white', fontFamily: 'inherit' }} dir="rtl">
+      {/* Header */}
+      <div style={{ background: '#1A1A2E', padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <AcademyLogo size={22} />
+          <span style={{ color: 'white', fontWeight: 900, fontSize: 10 }}>خريطة تقدّم أمير</span>
+        </div>
+        <div style={{ display: 'flex', gap: 10 }}>
+          {[{l:'النقاط',v:'1,240',e:'⭐'},{l:'الجلسات',v:'8',e:'📅'},{l:'الدقة',v:'76%',e:'🎯'}].map(({l,v,e}) => (
+            <div key={l} style={{ textAlign: 'center' }}>
+              <div style={{ color: 'white', fontSize: 11, fontWeight: 900 }}>{e} {v}</div>
+              <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 7 }}>{l}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* Map */}
+      <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 10, background: 'linear-gradient(180deg,#F8F5FF,white)' }}>
+        {steps.map((s, i) => (
+          <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: 10, flexDirection: i % 2 === 0 ? 'row' : 'row-reverse' }}>
+            {/* Node */}
+            <div style={{
+              width: 48, height: 48, borderRadius: '50%', flexShrink: 0,
+              background: s.done ? 'linear-gradient(135deg,#6B46F0,#9A7BFD)' : s.active ? 'linear-gradient(135deg,#F59E0B,#FBBF24)' : '#E5E7EB',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: s.done ? '0 6px 20px rgba(107,70,240,0.35)' : s.active ? '0 6px 20px rgba(245,158,11,0.4)' : 'none',
+              border: s.active ? '3px solid #FBBF24' : 'none',
+            }}>
+              {s.done ? <span style={{ fontSize: 20 }}>✓</span> : s.active ? <span style={{ fontSize: 20 }}>▶</span> : <span style={{ fontSize: 18, opacity: 0.4 }}>🔒</span>}
+            </div>
+            {/* Stars + label */}
+            <div>
+              <div style={{ fontSize: 9, fontWeight: 900, color: s.done ? '#1F2937' : s.active ? '#B45309' : '#9CA3AF', marginBottom: 3 }}>{s.label}</div>
+              <div style={{ display: 'flex', gap: 2 }}>
+                {[0,1,2].map(n => (
+                  <Star key={n} size={10} style={{ fill: n < s.stars ? '#F59E0B' : 'none', color: n < s.stars ? '#F59E0B' : '#D1D5DB' }} />
+                ))}
+              </div>
+            </div>
+            {/* Connector */}
+            {i < steps.length - 1 && (
+              <div style={{ position: 'absolute', left: i % 2 === 0 ? undefined : 20, right: i % 2 === 0 ? 20 : undefined }} />
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ─── Specialist dashboard mockup ────────────────────────────────────────────────
+function SpecialistMockup() {
+  const clients = [
+    { name: 'أمير السعيد', age: '9 سنوات', diag: 'ADHD', status: 'جلسة اليوم 5م', statusColor: '#16A34A', avatar: '👦' },
+    { name: 'ليلى المنصوري', age: '7 سنوات', diag: 'توحد', status: 'مكتملة ✓', statusColor: '#6B46F0', avatar: '👧' },
+    { name: 'فارس النجار', age: '12 سنة', diag: 'عسر قراءة', status: 'غداً 3م', statusColor: '#F59E0B', avatar: '🧑' },
+  ]
+  return (
+    <div style={{ background: 'white', fontFamily: 'inherit' }} dir="rtl">
+      {/* Header */}
+      <div style={{ background: 'white', borderBottom: '1px solid #F3F4F6', padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <AcademyLogo size={28} />
+          <div>
+            <div style={{ fontWeight: 900, fontSize: 11, color: '#1F2937' }}>أكاديمية أمين</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <Zap size={8} style={{ color: '#6B46F0' }} />
+              <span style={{ fontSize: 8, fontWeight: 900, color: '#6B46F0', textTransform: 'uppercase', letterSpacing: 1 }}>Admin Panel</span>
+            </div>
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {[{l:'المشتركون',v:'24'},{l:'هذا الشهر',v:'12'},{l:'معدل التحسّن',v:'84%'}].map(({l,v}) => (
+            <div key={l} style={{ textAlign: 'center', background: '#F8F5FF', borderRadius: 10, padding: '4px 8px' }}>
+              <div style={{ fontWeight: 900, fontSize: 11, color: '#6B46F0' }}>{v}</div>
+              <div style={{ fontSize: 7, color: '#9CA3AF' }}>{l}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* Nav + content */}
+      <div style={{ display: 'flex' }}>
+        {/* Sidebar */}
+        <div style={{ width: 100, borderLeft: '1px solid #F3F4F6', padding: '10px 6px', background: '#FAFAF9' }}>
+          {[{e:'🏠',l:'الرئيسية'},{e:'👥',l:'المشتركون',a:true},{e:'📅',l:'المواعيد'},{e:'📋',l:'البرامج'},{e:'📊',l:'التقارير'}].map(({e,l,a})=>(
+            <div key={l} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 8px', borderRadius: 10, marginBottom: 2, background: a ? '#F3EEFF' : 'transparent' }}>
+              <span style={{ fontSize: 11 }}>{e}</span>
+              <span style={{ fontSize: 8, fontWeight: a ? 900 : 500, color: a ? '#6B46F0' : '#9CA3AF' }}>{l}</span>
+            </div>
+          ))}
+        </div>
+        {/* Content */}
+        <div style={{ flex: 1, padding: '10px 12px' }}>
+          <div style={{ fontWeight: 900, fontSize: 10, color: '#1F2937', marginBottom: 8 }}>المشتركون — اليوم</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {clients.map(c => (
+              <div key={c.name} style={{ background: '#FAFAF9', border: '1px solid #F3F4F6', borderRadius: 12, padding: '8px 10px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#F3EEFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>{c.avatar}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 900, fontSize: 9, color: '#1F2937' }}>{c.name}</div>
+                  <div style={{ display: 'flex', gap: 4, marginTop: 2 }}>
+                    <span style={{ fontSize: 7, color: '#9CA3AF' }}>{c.age}</span>
+                    <span style={{ fontSize: 7, fontWeight: 700, color: '#6B46F0', background: '#F3EEFF', padding: '1px 5px', borderRadius: 8 }}>{c.diag}</span>
+                  </div>
+                </div>
+                <div style={{ fontSize: 8, fontWeight: 700, color: c.statusColor, background: `${c.statusColor}15`, padding: '3px 7px', borderRadius: 8, flexShrink: 0 }}>{c.status}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Session report mockup ───────────────────────────────────────────────────────
+function ReportMockup() {
+  const skills = [
+    { label: 'الانتباه المستمر', before: 35, after: 78, color: '#6B46F0' },
+    { label: 'الذاكرة العاملة',  before: 42, after: 68, color: '#0891B2' },
+    { label: 'الضبط الذاتي',     before: 28, after: 62, color: '#16A34A' },
+    { label: 'المهارات الاجتماعية', before: 50, after: 72, color: '#F59E0B' },
+  ]
+  return (
+    <div style={{ background: 'white', fontFamily: 'inherit' }} dir="rtl">
+      {/* Header */}
+      <div style={{ background: 'linear-gradient(135deg,#1A1A2E,#2D2B55)', padding: '12px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <AcademyLogo size={24} />
+          <div>
+            <div style={{ color: 'white', fontWeight: 900, fontSize: 10 }}>تقرير الجلسة — أمير</div>
+            <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 8 }}>الجلسة ٨ · الشهر الثالث</div>
+          </div>
+        </div>
+        <div style={{ background: '#16A34A20', border: '1px solid #16A34A50', borderRadius: 10, padding: '4px 10px', display: 'flex', alignItems: 'center', gap: 4 }}>
+          <CheckCircle size={10} style={{ color: '#4ADE80' }} />
+          <span style={{ color: '#4ADE80', fontSize: 8, fontWeight: 700 }}>مكتمل · A+</span>
+        </div>
+      </div>
+      {/* AI summary */}
+      <div style={{ background: '#F8F5FF', borderBottom: '1px solid #EDE9FE', padding: '10px 14px', display: 'flex', gap: 8 }}>
+        <div style={{ width: 28, height: 28, borderRadius: 9, background: '#6B46F0', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <span style={{ fontSize: 14 }}>🤖</span>
+        </div>
+        <div>
+          <div style={{ fontWeight: 900, fontSize: 9, color: '#6B46F0', marginBottom: 3 }}>تحليل الذكاء الاصطناعي</div>
+          <p style={{ margin: 0, fontSize: 8.5, color: '#374151', lineHeight: 1.6 }}>
+            أمير أتمّ ٦ من ٨ تمارين بدقة ٧٦٪. <strong style={{ color: '#6B46F0' }}>الانتباه تضاعف من ٣ إلى ٨ دقائق</strong> مقارنةً بالجلسة الأولى. أنصح بتركيز الجلسة القادمة على Zone of Regulation.
+          </p>
+        </div>
+      </div>
+      {/* Skills progress */}
+      <div style={{ padding: '10px 14px' }}>
+        <div style={{ fontWeight: 900, fontSize: 9, color: '#374151', marginBottom: 8 }}>التطور منذ بداية البرنامج</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+          {skills.map(({ label, before, after, color }) => (
+            <div key={label}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
+                <span style={{ fontSize: 8.5, color: '#374151', fontWeight: 600 }}>{label}</span>
+                <span style={{ fontSize: 8, fontWeight: 900, color }}>
+                  {before}% <span style={{ color: '#9CA3AF' }}>→</span> {after}%
+                </span>
+              </div>
+              {/* Before bar */}
+              <div style={{ height: 5, background: '#F3F4F6', borderRadius: 4, marginBottom: 2, position: 'relative', overflow: 'hidden' }}>
+                <div style={{ position: 'absolute', height: '100%', width: `${before}%`, background: '#E5E7EB', borderRadius: 4 }} />
+                <div style={{ position: 'absolute', height: '100%', width: `${after}%`, background: `linear-gradient(90deg,${color}80,${color})`, borderRadius: 4 }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Parent portal mockup ────────────────────────────────────────────────────────
+function ParentMockup() {
+  return (
+    <div style={{ background: '#FFF8F0', fontFamily: 'inherit' }} dir="rtl">
+      {/* Header */}
+      <div style={{ background: 'white', borderBottom: '1.5px solid #F0E8FF', padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ width: 30, height: 30, borderRadius: 10, background: '#6B46F0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <AcademyLogo size={22} />
+          </div>
+          <div>
+            <div style={{ fontWeight: 900, fontSize: 10, color: '#6B46F0' }}>أكاديمية أمين</div>
+            <div style={{ fontSize: 8, color: '#9CA3AF' }}>بوابة الأولياء</div>
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 6 }}>
+          {['🏠','👥','📊','💬'].map(icon => (
+            <div key={icon} style={{ width: 26, height: 26, borderRadius: 8, background: '#F3EEFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>{icon}</div>
+          ))}
+        </div>
+      </div>
+      {/* Welcome */}
+      <div style={{ padding: '12px 14px' }}>
+        <div style={{ fontWeight: 900, fontSize: 11, color: '#1F2937', marginBottom: 2 }}>مرحباً، محمد 👋</div>
+        <div style={{ fontSize: 8, color: '#9CA3AF', marginBottom: 10 }}>الجلسة القادمة لأمير: اليوم 5:00 م — 45 دقيقة</div>
+        {/* Stats */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 6, marginBottom: 10 }}>
+          {[{l:'الجلسات',v:'8',c:'#F3EEFF',tc:'#6B46F0'},{l:'التحسّن',v:'+64%',c:'#F0FDF4',tc:'#16A34A'},{l:'النقاط',v:'1,240⭐',c:'#FFFBEB',tc:'#D97706'}].map(({l,v,c,tc}) => (
+            <div key={l} style={{ background: c, borderRadius: 12, padding: '8px 6px', textAlign: 'center' }}>
+              <div style={{ fontWeight: 900, fontSize: 12, color: tc }}>{v}</div>
+              <div style={{ fontSize: 7, color: '#9CA3AF', marginTop: 1 }}>{l}</div>
+            </div>
+          ))}
+        </div>
+        {/* Next session card */}
+        <div style={{ background: '#1A1A2E', borderRadius: 14, padding: '10px 12px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+            <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 8 }}>الجلسة القادمة</span>
+            <span style={{ background: '#16A34A20', color: '#4ADE80', fontSize: 8, fontWeight: 700, padding: '2px 7px', borderRadius: 8 }}>مُؤكَّدة</span>
+          </div>
+          <div style={{ color: 'white', fontWeight: 900, fontSize: 10, marginBottom: 4 }}>الذاكرة والانتباه + APA حركي</div>
+          <div style={{ display: 'flex', gap: 10, color: 'rgba(255,255,255,0.5)', fontSize: 8, marginBottom: 8 }}>
+            <span>📅 اليوم 5:00 م</span><span>⏱ 45 دقيقة</span>
+          </div>
+          <div style={{ background: '#6B46F0', borderRadius: 10, padding: '7px', textAlign: 'center', color: 'white', fontSize: 9, fontWeight: 900 }}>
+            ▶ انضم للجلسة الآن
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Slides ────────────────────────────────────────────────────────────────────
+interface Slide {
+  tag: string
+  title: string
+  sub: string
+  accent: string
+  color: string
+  url?: string
+  mockup?: React.ReactNode
+  isHero?: boolean
+}
 
 const SLIDES: Slide[] = [
-  { isHero:true, tag:'🌟 قطر • تونس • العالم العربي', title:'أكاديمية أمين', sub:'طفلك يفكّر بطريقة مختلفة — ونحن نتحدّث لغته', accent:'#7C5CFC', color:'#6B46F0' },
-  { tag:'① التسجيل', title:'ابدأ في دقيقتين', sub:'سجّل حسابك وبيانات طفلك — مجاني تماماً بدون بطاقة بنكية', accent:'#34D399', color:'#10B981', url:'amine-academy.com/register', mockup:<RegisterMockup/> },
-  { tag:'② بوابة الولي', title:'كل شيء في مكان واحد', sub:'جلساتك القادمة، تمارين طفلك اليومية، ونقاطه — انضم بنقرة واحدة', accent:'#818CF8', color:'#6366F1', url:'amine-academy.com/parent/dashboard', mockup:<DashboardMockup/> },
-  { tag:'③ حجز الجلسات', title:'احجز بثوانٍ', sub:'تقويم متزامن مع الأستاذ أمين — تأكيد فوري وتذكير تلقائي قبل الجلسة', accent:'#34D399', color:'#10B981', url:'amine-academy.com/parent/appointments', mockup:<BookingMockup/> },
-  { tag:'④ الجلسة المباشرة', title:'ليست مجرد مكالمة', sub:'جلسة حركية ومعرفية تفاعلية — مع تتبع مستوى تركيز طفلك لحظياً', accent:'#F87171', color:'#EF4444', url:'amine-academy.com/session/live', mockup:<SessionMockup/> },
-  { tag:'⑤ مكتبة التمارين', title:'+32 تمرين تفاعلي', sub:'للتركيز والذاكرة والمهارات الاجتماعية والحركة — أعمار 5 إلى 22 سنة', accent:'#C084FC', color:'#9333EA', url:'amine-academy.com/parent/exercises', mockup:<ExercisesMockup/> },
-  { tag:'⑥ تقارير التقدم', title:'شاهد تطور طفلك بأرقام', sub:'تقرير شهري مفصّل مع توصيات الأستاذ ومقارنة بالمستويات المرجعية', accent:'#FBBF24', color:'#F59E0B', url:'amine-academy.com/parent/progress', mockup:<ProgressMockup/> },
+  {
+    isHero: true,
+    tag: '🌟 قطر • تونس • العالم العربي',
+    title: 'أكاديمية أمين الدولية',
+    sub: 'المنصة العربية الأولى التي تجمع الرياضة المعدّلة (APA) + تعديل السلوك (ABA) + التدريب المعرفي (CBT) في جلسات تفاعلية مباشرة لأطفال ADHD وطيف التوحد.',
+    accent: '#A78BFA', color: '#6B46F0',
+  },
+  {
+    tag: '① جلسة علاج حية',
+    title: 'ليست مجرد مكالمة',
+    sub: 'جلسة تفاعلية بالكامل — تمارين معرفية وحركية، صعوبة تكيفية تلقائية، وذكاء جلسة يُنبّه الأخصائي لحظياً بمستوى تركيز الطفل',
+    accent: '#A78BFA', color: '#7C3AED',
+    url: 'amine-academy.vercel.app/session/…',
+    mockup: <SessionMockup />,
+  },
+  {
+    tag: '② مكتبة التمارين',
+    title: '67 تمريناً تفاعلياً',
+    sub: 'تركيز، ذاكرة، قراءة، مشاعر، استرخاء، APA حركي — مُقسَّمة حسب الاضطراب والعمر والصعوبة، تُشغَّل مباشرة داخل الجلسة',
+    accent: '#818CF8', color: '#4F46E5',
+    url: 'amine-academy.vercel.app/exercises',
+    mockup: <ExercisesMockup />,
+  },
+  {
+    tag: '③ خريطة التقدّم',
+    title: 'نجوم تضيء بعد كل جلسة',
+    sub: 'خريطة بصرية يرى فيها الطفل تقدّمه بنجوم تُضاء بعد كل تمرين — يُحفّز الاستمرار ويُقلّل مقاومة الجلسة',
+    accent: '#FBBF24', color: '#D97706',
+    url: 'amine-academy.vercel.app/session/progress',
+    mockup: <ProgressMapMockup />,
+  },
+  {
+    tag: '④ لوحة الأخصائي',
+    title: 'إدارة كاملة بمكان واحد',
+    sub: 'قائمة المشتركين مع تشخيصاتهم، جدول المواعيد، البرامج الأسبوعية، التقارير السريرية، ولوحة تحليلات — جميعها بلوحة واحدة',
+    accent: '#6EE7B7', color: '#059669',
+    url: 'amine-academy.vercel.app/dashboard',
+    mockup: <SpecialistMockup />,
+  },
+  {
+    tag: '⑤ تقارير ذكية',
+    title: 'تقرير سريري بعد كل جلسة',
+    sub: 'تحليل الذكاء الاصطناعي لأداء الطفل، تطور المهارات مقارنةً بالجلسة الأولى، وتوصية للجلسة القادمة — يُرسَل تلقائياً لولي الأمر',
+    accent: '#FCA5A5', color: '#EF4444',
+    url: 'amine-academy.vercel.app/reports',
+    mockup: <ReportMockup />,
+  },
+  {
+    tag: '⑥ بوابة الأولياء',
+    title: 'ولي الأمر مُشارك دائماً',
+    sub: 'تطبيق ويب مخصص لأولياء الأمور — متابعة تقدم الطفل، مراسلة الأخصائي، الانضمام للجلسة بنقرة، وتمارين منزلية بين الجلسات',
+    accent: '#93C5FD', color: '#2563EB',
+    url: 'amine-academy.vercel.app/parent/dashboard',
+    mockup: <ParentMockup />,
+  },
 ]
 
 // ─── Demo page ─────────────────────────────────────────────────────────────────
@@ -316,33 +548,31 @@ export default function DemoPage() {
   const [progress, setProgress] = useState(0)
   const [animKey, setAnimKey] = useState(0)
 
-  const idxRef = useRef(0); idxRef.current = idx
   const audioCtxRef = useRef<AudioContext | null>(null)
   const stopMusicRef = useRef<(() => void) | null>(null)
 
-  const navigate = useCallback((dir: 'next'|'prev') => {
-    setProgress(0)
-    setAnimKey(k => k + 1)
+  const navigate = useCallback((dir: 'next' | 'prev') => {
+    setProgress(0); setAnimKey(k => k + 1)
     setIdx(i => dir === 'next' ? (i + 1) % SLIDES.length : (i - 1 + SLIDES.length) % SLIDES.length)
   }, [])
 
   const goNext = useCallback(() => navigate('next'), [navigate])
   const goPrev = useCallback(() => navigate('prev'), [navigate])
-  const goTo   = useCallback((t: number) => { setProgress(0); setAnimKey(k=>k+1); setIdx(t) }, [])
+  const goTo   = useCallback((t: number) => { setProgress(0); setAnimKey(k => k + 1); setIdx(t) }, [])
 
   useEffect(() => {
     if (!playing) return
     const start = Date.now()
-    const tick = setInterval(() => setProgress(Math.min(((Date.now()-start)/SLIDE_DURATION)*100, 100)), 30)
+    const tick  = setInterval(() => setProgress(Math.min(((Date.now() - start) / SLIDE_DURATION) * 100, 100)), 30)
     const timer = setTimeout(goNext, SLIDE_DURATION)
     return () => { clearInterval(tick); clearTimeout(timer) }
   }, [playing, idx, goNext])
 
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
-      if (e.code==='Space') { e.preventDefault(); setPlaying(p=>!p) }
-      if (e.code==='ArrowLeft') goNext()
-      if (e.code==='ArrowRight') goPrev()
+      if (e.code === 'Space') { e.preventDefault(); setPlaying(p => !p) }
+      if (e.code === 'ArrowLeft') goNext()
+      if (e.code === 'ArrowRight') goPrev()
     }
     window.addEventListener('keydown', h)
     return () => window.removeEventListener('keydown', h)
@@ -364,51 +594,62 @@ export default function DemoPage() {
     }
   }, [muted])
 
-  useEffect(() => () => { stopMusicRef.current?.(); setTimeout(()=>audioCtxRef.current?.close(),2000) }, [])
+  useEffect(() => () => { stopMusicRef.current?.(); setTimeout(() => audioCtxRef.current?.close(), 2000) }, [])
 
   const slide = SLIDES[idx]
 
   return (
-    <div dir="rtl" style={{ minHeight:'100vh', background:'linear-gradient(160deg,#F8F6FF 0%,#F0F4FF 60%,#EEF0FF 100%)', color:'#1E293B', display:'flex', flexDirection:'column' }}>
+    <div dir="rtl" style={{ minHeight: '100vh', background: 'linear-gradient(160deg,#F9F7FF 0%,#F3F0FF 50%,#EEF2FF 100%)', color: '#1E293B', display: 'flex', flexDirection: 'column', fontFamily: 'inherit' }}>
       <style>{`
-        @keyframes dfloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
-        @keyframes dspin  { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
-        @keyframes dappear { from{opacity:0;transform:translateY(14px) scale(0.98)} to{opacity:1;transform:translateY(0) scale(1)} }
+        @keyframes dfloat  { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-9px)} }
+        @keyframes dspin   { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+        @keyframes dappear { from{opacity:0;transform:translateY(16px) scale(0.97)} to{opacity:1;transform:translateY(0) scale(1)} }
+        @keyframes dpulse  { 0%,100%{opacity:1} 50%{opacity:0.3} }
       `}</style>
 
-      {/* ── Progress bar (top) ── */}
-      <div style={{position:'fixed',top:0,left:0,right:0,height:3,zIndex:100,background:'rgba(124,92,252,0.1)'}}>
-        <div style={{height:'100%',background:`linear-gradient(90deg,${slide.color},${slide.accent})`,width:'100%',transform:`scaleX(${((idx/SLIDES.length)*100 + progress/SLIDES.length)/100})`,transformOrigin:'left',transition:'transform 0.03s linear',borderRadius:'0 2px 2px 0'}}/>
+      {/* ── Global progress bar ── */}
+      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, height: 3, zIndex: 100, background: 'rgba(124,92,252,0.1)' }}>
+        <div style={{
+          height: '100%', background: `linear-gradient(90deg,${slide.color},${slide.accent})`,
+          width: '100%',
+          transform: `scaleX(${((idx / SLIDES.length) * 100 + progress / SLIDES.length) / 100})`,
+          transformOrigin: 'left', transition: 'transform 0.03s linear', borderRadius: '0 2px 2px 0',
+        }} />
       </div>
 
       {/* ── Header ── */}
-      <header style={{flexShrink:0,display:'flex',alignItems:'center',justifyContent:'space-between',padding:'14px 20px',borderBottom:'1px solid rgba(124,92,252,0.1)',marginTop:3,background:'rgba(255,255,255,0.7)',backdropFilter:'blur(12px)'}}>
-        <Link href="/" style={{color:'#94A3B8',fontSize:12,fontWeight:600,textDecoration:'none'}}>← الرئيسية</Link>
-        <div style={{display:'flex',alignItems:'center',gap:8}}>
-          <AcademyLogo size={28} />
-          <span style={{fontWeight:900,fontSize:13,color:'#1E293B'}}>أكاديمية أمين</span>
+      <header style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', borderBottom: '1px solid rgba(124,92,252,0.1)', marginTop: 3, background: 'rgba(255,255,255,0.8)', backdropFilter: 'blur(14px)' }}>
+        <Link href="/" style={{ color: '#94A3B8', fontSize: 12, fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
+          <ChevronRight size={14} />الرئيسية
+        </Link>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+          <AcademyLogo size={30} />
+          <div>
+            <div style={{ fontWeight: 900, fontSize: 12, color: '#1E293B', lineHeight: 1 }}>أكاديمية أمين</div>
+            <div style={{ fontSize: 9, color: '#94A3B8' }}>الجولة التجريبية</div>
+          </div>
         </div>
-        <Link href="/register" style={{background:'linear-gradient(135deg,#6B46F0,#9A7BFD)',color:'white',fontWeight:900,fontSize:12,padding:'7px 16px',borderRadius:10,textDecoration:'none',boxShadow:'0 4px 16px rgba(107,70,240,.25)'}}>
+        <Link href="/register" style={{ background: 'linear-gradient(135deg,#6B46F0,#9A7BFD)', color: 'white', fontWeight: 900, fontSize: 12, padding: '8px 18px', borderRadius: 11, textDecoration: 'none', boxShadow: '0 4px 18px rgba(107,70,240,.28)' }}>
           سجّل مجاناً ←
         </Link>
       </header>
 
-      {/* ── Slide content ── */}
-      <main style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'20px 20px 10px',overflow:'hidden'}}>
-        <div key={animKey} style={{width:'100%',maxWidth:700,display:'flex',flexDirection:'column',alignItems:'center',gap:12,animation:'dappear 0.55s cubic-bezier(0.22,1,0.36,1) both'}}>
+      {/* ── Slide ── */}
+      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '16px 20px 8px', overflow: 'hidden' }}>
+        <div key={animKey} style={{ width: '100%', maxWidth: 720, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, animation: 'dappear 0.5s cubic-bezier(0.22,1,0.36,1) both' }}>
 
           {/* Tag */}
-          <div style={{fontSize:10,fontWeight:700,color:slide.color,letterSpacing:2,textTransform:'uppercase',background:`${slide.color}12`,border:`1px solid ${slide.color}30`,padding:'4px 14px',borderRadius:20}}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: slide.color, letterSpacing: 2, textTransform: 'uppercase', background: `${slide.color}10`, border: `1px solid ${slide.color}28`, padding: '4px 14px', borderRadius: 20 }}>
             {slide.tag}
           </div>
 
           {/* Title */}
-          <h1 style={{fontSize:'clamp(24px,4.5vw,46px)',fontWeight:900,textAlign:'center',margin:0,lineHeight:1.15,color:'#1E293B'}}>
+          <h1 style={{ fontSize: 'clamp(22px,4vw,44px)', fontWeight: 900, textAlign: 'center', margin: 0, lineHeight: 1.15, color: '#1E293B' }}>
             {slide.title}
           </h1>
 
           {/* Subtitle */}
-          <p style={{fontSize:'clamp(12px,1.6vw,15px)',color:'#64748B',textAlign:'center',margin:0,lineHeight:1.7,maxWidth:520}}>
+          <p style={{ fontSize: 'clamp(11px,1.5vw,14px)', color: '#64748B', textAlign: 'center', margin: 0, lineHeight: 1.75, maxWidth: 540 }}>
             {slide.sub}
           </p>
 
@@ -416,46 +657,42 @@ export default function DemoPage() {
           {slide.isHero
             ? <HeroVisual />
             : slide.mockup && slide.url
-              ? <div style={{width:'100%'}}><Frame url={slide.url} color={slide.color}>{slide.mockup}</Frame></div>
+              ? <div style={{ width: '100%' }}><Frame url={slide.url} color={slide.color}>{slide.mockup}</Frame></div>
               : null
           }
         </div>
       </main>
 
-      {/* ── Controls bar ── */}
-      <footer style={{flexShrink:0,background:'rgba(255,255,255,0.92)',backdropFilter:'blur(16px)',borderTop:'1px solid rgba(124,92,252,0.1)',padding:'12px 20px 16px'}}>
-        {/* Dots */}
-        <div style={{display:'flex',justifyContent:'center',gap:6,marginBottom:10}}>
-          {SLIDES.map((_,i) => (
-            <button key={i} onClick={()=>goTo(i)} style={{height:6,width:i===idx?22:6,borderRadius:3,background:i===idx?slide.color:'rgba(124,92,252,0.2)',border:'none',cursor:'pointer',transition:'all 0.35s ease',padding:0}}/>
+      {/* ── Controls ── */}
+      <footer style={{ flexShrink: 0, background: 'rgba(255,255,255,0.93)', backdropFilter: 'blur(16px)', borderTop: '1px solid rgba(124,92,252,0.1)', padding: '10px 20px 14px' }}>
+        {/* Slide dots */}
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 5, marginBottom: 9 }}>
+          {SLIDES.map((_, i) => (
+            <button key={i} onClick={() => goTo(i)} style={{ height: 6, width: i === idx ? 22 : 6, borderRadius: 3, background: i === idx ? slide.color : 'rgba(124,92,252,0.18)', border: 'none', cursor: 'pointer', transition: 'all 0.3s ease', padding: 0 }} />
           ))}
         </div>
 
-        {/* Buttons row */}
-        <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:10}}>
-          <button onClick={goPrev} style={CB}><ChevronLeft size={16}/></button>
+        {/* Buttons */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+          <button onClick={goPrev} style={CB}><ChevronLeft size={16} /></button>
 
           <button
-            onClick={()=>setPlaying(p=>!p)}
-            style={{...CB,width:46,height:46,borderRadius:14,background:`${slide.color}15`,border:`1.5px solid ${slide.color}40`,color:slide.color}}
+            onClick={() => setPlaying(p => !p)}
+            style={{ ...CB, width: 44, height: 44, borderRadius: 13, background: `${slide.color}14`, border: `1.5px solid ${slide.color}38`, color: slide.color }}
           >
-            {playing ? <Pause size={18}/> : <Play size={18} fill={slide.color}/>}
+            {playing ? <Pause size={17} /> : <Play size={17} fill={slide.color} />}
           </button>
 
-          <button onClick={goNext} style={CB}><ChevronRight size={16}/></button>
+          <button onClick={goNext} style={CB}><ChevronRight size={16} /></button>
 
-          <div style={{width:1,height:24,background:'rgba(124,92,252,0.12)',margin:'0 4px'}}/>
+          <div style={{ width: 1, height: 22, background: 'rgba(124,92,252,0.12)', margin: '0 2px' }} />
 
-          <button
-            onClick={toggleMusic}
-            style={{...CB,color:muted?'#94A3B8':slide.color}}
-            title={muted?'تشغيل الموسيقى':'كتم الصوت'}
-          >
-            {muted ? <VolumeX size={15}/> : <Volume2 size={15}/>}
+          <button onClick={toggleMusic} style={{ ...CB, color: muted ? '#CBD5E1' : slide.color }} title={muted ? 'تشغيل الموسيقى' : 'كتم'}>
+            <span style={{ fontSize: 14 }}>{muted ? '🔇' : '🔊'}</span>
           </button>
 
-          <div dir="ltr" style={{color:'#94A3B8',fontSize:11,fontWeight:700,fontFamily:'monospace',minWidth:32,textAlign:'center'}}>
-            {idx+1}/{SLIDES.length}
+          <div dir="ltr" style={{ color: '#94A3B8', fontSize: 11, fontWeight: 700, fontFamily: 'monospace', minWidth: 28, textAlign: 'center' }}>
+            {idx + 1}/{SLIDES.length}
           </div>
         </div>
       </footer>
@@ -464,10 +701,10 @@ export default function DemoPage() {
 }
 
 const CB: React.CSSProperties = {
-  width:38,height:38,borderRadius:11,
-  background:'rgba(124,92,252,0.06)',
-  border:'1px solid rgba(124,92,252,0.12)',
-  color:'#64748B',
-  cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',
-  flexShrink:0,
+  width: 38, height: 38, borderRadius: 11,
+  background: 'rgba(124,92,252,0.06)',
+  border: '1px solid rgba(124,92,252,0.11)',
+  color: '#64748B',
+  cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+  flexShrink: 0,
 }

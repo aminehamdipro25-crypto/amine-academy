@@ -3094,34 +3094,53 @@ ${notes ? `
             )
           })()}
 
-          {/* Idle screen — hidden when Jitsi is embedded */}
+          {/* Idle screen — shown when session is running but no exercise selected */}
           {!jitsiEmbedded && !activeView && running && (
-            <div className="text-center">
-              <div className="text-6xl mb-4">✨</div>
-              <p className="text-white/40">اختر تمريناً من القائمة</p>
-              <button
-                onClick={() => setShowMobilePanel(true)}
-                className="lg:hidden mt-4 bg-brand-600 hover:bg-brand-500 text-white font-black px-6 py-2.5 rounded-xl text-sm transition-colors"
-              >
-                🎮 اختر تمريناً
-              </button>
-              {results.length > 0 && (
-                <div className="mt-8 bg-white/5 rounded-2xl p-6 max-w-sm mx-auto">
-                  <h3 className="font-black text-white mb-4">ملخص الجلسة</h3>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div>
-                      <div className="text-2xl font-black text-brand-400">{results.length}</div>
-                      <div className="text-xs text-white/40">تمارين</div>
+            <div className="text-center px-4 max-w-sm mx-auto" dir="rtl">
+              {results.length === 0 ? (
+                /* First exercise prompt */
+                <div
+                  className="rounded-3xl p-8 border"
+                  style={{ background: 'rgba(255,255,255,0.07)', borderColor: 'rgba(255,255,255,0.12)' }}
+                >
+                  <div className="text-7xl mb-4">🎯</div>
+                  <h3 className="text-white font-black text-xl mb-2">جاهز للبدء؟</h3>
+                  <p className="text-white/70 text-sm mb-5">اختر تمريناً من القائمة على اليمين لتبدأ الجلسة</p>
+                  <button
+                    onClick={() => setShowMobilePanel(true)}
+                    className="lg:hidden bg-brand-600 hover:bg-brand-500 text-white font-black px-8 py-3 rounded-2xl text-sm transition-colors"
+                  >
+                    🎮 اختر تمريناً
+                  </button>
+                </div>
+              ) : (
+                /* Between exercises — show mini summary */
+                <div
+                  className="rounded-3xl p-6 border"
+                  style={{ background: 'rgba(255,255,255,0.07)', borderColor: 'rgba(255,255,255,0.12)' }}
+                >
+                  <div className="text-5xl mb-3">⭐</div>
+                  <h3 className="text-white font-black text-lg mb-4">أحسنت! اختر التمرين التالي</h3>
+                  <div className="grid grid-cols-3 gap-3 mb-4">
+                    <div className="bg-white/10 rounded-2xl p-3">
+                      <div className="text-xl font-black text-brand-400">{results.length}</div>
+                      <div className="text-[10px] text-white/60">تمارين</div>
                     </div>
-                    <div>
-                      <div className="text-2xl font-black text-green-400">{avgScore}%</div>
-                      <div className="text-xs text-white/40">متوسط</div>
+                    <div className="bg-white/10 rounded-2xl p-3">
+                      <div className="text-xl font-black text-green-400">{avgScore}%</div>
+                      <div className="text-[10px] text-white/60">متوسط</div>
                     </div>
-                    <div>
-                      <div className="text-2xl font-black text-amber-400">{formatTime(elapsed)}</div>
-                      <div className="text-xs text-white/40">مدة</div>
+                    <div className="bg-white/10 rounded-2xl p-3">
+                      <div className="text-xl font-black text-amber-400">{formatTime(elapsed)}</div>
+                      <div className="text-[10px] text-white/60">مدة</div>
                     </div>
                   </div>
+                  <button
+                    onClick={() => setShowMobilePanel(true)}
+                    className="lg:hidden w-full bg-brand-600 hover:bg-brand-500 text-white font-black px-6 py-2.5 rounded-xl text-sm transition-colors"
+                  >
+                    🎮 اختر تمريناً
+                  </button>
                 </div>
               )}
             </div>

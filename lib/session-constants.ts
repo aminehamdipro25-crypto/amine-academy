@@ -199,15 +199,10 @@ export const EXERCISES = [
   { id:'color-sudoku',     labelAr:'سودوكو الألوان',           icon:'🎨', category:'محاكاة', color:'bg-orange-50 border-orange-200',  ageMin:5,  ageMax:22 },
   { id:'money-counter',    labelAr:'عدّ النقود',               icon:'💰', category:'محاكاة', color:'bg-yellow-50 border-yellow-200',  ageMin:5,  ageMax:18 },
 
-  // ── مهارات قرائية ──────────────────────────────────────────────────────────
-  { id:'syllable-tap',     labelAr:'تقطيع المقاطع',           icon:'👋', category:'سمعي',   color:'bg-rose-50 border-rose-200',      ageMin:5,  ageMax:14, tags:['عسر قراءة'] },
-  { id:'letter-reversal',  labelAr:'تمييز الحروف',            icon:'🔡', category:'تعلّم',  color:'bg-orange-50 border-orange-200',  ageMin:5,  ageMax:14, tags:['عسر قراءة'] },
-
-  // ── معرفي ──────────────────────────────────────────────────────────────────
-  { id:'clock-reading',    labelAr:'قراءة الساعة',            icon:'🕐', category:'معرفي',  color:'bg-sky-50 border-sky-200',        ageMin:5,  ageMax:14 },
-
   // ── تكامل حسي-حركي / عسر القراءة ─────────────────────────────────────────
-  { id:'cross-lateral',    labelAr:'عبور خط المنتصف',        icon:'🤸', category:'حركي',   color:'bg-violet-50 border-violet-200',  ageMin:4,  ageMax:18, tags:['عسر قراءة','تنسيق'] },
+  { id:'cross-lateral',      labelAr:'عبور خط المنتصف',        icon:'🤸', category:'حركي',   color:'bg-violet-50 border-violet-200',   ageMin:4,  ageMax:18, tags:['عسر قراءة','تنسيق'] },
+  { id:'reading-fluency',    labelAr:'طلاقة القراءة',           icon:'📖', category:'تعلّم',  color:'bg-amber-50 border-amber-200',     ageMin:5,  ageMax:16, tags:['عسر قراءة','طلاقة'] },
+  { id:'letter-search',      labelAr:'ابحث عن الحرف',           icon:'🔍', category:'تعلّم',  color:'bg-blue-50 border-blue-200',       ageMin:5,  ageMax:14, tags:['عسر قراءة','تمييز بصري'] },
 ]
 
 // Exercises whose component renders its own post-completion results screen

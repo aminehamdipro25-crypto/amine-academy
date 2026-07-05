@@ -69,14 +69,15 @@ export default function StudentTimerDisplay({
   const [stars, setStars] = useState<{ id: number; x: number; y: number; rot: number; scale: number }[]>([])
   const applauseFiredRef = useRef(false)
 
-  // Draggable position — null means "use default bottom-center"
+  // Draggable — use direct DOM manipulation during drag for 60fps smoothness.
+  // React state is only synced once on pointer-up so rendering stays minimal.
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null)
   const dragging = useRef(false)
   const dragOffset = useRef({ x: 0, y: 0 })
+  const posRef = useRef<{ x: number; y: number } | null>(null)
   const widgetRef = useRef<HTMLDivElement>(null)
 
   const onPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
-    // Only drag from the handle (top strip), not the buttons
     if ((e.target as HTMLElement).closest('button')) return
     e.currentTarget.setPointerCapture(e.pointerId)
     dragging.current = true
@@ -85,19 +86,24 @@ export default function StudentTimerDisplay({
   }, [])
 
   const onPointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
-    if (!dragging.current) return
-    const newX = e.clientX - dragOffset.current.x
-    const newY = e.clientY - dragOffset.current.y
-    // Clamp inside viewport
-    const w = widgetRef.current?.offsetWidth  ?? 210
-    const h = widgetRef.current?.offsetHeight ?? 160
-    setPos({
-      x: Math.max(0, Math.min(window.innerWidth  - w, newX)),
-      y: Math.max(0, Math.min(window.innerHeight - h, newY)),
-    })
+    if (!dragging.current || !widgetRef.current) return
+    const w = widgetRef.current.offsetWidth
+    const h = widgetRef.current.offsetHeight
+    const x = Math.max(0, Math.min(window.innerWidth  - w, e.clientX - dragOffset.current.x))
+    const y = Math.max(0, Math.min(window.innerHeight - h, e.clientY - dragOffset.current.y))
+    // Direct DOM update — bypasses React re-render entirely
+    widgetRef.current.style.left      = `${x}px`
+    widgetRef.current.style.top       = `${y}px`
+    widgetRef.current.style.bottom    = 'auto'
+    widgetRef.current.style.transform = 'none'
+    posRef.current = { x, y }
   }, [])
 
-  const onPointerUp = useCallback(() => { dragging.current = false }, [])
+  const onPointerUp = useCallback(() => {
+    dragging.current = false
+    // Sync final position to React state so it survives re-renders
+    if (posRef.current) setPos(posRef.current)
+  }, [])
 
   // Flash border + celebration when finished
   useEffect(() => {

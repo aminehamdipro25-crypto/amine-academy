@@ -100,6 +100,7 @@ import AbcLogPanel from '@/components/session/AbcLogPanel'
 import HomeworkPanel from '@/components/session/HomeworkPanel'
 import QuickObsPanel from '@/components/session/QuickObsPanel'
 import IncidentPanel, { type IncidentEntry } from '@/components/session/IncidentPanel'
+import DraggableVideoPiP from '@/components/session/DraggableVideoPiP'
 import LiveSessionCard from '@/components/session/LiveSessionCard'
 import SessionStarCounter from '@/components/session/SessionStarCounter'
 import { computeAdaptiveDecision } from '@/lib/session-adaptive'
@@ -423,7 +424,8 @@ export default function SessionPage() {
     fetch(`/api/appointments/${id}`)
       .then(r => r.json())
       .then(({ appointment }) => {
-        if (appointment?.meetingUrl) setJitsiUrl(appointment.meetingUrl)
+        // Always have a video room — use appointment URL or auto-generate from session ID
+        setJitsiUrl(appointment?.meetingUrl ?? `https://meet.jit.si/amine-academy-${id}`)
         if (appointment?.type) {
           setAppointmentType(appointment.type)
           if (appointment.type === 'assessment' && !draftRestoredRef.current) setTab('assessments')
@@ -480,6 +482,32 @@ export default function SessionPage() {
   const jitsiEmbedUrl = jitsiUrl
     ? `${jitsiUrl}#config.prejoinPageEnabled=false&config.startWithAudioMuted=false&config.disableDeepLinking=true&userInfo.displayName=${encodeURIComponent('الأستاذ أمين')}`
     : null
+
+  // Native screen sharing — runs in the parent frame so getDisplayMedia() works reliably
+  const [screenStream, setScreenStream] = useState<MediaStream | null>(null)
+  const screenVideoRef = useRef<HTMLVideoElement>(null)
+
+  async function startScreenShare() {
+    try {
+      const stream = await (navigator.mediaDevices as MediaDevices & {
+        getDisplayMedia: (opts?: MediaStreamConstraints) => Promise<MediaStream>
+      }).getDisplayMedia({ video: { frameRate: 30 } as MediaTrackConstraints })
+      stream.getVideoTracks()[0].addEventListener('ended', () => setScreenStream(null))
+      setScreenStream(stream)
+    } catch { /* user cancelled */ }
+  }
+
+  function stopScreenShare() {
+    screenStream?.getTracks().forEach(t => t.stop())
+    setScreenStream(null)
+  }
+
+  // Attach stream to video element when it changes
+  useEffect(() => {
+    if (screenVideoRef.current) {
+      screenVideoRef.current.srcObject = screenStream
+    }
+  }, [screenStream])
 
 
   // Timer
@@ -1737,6 +1765,9 @@ ${notes ? `
         hasResults={results.length > 0}
         onPrintReport={printSessionReport}
         onLockSession={lockSession}
+        screenSharing={!!screenStream}
+        onStartScreenShare={startScreenShare}
+        onStopScreenShare={stopScreenShare}
       />
 
       <SessionPhaseBar
@@ -2496,6 +2527,23 @@ ${notes ? `
               background: 'linear-gradient(160deg, #FFF0FA 0%, #EEF0FF 35%, #F0FFF8 70%, #FFFBF0 100%)',
             }}
           >
+            {/* ── Screen share view — fills top of kid panel when active ── */}
+            {screenStream && (
+              <div className="w-full bg-black relative" style={{ height: 220 }}>
+                <video
+                  ref={screenVideoRef}
+                  autoPlay
+                  muted
+                  playsInline
+                  style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                />
+                <div className="absolute top-2 right-3 flex items-center gap-1.5">
+                  <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                  <span className="text-white text-[10px] font-black">مشاركة شاشة</span>
+                </div>
+              </div>
+            )}
+
             <div className="max-w-2xl mx-auto px-4 py-6">
 
               {/* ── Exercise queue builder ── */}
@@ -2981,44 +3029,56 @@ ${notes ? `
 
           {/* ── Embedded Jitsi iframe ── */}
           {jitsiEmbedded && jitsiEmbedUrl && (
-            <div
-              className="rounded-2xl overflow-hidden"
-              style={
-                (activeView || showWhiteboard || promptCard)
-                  ? {
-                      position: 'fixed',
-                      bottom: 20,
-                      left: 20,
-                      width: 280,
-                      height: 210,
-                      zIndex: promptCard ? 320 : 60,
-                      boxShadow: '0 8px 40px rgba(0,0,0,0.8)',
-                      border: '2px solid rgba(255,255,255,0.15)',
-                      borderRadius: 16,
-                    }
-                  : {
-                      position: 'absolute',
-                      inset: 0,
-                      zIndex: 10,
-                      borderRadius: 0,
-                    }
-              }
-            >
-              <iframe
-                src={jitsiEmbedUrl}
-                style={{ width: '100%', height: '100%', border: 'none', display: 'block' }}
-                allow="camera *; microphone *; display-capture *; fullscreen *"
-                allowFullScreen
-              />
-              {(activeView || showWhiteboard || promptCard) && (
-                <button
-                  onClick={() => setJitsiEmbedded(false)}
-                  className="absolute top-2 right-2 bg-black/70 hover:bg-black/90 text-white font-bold text-xs px-2 py-1 rounded-lg transition-colors"
+            (activeView || showWhiteboard || promptCard)
+              ? (
+                // PiP mode — draggable floating window
+                <DraggableVideoPiP
+                  onClose={() => setJitsiEmbedded(false)}
+                  label="📹 مقابلة"
+                  initialBottom={20}
+                  initialLeft={20}
+                  minWidth={280}
+                  minHeight={210}
                 >
-                  ✕
-                </button>
-              )}
-            </div>
+                  <iframe
+                    src={jitsiEmbedUrl}
+                    style={{ width: '100%', height: '100%', border: 'none', display: 'block' }}
+                    allow="camera *; microphone *; display-capture *; fullscreen *; autoplay *"
+                    allowFullScreen
+                  />
+                </DraggableVideoPiP>
+              )
+              : (
+                // Full-screen mode
+                <div className="absolute inset-0 z-10">
+                  <iframe
+                    src={jitsiEmbedUrl}
+                    style={{ width: '100%', height: '100%', border: 'none', display: 'block' }}
+                    allow="camera *; microphone *; display-capture *; fullscreen *; autoplay *"
+                    allowFullScreen
+                  />
+                </div>
+              )
+          )}
+
+          {/* ── Screen share PiP (native — specialist shares to child) ── */}
+          {screenStream && !(activeView || showWhiteboard) && (
+            <DraggableVideoPiP
+              onClose={stopScreenShare}
+              label="🖥 مشاركة شاشة"
+              initialBottom={20}
+              initialLeft={320}
+              minWidth={320}
+              minHeight={240}
+            >
+              <video
+                ref={screenVideoRef}
+                autoPlay
+                muted
+                playsInline
+                style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#000' }}
+              />
+            </DraggableVideoPiP>
           )}
 
           {/* Start screen — readiness check then start */}

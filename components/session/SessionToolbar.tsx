@@ -1,5 +1,5 @@
 'use client'
-import { Video, PenLine } from 'lucide-react'
+import { Video, PenLine, Monitor } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import type { PROMPT_CARDS } from '@/lib/session-constants'
 import { ToolbarPopover, formatTime } from '@/lib/session-helpers'
@@ -65,6 +65,9 @@ export default function SessionToolbar({
   hasResults,
   onPrintReport,
   onLockSession,
+  screenSharing,
+  onStartScreenShare,
+  onStopScreenShare,
 }: {
   toolbarRef: React.RefObject<HTMLDivElement>
   chromeHidden: boolean
@@ -108,6 +111,9 @@ export default function SessionToolbar({
   hasResults: boolean
   onPrintReport: () => void
   onLockSession: () => void
+  screenSharing: boolean
+  onStartScreenShare: () => void
+  onStopScreenShare: () => void
 }) {
   // ── Custom audio upload (local state — no session persistence needed) ──
   const [customTrack, setCustomTrack] = useState<{ name: string; url: string } | null>(null)
@@ -200,7 +206,7 @@ export default function SessionToolbar({
     <div
       className="bg-white border-b border-brand-100 px-3 py-1.5 flex items-center gap-1.5 overflow-x-auto shadow-sm [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
 
-      {/* Group 1 — Camera */}
+      {/* Group 1 — Camera + Screen share */}
       {jitsiUrl && (
         <button
           onClick={onToggleJitsiEmbedded}
@@ -215,6 +221,19 @@ export default function SessionToolbar({
           {jitsiEmbedded ? '● مقابلة' : 'مقابلة'}
         </button>
       )}
+
+      <button
+        onClick={screenSharing ? onStopScreenShare : onStartScreenShare}
+        className={`flex items-center gap-1.5 font-black px-2.5 py-1.5 rounded-lg text-xs transition-all flex-shrink-0 ${
+          screenSharing
+            ? 'bg-red-600 text-white ring-1 ring-red-400/50'
+            : 'bg-surface-page hover:bg-brand-50 text-gray-500'
+        }`}
+        title={screenSharing ? 'إيقاف مشاركة الشاشة' : 'مشاركة شاشتك مع الطفل'}
+      >
+        <Monitor className="w-3.5 h-3.5" />
+        {screenSharing ? '● شاشة' : 'شاشة'}
+      </button>
 
       <div className="w-px h-5 bg-brand-100 flex-shrink-0" />
 

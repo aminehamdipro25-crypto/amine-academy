@@ -293,6 +293,10 @@ export default function SessionPage() {
   const [queueIndex, setQueueIndex]       = useState(0)
   const [showMobilePanel, setShowMobilePanel] = useState(false)
 
+  // Quick sticky-note overlay (#9)
+  const [showQuickNote, setShowQuickNote]   = useState(false)
+  const [quickNoteText, setQuickNoteText]   = useState('')
+
   // ── Session draft persistence — restore on refresh ──────────
   const draftRestoredRef = useRef(false)
 
@@ -1487,6 +1491,76 @@ ${notes ? `
         />
       )}
 
+      {/* ── Quick Sticky Note FAB (#9) — visible during exercises ── */}
+      {running && exerciseActive && !sessionLocked && (
+        <button
+          className="fixed z-[140] flex items-center justify-center rounded-full shadow-lg transition-all hover:scale-110 active:scale-95"
+          style={{
+            bottom: showStudentTimer ? 160 : 24,
+            left: 24,
+            width: 44,
+            height: 44,
+            background: 'rgba(234,179,8,0.9)',
+            backdropFilter: 'blur(8px)',
+            border: '2px solid rgba(255,255,255,0.3)',
+            fontSize: 20,
+          }}
+          title="ملاحظة سريعة"
+          onClick={() => setShowQuickNote(v => !v)}
+        >
+          📝
+        </button>
+      )}
+
+      {/* ── Quick Note Overlay ── */}
+      {showQuickNote && (
+        <div
+          className="fixed z-[145] flex flex-col gap-2 p-3 rounded-2xl shadow-xl"
+          style={{
+            bottom: showStudentTimer ? 210 : 74,
+            left: 16,
+            width: 240,
+            background: 'rgba(30,30,30,0.95)',
+            border: '1px solid rgba(234,179,8,0.35)',
+            backdropFilter: 'blur(12px)',
+          }}
+          dir="rtl"
+        >
+          <div className="text-yellow-400 text-xs font-black mb-1">📝 ملاحظة سريعة</div>
+          <textarea
+            autoFocus
+            value={quickNoteText}
+            onChange={e => setQuickNoteText(e.target.value)}
+            placeholder="اكتب ملاحظتك هنا..."
+            className="w-full text-white text-xs rounded-lg p-2 resize-none focus:outline-none"
+            style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', minHeight: 72 }}
+            rows={3}
+          />
+          <div className="flex gap-2">
+            <button
+              className="flex-1 text-xs font-black py-1.5 rounded-lg text-white transition-colors"
+              style={{ background: 'rgba(234,179,8,0.8)' }}
+              onClick={() => {
+                if (quickNoteText.trim()) {
+                  const ts = new Date().toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })
+                  setNotes((prev: string) => prev ? `${prev}\n[${ts}] ${quickNoteText.trim()}` : `[${ts}] ${quickNoteText.trim()}`)
+                  setQuickNoteText('')
+                }
+                setShowQuickNote(false)
+              }}
+            >
+              حفظ
+            </button>
+            <button
+              className="px-3 text-xs text-white/40 hover:text-white/70 rounded-lg transition-colors"
+              onClick={() => setShowQuickNote(false)}
+            >
+              إغلاق
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ── Prompt Card Full-Screen Overlay ── */}
       {promptCard && (
         <div
@@ -1944,6 +2018,28 @@ ${notes ? `
                     </div>
                   </div>
                 )}
+
+                {/* Regression alert (#7) — warn when current avg drops >15% vs past sessions */}
+                {results.length >= 2 && pastSessions.length > 0 && (() => {
+                  const pastAvg = Math.round(pastSessions.reduce((s, p) => s + p.score, 0) / pastSessions.length)
+                  const drop = pastAvg - avgScore
+                  if (drop < 15) return null
+                  return (
+                    <div
+                      className="flex items-start gap-2 rounded-xl px-3 py-2.5 mb-1"
+                      style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)' }}
+                      dir="rtl"
+                    >
+                      <span style={{ fontSize: 18 }}>⚠️</span>
+                      <div>
+                        <div className="text-red-700 text-xs font-black">تراجع ملحوظ في الأداء</div>
+                        <div className="text-red-600/80 text-[10px] mt-0.5">
+                          المتوسط الحالي {avgScore}% مقابل {pastAvg}% في الجلسات السابقة (انخفاض {drop}%)
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })()}
 
                 {/* Per-game results — enhanced */}
                 {results.map((r, i) => {
@@ -2568,15 +2664,15 @@ ${notes ? `
                             setActiveView({ type: 'exercise', id: ex.id })
                             setKidMode(false)
                           }}
-                          className="rounded-3xl p-4 text-center active:scale-95 transition-all duration-150 select-none w-full"
+                          className="rounded-3xl p-5 text-center active:scale-95 transition-all duration-150 select-none w-full"
                           style={{
                             background: c.bg,
-                            border: `2px solid ${inQ ? '#7C5CFC' : c.border}`,
-                            boxShadow: `0 4px 16px -4px ${c.border}`,
+                            border: `3px solid ${inQ ? '#7C5CFC' : c.border}`,
+                            boxShadow: `0 6px 20px -4px ${c.border}80`,
                           }}
                         >
-                          <div className="text-5xl mb-2 leading-none">{ex.icon}</div>
-                          <div className="font-black text-sm leading-tight" style={{ color: c.text }}>
+                          <div className="text-6xl mb-2.5 leading-none">{ex.icon}</div>
+                          <div className="font-black text-base leading-tight" style={{ color: c.text }}>
                             {ex.labelAr}
                           </div>
                           {(gameUsageCounts[ex.id] ?? 0) > 0 && (
@@ -3191,6 +3287,7 @@ ${notes ? `
               exit={{ opacity: 0, y: -8, transition: { duration: 0.2 } }}
               transition={{ duration: 0.25 }}
               className="w-full max-w-2xl mx-auto py-6"
+              style={{ minHeight: '520px' }}
             >
             <Suspense fallback={
               <div className="flex items-center justify-center h-48">

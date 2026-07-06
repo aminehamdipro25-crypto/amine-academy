@@ -1,11 +1,11 @@
 'use client'
-import { useState, useRef } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useRef, useEffect, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Loader2, Check, AlertCircle } from 'lucide-react'
+import { Loader2, Check, AlertCircle, Clock, Calendar, Brain } from 'lucide-react'
 
 // ── Zod Schemas ────────────────────────────────────────────────
 const step1Schema = z.object({
@@ -66,20 +66,88 @@ function inputClass(hasError: boolean) {
   }`
 }
 
+// ── Real plans matching PlansSection and checkout ─────────────────────────
+type PlanId = 'session' | 'weekly' | 'monthly'
+type Currency = 'QAR' | 'TND'
+
+interface PlanDef {
+  id: PlanId
+  name: string
+  subtitle: string
+  prices: Record<Currency, number>
+  period: string
+  sessionsLabel: string
+  badge: string | null
+  icon: typeof Clock
+  popular: boolean
+}
+
+const REGISTER_PLANS: PlanDef[] = [
+  {
+    id: 'session',
+    name: 'الحصة المفردة',
+    subtitle: 'مرونة كاملة — جرّب دون التزام',
+    prices: { QAR: 49, TND: 15 },
+    period: 'حصة',
+    sessionsLabel: 'حصة واحدة',
+    badge: null,
+    icon: Clock,
+    popular: false,
+  },
+  {
+    id: 'weekly',
+    name: 'الباقة الأسبوعية',
+    subtitle: 'متابعة منتظمة بمرونة أسبوعية',
+    prices: { QAR: 169, TND: 49 },
+    period: 'أسبوع',
+    sessionsLabel: '4 حصص / أسبوع',
+    badge: '⭐ الأكثر طلباً',
+    icon: Calendar,
+    popular: true,
+  },
+  {
+    id: 'monthly',
+    name: 'الباقة الشهرية',
+    subtitle: 'أفضل قيمة للتطور المستدام',
+    prices: { QAR: 549, TND: 149 },
+    period: 'شهر',
+    sessionsLabel: '16 حصة / شهر',
+    badge: '💎 الأفضل قيمة',
+    icon: Brain,
+    popular: false,
+  },
+]
+
 const STEPS = [
   { id: 1, label: 'بيانات ولي الأمر' },
   { id: 2, label: 'بيانات الطفل' },
   { id: 3, label: 'اختيار الخطة' },
 ]
 
-export default function RegisterPage() {
-  const router  = useRouter()
+function RegisterForm() {
+  const router       = useRouter()
+  const searchParams = useSearchParams()
   const [step, setStep]       = useState(1)
   const [loading, setLoading] = useState(false)
   const [apiError, setApiError] = useState('')
-  const [plan, setPlan]       = useState('standard')
+  // Pre-select plan from URL param (e.g. /register?plan=weekly&currency=QAR)
+  const urlPlan = searchParams.get('plan') as PlanId | null
+  const urlCurrency = (searchParams.get('currency') as Currency | null) ?? 'QAR'
+  const [plan, setPlan]       = useState<PlanId>(urlPlan ?? 'weekly')
+  const [currency, setCurrency] = useState<Currency>(urlCurrency)
+  const [apiPrices, setApiPrices] = useState<Record<PlanId, Record<Currency, number>> | null>(null)
   const [consent, setConsent] = useState(false)
   const formTopRef = useRef<HTMLDivElement>(null)
+
+  // Load real prices from API settings
+  useEffect(() => {
+    fetch('/api/public/settings')
+      .then(r => r.json())
+      .then((d: { prices?: Record<string, Record<string, number>> }) => {
+        if (d.prices) setApiPrices(d.prices as Record<PlanId, Record<Currency, number>>)
+      })
+      .catch(() => {})
+  }, [])
 
   // Persist step-2 data across navigations
   const [step2Data, setStep2Data] = useState<Partial<Step2>>({
@@ -156,6 +224,7 @@ export default function RegisterPage() {
         // Go directly to payment — pass plan + pre-fill contact info
         const qs = new URLSearchParams({
           plan,
+          currency,
           email: p.email,
           name:  `${p.firstName} ${p.lastName}`,
           phone: p.phone,
@@ -359,41 +428,81 @@ export default function RegisterPage() {
 
           {/* ── Step 3: Plan ── */}
           {step === 3 && (
-            <div className="space-y-4">
-              <h2 className="font-black text-xl text-gray-900 mb-5">اختر خطة الاشتراك</h2>
-              <div className="space-y-3">
-                {[
-                  { id: 'basic',    name: 'الأساسي', qar: 179, tnd: 49,  features: ['برنامج أسبوعي مخصص','مكتبة 25+ تمرين','تقرير شهري'] },
-                  { id: 'standard', name: 'المتقدم',  qar: 369, tnd: 99,  features: ['جلسة فيديو شهرية','واتساب مباشر','تقارير أسبوعية'], recommended: true },
-                  { id: 'premium',  name: 'المتميز',  qar: 659, tnd: 179, features: ['جلستان بالفيديو','ABA + PEERS كامل','تقارير يومية'] },
-                ].map(({ id, name, qar, tnd, features, recommended }) => (
-                  <button key={id} type="button" onClick={() => setPlan(id)}
-                    className={`w-full text-right p-4 rounded-2xl border-2 transition-all ${
-                      plan === id ? 'border-brand-500 bg-brand-50' : 'border-gray-200 hover:border-gray-300'
-                    }`}>
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                          plan === id ? 'border-brand-500 bg-brand-500' : 'border-gray-300'
-                        }`}>
-                          {plan === id && <div className="w-2 h-2 bg-white rounded-full" />}
-                        </div>
-                        <span className="font-black text-gray-900">{name}</span>
-                        {recommended && <span className="text-xs bg-brand-600 text-white px-2 py-0.5 rounded-full font-bold">مُوصى</span>}
-                      </div>
-                      <div className="text-right">
-                        <div className="font-black text-brand-600 ltr-num text-sm">{qar} <span className="text-xs font-normal text-gray-500">ر.ق / شهر</span></div>
-                        <div className="text-gray-400 ltr-num text-xs">{tnd} <span className="text-xs">د.ت / شهر</span></div>
-                      </div>
-                    </div>
-                    <div className="flex flex-wrap gap-2 pr-7">
-                      {features.map(f => (
-                        <span key={f} className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{f}</span>
-                      ))}
-                    </div>
-                  </button>
-                ))}
+            <div className="space-y-4" dir="rtl">
+              <div className="flex items-center justify-between mb-1">
+                <h2 className="font-black text-xl text-gray-900">اختر خطتك</h2>
+                {/* Currency toggle */}
+                <div className="flex rounded-xl overflow-hidden border border-gray-200 text-xs font-bold">
+                  {(['QAR', 'TND'] as Currency[]).map(c => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => setCurrency(c)}
+                      className="px-3 py-1.5 transition-colors"
+                      style={currency === c ? { background: '#6B46F0', color: '#fff' } : { background: '#fff', color: '#6B7280' }}
+                    >
+                      {c === 'QAR' ? '🇶🇦 ر.ق' : '🇹🇳 د.ت'}
+                    </button>
+                  ))}
+                </div>
               </div>
+              <div className="space-y-3">
+                {REGISTER_PLANS.map((p) => {
+                  const PlanIcon = p.icon
+                  const price = (apiPrices?.[p.id]?.[currency] ?? p.prices[currency])
+                  const symbol = currency === 'QAR' ? 'ر.ق' : 'د.ت'
+                  const selected = plan === p.id
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => setPlan(p.id)}
+                      className="w-full text-right p-4 rounded-2xl border-2 transition-all relative"
+                      style={selected
+                        ? { border: '2px solid #6B46F0', background: 'rgba(107,70,240,0.05)' }
+                        : { border: '2px solid #E5E7EB', background: '#FFFFFF' }
+                      }
+                    >
+                      {p.badge && (
+                        <span
+                          className="absolute top-3 left-3 text-[10px] font-black px-2.5 py-0.5 rounded-full text-white"
+                          style={{ background: p.popular ? '#6B46F0' : 'linear-gradient(135deg,#F59E0B,#F97316)' }}
+                        >
+                          {p.badge}
+                        </span>
+                      )}
+                      <div className="flex items-start gap-3">
+                        <div className={`mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                          selected ? 'border-brand-600 bg-brand-600' : 'border-gray-300'
+                        }`}>
+                          {selected && <div className="w-2 h-2 bg-white rounded-full" />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              <PlanIcon className="w-4 h-4 flex-shrink-0" style={{ color: '#6B46F0' }} />
+                              <span className="font-black text-gray-900 text-sm">{p.name}</span>
+                            </div>
+                            <div className="text-right flex-shrink-0">
+                              <span className="font-black ltr-num text-sm" style={{ color: '#6B46F0' }}>
+                                {price} <span className="text-xs font-normal text-gray-400">{symbol} / {p.period}</span>
+                              </span>
+                            </div>
+                          </div>
+                          <p className="text-xs text-gray-400 mt-0.5">{p.subtitle}</p>
+                          <span className="inline-block mt-1.5 text-xs font-bold px-2 py-0.5 rounded-full"
+                            style={{ background: 'rgba(107,70,240,0.07)', color: '#6B46F0' }}>
+                            📅 {p.sessionsLabel}
+                          </span>
+                        </div>
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+              <p className="text-xs text-gray-400 text-center pt-1">
+                يمكنك تغيير الخطة في أي وقت من بوابة ولي الأمر
+              </p>
             </div>
           )}
 
@@ -472,5 +581,17 @@ export default function RegisterPage() {
         </p>
       </div>
     </div>
+  )
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-[100dvh] flex items-center justify-center">
+        <div className="w-8 h-8 rounded-full border-4 border-brand-200 border-t-brand-600 animate-spin" />
+      </div>
+    }>
+      <RegisterForm />
+    </Suspense>
   )
 }

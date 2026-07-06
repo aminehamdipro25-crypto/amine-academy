@@ -100,6 +100,7 @@ export const tr = {
         home: 'الرئيسية', children: 'أطفالي', assessment: 'التقييم', exercises: 'التمارين',
         progress: 'التطور', appointments: 'المواعيد', reports: 'التقارير', chat: 'التواصل',
         familyChallenge: 'تحدي العائلة', practice: 'تمارين منزلية', account: 'حسابي', more: 'المزيد',
+        upgradePlan: 'تغيير الباقة',
       },
       studentNav: {
         home: 'بيتي', exercises: 'تمارين', journal: 'يومياتي', achievements: 'جوائزي', schedule: 'جدولي',
@@ -1305,6 +1306,7 @@ export const tr = {
         home: 'Home', children: 'My Children', assessment: 'Assessment', exercises: 'Exercises',
         progress: 'Progress', appointments: 'Appointments', reports: 'Reports', chat: 'Messages',
         familyChallenge: 'Family Challenge', practice: 'Home Practice', account: 'My Account', more: 'More',
+        upgradePlan: 'Change Plan',
       },
       studentNav: {
         home: 'Home', exercises: 'Exercises', journal: 'Journal', achievements: 'Awards', schedule: 'Schedule',
@@ -2510,6 +2512,7 @@ export const tr = {
         home: 'Accueil', children: 'Mes enfants', assessment: 'Évaluation', exercises: 'Exercices',
         progress: 'Progrès', appointments: 'Rendez-vous', reports: 'Rapports', chat: 'Messages',
         familyChallenge: 'Défi familial', practice: 'Pratique à domicile', account: 'Mon compte', more: 'Plus',
+        upgradePlan: 'Changer de formule',
       },
       studentNav: {
         home: 'Accueil', exercises: 'Exercices', journal: 'Journal', achievements: 'Récompenses', schedule: 'Emploi du temps',

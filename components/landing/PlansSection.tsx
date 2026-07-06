@@ -354,7 +354,7 @@ export default function PlansSection() {
                 {/* CTA */}
                 <div className="p-6">
                   <Link
-                    href={`/checkout?plan=${plan.id}&currency=${currency}`}
+                    href={`/register?plan=${plan.id}&currency=${currency}`}
                     className="block w-full text-center font-black py-3.5 rounded-xl transition-all hover:opacity-90 text-white"
                     style={{
                       background: isPopular

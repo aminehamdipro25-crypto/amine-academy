@@ -183,7 +183,7 @@ export default function HeroSection() {
             {t.nav.parents}
           </Link>
           <Link
-            href="/register"
+            href="/#plans"
             className="font-black text-sm px-5 py-2.5 rounded-xl text-white transition-all hover:opacity-90 hover:-translate-y-0.5"
             style={{
               background: '#6B46F0',
@@ -236,7 +236,7 @@ export default function HeroSection() {
           {/* CTAs */}
           <div className="flex flex-col sm:flex-row items-start gap-3">
             <Link
-              href="/register"
+              href="/#plans"
               className="flex items-center gap-2 font-black text-base px-8 py-3.5 rounded-2xl text-white transition-all hover:-translate-y-0.5 active:scale-95"
               style={{
                 background: '#6B46F0',

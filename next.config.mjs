@@ -28,21 +28,37 @@ const ContentSecurityPolicy = [
   "form-action 'self'",
 ].filter(Boolean).join('; ')
 
-const securityHeaders = [
+const baseHeaders = [
   { key: 'X-DNS-Prefetch-Control', value: 'on' },
   { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
   { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
   { key: 'X-Content-Type-Options', value: 'nosniff' },
   { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
-  { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), payment=(), display-capture=(self)' },
   { key: 'Content-Security-Policy', value: ContentSecurityPolicy },
-  // COPPA compliance marker
   { key: 'X-Children-Privacy', value: 'COPPA-compliant' },
+]
+
+// Session page needs display-capture for screen sharing — separate rule so
+// no second Permissions-Policy header is ever merged by the browser
+const sessionHeaders = [
+  ...baseHeaders,
+  { key: 'Permissions-Policy', value: 'geolocation=(), payment=(), display-capture=*' },
+]
+
+// All other pages: lock down camera, mic, display-capture
+const securityHeaders = [
+  ...baseHeaders,
+  { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), payment=()' },
 ]
 
 const nextConfig = {
   async headers() {
-    return [{ source: '/(.*)', headers: securityHeaders }]
+    return [
+      // Session page: explicit display-capture=* (must come FIRST — more specific wins)
+      { source: '/session/:path*', headers: sessionHeaders },
+      // All other routes: restrictive permissions
+      { source: '/((?!session).*)', headers: securityHeaders },
+    ]
   },
   images: {
     remotePatterns: [

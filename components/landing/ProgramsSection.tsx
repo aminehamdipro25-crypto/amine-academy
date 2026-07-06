@@ -186,8 +186,10 @@ export default function ProgramsSection() {
                     </div>
                   </div>
                   <h3
-                    className="ltr-num"
-                    style={{ color: 'white', fontWeight: 900, fontSize: 24, margin: '0 0 4px', letterSpacing: -0.5 }}
+                    style={{
+                      color: 'white', fontWeight: 900, fontSize: 24, margin: '0 0 4px', letterSpacing: -0.5,
+                      direction: 'ltr', textAlign: isRtl ? 'right' : 'left',
+                    }}
                   >
                     {pickLang(lang, prog.age, prog.ageEn, prog.ageFr)}
                   </h3>

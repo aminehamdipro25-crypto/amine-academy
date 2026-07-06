@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { useLang, tr } from '@/lib/i18n'
 import LangToggle from '@/components/shared/LangToggle'
+import AcademyLogo from '@/components/shared/AcademyLogo'
 
 export default function ParentPortalLayout({ children }: { children: React.ReactNode }) {
   const pathname  = usePathname()
@@ -102,9 +103,7 @@ export default function ParentPortalLayout({ children }: { children: React.React
 
           {/* Brand */}
           <Link href="/parent/dashboard" className="flex items-center gap-2.5 flex-shrink-0">
-            <div className="w-9 h-9 rounded-2xl flex items-center justify-center" style={{ background: '#6B46F0', boxShadow: '0 4px 12px rgba(107,70,240,0.30)' }}>
-              <span className="text-white text-base font-black">أ</span>
-            </div>
+            <AcademyLogo size={36} />
             <div className="hidden lg:block">
               <div className="font-black text-sm leading-tight" style={{ color: '#6B46F0' }}>أكاديمية أمين</div>
               <div className="text-[10px] text-gray-400 leading-tight">{t.common.parentsPortalSubtitle}</div>

@@ -509,20 +509,23 @@ export default function SessionPage() {
   }
 
   async function startScreenShare() {
-    if (!navigator.mediaDevices || typeof navigator.mediaDevices.getDisplayMedia !== 'function') {
-      showScreenMsg('مشاركة الشاشة غير مدعومة في هذا المتصفح')
-      return
-    }
     try {
       const stream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 15 }, audio: false })
       stream.getVideoTracks()[0].addEventListener('ended', () => setScreenStream(null))
       setScreenStream(stream)
     } catch (err: unknown) {
-      const name = (err instanceof DOMException) ? err.name : ''
-      if (name !== 'AbortError' && name !== 'NotAllowedError') {
+      if (err instanceof TypeError) {
+        // getDisplayMedia not available in this browser
+        showScreenMsg('مشاركة الشاشة غير مدعومة في هذا المتصفح')
+      } else if (err instanceof DOMException) {
+        const { name } = err
+        // NotAllowedError = user cancelled / policy block, AbortError = user dismissed → silent
+        if (name !== 'NotAllowedError' && name !== 'AbortError') {
+          showScreenMsg('تعذّرت مشاركة الشاشة — تأكد من صلاحيات المتصفح')
+        }
+      } else {
         showScreenMsg('تعذّرت مشاركة الشاشة — تأكد من صلاحيات المتصفح')
       }
-      // User cancelled (NotAllowedError / AbortError) → silent
     }
   }
 

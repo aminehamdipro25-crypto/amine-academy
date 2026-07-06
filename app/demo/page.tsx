@@ -656,7 +656,7 @@ export default function DemoPage() {
             {!isMobile && <div style={{ fontSize: 9, color: '#94A3B8' }}>الجولة التجريبية</div>}
           </div>
         </div>
-        <Link href="/register" style={{ background: 'linear-gradient(135deg,#6B46F0,#9A7BFD)', color: 'white', fontWeight: 900, fontSize: isMobile ? 11 : 12, padding: isMobile ? '7px 13px' : '8px 18px', borderRadius: 11, textDecoration: 'none', boxShadow: '0 4px 18px rgba(107,70,240,.28)' }}>
+        <Link href="/#plans" style={{ background: 'linear-gradient(135deg,#6B46F0,#9A7BFD)', color: 'white', fontWeight: 900, fontSize: isMobile ? 11 : 12, padding: isMobile ? '7px 13px' : '8px 18px', borderRadius: 11, textDecoration: 'none', boxShadow: '0 4px 18px rgba(107,70,240,.28)' }}>
           {isMobile ? 'سجّل ←' : 'سجّل مجاناً ←'}
         </Link>
       </header>
@@ -698,7 +698,7 @@ export default function DemoPage() {
 
             {slide.isHero && (
               <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 6 }}>
-                <Link href="/register" style={{ background: 'linear-gradient(135deg,#6B46F0,#9A7BFD)', color: 'white', fontWeight: 900, fontSize: 14, padding: '12px 24px', borderRadius: 14, textDecoration: 'none', boxShadow: '0 6px 24px rgba(107,70,240,.32)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Link href="/#plans" style={{ background: 'linear-gradient(135deg,#6B46F0,#9A7BFD)', color: 'white', fontWeight: 900, fontSize: 14, padding: '12px 24px', borderRadius: 14, textDecoration: 'none', boxShadow: '0 6px 24px rgba(107,70,240,.32)', display: 'flex', alignItems: 'center', gap: 6 }}>
                   ابدأ مجاناً ←
                 </Link>
                 <button onClick={goNext} style={{ background: 'rgba(107,70,240,0.06)', border: '1.5px solid rgba(107,70,240,0.18)', color: '#6B46F0', fontWeight: 800, fontSize: 13, padding: '12px 20px', borderRadius: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>

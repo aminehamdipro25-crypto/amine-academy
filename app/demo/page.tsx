@@ -52,7 +52,7 @@ function Frame({ url, color, children }: { url: string; color: string; children:
           🔒 {url}
         </div>
       </div>
-      <div style={{ maxHeight: '46vh', overflow: 'hidden' }}>{children}</div>
+      <div style={{ maxHeight: '52vh', overflow: 'hidden' }}>{children}</div>
     </div>
   )
 }
@@ -82,10 +82,6 @@ function HeroVisual() {
           </div>
         )
       })}
-      {/* Age range badge */}
-      <div style={{ position: 'absolute', bottom: 10, left: '50%', transform: 'translateX(-50%)', background: 'white', border: '1.5px solid rgba(124,92,252,0.2)', borderRadius: 20, padding: '4px 12px', fontSize: 9, fontWeight: 900, color: '#6B46F0', whiteSpace: 'nowrap', boxShadow: '0 4px 12px rgba(124,92,252,0.12)' }}>
-        5 — 22 سنة • 🇶🇦 قطر • 🇹🇳 تونس
-      </div>
       <div style={{ animation: 'dfloat 4.5s ease-in-out infinite', position: 'relative', zIndex: 2 }}>
         <AcademyLogo size={90} />
       </div>
@@ -542,23 +538,24 @@ const SLIDES: Slide[] = [
 
 // ─── Demo page ─────────────────────────────────────────────────────────────────
 export default function DemoPage() {
-  const [idx, setIdx]       = useState(0)
+  const [idx, setIdx]         = useState(0)
   const [playing, setPlaying] = useState(true)
-  const [muted, setMuted]   = useState(true)
+  const [muted, setMuted]     = useState(true)
   const [progress, setProgress] = useState(0)
   const [animKey, setAnimKey] = useState(0)
+  const [animDir, setAnimDir] = useState<'next' | 'prev'>('next')
 
-  const audioCtxRef = useRef<AudioContext | null>(null)
+  const audioCtxRef  = useRef<AudioContext | null>(null)
   const stopMusicRef = useRef<(() => void) | null>(null)
 
   const navigate = useCallback((dir: 'next' | 'prev') => {
-    setProgress(0); setAnimKey(k => k + 1)
+    setAnimDir(dir); setProgress(0); setAnimKey(k => k + 1)
     setIdx(i => dir === 'next' ? (i + 1) % SLIDES.length : (i - 1 + SLIDES.length) % SLIDES.length)
   }, [])
 
   const goNext = useCallback(() => navigate('next'), [navigate])
   const goPrev = useCallback(() => navigate('prev'), [navigate])
-  const goTo   = useCallback((t: number) => { setProgress(0); setAnimKey(k => k + 1); setIdx(t) }, [])
+  const goTo   = useCallback((t: number) => { setAnimDir('next'); setProgress(0); setAnimKey(k => k + 1); setIdx(t) }, [])
 
   useEffect(() => {
     if (!playing) return
@@ -596,15 +593,18 @@ export default function DemoPage() {
 
   useEffect(() => () => { stopMusicRef.current?.(); setTimeout(() => audioCtxRef.current?.close(), 2000) }, [])
 
-  const slide = SLIDES[idx]
+  const slide    = SLIDES[idx]
+  const hasVisual = slide.isHero || !!(slide.mockup && slide.url)
+  const slideAnim = animDir === 'next' ? 'dslideNext 0.42s cubic-bezier(0.22,1,0.36,1) both' : 'dslidePrev 0.42s cubic-bezier(0.22,1,0.36,1) both'
 
   return (
-    <div dir="rtl" style={{ minHeight: '100vh', background: 'linear-gradient(160deg,#F9F7FF 0%,#F3F0FF 50%,#EEF2FF 100%)', color: '#1E293B', display: 'flex', flexDirection: 'column', fontFamily: 'inherit' }}>
+    <div dir="rtl" style={{ height: '100dvh', background: 'linear-gradient(160deg,#F9F7FF 0%,#F3F0FF 50%,#EEF2FF 100%)', color: '#1E293B', display: 'flex', flexDirection: 'column', fontFamily: 'inherit', overflow: 'hidden' }}>
       <style>{`
-        @keyframes dfloat  { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-9px)} }
-        @keyframes dspin   { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
-        @keyframes dappear { from{opacity:0;transform:translateY(16px) scale(0.97)} to{opacity:1;transform:translateY(0) scale(1)} }
-        @keyframes dpulse  { 0%,100%{opacity:1} 50%{opacity:0.3} }
+        @keyframes dfloat    { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-9px)} }
+        @keyframes dspin     { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+        @keyframes dpulse    { 0%,100%{opacity:1} 50%{opacity:0.3} }
+        @keyframes dslideNext{ from{opacity:0;transform:translateX(-28px)} to{opacity:1;transform:translateX(0)} }
+        @keyframes dslidePrev{ from{opacity:0;transform:translateX(28px)}  to{opacity:1;transform:translateX(0)} }
       `}</style>
 
       {/* ── Global progress bar ── */}
@@ -613,19 +613,19 @@ export default function DemoPage() {
           height: '100%', background: `linear-gradient(90deg,${slide.color},${slide.accent})`,
           width: '100%',
           transform: `scaleX(${((idx / SLIDES.length) * 100 + progress / SLIDES.length) / 100})`,
-          transformOrigin: 'left', transition: 'transform 0.03s linear', borderRadius: '0 2px 2px 0',
+          transformOrigin: 'right', transition: 'transform 0.03s linear', borderRadius: '2px 0 0 2px',
         }} />
       </div>
 
       {/* ── Header ── */}
-      <header style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', borderBottom: '1px solid rgba(124,92,252,0.1)', marginTop: 3, background: 'rgba(255,255,255,0.8)', backdropFilter: 'blur(14px)' }}>
+      <header style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 24px', borderBottom: '1px solid rgba(124,92,252,0.1)', marginTop: 3, background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(16px)' }}>
         <Link href="/" style={{ color: '#94A3B8', fontSize: 12, fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
           <ChevronRight size={14} />الرئيسية
         </Link>
         <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
           <AcademyLogo size={30} />
           <div>
-            <div style={{ fontWeight: 900, fontSize: 12, color: '#1E293B', lineHeight: 1 }}>أكاديمية أمين</div>
+            <div style={{ fontWeight: 900, fontSize: 13, color: '#1E293B', lineHeight: 1 }}>أكاديمية أمين</div>
             <div style={{ fontSize: 9, color: '#94A3B8' }}>الجولة التجريبية</div>
           </div>
         </div>
@@ -635,44 +635,85 @@ export default function DemoPage() {
       </header>
 
       {/* ── Slide ── */}
-      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '16px 20px 8px', overflow: 'hidden' }}>
-        <div key={animKey} style={{ width: '100%', maxWidth: 720, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, animation: 'dappear 0.5s cubic-bezier(0.22,1,0.36,1) both' }}>
+      <main style={{ flex: 1, display: 'flex', alignItems: 'center', overflow: 'hidden', padding: '0 32px' }}>
+        <div
+          key={animKey}
+          style={{
+            width: '100%', maxWidth: 960, margin: '0 auto',
+            display: 'grid',
+            gridTemplateColumns: hasVisual ? '1fr 1fr' : '1fr',
+            gap: 48,
+            alignItems: 'center',
+            animation: slideAnim,
+          }}
+        >
+          {/* ── Text column (right in RTL) ── */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: slide.color, letterSpacing: 1.5, textTransform: 'uppercase', background: `${slide.color}10`, border: `1px solid ${slide.color}28`, padding: '5px 16px', borderRadius: 20, alignSelf: 'flex-start' }}>
+              {slide.tag}
+            </div>
 
-          {/* Tag */}
-          <div style={{ fontSize: 10, fontWeight: 700, color: slide.color, letterSpacing: 2, textTransform: 'uppercase', background: `${slide.color}10`, border: `1px solid ${slide.color}28`, padding: '4px 14px', borderRadius: 20 }}>
-            {slide.tag}
+            <h1 style={{ fontSize: 'clamp(26px,3.2vw,46px)', fontWeight: 900, margin: 0, lineHeight: 1.12, color: '#1E293B' }}>
+              {slide.title}
+            </h1>
+
+            <p style={{ fontSize: 'clamp(13px,1.4vw,15px)', color: '#64748B', margin: 0, lineHeight: 1.85 }}>
+              {slide.sub}
+            </p>
+
+            {slide.isHero && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 4 }}>
+                {['ADHD', 'طيف التوحد', 'عسر القراءة', 'اضطراب التركيز'].map(t => (
+                  <span key={t} style={{ background: 'rgba(107,70,240,0.07)', border: '1px solid rgba(107,70,240,0.15)', color: '#6B46F0', fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 20 }}>{t}</span>
+                ))}
+              </div>
+            )}
+
+            {slide.isHero && (
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 6 }}>
+                <Link href="/register" style={{ background: 'linear-gradient(135deg,#6B46F0,#9A7BFD)', color: 'white', fontWeight: 900, fontSize: 14, padding: '12px 24px', borderRadius: 14, textDecoration: 'none', boxShadow: '0 6px 24px rgba(107,70,240,.32)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  ابدأ مجاناً ←
+                </Link>
+                <button onClick={goNext} style={{ background: 'rgba(107,70,240,0.06)', border: '1.5px solid rgba(107,70,240,0.18)', color: '#6B46F0', fontWeight: 800, fontSize: 13, padding: '12px 20px', borderRadius: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Play size={14} fill="#6B46F0" /> شاهد الجلسة
+                </button>
+              </div>
+            )}
           </div>
 
-          {/* Title */}
-          <h1 style={{ fontSize: 'clamp(22px,4vw,44px)', fontWeight: 900, textAlign: 'center', margin: 0, lineHeight: 1.15, color: '#1E293B' }}>
-            {slide.title}
-          </h1>
-
-          {/* Subtitle */}
-          <p style={{ fontSize: 'clamp(11px,1.5vw,14px)', color: '#64748B', textAlign: 'center', margin: 0, lineHeight: 1.75, maxWidth: 540 }}>
-            {slide.sub}
-          </p>
-
-          {/* Visual */}
-          {slide.isHero
-            ? <HeroVisual />
-            : slide.mockup && slide.url
-              ? <div style={{ width: '100%' }}><Frame url={slide.url} color={slide.color}>{slide.mockup}</Frame></div>
-              : null
-          }
+          {/* ── Visual column (left in RTL) ── */}
+          {hasVisual && (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+              {slide.isHero
+                ? <HeroVisual />
+                : <Frame url={slide.url!} color={slide.color}>{slide.mockup}</Frame>
+              }
+            </div>
+          )}
         </div>
       </main>
 
       {/* ── Controls ── */}
-      <footer style={{ flexShrink: 0, background: 'rgba(255,255,255,0.93)', backdropFilter: 'blur(16px)', borderTop: '1px solid rgba(124,92,252,0.1)', padding: '10px 20px 14px' }}>
-        {/* Slide dots */}
+      <footer style={{ flexShrink: 0, background: 'rgba(255,255,255,0.93)', backdropFilter: 'blur(16px)', borderTop: '1px solid rgba(124,92,252,0.1)', padding: '10px 24px 14px' }}>
         <div style={{ display: 'flex', justifyContent: 'center', gap: 5, marginBottom: 9 }}>
-          {SLIDES.map((_, i) => (
-            <button key={i} onClick={() => goTo(i)} style={{ height: 6, width: i === idx ? 22 : 6, borderRadius: 3, background: i === idx ? slide.color : 'rgba(124,92,252,0.18)', border: 'none', cursor: 'pointer', transition: 'all 0.3s ease', padding: 0 }} />
+          {SLIDES.map((s, i) => (
+            <button
+              key={i}
+              onClick={() => goTo(i)}
+              style={{
+                height: 6,
+                width: i === idx ? 28 : 6,
+                borderRadius: 3,
+                background: i === idx ? s.color : 'rgba(124,92,252,0.18)',
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'all 0.3s cubic-bezier(0.34,1.56,0.64,1)',
+                padding: 0,
+              }}
+            />
           ))}
         </div>
 
-        {/* Buttons */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
           <button onClick={goPrev} style={CB}><ChevronLeft size={16} /></button>
 

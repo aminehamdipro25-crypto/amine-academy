@@ -248,11 +248,20 @@ export default function PlansSection() {
               : plan.id === 'monthly'
               ? pickLang(lang, `${spm} حصة / شهر`, `${spm} sessions / month`, `${spm} séances / mois`)
               : null
-            const perSessionStr = plan.id === 'weekly'
-              ? `≈ ${Math.round(displayPrice / spw)} ${symbol} / ${pickLang(lang, 'حصة', 'session', 'séance')}`
+
+            const singleSessionPrice = settings?.prices?.session?.[currency] ?? PLANS[0].prices[currency]
+            const perSessionRaw = plan.id === 'weekly'
+              ? displayPrice / spw
               : plan.id === 'monthly'
-              ? `≈ ${Math.round(displayPrice / spm)} ${symbol} / ${pickLang(lang, 'حصة', 'session', 'séance')}`
+              ? displayPrice / spm
               : null
+            const perSessionRounded = perSessionRaw !== null ? Math.round(perSessionRaw) : null
+            const perSessionStr = perSessionRounded !== null
+              ? `≈ ${perSessionRounded} ${symbol} / ${pickLang(lang, 'حصة', 'session', 'séance')}`
+              : null
+            const realSavingsPct = (perSessionRaw !== null && perSessionRaw < singleSessionPrice)
+              ? Math.round((1 - perSessionRaw / singleSessionPrice) * 100)
+              : 0
 
             return (
               <div
@@ -317,17 +326,17 @@ export default function PlansSection() {
                           <span className="text-sm" style={{ color: '#94A3B8' }}>{symbol} / {pickLang(lang, plan.period, plan.periodEn, plan.periodFr)}</span>
                         </div>
                       )}
-                      {(perSessionStr || plan.savingsPct) && (
+                      {(perSessionStr || realSavingsPct > 0) && (
                         <div className="mt-2 flex items-center gap-2 flex-wrap">
                           {perSessionStr && (
                             <span className="text-xs" style={{ color: '#94A3B8' }}>
                               {perSessionStr}
                             </span>
                           )}
-                          {plan.savingsPct && (
+                          {realSavingsPct > 0 && (
                             <span className="text-xs font-black px-2 py-0.5 rounded-full"
                               style={{ background: isPopular ? 'rgba(107,70,240,0.1)' : 'rgba(245,158,11,0.1)', color: isPopular ? '#6B46F0' : '#D97706' }}>
-                              {pickLang(lang, `وفّر ${plan.savingsPct}%`, `Save ${plan.savingsPct}%`, `Économisez ${plan.savingsPct}%`)}
+                              {pickLang(lang, `وفّر ${realSavingsPct}%`, `Save ${realSavingsPct}%`, `Économisez ${realSavingsPct}%`)}
                             </span>
                           )}
                         </div>

@@ -39,7 +39,7 @@ const DEFAULT_SETTINGS: SiteSettings = {
     childrenCount:   '12',
     satisfactionPct: '97%',
     protocolsCount:  '+25',
-    sessionMinutes:  '45',
+    sessionMinutes:  '60',
     yearsExperience: '+5',
   },
 }
@@ -67,7 +67,7 @@ export async function getSiteSettings(): Promise<SiteSettings> {
           weekly:  { ...DEFAULT_SETTINGS.prices.weekly,  ...(migratedPrices.weekly  ?? {}) },
           monthly: { ...DEFAULT_SETTINGS.prices.monthly, ...(migratedPrices.monthly ?? {}) },
         },
-        stats: { ...DEFAULT_SETTINGS.stats, ...(stored.stats ?? {}) },
+        stats: { ...DEFAULT_SETTINGS.stats, ...(stored.stats ?? {}), ...(stored.stats?.sessionMinutes === '45' ? { sessionMinutes: '60' } : {}) },
       }
     }
   } catch (e) {

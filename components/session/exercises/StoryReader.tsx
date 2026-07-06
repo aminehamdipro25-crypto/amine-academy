@@ -609,25 +609,25 @@ const CHOICE_COLORS = [
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
+const DIFF_LABEL: Record<number, string> = { 1: 'سَهل', 2: 'مُتَوَسِّط', 3: 'صَعب' }
+const DIFF_COLOR: Record<number, string> = { 1: '#22C55E', 2: '#F59E0B', 3: '#EF4444' }
+
 export default function StoryReader({ onComplete, onCancel, studentAge, difficulty = 1 }: Props) {
   const startRef = useRef(Date.now())
   const doneRef  = useRef(false)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // useState initializer runs ONCE — prevents Math.random() re-picking a
-  // different story on every re-render (session timer fires every second)
-  const [story] = useState<Story>(() => {
-    const available = STORIES.filter(s => {
-      if (difficulty === 1 && studentAge < 9) return s.diff === 1
-      if (difficulty <= 1) return s.diff === 1
-      if (difficulty === 2) return s.diff <= 2
-      return true
-    })
-    return available[Math.floor(Math.random() * available.length)] ?? STORIES[0]
+  const available = STORIES.filter(s => {
+    if (difficulty === 1 && studentAge < 9) return s.diff === 1
+    if (difficulty <= 1) return s.diff === 1
+    if (difficulty === 2) return s.diff <= 2
+    return true
   })
-  const scenes = SCENES[story.id] ?? []
 
-  const [phase, setPhase]       = useState<'read'|'quiz'|'done'>('read')
+  const [story, setStory] = useState<Story | null>(null)
+  const scenes = story ? (SCENES[story.id] ?? []) : []
+
+  const [phase, setPhase]       = useState<'pick'|'read'|'quiz'|'done'>('pick')
   const [pageIdx, setPageIdx]   = useState(0)
   const [qIdx, setQIdx]         = useState(0)
   const [selected, setSelected] = useState<number|null>(null)
@@ -637,7 +637,16 @@ export default function StoryReader({ onComplete, onCancel, studentAge, difficul
   const cleanTimer = () => { if (timerRef.current) clearTimeout(timerRef.current) }
   useEffect(() => () => { cleanTimer() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
+  function startStory(s: Story) {
+    startRef.current = Date.now()
+    doneRef.current = false
+    setPageIdx(0); setQIdx(0); setSelected(null); setShowFB(false); setCorrect(0)
+    setStory(s)
+    setPhase('read')
+  }
+
   function nextPage() {
+    if (!story) return
     cleanTimer()
     if (pageIdx < story.pages.length - 1) {
       setPageIdx(p => p + 1)
@@ -652,20 +661,21 @@ export default function StoryReader({ onComplete, onCancel, studentAge, difficul
   }
 
   function handleChoice(idx: number) {
-    if (selected !== null || showFB) return
+    if (!story || selected !== null || showFB) return
     setSelected(idx)
     setShowFB(true)
     const nc = correct + (idx === story.questions[qIdx].correct ? 1 : 0)
     if (idx === story.questions[qIdx].correct) setCorrect(nc)
+    const totalQ = story.questions.length
 
     timerRef.current = setTimeout(() => {
       setShowFB(false); setSelected(null)
-      if (qIdx < story.questions.length - 1) {
+      if (qIdx < totalQ - 1) {
         setQIdx(q => q + 1)
       } else {
         if (doneRef.current) return
         doneRef.current = true
-        const score = Math.round((nc / story.questions.length) * 100)
+        const score = Math.round((nc / totalQ) * 100)
         setPhase('done')
         timerRef.current = setTimeout(() => {
           onComplete({
@@ -674,7 +684,7 @@ export default function StoryReader({ onComplete, onCancel, studentAge, difficul
             completedAt: new Date().toISOString(),
             score, accuracy: score,
             duration: Math.round((Date.now() - startRef.current) / 1000),
-            errors: story.questions.length - nc,
+            errors: totalQ - nc,
             metadata: { storyId: story.id, storyTitle: story.title, pagesRead: story.pages.length, questionsCorrect: nc },
           })
         }, 2000)
@@ -682,12 +692,61 @@ export default function StoryReader({ onComplete, onCancel, studentAge, difficul
     }, 1400)
   }
 
-  const currentScene = scenes[pageIdx]
-  const totalPages   = story.pages.length
-  const q            = phase === 'quiz' ? story.questions[qIdx] : null
+  const currentScene = story ? scenes[pageIdx] : null
+  const totalPages   = story?.pages.length ?? 0
+  const q            = phase === 'quiz' && story ? story.questions[qIdx] : null
+
+  // ── PICK phase ──
+  if (phase === 'pick') {
+    return (
+      <div className="flex flex-col h-full" dir="rtl" style={{background:'#FAFAFA'}}>
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 pt-3 pb-2 flex-shrink-0">
+          <div>
+            <p className="font-black text-base" style={{color:'#1E293B'}}>📖 اختَر قِصَّة</p>
+            <p className="text-xs" style={{color:'#94A3B8'}}>{available.length} قِصَّة مُتاحة</p>
+          </div>
+          <button onClick={onCancel} className="text-xs font-bold px-3 py-1.5 rounded-xl" style={{color:'#64748B',background:'#F1F5F9'}}>
+            إِغلاق
+          </button>
+        </div>
+
+        {/* Story grid */}
+        <div className="flex-1 overflow-y-auto px-3 pb-3 flex flex-col gap-2.5">
+          {available.map(s => (
+            <button
+              key={s.id}
+              onClick={() => startStory(s)}
+              className="w-full text-right rounded-2xl px-4 py-3.5 flex items-center gap-3 active:scale-[0.98] transition-transform"
+              style={{
+                background: '#fff',
+                border: `2px solid ${s.accent}33`,
+                boxShadow: `0 2px 12px ${s.accent}18`,
+              }}
+            >
+              <span style={{fontSize: 36, lineHeight: 1}}>{s.icon}</span>
+              <div className="flex-1 min-w-0">
+                <p className="font-black text-sm leading-tight mb-1" style={{color:'#1E293B'}}>{s.title}</p>
+                <div className="flex items-center gap-2">
+                  <span
+                    className="text-[10px] font-black px-2 py-0.5 rounded-full"
+                    style={{background:`${DIFF_COLOR[s.diff]}22`, color:DIFF_COLOR[s.diff]}}
+                  >
+                    {DIFF_LABEL[s.diff]}
+                  </span>
+                  <span className="text-[10px]" style={{color:'#94A3B8'}}>{s.pages.length} صَفَحات · {s.questions.length} أَسئِلة</span>
+                </div>
+              </div>
+              <span style={{color: s.accent, fontSize:20}}>←</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    )
+  }
 
   // ── DONE ──
-  if (phase === 'done') {
+  if (phase === 'done' && story) {
     const score = Math.round((correct / story.questions.length) * 100)
     const stars = score >= 90 ? 3 : score >= 60 ? 2 : 1
     return (
@@ -707,13 +766,20 @@ export default function StoryReader({ onComplete, onCancel, studentAge, difficul
         <div className="w-full max-w-xs rounded-full h-4 overflow-hidden" style={{background:'#E5E7EB'}}>
           <div className="h-4 rounded-full transition-all" style={{width:`${score}%`, background: score>=70 ? story.accent : '#F59E0B', transition:'width 1s ease-out'}} />
         </div>
+        <button
+          onClick={() => { setPhase('pick'); setStory(null) }}
+          className="px-6 py-3 rounded-2xl font-black text-white text-sm"
+          style={{background:'#6366F1', boxShadow:'0 4px 14px #6366F155'}}
+        >
+          📖 اختَر قِصَّةً أُخرى
+        </button>
         <style>{`@keyframes storyDoneBounce { 0%{transform:scale(0.5);opacity:0} 80%{transform:scale(1.15)} 100%{transform:scale(1);opacity:1} }`}</style>
       </div>
     )
   }
 
   // ── READ phase ──
-  if (phase === 'read' && currentScene) {
+  if (phase === 'read' && story && currentScene) {
     const lines = story.pages[pageIdx].split('\n')
     return (
       <div className="flex flex-col h-full" dir="rtl" style={{background:'#FAFAFA'}}>
@@ -810,7 +876,7 @@ export default function StoryReader({ onComplete, onCancel, studentAge, difficul
   }
 
   // ── QUIZ phase ──
-  if (phase === 'quiz' && q) {
+  if (phase === 'quiz' && story && q) {
     return (
       <div className="flex flex-col h-full" dir="rtl" style={{background:'#FAFAFA'}}>
         {/* Header */}

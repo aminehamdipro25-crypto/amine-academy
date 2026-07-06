@@ -122,27 +122,22 @@ export default function AttentionSection() {
           >
             {pickLang(lang, 'التركيز والانتباه وكبح التشتت', 'Focus, Attention & Distraction Control', 'Concentration, attention et maîtrise des distractions')}
           </span>
-          <h2 className="text-3xl md:text-5xl font-black mb-5" style={{ color: '#1E293B' }}>
+          <h2 className="text-3xl md:text-5xl font-black mb-5" style={{ color: '#1E293B', lineHeight: 1.2 }}>
             {pickLang(
               lang,
-              <>الانتباه ليس مشكلة إرادة —<span className="block" style={{
-                background: 'linear-gradient(135deg, #C084FC, #818CF8)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
-              }}>إنها مشكلة تدريب عصبي</span></>,
-              <>Attention is not a willpower problem —<span className="block" style={{
-                background: 'linear-gradient(135deg, #C084FC, #818CF8)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
-              }}>It&apos;s a neural training problem</span></>,
-              <>L&apos;attention n&apos;est pas un problème de volonté —<span className="block" style={{
-                background: 'linear-gradient(135deg, #C084FC, #818CF8)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
-              }}>c&apos;est un problème d&apos;entraînement neuronal</span></>
+              <>
+                الانتباه ليس مشكلة{' '}
+                <span style={{ position: 'relative', display: 'inline-block', background: 'rgba(251,191,36,0.15)', padding: '2px 10px 4px', borderRadius: 8, color: '#92400E', borderBottom: '3px solid #F59E0B' }}>إرادة</span>
+                {' '}—
+                <span className="block mt-1">
+                  إنها مشكلة{' '}
+                  <span style={{ background: 'rgba(251,191,36,0.15)', padding: '2px 10px 4px', borderRadius: 8, color: '#92400E', borderBottom: '3px solid #F59E0B', display: 'inline-block' }}>تدريب</span>
+                  {' '}
+                  <span style={{ background: 'linear-gradient(135deg, #C084FC, #818CF8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', display: 'inline-block' }}>عصبي</span>
+                </span>
+              </>,
+              <>Attention is not a willpower problem —<span className="block" style={{ background: 'linear-gradient(135deg, #C084FC, #818CF8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>It&apos;s a neural training problem</span></>,
+              <>L&apos;attention n&apos;est pas un problème de volonté —<span className="block" style={{ background: 'linear-gradient(135deg, #C084FC, #818CF8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>c&apos;est un problème d&apos;entraînement neuronal</span></>
             )}
           </h2>
           <p className="max-w-2xl mx-auto text-lg leading-relaxed" style={{ color: '#64748B' }}>

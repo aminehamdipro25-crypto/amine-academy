@@ -516,30 +516,36 @@ export default function SessionPage() {
   }
 
   async function startScreenShare() {
+    // Diagnose environment first so we can show a precise message
+    if (typeof window === 'undefined') return
+    if (!window.isSecureContext) {
+      showScreenMsg('⚠️ مشاركة الشاشة تحتاج HTTPS — الصفحة غير آمنة')
+      return
+    }
+    if (!navigator.mediaDevices || typeof navigator.mediaDevices.getDisplayMedia !== 'function') {
+      showScreenMsg('⚠️ getDisplayMedia غير متاح — جرّب تحديث Chrome')
+      return
+    }
     const t0 = Date.now()
     try {
-      const stream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 15 }, audio: false })
+      const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false })
       stream.getVideoTracks()[0].addEventListener('ended', () => setScreenStream(null))
       setScreenStream(stream)
     } catch (err: unknown) {
-      if (err instanceof TypeError) {
-        showScreenMsg('مشاركة الشاشة غير مدعومة في هذا المتصفح')
+      const elapsed = Date.now() - t0
+      const name = err instanceof DOMException ? err.name : ''
+      const msg  = err instanceof Error ? err.message : String(err)
+      if (name === 'AbortError') return
+      if (name === 'NotAllowedError') {
+        if (elapsed < 600) {
+          // No picker appeared → OS or policy blocked it
+          showScreenMsg('⚠️ مشاركة الشاشة محظورة — على Mac: إعدادات النظام ← الخصوصية ← تسجيل الشاشة ← فعّل Chrome')
+        }
+        // else user cancelled → silent
         return
       }
-      if (err instanceof DOMException) {
-        const { name } = err
-        if (name === 'AbortError') return // user dismissed with Esc — silent
-        if (name === 'NotAllowedError') {
-          // < 600ms → picker never appeared → blocked by browser/system policy
-          // >= 600ms → user saw the picker and clicked Cancel
-          if (Date.now() - t0 < 600) {
-            showScreenMsg('مشاركة الشاشة محظورة — فعّل الصلاحية من إعدادات Chrome أو النظام')
-          }
-          // user-cancelled: silent (they know what they did)
-          return
-        }
-      }
-      showScreenMsg('تعذّرت مشاركة الشاشة — تأكد من صلاحيات المتصفح')
+      // Show raw error name so we can diagnose
+      showScreenMsg(`⚠️ خطأ: ${name || msg || 'غير معروف'}`)
     }
   }
 

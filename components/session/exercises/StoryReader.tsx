@@ -617,12 +617,9 @@ export default function StoryReader({ onComplete, onCancel, studentAge, difficul
   const doneRef  = useRef(false)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const available = STORIES.filter(s => {
-    if (difficulty === 1 && studentAge < 9) return s.diff === 1
-    if (difficulty <= 1) return s.diff === 1
-    if (difficulty === 2) return s.diff <= 2
-    return true
-  })
+  // In the picker, show ALL stories — specialist selects manually.
+  // The difficulty filter was only needed for blind random selection.
+  const available = STORIES
 
   const [story, setStory] = useState<Story | null>(null)
   const scenes = story ? (SCENES[story.id] ?? []) : []

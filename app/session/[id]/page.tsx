@@ -484,19 +484,45 @@ export default function SessionPage() {
     ? `${jitsiUrl}#config.prejoinPageEnabled=false&config.startWithAudioMuted=false&config.disableDeepLinking=true&userInfo.displayName=${encodeURIComponent('الأستاذ أمين')}`
     : null
 
-  // Native screen sharing — runs in the parent frame so getDisplayMedia() works reliably
-  const [screenStream, setScreenStream] = useState<MediaStream | null>(null)
-  const screenVideoRef = useRef<HTMLVideoElement>(null)
+  // Screen sharing
+  const [screenStream, setScreenStream]     = useState<MediaStream | null>(null)
+  const [screenShareMsg, setScreenShareMsg] = useState<string | null>(null)
+  const screenMsgTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Keep a live set of video elements so we can wire the stream to whichever is mounted
+  const screenVideosRef = useRef<Set<HTMLVideoElement>>(new Set())
+
+  const screenVideoRef = useCallback((node: HTMLVideoElement | null) => {
+    if (node) {
+      screenVideosRef.current.add(node)
+      node.srcObject = screenStream
+      if (screenStream) node.play().catch(() => {})
+    } else {
+      // element unmounting — clean up the set lazily
+      screenVideosRef.current.forEach(v => { if (!document.contains(v)) screenVideosRef.current.delete(v) })
+    }
+  }, [screenStream]) // re-runs when stream changes, rewiring new elements
+
+  function showScreenMsg(msg: string) {
+    if (screenMsgTimer.current) clearTimeout(screenMsgTimer.current)
+    setScreenShareMsg(msg)
+    screenMsgTimer.current = setTimeout(() => setScreenShareMsg(null), 3500)
+  }
 
   async function startScreenShare() {
-    // Silent: if the API is unavailable in this browser/context, do nothing — no alert
-    if (typeof navigator.mediaDevices?.getDisplayMedia !== 'function') return
+    if (!navigator.mediaDevices || typeof navigator.mediaDevices.getDisplayMedia !== 'function') {
+      showScreenMsg('مشاركة الشاشة غير مدعومة في هذا المتصفح')
+      return
+    }
     try {
-      const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false })
+      const stream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 15 }, audio: false })
       stream.getVideoTracks()[0].addEventListener('ended', () => setScreenStream(null))
       setScreenStream(stream)
-    } catch {
-      // Any error (cancelled, denied, unsupported) → silent fail
+    } catch (err: unknown) {
+      const name = (err instanceof DOMException) ? err.name : ''
+      if (name !== 'AbortError' && name !== 'NotAllowedError') {
+        showScreenMsg('تعذّرت مشاركة الشاشة — تأكد من صلاحيات المتصفح')
+      }
+      // User cancelled (NotAllowedError / AbortError) → silent
     }
   }
 
@@ -504,13 +530,6 @@ export default function SessionPage() {
     screenStream?.getTracks().forEach(t => t.stop())
     setScreenStream(null)
   }
-
-  // Attach stream to video element when it changes
-  useEffect(() => {
-    if (screenVideoRef.current) {
-      screenVideoRef.current.srcObject = screenStream
-    }
-  }, [screenStream])
 
 
   // Timer
@@ -1532,6 +1551,18 @@ ${notes ? `
 
   return (
     <div className="h-screen bg-gray-950 text-white flex flex-col overflow-hidden">
+
+      {/* ── Screen share error toast ── */}
+      {screenShareMsg && (
+        <div
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] px-5 py-3 rounded-2xl text-white text-sm font-bold shadow-2xl flex items-center gap-2"
+          style={{ background: '#EF4444', backdropFilter: 'blur(8px)' }}
+          dir="rtl"
+        >
+          <span>⚠️</span>
+          <span>{screenShareMsg}</span>
+        </div>
+      )}
 
       {/* ── Student Timer Large Display (#9) ── */}
       {showStudentTimer && (

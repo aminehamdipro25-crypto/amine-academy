@@ -497,35 +497,49 @@ export default function SessionPage() {
       node.srcObject = screenStream
       if (screenStream) node.play().catch(() => {})
     } else {
-      // element unmounting — clean up the set lazily
       screenVideosRef.current.forEach(v => { if (!document.contains(v)) screenVideosRef.current.delete(v) })
     }
-  }, [screenStream]) // re-runs when stream changes, rewiring new elements
+  }, [screenStream])
+
+  // Keep all registered video elements in sync when the stream changes
+  useEffect(() => {
+    screenVideosRef.current.forEach(v => {
+      v.srcObject = screenStream
+      if (screenStream) v.play().catch(() => {})
+    })
+  }, [screenStream])
 
   function showScreenMsg(msg: string) {
     if (screenMsgTimer.current) clearTimeout(screenMsgTimer.current)
     setScreenShareMsg(msg)
-    screenMsgTimer.current = setTimeout(() => setScreenShareMsg(null), 3500)
+    screenMsgTimer.current = setTimeout(() => setScreenShareMsg(null), 4000)
   }
 
   async function startScreenShare() {
+    const t0 = Date.now()
     try {
       const stream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 15 }, audio: false })
       stream.getVideoTracks()[0].addEventListener('ended', () => setScreenStream(null))
       setScreenStream(stream)
     } catch (err: unknown) {
       if (err instanceof TypeError) {
-        // getDisplayMedia not available in this browser
         showScreenMsg('مشاركة الشاشة غير مدعومة في هذا المتصفح')
-      } else if (err instanceof DOMException) {
-        const { name } = err
-        // NotAllowedError = user cancelled / policy block, AbortError = user dismissed → silent
-        if (name !== 'NotAllowedError' && name !== 'AbortError') {
-          showScreenMsg('تعذّرت مشاركة الشاشة — تأكد من صلاحيات المتصفح')
-        }
-      } else {
-        showScreenMsg('تعذّرت مشاركة الشاشة — تأكد من صلاحيات المتصفح')
+        return
       }
+      if (err instanceof DOMException) {
+        const { name } = err
+        if (name === 'AbortError') return // user dismissed with Esc — silent
+        if (name === 'NotAllowedError') {
+          // < 600ms → picker never appeared → blocked by browser/system policy
+          // >= 600ms → user saw the picker and clicked Cancel
+          if (Date.now() - t0 < 600) {
+            showScreenMsg('مشاركة الشاشة محظورة — فعّل الصلاحية من إعدادات Chrome أو النظام')
+          }
+          // user-cancelled: silent (they know what they did)
+          return
+        }
+      }
+      showScreenMsg('تعذّرت مشاركة الشاشة — تأكد من صلاحيات المتصفح')
     }
   }
 

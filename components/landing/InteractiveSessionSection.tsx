@@ -223,9 +223,9 @@ export default function InteractiveSessionSection() {
                   <p className="text-xs mt-0.5" style={{ color: '#64748B' }}>
                     {pickLang(
                       lang,
-                      '30 دقيقة مع الأستاذ أمين — بدون أي التزام',
-                      '30 minutes with Prof. Amine — no commitment required',
-                      '30 minutes avec le professeur Amine — sans aucun engagement'
+                      '30 دقيقة مع الأستاذ أمين — بدون أي التزام • الكاميرا اختيارية',
+                      '30 minutes with Prof. Amine — no commitment • Camera optional',
+                      '30 minutes avec le professeur Amine — sans engagement • Caméra optionnelle'
                     )}
                   </p>
                 </div>

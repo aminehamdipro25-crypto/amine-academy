@@ -186,13 +186,14 @@ export default function ProgramsSection() {
                     </div>
                   </div>
                   <h3
-                    className="ltr-num"
                     style={{
                       color: 'white', fontWeight: 900, fontSize: 24, margin: '0 0 4px', letterSpacing: -0.5,
-                      textAlign: isRtl ? 'right' : 'left',
                     }}
                   >
-                    {pickLang(lang, prog.age, prog.ageEn, prog.ageFr)}
+                    {lang === 'ar'
+                      ? <>{'سنة '}<bdi>{prog.age.replace(/ سنة$/, '')}</bdi></>
+                      : pickLang(lang, prog.age, prog.ageEn, prog.ageFr)
+                    }
                   </h3>
                   <p style={{ color: 'rgba(255,255,255,0.96)', fontWeight: 700, fontSize: 14, margin: '0 0 6px' }}>
                     {pickLang(lang, prog.goal, prog.goalEn, prog.goalFr)}

@@ -544,9 +544,11 @@ export default function DemoPage() {
   const [progress, setProgress] = useState(0)
   const [animKey, setAnimKey] = useState(0)
   const [animDir, setAnimDir] = useState<'next' | 'prev'>('next')
+  const [isMobile, setIsMobile] = useState(false)
 
   const audioCtxRef  = useRef<AudioContext | null>(null)
   const stopMusicRef = useRef<(() => void) | null>(null)
+  const touchStartX  = useRef<number | null>(null)
 
   const navigate = useCallback((dir: 'next' | 'prev') => {
     setAnimDir(dir); setProgress(0); setAnimKey(k => k + 1)
@@ -575,6 +577,18 @@ export default function DemoPage() {
     return () => window.removeEventListener('keydown', h)
   }, [goNext, goPrev])
 
+  function onTouchStart(e: React.TouchEvent) {
+    touchStartX.current = e.touches[0].clientX
+  }
+  function onTouchEnd(e: React.TouchEvent) {
+    if (touchStartX.current === null) return
+    const dx = e.changedTouches[0].clientX - touchStartX.current
+    touchStartX.current = null
+    if (Math.abs(dx) < 40) return
+    // RTL: swipe right → prev, swipe left → next
+    if (dx > 0) goPrev(); else goNext()
+  }
+
   const toggleMusic = useCallback(async () => {
     if (muted) {
       try {
@@ -593,12 +607,25 @@ export default function DemoPage() {
 
   useEffect(() => () => { stopMusicRef.current?.(); setTimeout(() => audioCtxRef.current?.close(), 2000) }, [])
 
+  // Mobile detection
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 640)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+
   const slide    = SLIDES[idx]
   const hasVisual = slide.isHero || !!(slide.mockup && slide.url)
   const slideAnim = animDir === 'next' ? 'dslideNext 0.42s cubic-bezier(0.22,1,0.36,1) both' : 'dslidePrev 0.42s cubic-bezier(0.22,1,0.36,1) both'
 
   return (
-    <div dir="rtl" style={{ height: '100dvh', background: 'linear-gradient(160deg,#F9F7FF 0%,#F3F0FF 50%,#EEF2FF 100%)', color: '#1E293B', display: 'flex', flexDirection: 'column', fontFamily: 'inherit', overflow: 'hidden' }}>
+    <div
+      dir="rtl"
+      style={{ height: '100dvh', background: 'linear-gradient(160deg,#F9F7FF 0%,#F3F0FF 50%,#EEF2FF 100%)', color: '#1E293B', display: 'flex', flexDirection: 'column', fontFamily: 'inherit', overflow: 'hidden' }}
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
+    >
       <style>{`
         @keyframes dfloat    { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-9px)} }
         @keyframes dspin     { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
@@ -618,46 +645,46 @@ export default function DemoPage() {
       </div>
 
       {/* ── Header ── */}
-      <header style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 24px', borderBottom: '1px solid rgba(124,92,252,0.1)', marginTop: 3, background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(16px)' }}>
+      <header style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: isMobile ? '10px 14px' : '12px 24px', borderBottom: '1px solid rgba(124,92,252,0.1)', marginTop: 3, background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(16px)' }}>
         <Link href="/" style={{ color: '#94A3B8', fontSize: 12, fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
-          <ChevronRight size={14} />الرئيسية
+          <ChevronRight size={14} />{isMobile ? '' : 'الرئيسية'}
         </Link>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-          <AcademyLogo size={30} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+          <AcademyLogo size={isMobile ? 26 : 30} />
           <div>
-            <div style={{ fontWeight: 900, fontSize: 13, color: '#1E293B', lineHeight: 1 }}>أكاديمية أمين</div>
-            <div style={{ fontSize: 9, color: '#94A3B8' }}>الجولة التجريبية</div>
+            <div style={{ fontWeight: 900, fontSize: isMobile ? 12 : 13, color: '#1E293B', lineHeight: 1 }}>أكاديمية أمين</div>
+            {!isMobile && <div style={{ fontSize: 9, color: '#94A3B8' }}>الجولة التجريبية</div>}
           </div>
         </div>
-        <Link href="/register" style={{ background: 'linear-gradient(135deg,#6B46F0,#9A7BFD)', color: 'white', fontWeight: 900, fontSize: 12, padding: '8px 18px', borderRadius: 11, textDecoration: 'none', boxShadow: '0 4px 18px rgba(107,70,240,.28)' }}>
-          سجّل مجاناً ←
+        <Link href="/register" style={{ background: 'linear-gradient(135deg,#6B46F0,#9A7BFD)', color: 'white', fontWeight: 900, fontSize: isMobile ? 11 : 12, padding: isMobile ? '7px 13px' : '8px 18px', borderRadius: 11, textDecoration: 'none', boxShadow: '0 4px 18px rgba(107,70,240,.28)' }}>
+          {isMobile ? 'سجّل ←' : 'سجّل مجاناً ←'}
         </Link>
       </header>
 
       {/* ── Slide ── */}
-      <main style={{ flex: 1, display: 'flex', alignItems: 'center', overflow: 'hidden', padding: '0 32px' }}>
+      <main style={{ flex: 1, display: 'flex', alignItems: 'center', overflow: 'hidden', padding: isMobile ? '0 18px' : '0 32px' }}>
         <div
           key={animKey}
           style={{
             width: '100%', maxWidth: 960, margin: '0 auto',
             display: 'grid',
-            gridTemplateColumns: hasVisual ? '1fr 1fr' : '1fr',
-            gap: 48,
+            gridTemplateColumns: (!isMobile && hasVisual) ? '1fr 1fr' : '1fr',
+            gap: isMobile ? 0 : 48,
             alignItems: 'center',
             animation: slideAnim,
           }}
         >
           {/* ── Text column (right in RTL) ── */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 14 : 18 }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: slide.color, letterSpacing: 1.5, textTransform: 'uppercase', background: `${slide.color}10`, border: `1px solid ${slide.color}28`, padding: '5px 16px', borderRadius: 20, alignSelf: 'flex-start' }}>
               {slide.tag}
             </div>
 
-            <h1 style={{ fontSize: 'clamp(26px,3.2vw,46px)', fontWeight: 900, margin: 0, lineHeight: 1.12, color: '#1E293B' }}>
+            <h1 style={{ fontSize: isMobile ? 'clamp(24px,7vw,32px)' : 'clamp(26px,3.2vw,46px)', fontWeight: 900, margin: 0, lineHeight: 1.15, color: '#1E293B' }}>
               {slide.title}
             </h1>
 
-            <p style={{ fontSize: 'clamp(13px,1.4vw,15px)', color: '#64748B', margin: 0, lineHeight: 1.85 }}>
+            <p style={{ fontSize: isMobile ? 14 : 'clamp(13px,1.4vw,15px)', color: '#64748B', margin: 0, lineHeight: 1.8 }}>
               {slide.sub}
             </p>
 
@@ -681,8 +708,8 @@ export default function DemoPage() {
             )}
           </div>
 
-          {/* ── Visual column (left in RTL) ── */}
-          {hasVisual && (
+          {/* ── Visual column (left in RTL) — hidden on mobile ── */}
+          {hasVisual && !isMobile && (
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
               {slide.isHero
                 ? <HeroVisual />
@@ -694,7 +721,12 @@ export default function DemoPage() {
       </main>
 
       {/* ── Controls ── */}
-      <footer style={{ flexShrink: 0, background: 'rgba(255,255,255,0.93)', backdropFilter: 'blur(16px)', borderTop: '1px solid rgba(124,92,252,0.1)', padding: '10px 24px 14px' }}>
+      <footer style={{ flexShrink: 0, background: 'rgba(255,255,255,0.93)', backdropFilter: 'blur(16px)', borderTop: '1px solid rgba(124,92,252,0.1)', padding: isMobile ? '8px 16px 12px' : '10px 24px 14px' }}>
+        {isMobile && (
+          <div style={{ textAlign: 'center', color: '#CBD5E1', fontSize: 10, fontWeight: 600, marginBottom: 6, letterSpacing: 0.5 }}>
+            ← اسحب للتنقل →
+          </div>
+        )}
         <div style={{ display: 'flex', justifyContent: 'center', gap: 5, marginBottom: 9 }}>
           {SLIDES.map((s, i) => (
             <button

@@ -49,13 +49,15 @@ export default function AdminPaymentsPage() {
       if (res.ok) {
         const data = await res.json()
         setPayments(data.payments ?? [])
+      } else {
+        toast('تعذّر تحميل بيانات المدفوعات', 'error')
       }
-    } catch (e) {
-      console.error(e)
+    } catch {
+      toast('تعذّر الاتصال بالخادم', 'error')
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [toast])
 
   useEffect(() => { fetchPayments() }, [fetchPayments])
 

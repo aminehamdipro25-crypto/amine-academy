@@ -14,7 +14,7 @@ const step1Schema = z.object({
   email:           z.string().email('يرجى إدخال بريد إلكتروني صالح'),
   phone:           z.string().min(8, 'رقم الهاتف مطلوب (8 أرقام على الأقل)'),
   country:         z.string().min(1, 'يرجى اختيار دولتك'),
-  password:        z.string().min(6, 'كلمة المرور يجب أن تكون 6 أحرف على الأقل'),
+  password:        z.string().min(8, 'كلمة المرور يجب أن تكون 8 أحرف على الأقل'),
   confirmPassword: z.string().min(1, 'يرجى تأكيد كلمة المرور'),
 }).refine(d => d.password === d.confirmPassword, {
   message: 'كلمة المرور وتأكيدها غير متطابقتين',

@@ -59,9 +59,11 @@ export default function ParentLoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1.5">{t.email}</label>
+            <label htmlFor="parent-email" className="block text-sm font-bold text-gray-700 mb-1.5">{t.email}</label>
             <input
+              id="parent-email"
               type="email"
+              autoComplete="email"
               value={form.email}
               onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
               placeholder="example@email.com"
@@ -70,10 +72,12 @@ export default function ParentLoginPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1.5">{t.password}</label>
+            <label htmlFor="parent-password" className="block text-sm font-bold text-gray-700 mb-1.5">{t.password}</label>
             <div className="relative">
               <input
+                id="parent-password"
                 type={showPass ? 'text' : 'password'}
+                autoComplete="current-password"
                 value={form.password}
                 onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
                 placeholder="••••••••"

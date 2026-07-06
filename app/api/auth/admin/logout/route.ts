@@ -7,7 +7,7 @@ export async function POST() {
   const token = cookieStore.get('admin_token')?.value
   if (token) await revokeAdminSession(token)
 
-  const res = NextResponse.redirect(new URL('/dashboard/login', process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'), 303)
+  const res = NextResponse.redirect(new URL('/dashboard/login', process.env.NEXT_PUBLIC_BASE_URL ?? 'https://amine-academy.vercel.app'), 303)
   res.cookies.set('admin_token', '', { maxAge: 0, path: '/' })
   return res
 }

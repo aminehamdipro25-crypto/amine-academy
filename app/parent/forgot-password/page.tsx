@@ -63,9 +63,11 @@ export default function ForgotPasswordPage() {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1.5">{t.email}</label>
+                <label htmlFor="fp-email" className="block text-sm font-bold text-gray-700 mb-1.5">{t.email}</label>
                 <input
+                  id="fp-email"
                   type="email"
+                  autoComplete="email"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   placeholder="example@email.com"

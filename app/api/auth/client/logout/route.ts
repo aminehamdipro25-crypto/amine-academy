@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 export const runtime = 'nodejs'
 
 export async function POST() {
-  const res = NextResponse.redirect(new URL('/parent/login', process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'), 303)
+  const res = NextResponse.redirect(new URL('/parent/login', process.env.NEXT_PUBLIC_BASE_URL ?? 'https://amine-academy.vercel.app'), 303)
   res.cookies.set('parent_token', '', {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',

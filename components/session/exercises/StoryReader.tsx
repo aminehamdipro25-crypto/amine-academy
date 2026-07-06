@@ -1,5 +1,5 @@
 'use client'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import type { ExerciseResult } from '@/lib/types'
 
 type DecorType = 'forest' | 'water' | 'meadow' | 'school' | 'home' | 'stars'
@@ -348,13 +348,17 @@ export default function StoryReader({ onComplete, onCancel, studentAge, difficul
   const doneRef  = useRef(false)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const available = STORIES.filter(s => {
-    if (difficulty === 1 && studentAge < 9) return s.diff === 1
-    if (difficulty <= 1) return s.diff === 1
-    if (difficulty === 2) return s.diff <= 2
-    return true
+  // useState initializer runs ONCE — prevents Math.random() re-picking a
+  // different story on every re-render (session timer fires every second)
+  const [story] = useState<Story>(() => {
+    const available = STORIES.filter(s => {
+      if (difficulty === 1 && studentAge < 9) return s.diff === 1
+      if (difficulty <= 1) return s.diff === 1
+      if (difficulty === 2) return s.diff <= 2
+      return true
+    })
+    return available[Math.floor(Math.random() * available.length)] ?? STORIES[0]
   })
-  const story = available[Math.floor(Math.random() * available.length)] ?? STORIES[0]
   const scenes = SCENES[story.id] ?? []
 
   const [phase, setPhase]       = useState<'read'|'quiz'|'done'>('read')
@@ -364,8 +368,8 @@ export default function StoryReader({ onComplete, onCancel, studentAge, difficul
   const [showFB, setShowFB]     = useState(false)
   const [correct, setCorrect]   = useState(0)
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const cleanTimer = () => { if (timerRef.current) clearTimeout(timerRef.current) }
+  useEffect(() => () => { cleanTimer() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   function nextPage() {
     cleanTimer()

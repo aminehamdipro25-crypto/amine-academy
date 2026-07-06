@@ -149,18 +149,10 @@ function StoryIllustration({ scene }: { scene: SceneDef }) {
           textAnchor="middle"
           dominantBaseline="middle"
           fontSize={fsize}
-          style={i===0 ? {animation:'storyBounce 2.4s ease-in-out infinite'} : {}}
         >
           {ch}
         </text>
       ))}
-
-      <style>{`
-        @keyframes storyBounce {
-          0%,100% { transform:translateY(0); }
-          48% { transform:translateY(-12px); }
-        }
-      `}</style>
     </svg>
   )
 }
@@ -365,31 +357,28 @@ export default function StoryReader({ onComplete, onCancel, studentAge, difficul
   const story = available[Math.floor(Math.random() * available.length)] ?? STORIES[0]
   const scenes = SCENES[story.id] ?? []
 
-  const [phase, setPhase]         = useState<'read'|'quiz'|'done'>('read')
-  const [pageIdx, setPageIdx]     = useState(0)
-  const [qIdx, setQIdx]           = useState(0)
-  const [selected, setSelected]   = useState<number|null>(null)
-  const [showFB, setShowFB]       = useState(false)
-  const [correct, setCorrect]     = useState(0)
-  const [animKey, setAnimKey]     = useState(0)
+  const [phase, setPhase]       = useState<'read'|'quiz'|'done'>('read')
+  const [pageIdx, setPageIdx]   = useState(0)
+  const [qIdx, setQIdx]         = useState(0)
+  const [selected, setSelected] = useState<number|null>(null)
+  const [showFB, setShowFB]     = useState(false)
+  const [correct, setCorrect]   = useState(0)
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const cleanTimer = () => { if (timerRef.current) clearTimeout(timerRef.current) }
-  // No useEffect cleanup needed — timerRef is cancelled before each new assignment
 
   function nextPage() {
     cleanTimer()
     if (pageIdx < story.pages.length - 1) {
       setPageIdx(p => p + 1)
-      setAnimKey(k => k + 1)
     } else {
-      setPhase('quiz'); setQIdx(0); setAnimKey(k => k + 1)
+      setPhase('quiz'); setQIdx(0)
     }
   }
 
   function prevPage() {
     cleanTimer()
-    if (pageIdx > 0) { setPageIdx(p => p - 1); setAnimKey(k => k + 1) }
+    if (pageIdx > 0) setPageIdx(p => p - 1)
   }
 
   function handleChoice(idx: number) {
@@ -402,7 +391,7 @@ export default function StoryReader({ onComplete, onCancel, studentAge, difficul
     timerRef.current = setTimeout(() => {
       setShowFB(false); setSelected(null)
       if (qIdx < story.questions.length - 1) {
-        setQIdx(q => q + 1); setAnimKey(k => k + 1)
+        setQIdx(q => q + 1)
       } else {
         if (doneRef.current) return
         doneRef.current = true
@@ -458,15 +447,16 @@ export default function StoryReader({ onComplete, onCancel, studentAge, difficul
     const lines = story.pages[pageIdx].split('\n')
     return (
       <div className="flex flex-col h-full" dir="rtl" style={{background:'#FAFAFA'}}>
+
         {/* Header */}
-        <div className="flex items-center justify-between px-4 pt-3 pb-2 flex-shrink-0">
+        <div className="flex items-center justify-between px-4 pt-3 pb-1 flex-shrink-0">
           <div className="flex items-center gap-2">
-            <span className="text-2xl">{story.icon}</span>
-            <span className="font-black text-base" style={{color:'#1E293B'}}>{story.title}</span>
+            <span className="text-xl">{story.icon}</span>
+            <span className="font-black text-sm" style={{color:'#1E293B'}}>{story.title}</span>
           </div>
           <button
             onClick={onCancel}
-            className="text-sm font-bold px-3 py-1.5 rounded-xl transition-colors"
+            className="text-xs font-bold px-3 py-1.5 rounded-xl"
             style={{color:'#64748B', background:'#F1F5F9'}}
           >
             إِغلاق
@@ -474,51 +464,64 @@ export default function StoryReader({ onComplete, onCancel, studentAge, difficul
         </div>
 
         {/* Progress dots */}
-        <div className="flex gap-2 px-4 pb-2 flex-shrink-0 justify-center">
+        <div className="flex gap-1.5 px-4 pb-1.5 flex-shrink-0 justify-center">
           {story.pages.map((_, i) => (
             <div
               key={i}
-              className="rounded-full transition-all"
+              className="rounded-full transition-all duration-300"
               style={{
-                width: i === pageIdx ? 24 : 10,
-                height: 10,
-                background: i < pageIdx ? story.accent : i === pageIdx ? story.accent : '#E2E8F0',
-                opacity: i > pageIdx ? 0.4 : 1,
+                width: i === pageIdx ? 22 : 9,
+                height: 9,
+                background: i <= pageIdx ? story.accent : '#E2E8F0',
               }}
             />
           ))}
         </div>
 
-        {/* SVG Illustration — the centrepiece */}
-        <div className="flex-1 min-h-0 px-3 pb-2" key={`scene-${animKey}`} style={{animation:'storySlide 0.3s ease-out'}}>
-          <div className="w-full h-full rounded-3xl overflow-hidden shadow-md">
+        {/* Illustration — compact, fixed height */}
+        <div className="px-3 pb-2 flex-shrink-0" style={{height: 190}}>
+          <div className="w-full h-full rounded-2xl overflow-hidden shadow-sm">
             <StoryIllustration scene={currentScene} />
           </div>
         </div>
 
-        {/* Story text */}
+        {/* Story text — dominant, flex-1 */}
         <div
-          className="mx-3 mb-2 px-4 py-3 rounded-2xl flex-shrink-0"
-          style={{background:'#fff', border:`2.5px solid ${story.accent}33`, boxShadow:`0 2px 12px ${story.accent}18`}}
+          className="mx-3 mb-2 px-5 rounded-2xl flex-1 flex flex-col justify-center"
+          style={{
+            background:'#fff',
+            border:`3px solid ${story.accent}`,
+            boxShadow:`0 4px 20px ${story.accent}22`,
+          }}
         >
           {lines.map((line, i) => (
             <p
               key={i}
-              className="text-center font-black leading-relaxed"
-              style={{color:'#1E293B', fontSize:20, lineHeight:1.75, marginBottom: i < lines.length-1 ? 4 : 0}}
+              className="text-center font-black"
+              style={{
+                color:'#1E293B',
+                fontSize: 26,
+                lineHeight: 1.9,
+                marginBottom: i < lines.length - 1 ? 8 : 0,
+                letterSpacing: '0.01em',
+              }}
             >
               {line}
             </p>
           ))}
-          <p className="text-center text-xs font-bold mt-1" style={{color:'#94A3B8'}}>صفحة {pageIdx+1} / {totalPages}</p>
         </div>
 
-        {/* Navigation */}
-        <div className="flex gap-2.5 px-3 pb-4 flex-shrink-0">
+        {/* Page counter */}
+        <p className="text-center text-xs font-bold pb-1 flex-shrink-0" style={{color:'#94A3B8'}}>
+          {pageIdx + 1} / {totalPages}
+        </p>
+
+        {/* Navigation — big, easy to tap */}
+        <div className="flex gap-2.5 px-3 pb-3 flex-shrink-0">
           {pageIdx > 0 && (
             <button
               onClick={prevPage}
-              className="flex-1 py-3.5 rounded-2xl font-bold text-base transition-all active:scale-95"
+              className="flex-1 py-4 rounded-2xl font-bold text-base active:scale-95 transition-transform"
               style={{background:'#F1F5F9', border:'2px solid #E2E8F0', color:'#64748B'}}
             >
               ← السَّابِقة
@@ -526,19 +529,12 @@ export default function StoryReader({ onComplete, onCancel, studentAge, difficul
           )}
           <button
             onClick={nextPage}
-            className="flex-1 py-3.5 rounded-2xl font-black text-base text-white transition-all active:scale-95"
-            style={{background:story.accent, boxShadow:`0 4px 16px ${story.accent}55`}}
+            className="flex-1 py-4 rounded-2xl font-black text-lg text-white active:scale-95 transition-transform"
+            style={{background:story.accent, boxShadow:`0 4px 14px ${story.accent}55`}}
           >
-            {pageIdx === totalPages - 1 ? '🎯 الأَسئِلة →' : 'التَّالِيَة →'}
+            {pageIdx === totalPages - 1 ? '🎯 الأَسئِلة' : 'التَّالِيَة ←'}
           </button>
         </div>
-
-        <style>{`
-          @keyframes storySlide {
-            from { opacity:0; transform:translateX(-16px); }
-            to   { opacity:1; transform:translateX(0); }
-          }
-        `}</style>
       </div>
     )
   }
@@ -568,18 +564,17 @@ export default function StoryReader({ onComplete, onCancel, studentAge, difficul
 
         {/* Question */}
         <div
-          className="mx-3 mb-3 px-5 py-4 rounded-2xl flex-shrink-0 text-center"
-          key={`q-${animKey}`}
-          style={{background:`${story.accent}12`, border:`2.5px solid ${story.accent}40`, animation:'storySlide 0.25s ease-out'}}
+          className="mx-3 mb-3 px-5 py-5 rounded-2xl flex-shrink-0 text-center"
+          style={{background:`${story.accent}12`, border:`3px solid ${story.accent}`}}
         >
-          <p className="text-xs font-bold mb-1" style={{color:story.accent}}>
+          <p className="text-xs font-bold mb-2" style={{color:story.accent}}>
             سُؤالٌ {qIdx+1} مِن {story.questions.length}
           </p>
-          <p className="font-black leading-snug" style={{color:'#1E293B', fontSize:20}}>{q.q}</p>
+          <p className="font-black leading-snug" style={{color:'#1E293B', fontSize:22}}>{q.q}</p>
         </div>
 
         {/* Choices */}
-        <div className="flex flex-col gap-2.5 px-3 pb-4 flex-1 justify-center" key={`choices-${animKey}`}>
+        <div className="flex flex-col gap-3 px-3 pb-4 flex-1 justify-center">
           {q.choices.map((choice, i) => {
             const col = CHOICE_COLORS[i % CHOICE_COLORS.length]
             const isSelected = selected === i
@@ -596,26 +591,19 @@ export default function StoryReader({ onComplete, onCancel, studentAge, difficul
                 key={i}
                 onClick={() => handleChoice(i)}
                 disabled={selected !== null}
-                className="w-full text-right px-4 py-3.5 rounded-2xl font-bold transition-all active:scale-98 disabled:cursor-default flex items-center gap-3"
-                style={{background:bg, border:`2.5px solid ${border}`, color, boxShadow:`0 2px 8px ${border}22`}}
+                className="w-full text-right px-4 py-4 rounded-2xl font-bold disabled:cursor-default flex items-center gap-3"
+                style={{background:bg, border:`2.5px solid ${border}`, color}}
               >
-                <span className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center font-black text-sm text-white" style={{background:col.badge}}>
+                <span className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center font-black text-base text-white" style={{background:col.badge}}>
                   {i+1}
                 </span>
-                <span className="flex-1">{choice}</span>
-                {showFB && isCorrect   && <span className="text-xl">✅</span>}
-                {showFB && isSelected && !isCorrect && <span className="text-xl">❌</span>}
+                <span className="flex-1 text-base">{choice}</span>
+                {showFB && isCorrect      && <span className="text-2xl">✅</span>}
+                {showFB && isSelected && !isCorrect && <span className="text-2xl">❌</span>}
               </button>
             )
           })}
         </div>
-
-        <style>{`
-          @keyframes storySlide {
-            from { opacity:0; transform:translateX(-16px); }
-            to   { opacity:1; transform:translateX(0); }
-          }
-        `}</style>
       </div>
     )
   }

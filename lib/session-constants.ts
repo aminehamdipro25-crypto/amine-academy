@@ -203,6 +203,7 @@ export const EXERCISES = [
   { id:'cross-lateral',      labelAr:'عبور خط المنتصف',        icon:'🤸', category:'حركي',   color:'bg-violet-50 border-violet-200',   ageMin:4,  ageMax:18, tags:['عسر قراءة','تنسيق'] },
   { id:'reading-fluency',    labelAr:'طلاقة القراءة',           icon:'📖', category:'تعلّم',  color:'bg-amber-50 border-amber-200',     ageMin:5,  ageMax:16, tags:['عسر قراءة','طلاقة'] },
   { id:'letter-search',      labelAr:'ابحث عن الحرف',           icon:'🔍', category:'تعلّم',  color:'bg-blue-50 border-blue-200',       ageMin:5,  ageMax:14, tags:['عسر قراءة','تمييز بصري'] },
+  { id:'story-reader',       labelAr:'مكتبة القصص',             icon:'📚', category:'تعلّم',  color:'bg-amber-50 border-amber-200',      ageMin:5,  ageMax:18, tags:['عسر قراءة','فهم','سمع'] },
 ]
 
 // Exercises whose component renders its own post-completion results screen

@@ -45,16 +45,26 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'غير مصرح' }, { status: 403 })
     }
 
-    const appt = await createAppointment({
-      parentId: payload.id,
-      studentId,
-      date,
-      timeSlot,
-      type,
-      status: 'scheduled',
-      meetingUrl: '',
-      notes: notes || '',
-    })
+    let appt
+    try {
+      appt = await createAppointment({
+        parentId: payload.id,
+        studentId,
+        date,
+        timeSlot,
+        type,
+        status: 'scheduled',
+        meetingUrl: '',
+        notes: notes || '',
+      })
+    } catch (bookingErr) {
+      const err = bookingErr as { code?: string; message?: string }
+      if (err.code === 'SLOT_TAKEN') {
+        return NextResponse.json({ error: err.message || 'الوقت المحدد محجوز' }, { status: 409 })
+      }
+      throw bookingErr
+    }
+
     const roomName = `AmineAcademy${appt.id.replace(/[^a-zA-Z0-9]/g, '')}`
     await updateAppointment(appt.id, { meetingUrl: `https://meet.jit.si/${roomName}` })
     const appointment = { ...appt, meetingUrl: `https://meet.jit.si/${roomName}` }

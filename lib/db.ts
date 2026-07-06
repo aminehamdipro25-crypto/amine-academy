@@ -213,7 +213,20 @@ export async function getStudentProgram(studentId: string): Promise<Program | nu
 
 // ── Appointments ──────────────────────────────────────────────
 
+export async function getAppointmentsByDate(date: string): Promise<Appointment[]> {
+  const ids = await redis.lrange('appointments:index', 0, 200)
+  const appts = await Promise.all(ids.map(id => getAppointment(id)))
+  return (appts.filter(Boolean) as Appointment[]).filter(
+    a => a.date === date && a.status !== 'cancelled'
+  )
+}
+
 export async function createAppointment(data: Omit<Appointment, 'id' | 'createdAt'>): Promise<Appointment> {
+  // Double-booking check: reject if the same timeSlot is already taken on that date
+  const existing = await getAppointmentsByDate(data.date)
+  if (existing.some(a => a.timeSlot === data.timeSlot)) {
+    throw Object.assign(new Error('الوقت المحدد محجوز — يرجى اختيار وقت آخر'), { code: 'SLOT_TAKEN' })
+  }
   const id = generateId('AP')
   const appointment: Appointment = { ...data, id, createdAt: new Date().toISOString() }
   await redis.pipeline([

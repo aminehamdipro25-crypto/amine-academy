@@ -88,6 +88,7 @@ const MoneyCounter         = lazy(() => import('@/components/session/exercises/M
 const CrossLateral         = lazy(() => import('@/components/session/exercises/CrossLateral'))
 const ReadingFluency       = lazy(() => import('@/components/session/exercises/ReadingFluency'))
 const LetterSearch         = lazy(() => import('@/components/session/exercises/LetterSearch'))
+const StoryReader          = lazy(() => import('@/components/session/exercises/StoryReader'))
 import Whiteboard      from '@/components/session/Whiteboard'
 import StudentTimerDisplay from '@/components/session/StudentTimerDisplay'
 import SessionHeader   from '@/components/session/SessionHeader'
@@ -901,6 +902,7 @@ export default function SessionPage() {
       'cross-lateral':     { threshold: 65, low: 'صعوبة في تنسيق عبور الخط المنتصف — مؤشر على ضعف التواصل بين نصفي الدماغ. طبّق تمارين الزحف (crawling) على الأرض 5 دقائق يومياً، واستخدم تمرين "اللمسة المتقاطعة" يدوياً: اليد اليمنى تلمس الركبة اليسرى والعكس بإيقاع منتظم.', mid: 'تواصل بين النصفين في طور التطور. استمر بالتمرين مرتين في الأسبوع وأضف تمارين تنسيق عين-يد (رمي الكرة وإمساكها).' },
       'reading-fluency':   { threshold: 70, low: 'سرعة القراءة دون المستوى المتوقع — طبّق مبدأ التكرار المتباعد: اقرأ نفس الكلمات يومياً على مدى أسبوع مع زيادة تدريجية في السرعة. استخدم الإصبع كدليل بصري أثناء القراءة.', mid: 'تقدم ملحوظ في الطلاقة. انتقل لنصوص أطول قليلاً وحاول القراءة الجهرية أمام المرآة لتعزيز الثقة.' },
       'letter-search':     { threshold: 75, low: 'صعوبة في التمييز البصري بين الحروف المتشابهة — مؤشر شائع في عسر القراءة. ركّز على أزواج (ب/ت/ث) و(ع/غ) يومياً بطاقات فلاش مضيئة، وابدأ بحرف واحد لكل جلسة.', mid: 'التمييز البصري في تحسن. جرّب زيادة حجم الشبكة أو تضمين حروف متشابهة أكثر لتعميق التدريب.' },
+      'story-reader':      { threshold: 70, low: 'صعوبة في فهم المقروء — طبيعي في مراحل تنمية فهم النص. اقرأ القصة مع الطفل بصوت عالٍ قبل الجلسة، وناقش الشخصيات والأحداث بأسئلة مفتوحة بسيطة، وادعم بالصور.', mid: 'فهم أساسي متطور. انتقل لقصص أطول مع محاور أكثر عمقاً وشجّع الطفل على إعادة الحكي بكلماته الخاصة.' },
     }
 
     // ── Category-level analysis ──
@@ -936,7 +938,7 @@ export default function SessionPage() {
       'picture-puzzle':'attention','matrix-puzzle':'attention','clock-reading':'attention',
       'money-counter':'language','letter-reversal':'language',
       'cross-lateral':'motor',
-      'reading-fluency':'language', 'letter-search':'language',
+      'reading-fluency':'language', 'letter-search':'language', 'story-reader':'language',
     }
     results.forEach(r => {
       const cat = exCat[r.exerciseType]
@@ -3464,6 +3466,7 @@ ${notes ? `
               {activeView.id === 'cross-lateral'      && <CrossLateral       onComplete={handleExerciseComplete} onCancel={handleCancel} difficulty={activeDifficulty} />}
               {activeView.id === 'reading-fluency'    && <ReadingFluency     onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
               {activeView.id === 'letter-search'      && <LetterSearch       onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'story-reader'       && <StoryReader        onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
               {/* ── Physical exercises ── */}
               {['jumping-jacks','obstacle-circuit','balance-walk','tiger-crawl','ball-throw','stretching','body-percussion'].includes(activeView.id) && (
                 <PhysicalExercise id={activeView.id} onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />

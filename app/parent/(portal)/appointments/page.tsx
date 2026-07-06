@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { Calendar, Clock, Video, Plus, CheckCircle, XCircle, AlertCircle } from 'lucide-react'
 import type { Appointment, Student } from '@/lib/types'
 import { useLang, tr } from '@/lib/i18n'
@@ -15,13 +15,11 @@ const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
   'no-show': { bg: '#F9FAFB', color: '#6B7280' },
 }
 
-const QUICK_TIMES = ['09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00']
-
 function isSessionLive(date: string, timeSlot: string): boolean {
   const startPart = timeSlot.includes('-') ? timeSlot.split('-')[0] : timeSlot
   const endPart   = timeSlot.includes('-') ? timeSlot.split('-')[1] : null
   const [startH, startM] = startPart.split(':').map(Number)
-  const [endH, endM] = endPart ? endPart.split(':').map(Number) : [startH, startM + 45]
+  const [endH, endM] = endPart ? endPart.split(':').map(Number) : [startH, startM + 60]
   const now = new Date()
   const sessionDate = new Date(date)
   if (
@@ -34,6 +32,8 @@ function isSessionLive(date: string, timeSlot: string): boolean {
   return now >= start && now <= end
 }
 
+interface SlotInfo { time: string; available: boolean }
+
 export default function AppointmentsPage() {
   const { lang } = useLang()
   const t = tr[lang].parentAppointments
@@ -45,6 +45,9 @@ export default function AppointmentsPage() {
   const [booking, setBooking] = useState({ studentId: '', date: defaultDate, timeSlot: '', type: 'followup', notes: '' })
   const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState(false)
+  const [bookingError, setBookingError] = useState('')
+  const [slots, setSlots] = useState<SlotInfo[]>([])
+  const [loadingSlots, setLoadingSlots] = useState(false)
 
   useEffect(() => {
     Promise.all([
@@ -57,9 +60,28 @@ export default function AppointmentsPage() {
     }).finally(() => setLoading(false))
   }, [])
 
+  const fetchSlots = useCallback(async (date: string) => {
+    if (!date) return
+    setLoadingSlots(true)
+    setSlots([])
+    try {
+      const res = await fetch(`/api/appointments/available?date=${date}`)
+      const data = await res.json()
+      setSlots(data.slots || [])
+    } finally {
+      setLoadingSlots(false)
+    }
+  }, [])
+
+  // Load slots whenever the booking panel opens or the date changes
+  useEffect(() => {
+    if (showBook && booking.date) fetchSlots(booking.date)
+  }, [showBook, booking.date, fetchSlots])
+
   async function handleBook(e: React.FormEvent) {
     e.preventDefault()
     setSubmitting(true)
+    setBookingError('')
     try {
       const res = await fetch('/api/appointments', {
         method: 'POST',
@@ -71,7 +93,12 @@ export default function AppointmentsPage() {
         setAppointments(prev => [data.appointment, ...prev])
         setSuccess(true)
         setShowBook(false)
+        setBooking(b => ({ ...b, timeSlot: '' }))
         setTimeout(() => setSuccess(false), 4000)
+      } else {
+        setBookingError(data.error || 'خطأ في الحجز')
+        // If slot was taken, refresh slots
+        if (res.status === 409) fetchSlots(booking.date)
       }
     } finally {
       setSubmitting(false)
@@ -263,9 +290,14 @@ export default function AppointmentsPage() {
           style={{ background: 'rgba(0,0,0,0.5)' }}
           onClick={e => e.target === e.currentTarget && setShowBook(false)}
         >
-          <div className="rounded-3xl w-full max-w-md p-6" style={{ background: '#FFFFFF' }}>
+          <div
+            className="rounded-3xl w-full max-w-md p-6 overflow-y-auto"
+            style={{ background: '#FFFFFF', maxHeight: '90vh' }}
+          >
             <h3 className="font-black text-xl text-gray-900 mb-5">{t.bookingModalTitle}</h3>
             <form onSubmit={handleBook} className="space-y-4">
+
+              {/* Child selector */}
               {children.length > 1 && (
                 <div>
                   <label className="text-xs font-bold text-gray-500 block mb-1">{t.childLabel}</label>
@@ -284,6 +316,7 @@ export default function AppointmentsPage() {
                 </div>
               )}
 
+              {/* Session type */}
               <div>
                 <label className="text-xs font-bold text-gray-500 block mb-1.5">{t.sessionTypeLabel}</label>
                 <div className="grid grid-cols-2 gap-2">
@@ -308,6 +341,7 @@ export default function AppointmentsPage() {
                 </div>
               </div>
 
+              {/* Date picker */}
               <div>
                 <label className="text-xs font-bold text-gray-500 block mb-1">{t.dateLabel}</label>
                 <input
@@ -315,7 +349,9 @@ export default function AppointmentsPage() {
                   required
                   min={new Date().toISOString().split('T')[0]}
                   value={booking.date}
-                  onChange={e => setBooking(b => ({ ...b, date: e.target.value }))}
+                  onChange={e => {
+                    setBooking(b => ({ ...b, date: e.target.value, timeSlot: '' }))
+                  }}
                   className="w-full rounded-xl px-4 py-3 text-sm focus:outline-none"
                   style={{ border: '1.5px solid #E5E7EB' }}
                   onFocus={e => { e.target.style.border = '1.5px solid #7C5CFC'; e.target.style.boxShadow = '0 0 0 3px rgba(124,92,252,0.1)' }}
@@ -323,39 +359,48 @@ export default function AppointmentsPage() {
                 />
               </div>
 
+              {/* Visual slot picker */}
               <div>
-                <label className="text-xs font-bold text-gray-500 block mb-1.5">{t.preferredTimeLabel}</label>
-                <input
-                  type="time"
-                  required
-                  value={booking.timeSlot}
-                  onChange={e => setBooking(b => ({ ...b, timeSlot: e.target.value }))}
-                  className="w-full rounded-xl px-4 py-3 text-sm focus:outline-none ltr-num"
-                  style={{ border: '1.5px solid #E5E7EB' }}
-                  onFocus={e => { e.target.style.border = '1.5px solid #7C5CFC'; e.target.style.boxShadow = '0 0 0 3px rgba(124,92,252,0.1)' }}
-                  onBlur={e => { e.target.style.border = '1.5px solid #E5E7EB'; e.target.style.boxShadow = 'none' }}
-                />
-                <div className="flex gap-1.5 flex-wrap mt-2">
-                  {QUICK_TIMES.map(qt => (
-                    <button
-                      key={qt}
-                      type="button"
-                      onClick={() => setBooking(b => ({ ...b, timeSlot: qt }))}
-                      className="text-xs font-bold px-2.5 py-1 rounded-full transition-all ltr-num"
-                      style={
-                        booking.timeSlot === qt
-                          ? { background: '#6B46F0', color: '#FFFFFF', border: '1px solid #6B46F0' }
-                          : { background: '#FFFFFF', color: '#6B7280', border: '1px solid #E5E7EB' }
-                      }
-                      onMouseEnter={e => { if (booking.timeSlot !== qt) { (e.currentTarget as HTMLButtonElement).style.borderColor = '#D3BBFF'; (e.currentTarget as HTMLButtonElement).style.color = '#6B46F0' } }}
-                      onMouseLeave={e => { if (booking.timeSlot !== qt) { (e.currentTarget as HTMLButtonElement).style.borderColor = '#E5E7EB'; (e.currentTarget as HTMLButtonElement).style.color = '#6B7280' } }}
-                    >
-                      {qt}
-                    </button>
-                  ))}
-                </div>
+                <label className="text-xs font-bold text-gray-500 block mb-2">{t.preferredTimeLabel}</label>
+                {loadingSlots ? (
+                  <div className="flex items-center justify-center py-6 rounded-2xl" style={{ background: '#F9FAFB' }}>
+                    <div className="w-5 h-5 rounded-full border-2 border-violet-400 border-t-transparent animate-spin" />
+                  </div>
+                ) : slots.length === 0 ? (
+                  <p className="text-xs text-gray-400 text-center py-4">لا توجد مواعيد متاحة في هذا اليوم</p>
+                ) : (
+                  <div className="grid grid-cols-3 gap-2">
+                    {slots.map(slot => {
+                      const selected = booking.timeSlot === slot.time
+                      return (
+                        <button
+                          key={slot.time}
+                          type="button"
+                          disabled={!slot.available}
+                          onClick={() => slot.available && setBooking(b => ({ ...b, timeSlot: slot.time }))}
+                          className="ltr-num rounded-xl py-2.5 text-sm font-bold transition-all relative"
+                          style={
+                            !slot.available
+                              ? { background: '#F3F4F6', color: '#D1D5DB', cursor: 'not-allowed', border: '1.5px solid #F3F4F6' }
+                              : selected
+                              ? { background: '#6B46F0', color: '#FFFFFF', border: '1.5px solid #6B46F0', boxShadow: '0 4px 12px rgba(107,70,240,0.3)' }
+                              : { background: '#F0FFF4', color: '#15803D', border: '1.5px solid #A7F3D0' }
+                          }
+                        >
+                          {slot.time}
+                          {!slot.available && (
+                            <span className="block text-[9px] font-normal mt-0.5" style={{ color: '#9CA3AF' }}>
+                              محجوز
+                            </span>
+                          )}
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
 
+              {/* Notes */}
               <div>
                 <label className="text-xs font-bold text-gray-500 block mb-1">{t.notesLabel}</label>
                 <textarea
@@ -370,10 +415,18 @@ export default function AppointmentsPage() {
                 />
               </div>
 
+              {/* Error message */}
+              {bookingError && (
+                <div className="rounded-xl p-3 flex items-center gap-2" style={{ background: '#FEF2F2', border: '1px solid #FECACA' }}>
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" style={{ color: '#DC2626' }} />
+                  <p className="text-sm font-bold" style={{ color: '#DC2626' }}>{bookingError}</p>
+                </div>
+              )}
+
               <div className="flex gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={() => setShowBook(false)}
+                  onClick={() => { setShowBook(false); setBookingError('') }}
                   className="flex-1 font-bold py-3 rounded-xl text-sm text-gray-600 transition-all"
                   style={{ border: '2px solid #E5E7EB', background: '#FFFFFF' }}
                   onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#F9FAFB' }}

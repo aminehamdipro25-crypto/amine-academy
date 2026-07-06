@@ -239,6 +239,16 @@ export default function ParentDashboardPage() {
                   {parent.subscriptionStatus === 'active' ? t.statusActive :
                    parent.subscriptionStatus === 'pending' ? t.statusPending : parent.subscriptionStatus}
                 </span>
+                <Link
+                  href="/parent/upgrade-plan"
+                  className="text-xs font-black px-2.5 py-1 rounded-full flex items-center gap-1 transition-all"
+                  style={{ background: 'rgba(107,70,240,0.08)', color: '#6B46F0', border: '1px solid rgba(107,70,240,0.18)' }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = '#EDE0FF' }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(107,70,240,0.08)' }}
+                >
+                  <Zap className="w-3 h-3" />
+                  {lang === 'ar' ? 'تغيير الباقة' : 'Change Plan'}
+                </Link>
               </div>
             </div>
 

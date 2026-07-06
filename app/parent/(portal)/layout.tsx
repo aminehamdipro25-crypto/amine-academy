@@ -112,7 +112,7 @@ export default function ParentPortalLayout({ children }: { children: React.React
           </Link>
 
           {/* ── Desktop primary nav ── */}
-          <nav className="hidden md:flex items-center gap-0.5 flex-1 min-w-0 overflow-hidden">
+          <nav className="hidden md:flex items-center gap-0.5 flex-1 min-w-0 overflow-visible">
             {primaryNav.map(({ href, label, icon: Icon }) => {
               const active = isActive(href)
               return (

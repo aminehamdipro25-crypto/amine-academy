@@ -1,68 +1,11 @@
 'use client'
 import Link from 'next/link'
 import { ArrowLeft, ArrowRight, Play, LayoutDashboard, Sparkles } from 'lucide-react'
-import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useLang, tr, pickLang } from '@/lib/i18n'
 import LangToggle from '@/components/shared/LangToggle'
 import AcademyLogo from '@/components/shared/AcademyLogo'
 
-const DEFAULT_OFFER_DAYS = 5
-const LS_KEY = 'aa_offer_expiry'
-const LS_DURATION_KEY = 'aa_offer_duration'
-
-function useCountdown(offerDays: number) {
-  const [time, setTime] = useState({ d: 0, h: 0, m: 0, s: 0, expired: false })
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => {
-    setMounted(true)
-    const durationMs = offerDays * 24 * 60 * 60 * 1000
-    const storedDuration = parseInt(localStorage.getItem(LS_DURATION_KEY) || '0', 10)
-    let expiry = parseInt(localStorage.getItem(LS_KEY) || '0', 10)
-    if (!expiry || expiry < Date.now() || storedDuration !== durationMs) {
-      expiry = Date.now() + durationMs
-      localStorage.setItem(LS_KEY, String(expiry))
-      localStorage.setItem(LS_DURATION_KEY, String(durationMs))
-    }
-    const tick = () => {
-      const diff = expiry - Date.now()
-      if (diff <= 0) { setTime({ d: 0, h: 0, m: 0, s: 0, expired: true }); return }
-      setTime({
-        d: Math.floor(diff / 86400000),
-        h: Math.floor((diff % 86400000) / 3600000),
-        m: Math.floor((diff % 3600000) / 60000),
-        s: Math.floor((diff % 60000) / 1000),
-        expired: false,
-      })
-    }
-    tick()
-    const id = setInterval(tick, 1000)
-    return () => clearInterval(id)
-  }, [offerDays])
-
-  if (!mounted) return null
-  return time
-}
-
-function CountdownUnit({ value, label }: { value: number; label: string }) {
-  return (
-    <div className="flex flex-col items-center">
-      <div
-        className="rounded-lg px-2.5 py-1.5 min-w-[2.5rem] text-center"
-        style={{
-          background: 'rgba(107,70,240,0.08)',
-          border: '1px solid rgba(107,70,240,0.14)',
-        }}
-      >
-        <span className="font-black text-base ltr-num" style={{ color: '#6B46F0' }}>
-          {String(value).padStart(2, '0')}
-        </span>
-      </div>
-      <span className="text-slate-400 text-[10px] mt-0.5">{label}</span>
-    </div>
-  )
-}
 
 function DashboardVisual() {
   const scores = [72, 85, 68, 91, 88, 95, 87]
@@ -189,15 +132,6 @@ function DashboardVisual() {
 }
 
 export default function HeroSection() {
-  const [offerDays, setOfferDays] = useState(DEFAULT_OFFER_DAYS)
-  useEffect(() => {
-    fetch('/api/public/settings')
-      .then(r => r.json())
-      .then(d => { if (d?.offerDurationDays) setOfferDays(d.offerDurationDays) })
-      .catch(() => {})
-  }, [])
-
-  const time = useCountdown(offerDays)
   const { lang } = useLang()
   const t = tr[lang]
   const isRtl = lang === 'ar'
@@ -354,27 +288,6 @@ export default function HeroSection() {
             <DashboardVisual />
           </motion.div>
 
-          {/* Countdown compact — below visual */}
-          {time && !time.expired && (
-            <div
-              className="flex items-center justify-center gap-3 rounded-2xl px-5 py-3"
-              style={{
-                background: 'rgba(255,255,255,0.75)',
-                border: '1px solid rgba(107,70,240,0.12)',
-              }}
-            >
-              <p className="text-slate-400 text-xs font-medium whitespace-nowrap">{t.hero.offerLabel}</p>
-              <div className="flex items-center gap-2" dir="ltr">
-                <CountdownUnit value={time.d} label={t.hero.units.d} />
-                <span className="text-slate-300 font-black mb-3">:</span>
-                <CountdownUnit value={time.h} label={t.hero.units.h} />
-                <span className="text-slate-300 font-black mb-3">:</span>
-                <CountdownUnit value={time.m} label={t.hero.units.m} />
-                <span className="text-slate-300 font-black mb-3">:</span>
-                <CountdownUnit value={time.s} label={t.hero.units.s} />
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </section>

@@ -28,7 +28,7 @@ const FEATURES = [
   { text: 'تقارير تقدم مفصّلة لولي الأمر بعد كل حصة',           textEn: 'Detailed progress reports for parents after each session', textFr: 'Rapports de progrès détaillés pour les parents après chaque séance' },
   { text: 'واتساب مباشر مع الأستاذ للمتابعة اليومية',            textEn: 'Direct WhatsApp with Prof. Amine for daily follow-up', textFr: 'WhatsApp direct avec le professeur Amine pour un suivi quotidien' },
   { text: 'تعديل البرنامج المستمر حسب استجابة الطفل',            textEn: 'Continuous program adjustments based on child\'s response', textFr: "Ajustements continus du programme selon la réponse de l'enfant" },
-  { text: 'تقييم دوري بالذكاء الاصطناعي لرصد التطور',           textEn: 'Periodic AI-powered assessment to track progress', textFr: "Évaluation périodique par intelligence artificielle pour suivre les progrès" },
+  { text: 'تقييم دوري متخصص لرصد التطور وتعديل البرنامج',       textEn: 'Periodic specialist assessment to track progress and adjust the program', textFr: "Évaluation périodique spécialisée pour suivre les progrès et ajuster le programme" },
   { text: 'إرشادات يومية للوالدين لتطبيق البرنامج في المنزل',    textEn: 'Daily parent guidance for home program implementation', textFr: 'Conseils quotidiens aux parents pour appliquer le programme à la maison' },
 ]
 

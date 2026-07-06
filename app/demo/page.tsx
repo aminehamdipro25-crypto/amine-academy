@@ -386,7 +386,7 @@ function ReportMockup() {
           <span style={{ fontSize: 14 }}>🤖</span>
         </div>
         <div>
-          <div style={{ fontWeight: 900, fontSize: 9, color: '#6B46F0', marginBottom: 3 }}>تحليل الذكاء الاصطناعي</div>
+          <div style={{ fontWeight: 900, fontSize: 9, color: '#6B46F0', marginBottom: 3 }}>تحليل الأخصائي</div>
           <p style={{ margin: 0, fontSize: 8.5, color: '#374151', lineHeight: 1.6 }}>
             أمير أتمّ ٦ من ٨ تمارين بدقة ٧٦٪. <strong style={{ color: '#6B46F0' }}>الانتباه تضاعف من ٣ إلى ٨ دقائق</strong> مقارنةً بالجلسة الأولى. أنصح بتركيز الجلسة القادمة على Zone of Regulation.
           </p>
@@ -441,7 +441,7 @@ function ParentMockup() {
       {/* Welcome */}
       <div style={{ padding: '12px 14px' }}>
         <div style={{ fontWeight: 900, fontSize: 11, color: '#1F2937', marginBottom: 2 }}>مرحباً، محمد 👋</div>
-        <div style={{ fontSize: 8, color: '#9CA3AF', marginBottom: 10 }}>الجلسة القادمة لأمير: اليوم 5:00 م — 45 دقيقة</div>
+        <div style={{ fontSize: 8, color: '#9CA3AF', marginBottom: 10 }}>الجلسة القادمة لأمير: اليوم 5:00 م — 60 دقيقة</div>
         {/* Stats */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 6, marginBottom: 10 }}>
           {[{l:'الجلسات',v:'8',c:'#F3EEFF',tc:'#6B46F0'},{l:'التحسّن',v:'+64%',c:'#F0FDF4',tc:'#16A34A'},{l:'النقاط',v:'1,240⭐',c:'#FFFBEB',tc:'#D97706'}].map(({l,v,c,tc}) => (
@@ -459,7 +459,7 @@ function ParentMockup() {
           </div>
           <div style={{ color: 'white', fontWeight: 900, fontSize: 10, marginBottom: 4 }}>الذاكرة والانتباه + APA حركي</div>
           <div style={{ display: 'flex', gap: 10, color: 'rgba(255,255,255,0.5)', fontSize: 8, marginBottom: 8 }}>
-            <span>📅 اليوم 5:00 م</span><span>⏱ 45 دقيقة</span>
+            <span>📅 اليوم 5:00 م</span><span>⏱ 60 دقيقة</span>
           </div>
           <div style={{ background: '#6B46F0', borderRadius: 10, padding: '7px', textAlign: 'center', color: 'white', fontSize: 9, fontWeight: 900 }}>
             ▶ انضم للجلسة الآن
@@ -493,7 +493,7 @@ const SLIDES: Slide[] = [
   {
     tag: '① جلسة علاج حية',
     title: 'ليست مجرد مكالمة',
-    sub: 'جلسة تفاعلية بالكامل — تمارين معرفية وحركية، صعوبة تكيفية تلقائية، وذكاء جلسة يُنبّه الأخصائي لحظياً بمستوى تركيز الطفل',
+    sub: 'جلسة تفاعلية بالكامل — تمارين معرفية وحركية، صعوبة تكيفية تلقائية، ونظام تنبيهات يُطلع الأخصائي لحظياً على مستوى تركيز الطفل',
     accent: '#A78BFA', color: '#7C3AED',
     url: 'amine-academy.vercel.app/session/…',
     mockup: <SessionMockup />,
@@ -525,7 +525,7 @@ const SLIDES: Slide[] = [
   {
     tag: '⑤ تقارير ذكية',
     title: 'تقرير سريري بعد كل جلسة',
-    sub: 'تحليل الذكاء الاصطناعي لأداء الطفل، تطور المهارات مقارنةً بالجلسة الأولى، وتوصية للجلسة القادمة — يُرسَل تلقائياً لولي الأمر',
+    sub: 'تقرير سريري مفصّل لأداء الطفل، تطور المهارات مقارنةً بالجلسة الأولى، وتوصية للجلسة القادمة — يُرسَل تلقائياً لولي الأمر',
     accent: '#FCA5A5', color: '#EF4444',
     url: 'amine-academy.vercel.app/reports',
     mockup: <ReportMockup />,

@@ -71,21 +71,21 @@ const SESSION_TIMELINE_AR = [
   { time: '5–20 دق',  label: 'تمارين APA الحركية',   note: 'موجّهة مباشرة بالكاميرا',   gradient: 'linear-gradient(135deg,#3B82F6,#60A5FA)' },
   { time: '20–30 دق', label: 'تدريب CBT / ABA',       note: 'بروتوكول مخصص للطفل',        gradient: 'linear-gradient(135deg,#8B5CF6,#C084FC)' },
   { time: '30–40 دق', label: 'نقاط وإنجازات',          note: 'تفعيل دوبامين المكافأة',     gradient: 'linear-gradient(135deg,#F59E0B,#FBBF24)' },
-  { time: '40–45 دق', label: 'توجيه الوالد',           note: 'خطة أسبوعية واضحة',         gradient: 'linear-gradient(135deg,#10B981,#34D399)' },
+  { time: '50–60 دق', label: 'توجيه الوالد',           note: 'خطة أسبوعية واضحة',         gradient: 'linear-gradient(135deg,#10B981,#34D399)' },
 ]
 const SESSION_TIMELINE_EN = [
   { time: '0–5 min',   label: 'Emotional zone check', note: 'Zone of Regulation check-in', gradient: 'linear-gradient(135deg,#6366F1,#818CF8)' },
   { time: '5–20 min',  label: 'APA motor exercises',  note: 'Live camera-guided',           gradient: 'linear-gradient(135deg,#3B82F6,#60A5FA)' },
   { time: '20–30 min', label: 'CBT / ABA training',   note: 'Child-specific protocol',      gradient: 'linear-gradient(135deg,#8B5CF6,#C084FC)' },
   { time: '30–40 min', label: 'Points & achievements', note: 'Reward dopamine activation',  gradient: 'linear-gradient(135deg,#F59E0B,#FBBF24)' },
-  { time: '40–45 min', label: 'Parent coaching',       note: 'Clear weekly action plan',    gradient: 'linear-gradient(135deg,#10B981,#34D399)' },
+  { time: '50–60 min', label: 'Parent coaching',       note: 'Clear weekly action plan',    gradient: 'linear-gradient(135deg,#10B981,#34D399)' },
 ]
 const SESSION_TIMELINE_FR = [
   { time: '0–5 min',   label: 'Bilan de la zone émotionnelle', note: 'Point Zone of Regulation', gradient: 'linear-gradient(135deg,#6366F1,#818CF8)' },
   { time: '5–20 min',  label: 'Exercices moteurs APA',  note: 'Guidés en direct par caméra',  gradient: 'linear-gradient(135deg,#3B82F6,#60A5FA)' },
   { time: '20–30 min', label: 'Entraînement TCC / ABA', note: "Protocole propre à l'enfant",  gradient: 'linear-gradient(135deg,#8B5CF6,#C084FC)' },
   { time: '30–40 min', label: 'Points et succès',       note: 'Activation de la récompense dopaminergique', gradient: 'linear-gradient(135deg,#F59E0B,#FBBF24)' },
-  { time: '40–45 min', label: 'Accompagnement du parent', note: "Plan d'action hebdomadaire clair", gradient: 'linear-gradient(135deg,#10B981,#34D399)' },
+  { time: '50–60 min', label: 'Accompagnement du parent', note: "Plan d'action hebdomadaire clair", gradient: 'linear-gradient(135deg,#10B981,#34D399)' },
 ]
 
 export default function InteractiveSessionSection() {
@@ -179,7 +179,7 @@ export default function InteractiveSessionSection() {
             {/* Timeline */}
             <div>
               <h3 className="font-black text-2xl mb-6" style={{ color: '#1E293B' }}>
-                {pickLang(lang, 'ماذا يحدث في 45 دقيقة؟', 'What Happens in 45 Minutes?', 'Que se passe-t-il en 45 minutes ?')}
+                {pickLang(lang, 'ماذا يحدث في 60 دقيقة؟', 'What Happens in 60 Minutes?', 'Que se passe-t-il en 60 minutes ?')}
               </h3>
               <div className="space-y-4">
                 {timeline.map(({ time, label, note, gradient }) => (

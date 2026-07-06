@@ -7,6 +7,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import type { ExerciseResult } from '@/lib/types'
 import { useVoiceInstruction } from '@/lib/hooks/useVoiceInstruction'
+import { speakArabic } from '@/lib/speech'
 
 interface Props {
   onComplete: (r: ExerciseResult) => void
@@ -100,6 +101,7 @@ export default function CrossLateral({ onComplete, onCancel, difficulty = 1 }: P
     hitsRef.current += 1
     setHitsDisplay(hitsRef.current)
     setFeedback('hit')
+    speakArabic('ممتاز', 1.1)
     timerRef.current = setTimeout(() => advance(round + 1), 420)
   }
 
@@ -291,6 +293,14 @@ export default function CrossLateral({ onComplete, onCancel, difficulty = 1 }: P
           }}
         />
       )}
+
+      {/* ── In-exercise cancel ── */}
+      <button
+        onClick={onCancel}
+        className="absolute bottom-4 left-1/2 -translate-x-1/2 text-gray-400 hover:text-gray-600 text-xs transition-colors px-4 py-2"
+      >
+        ← إنهاء التمرين
+      </button>
     </div>
   )
 }

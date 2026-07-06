@@ -19,7 +19,7 @@ const WORD_BANKS: Record<1|2|3, string[]> = {
        'دجاجة','قنفذ','سلحفاة','تمساح'],
   3: ['اشتريت','الاستعداد','المدرسة','الأصدقاء','التلميذات','المكتبة',
        'الحيوانات','الطبيبة','البيئة','المستشفى','الاجتماع','المعلمة',
-       'التلفزيون','الإخوة','الفطار','التمرين','الإجازة','الترتيب',
+       'التلفزيون','الإخوة','الإفطار','التمرين','الإجازة','الترتيب',
        'المساعدة','الاطمئنان'],
 }
 
@@ -84,9 +84,17 @@ export default function ReadingFluency({ onComplete, onCancel, difficulty = 1 }:
   // ── Interactions ──────────────────────────────────────────────
   function handleConfirm() {
     if (phase !== 'playing' || doneRef.current) return
-    const next = (wordIdx + 1) % totalWords
-    setWordsRead(w => w + 1)
-    setWordIdx(next)
+    const newCount = wordsRead + 1
+    setWordsRead(newCount)
+    // Stop when all words have been read (don't loop silently)
+    if (newCount >= totalWords) {
+      doneRef.current = true
+      endMsRef.current = Date.now()
+      cancelSpeech()
+      setPhase('done')
+      return
+    }
+    setWordIdx((wordIdx + 1) % totalWords)
     setFlickerKey(k => k + 1) // triggers animation + auto-speak via effect
   }
 
@@ -125,7 +133,7 @@ export default function ReadingFluency({ onComplete, onCancel, difficulty = 1 }:
         score,
         accuracy:   score,
         duration,
-        errors:     Math.max(0, totalWords - wordsRead),
+        errors:     0, // self-paced — no per-word error tracking; misses aren't errors
         metadata:   { wordsRead, totalWords, wordsPerMinute, difficulty, timeAllowed: totalTime },
         completedAt: new Date().toISOString(),
       })

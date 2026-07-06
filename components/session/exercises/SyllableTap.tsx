@@ -139,7 +139,7 @@ export default function SyllableTap({ onComplete, onCancel, difficulty = 1, stud
 
       <div className="w-full max-w-sm bg-white/10 rounded-full h-2">
         <div className="h-2 rounded-full transition-all duration-500"
-          style={{ width: `${(idx / count) * 100}%`, background: '#7C5CFC' }} />
+          style={{ width: `${Math.min(100, ((idx + (phase === 'feedback' ? 1 : 0)) / count) * 100)}%`, background: '#7C5CFC' }} />
       </div>
 
       {/* Word card */}
@@ -161,16 +161,25 @@ export default function SyllableTap({ onComplete, onCancel, difficulty = 1, stud
         اضغط الزر مرة واحدة لكل مقطع
       </p>
 
-      {/* Tap dots */}
+      {/* Tap dots — show expected count as grey slots, filled with purple per tap */}
       <div className="flex gap-2 h-6 items-center">
-        {taps === 0
-          ? [0,1,2].map(i => (
-            <div key={i} className="w-4 h-4 rounded-full" style={{ background: 'rgba(255,255,255,0.15)' }} />
-          ))
-          : Array.from({ length: taps }).map((_, i) => (
-            <div key={i} className="w-4 h-4 rounded-full transition-all duration-100" style={{ background: '#7C5CFC' }} />
-          ))
-        }
+        {Array.from({ length: Math.max(w.syllables, taps) }).map((_, i) => {
+          const filled = i < taps
+          const overflow = i >= w.syllables
+          return (
+            <div
+              key={i}
+              className="w-4 h-4 rounded-full transition-all duration-100"
+              style={{
+                background: filled
+                  ? overflow ? '#EF4444' : '#7C5CFC'
+                  : 'rgba(255,255,255,0.18)',
+                border: filled ? 'none' : '2px solid rgba(255,255,255,0.3)',
+                transform: filled ? 'scale(1.15)' : 'scale(1)',
+              }}
+            />
+          )
+        })}
       </div>
 
       {/* Big tap button */}
@@ -193,7 +202,7 @@ export default function SyllableTap({ onComplete, onCancel, difficulty = 1, stud
       {phase === 'feedback' && (
         <div className="flex flex-col items-center gap-2">
           <div className="text-3xl font-black" style={{ color: isCorrectAnswer ? '#22c55e' : '#ef4444' }}>
-            {isCorrectAnswer ? '✅ ممتاز!' : `❌ الصحيح: ${w.syllables} مقاطع`}
+            {isCorrectAnswer ? '✅ ممتاز!' : `❌ الصحيح: ${w.syllables} ${w.syllables === 1 ? 'مقطع' : 'مقاطع'}`}
           </div>
           <div className="text-white/60 text-sm">
             ضغطت {taps} {taps === 1 ? 'مرة' : 'مرات'} — الكلمة لها {w.syllables} {w.syllables === 1 ? 'مقطع' : 'مقاطع'}

@@ -1,6 +1,7 @@
 'use client'
 import { useState, useRef, useEffect, useCallback } from 'react'
 import type { ExerciseResult } from '@/lib/types'
+import { speakArabic, cancelSpeech } from '@/lib/speech'
 
 // ── Clinically-relevant Arabic confusion pairs ──────────────────────────────
 // Letters that children with dyslexia / visual-processing difficulties confuse
@@ -127,6 +128,7 @@ export default function LetterSearch({ onComplete, onCancel, difficulty = 1 }: P
   useEffect(() => () => {
     if (timerRef.current)   clearTimeout(timerRef.current)
     if (shakeTimer.current) clearTimeout(shakeTimer.current)
+    cancelSpeech()
   }, [])
 
   // ── finish game ────────────────────────────────────────────────────────────
@@ -231,8 +233,22 @@ export default function LetterSearch({ onComplete, onCancel, difficulty = 1 }: P
     setPhase('playing')
   }
 
+  // Announce target letter via TTS whenever a new round starts
+  useEffect(() => {
+    if (phase === 'playing' && target) {
+      const t = setTimeout(() => speakArabic(target, 0.7), 300)
+      return () => clearTimeout(t)
+    }
+  }, [target, phase]) // eslint-disable-line
+
   // ── early exits ───────────────────────────────────────────────────────────
-  if (phase === 'done') return null
+  if (phase === 'done') return (
+    <div dir="rtl" className="flex flex-col items-center justify-center h-full gap-4 p-8" style={{ background: BG }}>
+      <div className="text-6xl ls-pop">✅</div>
+      <h2 className="text-2xl font-black text-purple-900">انتهى التمرين!</h2>
+      <p className="text-purple-600 text-center">جاري حفظ النتائج…</p>
+    </div>
+  )
 
   const pct = Math.round((round / cfg.rounds) * 100)
 
@@ -420,8 +436,8 @@ export default function LetterSearch({ onComplete, onCancel, difficulty = 1 }: P
                         : 'border-purple-200 bg-white/90 text-purple-900 hover:border-purple-400 hover:bg-purple-50 active:scale-90 shadow-sm cursor-pointer',
                 ].join(' ')}
                 style={{
-                  width: 55, height: 55,
-                  fontSize: '1.5rem',
+                  width: 62, height: 62,
+                  fontSize: '1.6rem',
                   fontFamily: 'Arial, sans-serif',
                 }}
               >

@@ -139,7 +139,7 @@ export default function LetterReversal({ onComplete, onCancel, difficulty = 1, s
 
       <div className="w-full max-w-sm bg-white/10 rounded-full h-2">
         <div className="h-2 rounded-full transition-all duration-500"
-          style={{ width: `${(idx / count) * 100}%`, background: '#7C5CFC' }} />
+          style={{ width: `${Math.min(100, ((idx + (chosen ? 1 : 0)) / count) * 100)}%`, background: '#7C5CFC' }} />
       </div>
 
       <div className="flex flex-col items-center gap-3 mt-2">

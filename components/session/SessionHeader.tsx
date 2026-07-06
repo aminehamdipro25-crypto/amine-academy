@@ -72,7 +72,7 @@ export default function SessionHeader({
           never silently counting the time spent away. */}
       <button
         onClick={onClose}
-        className="w-8 h-8 flex items-center justify-center rounded-xl flex-shrink-0 transition-colors hover:bg-brand-50 text-gray-400 hover:text-gray-700"
+        className="w-11 h-11 flex items-center justify-center rounded-xl flex-shrink-0 transition-colors hover:bg-brand-50 text-gray-400 hover:text-gray-700"
       >
         <X className="w-4 h-4" />
       </button>
@@ -258,7 +258,7 @@ export default function SessionHeader({
       {!running && (
         <button
           onClick={onStart}
-          className="font-black text-white text-xs px-3 py-2 rounded-xl flex-shrink-0 transition-all active:scale-95"
+          className="font-black text-white text-xs px-3 py-2.5 rounded-xl flex-shrink-0 transition-all active:scale-95"
           style={{ background: 'linear-gradient(135deg,#16A34A,#22C55E)', boxShadow: '0 4px 16px rgba(34,197,94,0.3)' }}
         >
           ▶ ابدأ
@@ -270,7 +270,7 @@ export default function SessionHeader({
         onClick={onSave}
         disabled={saving}
         title={saveFailed ? 'فشل الحفظ — البيانات محفوظة محليًا مؤقتًا، اضغط لإعادة المحاولة' : undefined}
-        className={`flex items-center gap-1.5 px-3 py-2 rounded-xl font-black text-xs flex-shrink-0 transition-all active:scale-95 ${
+        className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl font-black text-xs flex-shrink-0 transition-all active:scale-95 ${
           saveFailed ? 'bg-red-50 text-red-600 border border-red-200' :
           saved ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' :
           saving ? 'bg-brand-50 text-gray-400' : 'text-white'

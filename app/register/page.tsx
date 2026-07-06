@@ -310,7 +310,7 @@ function RegisterForm() {
                   ))}
                 </select>
               </Field>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Field label="كلمة المرور" error={e1.password?.message} required>
                   <input type="password" {...r1('password')} placeholder="••••••••"
                     className={inputClass(!!e1.password)} />

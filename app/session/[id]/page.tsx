@@ -1963,7 +1963,7 @@ ${notes ? `
                           {([1,2,3,4,5] as const).map(v => (
                             <button key={v}
                               onClick={() => setObservations(o => ({ ...o, [key]: v }))}
-                              className={`w-5 h-5 rounded text-xs font-bold transition-colors ${
+                              className={`w-8 h-8 rounded-lg text-xs font-bold transition-colors ${
                                 observations[key] >= v ? 'bg-brand-500 text-white' : 'bg-white text-gray-300'
                               }`}>
                               {v}

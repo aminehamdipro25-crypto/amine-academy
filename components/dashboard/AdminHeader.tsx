@@ -159,7 +159,7 @@ export default function AdminHeader({ onMenuToggle, onUnreadChange }: { onMenuTo
 
           {/* Dropdown */}
           {open && (
-            <div className="absolute left-0 top-full mt-2 w-80 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-50">
+            <div className="absolute left-0 top-full mt-2 w-80 max-w-[calc(100vw-16px)] bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-50">
               {/* Header */}
               <div className="flex items-center justify-between px-4 py-3 border-b border-gray-50">
                 <div className="flex items-center gap-2">

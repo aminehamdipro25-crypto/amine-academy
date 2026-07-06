@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /parent
+Disallow: /session
+Disallow: /api
+Disallow: /student
+
+Sitemap: https://amine-academy.vercel.app/sitemap.xml

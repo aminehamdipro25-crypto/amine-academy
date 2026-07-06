@@ -41,7 +41,6 @@ export const metadata: Metadata = {
     locale: 'ar_TN',
     url: BASE_URL,
     siteName: 'أكاديمية أمين الدولية',
-    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Amine Academy' }],
   },
   twitter: { card: 'summary_large_image' },
   robots: { index: true, follow: true },

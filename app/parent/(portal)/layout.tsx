@@ -250,7 +250,7 @@ export default function ParentPortalLayout({ children }: { children: React.React
               >
                 {active && <span className="absolute inset-0 rounded-2xl" style={{ background: '#F3EEFF' }} />}
                 <Icon className="w-5 h-5 relative z-10" />
-                <span className="text-[9px] font-black leading-none relative z-10 text-center">{label}</span>
+                <span className="text-[11px] font-black leading-none relative z-10 text-center">{label}</span>
               </Link>
             )
           })}

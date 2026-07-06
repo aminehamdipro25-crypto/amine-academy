@@ -489,20 +489,14 @@ export default function SessionPage() {
   const screenVideoRef = useRef<HTMLVideoElement>(null)
 
   async function startScreenShare() {
-    if (typeof navigator.mediaDevices?.getDisplayMedia !== 'function') {
-      alert('مشاركة الشاشة غير مدعومة في هذا المتصفح.\nيُرجى استخدام Chrome أو Firefox أو Edge (إصدار حديث).\n\nScreen sharing is not supported. Please use a recent Chrome, Firefox, or Edge.')
-      return
-    }
+    // Silent: if the API is unavailable in this browser/context, do nothing — no alert
+    if (typeof navigator.mediaDevices?.getDisplayMedia !== 'function') return
     try {
       const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false })
       stream.getVideoTracks()[0].addEventListener('ended', () => setScreenStream(null))
       setScreenStream(stream)
-    } catch (err) {
-      const name = (err as Error)?.name
-      // NotAllowedError / AbortError = user cancelled or denied — silent
-      if (name !== 'NotAllowedError' && name !== 'AbortError') {
-        console.warn('[screen-share]', err)
-      }
+    } catch {
+      // Any error (cancelled, denied, unsupported) → silent fail
     }
   }
 

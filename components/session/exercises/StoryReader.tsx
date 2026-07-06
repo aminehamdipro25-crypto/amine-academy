@@ -23,135 +23,119 @@ interface Story {
 }
 
 const STORIES: Story[] = [
-  // ── D1: 3 pages ────────────────────────────────────────────────────────────
+  // ── D1: قصص مبسطة — 3 صفحات، جمل قصيرة جداً ─────────────────────────────
   {
-    id: 'cat-ball', title: 'القطة والكرة', icon: '🐱', diff: 1,
+    id: 'lion-brave', title: 'الأسد الطيب', icon: '🦁', diff: 1,
     pages: [
-      { emoji: '🐱🔵', bg: 'linear-gradient(135deg,#DBEAFE,#EFF6FF)', text: 'كانت هناك قطة صغيرة اسمها لولو. كانت تلعب بكرة زرقاء كبيرة في الحديقة.' },
-      { emoji: '🐱🌳', bg: 'linear-gradient(135deg,#DCFCE7,#F0FDF4)', text: 'قفزت الكرة بعيداً وسقطت خلف الشجرة الكبيرة. لم تستطع لولو أن تجدها وبدأت تبكي.' },
-      { emoji: '🐶🐱🔵', bg: 'linear-gradient(135deg,#FEF9C3,#FFFBEB)', text: 'جاء الكلب بسبوس وساعد لولو في إيجاد الكرة. فرحا معاً وصارا صديقين.' },
+      { emoji: '🦁🌿', bg: 'linear-gradient(135deg,#FEF9C3,#FFFDE7)', text: 'الأسد حيوان كبير. يعيش في الغابة. لونه أصفر جميل.' },
+      { emoji: '🦁🐇', bg: 'linear-gradient(135deg,#DCFCE7,#F0FDF4)', text: 'رأى الأسد أرنباً صغيراً. الأرنب كان خائفاً. قال الأسد: لا تخف، أنا صديقك!' },
+      { emoji: '🦁🐇😊', bg: 'linear-gradient(135deg,#E0F2FE,#F0F9FF)', text: 'لعب الأسد والأرنب معاً. صارا أصدقاء. كانا سعيدين جداً.' },
     ],
     questions: [
-      { q: 'ما اسم القطة في القصة؟', choices: ['ببسي', 'لولو', 'سوسو'], correct: 1 },
-      { q: 'أين سقطت الكرة؟', choices: ['في الماء', 'خلف الشجرة', 'على السطح'], correct: 1 },
-      { q: 'من ساعد لولو في إيجاد الكرة؟', choices: ['طفلة صغيرة', 'قطة أخرى', 'الكلب بسبوس'], correct: 2 },
+      { q: 'أين يعيش الأسد؟', choices: ['في البيت', 'في البحر', 'في الغابة'], correct: 2 },
+      { q: 'كيف كان الأرنب في البداية؟', choices: ['سعيداً', 'خائفاً', 'غاضباً'], correct: 1 },
+      { q: 'ماذا صار الأسد والأرنب؟', choices: ['أعداء', 'أصدقاء', 'غرباء'], correct: 1 },
     ],
   },
   {
-    id: 'rainy-day', title: 'يوم المطر', icon: '🌧️', diff: 1,
+    id: 'rabbit-carrot', title: 'الأرنب والجزر', icon: '🐇', diff: 1,
     pages: [
-      { emoji: '☁️🌧️', bg: 'linear-gradient(135deg,#E0E7FF,#EEF2FF)', text: 'في الصباح نزل المطر الجميل. قال عمر بصوت عالٍ: أريد أن ألعب بالمطر!' },
-      { emoji: '👦☂️', bg: 'linear-gradient(135deg,#FEF3C7,#FFFBEB)', text: 'أعطته أمه المظلة الصفراء ومعطف المطر الأزرق. خرج عمر من الباب مبتسماً.' },
-      { emoji: '👦💧😊', bg: 'linear-gradient(135deg,#DCFCE7,#F0FDF4)', text: 'لعب عمر في البرك الصغيرة وبلّلت قدميه. كان قلبه مليئاً بالفرح والسعادة.' },
+      { emoji: '🐇🌱', bg: 'linear-gradient(135deg,#DCFCE7,#F0FDF4)', text: 'الأرنب الصغير اسمه بيبي. يحب الجزر كثيراً. يزرعه في حديقته.' },
+      { emoji: '🐇💧🌿', bg: 'linear-gradient(135deg,#E0F2FE,#F0F9FF)', text: 'بيبي يسقي النباتات كل يوم. يعمل بجد ونشاط. الجزر ينمو ببطء.' },
+      { emoji: '🐇🥕😄', bg: 'linear-gradient(135deg,#FEF9C3,#FFFBEB)', text: 'بعد أيام نضج الجزر! قطفه بيبي وأكله. كان لذيذاً جداً. يا لها من فرحة!' },
     ],
     questions: [
-      { q: 'من أراد اللعب بالمطر؟', choices: ['سارة', 'عمر', 'أحمد'], correct: 1 },
-      { q: 'ما لون المظلة التي أخذها عمر؟', choices: ['الحمراء', 'الزرقاء', 'الصفراء'], correct: 2 },
-      { q: 'كيف شعر عمر في نهاية القصة؟', choices: ['حزيناً', 'خائفاً', 'سعيداً'], correct: 2 },
+      { q: 'ما اسم الأرنب؟', choices: ['بوبو', 'بيبي', 'بابا'], correct: 1 },
+      { q: 'ماذا يحب بيبي أن يزرع؟', choices: ['التفاح', 'الجزر', 'البطيخ'], correct: 1 },
+      { q: 'كيف كان طعم الجزر؟', choices: ['مراً', 'لذيذاً', 'حامضاً'], correct: 1 },
     ],
   },
   {
-    id: 'cake-day', title: 'الكعكة الجميلة', icon: '🎂', diff: 1,
+    id: 'little-duck', title: 'البطة الصغيرة', icon: '🦆', diff: 1,
     pages: [
-      { emoji: '👩🧁', bg: 'linear-gradient(135deg,#FCE7F3,#FDF2F8)', text: 'قررت سلمى أن تصنع كعكة لعيد ميلاد أختها. جلبت الطحين والسكر والبيض من المطبخ.' },
-      { emoji: '🥣✋', bg: 'linear-gradient(135deg,#FEF9C3,#FFFBEB)', text: 'خلطت سلمى كل المكونات ببطء وعناية. ثم وضعت الكعكة في الفرن بعناية.' },
-      { emoji: '🎂❤️', bg: 'linear-gradient(135deg,#FFE4E6,#FFF1F2)', text: 'خرجت الكعكة ذهبية اللون ولذيذة الرائحة. قالت أختها: شكراً يا سلمى، أنتِ الأفضل!' },
+      { emoji: '🦆💧', bg: 'linear-gradient(135deg,#E0F2FE,#F0F9FF)', text: 'البطة الصغيرة اسمها دودو. تعيش بجانب البحيرة. تحب السباحة.' },
+      { emoji: '🦆😰', bg: 'linear-gradient(135deg,#FFE4E6,#FFF1F2)', text: 'يوماً ما فقدت دودو أمها. بكت كثيراً. كانت خائفة وحزينة.' },
+      { emoji: '🦆👨‍👩‍👧😊', bg: 'linear-gradient(135deg,#FEF9C3,#FFFBEB)', text: 'سمعت الأم صوت دودو. جاءت بسرعة وعانقتها. دودو فرحت فرحاً كبيراً!' },
     ],
     questions: [
-      { q: 'لماذا صنعت سلمى الكعكة؟', choices: ['للبيع', 'لعيد ميلاد أختها', 'للمدرسة'], correct: 1 },
-      { q: 'أين وضعت سلمى الكعكة؟', choices: ['في الثلاجة', 'على الطاولة', 'في الفرن'], correct: 2 },
-      { q: 'كيف كانت الكعكة؟', choices: ['محترقة', 'ذهبية ولذيذة', 'صغيرة وحلوة'], correct: 1 },
+      { q: 'أين تعيش البطة دودو؟', choices: ['في الغابة', 'بجانب البحيرة', 'في الجبل'], correct: 1 },
+      { q: 'لماذا بكت دودو؟', choices: ['كانت جائعة', 'فقدت أمها', 'كانت مريضة'], correct: 1 },
+      { q: 'كيف انتهت القصة؟', choices: ['بكاء', 'حزن', 'فرح'], correct: 2 },
+    ],
+  },
+  {
+    id: 'bear-honey', title: 'الدب والعسل', icon: '🐻', diff: 1,
+    pages: [
+      { emoji: '🐻🌲', bg: 'linear-gradient(135deg,#FEF3C7,#FFFDE7)', text: 'الدب الكبير اسمه بوبو. يعيش في الغابة. يحب العسل جداً.' },
+      { emoji: '🐻🍯🐝', bg: 'linear-gradient(135deg,#FEF9C3,#FFFBEB)', text: 'رأى بوبو خلية نحل على الشجرة. أراد أن يأكل العسل. لكن النحل طار نحوه!' },
+      { emoji: '🐻🏃💨', bg: 'linear-gradient(135deg,#DCFCE7,#F0FDF4)', text: 'ركض بوبو بعيداً وسقط في النهر! خرج مبللاً. ابتسم وقال: العسل جميل لكن النحل أشد!' },
+    ],
+    questions: [
+      { q: 'ما الذي يحبه الدب بوبو؟', choices: ['التفاح', 'العسل', 'السمك'], correct: 1 },
+      { q: 'أين كانت خلية النحل؟', choices: ['على الأرض', 'في الماء', 'على الشجرة'], correct: 2 },
+      { q: 'أين سقط بوبو؟', choices: ['في الحفرة', 'في النهر', 'على الحشيش'], correct: 1 },
     ],
   },
 
-  // ── D2: 4 pages ────────────────────────────────────────────────────────────
+  // ── D2: قصص متوسطة — 4 صفحات ─────────────────────────────────────────────
   {
     id: 'new-friend', title: 'الصديق الجديد', icon: '🤝', diff: 2,
     pages: [
-      { emoji: '🏫😟', bg: 'linear-gradient(135deg,#E0F2FE,#F0F9FF)', text: 'في أول يوم بالمدرسة الجديدة، جلس ياسر وحيداً في الفناء. كان الأطفال يلعبون حوله لكنه لم يعرف أحداً ولم يجرؤ على الاقتراب.' },
-      { emoji: '⚽👦', bg: 'linear-gradient(135deg,#DCFCE7,#F0FDF4)', text: 'جاء طفل يرتدي قميصاً أخضر اسمه نور. قال بابتسامة: أتريد أن تلعب معنا؟ قام ياسر فرحاً وسار معه.' },
-      { emoji: '⚽😄', bg: 'linear-gradient(135deg,#FEF9C3,#FFFBEB)', text: 'لعبا الكرة معاً وضحكا كثيراً. اكتشف ياسر أن نور يحب نفس الألعاب ويمجّد نفس الفريق.' },
-      { emoji: '🤝💛', bg: 'linear-gradient(135deg,#FDF4FF,#FAF5FF)', text: 'في نهاية اليوم قال ياسر لأمه وهو يقفز: وجدت صديقاً جديداً اسمه نور! ابتسمت أمه وعانقته بحب.' },
+      { emoji: '🏫😟', bg: 'linear-gradient(135deg,#E0F2FE,#F0F9FF)', text: 'ياسر في مدرسة جديدة. لا يعرف أحداً. جلس وحيداً في الفناء.' },
+      { emoji: '👦😊', bg: 'linear-gradient(135deg,#DCFCE7,#F0FDF4)', text: 'جاء نور وابتسم له. قال: أتريد أن تلعب معنا؟ ياسر قفز من الفرح وقال: نعم!' },
+      { emoji: '⚽😄', bg: 'linear-gradient(135deg,#FEF9C3,#FFFBEB)', text: 'لعبا الكرة معاً. ضحكا كثيراً. اكتشفا أنهما يحبان نفس الفريق.' },
+      { emoji: '🤝💛', bg: 'linear-gradient(135deg,#FDF4FF,#FAF5FF)', text: 'قال ياسر لأمه: وجدت صديقاً! اسمه نور. الصداقة تبدأ بابتسامة واحدة.' },
     ],
     questions: [
-      { q: 'لماذا جلس ياسر وحيداً في البداية؟', choices: ['لأنه غاضب', 'لأنه لا يعرف أحداً', 'لأنه مريض'], correct: 1 },
-      { q: 'ما الذي فعله نور حين رأى ياسر وحيداً؟', choices: ['دعاه للعب', 'أعطاه طعاماً', 'جلس بجانبه صامتاً'], correct: 0 },
-      { q: 'ما الذي قاله ياسر لأمه؟', choices: ['أنه متعب', 'أنه وجد صديقاً جديداً', 'أنه يريد تغيير المدرسة'], correct: 1 },
-    ],
-  },
-  {
-    id: 'magic-book', title: 'الكتاب السحري', icon: '📚', diff: 2,
-    pages: [
-      { emoji: '📚✨', bg: 'linear-gradient(135deg,#EDE9FE,#F5F3FF)', text: 'في مكتبة المدرسة وجدت ليلى كتاباً قديماً به رسومات غريبة وجميلة. فتحته بفضول وبدأت تقرأ بصوت منخفض.' },
-      { emoji: '🦁🌴', bg: 'linear-gradient(135deg,#D1FAE5,#ECFDF5)', text: 'إذا بها في غابة خضراء واسعة! أمامها أسد كبير ذو عرف ذهبي، لكنه كان يبتسم ابتسامة لطيفة ومطمئنة.' },
-      { emoji: '🦁👧🌧️', bg: 'linear-gradient(135deg,#FEF3C7,#FFFBEB)', text: 'قال الأسد: مرحباً ليلى، مطر سحري سيأتي الليلة. هل تساعديننا في إيجاد مأوى للحيوانات الصغيرة؟' },
-      { emoji: '🌈🌟', bg: 'linear-gradient(135deg,#E0F2FE,#F0F9FF)', text: 'ساعدت ليلى الحيوانات بسرعة وذكاء. حين جاء المطر ظهر قوس قزح. استيقظت ليلى على ابتسامة وبيدها الكتاب.' },
-    ],
-    questions: [
-      { q: 'أين وجدت ليلى الكتاب السحري؟', choices: ['في بيتها', 'في الحديقة', 'في مكتبة المدرسة'], correct: 2 },
-      { q: 'كيف كان الأسد حين رأته ليلى؟', choices: ['مخيفاً ومفزعاً', 'طيباً ومبتسماً', 'حزيناً وصامتاً'], correct: 1 },
-      { q: 'بماذا ساعدت ليلى الحيوانات؟', choices: ['أعطتهم طعاماً', 'أوجدت لهم مأوى', 'قرأت لهم قصة'], correct: 1 },
+      { q: 'لماذا كان ياسر وحيداً؟', choices: ['لأنه غاضب', 'مدرسة جديدة ولا يعرف أحداً', 'لأنه مريض'], correct: 1 },
+      { q: 'كيف بدأت صداقة نور وياسر؟', choices: ['بالكتب', 'بابتسامة ودعوة للعب', 'بالطعام'], correct: 1 },
+      { q: 'ما الدرس من القصة؟', choices: ['الألعاب مهمة', 'الصداقة تبدأ بابتسامة', 'المدرسة صعبة'], correct: 1 },
     ],
   },
   {
     id: 'lost-key', title: 'المفتاح الضائع', icon: '🔑', diff: 2,
     pages: [
-      { emoji: '🔑😰', bg: 'linear-gradient(135deg,#FFE4E6,#FFF1F2)', text: 'وصلت رانيا إلى باب المنزل وبحثت في حقيبتها. لم تجد المفتاح! صارت قلقة وفكّرت: أين وضعته؟' },
-      { emoji: '🧠💭', bg: 'linear-gradient(135deg,#EDE9FE,#F5F3FF)', text: 'جلست رانيا وأغمضت عينيها. تذكّرت: في الصباح أخذت المفتاح، ثم ذهبت للحديقة، ثم للمكتبة…' },
-      { emoji: '📚🔑', bg: 'linear-gradient(135deg,#FEF9C3,#FFFBEB)', text: 'ركضت رانيا للمكتبة وسألت الأمينة. قالت الأمينة وهي تبتسم: نعم! وجدناه على الطاولة وانتظرنا صاحبه.' },
-      { emoji: '😊🏠', bg: 'linear-gradient(135deg,#DCFCE7,#F0FDF4)', text: 'عادت رانيا للبيت فرحة. علّقت المفتاح في مكان ثابت وقالت: من الآن لمفتاحي مكان واحد فقط!' },
+      { emoji: '🔑😰', bg: 'linear-gradient(135deg,#FFE4E6,#FFF1F2)', text: 'رانيا وصلت للبيت. بحثت في حقيبتها. المفتاح ليس موجوداً! قالت: أين هو؟' },
+      { emoji: '🧠💭', bg: 'linear-gradient(135deg,#EDE9FE,#F5F3FF)', text: 'أغمضت عينيها وفكّرت. تذكّرت: ذهبت للمكتبة اليوم. ربما تركته هناك.' },
+      { emoji: '📚🔑', bg: 'linear-gradient(135deg,#FEF9C3,#FFFBEB)', text: 'ذهبت للمكتبة بسرعة. قالت الأمينة: وجدناه على الطاولة! تسلّمته رانيا فرحةً.' },
+      { emoji: '😊🏠', bg: 'linear-gradient(135deg,#DCFCE7,#F0FDF4)', text: 'عادت للبيت وعلّقت المفتاح في مكان ثابت. قالت: من الآن له مكان واحد فقط!' },
     ],
     questions: [
-      { q: 'ما المشكلة التي واجهت رانيا؟', choices: ['نسيت واجبها', 'ضاع منها المفتاح', 'تأخرت عن المدرسة'], correct: 1 },
-      { q: 'كيف تذكّرت رانيا أين المفتاح؟', choices: ['اتصلت بأمها', 'أغمضت عينيها وتذكّرت خطواتها', 'سألت جيرانها'], correct: 1 },
-      { q: 'ماذا قررت رانيا في النهاية؟', choices: ['تشتري مفتاحاً جديداً', 'تعلّق المفتاح في مكان ثابت دائماً', 'تعطي المفتاح لأمها'], correct: 1 },
+      { q: 'ما الذي فقدته رانيا؟', choices: ['حقيبتها', 'مفتاحها', 'كتابها'], correct: 1 },
+      { q: 'أين وجدت المفتاح؟', choices: ['في الحديقة', 'في المكتبة', 'في المدرسة'], correct: 1 },
+      { q: 'ماذا فعلت رانيا لحل المشكلة في المستقبل؟', choices: ['اشترت مفتاحاً جديداً', 'علّقته في مكان ثابت', 'أعطته لأمها'], correct: 1 },
     ],
   },
 
-  // ── D3: 5 pages ────────────────────────────────────────────────────────────
+  // ── D3: قصص متقدمة — 5 صفحات ──────────────────────────────────────────────
   {
     id: 'bridge-team', title: 'الفريق المتعاون', icon: '🏆', diff: 3,
     pages: [
-      { emoji: '🏫📋', bg: 'linear-gradient(135deg,#DBEAFE,#EFF6FF)', text: 'طُلب من طلاب الصف الخامس بناء جسر من الورق والمعكرونة يتحمّل كرة حجرية. المجموعة: كريم ونورة وسامي. المشكلة؟ لكل واحد فكرة مختلفة.' },
-      { emoji: '💬😤', bg: 'linear-gradient(135deg,#FFE4E6,#FFF1F2)', text: 'أراد كريم التصميم الكبير المعقد، وتريد نورة تصميم المثلث، ويريد سامي أبسط شيء ممكن. انشغل الجميع بالجدال حتى ضاع نصف الوقت.' },
-      { emoji: '💡🤔', bg: 'linear-gradient(135deg,#FEF9C3,#FFFBEB)', text: 'قالت نورة بهدوء: توقفوا. لكل واحد عشر ثوانٍ يشرح فكرته، ثم نصوّت. استمعوا بصمت واختاروا تصميم المثلث بعد التصويت.' },
-      { emoji: '🔨⚙️', bg: 'linear-gradient(135deg,#D1FAE5,#ECFDF5)', text: 'عمل الثلاثة معاً بسرعة. ركّز كريم على القاعدة، وعمل سامي على الوصلات، وأشرفت نورة على الشكل الثلاثي. كان الجسر يتخذ شكلاً جميلاً.' },
-      { emoji: '🏆🎉', bg: 'linear-gradient(135deg,#FDF4FF,#FAF5FF)', text: 'صمد الجسر وحمل الكرة! فازوا بالمسابقة. قال كريم وهو يضحك: تعلّمت أن الاستماع أقوى من الفوز بالجدال. أنتما الأفضل.' },
+      { emoji: '🏫📋', bg: 'linear-gradient(135deg,#DBEAFE,#EFF6FF)', text: 'طُلب من ثلاثة أطفال بناء جسر. المجموعة: كريم ونورة وسامي. كل واحد عنده فكرة مختلفة.' },
+      { emoji: '💬😤', bg: 'linear-gradient(135deg,#FFE4E6,#FFF1F2)', text: 'تجادل الأطفال كثيراً. كل واحد يريد فكرته فقط. ضاع نصف الوقت بلا فائدة.' },
+      { emoji: '💡🤝', bg: 'linear-gradient(135deg,#FEF9C3,#FFFBEB)', text: 'قالت نورة: توقفوا! كل واحد يشرح فكرته ثم نصوّت معاً. اتفقوا واختاروا أفضل فكرة.' },
+      { emoji: '🔨⚙️', bg: 'linear-gradient(135deg,#D1FAE5,#ECFDF5)', text: 'عملوا معاً بسرعة. كل واحد له دور مختلف. الجسر صار شكله جميلاً وقوياً.' },
+      { emoji: '🏆🎉', bg: 'linear-gradient(135deg,#FDF4FF,#FAF5FF)', text: 'الجسر نجح! فازوا بالمسابقة. قال كريم: تعلّمت أن الاستماع أقوى من الجدال!' },
     ],
     questions: [
       { q: 'ما المشكلة الأولى التي واجهت المجموعة؟', choices: ['نقص المواد', 'الخلاف على التصميم', 'لم يفهموا التعليمات'], correct: 1 },
-      { q: 'كيف حلّوا الخلاف بطريقة عادلة؟', choices: ['رمي القرعة', 'كل واحد يشرح ثم يصوّتون', 'طلب مساعدة المعلم'], correct: 1 },
-      { q: 'ما الدرس الذي تعلّمه كريم؟', choices: ['المثلثات أقوى البنى', 'الاستماع أهم من الفوز بالجدال', 'الورق أمتن من المعكرونة'], correct: 1 },
+      { q: 'كيف حلّوا الخلاف؟', choices: ['رمي القرعة', 'كل واحد يشرح ثم يصوّتون', 'طلب مساعدة المعلم'], correct: 1 },
+      { q: 'ما الدرس الذي تعلّمه كريم؟', choices: ['الفوز هو كل شيء', 'الاستماع أهم من الجدال', 'العمل بمفرده أفضل'], correct: 1 },
     ],
   },
   {
-    id: 'young-inventor', title: 'المخترع الصغير', icon: '⚙️', diff: 3,
+    id: 'goal-journey', title: 'خطوة كل يوم', icon: '🌟', diff: 3,
     pages: [
-      { emoji: '⚙️💡', bg: 'linear-gradient(135deg,#FEF9C3,#FFFBEB)', text: 'كانت أميرة تلاحظ دائماً أن أجداد الحي يصعب عليهم فتح العبوات البلاستيكية. فكّرت: يجب أن أخترع شيئاً يساعدهم.' },
-      { emoji: '📐✏️', bg: 'linear-gradient(135deg,#DBEAFE,#EFF6FF)', text: 'رسمت أميرة عشرات التصاميم في دفترها. جرّبت أشكالاً مختلفة، وفشلت أربع مرات. لكنها في كل مرة تكتب: هذا لن أفعله مرة أخرى.' },
-      { emoji: '🔧🛠️', bg: 'linear-gradient(135deg,#D1FAE5,#ECFDF5)', text: 'في المرة الخامسة صنعت أداة صغيرة من البلاستيك والمطاط. جرّبتها على إبريق القهوة. نجحت! قفزت أميرة من الفرح.' },
-      { emoji: '👴👵❤️', bg: 'linear-gradient(135deg,#FFE4E6,#FFF1F2)', text: 'عرضت الأداة على جيرانها المسنّين. قال الجد: يا بنيتي، هذه هدية حقيقية. لم يصنعها أحد بهذا الشكل من قبل.' },
-      { emoji: '🏅🌟', bg: 'linear-gradient(135deg,#EDE9FE,#F5F3FF)', text: 'قدّم معلمها أميرة لمسابقة الابتكار. فازت بالجائزة الأولى. وقالت في كلمتها: الفشل لم يوقفني — بل علّمني.' },
+      { emoji: '🏊😰', bg: 'linear-gradient(135deg,#E0F2FE,#F0F9FF)', text: 'زياد يريد السباحة في البطولة. لكنه كان يتعب بسرعة. قال المدرب: ابدأ بخطوة صغيرة كل يوم.' },
+      { emoji: '📅💪', bg: 'linear-gradient(135deg,#D1FAE5,#ECFDF5)', text: 'زياد يتدرب كل يوم. في الأسبوع الأول توقف ثلاث مرات. في الثالث توقف مرة واحدة.' },
+      { emoji: '🏊⬆️', bg: 'linear-gradient(135deg,#FEF9C3,#FFFBEB)', text: 'في الأسبوع الخامس سبح دون توقف! قال المدرب: ممتاز! التقدم الحقيقي يحتاج وقتاً.' },
+      { emoji: '🎽😤', bg: 'linear-gradient(135deg,#EDE9FE,#F5F3FF)', text: 'جاء يوم البطولة. زياد كان متوتراً. أخذ نفساً عميقاً وقال: أنا هنا لأكون أفضل من أمس.' },
+      { emoji: '🥈😊', bg: 'linear-gradient(135deg,#FDF4FF,#FAF5FF)', text: 'جاء زياد في المركز الثاني. قال لأبيه: اليوم انتصرت على نفسي. الخطوات الصغيرة تصنع الفرق!' },
     ],
     questions: [
-      { q: 'ما المشكلة التي لاحظتها أميرة؟', choices: ['أجداد الحي يصعب عليهم القراءة', 'أجداد الحي يصعب عليهم فتح العبوات', 'أجداد الحي لا يحبون الطعام الجديد'], correct: 1 },
-      { q: 'كم مرة فشلت أميرة قبل النجاح؟', choices: ['مرتين', 'ثلاث مرات', 'أربع مرات'], correct: 2 },
-      { q: 'ما الدرس الذي شاركته أميرة في كلمتها؟', choices: ['الصبر يأتي بالنجاح', 'الفشل علّمها', 'العمل الجماعي أهم'], correct: 1 },
-    ],
-  },
-  {
-    id: 'goal-journey', title: 'رحلة الهدف', icon: '🌟', diff: 3,
-    pages: [
-      { emoji: '⛵🌊', bg: 'linear-gradient(135deg,#E0F2FE,#F0F9FF)', text: 'حلم زياد دائماً بالسباحة في بطولة المدرسة. لكنه في أول تدريب خرج من الماء وهو يتنفس بصعوبة. قال المدرب: هذا طبيعي، ابدأ كل يوم بخطوة صغيرة.' },
-      { emoji: '🏊📅', bg: 'linear-gradient(135deg,#D1FAE5,#ECFDF5)', text: 'وضع زياد جدولاً: عشر دقائق سباحة يومياً. في الأسبوع الأول كان يتوقف ثلاث مرات. في الثالث توقف مرة واحدة. في الخامس سبح دون توقف.' },
-      { emoji: '💪📈', bg: 'linear-gradient(135deg,#FEF9C3,#FFFBEB)', text: 'في الشهر الثاني بدأ يُضيف خمس دقائق كل أسبوع. التعب كان حاضراً لكن زياد تذكّر كلمة المدرب: لا تقارن نفسك بالآخرين، قارنها بنفسك أمس.' },
-      { emoji: '🏊🌊', bg: 'linear-gradient(135deg,#EDE9FE,#F5F3FF)', text: 'جاء يوم التصفيات. شعر زياد بالتوتر. قبل النزول قال لنفسه: أنا هنا لأكون أفضل مما كنت، لا لأكون الأفضل بين الجميع. ثم قفز.' },
-      { emoji: '🥈😊', bg: 'linear-gradient(135deg,#FDF4FF,#FAF5FF)', text: 'جاء زياد في المركز الثاني. لم يكن الأول، لكنه تحسّن بنسبة أربعين بالمئة مقارنة بأول تدريب. قال لأبيه: اليوم انتصرت على نفسي.' },
-    ],
-    questions: [
-      { q: 'ما نصيحة المدرب لزياد في البداية؟', choices: ['استعن بمدرب آخر', 'ابدأ كل يوم بخطوة صغيرة', 'استرح أسبوعاً قبل العودة'], correct: 1 },
-      { q: 'كيف كان تقدم زياد في السباحة؟', choices: ['سريع جداً من البداية', 'تدريجي بزيادة الوقت أسبوعياً', 'متقطع وغير منتظم'], correct: 1 },
-      { q: 'ماذا قال زياد لأبيه بعد السباق؟', choices: ['أنه فاز بالمركز الأول', 'أنه انتصر على نفسه', 'أنه يريد ترك السباحة'], correct: 1 },
+      { q: 'ما نصيحة المدرب لزياد؟', choices: ['استرح أسبوعاً', 'ابدأ بخطوة صغيرة كل يوم', 'غيّر رياضتك'], correct: 1 },
+      { q: 'كيف تقدّم زياد في السباحة؟', choices: ['بسرعة كبيرة', 'تدريجياً كل أسبوع', 'بدون تدريب'], correct: 1 },
+      { q: 'ما الدرس من القصة؟', choices: ['الفوز بالمركز الأول أهم شيء', 'الخطوات الصغيرة تصنع الفرق', 'السباحة سهلة'], correct: 1 },
     ],
   },
 ]
@@ -299,29 +283,32 @@ export default function StoryReader({ onComplete, onCancel, studentAge, difficul
 
       {/* READ phase */}
       {phase === 'read' && (
-        <div className="flex-1 flex flex-col px-5 pb-5 gap-4 overflow-auto">
-          {/* Illustration */}
+        <div className="flex-1 flex flex-col px-4 pb-5 gap-3 overflow-auto">
+          {/* Illustration — big picture-book style */}
           <div
-            className="rounded-3xl flex items-center justify-center flex-shrink-0"
-            style={{ background: page.bg, height: 160, fontSize: 64, letterSpacing: -4 }}
+            className="rounded-3xl flex items-center justify-center flex-shrink-0 shadow-sm"
+            style={{ background: page.bg, height: 180, fontSize: 80, letterSpacing: -2, lineHeight: 1 }}
           >
             {page.emoji}
           </div>
 
-          {/* Page label */}
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-gray-400">صفحة {pageIdx + 1} من {totalPages}</span>
-            <button onClick={() => speak(page.text)} className="text-xs px-2 py-0.5 rounded-lg font-bold" style={{ background: '#F3EEFF', color: '#6B46F0' }}>
-              🔊 استمع
-            </button>
-          </div>
-
-          {/* Story text */}
+          {/* Story text — large, clear, like a picture book */}
           <div
-            className="rounded-2xl p-4 text-lg leading-loose font-medium flex-1"
-            style={{ background: 'rgba(255,255,255,0.9)', border: '1px solid rgba(107,70,240,0.1)', color: '#1E293B', lineHeight: 2.2, minHeight: 100 }}
+            className="rounded-3xl p-5 flex-1 flex flex-col justify-between"
+            style={{ background: '#FFFDF7', border: '2px solid #F0E6FF', boxShadow: '0 2px 12px rgba(107,70,240,0.06)' }}
           >
-            {page.text}
+            <p
+              className="text-center font-black leading-loose"
+              style={{ color: '#1E293B', fontSize: 22, lineHeight: 2.0 }}
+            >
+              {page.text}
+            </p>
+            <div className="flex items-center justify-between mt-3">
+              <span className="text-xs font-bold text-gray-400">صفحة {pageIdx + 1} / {totalPages}</span>
+              <button onClick={() => speak(page.text)} className="flex items-center gap-1.5 text-sm font-black px-3 py-1.5 rounded-xl" style={{ background: '#F3EEFF', color: '#6B46F0' }}>
+                🔊 استمع
+              </button>
+            </div>
           </div>
 
           {/* Navigation */}
@@ -329,7 +316,7 @@ export default function StoryReader({ onComplete, onCancel, studentAge, difficul
             {pageIdx > 0 && (
               <button
                 onClick={prevPage}
-                className="flex-1 py-3 rounded-2xl font-bold text-sm transition-all"
+                className="flex-1 py-3.5 rounded-2xl font-bold text-sm transition-all"
                 style={{ background: '#F8FAFC', border: '1.5px solid #E2E8F0', color: '#64748B' }}
               >
                 ← السابقة
@@ -337,7 +324,7 @@ export default function StoryReader({ onComplete, onCancel, studentAge, difficul
             )}
             <button
               onClick={nextPage}
-              className="flex-1 py-3 rounded-2xl font-black text-sm text-white transition-all hover:-translate-y-0.5"
+              className="flex-1 py-3.5 rounded-2xl font-black text-base text-white transition-all hover:-translate-y-0.5"
               style={{ background: 'linear-gradient(135deg,#6B46F0,#8B5CF6)', boxShadow: '0 4px 16px rgba(107,70,240,0.3)' }}
             >
               {pageIdx === totalPages - 1 ? '🎯 الأسئلة ←' : 'التالية ←'}

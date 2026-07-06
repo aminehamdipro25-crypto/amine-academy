@@ -35,13 +35,23 @@ export async function GET() {
     const children = await getStudentsByParent(payload.id)
     const sessionsPerChild = await Promise.all(
       children.map(async child => {
-        const appointmentIds = await redis.lrange(`sessions:student:${child.id}`, 0, 50)
+        const rawIds = await redis.lrange(`sessions:student:${child.id}`, 0, 200)
+        // Deduplicate — the list can accumulate duplicate IDs from repeated auto-saves
+        const appointmentIds = [...new Set(rawIds)]
         const logs = (await Promise.all(
           appointmentIds.map(aid => redis.get<SessionLog>(`session-log:${aid}`))
         )).filter(Boolean) as SessionLog[]
 
+        // Secondary dedup by appointmentId (in case two different keys point to same session)
+        const seen = new Set<string>()
+        const uniqueLogs = logs.filter(log => {
+          if (seen.has(log.appointmentId)) return false
+          seen.add(log.appointmentId)
+          return true
+        })
+
         const sessions: ParentSessionSummary[] = await Promise.all(
-          logs.map(async log => {
+          uniqueLogs.map(async log => {
             const appt = await getAppointment(log.appointmentId)
             return {
               appointmentId: log.appointmentId,

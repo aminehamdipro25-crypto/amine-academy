@@ -26,6 +26,10 @@ const DIAG_EMOJI: Record<string, string> = {
 const TODAY_KEY = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'][new Date().getDay()]
 
 const PLAN_COLOR: Record<string, { color: string; bg: string }> = {
+  session: { color: '#6B7280', bg: '#F3F4F6' },
+  weekly:  { color: '#92400E', bg: '#FEF3C7' },
+  monthly: { color: '#5A32D9', bg: '#F3EEFF' },
+  // legacy fallbacks
   basic:    { color: '#6B7280', bg: '#F3F4F6' },
   standard: { color: '#92400E', bg: '#FEF3C7' },
   premium:  { color: '#78350F', bg: '#FDE68A' },

@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, Users, LineChart,
-  Calendar, MessageSquare, FileText, LogOut, Dumbbell, Bell, ClipboardCheck, ChevronLeft, Sparkles, UserCircle, Zap,
+  Calendar, MessageSquare, FileText, LogOut, Dumbbell, Bell, ClipboardCheck, ChevronLeft, Sparkles, UserCircle, Zap, Home,
 } from 'lucide-react'
 import { useLang, tr } from '@/lib/i18n'
 import LangToggle from '@/components/shared/LangToggle'
@@ -29,6 +29,7 @@ export default function ParentPortalLayout({ children }: { children: React.React
     { href: '/parent/family-challenge', label: t.parentNav.familyChallenge, icon: Sparkles },
     { href: '/parent/account',          label: t.parentNav.account, icon: UserCircle },
     { href: '/parent/upgrade-plan',     label: t.parentNav.upgradePlan, icon: Zap },
+    { href: '/parent/home-environment', label: t.parentNav.homeEnv, icon: Home },
   ]
 
   const bottomItems = navItems.slice(0, 5)

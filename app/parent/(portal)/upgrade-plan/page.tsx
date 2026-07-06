@@ -91,7 +91,7 @@ export default function UpgradePlanPage() {
   const isAr = lang === 'ar'
   const [currency, setCurrency] = useState<Currency>('QAR')
   const [apiPrices, setApiPrices] = useState<Record<string, Record<string, number>> | null>(null)
-  const [currentPlan] = useState<PlanId | null>(null) // future: load from parent profile
+  const [currentPlan, setCurrentPlan] = useState<PlanId | null>(null)
 
   useEffect(() => {
     // Detect currency from geo
@@ -103,6 +103,14 @@ export default function UpgradePlanPage() {
     fetch('/api/public/settings')
       .then(r => r.json())
       .then((d: PublicSettings) => { if (d.prices) setApiPrices(d.prices) })
+      .catch(() => {})
+    // Load current plan from parent profile
+    fetch('/api/parent/me')
+      .then(r => r.ok ? r.json() : null)
+      .then((d: { parent?: { subscriptionPlan?: string } } | null) => {
+        const plan = d?.parent?.subscriptionPlan as PlanId | undefined
+        if (plan && ['session', 'weekly', 'monthly'].includes(plan)) setCurrentPlan(plan)
+      })
       .catch(() => {})
   }, [])
 

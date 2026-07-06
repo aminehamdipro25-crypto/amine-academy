@@ -489,18 +489,17 @@ export default function SessionPage() {
   const screenVideoRef = useRef<HTMLVideoElement>(null)
 
   async function startScreenShare() {
-    const devices = navigator.mediaDevices as MediaDevices & {
-      getDisplayMedia?: (opts?: MediaStreamConstraints) => Promise<MediaStream>
-    }
-    if (!devices.getDisplayMedia) {
-      alert('مشاركة الشاشة غير مدعومة في هذا المتصفح.\nيُرجى استخدام Chrome أو Firefox أو Edge.\n\nScreen sharing is not supported in this browser. Please use Chrome, Firefox, or Edge.')
-      return
-    }
     try {
-      const stream = await devices.getDisplayMedia({ video: { frameRate: 30 } as MediaTrackConstraints })
+      const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false })
       stream.getVideoTracks()[0].addEventListener('ended', () => setScreenStream(null))
       setScreenStream(stream)
-    } catch { /* user cancelled */ }
+    } catch (err) {
+      const name = (err as Error)?.name
+      // NotAllowedError = user cancelled/denied — no alert needed
+      if (name !== 'NotAllowedError') {
+        alert('مشاركة الشاشة غير مدعومة في هذا المتصفح.\nيُرجى استخدام Chrome أو Firefox أو Edge.\n\nScreen sharing is not supported in this browser. Please use Chrome, Firefox, or Edge.')
+      }
+    }
   }
 
   function stopScreenShare() {

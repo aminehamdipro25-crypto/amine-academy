@@ -110,7 +110,7 @@ export default function AttentionSection() {
           radial-gradient(ellipse 50% 40% at 80% 70%, rgba(42,191,163,0.03) 0%, transparent 60%),
           #FFF8F0
         `,
-        padding: '96px 0',
+        padding: 'clamp(48px, 8vw, 96px) 0',
       }}
     >
       <div className="max-w-7xl mx-auto px-6">
@@ -194,17 +194,17 @@ export default function AttentionSection() {
           {ATTENTION_TYPES.map((item) => (
             <div
               key={item.type}
-              className="rounded-3xl p-7 transition-all hover:-translate-y-0.5"
+              className="rounded-3xl p-4 sm:p-7 transition-all hover:-translate-y-0.5"
               style={{
                 background: 'rgba(255,255,255,0.97)',
                 border: '1px solid rgba(0,0,0,0.06)',
                 boxShadow: '0 6px 24px rgba(0,0,0,0.06)',
               }}
             >
-              <div className="flex items-start justify-between mb-5">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4 sm:mb-5">
                 <div className="flex items-center gap-3">
                   <div
-                    className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0"
+                    className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center text-xl sm:text-2xl flex-shrink-0"
                     style={{ background: item.glowColor }}
                   >
                     {item.icon}
@@ -216,15 +216,15 @@ export default function AttentionSection() {
                     >
                       {item.en}
                     </span>
-                    <h3 className="font-black text-lg mt-1" style={{ color: '#1E293B' }}>{pickLang(lang, item.type, item.typeEn, item.typeFr)}</h3>
+                    <h3 className="font-black text-base sm:text-lg mt-1" style={{ color: '#1E293B' }}>{pickLang(lang, item.type, item.typeEn, item.typeFr)}</h3>
                   </div>
                 </div>
                 <div
-                  className="text-center px-4 py-2 rounded-2xl flex-shrink-0"
+                  className="text-center px-3 sm:px-4 py-2 rounded-2xl self-start sm:self-auto flex-shrink-0"
                   style={{ background: item.glowColor }}
                 >
                   <div
-                    className="text-2xl font-black ltr-num"
+                    className="text-xl sm:text-2xl font-black ltr-num"
                     style={{
                       background: item.statGradient,
                       WebkitBackgroundClip: 'text',

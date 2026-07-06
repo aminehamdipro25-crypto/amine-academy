@@ -24,7 +24,7 @@ export default function CTASection() {
       dir={isRtl ? 'rtl' : 'ltr'}
       style={{
         background: '#1E293B',
-        padding: '100px 0',
+        padding: 'clamp(56px, 10vw, 100px) 0',
         position: 'relative',
         overflow: 'hidden',
       }}
@@ -70,7 +70,7 @@ export default function CTASection() {
         </span>
 
         {/* Heading */}
-        <h2 className="text-4xl md:text-6xl font-black mb-6 leading-tight">
+        <h2 className="text-[1.9rem] sm:text-4xl md:text-6xl font-black mb-6 leading-tight">
           <span style={{ color: 'rgba(255,255,255,0.9)' }}>
             {pickLang(lang, 'كل يوم تأخير هو', 'Every Day of Delay Is', 'Chaque jour de retard est')}
           </span>
@@ -90,11 +90,11 @@ export default function CTASection() {
         </p>
 
         {/* CTA buttons */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 sm:gap-4 mb-6">
           <motion.div whileHover={{ y: -2 }} whileTap={{ scale: 0.97 }}>
             <Link
-              href="/register"
-              className="flex items-center gap-2 font-black text-lg px-8 py-4 rounded-2xl transition-colors"
+              href="/#plans"
+              className="flex items-center justify-center gap-2 font-black text-base sm:text-lg px-8 py-3.5 sm:py-4 rounded-2xl transition-colors"
               style={{
                 background: '#6B46F0',
                 color: 'white',
@@ -109,7 +109,7 @@ export default function CTASection() {
             <a
               href={`https://wa.me/${wa}?text=${encodeURIComponent(waMessage)}`}
               target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-2 font-bold text-lg px-8 py-4 rounded-2xl transition-colors"
+              className="flex items-center justify-center gap-2 font-bold text-base sm:text-lg px-8 py-3.5 sm:py-4 rounded-2xl transition-colors"
               style={{
                 background: 'rgba(255,255,255,0.08)',
                 border: '1px solid rgba(255,255,255,0.15)',
@@ -117,7 +117,7 @@ export default function CTASection() {
               }}
             >
               <MessageCircle className="w-5 h-5 text-emerald-400" />
-              {pickLang(lang, 'تواصل عبر واتساب', 'Contact via WhatsApp', 'Contactez-nous sur WhatsApp')}
+              {pickLang(lang, 'تواصل عبر واتساب', 'Contact via WhatsApp', 'تواصل عبر واتساب')}
             </a>
           </motion.div>
         </div>

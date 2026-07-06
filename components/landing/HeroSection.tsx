@@ -159,17 +159,17 @@ export default function HeroSection() {
       />
 
       {/* Navigation */}
-      <nav className="relative z-10 flex items-center justify-between px-6 py-5 max-w-7xl mx-auto">
-        <div className="flex items-center gap-3">
-          <AcademyLogo size={44} />
+      <nav className="relative z-10 flex items-center justify-between px-4 sm:px-6 py-4 sm:py-5 max-w-7xl mx-auto">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <AcademyLogo size={36} />
           <div>
-            <span className="text-slate-900 font-black text-lg block leading-none">
+            <span className="text-slate-900 font-black text-base sm:text-lg block leading-none">
               {pickLang(lang, 'أكاديمية أمين', 'Amine Academy', 'Amine Academy')}
             </span>
-            <span className="text-slate-400 text-xs">ADHD & Autism Academy</span>
+            <span className="text-slate-400 text-[10px] sm:text-xs hidden sm:block">ADHD & Autism Academy</span>
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <Link
             href="/demo"
             className="text-slate-500 hover:text-slate-800 text-sm font-medium transition-colors hidden sm:block"
@@ -184,7 +184,7 @@ export default function HeroSection() {
           </Link>
           <Link
             href="/#plans"
-            className="font-black text-sm px-5 py-2.5 rounded-xl text-white transition-all hover:opacity-90 hover:-translate-y-0.5"
+            className="font-black text-xs sm:text-sm px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl text-white transition-all hover:opacity-90 active:scale-95"
             style={{
               background: '#6B46F0',
               boxShadow: '0 4px 20px rgba(107,70,240,0.30)',
@@ -194,13 +194,13 @@ export default function HeroSection() {
           </Link>
           <Link
             href="/dashboard"
-            className="flex items-center gap-1.5 text-slate-600 font-bold text-xs px-3 py-2 rounded-xl transition-all"
+            className="hidden sm:flex items-center gap-1.5 text-slate-600 font-bold text-xs px-3 py-2 rounded-xl transition-all"
             style={{ background: 'rgba(107,70,240,0.06)', border: '1px solid rgba(107,70,240,0.12)' }}
           >
             <LayoutDashboard className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">{pickLang(lang, 'لوحة التحكم', 'Dashboard', 'Tableau de bord')}</span>
           </Link>
-          <LangToggle />
+          <div className="hidden sm:block"><LangToggle /></div>
         </div>
       </nav>
 
@@ -223,7 +223,7 @@ export default function HeroSection() {
           </div>
 
           {/* Heading — no gradient, solid colors only */}
-          <h1 className="font-black leading-[1.08] text-4xl sm:text-5xl lg:text-[3.25rem] xl:text-6xl" style={{ color: '#1E293B' }}>
+          <h1 className="font-black leading-[1.12] text-[1.85rem] sm:text-5xl lg:text-[3.25rem] xl:text-6xl" style={{ color: '#1E293B' }}>
             {t.hero.h1a}
             <span className="block mt-1" style={{ color: '#6B46F0' }}>{t.hero.h1b}</span>
           </h1>
@@ -234,10 +234,10 @@ export default function HeroSection() {
           </p>
 
           {/* CTAs */}
-          <div className="flex flex-col sm:flex-row items-start gap-3">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-start gap-3">
             <Link
               href="/#plans"
-              className="flex items-center gap-2 font-black text-base px-8 py-3.5 rounded-2xl text-white transition-all hover:-translate-y-0.5 active:scale-95"
+              className="flex items-center justify-center gap-2 font-black text-base px-8 py-3.5 rounded-2xl text-white transition-all hover:-translate-y-0.5 active:scale-95"
               style={{
                 background: '#6B46F0',
                 boxShadow: '0 8px 32px rgba(107,70,240,0.28)',
@@ -248,7 +248,7 @@ export default function HeroSection() {
             </Link>
             <Link
               href="/demo"
-              className="flex items-center gap-2 font-bold text-base px-6 py-3.5 rounded-2xl transition-all hover:-translate-y-0.5"
+              className="flex items-center justify-center gap-2 font-bold text-base px-6 py-3.5 rounded-2xl transition-all hover:-translate-y-0.5"
               style={{
                 color: '#6B46F0',
                 background: 'rgba(255,255,255,0.95)',
@@ -262,7 +262,7 @@ export default function HeroSection() {
 
           {/* Stats — inline row */}
           <div
-            className="flex items-center gap-8 pt-2"
+            className="flex items-center gap-4 sm:gap-8 pt-2"
             style={{ borderTop: '1px solid rgba(107,70,240,0.10)' }}
           >
             {[

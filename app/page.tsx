@@ -11,6 +11,7 @@ import TestimonialsSection from '@/components/landing/TestimonialsSection'
 import CTASection from '@/components/landing/CTASection'
 import FooterSection from '@/components/landing/FooterSection'
 import FloatingChat from '@/components/shared/FloatingChat'
+import TabletNotice from '@/components/landing/TabletNotice'
 
 export default function HomePage() {
   return (
@@ -28,6 +29,7 @@ export default function HomePage() {
       <CTASection />
       <FooterSection />
       <FloatingChat />
+      <TabletNotice />
     </main>
   )
 }

@@ -90,11 +90,11 @@ export default function StatsSection() {
       <div className="max-w-7xl mx-auto px-6">
         {/* Invisible anchor for useInView */}
         <div ref={ref} />
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
           {stats.map((stat, index) => (
             <motion.div
               key={stat.label}
-              className="rounded-3xl p-6 text-center"
+              className="rounded-2xl sm:rounded-3xl p-4 sm:p-6 text-center"
               initial={{ opacity: 0, y: 16 }}
               animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }}
               transition={{ duration: 0.4, delay: index * 0.08, ease: EASE }}

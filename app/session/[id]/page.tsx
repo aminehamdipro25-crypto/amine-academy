@@ -495,7 +495,7 @@ export default function SessionPage() {
     if (!trimmed) return null
     // YouTube → embed
     const ytId = extractYoutubeId(trimmed)
-    if (ytId) return `https://www.youtube.com/embed/${ytId}?autoplay=1&rel=0`
+    if (ytId) return `https://www.youtube.com/embed/${ytId}?rel=0`
     // Generic URL — must start with https://
     try {
       const u = new URL(trimmed)

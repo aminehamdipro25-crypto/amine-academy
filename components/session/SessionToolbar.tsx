@@ -229,10 +229,10 @@ export default function SessionToolbar({
             ? 'bg-red-600 text-white ring-1 ring-red-400/50'
             : 'bg-surface-page hover:bg-brand-50 text-gray-500'
         }`}
-        title={screenSharing ? 'إيقاف مشاركة الشاشة' : 'مشاركة شاشتك مع الطفل'}
+        title={screenSharing ? 'إيقاف عرض المحتوى' : 'عرض يوتيوب أو موقع ويب للطفل'}
       >
         <Monitor className="w-3.5 h-3.5" />
-        {screenSharing ? '● شاشة' : 'شاشة'}
+        {screenSharing ? '● محتوى' : 'محتوى'}
       </button>
 
       <div className="w-px h-5 bg-brand-100 flex-shrink-0" />

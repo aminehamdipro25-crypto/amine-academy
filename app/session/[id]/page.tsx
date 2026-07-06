@@ -484,74 +484,45 @@ export default function SessionPage() {
     ? `${jitsiUrl}#config.prejoinPageEnabled=false&config.startWithAudioMuted=false&config.disableDeepLinking=true&userInfo.displayName=${encodeURIComponent('الأستاذ أمين')}`
     : null
 
-  // Screen sharing
-  const [screenStream, setScreenStream]     = useState<MediaStream | null>(null)
-  const [screenShareMsg, setScreenShareMsg] = useState<string | null>(null)
-  const screenMsgTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  // Keep a live set of video elements so we can wire the stream to whichever is mounted
-  const screenVideosRef = useRef<Set<HTMLVideoElement>>(new Set())
+  // Content presenter (replaces broken native screen-share)
+  const [contentUrl, setContentUrl]           = useState<string | null>(null)
+  const [showContentModal, setShowContentModal] = useState(false)
+  const [contentInput, setContentInput]       = useState('')
+  const [contentInputErr, setContentInputErr] = useState('')
 
-  const screenVideoRef = useCallback((node: HTMLVideoElement | null) => {
-    if (node) {
-      screenVideosRef.current.add(node)
-      node.srcObject = screenStream
-      if (screenStream) node.play().catch(() => {})
-    } else {
-      screenVideosRef.current.forEach(v => { if (!document.contains(v)) screenVideosRef.current.delete(v) })
-    }
-  }, [screenStream])
-
-  // Keep all registered video elements in sync when the stream changes
-  useEffect(() => {
-    screenVideosRef.current.forEach(v => {
-      v.srcObject = screenStream
-      if (screenStream) v.play().catch(() => {})
-    })
-  }, [screenStream])
-
-  function showScreenMsg(msg: string) {
-    if (screenMsgTimer.current) clearTimeout(screenMsgTimer.current)
-    setScreenShareMsg(msg)
-    screenMsgTimer.current = setTimeout(() => setScreenShareMsg(null), 4000)
-  }
-
-  async function startScreenShare() {
-    // Diagnose environment first so we can show a precise message
-    if (typeof window === 'undefined') return
-    if (!window.isSecureContext) {
-      showScreenMsg('⚠️ مشاركة الشاشة تحتاج HTTPS — الصفحة غير آمنة')
-      return
-    }
-    if (!navigator.mediaDevices || typeof navigator.mediaDevices.getDisplayMedia !== 'function') {
-      showScreenMsg('⚠️ getDisplayMedia غير متاح — جرّب تحديث Chrome')
-      return
-    }
-    const t0 = Date.now()
+  function buildEmbedUrl(raw: string): string | null {
+    const trimmed = raw.trim()
+    if (!trimmed) return null
+    // YouTube → embed
+    const ytId = extractYoutubeId(trimmed)
+    if (ytId) return `https://www.youtube.com/embed/${ytId}?autoplay=1&rel=0`
+    // Generic URL — must start with https://
     try {
-      const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false })
-      stream.getVideoTracks()[0].addEventListener('ended', () => setScreenStream(null))
-      setScreenStream(stream)
-    } catch (err: unknown) {
-      const elapsed = Date.now() - t0
-      const name = err instanceof DOMException ? err.name : ''
-      const msg  = err instanceof Error ? err.message : String(err)
-      if (name === 'AbortError') return
-      if (name === 'NotAllowedError') {
-        if (elapsed < 600) {
-          // No picker appeared → OS or policy blocked it
-          showScreenMsg('⚠️ مشاركة الشاشة محظورة — على Mac: إعدادات النظام ← الخصوصية ← تسجيل الشاشة ← فعّل Chrome')
-        }
-        // else user cancelled → silent
-        return
-      }
-      // Show raw error name so we can diagnose
-      showScreenMsg(`⚠️ خطأ: ${name || msg || 'غير معروف'}`)
-    }
+      const u = new URL(trimmed)
+      if (u.protocol === 'https:') return trimmed
+    } catch { /* ignore */ }
+    // Try prepending https://
+    try {
+      const u = new URL('https://' + trimmed)
+      if (u.hostname.includes('.')) return u.href
+    } catch { /* ignore */ }
+    return null
   }
 
-  function stopScreenShare() {
-    screenStream?.getTracks().forEach(t => t.stop())
-    setScreenStream(null)
+  function submitContentUrl() {
+    const embed = buildEmbedUrl(contentInput)
+    if (!embed) {
+      setContentInputErr('أدخل رابط YouTube أو موقع ويب صحيح (https://...)')
+      return
+    }
+    setContentUrl(embed)
+    setShowContentModal(false)
+    setContentInput('')
+    setContentInputErr('')
+  }
+
+  function stopContentPresenter() {
+    setContentUrl(null)
   }
 
 
@@ -1575,15 +1546,53 @@ ${notes ? `
   return (
     <div className="h-screen bg-gray-950 text-white flex flex-col overflow-hidden">
 
-      {/* ── Screen share error toast ── */}
-      {screenShareMsg && (
+      {/* ── Content presenter URL modal ── */}
+      {showContentModal && (
         <div
-          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] px-5 py-3 rounded-2xl text-white text-sm font-bold shadow-2xl flex items-center gap-2"
-          style={{ background: '#EF4444', backdropFilter: 'blur(8px)' }}
-          dir="rtl"
+          className="fixed inset-0 z-[9998] flex items-center justify-center"
+          style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
+          onClick={e => { if (e.target === e.currentTarget) setShowContentModal(false) }}
         >
-          <span>⚠️</span>
-          <span>{screenShareMsg}</span>
+          <div
+            className="bg-white rounded-3xl shadow-2xl p-6 w-full mx-4 flex flex-col gap-4"
+            style={{ maxWidth: 440 }}
+            dir="rtl"
+          >
+            <h2 className="text-gray-800 font-black text-base flex items-center gap-2">
+              <span>🖥</span> عرض محتوى للطفل
+            </h2>
+            <p className="text-gray-500 text-sm leading-relaxed">
+              الصق رابط يوتيوب أو أي موقع ويب — سيظهر للطفل في نافذة داخل الجلسة.
+            </p>
+            <input
+              type="text"
+              dir="ltr"
+              value={contentInput}
+              onChange={e => { setContentInput(e.target.value); setContentInputErr('') }}
+              onKeyDown={e => { if (e.key === 'Enter') submitContentUrl() }}
+              placeholder="https://www.youtube.com/watch?v=..."
+              className="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-brand-300 text-gray-800 placeholder-gray-300"
+              autoFocus
+            />
+            {contentInputErr && (
+              <p className="text-red-500 text-xs font-bold">{contentInputErr}</p>
+            )}
+            <div className="flex gap-2">
+              <button
+                onClick={submitContentUrl}
+                className="flex-1 py-3 rounded-2xl text-sm font-black text-white transition-all"
+                style={{ background: 'linear-gradient(135deg,#7C5CFC,#6B46F0)' }}
+              >
+                عرض
+              </button>
+              <button
+                onClick={() => { setShowContentModal(false); setContentInput(''); setContentInputErr('') }}
+                className="px-5 py-3 rounded-2xl text-sm font-black text-gray-500 bg-gray-100 hover:bg-gray-200 transition-all"
+              >
+                إلغاء
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -1831,9 +1840,9 @@ ${notes ? `
         hasResults={results.length > 0}
         onPrintReport={printSessionReport}
         onLockSession={lockSession}
-        screenSharing={!!screenStream}
-        onStartScreenShare={startScreenShare}
-        onStopScreenShare={stopScreenShare}
+        screenSharing={!!contentUrl}
+        onStartScreenShare={() => setShowContentModal(true)}
+        onStopScreenShare={stopContentPresenter}
       />
 
       <SessionPhaseBar
@@ -2593,20 +2602,22 @@ ${notes ? `
               background: 'linear-gradient(160deg, #FFF0FA 0%, #EEF0FF 35%, #F0FFF8 70%, #FFFBF0 100%)',
             }}
           >
-            {/* ── Screen share view — fills top of kid panel when active ── */}
-            {screenStream && (
-              <div className="w-full bg-black relative" style={{ height: 220 }}>
-                <video
-                  ref={screenVideoRef}
-                  autoPlay
-                  muted
-                  playsInline
-                  style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+            {/* ── Content presenter — fills top of kid panel when active ── */}
+            {contentUrl && (
+              <div className="w-full bg-black relative" style={{ height: 260 }}>
+                <iframe
+                  src={contentUrl}
+                  allow="autoplay; fullscreen"
+                  style={{ width: '100%', height: '100%', border: 'none' }}
+                  title="محتوى الجلسة"
                 />
-                <div className="absolute top-2 right-3 flex items-center gap-1.5">
-                  <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                  <span className="text-white text-[10px] font-black">مشاركة شاشة</span>
-                </div>
+                <button
+                  onClick={stopContentPresenter}
+                  className="absolute top-2 left-2 w-7 h-7 rounded-full bg-black/60 text-white text-xs flex items-center justify-center hover:bg-black/80 transition-all"
+                  title="إغلاق المحتوى"
+                >
+                  ✕
+                </button>
               </div>
             )}
 
@@ -3127,22 +3138,21 @@ ${notes ? `
               )
           )}
 
-          {/* ── Screen share PiP (native — specialist shares to child) ── */}
-          {screenStream && !(activeView || showWhiteboard) && (
+          {/* ── Content presenter PiP — specialist drags/resizes over the session ── */}
+          {contentUrl && !(activeView || showWhiteboard) && (
             <DraggableVideoPiP
-              onClose={stopScreenShare}
-              label="🖥 مشاركة شاشة"
+              onClose={stopContentPresenter}
+              label="🖥 محتوى"
               initialBottom={20}
               initialLeft={320}
-              minWidth={320}
+              minWidth={360}
               minHeight={240}
             >
-              <video
-                ref={screenVideoRef}
-                autoPlay
-                muted
-                playsInline
-                style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#000' }}
+              <iframe
+                src={contentUrl}
+                allow="autoplay; fullscreen"
+                style={{ width: '100%', height: '100%', border: 'none', background: '#000' }}
+                title="محتوى الجلسة"
               />
             </DraggableVideoPiP>
           )}

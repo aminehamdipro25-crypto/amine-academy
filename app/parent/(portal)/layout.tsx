@@ -12,13 +12,19 @@ import LangToggle from '@/components/shared/LangToggle'
 import AcademyLogo from '@/components/shared/AcademyLogo'
 import ParentOnboarding from '@/components/parent/ParentOnboarding'
 
+interface UpcomingAppt { date: string; time: string }
+
 export default function ParentPortalLayout({ children }: { children: React.ReactNode }) {
   const pathname  = usePathname()
   const [scrolled, setScrolled]         = useState(false)
   const [moreOpen, setMoreOpen]         = useState(false)
   const [mobileMenu, setMobileMenu]     = useState(false)
   const [unreadBell, setUnreadBell]     = useState(0)
+  const [bellOpen, setBellOpen]         = useState(false)
+  const [upcomingAppt, setUpcomingAppt] = useState<UpcomingAppt | null>(null)
+  const [unreadReports, setUnreadReports] = useState(0)
   const moreRef = useRef<HTMLDivElement>(null)
+  const bellRef = useRef<HTMLDivElement>(null)
   const { lang } = useLang()
   const dir = lang === 'ar' ? 'rtl' : 'ltr'
   const t   = tr[lang].portal
@@ -55,10 +61,11 @@ export default function ParentPortalLayout({ children }: { children: React.React
   const activeItem       = allNav.find(n => isActive(n.href))
   const isSecondaryActive = secondaryNav.some(n => isActive(n.href))
 
-  // Close dropdown on outside click
+  // Close dropdowns on outside click
   useEffect(() => {
     function onOutside(e: MouseEvent) {
       if (moreRef.current && !moreRef.current.contains(e.target as Node)) setMoreOpen(false)
+      if (bellRef.current && !bellRef.current.contains(e.target as Node)) setBellOpen(false)
     }
     document.addEventListener('mousedown', onOutside)
     return () => document.removeEventListener('mousedown', onOutside)
@@ -74,7 +81,18 @@ export default function ParentPortalLayout({ children }: { children: React.React
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  // Unread notifications badge
+  // Fetch parent info once for bell panel (appointment + reports)
+  useEffect(() => {
+    fetch('/api/parent/me')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        if (d?.upcomingAppointment) setUpcomingAppt(d.upcomingAppointment)
+        if (d?.unreadReports) setUnreadReports(d.unreadReports)
+      })
+      .catch(() => {})
+  }, [])
+
+  // Unread messages badge — poll every 60s
   useEffect(() => {
     function fetchUnread() {
       fetch('/api/messages')
@@ -204,25 +222,129 @@ export default function ParentPortalLayout({ children }: { children: React.React
               </span>
             )}
 
-            {/* Notifications */}
-            <Link
-              href="/parent/dashboard#notifications"
-              className="w-8 h-8 rounded-xl flex items-center justify-center transition-all flex-shrink-0 relative"
-              style={{ background: '#F3EEFF' }}
-              title={t.common.notifications}
-              onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = '#E8DBFF' }}
-              onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = '#F3EEFF' }}
-            >
-              <Bell className="w-4 h-4" style={{ color: '#7C5CFC' }} />
-              {unreadBell > 0 && (
-                <span
-                  className="absolute -top-1 -right-1 w-4 h-4 text-white text-[9px] font-black rounded-full flex items-center justify-center"
-                  style={{ background: '#EF4444' }}
+            {/* Notifications bell */}
+            <div ref={bellRef} className="relative flex-shrink-0">
+              <button
+                onClick={() => setBellOpen(o => !o)}
+                className="w-8 h-8 rounded-xl flex items-center justify-center transition-all relative"
+                style={{ background: bellOpen ? '#E8DBFF' : '#F3EEFF' }}
+                title={t.common.notifications}
+              >
+                <Bell className="w-4 h-4" style={{ color: '#7C5CFC' }} />
+                {(unreadBell > 0 || unreadReports > 0) && (
+                  <span
+                    className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 text-white text-[9px] font-black rounded-full flex items-center justify-center"
+                    style={{ background: '#EF4444' }}
+                  >
+                    {unreadBell + unreadReports > 9 ? '9+' : unreadBell + unreadReports}
+                  </span>
+                )}
+              </button>
+
+              {/* Bell dropdown panel */}
+              {bellOpen && (
+                <div
+                  className="absolute top-full mt-2 rounded-2xl overflow-hidden"
+                  style={{
+                    [dir === 'rtl' ? 'left' : 'right']: 0,
+                    zIndex: 60,
+                    width: 288,
+                    background: 'white',
+                    border: '1.5px solid #EDE9FE',
+                    boxShadow: '0 16px 48px rgba(107,70,240,0.16), 0 2px 8px rgba(0,0,0,0.06)',
+                  }}
                 >
-                  {unreadBell > 9 ? '9+' : unreadBell}
-                </span>
+                  <div className="px-4 pt-3 pb-2" style={{ borderBottom: '1px solid #F3EEFF' }}>
+                    <p className="font-black text-xs text-gray-400 uppercase tracking-widest">الإشعارات</p>
+                  </div>
+                  <div className="p-3 space-y-2">
+
+                    {/* Unread messages */}
+                    {unreadBell > 0 ? (
+                      <Link
+                        href="/parent/chat"
+                        onClick={() => setBellOpen(false)}
+                        className="flex items-center gap-3 p-3 rounded-xl transition-all"
+                        style={{ background: '#F3EEFF', border: '1.5px solid #DDD6FE' }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = '#EDE9FE' }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = '#F3EEFF' }}
+                      >
+                        <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: '#E8DBFF' }}>
+                          <MessageSquare className="w-4 h-4" style={{ color: '#6B46F0' }} />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-black text-gray-900">{unreadBell === 1 ? 'رسالة جديدة' : `${unreadBell} رسائل جديدة`}</p>
+                          <p className="text-xs text-gray-500">من الأستاذ أمين — اضغط للرد</p>
+                        </div>
+                        <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: '#EF4444' }} />
+                      </Link>
+                    ) : (
+                      <div className="flex items-center gap-3 p-3 rounded-xl" style={{ background: '#F9FAFB' }}>
+                        <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: '#F3F4F6' }}>
+                          <MessageSquare className="w-4 h-4 text-gray-300" />
+                        </div>
+                        <p className="text-xs text-gray-400">لا توجد رسائل جديدة</p>
+                      </div>
+                    )}
+
+                    {/* Upcoming appointment */}
+                    {upcomingAppt ? (
+                      <Link
+                        href="/parent/appointments"
+                        onClick={() => setBellOpen(false)}
+                        className="flex items-center gap-3 p-3 rounded-xl transition-all"
+                        style={{ background: '#F0FFF4', border: '1.5px solid #BBF7D0' }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = '#DCFCE7' }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = '#F0FFF4' }}
+                      >
+                        <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: '#DCFCE7' }}>
+                          <Calendar className="w-4 h-4" style={{ color: '#16A34A' }} />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-black text-gray-900">موعد قادم</p>
+                          <p className="text-xs text-gray-500 ltr-num">{upcomingAppt.date} · {upcomingAppt.time}</p>
+                        </div>
+                      </Link>
+                    ) : (
+                      <Link
+                        href="/parent/appointments"
+                        onClick={() => setBellOpen(false)}
+                        className="flex items-center gap-3 p-3 rounded-xl transition-all"
+                        style={{ background: '#F9FAFB' }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = '#F3F4F6' }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = '#F9FAFB' }}
+                      >
+                        <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: '#F3F4F6' }}>
+                          <Calendar className="w-4 h-4 text-gray-300" />
+                        </div>
+                        <p className="text-xs text-gray-400">لا يوجد موعد قادم — احجز الآن</p>
+                      </Link>
+                    )}
+
+                    {/* New reports */}
+                    {unreadReports > 0 && (
+                      <Link
+                        href="/parent/reports"
+                        onClick={() => setBellOpen(false)}
+                        className="flex items-center gap-3 p-3 rounded-xl transition-all"
+                        style={{ background: '#FFFBEB', border: '1.5px solid #FDE68A' }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = '#FEF3C7' }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = '#FFFBEB' }}
+                      >
+                        <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: '#FEF3C7' }}>
+                          <FileText className="w-4 h-4" style={{ color: '#D97706' }} />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-black text-gray-900">{unreadReports === 1 ? 'تقرير جديد' : `${unreadReports} تقارير جديدة`}</p>
+                          <p className="text-xs text-gray-500">متاح للاطلاع</p>
+                        </div>
+                        <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: '#F59E0B' }} />
+                      </Link>
+                    )}
+                  </div>
+                </div>
               )}
-            </Link>
+            </div>
 
             <LangToggle variant="light" className="hidden md:flex" />
 

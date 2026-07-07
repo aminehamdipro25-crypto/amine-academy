@@ -163,13 +163,12 @@ export default function AppointmentsView({ appointments, parents, error }: {
                           {t.reminderLabel}
                         </a>
                       )}
-                      {appt.meetingUrl && (
-                        <a href={appt.meetingUrl} target="_blank" rel="noopener noreferrer"
-                          className="flex items-center gap-1 bg-green-50 text-green-600 hover:bg-green-100 text-[11px] font-bold px-2.5 py-1 rounded-xl transition-colors">
-                          <Video className="w-3 h-3" />
-                          {t.joinLabel}
-                        </a>
-                      )}
+                      <Link
+                        href={`/session/${appt.id}`}
+                        className="flex items-center gap-1 bg-brand-50 text-brand-600 hover:bg-brand-100 text-[11px] font-bold px-2.5 py-1 rounded-xl transition-colors">
+                        <MonitorPlay className="w-3 h-3" />
+                        {t.startSessionButton}
+                      </Link>
                     </div>
                   </motion.div>
                 )

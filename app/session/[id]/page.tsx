@@ -3105,9 +3105,9 @@ ${notes ? `
         <main className={`flex-1 flex items-center justify-center bg-gray-950 relative overflow-auto ${chromeHidden ? '' : 'pb-20 lg:pb-0'} ${kidMode ? 'hidden' : ''}`}>
 
           {/* ── Embedded Jitsi iframe ── */}
-          {/* Single DraggableVideoPiP instance — never unmounts so WebRTC stays connected.
-              fullScreen=true when no exercise/whiteboard is active (fills viewport),
-              fullScreen=false when exercise starts (shrinks to draggable PiP). */}
+          {/* Always rendered as a small draggable PiP — never full-screen, never unmounts.
+              Keeping one DraggableVideoPiP instance means the iframe is never destroyed,
+              so the WebRTC connection stays alive when exercises start. */}
           {jitsiEmbedded && jitsiEmbedUrl && (
             <DraggableVideoPiP
               onClose={() => setJitsiEmbedded(false)}
@@ -3116,7 +3116,6 @@ ${notes ? `
               initialLeft={20}
               minWidth={280}
               minHeight={210}
-              fullScreen={!(activeView || showWhiteboard || promptCard)}
             >
               <iframe
                 src={jitsiEmbedUrl}

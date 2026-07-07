@@ -54,7 +54,9 @@ export async function middleware(request: NextRequest) {
   }
 
   // ── Session Platform (owner or staff) ─────────────────────
-  if (pathname.startsWith('/session')) {
+  // Kid pages (/session/[id]/kid) are public — no auth required so families
+  // can open the shared link without a dashboard account.
+  if (pathname.startsWith('/session') && !pathname.endsWith('/kid')) {
     if (!(await isDashboardAuthorized(request))) {
       return NextResponse.redirect(new URL('/dashboard/login', request.url))
     }

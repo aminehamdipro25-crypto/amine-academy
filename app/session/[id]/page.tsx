@@ -426,7 +426,15 @@ export default function SessionPage() {
     fetch(`/api/appointments/${id}`)
       .then(r => r.json())
       .then(({ appointment }) => {
-        if (appointment?.meetingUrl) setJitsiUrl(appointment.meetingUrl)
+        // Use the meeting endpoint so the Daily room is refreshed (never
+        // expired) before we try to join it.
+        if (appointment?.meetingUrl) {
+          setJitsiUrl(appointment.meetingUrl)
+          fetch(`/api/sessions/${id}/meeting`)
+            .then(r => r.ok ? r.json() : null)
+            .then(d => { if (d?.meetingUrl) setJitsiUrl(d.meetingUrl) })
+            .catch(() => {})
+        }
         if (appointment?.type) {
           setAppointmentType(appointment.type)
           if (appointment.type === 'assessment' && !draftRestoredRef.current) setTab('assessments')

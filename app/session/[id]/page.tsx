@@ -3621,7 +3621,7 @@ ${notes ? `
               whiteboard returns to it exactly where the specialist left off. ── */}
           {showWhiteboard && (
             <div className="absolute inset-0 z-20 flex flex-col">
-              <Whiteboard onClose={() => setShowWhiteboard(false)} />
+              <Whiteboard onClose={() => setShowWhiteboard(false)} sessionId={id} />
             </div>
           )}
 

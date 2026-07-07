@@ -87,6 +87,77 @@ const StoryReader          = lazy(() => import('@/components/session/exercises/S
 const PHYSICAL_IDS = ['jumping-jacks','obstacle-circuit','balance-walk','tiger-crawl','ball-throw','stretching','body-percussion']
 
 type LiveState = { exerciseId: string; difficulty: number } | null
+type WBStroke = { c: string; s: number; e: boolean; p: number[] }
+type WBState  = { active: boolean; strokes: WBStroke[]; rev: number }
+
+// Read-only mirror of the specialist's whiteboard — replays normalized strokes
+function KidWhiteboardOverlay({ id }: { id: string }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [wb, setWb] = useState<WBState | null>(null)
+
+  // Fast poll (1s) while the overlay is mounted
+  useEffect(() => {
+    let stop = false
+    const tick = async () => {
+      try {
+        const r = await fetch(`/api/sessions/${id}/whiteboard`)
+        const { wb: data } = await r.json() as { wb: WBState }
+        if (!stop) setWb(data)
+      } catch { /* ignore */ }
+    }
+    tick()
+    const iv = setInterval(tick, 1000)
+    return () => { stop = true; clearInterval(iv) }
+  }, [id])
+
+  // Redraw whenever strokes change
+  useEffect(() => {
+    const c = canvasRef.current
+    if (!c || !wb) return
+    c.width  = c.offsetWidth
+    c.height = c.offsetHeight
+    const ctx = c.getContext('2d')
+    if (!ctx) return
+    ctx.fillStyle = '#1F2937'
+    ctx.fillRect(0, 0, c.width, c.height)
+    for (const st of wb.strokes) {
+      ctx.globalCompositeOperation = st.e ? 'destination-out' : 'source-over'
+      ctx.strokeStyle = st.e ? 'rgba(0,0,0,1)' : st.c
+      ctx.fillStyle   = ctx.strokeStyle
+      ctx.lineWidth   = st.s
+      ctx.lineCap     = 'round'
+      ctx.lineJoin    = 'round'
+      const pts = st.p
+      if (pts.length === 2) {
+        ctx.beginPath()
+        ctx.arc(pts[0] * c.width, pts[1] * c.height, st.s / 2, 0, Math.PI * 2)
+        ctx.fill()
+      } else {
+        ctx.beginPath()
+        ctx.moveTo(pts[0] * c.width, pts[1] * c.height)
+        for (let i = 2; i < pts.length - 1; i += 2) {
+          ctx.lineTo(pts[i] * c.width, pts[i + 1] * c.height)
+        }
+        ctx.stroke()
+      }
+    }
+    ctx.globalCompositeOperation = 'source-over'
+  }, [wb?.strokes.length, wb?.rev, wb])
+
+  if (!wb?.active) return null
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: '#1F2937' }}>
+      <div style={{
+        position: 'absolute', top: 12, right: 12, zIndex: 10,
+        background: 'rgba(124,92,252,0.9)', color: '#fff', borderRadius: 12,
+        padding: '6px 14px', fontSize: 13, fontWeight: 900,
+      }} dir="rtl">
+        ✏️ سبورة الأستاذ
+      </div>
+      <canvas ref={canvasRef} style={{ width: '100%', height: '100%', display: 'block' }} />
+    </div>
+  )
+}
 
 export default function KidSessionPage() {
   const { id } = useParams<{ id: string }>()
@@ -97,6 +168,7 @@ export default function KidSessionPage() {
   const [meetingUrl, setMeetingUrl] = useState<string | null>(null)
   const [videoHidden, setVideoHidden] = useState(false)
   const [sharedContentUrl, setSharedContentUrl] = useState<string | null>(null)
+  const [wbActive, setWbActive] = useState(false)
 
   // Fetch meeting URL once on load
   useEffect(() => {
@@ -106,15 +178,17 @@ export default function KidSessionPage() {
       .catch(() => {})
   }, [id])
 
-  // Poll every 3 seconds for current exercise AND shared content
+  // Poll every 3 seconds for current exercise, shared content, and whiteboard
   const poll = useCallback(async () => {
     try {
-      const [liveRes, contentRes] = await Promise.all([
+      const [liveRes, contentRes, wbRes] = await Promise.all([
         fetch(`/api/sessions/${id}/live`),
         fetch(`/api/sessions/${id}/content`),
+        fetch(`/api/sessions/${id}/whiteboard`),
       ])
       const { live: data } = await liveRes.json() as { live: LiveState }
       const { contentUrl: cUrl } = await contentRes.json() as { contentUrl: string | null }
+      const { wb } = await wbRes.json() as { wb: WBState }
       if (data?.exerciseId !== prevId.current) {
         prevId.current = data?.exerciseId ?? null
         setDone(false)
@@ -122,6 +196,7 @@ export default function KidSessionPage() {
         setLive(data)
       }
       setSharedContentUrl(cUrl)
+      setWbActive(!!wb?.active)
     } catch { /* ignore */ }
   }, [id])
 
@@ -193,6 +268,7 @@ export default function KidSessionPage() {
           padding: 24, gap: 24,
         }}
       >
+        {wbActive && <KidWhiteboardOverlay id={id} />}
         {teacherVideoBtn}
         {/* Animated stars */}
         <div style={{ fontSize: 72, lineHeight: 1, animation: 'bounce 2s infinite' }}>
@@ -229,6 +305,7 @@ export default function KidSessionPage() {
   if (sharedContentUrl && (done || !live)) {
     return (
       <div style={{ width: '100vw', height: '100dvh', overflow: 'hidden', background: '#000', position: 'relative' }}>
+        {wbActive && <KidWhiteboardOverlay id={id} />}
         {teacherVideoBtn}
         <iframe
           src={sharedContentUrl}
@@ -242,6 +319,7 @@ export default function KidSessionPage() {
 
   return (
     <div style={{ width: '100vw', height: '100dvh', overflow: 'hidden', background: '#fff', position: 'relative' }}>
+      {wbActive && <KidWhiteboardOverlay id={id} />}
       {teacherVideoBtn}
       {/* Shared content overlay — shown while exercise is active too */}
       {sharedContentUrl && (

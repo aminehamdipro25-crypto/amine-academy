@@ -4,6 +4,9 @@ import { Trash2, Minus, Circle } from 'lucide-react'
 
 interface Props {
   onClose: () => void
+  /** When set, every stroke is broadcast to /api/sessions/{sessionId}/whiteboard
+      so the kid/parent page mirrors the board in near-real-time. */
+  sessionId?: string
 }
 
 const COLORS = [
@@ -17,16 +20,33 @@ const SIZES = [
   { label: 'L', value: 18 },
 ]
 
-export default function Whiteboard({ onClose }: Props) {
+export default function Whiteboard({ onClose, sessionId }: Props) {
   const canvasRef   = useRef<HTMLCanvasElement>(null)
   const drawing     = useRef(false)
   const lastPos     = useRef<{ x: number; y: number } | null>(null)
+  const strokePts   = useRef<number[]>([])   // normalized flat [x1,y1,x2,y2,...] of the stroke in progress
   const [color, setColor]     = useState('#FFFFFF')
   const [sizeIdx, setSizeIdx] = useState(1)
   const [eraser, setEraser]   = useState(false)
   const [history, setHistory] = useState<ImageData[]>([])
 
   const getCtx = () => canvasRef.current?.getContext('2d') ?? null
+
+  // Broadcast a whiteboard mutation so the kid page can mirror it
+  const syncPost = useCallback((payload: Record<string, unknown>) => {
+    if (!sessionId) return
+    fetch(`/api/sessions/${sessionId}/whiteboard`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    }).catch(() => {})
+  }, [sessionId])
+
+  // Mark board open/closed for the kid page
+  useEffect(() => {
+    syncPost({ action: 'open' })
+    return () => syncPost({ action: 'close' })
+  }, [syncPost])
 
   // Save state for undo
   function saveState() {
@@ -42,6 +62,7 @@ export default function Whiteboard({ onClose }: Props) {
     const prev = history[history.length - 1]
     ctx.putImageData(prev, 0, 0)
     setHistory(h => h.slice(0, -1))
+    syncPost({ action: 'undo' })
   }
 
   function clear() {
@@ -51,6 +72,7 @@ export default function Whiteboard({ onClose }: Props) {
     saveState()
     ctx.fillStyle = '#1F2937'
     ctx.fillRect(0, 0, c.width, c.height)
+    syncPost({ action: 'clear' })
   }
 
   // Resize canvas to fill container
@@ -99,14 +121,23 @@ export default function Whiteboard({ onClose }: Props) {
     ctx.stroke()
   }
 
+  // Normalize a canvas position to 0..1 so the kid canvas (any size) can replay it
+  function pushNormPoint(pos: { x: number; y: number }) {
+    const c = canvasRef.current
+    if (!c || c.width === 0 || c.height === 0) return
+    strokePts.current.push(pos.x / c.width, pos.y / c.height)
+  }
+
   const onStart = useCallback((e: React.MouseEvent | React.TouchEvent) => {
     e.preventDefault()
     saveState()
     drawing.current = true
     const pos = getPos(e)
     lastPos.current = pos
+    strokePts.current = []
     // Draw a dot on click
     if (pos) {
+      pushNormPoint(pos)
       const ctx = getCtx()
       if (ctx) {
         ctx.globalCompositeOperation = eraser ? 'destination-out' : 'source-over'
@@ -124,14 +155,21 @@ export default function Whiteboard({ onClose }: Props) {
     if (!drawing.current) return
     const pos = getPos(e)
     if (pos && lastPos.current) drawLine(lastPos.current, pos)
+    if (pos) pushNormPoint(pos)
     lastPos.current = pos
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [color, eraser, sizeIdx])
 
   const onEnd = useCallback(() => {
+    if (drawing.current && strokePts.current.length >= 2) {
+      // Round to 4 decimals to keep the payload small
+      const p = strokePts.current.map(v => Math.round(v * 10000) / 10000)
+      syncPost({ action: 'stroke', stroke: { c: color, s: SIZES[sizeIdx].value * (eraser ? 3 : 1), e: eraser, p } })
+    }
     drawing.current = false
     lastPos.current = null
-  }, [])
+    strokePts.current = []
+  }, [color, eraser, sizeIdx, syncPost])
 
   return (
     <div className="flex flex-col h-full" dir="rtl">
@@ -241,7 +279,7 @@ export default function Whiteboard({ onClose }: Props) {
         className="text-center py-1 flex-shrink-0 text-[10px] text-white/20 font-bold"
         style={{ background: '#0F172A' }}
       >
-        شارك شاشتك مع الطالب ليرى السبورة
+        {sessionId ? '✨ الطفل يرى السبورة مباشرةً على جهازه' : 'شارك شاشتك مع الطالب ليرى السبورة'}
       </div>
 
       {/* Canvas */}

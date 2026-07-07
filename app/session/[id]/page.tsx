@@ -479,9 +479,9 @@ export default function SessionPage() {
 
   const [jitsiEmbedded, setJitsiEmbedded] = useState(false)
 
-  // Jitsi embed URL — disables prejoin screen and sets display name automatically
+  // Jitsi embed URL — camera+mic on, no lobby, no deep-link redirect
   const jitsiEmbedUrl = jitsiUrl
-    ? `${jitsiUrl}#config.prejoinPageEnabled=false&config.startWithAudioMuted=false&config.disableDeepLinking=true&userInfo.displayName=${encodeURIComponent('الأستاذ أمين')}`
+    ? `${jitsiUrl}#config.prejoinPageEnabled=false&config.startWithAudioMuted=false&config.startWithVideoMuted=false&config.disableDeepLinking=true&config.disableInitialGUM=false&interfaceConfig.FILM_STRIP_MAX_HEIGHT=0&userInfo.displayName=${encodeURIComponent('الأستاذ أمين')}`
     : null
 
   // Content presenter (replaces broken native screen-share)
@@ -3114,8 +3114,8 @@ ${notes ? `
               label="📹 مقابلة"
               initialBottom={20}
               initialLeft={20}
-              minWidth={280}
-              minHeight={210}
+              minWidth={320}
+              minHeight={240}
             >
               <iframe
                 src={jitsiEmbedUrl}

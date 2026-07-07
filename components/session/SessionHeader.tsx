@@ -3,7 +3,7 @@
 // button, student identity + quick profile card, session timer, paused/saved
 // flash badges, average score, and start/save controls. Extracted out of
 // page.tsx to keep that file focused on session state/behavior.
-import { Clock, X, Save, ClipboardList, ChevronDown, User, Pause, Check, Share2 } from 'lucide-react'
+import { Clock, X, Save, ClipboardList, ChevronDown, User, Pause, Check } from 'lucide-react'
 import type { ExerciseResult, StudentAssessmentProfile } from '@/lib/types'
 import { DIFFICULTY_LABELS_AR } from '@/lib/game-mapping'
 import { DIAG_LABELS, SEVERITY_LABELS, SESSION_TYPE_CFG } from '@/lib/session-constants'
@@ -35,9 +35,6 @@ export default function SessionHeader({
   saving,
   saved,
   saveFailed,
-  kidUrl,
-  kidCopied,
-  onCopyKidUrl,
   kidStatus,
   activeExerciseId,
 }: {
@@ -66,9 +63,6 @@ export default function SessionHeader({
   saving: boolean
   saved: boolean
   saveFailed: boolean
-  kidUrl: string
-  kidCopied: boolean
-  onCopyKidUrl: () => void
   kidStatus: { exerciseId: string; status: 'active' | 'done'; ts: number } | null
   activeExerciseId: string | null
 }) {
@@ -273,34 +267,6 @@ export default function SessionHeader({
         >
           ▶ ابدأ
         </button>
-      )}
-
-      {/* Kid URL — most prominent button in the header so specialist can always find it */}
-      {kidUrl && (
-        <div className="flex items-center gap-1 flex-shrink-0">
-          <button
-            onClick={onCopyKidUrl}
-            title="انسخ رابط الطفل وأرسله لولي الأمر"
-            className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl font-black text-xs flex-shrink-0 transition-all active:scale-95 border ${
-              kidCopied
-                ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
-                : 'bg-amber-50 text-amber-700 border-amber-300 hover:bg-amber-100'
-            }`}
-          >
-            <span className="text-sm">👦</span>
-            <span className="hidden sm:inline">{kidCopied ? '✓ تم النسخ!' : 'رابط الطفل'}</span>
-          </button>
-          {/* WhatsApp share */}
-          <a
-            href={`https://wa.me/?text=${encodeURIComponent(`افتح هذا الرابط خلال الجلسة: ${kidUrl}`)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            title="شارك رابط الطفل عبر واتساب"
-            className="flex items-center justify-center w-9 h-9 rounded-xl bg-green-500 hover:bg-green-600 text-white flex-shrink-0 transition-all active:scale-95"
-          >
-            <Share2 className="w-4 h-4" />
-          </a>
-        </div>
       )}
 
       {/* Kid status indicator — shows when kid is active or done */}

@@ -4,8 +4,10 @@ const isDev = process.env.NODE_ENV === 'development'
 
 const ContentSecurityPolicy = [
   "default-src 'self'",
-  // Scripts: self + Next.js hydration inline scripts + no unsafe-eval
-  `script-src 'self' ${isDev ? "'unsafe-eval'" : ''} 'unsafe-inline'`,
+  // Scripts: self + Next.js hydration inline scripts + Daily.co call machine
+  // (daily-js call-object mode loads its bundle from c.daily.co) + wasm for
+  // Daily's audio processing
+  `script-src 'self' ${isDev ? "'unsafe-eval'" : ''} 'unsafe-inline' 'wasm-unsafe-eval' https://*.daily.co`,
   // Styles: self + inline (Tailwind generates inline styles) + Google Fonts
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   // Fonts: self + Google Fonts

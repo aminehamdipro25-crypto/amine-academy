@@ -1532,11 +1532,6 @@ ${notes ? `
     setManualChromeOverride(null)
   }, [exerciseActive, showWhiteboard])
 
-  const kidUrl = typeof window !== 'undefined' ? `${window.location.origin}/session/${id}/kid` : ''
-  const [kidCopied, setKidCopied] = useState(false)
-  function copyKidUrl() {
-    navigator.clipboard.writeText(kidUrl).then(() => { setKidCopied(true); setTimeout(() => setKidCopied(false), 2000) })
-  }
 
   // Poll kid status — specialist sees when kid receives / finishes an exercise
   type KidStatus = { exerciseId: string; status: 'active' | 'done'; ts: number } | null
@@ -1843,9 +1838,6 @@ ${notes ? `
         saving={saving}
         saved={saved}
         saveFailed={saveFailed}
-        kidUrl={kidUrl}
-        kidCopied={kidCopied}
-        onCopyKidUrl={copyKidUrl}
         kidStatus={kidStatus}
         activeExerciseId={activeExerciseId}
       />
@@ -3156,17 +3148,6 @@ ${notes ? `
         {/* Main exercise area */}
 
         <main className={`flex-1 flex items-center justify-center bg-gray-950 relative overflow-auto ${chromeHidden ? '' : 'pb-20 lg:pb-0'} ${kidMode ? 'hidden' : ''}`}>
-
-          {/* ── Kid page link badge ── */}
-          {kidUrl && (
-            <button
-              onClick={copyKidUrl}
-              style={{ position: 'absolute', bottom: 20, right: 20, zIndex: 50, background: kidCopied ? '#166534' : '#4C1D95', color: '#fff', borderRadius: 12, padding: '8px 14px', display: 'flex', alignItems: 'center', gap: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.4)', fontSize: 12, fontWeight: 700, border: 'none', cursor: 'pointer', transition: 'background 0.2s' }}
-              title="انسخ رابط الطفل وأرسله للعائلة"
-            >
-              {kidCopied ? '✓ تم النسخ!' : '👦 رابط الطفل'}
-            </button>
-          )}
 
           {/* ── Embedded video call (Daily.co SDK, no iframe) ── */}
           {jitsiEmbedded && jitsiUrl && (

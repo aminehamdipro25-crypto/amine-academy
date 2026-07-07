@@ -94,6 +94,16 @@ export default function KidSessionPage() {
   const [done, setDone] = useState(false)
   const [nonce, setNonce] = useState(0)
   const prevId = useRef<string | null>(null)
+  const [meetingUrl, setMeetingUrl] = useState<string | null>(null)
+  const [videoHidden, setVideoHidden] = useState(false)
+
+  // Fetch meeting URL once on load
+  useEffect(() => {
+    fetch(`/api/sessions/${id}/meeting`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.meetingUrl) setMeetingUrl(d.meetingUrl) })
+      .catch(() => {})
+  }, [id])
 
   // Poll every 3 seconds for current exercise
   const poll = useCallback(async () => {
@@ -119,6 +129,32 @@ export default function KidSessionPage() {
 
   const difficulty = (live?.difficulty ?? 1) as 1|2|3
 
+  // ── Teacher video PiP (shown on all screens) ──────────────────────────
+  const teacherPiP = meetingUrl && !videoHidden && (
+    <div style={{
+      position: 'fixed', bottom: 16, left: 16, zIndex: 9999,
+      width: 180, height: 135, borderRadius: 16,
+      overflow: 'hidden', boxShadow: '0 8px 32px rgba(0,0,0,0.35)',
+      border: '2px solid rgba(255,255,255,0.3)',
+    }}>
+      <iframe
+        src={meetingUrl}
+        allow="camera; microphone; fullscreen; display-capture"
+        style={{ width: '100%', height: '100%', border: 'none' }}
+      />
+      <button
+        onClick={() => setVideoHidden(true)}
+        style={{
+          position: 'absolute', top: 4, right: 4, zIndex: 10,
+          width: 20, height: 20, borderRadius: '50%',
+          background: 'rgba(0,0,0,0.6)', border: 'none',
+          color: '#fff', fontSize: 10, cursor: 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}
+      >✕</button>
+    </div>
+  )
+
   // ── Waiting screen ──────────────────────────────────────────────────────
   if (!live || done) {
     return (
@@ -131,6 +167,7 @@ export default function KidSessionPage() {
           padding: 24, gap: 24,
         }}
       >
+        {teacherPiP}
         {/* Animated stars */}
         <div style={{ fontSize: 72, lineHeight: 1, animation: 'bounce 2s infinite' }}>
           {done ? '🌟' : '⏳'}
@@ -164,6 +201,7 @@ export default function KidSessionPage() {
 
   return (
     <div style={{ width: '100vw', height: '100dvh', overflow: 'hidden', background: '#fff' }}>
+      {teacherPiP}
       <Suspense fallback={
         <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100%' }}>
           <div style={{ width:48, height:48, borderRadius:'50%', border:'5px solid #A78BFA', borderTopColor:'transparent', animation:'spin 0.8s linear infinite' }} />

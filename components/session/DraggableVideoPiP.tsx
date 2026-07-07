@@ -99,38 +99,45 @@ export default function DraggableVideoPiP({
         transition: collapsed ? 'height 0.2s ease' : undefined,
       }}
     >
-      {/* Title bar */}
-      <div
-        className="flex items-center justify-between px-2 flex-shrink-0"
-        style={{ background: 'rgba(0,0,0,0.6)', minHeight: 28 }}
-      >
-        <div className="flex items-center gap-1.5">
-          <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-          <span className="text-white text-[10px] font-black">{label}</span>
+      {/* Title bar — absolute overlay so video fills entire height */}
+      {collapsed ? (
+        <div
+          className="flex items-center justify-between px-2 flex-shrink-0"
+          style={{ background: 'rgba(0,0,0,0.7)', minHeight: 36 }}
+        >
+          <div className="flex items-center gap-1.5">
+            <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+            <span className="text-white text-[10px] font-black">{label}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <button onPointerDown={e => e.stopPropagation()} onClick={() => setCollapsed(false)}
+              className="text-white/60 hover:text-white text-xs w-5 h-5 flex items-center justify-center rounded transition-colors hover:bg-white/10" title="توسيع">▲</button>
+            <button onPointerDown={e => e.stopPropagation()} onClick={onClose}
+              className="text-white/60 hover:text-red-400 text-xs w-5 h-5 flex items-center justify-center rounded transition-colors hover:bg-white/10" title="إغلاق">✕</button>
+          </div>
         </div>
-        <div className="flex items-center gap-1">
-          <button
-            onPointerDown={e => e.stopPropagation()}
-            onClick={() => setCollapsed(c => !c)}
-            className="text-white/60 hover:text-white text-xs w-5 h-5 flex items-center justify-center rounded transition-colors hover:bg-white/10"
-            title={collapsed ? 'توسيع' : 'تصغير'}
-          >
-            {collapsed ? '▲' : '▼'}
-          </button>
-          <button
-            onPointerDown={e => e.stopPropagation()}
-            onClick={onClose}
-            className="text-white/60 hover:text-red-400 text-xs w-5 h-5 flex items-center justify-center rounded transition-colors hover:bg-white/10"
-            title="إغلاق"
-          >
-            ✕
-          </button>
+      ) : (
+        /* Floating controls over video — don't steal height */
+        <div
+          className="absolute top-0 left-0 right-0 flex items-center justify-between px-2"
+          style={{ zIndex: 10, height: 32, background: 'linear-gradient(to bottom,rgba(0,0,0,0.55) 0%,transparent 100%)', pointerEvents: 'none' }}
+        >
+          <div className="flex items-center gap-1.5" style={{ pointerEvents: 'auto' }}>
+            <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+            <span className="text-white text-[10px] font-black drop-shadow">{label}</span>
+          </div>
+          <div className="flex items-center gap-1" style={{ pointerEvents: 'auto' }}>
+            <button onPointerDown={e => e.stopPropagation()} onClick={() => setCollapsed(true)}
+              className="text-white/70 hover:text-white text-xs w-5 h-5 flex items-center justify-center rounded transition-colors hover:bg-white/20" title="تصغير">▼</button>
+            <button onPointerDown={e => e.stopPropagation()} onClick={onClose}
+              className="text-white/70 hover:text-red-400 text-xs w-5 h-5 flex items-center justify-center rounded transition-colors hover:bg-white/20" title="إغلاق">✕</button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Content */}
       {!collapsed && (
-        <div className="flex-1 relative overflow-hidden">
+        <div className="flex-1 relative overflow-hidden" style={{ height: '100%' }}>
           {children}
           {/* Resize handle — bottom-right corner */}
           <div

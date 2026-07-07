@@ -161,9 +161,6 @@ export default function UpgradePlanPage() {
                   <div className="text-white/50 text-xs">/ {isAr ? 'أسبوع' : 'week'}</div>
                 </div>
               </div>
-              <p className="text-white/60 text-xs mt-1 ltr-num">
-                ≈ {perSession(id)} {sym} / {isAr ? 'حصة' : 'session'}
-              </p>
             </div>
 
             {/* Feature chips */}

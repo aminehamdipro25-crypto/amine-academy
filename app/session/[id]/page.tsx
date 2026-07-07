@@ -3117,7 +3117,7 @@ ${notes ? `
               <iframe
                 src={jitsiEmbedUrl}
                 style={{ width: '100%', height: '100%', border: 'none', display: 'block' }}
-                allow="camera *; microphone *; display-capture *; fullscreen *; autoplay *"
+                allow="camera; microphone; fullscreen; display-capture; picture-in-picture; speaker-selection; autoplay"
                 allowFullScreen
               />
             </DraggableVideoPiP>

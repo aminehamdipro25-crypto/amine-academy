@@ -2,6 +2,8 @@
 import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react'
 import { useParams } from 'next/navigation'
 
+const DailyVideoCall = lazy(() => import('@/components/session/DailyVideoCall'))
+
 // ── Exercise components (same set as specialist page) ──────────────────────
 const MemoryCards          = lazy(() => import('@/components/session/exercises/MemoryCards'))
 const SequenceMemory       = lazy(() => import('@/components/session/exercises/SequenceMemory'))
@@ -227,38 +229,67 @@ export default function KidSessionPage() {
 
   const difficulty = (live?.difficulty ?? 1) as 1|2|3
 
-  // ── Teacher video button (opens in new tab — avoids iframe camera block) ──
-  const teacherVideoBtn = meetingUrl && !videoHidden && (
-    <div style={{ position: 'fixed', bottom: 16, left: 16, zIndex: 9999, display: 'flex', alignItems: 'center', gap: 6 }}>
-      <a
-        href={meetingUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        style={{
-          display: 'flex', alignItems: 'center', gap: 8,
-          background: 'linear-gradient(135deg,#6D28D9,#9333EA)',
-          color: '#fff', borderRadius: 14, padding: '10px 16px',
-          textDecoration: 'none', fontWeight: 900, fontSize: 14,
-          boxShadow: '0 4px 20px rgba(109,40,217,0.4)',
-          border: '2px solid rgba(255,255,255,0.25)',
-        }}
-      >
-        📹 المقابلة مع الأستاذ
-      </a>
-      <button
-        onClick={() => setVideoHidden(true)}
-        style={{
-          width: 28, height: 28, borderRadius: '50%',
-          background: 'rgba(0,0,0,0.5)', border: 'none',
-          color: '#fff', fontSize: 12, cursor: 'pointer',
-        }}
-      >✕</button>
-    </div>
+  // ── Teacher video — embedded in-page (Daily.co SDK, no iframe, no links).
+  // Mounted ONCE for the whole session so the call never drops between
+  // screens; hiding only collapses the box (audio keeps playing).
+  const [videoSmall, setVideoSmall] = useState(false)
+  const teacherVideo = meetingUrl && (
+    <>
+      <div style={{
+        position: 'fixed', bottom: 12, left: 12, zIndex: 9999,
+        width:  videoSmall ? 120 : 'min(240px, 40vw)',
+        height: videoSmall ? 90  : 180,
+        borderRadius: 14, overflow: 'hidden',
+        boxShadow: '0 8px 32px rgba(0,0,0,0.35)',
+        border: '2px solid rgba(255,255,255,0.3)',
+        background: '#111827',
+        display: videoHidden ? 'none' : 'block',
+      }}>
+        <Suspense fallback={
+          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.5)', fontSize: 11, fontWeight: 700 }}>
+            جارٍ التحميل...
+          </div>
+        }>
+          <DailyVideoCall url={meetingUrl} userName="الطفل" compact />
+        </Suspense>
+        <div style={{ position: 'absolute', top: 4, right: 4, zIndex: 10, display: 'flex', gap: 4 }}>
+          <button
+            onClick={() => setVideoSmall(s => !s)}
+            style={{
+              width: 22, height: 22, borderRadius: '50%',
+              background: 'rgba(0,0,0,0.55)', border: 'none',
+              color: '#fff', fontSize: 10, cursor: 'pointer',
+            }}
+          >{videoSmall ? '▲' : '▼'}</button>
+          <button
+            onClick={() => setVideoHidden(true)}
+            style={{
+              width: 22, height: 22, borderRadius: '50%',
+              background: 'rgba(0,0,0,0.55)', border: 'none',
+              color: '#fff', fontSize: 10, cursor: 'pointer',
+            }}
+          >✕</button>
+        </div>
+      </div>
+      {videoHidden && (
+        <button
+          onClick={() => setVideoHidden(false)}
+          style={{
+            position: 'fixed', bottom: 12, left: 12, zIndex: 9999,
+            padding: '10px 14px', borderRadius: 14, border: 'none', cursor: 'pointer',
+            background: 'linear-gradient(135deg,#6D28D9,#9333EA)', color: '#fff',
+            fontWeight: 900, fontSize: 13, boxShadow: '0 4px 20px rgba(109,40,217,0.4)',
+          }}
+        >📹 الأستاذ</button>
+      )}
+    </>
   )
 
-  // ── Waiting screen ──────────────────────────────────────────────────────
+  // ── Main content: waiting screen OR active exercise ───────────────────
+  let mainContent: React.ReactNode
+
   if (!live || done) {
-    return (
+    mainContent = (
       <div
         dir="rtl"
         style={{
@@ -268,8 +299,6 @@ export default function KidSessionPage() {
           padding: 24, gap: 24,
         }}
       >
-        {wbActive && <KidWhiteboardOverlay id={id} />}
-        {teacherVideoBtn}
         {/* Animated stars */}
         <div style={{ fontSize: 72, lineHeight: 1, animation: 'bounce 2s infinite' }}>
           {done ? '🌟' : '⏳'}
@@ -295,47 +324,13 @@ export default function KidSessionPage() {
         `}</style>
       </div>
     )
-  }
+  } else {
+    // ── Exercise renderer ────────────────────────────────────────────────
+    const id_ = live.exerciseId
+    const props = { onComplete: handleDone, onCancel: handleDone, difficulty, studentAge: 10 }
 
-  // ── Exercise renderer ──────────────────────────────────────────────────
-  const id_ = live.exerciseId
-  const props = { onComplete: handleDone, onCancel: handleDone, difficulty, studentAge: 10 }
-
-  // When specialist is sharing content (screen share), show it fullscreen
-  if (sharedContentUrl && (done || !live)) {
-    return (
-      <div style={{ width: '100vw', height: '100dvh', overflow: 'hidden', background: '#000', position: 'relative' }}>
-        {wbActive && <KidWhiteboardOverlay id={id} />}
-        {teacherVideoBtn}
-        <iframe
-          src={sharedContentUrl}
-          allow="autoplay; fullscreen"
-          style={{ width: '100%', height: '100%', border: 'none' }}
-          title="محتوى مشترك"
-        />
-      </div>
-    )
-  }
-
-  return (
+    mainContent = (
     <div style={{ width: '100vw', height: '100dvh', overflow: 'hidden', background: '#fff', position: 'relative' }}>
-      {wbActive && <KidWhiteboardOverlay id={id} />}
-      {teacherVideoBtn}
-      {/* Shared content overlay — shown while exercise is active too */}
-      {sharedContentUrl && (
-        <div style={{
-          position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 100,
-          background: '#000',
-        }}>
-          <iframe
-            src={sharedContentUrl}
-            allow="autoplay; fullscreen"
-            style={{ width: '100%', height: '100%', border: 'none' }}
-            title="محتوى مشترك"
-          />
-          {teacherVideoBtn}
-        </div>
-      )}
       <Suspense fallback={
         <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100%' }}>
           <div style={{ width:48, height:48, borderRadius:'50%', border:'5px solid #A78BFA', borderTopColor:'transparent', animation:'spin 0.8s linear infinite' }} />
@@ -426,5 +421,27 @@ export default function KidSessionPage() {
         </div>
       </Suspense>
     </div>
+    )
+  }
+
+  return (
+    <>
+      {mainContent}
+      {/* Shared content (specialist screen share) — global overlay */}
+      {sharedContentUrl && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 100, background: '#000' }}>
+          <iframe
+            src={sharedContentUrl}
+            allow="autoplay; fullscreen"
+            style={{ width: '100%', height: '100%', border: 'none' }}
+            title="محتوى مشترك"
+          />
+        </div>
+      )}
+      {/* Whiteboard mirror — above shared content */}
+      {wbActive && <KidWhiteboardOverlay id={id} />}
+      {/* Teacher video call — always on top, mounted once for the whole session */}
+      {teacherVideo}
+    </>
   )
 }

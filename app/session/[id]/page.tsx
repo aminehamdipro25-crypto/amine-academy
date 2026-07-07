@@ -102,6 +102,7 @@ import HomeworkPanel from '@/components/session/HomeworkPanel'
 import QuickObsPanel from '@/components/session/QuickObsPanel'
 import IncidentPanel, { type IncidentEntry } from '@/components/session/IncidentPanel'
 import DraggableVideoPiP from '@/components/session/DraggableVideoPiP'
+import DailyVideoCall from '@/components/session/DailyVideoCall'
 import LiveSessionCard from '@/components/session/LiveSessionCard'
 import SessionStarCounter from '@/components/session/SessionStarCounter'
 import { computeAdaptiveDecision } from '@/lib/session-adaptive'
@@ -476,35 +477,9 @@ export default function SessionPage() {
       }).catch(() => {})
   }, [id])
 
-  // Meeting popup — open Daily.co in a new window instead of an iframe so
-  // Chrome can grant camera/mic permissions without cross-origin restrictions.
-  const meetingPopupRef = useRef<Window | null>(null)
-  const meetingCheckRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const [jitsiEmbedded, setJitsiEmbedded] = useState(false) // true = popup is open
-
-  function openMeetingPopup() {
-    if (meetingPopupRef.current && !meetingPopupRef.current.closed) {
-      meetingPopupRef.current.focus()
-      return
-    }
-    if (!jitsiUrl) return
-    const popup = window.open(jitsiUrl, 'daily-meeting',
-      'width=900,height=700,menubar=no,toolbar=no,location=no,status=no,resizable=yes')
-    if (!popup) return
-    meetingPopupRef.current = popup
-    setJitsiEmbedded(true)
-    if (meetingCheckRef.current) clearInterval(meetingCheckRef.current)
-    meetingCheckRef.current = setInterval(() => {
-      if (popup.closed) {
-        setJitsiEmbedded(false)
-        meetingPopupRef.current = null
-        clearInterval(meetingCheckRef.current!)
-      }
-    }, 1000)
-  }
-
-  // Daily.co embed URL — settings applied at room creation, no hash params needed
-  const jitsiEmbedUrl = jitsiUrl ?? null
+  // Embedded video call (Daily.co JS SDK — no iframe, camera requested by
+  // our own origin so it is never blocked by cross-origin policies)
+  const [jitsiEmbedded, setJitsiEmbedded] = useState(false)
 
   // Content presenter (replaces broken native screen-share)
   const [contentUrl, setContentUrl]           = useState<string | null>(null)
@@ -1880,7 +1855,7 @@ ${notes ? `
         chromeHidden={chromeHidden}
         jitsiUrl={jitsiUrl}
         jitsiEmbedded={jitsiEmbedded}
-        onToggleJitsiEmbedded={openMeetingPopup}
+        onToggleJitsiEmbedded={() => setJitsiEmbedded(e => !e)}
         showWhiteboard={showWhiteboard}
         onToggleWhiteboard={() => setShowWhiteboard(w => !w)}
         promptBtnRef={promptBtnRef}
@@ -3193,7 +3168,19 @@ ${notes ? `
             </button>
           )}
 
-          {/* Meeting is now a popup window — no iframe needed */}
+          {/* ── Embedded video call (Daily.co SDK, no iframe) ── */}
+          {jitsiEmbedded && jitsiUrl && (
+            <DraggableVideoPiP
+              onClose={() => setJitsiEmbedded(false)}
+              label="📹 مقابلة"
+              initialBottom={20}
+              initialLeft={20}
+              minWidth={380}
+              minHeight={300}
+            >
+              <DailyVideoCall url={jitsiUrl} userName={studentName ? `أخصائي ${studentName}` : 'الأخصائي'} />
+            </DraggableVideoPiP>
+          )}
 
           {/* ── Content presenter PiP — specialist drags/resizes over the session ── */}
           {contentUrl && !(activeView || showWhiteboard) && (

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyToken } from '@/lib/auth'
-import { getStudent, getStudentProgram, getAllExercises } from '@/lib/db'
+import { getStudent, getStudentProgram, getExercise } from '@/lib/db'
 
 export const runtime = 'nodejs'
 
@@ -23,14 +23,21 @@ export async function GET(
       return NextResponse.json({ program: null })
     }
 
-    const [program, allExercises] = await Promise.all([
-      getStudentProgram(params.id),
-      getAllExercises(),
-    ])
+    const program = await getStudentProgram(params.id)
+
+    // Collect the unique exercise IDs actually used in this program's schedule
+    const schedule = (program?.weeklySchedule ?? {}) as Record<string, string[]>
+    const usedIds = [...new Set(Object.values(schedule).flat().filter(Boolean))]
+
+    // Look up each exercise directly by its Redis key — more reliable than the index list
     const exerciseNames: Record<string, string> = {}
-    for (const ex of allExercises) {
-      exerciseNames[ex.id] = ex.titleAr || ex.title || ex.id
+    if (usedIds.length > 0) {
+      const records = await Promise.all(usedIds.map(id => getExercise(id)))
+      for (const ex of records) {
+        if (ex) exerciseNames[ex.id] = ex.titleAr || ex.title || ex.id
+      }
     }
+
     return NextResponse.json({ program, exerciseNames })
   } catch {
     return NextResponse.json({ program: null })

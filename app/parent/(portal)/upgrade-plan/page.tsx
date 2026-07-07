@@ -25,7 +25,7 @@ const FEATURES: Record<PlanId, { emoji: string; ar: string; en: string }[]> = {
     { emoji: '🔓', ar: 'بدون التزام', en: 'No commitment' },
   ],
   weekly: [
-    { emoji: '📅', ar: '4 حصص / أسبوع', en: '4 sessions/week' },
+    { emoji: '📅', ar: '3 حصص / أسبوع', en: '3 sessions/week' },
     { emoji: '🧠', ar: 'برنامج متكيّف', en: 'Adaptive program' },
     { emoji: '📊', ar: 'تقارير أسبوعية', en: 'Weekly reports' },
     { emoji: '💬', ar: 'واتساب مباشر', en: 'Direct WhatsApp' },

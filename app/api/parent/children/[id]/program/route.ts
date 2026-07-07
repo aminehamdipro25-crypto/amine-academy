@@ -25,11 +25,14 @@ export async function GET(
 
     const program = await getStudentProgram(params.id)
 
-    // Collect the unique exercise IDs actually used in this program's schedule
+    // If the program already has embedded labels (saved after the new flow), use them directly
+    if (program?.exerciseLabels && Object.keys(program.exerciseLabels).length > 0) {
+      return NextResponse.json({ program, exerciseNames: program.exerciseLabels })
+    }
+
+    // Fallback: resolve labels by looking up each exercise ID directly in Redis
     const schedule = (program?.weeklySchedule ?? {}) as Record<string, string[]>
     const usedIds = [...new Set(Object.values(schedule).flat().filter(Boolean))]
-
-    // Look up each exercise directly by its Redis key — more reliable than the index list
     const exerciseNames: Record<string, string> = {}
     if (usedIds.length > 0) {
       const records = await Promise.all(usedIds.map(id => getExercise(id)))

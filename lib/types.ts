@@ -104,6 +104,7 @@ export interface Program {
   endDate: string
   weeklySchedule: WeeklySchedule
   exerciseIds: string[]
+  exerciseLabels?: Record<string, string>   // id → Arabic name, stored at save time
   status: 'active' | 'completed' | 'paused'
   progressPercentage: number
   createdAt: string

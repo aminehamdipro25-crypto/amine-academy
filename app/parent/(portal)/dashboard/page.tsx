@@ -704,7 +704,7 @@ export default function ParentDashboardPage() {
                               className="text-xs font-bold px-2.5 py-0.5 rounded-full"
                               style={{ background: '#BBF7D0', color: '#15803D' }}
                             >
-                              {exerciseNames[exId] || EX_LABEL[exId] || exId}
+                              {exerciseNames[exId] || EX_LABEL[exId] || (exId.startsWith('AE-') ? `تمرين ${i + 1}` : exId)}
                             </span>
                           ))}
                           {todayExs.length > 4 && (

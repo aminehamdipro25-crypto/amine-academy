@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isDashboardUser } from '@/lib/auth'
-import { createProgram, getStudentProgram, getAllExercises } from '@/lib/db'
+import { createProgram, getStudentProgram, getAllExercises, getExercise } from '@/lib/db'
 
 export const runtime = 'nodejs'
 
@@ -28,6 +28,14 @@ export async function POST(req: NextRequest) {
     }
 
     const exerciseIdArray = Array.from(exerciseIds)
+
+    // Resolve exercise names at save time so they survive future re-seeding
+    const labelRecords = await Promise.all(exerciseIdArray.map(id => getExercise(id)))
+    const exerciseLabels: Record<string, string> = {}
+    for (const ex of labelRecords) {
+      if (ex) exerciseLabels[ex.id] = ex.titleAr || ex.title || ex.id
+    }
+
     const program = await createProgram({
       studentId: body.studentId,
       professorId: 'admin',
@@ -36,6 +44,7 @@ export async function POST(req: NextRequest) {
       endDate: body.endDate,
       weeklySchedule: weeklySchedule as unknown as Parameters<typeof createProgram>[0]['weeklySchedule'],
       exerciseIds: exerciseIdArray,
+      exerciseLabels,
       status: 'active',
       progressPercentage: 0,
       createdAt: new Date().toISOString(),
@@ -62,6 +71,13 @@ export async function GET(req: NextRequest) {
       getStudentProgram(studentId),
       getAllExercises(),
     ])
+
+    // Backfill exerciseLabels for programs saved before this feature was added
+    if (program && !program.exerciseLabels) {
+      const labelMap: Record<string, string> = {}
+      for (const ex of allExercises) { labelMap[ex.id] = ex.titleAr || ex.title || ex.id }
+      program.exerciseLabels = labelMap
+    }
 
     return NextResponse.json({ program, allExercises })
   } catch (e) {

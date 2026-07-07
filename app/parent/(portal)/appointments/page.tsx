@@ -48,6 +48,8 @@ export default function AppointmentsPage() {
   const [bookingError, setBookingError] = useState('')
   const [slots, setSlots] = useState<SlotInfo[]>([])
   const [loadingSlots, setLoadingSlots] = useState(false)
+  const [cancellingId, setCancellingId] = useState<string | null>(null)
+  const [cancelError, setCancelError] = useState('')
 
   useEffect(() => {
     Promise.all([
@@ -102,6 +104,26 @@ export default function AppointmentsPage() {
       }
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  async function handleCancelAppointment(id: string) {
+    setCancellingId(id)
+    setCancelError('')
+    try {
+      const res = await fetch(`/api/appointments/${id}`, { method: 'PATCH' })
+      const data = await res.json()
+      if (res.ok) {
+        setAppointments(prev => prev.map(a => a.id === id ? { ...a, status: 'cancelled' } : a))
+      } else {
+        setCancelError(data.error || 'خطأ في الإلغاء')
+        setTimeout(() => setCancelError(''), 5000)
+      }
+    } catch {
+      setCancelError('خطأ في الاتصال')
+      setTimeout(() => setCancelError(''), 5000)
+    } finally {
+      setCancellingId(null)
     }
   }
 
@@ -242,19 +264,38 @@ export default function AppointmentsPage() {
                       </a>
                     )}
                   </div>
-                  {appt.meetingUrl && (
-                    <div className="mt-3 pt-3" style={{ borderTop: '1px solid #F0E8FF' }}>
-                      <p className="text-xs text-gray-400">
+                  <div className="mt-3 pt-3 flex items-center justify-between gap-3" style={{ borderTop: '1px solid #F0E8FF' }}>
+                    {appt.meetingUrl ? (
+                      <p className="text-xs text-gray-400 flex-1">
                         <span className="font-bold">{t.sessionToolLabel}</span> {t.sessionToolDesc}
                       </p>
-                    </div>
-                  )}
+                    ) : <div className="flex-1" />}
+                    {!live && (
+                      <button
+                        onClick={() => {
+                          if (window.confirm(lang === 'ar' ? 'هل أنت متأكد من إلغاء هذا الموعد؟' : 'Are you sure you want to cancel this appointment?')) {
+                            handleCancelAppointment(appt.id)
+                          }
+                        }}
+                        disabled={cancellingId === appt.id}
+                        className="text-xs font-bold px-3 py-1.5 rounded-xl transition-all flex-shrink-0 disabled:opacity-50"
+                        style={{ color: '#DC2626', background: '#FEF2F2', border: '1px solid #FECACA' }}
+                      >
+                        {cancellingId === appt.id ? '...' : (lang === 'ar' ? 'إلغاء الموعد' : 'Cancel')}
+                      </button>
+                    )}
+                  </div>
                 </div>
               )
             })}
           </div>
         )}
       </div>
+      {cancelError && (
+        <div className="fixed bottom-24 inset-x-4 md:inset-x-auto md:right-6 md:left-auto md:w-80 rounded-2xl p-4 text-sm font-bold z-50" style={{ background: '#FEF2F2', border: '1px solid #FECACA', color: '#B91C1C' }}>
+          {cancelError}
+        </div>
+      )}
 
       {/* ── Past appointments ── */}
       {past.length > 0 && (

@@ -1,12 +1,13 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Download, Trash2, AlertTriangle, ShieldAlert, User, Mail } from 'lucide-react'
+import { Download, Trash2, AlertTriangle, ShieldAlert, User, Mail, Phone, Edit3, CheckCircle } from 'lucide-react'
 
 interface ParentInfo {
   firstName: string
   lastName: string
   email: string
+  phone: string
 }
 
 export default function AccountPage() {
@@ -16,6 +17,15 @@ export default function AccountPage() {
 
   // Download state
   const [downloading, setDownloading] = useState(false)
+
+  // Edit profile state
+  const [editMode, setEditMode] = useState(false)
+  const [editFirstName, setEditFirstName] = useState('')
+  const [editLastName, setEditLastName] = useState('')
+  const [editPhone, setEditPhone] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [saveSuccess, setSaveSuccess] = useState(false)
+  const [saveError, setSaveError] = useState('')
 
   // Delete state
   const [confirmInput, setConfirmInput] = useState('')
@@ -31,6 +41,7 @@ export default function AccountPage() {
             firstName: d.parent.firstName,
             lastName: d.parent.lastName,
             email: d.parent.email,
+            phone: d.parent.phone || '',
           })
         }
       })
@@ -38,13 +49,47 @@ export default function AccountPage() {
       .finally(() => setLoadingData(false))
   }, [])
 
+  function startEdit() {
+    if (!parent) return
+    setEditFirstName(parent.firstName)
+    setEditLastName(parent.lastName)
+    setEditPhone(parent.phone || '')
+    setEditMode(true)
+    setSaveSuccess(false)
+    setSaveError('')
+  }
+
+  async function handleSave() {
+    setSaving(true)
+    setSaveError('')
+    try {
+      const res = await fetch('/api/parent/me', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ firstName: editFirstName, lastName: editLastName, phone: editPhone }),
+      })
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}))
+        setSaveError(d?.error || 'فشل الحفظ. يرجى المحاولة مرة أخرى.')
+        return
+      }
+      setParent(p => p ? { ...p, firstName: editFirstName, lastName: editLastName, phone: editPhone } : p)
+      setEditMode(false)
+      setSaveSuccess(true)
+      setTimeout(() => setSaveSuccess(false), 4000)
+    } catch {
+      setSaveError('تعذّر الاتصال بالخادم.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
   async function handleDownload() {
     setDownloading(true)
     try {
       const res = await fetch('/api/parent/me')
       if (!res.ok) throw new Error('فشل التحميل')
       const data = await res.json()
-      // Strip sensitive server-only fields before download
       const exportData = {
         parent: {
           id: data.parent?.id,
@@ -129,6 +174,17 @@ export default function AccountPage() {
         <p className="text-gray-400 text-sm mt-1">إدارة بياناتك الشخصية وخصوصيتك</p>
       </div>
 
+      {/* ══ Save success toast ══ */}
+      {saveSuccess && (
+        <div
+          className="rounded-xl px-4 py-3 flex items-center gap-2 text-sm font-bold text-green-700"
+          style={{ background: '#F0FFF4', border: '1.5px solid #A7F3D0' }}
+        >
+          <CheckCircle className="w-4 h-4 flex-shrink-0" />
+          تم حفظ التغييرات بنجاح
+        </div>
+      )}
+
       {/* ══ Identity card ══ */}
       {parent && (
         <div
@@ -139,24 +195,125 @@ export default function AccountPage() {
             boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
           }}
         >
-          <div className="flex items-center gap-3 mb-4">
-            <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-              style={{ background: '#F3EEFF' }}
-            >
-              <User className="w-5 h-5" style={{ color: '#7C5CFC' }} />
+          {/* Header row */}
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <div className="flex items-center gap-3">
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{ background: '#F3EEFF' }}
+              >
+                <User className="w-5 h-5" style={{ color: '#7C5CFC' }} />
+              </div>
+              <div>
+                <p className="font-black text-gray-900 text-sm leading-tight">
+                  {editMode ? `${editFirstName} ${editLastName}` : `${parent.firstName} ${parent.lastName}`}
+                </p>
+                <p className="text-gray-400 text-xs mt-0.5">ولي الأمر</p>
+              </div>
             </div>
-            <div>
-              <p className="font-black text-gray-900 text-sm leading-tight">
-                {parent.firstName} {parent.lastName}
-              </p>
-              <p className="text-gray-400 text-xs mt-0.5">ولي الأمر</p>
-            </div>
+            {!editMode && (
+              <button
+                onClick={startEdit}
+                className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl transition-all flex-shrink-0"
+                style={{ background: '#F3EEFF', color: '#6B46F0', border: '1.5px solid #E0D0FF' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#E8DBFF' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '#F3EEFF' }}
+              >
+                <Edit3 className="w-3 h-3" />
+                تعديل
+              </button>
+            )}
           </div>
-          <div className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: '#F9FAFB', border: '1px solid #F0E8FF' }}>
+
+          {/* Email row — always read-only */}
+          <div className="flex items-center gap-2 px-3 py-2 rounded-xl mb-2" style={{ background: '#F9FAFB', border: '1px solid #F0E8FF' }}>
             <Mail className="w-4 h-4 flex-shrink-0" style={{ color: '#9CA3AF' }} />
             <span className="text-sm text-gray-600 ltr-num" dir="ltr">{parent.email}</span>
           </div>
+
+          {editMode ? (
+            /* ── Edit form ── */
+            <div className="space-y-3 mt-3">
+              <div>
+                <label className="block text-xs font-bold text-gray-500 mb-1">الاسم الأول</label>
+                <input
+                  type="text"
+                  value={editFirstName}
+                  onChange={e => setEditFirstName(e.target.value)}
+                  disabled={saving}
+                  className="w-full px-3 py-2.5 rounded-xl text-sm outline-none transition-all"
+                  style={{ border: '1.5px solid #E0D0FF', background: '#FAFAFE', color: '#1F2937' }}
+                  onFocus={e => { (e.target as HTMLInputElement).style.border = '1.5px solid #7C5CFC'; (e.target as HTMLInputElement).style.boxShadow = '0 0 0 3px rgba(124,92,252,0.1)' }}
+                  onBlur={e => { (e.target as HTMLInputElement).style.border = '1.5px solid #E0D0FF'; (e.target as HTMLInputElement).style.boxShadow = 'none' }}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 mb-1">اسم العائلة</label>
+                <input
+                  type="text"
+                  value={editLastName}
+                  onChange={e => setEditLastName(e.target.value)}
+                  disabled={saving}
+                  className="w-full px-3 py-2.5 rounded-xl text-sm outline-none transition-all"
+                  style={{ border: '1.5px solid #E0D0FF', background: '#FAFAFE', color: '#1F2937' }}
+                  onFocus={e => { (e.target as HTMLInputElement).style.border = '1.5px solid #7C5CFC'; (e.target as HTMLInputElement).style.boxShadow = '0 0 0 3px rgba(124,92,252,0.1)' }}
+                  onBlur={e => { (e.target as HTMLInputElement).style.border = '1.5px solid #E0D0FF'; (e.target as HTMLInputElement).style.boxShadow = 'none' }}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 mb-1">رقم الهاتف</label>
+                <div
+                  className="flex items-center gap-2 px-3 py-2.5 rounded-xl"
+                  style={{ border: '1.5px solid #E0D0FF', background: '#FAFAFE' }}
+                >
+                  <Phone className="w-4 h-4 flex-shrink-0" style={{ color: '#9CA3AF' }} />
+                  <input
+                    type="tel"
+                    value={editPhone}
+                    onChange={e => setEditPhone(e.target.value)}
+                    disabled={saving}
+                    placeholder="+974 XXXX XXXX"
+                    dir="ltr"
+                    className="flex-1 bg-transparent text-sm outline-none ltr-num"
+                    style={{ color: '#1F2937' }}
+                  />
+                </div>
+              </div>
+              {saveError && (
+                <p className="text-xs font-bold text-red-600">{saveError}</p>
+              )}
+              <div className="flex gap-2 pt-1">
+                <button
+                  onClick={() => { setEditMode(false); setSaveError('') }}
+                  disabled={saving}
+                  className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-50"
+                  style={{ border: '1.5px solid #E5E7EB', color: '#6B7280', background: '#FFFFFF' }}
+                  onMouseEnter={e => { if (!saving) (e.currentTarget as HTMLButtonElement).style.background = '#F9FAFB' }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '#FFFFFF' }}
+                >
+                  إلغاء
+                </button>
+                <button
+                  onClick={handleSave}
+                  disabled={saving || !editFirstName.trim() || !editLastName.trim()}
+                  className="flex-1 py-2.5 rounded-xl text-sm font-black text-white transition-all disabled:opacity-50"
+                  style={{ background: 'linear-gradient(135deg, #7C5CFC, #5A32D9)' }}
+                >
+                  {saving ? 'جاري الحفظ...' : 'حفظ التغييرات'}
+                </button>
+              </div>
+            </div>
+          ) : (
+            /* ── Phone display row ── */
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: '#F9FAFB', border: '1px solid #F0E8FF' }}>
+              <Phone className="w-4 h-4 flex-shrink-0" style={{ color: '#9CA3AF' }} />
+              {parent.phone ? (
+                <span className="text-sm text-gray-600 ltr-num" dir="ltr">{parent.phone}</span>
+              ) : (
+                <span className="text-sm text-gray-400 italic">لم يُضف رقم الهاتف بعد — اضغط تعديل</span>
+              )}
+            </div>
+          )}
         </div>
       )}
 

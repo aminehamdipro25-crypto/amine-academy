@@ -42,6 +42,41 @@ const EX_LABEL: Record<string, string> = Object.fromEntries(
   EXERCISES.map(e => [e.id, `${e.icon} ${e.labelAr}`])
 )
 
+const DAILY_TIPS_AR = [
+  'الثبات في التمارين اليومية يُحقق نتائج أفضل بكثير من الجلسات المكثفة المتفرقة.',
+  'احتفل بكل تقدم صغير يحققه طفلك — التعزيز الإيجابي يبني الثقة ويرسّخ السلوك.',
+  'ابدأ كل جلسة منزلية بنشاط يحبه طفلك لتهيئة المزاج وتشجيعه على المشاركة.',
+  'خصص وقتاً للراحة بين التمارين — الدماغ يتعلم أفضل عندما لا يكون مجهداً.',
+  'تحدث مع طفلك عن مشاعره بعد كل تمرين، فهذا يقوي الوعي الذاتي.',
+  'البيئة الهادئة والمنظمة تساعد الأطفال ذوي الاحتياجات الخاصة على التركيز بشكل أفضل.',
+  'تواصل مع المعالج بانتظام — ملاحظاتك اليومية لها قيمة سريرية كبيرة.',
+]
+const DAILY_TIPS_EN = [
+  'Consistency in daily exercises achieves far better results than intense, scattered sessions.',
+  'Celebrate every small progress your child makes — positive reinforcement builds confidence.',
+  'Start each home session with an activity your child loves to set the mood.',
+  'Allow rest between exercises — the brain learns best when it is not overwhelmed.',
+  'Talk to your child about their feelings after each exercise to strengthen self-awareness.',
+  'A calm, structured environment helps children with special needs focus better.',
+  'Communicate regularly with the therapist — your daily observations have great clinical value.',
+]
+const DAILY_TIPS_FR = [
+  'La régularité dans les exercices quotidiens donne de bien meilleurs résultats que des séances intenses et espacées.',
+  'Célébrez chaque petit progrès de votre enfant — le renforcement positif construit la confiance.',
+  'Commencez chaque séance à domicile par une activité que votre enfant aime.',
+  'Accordez du repos entre les exercices — le cerveau apprend mieux quand il n\'est pas surchargé.',
+  'Parlez à votre enfant de ses sentiments après chaque exercice pour renforcer la conscience de soi.',
+  'Un environnement calme et structuré aide les enfants à besoins spéciaux à mieux se concentrer.',
+  'Communiquez régulièrement avec le thérapeute — vos observations quotidiennes ont une grande valeur clinique.',
+]
+
+function getDailyTip(lang: string): string {
+  const day = new Date().getDay()
+  if (lang === 'en') return DAILY_TIPS_EN[day]
+  if (lang === 'fr') return DAILY_TIPS_FR[day]
+  return DAILY_TIPS_AR[day]
+}
+
 type NotifSeverity = 'urgent' | 'warning' | 'positive' | 'achievement' | 'info'
 
 interface Notification {
@@ -710,7 +745,7 @@ export default function ParentDashboardPage() {
         <div className="flex-1">
           <p className="font-black text-amber-900 text-sm">{t.tipOfDayTitle}</p>
           <p className="text-amber-800 text-xs mt-1 leading-relaxed">
-            {t.tipOfDayText}
+            {getDailyTip(lang)}
           </p>
         </div>
       </motion.div>

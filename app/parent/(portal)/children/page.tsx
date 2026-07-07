@@ -157,7 +157,7 @@ export default function ChildrenPage() {
                           { label: t.sensoryLabels.vision, value: child.sensoryProfile?.visualSensitivity },
                           { label: t.sensoryLabels.hearing, value: child.sensoryProfile?.audioSensitivity },
                           { label: t.sensoryLabels.touch, value: child.sensoryProfile?.touchSensitivity },
-                        ].map(({ label, value }) => {
+                        ].filter(({ value }) => value === 'high' || value === 'low' || value === 'medium').map(({ label, value }) => {
                           const cfg = value === 'high'
                             ? { bg: '#FEF2F2', color: '#B91C1C', text: t.sensitivityHigh }
                             : value === 'low'

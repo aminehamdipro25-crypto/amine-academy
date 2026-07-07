@@ -45,8 +45,8 @@ export default function ParentPortalLayout({ children }: { children: React.React
 
   const allNav = [...primaryNav, ...secondaryNav]
 
-  // Mobile bottom bar: home + exercises + appointments + reports + chat
-  const mobileBottomNav = [primaryNav[0], primaryNav[2], primaryNav[3], primaryNav[4], primaryNav[5]]
+  // Mobile bottom bar: home + children + exercises + appointments + chat
+  const mobileBottomNav = [primaryNav[0], primaryNav[1], primaryNav[2], primaryNav[3], primaryNav[5]]
 
   // ── Helpers ────────────────────────────────────────────────────
   function isActive(href: string) {

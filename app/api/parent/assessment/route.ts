@@ -5,6 +5,37 @@ import { getStudentsByParent } from '@/lib/db'
 import { redis } from '@/lib/redis'
 import type { AssessmentResult } from '@/lib/types'
 
+export async function GET(req: NextRequest) {
+  try {
+    const cookieStore = await cookies()
+    const token = cookieStore.get('parent_token')?.value
+    const payload = await verifyToken(token)
+    if (!payload || payload.role !== 'parent') {
+      return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
+    }
+    const { searchParams } = new URL(req.url)
+    const studentId = searchParams.get('studentId')
+    const children = await getStudentsByParent(payload.id)
+    const targetChildren = studentId
+      ? children.filter(c => c.id === studentId)
+      : children
+    if (targetChildren.length === 0) return NextResponse.json({ assessments: [] })
+
+    const allIds = (await Promise.all(
+      targetChildren.map(c => redis.lrange(`assessments:student:${c.id}`, 0, 19))
+    )).flat()
+    const records = (await Promise.all(
+      allIds.map(id => redis.get<AssessmentResult>(`assessment:${id}`))
+    )).filter(Boolean) as AssessmentResult[]
+
+    records.sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime())
+    return NextResponse.json({ assessments: records })
+  } catch (err) {
+    console.error('[parent/assessment GET]', err)
+    return NextResponse.json({ error: 'خطأ في الخادم' }, { status: 500 })
+  }
+}
+
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 

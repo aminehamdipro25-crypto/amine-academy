@@ -11,6 +11,14 @@ import { useLang, tr } from '@/lib/i18n'
 type Phase = 'intro' | 'questions' | 'results'
 
 interface Child { id: string; firstName: string; lastName: string }
+interface PastAssessment { id: string; completedAt: string; totalScore: number; severity: string; studentId: string }
+
+const SEVERITY_LABEL: Record<string, { label: string; color: string; bg: string }> = {
+  none:     { label: 'طبيعي',      color: '#065F46', bg: '#D1FAE5' },
+  mild:     { label: 'خفيف',       color: '#B45309', bg: '#FFFBEB' },
+  moderate: { label: 'متوسط',      color: '#C2410C', bg: '#FFF7ED' },
+  severe:   { label: 'مرتفع',      color: '#B91C1C', bg: '#FEF2F2' },
+}
 
 export default function AssessmentPage() {
   const { lang } = useLang()
@@ -23,6 +31,7 @@ export default function AssessmentPage() {
   const [saving, setSaving]         = useState(false)
   const [saved, setSaved]           = useState(false)
   const [saveError, setSaveError]   = useState('')
+  const [pastAssessments, setPastAssessments] = useState<PastAssessment[]>([])
 
   useEffect(() => {
     fetch('/api/parent/me')
@@ -33,6 +42,10 @@ export default function AssessmentPage() {
           setSelectedChild(d.children[0].id)
         }
       })
+      .catch(() => {})
+    fetch('/api/parent/assessment')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.assessments) setPastAssessments(d.assessments.slice(0, 3)) })
       .catch(() => {})
   }, [])
 
@@ -146,6 +159,33 @@ export default function AssessmentPage() {
         </p>
       </div>
 
+      {/* Previous assessments */}
+      {pastAssessments.length > 0 && (
+        <div className="rounded-2xl p-4" style={{ background: '#FFFFFF', border: '1.5px solid #F0E8FF' }}>
+          <p className="font-black text-sm text-gray-700 mb-3">📊 آخر تقييمات مكتملة</p>
+          <div className="space-y-2">
+            {pastAssessments.map(a => {
+              const sev = SEVERITY_LABEL[a.severity] ?? SEVERITY_LABEL.mild
+              const childName = children.find(c => c.id === a.studentId)?.firstName ?? ''
+              return (
+                <div key={a.id} className="flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl" style={{ background: '#F9FAFB' }}>
+                  <div>
+                    <div className="text-xs font-bold text-gray-700">
+                      {new Date(a.completedAt).toLocaleDateString('fr-FR', { year: 'numeric', month: 'short', day: 'numeric' })}
+                      {childName ? ` · ${childName}` : ''}
+                    </div>
+                    <div className="text-[10px] text-gray-400 mt-0.5 ltr-num">{a.totalScore}/60 نقطة</div>
+                  </div>
+                  <span className="text-xs font-bold px-2.5 py-1 rounded-full" style={{ background: sev.bg, color: sev.color }}>
+                    {sev.label}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       <button
         onClick={() => setPhase('questions')}
         className="w-full font-black text-lg text-white py-4 rounded-2xl transition-all"
@@ -153,7 +193,7 @@ export default function AssessmentPage() {
         onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-2px)' }}
         onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = '' }}
       >
-        {t.startButton}
+        {pastAssessments.length > 0 ? 'إعادة التقييم' : t.startButton}
       </button>
     </div>
   )

@@ -3105,37 +3105,26 @@ ${notes ? `
         <main className={`flex-1 flex items-center justify-center bg-gray-950 relative overflow-auto ${chromeHidden ? '' : 'pb-20 lg:pb-0'} ${kidMode ? 'hidden' : ''}`}>
 
           {/* ── Embedded Jitsi iframe ── */}
+          {/* Single DraggableVideoPiP instance — never unmounts so WebRTC stays connected.
+              fullScreen=true when no exercise/whiteboard is active (fills viewport),
+              fullScreen=false when exercise starts (shrinks to draggable PiP). */}
           {jitsiEmbedded && jitsiEmbedUrl && (
-            (activeView || showWhiteboard || promptCard)
-              ? (
-                // PiP mode — draggable floating window
-                <DraggableVideoPiP
-                  onClose={() => setJitsiEmbedded(false)}
-                  label="📹 مقابلة"
-                  initialBottom={20}
-                  initialLeft={20}
-                  minWidth={280}
-                  minHeight={210}
-                >
-                  <iframe
-                    src={jitsiEmbedUrl}
-                    style={{ width: '100%', height: '100%', border: 'none', display: 'block' }}
-                    allow="camera *; microphone *; display-capture *; fullscreen *; autoplay *"
-                    allowFullScreen
-                  />
-                </DraggableVideoPiP>
-              )
-              : (
-                // Full-screen mode
-                <div className="absolute inset-0 z-10">
-                  <iframe
-                    src={jitsiEmbedUrl}
-                    style={{ width: '100%', height: '100%', border: 'none', display: 'block' }}
-                    allow="camera *; microphone *; display-capture *; fullscreen *; autoplay *"
-                    allowFullScreen
-                  />
-                </div>
-              )
+            <DraggableVideoPiP
+              onClose={() => setJitsiEmbedded(false)}
+              label="📹 مقابلة"
+              initialBottom={20}
+              initialLeft={20}
+              minWidth={280}
+              minHeight={210}
+              fullScreen={!(activeView || showWhiteboard || promptCard)}
+            >
+              <iframe
+                src={jitsiEmbedUrl}
+                style={{ width: '100%', height: '100%', border: 'none', display: 'block' }}
+                allow="camera *; microphone *; display-capture *; fullscreen *; autoplay *"
+                allowFullScreen
+              />
+            </DraggableVideoPiP>
           )}
 
           {/* ── Content presenter PiP — specialist drags/resizes over the session ── */}

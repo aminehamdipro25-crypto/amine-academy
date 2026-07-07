@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAppointment } from '@/lib/db'
 import { ensureDailyRoom, createMeetingToken } from '@/lib/daily'
 import { authorizeSession } from '@/lib/session-access'
+import { isRateLimited } from '@/lib/rateLimit'
 
 export const runtime = 'nodejs'
 
@@ -17,6 +18,11 @@ export async function GET(
   try {
     const role = await authorizeSession(params.appointmentId)
     if (!role) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
+
+    // This call reaches out to the Daily.co API (room refresh + token mint) —
+    // cap retries so a reconnect loop can't hammer Daily's API.
+    const rl = await isRateLimited(`session_meeting_get:${params.appointmentId}`, 20, 60)
+    if (rl.limited) return NextResponse.json({ error: 'طلبات كثيرة جداً' }, { status: 429 })
 
     const appt = await getAppointment(params.appointmentId)
     if (!appt?.meetingUrl) return NextResponse.json({ meetingUrl: null })

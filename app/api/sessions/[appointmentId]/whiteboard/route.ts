@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isDashboardUser } from '@/lib/auth'
 import { authorizeSession } from '@/lib/session-access'
+import { isRateLimited } from '@/lib/rateLimit'
 import { redis } from '@/lib/redis'
 
 export const runtime = 'nodejs'
@@ -40,6 +41,10 @@ export async function POST(
 ) {
   try {
     if (!await isDashboardUser()) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
+    // Generous cap — a fast-drawing specialist can lift the pen a few times a
+    // second; this only guards against runaway/malicious flooding.
+    const rl = await isRateLimited(`session_wb_post:${params.appointmentId}`, 300, 60)
+    if (rl.limited) return NextResponse.json({ error: 'طلبات كثيرة جداً' }, { status: 429 })
     const body = await req.json().catch(() => null)
     if (!body?.action) return NextResponse.json({ error: 'action مطلوب' }, { status: 400 })
 

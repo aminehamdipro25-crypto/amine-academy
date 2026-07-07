@@ -21,12 +21,14 @@ export function computeAdaptiveDecision(
   allResults: ExerciseResult[],
   currentLevel: 1|2|3,
 ): AdaptiveDecision | null {
-  // Include the brand-new result
-  const typeResults = [...allResults.filter(r => r.exerciseType === result.exerciseType), result]
+  // allResults is the CURRENT results state, which already contains `result`
+  // (appended by the caller's setResults before this runs) — filtering by
+  // exerciseType alone gives the up-to-date list without double-counting it.
+  const typeResults = allResults.filter(r => r.exerciseType === result.exerciseType)
   if (typeResults.length < 2) return null
 
   const last3 = typeResults.slice(-3)
-  const avg   = last3.reduce((s, r) => s + r.score, 0) / 3
+  const avg   = last3.reduce((s, r) => s + r.score, 0) / last3.length
 
   if (avg >= 85 && currentLevel < 3) {
     return {

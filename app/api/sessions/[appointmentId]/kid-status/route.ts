@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { authorizeSession } from '@/lib/session-access'
+import { isRateLimited } from '@/lib/rateLimit'
 import { redis } from '@/lib/redis'
 
 export const runtime = 'nodejs'
@@ -32,6 +33,8 @@ export async function POST(
     if (!await authorizeSession(params.appointmentId)) {
       return NextResponse.json({ ok: false }, { status: 401 })
     }
+    const rl = await isRateLimited(`session_kidstatus_post:${params.appointmentId}`, 60, 60)
+    if (rl.limited) return NextResponse.json({ ok: false }, { status: 429 })
     const body = await req.json().catch(() => null)
     if (!body?.exerciseId || (body.status !== 'active' && body.status !== 'done')) {
       return NextResponse.json({ ok: false }, { status: 400 })

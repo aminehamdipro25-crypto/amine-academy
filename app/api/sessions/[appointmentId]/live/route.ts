@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isDashboardUser } from '@/lib/auth'
 import { authorizeSession } from '@/lib/session-access'
+import { isRateLimited } from '@/lib/rateLimit'
 import { redis } from '@/lib/redis'
 
 export const runtime = 'nodejs'
@@ -33,6 +34,8 @@ export async function POST(
     if (!await isDashboardUser()) {
       return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
     }
+    const rl = await isRateLimited(`session_live_post:${params.appointmentId}`, 60, 60)
+    if (rl.limited) return NextResponse.json({ error: 'طلبات كثيرة جداً' }, { status: 429 })
     const body = await req.json().catch(() => null)
     if (!body?.exerciseId) return NextResponse.json({ error: 'exerciseId مطلوب' }, { status: 400 })
     await redis.set(key(params.appointmentId), { exerciseId: body.exerciseId, difficulty: body.difficulty ?? 1 }, { ex: 14400 })

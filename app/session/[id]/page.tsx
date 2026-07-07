@@ -149,6 +149,10 @@ export default function SessionPage() {
   const [saved, setSaved] = useState(false)
   const [saving, setSaving] = useState(false)
   const [saveFailed, setSaveFailed] = useState(false)
+  // Tracks whether anything has changed since the last successful saveSession()
+  // — separate from `saved` (a transient UI flourish that doesn't reset when
+  // new content is added), so the unload warning stays accurate.
+  const dirtySinceSaveRef = useRef(false)
   const [assessmentSaveFailed, setAssessmentSaveFailed] = useState(false)
   const [studentAge, setStudentAge] = useState(8)
   const [studentName, setStudentName] = useState('')
@@ -357,9 +361,12 @@ export default function SessionPage() {
   persistDraftRef.current = persistDraft
 
   // Silent server auto-save — runs every 30s while the session is active and
-  // has results. No UI feedback; it's backup insurance, not the canonical save.
+  // has ANY meaningful content (exercises OR notes/observations/incidents).
+  // No UI feedback; it's backup insurance, not the canonical save, and never
+  // finalizes the appointment (finalize omitted — see route.ts).
   async function silentServerSave() {
-    if (!currentStudentId || results.length === 0) return
+    const hasContent = results.length > 0 || notes.trim() !== '' || obsLog.length > 0 || abcLog.length > 0 || incidentLog.length > 0
+    if (!currentStudentId || !hasContent) return
     try {
       await fetch(`/api/sessions/${id}`, {
         method: 'POST',
@@ -373,6 +380,7 @@ export default function SessionPage() {
           highlights: results.filter(r => r.score >= 80).map(r => `${r.exerciseLabelAr}: ${r.score}%`),
           observationLog: obsLog,
           abcLog,
+          incidentLog,
         }),
       })
     } catch { /* silent — manual save is still the canonical action */ }
@@ -393,6 +401,11 @@ export default function SessionPage() {
     return () => clearTimeout(tid)
   }, [running, results, assessments, notes, difficulty, obsLog, abcLog, phaseIdx, phaseDurations, id])
 
+  // Marks content dirty since the last explicit save, for the unload warning.
+  useEffect(() => {
+    dirtySinceSaveRef.current = true
+  }, [results, notes, obsLog, abcLog, incidentLog])
+
   // Periodic heartbeat save while the timer is running, so progress is never
   // more than a few seconds stale if the tab is closed mid-session.
   useEffect(() => {
@@ -402,11 +415,28 @@ export default function SessionPage() {
   }, [running, id])
 
   // Server auto-save every 30s — guards against browser crash losing data.
+  // Runs whenever there's ANY unsaved content, not just while the timer is
+  // running: notes/observations/incidents logged before pressing "ابدأ" (or
+  // after pausing) previously had zero server backup.
+  const hasUnsavedContent = results.length > 0 || notes.trim() !== '' || obsLog.length > 0 || abcLog.length > 0 || incidentLog.length > 0
   useEffect(() => {
-    if (!running || !currentStudentId) return
+    if (!currentStudentId || !hasUnsavedContent) return
     const iv = setInterval(() => silentServerSaveRef.current(), 30_000)
     return () => clearInterval(iv)
-  }, [running, currentStudentId, id])
+  }, [hasUnsavedContent, currentStudentId, id])
+
+  // Warn before closing/reloading the tab while there's content that hasn't
+  // been through the canonical saveSession() yet (dirtySinceSaveRef, not the
+  // transient `saved` flourish, which doesn't reset when new content arrives).
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (!hasUnsavedContent || !dirtySinceSaveRef.current) return
+      e.preventDefault()
+      e.returnValue = ''
+    }
+    window.addEventListener('beforeunload', handler)
+    return () => window.removeEventListener('beforeunload', handler)
+  }, [hasUnsavedContent])
 
   // Track header + toolbar + phase-bar height so top toasts never overlap them, regardless of how many rows they take
   useEffect(() => {
@@ -1473,9 +1503,11 @@ ${notes ? `
           observationLog: obsLog,
           abcLog,
           incidentLog,
+          finalize: true,
         }),
       })
       if (!res.ok) throw new Error(String(res.status))
+      dirtySinceSaveRef.current = false
       setSaved(true)
       sessionStorage.removeItem(`session_draft_${id}`)
       playSound('complete')
@@ -1564,7 +1596,9 @@ ${notes ? `
     return () => clearInterval(iv)
   }, [id])
 
-  // Publish current exercise to Redis so the kid page can mirror it in real-time
+  // Publish current exercise to Redis so the kid page can mirror it in real-time.
+  // Re-runs on activeDifficulty too, so an adaptive-engine level change for the
+  // SAME exercise re-publishes instead of leaving the kid on the old level.
   useEffect(() => {
     if (!id) return
     if (activeView?.type === 'exercise') {
@@ -1573,11 +1607,13 @@ ${notes ? `
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ exerciseId: activeView.id, difficulty: activeDifficulty }),
       }).catch(() => {})
-    } else if (activeView === null) {
+    } else {
+      // Nothing active OR a non-exercise view (e.g. an assessment) — clear the
+      // live exercise so the kid page doesn't keep mirroring a stale exercise
+      // while the specialist is doing something else entirely.
       fetch(`/api/sessions/${id}/live`, { method: 'DELETE' }).catch(() => {})
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeView?.id, id])
+  }, [activeView?.id, activeView?.type, activeDifficulty, id])
 
   // The prompt-card / timer / music popovers are portaled to document.body and
   // anchored to their toolbar button's on-screen position — they don't live

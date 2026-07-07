@@ -124,10 +124,15 @@ export async function POST(
     if (studentId) {
       await redis.pipeline([['LPUSH', `sessions:student:${studentId}`, params.appointmentId]])
     }
-    try {
-      await updateAppointment(params.appointmentId, { status: 'completed' })
-    } catch (e) {
-      console.error('[session-log POST] failed to mark appointment completed', e)
+    // Only the explicit "حفظ" action finalizes the appointment as completed.
+    // The 30s silent backup (finalize: false/omitted) must NOT flip status —
+    // otherwise an in-progress or abandoned session shows as completed.
+    if (body.finalize) {
+      try {
+        await updateAppointment(params.appointmentId, { status: 'completed' })
+      } catch (e) {
+        console.error('[session-log POST] failed to mark appointment completed', e)
+      }
     }
     await audit({ action: 'session_save', actorId: 'admin', actorRole: 'admin', targetId: studentId, meta: { appointmentId: params.appointmentId } })
     return NextResponse.json({ ok: true, id })

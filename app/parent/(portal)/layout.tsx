@@ -10,6 +10,7 @@ import {
 import { useLang, tr } from '@/lib/i18n'
 import LangToggle from '@/components/shared/LangToggle'
 import AcademyLogo from '@/components/shared/AcademyLogo'
+import ParentOnboarding from '@/components/parent/ParentOnboarding'
 
 export default function ParentPortalLayout({ children }: { children: React.ReactNode }) {
   const pathname  = usePathname()
@@ -361,6 +362,7 @@ export default function ParentPortalLayout({ children }: { children: React.React
           </div>
         </>
       )}
+      <ParentOnboarding />
     </div>
   )
 }

@@ -46,7 +46,7 @@ function AIChatTab() {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: history }),
+        body: JSON.stringify({ messages: history, lang }),
       })
       const data = await res.json()
       setMsgs(prev => [...prev, { role: 'assistant', text: data.reply || t.aiErrorReply, time: nowTime(lang) }])

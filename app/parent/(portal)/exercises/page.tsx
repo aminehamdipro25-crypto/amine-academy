@@ -574,6 +574,7 @@ export default function ExercisesPage() {
   const catLabels = tr[lang].portal.common.categoryLabels
   const [exercises,  setExercises]  = useState<Exercise[]>([])
   const [child,      setChild]      = useState<Student | null>(null)
+  const [allChildren, setAllChildren] = useState<Student[]>([])
   const [loading,    setLoading]    = useState(true)
   const [filter,     setFilter]     = useState('all')
   const [selected,   setSelected]   = useState<Exercise | null>(null)
@@ -591,13 +592,29 @@ export default function ExercisesPage() {
 
   useEffect(() => {
     fetch('/api/parent/me').then(r => r.json()).then(d => {
-      const c = d.children?.[0] || null
+      const kids: Student[] = d.children || []
+      setAllChildren(kids)
+      const c = kids[0] || null
       setChild(c)
       const q = c ? `age=${c.ageGroup}&diagnosis=${c.diagnosis}` : ''
       return fetch(`/api/exercises?${q}`)
     }).then(r => r.json()).then(d => setExercises(d.exercises || []))
     .finally(() => setLoading(false))
   }, [])
+
+  function switchChild(c: Student) {
+    if (c.id === child?.id) return
+    setChild(c)
+    setCompleted(new Set())
+    setSelected(null)
+    setPhase('grid')
+    setLoading(true)
+    const q = `age=${c.ageGroup}&diagnosis=${c.diagnosis}`
+    fetch(`/api/exercises?${q}`)
+      .then(r => r.json())
+      .then(d => setExercises(d.exercises || []))
+      .finally(() => setLoading(false))
+  }
 
   // Session timer
   useEffect(() => {
@@ -636,12 +653,27 @@ export default function ExercisesPage() {
     setTimerOn(false)
     sfx.complete()
     setCompleted(prev => new Set([...prev, selected.id]))
-    setResult(r || {
+    const res: ExerciseResult = r || {
       exerciseType: selected.title, exerciseLabelAr: selected.titleAr,
       score: 100, accuracy: 100, duration: sessionSec, errors: 0,
       metadata: {}, completedAt: new Date().toISOString(),
-    })
+    }
+    setResult(res)
     setPhase('complete')
+    if (child) {
+      fetch('/api/parent/game-progress', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          studentId:       child.id,
+          gameId:          selected.id,
+          gameLabelAr:     selected.titleAr || selected.title,
+          score:           res.score,
+          accuracy:        res.accuracy,
+          durationSeconds: res.duration || sessionSec,
+        }),
+      }).catch(() => {})
+    }
   }
 
   function handleCancel() {
@@ -688,6 +720,27 @@ export default function ExercisesPage() {
           </div>
         ) : null}
       </div>
+
+      {/* ── Child switcher (only when multiple children) ── */}
+      {allChildren.length > 1 && (
+        <div className="flex gap-2 flex-wrap">
+          {allChildren.map(c => (
+            <button
+              key={c.id}
+              onClick={() => switchChild(c)}
+              className="flex items-center gap-2 px-3 py-2 rounded-2xl text-sm font-black transition-all"
+              style={
+                child?.id === c.id
+                  ? { background: '#6B46F0', color: '#FFFFFF', boxShadow: '0 2px 8px rgba(107,70,240,0.3)' }
+                  : { background: '#F3EEFF', color: '#6B46F0', border: '1.5px solid #E0D0FF' }
+              }
+            >
+              <span>{c.firstName}</span>
+              <span className="opacity-70 text-xs font-medium">{c.diagnosis}</span>
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* ── Stats row ── */}
       <div className="grid grid-cols-3 gap-3">

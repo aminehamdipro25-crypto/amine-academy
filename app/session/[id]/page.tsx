@@ -476,7 +476,32 @@ export default function SessionPage() {
       }).catch(() => {})
   }, [id])
 
-  const [jitsiEmbedded, setJitsiEmbedded] = useState(false)
+  // Meeting popup — open Daily.co in a new window instead of an iframe so
+  // Chrome can grant camera/mic permissions without cross-origin restrictions.
+  const meetingPopupRef = useRef<Window | null>(null)
+  const meetingCheckRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const [jitsiEmbedded, setJitsiEmbedded] = useState(false) // true = popup is open
+
+  function openMeetingPopup() {
+    if (meetingPopupRef.current && !meetingPopupRef.current.closed) {
+      meetingPopupRef.current.focus()
+      return
+    }
+    if (!jitsiUrl) return
+    const popup = window.open(jitsiUrl, 'daily-meeting',
+      'width=900,height=700,menubar=no,toolbar=no,location=no,status=no,resizable=yes')
+    if (!popup) return
+    meetingPopupRef.current = popup
+    setJitsiEmbedded(true)
+    if (meetingCheckRef.current) clearInterval(meetingCheckRef.current)
+    meetingCheckRef.current = setInterval(() => {
+      if (popup.closed) {
+        setJitsiEmbedded(false)
+        meetingPopupRef.current = null
+        clearInterval(meetingCheckRef.current!)
+      }
+    }, 1000)
+  }
 
   // Daily.co embed URL — settings applied at room creation, no hash params needed
   const jitsiEmbedUrl = jitsiUrl ?? null
@@ -1530,6 +1555,28 @@ ${notes ? `
     navigator.clipboard.writeText(kidUrl).then(() => { setKidCopied(true); setTimeout(() => setKidCopied(false), 2000) })
   }
 
+  // Poll kid status — specialist sees when kid receives / finishes an exercise
+  type KidStatus = { exerciseId: string; status: 'active' | 'done'; ts: number } | null
+  const [kidStatus, setKidStatus] = useState<KidStatus>(null)
+  const kidStatusRef = useRef<KidStatus>(null)
+  useEffect(() => {
+    if (!id) return
+    const poll = async () => {
+      try {
+        const r = await fetch(`/api/sessions/${id}/kid-status`)
+        const { kidStatus: data } = await r.json() as { kidStatus: KidStatus }
+        // Only update state when something actually changed
+        if (JSON.stringify(data) !== JSON.stringify(kidStatusRef.current)) {
+          kidStatusRef.current = data
+          setKidStatus(data)
+        }
+      } catch { /* ignore */ }
+    }
+    poll()
+    const iv = setInterval(poll, 3000)
+    return () => clearInterval(iv)
+  }, [id])
+
   // Publish current exercise to Redis so the kid page can mirror it in real-time
   useEffect(() => {
     if (!id) return
@@ -1816,6 +1863,8 @@ ${notes ? `
         kidUrl={kidUrl}
         kidCopied={kidCopied}
         onCopyKidUrl={copyKidUrl}
+        kidStatus={kidStatus}
+        activeExerciseId={activeExerciseId}
       />
 
       <SessionToolbar
@@ -1823,7 +1872,7 @@ ${notes ? `
         chromeHidden={chromeHidden}
         jitsiUrl={jitsiUrl}
         jitsiEmbedded={jitsiEmbedded}
-        onToggleJitsiEmbedded={() => setJitsiEmbedded(e => !e)}
+        onToggleJitsiEmbedded={openMeetingPopup}
         showWhiteboard={showWhiteboard}
         onToggleWhiteboard={() => setShowWhiteboard(w => !w)}
         promptBtnRef={promptBtnRef}
@@ -3136,24 +3185,7 @@ ${notes ? `
             </button>
           )}
 
-          {/* ── Embedded Daily.co iframe ── */}
-          {jitsiEmbedded && jitsiEmbedUrl && (
-            <DraggableVideoPiP
-              onClose={() => setJitsiEmbedded(false)}
-              label="📹 مقابلة"
-              initialBottom={20}
-              initialLeft={20}
-              minWidth={460}
-              minHeight={360}
-            >
-              <iframe
-                src={jitsiEmbedUrl}
-                style={{ width: '100%', height: '100%', border: 'none', display: 'block' }}
-                allow="camera; microphone; fullscreen; display-capture; picture-in-picture; speaker-selection"
-                allowFullScreen
-              />
-            </DraggableVideoPiP>
-          )}
+          {/* Meeting is now a popup window — no iframe needed */}
 
           {/* ── Content presenter PiP — specialist drags/resizes over the session ── */}
           {contentUrl && !(activeView || showWhiteboard) && (

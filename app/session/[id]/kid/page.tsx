@@ -125,31 +125,51 @@ export default function KidSessionPage() {
     return () => clearInterval(iv)
   }, [poll])
 
-  const handleDone = useCallback(() => setDone(true), [])
+  // Report status to specialist when exercise starts/finishes
+  const reportStatus = useCallback((exerciseId: string, status: 'active' | 'done') => {
+    fetch(`/api/sessions/${id}/kid-status`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ exerciseId, status }),
+    }).catch(() => {})
+  }, [id])
+
+  const handleDone = useCallback(() => {
+    setDone(true)
+    if (live?.exerciseId) reportStatus(live.exerciseId, 'done')
+  }, [live?.exerciseId, reportStatus])
+
+  // Report active when a new exercise is received
+  useEffect(() => {
+    if (live?.exerciseId) reportStatus(live.exerciseId, 'active')
+  }, [live?.exerciseId, reportStatus])
 
   const difficulty = (live?.difficulty ?? 1) as 1|2|3
 
-  // ── Teacher video PiP (shown on all screens) ──────────────────────────
-  const teacherPiP = meetingUrl && !videoHidden && (
-    <div style={{
-      position: 'fixed', bottom: 16, left: 16, zIndex: 9999,
-      width: 180, height: 135, borderRadius: 16,
-      overflow: 'hidden', boxShadow: '0 8px 32px rgba(0,0,0,0.35)',
-      border: '2px solid rgba(255,255,255,0.3)',
-    }}>
-      <iframe
-        src={meetingUrl}
-        allow="camera; microphone; fullscreen; display-capture"
-        style={{ width: '100%', height: '100%', border: 'none' }}
-      />
+  // ── Teacher video button (opens in new tab — avoids iframe camera block) ──
+  const teacherVideoBtn = meetingUrl && !videoHidden && (
+    <div style={{ position: 'fixed', bottom: 16, left: 16, zIndex: 9999, display: 'flex', alignItems: 'center', gap: 6 }}>
+      <a
+        href={meetingUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{
+          display: 'flex', alignItems: 'center', gap: 8,
+          background: 'linear-gradient(135deg,#6D28D9,#9333EA)',
+          color: '#fff', borderRadius: 14, padding: '10px 16px',
+          textDecoration: 'none', fontWeight: 900, fontSize: 14,
+          boxShadow: '0 4px 20px rgba(109,40,217,0.4)',
+          border: '2px solid rgba(255,255,255,0.25)',
+        }}
+      >
+        📹 المقابلة مع الأستاذ
+      </a>
       <button
         onClick={() => setVideoHidden(true)}
         style={{
-          position: 'absolute', top: 4, right: 4, zIndex: 10,
-          width: 20, height: 20, borderRadius: '50%',
-          background: 'rgba(0,0,0,0.6)', border: 'none',
-          color: '#fff', fontSize: 10, cursor: 'pointer',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          width: 28, height: 28, borderRadius: '50%',
+          background: 'rgba(0,0,0,0.5)', border: 'none',
+          color: '#fff', fontSize: 12, cursor: 'pointer',
         }}
       >✕</button>
     </div>
@@ -167,7 +187,7 @@ export default function KidSessionPage() {
           padding: 24, gap: 24,
         }}
       >
-        {teacherPiP}
+        {teacherVideoBtn}
         {/* Animated stars */}
         <div style={{ fontSize: 72, lineHeight: 1, animation: 'bounce 2s infinite' }}>
           {done ? '🌟' : '⏳'}
@@ -201,7 +221,7 @@ export default function KidSessionPage() {
 
   return (
     <div style={{ width: '100vw', height: '100dvh', overflow: 'hidden', background: '#fff' }}>
-      {teacherPiP}
+      {teacherVideoBtn}
       <Suspense fallback={
         <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100%' }}>
           <div style={{ width:48, height:48, borderRadius:'50%', border:'5px solid #A78BFA', borderTopColor:'transparent', animation:'spin 0.8s linear infinite' }} />

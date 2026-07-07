@@ -38,6 +38,8 @@ export default function SessionHeader({
   kidUrl,
   kidCopied,
   onCopyKidUrl,
+  kidStatus,
+  activeExerciseId,
 }: {
   headerRef: React.RefObject<HTMLElement>
   chromeHidden: boolean
@@ -67,6 +69,8 @@ export default function SessionHeader({
   kidUrl: string
   kidCopied: boolean
   onCopyKidUrl: () => void
+  kidStatus: { exerciseId: string; status: 'active' | 'done'; ts: number } | null
+  activeExerciseId: string | null
 }) {
   return (
     <header
@@ -296,6 +300,23 @@ export default function SessionHeader({
           >
             <Share2 className="w-4 h-4" />
           </a>
+        </div>
+      )}
+
+      {/* Kid status indicator — shows when kid is active or done */}
+      {kidStatus && kidStatus.exerciseId === activeExerciseId && (
+        <div
+          className={`flex items-center gap-1 px-2 py-1 rounded-lg flex-shrink-0 border animate-in fade-in duration-300 ${
+            kidStatus.status === 'done'
+              ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
+              : 'bg-blue-50 text-blue-700 border-blue-200'
+          }`}
+          title={kidStatus.status === 'done' ? 'الطفل أنهى التمرين' : 'الطفل يؤدي التمرين الآن'}
+        >
+          <span className="text-sm">{kidStatus.status === 'done' ? '✅' : '🧒'}</span>
+          <span className="text-[10px] font-black hidden sm:inline">
+            {kidStatus.status === 'done' ? 'أنهى التمرين' : 'يتفاعل الآن'}
+          </span>
         </div>
       )}
 

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyToken } from '@/lib/auth'
-import { getStudent, getStudentProgram } from '@/lib/db'
+import { getStudent, getStudentProgram, getAllExercises } from '@/lib/db'
 
 export const runtime = 'nodejs'
 
@@ -23,8 +23,15 @@ export async function GET(
       return NextResponse.json({ program: null })
     }
 
-    const program = await getStudentProgram(params.id)
-    return NextResponse.json({ program })
+    const [program, allExercises] = await Promise.all([
+      getStudentProgram(params.id),
+      getAllExercises(),
+    ])
+    const exerciseNames: Record<string, string> = {}
+    for (const ex of allExercises) {
+      exerciseNames[ex.id] = ex.titleAr || ex.title || ex.id
+    }
+    return NextResponse.json({ program, exerciseNames })
   } catch {
     return NextResponse.json({ program: null })
   }

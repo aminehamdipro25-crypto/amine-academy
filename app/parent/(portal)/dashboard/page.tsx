@@ -173,6 +173,7 @@ export default function ParentDashboardPage() {
   const coachName = tr[lang].portal.common.coachName
   const [data, setData] = useState<DashboardData | null>(null)
   const [programs, setPrograms] = useState<Record<string, Program>>({})
+  const [exerciseNames, setExerciseNames] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
   const [unreadMessages, setUnreadMessages] = useState(0)
   const [dismissedNotifs, setDismissedNotifs] = useState<number[]>([])
@@ -190,13 +191,19 @@ export default function ParentDashboardPage() {
       .then(async d => {
         setData(d)
         const progs: Record<string, Program> = {}
+        const allNames: Record<string, string> = {}
         await Promise.all((d.children || []).map(async (c: Student) => {
           try {
             const r = await fetch(`/api/parent/children/${c.id}/program`)
-            if (r.ok) { const p = await r.json(); if (p.program) progs[c.id] = p.program }
+            if (r.ok) {
+              const p = await r.json()
+              if (p.program) progs[c.id] = p.program
+              if (p.exerciseNames) Object.assign(allNames, p.exerciseNames)
+            }
           } catch { /* no program */ }
         }))
         setPrograms(progs)
+        setExerciseNames(allNames)
       })
       .finally(() => setLoading(false))
 
@@ -697,7 +704,7 @@ export default function ParentDashboardPage() {
                               className="text-xs font-bold px-2.5 py-0.5 rounded-full"
                               style={{ background: '#BBF7D0', color: '#15803D' }}
                             >
-                              {EX_LABEL[exId] || exId}
+                              {exerciseNames[exId] || EX_LABEL[exId] || exId}
                             </span>
                           ))}
                           {todayExs.length > 4 && (

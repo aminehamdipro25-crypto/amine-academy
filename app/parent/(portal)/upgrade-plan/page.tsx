@@ -16,7 +16,7 @@ const BASE_PRICES: Record<PlanId, Record<Currency, number>> = {
   monthly: { QAR: 549, TND: 149 },
 }
 
-const PLAN_SESSIONS: Record<PlanId, number> = { session: 1, weekly: 4, monthly: 16 }
+const PLAN_SESSIONS: Record<PlanId, number> = { session: 1, weekly: 4, monthly: 12 }
 
 const FEATURES: Record<PlanId, { emoji: string; ar: string; en: string }[]> = {
   session: [
@@ -31,7 +31,7 @@ const FEATURES: Record<PlanId, { emoji: string; ar: string; en: string }[]> = {
     { emoji: '💬', ar: 'واتساب مباشر', en: 'Direct WhatsApp' },
   ],
   monthly: [
-    { emoji: '🏆', ar: '16 حصة / شهر', en: '16 sessions/month' },
+    { emoji: '🏆', ar: '12 حصة / شهر', en: '12 sessions/month' },
     { emoji: '⚡', ar: 'أولوية الحجز', en: 'Priority booking' },
     { emoji: '📈', ar: 'تقارير يومية', en: 'Daily reports' },
     { emoji: '👨‍👩‍👧', ar: 'توجيه الوالدين', en: 'Parent coaching' },

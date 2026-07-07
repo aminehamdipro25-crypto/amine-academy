@@ -397,7 +397,10 @@ export default function AppointmentsPage() {
                 ) : slots.length === 0 ? (
                   <p className="text-xs text-gray-400 text-center py-4">لا توجد مواعيد متاحة في هذا اليوم</p>
                 ) : (
-                  <div className="grid grid-cols-3 gap-2">
+                  <div
+                    className="grid grid-cols-3 gap-2 overflow-y-auto pr-1"
+                    style={{ maxHeight: 220 }}
+                  >
                     {slots.map(slot => {
                       const selected = booking.timeSlot === slot.time
                       return (
@@ -406,7 +409,7 @@ export default function AppointmentsPage() {
                           type="button"
                           disabled={!slot.available}
                           onClick={() => slot.available && setBooking(b => ({ ...b, timeSlot: slot.time }))}
-                          className="ltr-num rounded-xl py-2.5 text-sm font-bold transition-all relative"
+                          className="ltr-num rounded-xl py-2 text-sm font-bold transition-all relative"
                           style={
                             !slot.available
                               ? { background: '#F3F4F6', color: '#D1D5DB', cursor: 'not-allowed', border: '1.5px solid #F3F4F6' }

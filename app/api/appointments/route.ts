@@ -41,6 +41,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'بيانات غير مكتملة' }, { status: 400 })
     }
 
+    // Validate the time is a real HH:MM inside working hours (09:00–18:45)
+    const tm = /^(\d{2}):(\d{2})$/.exec(String(timeSlot))
+    if (!tm) return NextResponse.json({ error: 'وقت غير صالح' }, { status: 400 })
+    const th = Number(tm[1]), tmin = Number(tm[2])
+    if (th < 9 || th > 18 || ![0, 15, 30, 45].includes(tmin)) {
+      return NextResponse.json({ error: 'وقت غير صالح' }, { status: 400 })
+    }
+
     // IDOR guard: verify studentId belongs to the authenticated parent
     const parentStudents = await getStudentsByParent(payload.id)
     if (!parentStudents.some(s => s.id === studentId)) {

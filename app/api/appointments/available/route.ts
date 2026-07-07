@@ -6,8 +6,13 @@ import { getAppointmentsByDate } from '@/lib/db'
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
-// Specialist working slots (Sun–Thu, 09:00–18:00)
-const ALL_SLOTS = ['09:00', '10:00', '11:00', '12:00', '14:00', '15:00', '16:00', '17:00', '18:00']
+// Specialist working slots (Sun–Thu). 15-minute granularity so families can
+// pick e.g. 17:30 or 17:45, not just whole hours. 13:xx is the lunch break.
+const WORK_HOURS = [9, 10, 11, 12, 14, 15, 16, 17, 18]
+const MINUTES    = [0, 15, 30, 45]
+const ALL_SLOTS  = WORK_HOURS.flatMap(h =>
+  MINUTES.map(m => `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`)
+)
 
 export async function GET(req: Request) {
   try {
@@ -33,12 +38,13 @@ export async function GET(req: Request) {
     const booked = await getAppointmentsByDate(date)
     const bookedTimes = new Set(booked.map(a => a.timeSlot))
 
-    const today = new Date().toISOString().split('T')[0]
-    const nowHour = new Date().getHours()
+    const now = new Date()
+    const today = now.toISOString().split('T')[0]
+    const nowMins = now.getHours() * 60 + now.getMinutes()
 
     const slots = ALL_SLOTS.map(time => {
-      const [h] = time.split(':').map(Number)
-      const isPast = date === today && h <= nowHour
+      const [h, m] = time.split(':').map(Number)
+      const isPast = date === today && (h * 60 + m) <= nowMins
       return { time, available: !bookedTimes.has(time) && !isPast }
     })
 

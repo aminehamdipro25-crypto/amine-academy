@@ -1,10 +1,13 @@
 'use client'
 import Link from 'next/link'
+import { useState, useEffect } from 'react'
 import { ArrowLeft, ArrowRight, Play, LayoutDashboard, Sparkles } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useLang, tr, pickLang } from '@/lib/i18n'
 import LangToggle from '@/components/shared/LangToggle'
 import AcademyLogo from '@/components/shared/AcademyLogo'
+
+type SessionRole = 'owner' | 'staff' | 'parent' | 'student' | null
 
 
 function DashboardVisual() {
@@ -136,6 +139,22 @@ export default function HeroSection() {
   const t = tr[lang]
   const isRtl = lang === 'ar'
 
+  // Detect an existing session so returning users get a direct entry button
+  // (especially on mobile, where the login links are hidden)
+  const [sessionRole, setSessionRole] = useState<SessionRole>(null)
+  useEffect(() => {
+    fetch('/api/auth/whoami')
+      .then(r => r.ok ? r.json() : { role: null })
+      .then(d => setSessionRole(d.role ?? null))
+      .catch(() => {})
+  }, [])
+
+  const portal = sessionRole === 'parent'  ? { href: '/parent/dashboard',  label: pickLang(lang, '👪 لوحتي', '👪 My Portal', '👪 Mon espace') }
+              : sessionRole === 'student' ? { href: '/student/dashboard', label: pickLang(lang, '🎮 لوحتي', '🎮 My Space', '🎮 Mon espace') }
+              : (sessionRole === 'owner' || sessionRole === 'staff')
+                ? { href: '/dashboard', label: pickLang(lang, 'لوحة التحكم', 'Dashboard', 'Tableau de bord') }
+                : null
+
   return (
     <section
       className="relative overflow-hidden"
@@ -176,30 +195,39 @@ export default function HeroSection() {
           >
             {t.nav.trial}
           </Link>
-          <Link
-            href="/parent/login"
-            className="text-slate-500 hover:text-slate-800 text-sm font-medium transition-colors hidden sm:block"
-          >
-            {t.nav.parents}
-          </Link>
-          <Link
-            href="/#plans"
-            className="font-black text-xs sm:text-sm px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl text-white transition-all hover:opacity-90 active:scale-95"
-            style={{
-              background: '#6B46F0',
-              boxShadow: '0 4px 20px rgba(107,70,240,0.30)',
-            }}
-          >
-            {t.nav.register}
-          </Link>
-          <Link
-            href="/dashboard"
-            className="hidden sm:flex items-center gap-1.5 text-slate-600 font-bold text-xs px-3 py-2 rounded-xl transition-all"
-            style={{ background: 'rgba(107,70,240,0.06)', border: '1px solid rgba(107,70,240,0.12)' }}
-          >
-            <LayoutDashboard className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">{pickLang(lang, 'لوحة التحكم', 'Dashboard', 'Tableau de bord')}</span>
-          </Link>
+          {!portal && (
+            <Link
+              href="/parent/login"
+              className="text-slate-500 hover:text-slate-800 text-sm font-medium transition-colors"
+            >
+              {pickLang(lang, 'دخول', 'Login', 'Connexion')}
+            </Link>
+          )}
+          {portal ? (
+            /* Logged in — one prominent direct-entry button (works on mobile too) */
+            <Link
+              href={portal.href}
+              className="flex items-center gap-1.5 font-black text-xs sm:text-sm px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl text-white transition-all hover:opacity-90 active:scale-95"
+              style={{
+                background: 'linear-gradient(135deg,#16A34A,#22C55E)',
+                boxShadow: '0 4px 20px rgba(34,197,94,0.35)',
+              }}
+            >
+              <LayoutDashboard className="w-3.5 h-3.5" />
+              {portal.label}
+            </Link>
+          ) : (
+            <Link
+              href="/#plans"
+              className="font-black text-xs sm:text-sm px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl text-white transition-all hover:opacity-90 active:scale-95"
+              style={{
+                background: '#6B46F0',
+                boxShadow: '0 4px 20px rgba(107,70,240,0.30)',
+              }}
+            >
+              {t.nav.register}
+            </Link>
+          )}
           <div className="hidden sm:block"><LangToggle /></div>
         </div>
       </nav>

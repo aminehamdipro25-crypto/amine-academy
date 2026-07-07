@@ -12,9 +12,14 @@ interface Props {
   userName: string
   /** Compact mode for the kid page: smaller controls, remote video fills the box */
   compact?: boolean
+  /** 'specialist' can remotely mute the 'kid'. 'kid' obeys mute commands. */
+  role?: 'specialist' | 'kid'
 }
 
-export default function DailyVideoCall({ url, userName, compact = false }: Props) {
+// App-message payload the specialist sends to control the kid's mic
+type MicCmd = { t: 'kid-mic'; on: boolean }
+
+export default function DailyVideoCall({ url, userName, compact = false, role = 'specialist' }: Props) {
   const callRef        = useRef<DailyCall | null>(null)
   const localVideoRef  = useRef<HTMLVideoElement>(null)
   const remoteVideoRef = useRef<HTMLVideoElement>(null)
@@ -25,6 +30,12 @@ export default function DailyVideoCall({ url, userName, compact = false }: Props
   const [remotePresent, setRemotePresent] = useState(false)
   const [error, setError]                 = useState('')
   const [retryNonce, setRetryNonce]       = useState(0)
+  // Specialist: whether the kid is currently muted-by-me. Kept in a ref so the
+  // participant-joined handler can re-assert it after the kid (re)connects.
+  const [kidMuted, setKidMuted]           = useState(false)
+  const kidMutedRef                       = useRef(false)
+  // Kid: whether the specialist has forced my mic off (locks my own button)
+  const [micLocked, setMicLocked]         = useState(false)
 
   const reconnect = useCallback(() => {
     setError('')
@@ -66,6 +77,33 @@ export default function DailyVideoCall({ url, userName, compact = false }: Props
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     evs.forEach(ev => call.on(ev as any, updateTracks))
     const onJoined = () => { if (!cancelled) { setJoined(true); setError(''); updateTracks() } }
+
+    // Specialist: when the kid (re)joins, re-assert the current mute state so a
+    // reconnecting child doesn't come back un-muted against the specialist's wish
+    const onParticipantJoined = () => {
+      if (cancelled || role !== 'specialist') return
+      if (kidMutedRef.current) {
+        try { call.sendAppMessage({ t: 'kid-mic', on: false } as MicCmd, '*') } catch { /* ignore */ }
+      }
+    }
+    // Kid: obey the specialist's mic commands
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const onAppMessage = (e: any) => {
+      if (cancelled || role !== 'kid') return
+      const data = e?.data as MicCmd | undefined
+      if (data?.t !== 'kid-mic') return
+      call.setLocalAudio(data.on)
+      setMicOn(data.on)
+      setMicLocked(!data.on)
+    }
+    if (role === 'specialist') {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      call.on('participant-joined', onParticipantJoined as any)
+    }
+    if (role === 'kid') {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      call.on('app-message', onAppMessage as any)
+    }
     // Surface the REAL Daily error so we can diagnose (camera-in-use, expired
     // room, blocked script, etc.) instead of a generic message.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -99,10 +137,24 @@ export default function DailyVideoCall({ url, userName, compact = false }: Props
       call.off('joined-meeting', onJoined as any)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       call.off('error', onError as any)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      call.off('participant-joined', onParticipantJoined as any)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      call.off('app-message', onAppMessage as any)
       call.leave().catch(() => {}).finally(() => { call.destroy().catch(() => {}) })
       callRef.current = null
     }
-  }, [url, userName, retryNonce])
+  }, [url, userName, retryNonce, role])
+
+  // Specialist: toggle the kid's microphone remotely via app message
+  const toggleKidMic = useCallback(() => {
+    const call = callRef.current
+    if (!call) return
+    const nextMuted = !kidMutedRef.current
+    kidMutedRef.current = nextMuted
+    setKidMuted(nextMuted)
+    try { call.sendAppMessage({ t: 'kid-mic', on: !nextMuted } as MicCmd, '*') } catch { /* ignore */ }
+  }, [])
 
   const toggleCam = useCallback(() => {
     const call = callRef.current
@@ -115,10 +167,12 @@ export default function DailyVideoCall({ url, userName, compact = false }: Props
   const toggleMic = useCallback(() => {
     const call = callRef.current
     if (!call) return
+    // Kid can't unmute themselves while the specialist has locked their mic
+    if (role === 'kid' && micLocked) return
     const next = !micOn
     call.setLocalAudio(next)
     setMicOn(next)
-  }, [micOn])
+  }, [micOn, role, micLocked])
 
   const btnSize = compact ? 28 : 36
   const iconCls = compact ? 'w-3.5 h-3.5' : 'w-4 h-4'
@@ -192,15 +246,35 @@ export default function DailyVideoCall({ url, userName, compact = false }: Props
       }}>
         <button
           onClick={toggleMic}
-          title={micOn ? 'كتم الصوت' : 'تشغيل الصوت'}
+          title={role === 'kid' && micLocked ? 'الأستاذ كتم صوتك' : micOn ? 'كتم الصوت' : 'تشغيل الصوت'}
           style={{
-            width: btnSize, height: btnSize, borderRadius: '50%', border: 'none', cursor: 'pointer',
+            width: btnSize, height: btnSize, borderRadius: '50%', border: 'none',
+            cursor: role === 'kid' && micLocked ? 'not-allowed' : 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             background: micOn ? 'rgba(255,255,255,0.15)' : '#DC2626', color: '#fff',
+            opacity: role === 'kid' && micLocked ? 0.7 : 1,
           }}
         >
           {micOn ? <Mic className={iconCls} /> : <MicOff className={iconCls} />}
         </button>
+
+        {/* Specialist only: remotely mute/unmute the child's microphone */}
+        {role === 'specialist' && (
+          <button
+            onClick={toggleKidMic}
+            title={kidMuted ? 'إلغاء كتم مايك الطفل' : 'كتم مايك الطفل'}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+              height: btnSize, padding: '0 12px', borderRadius: btnSize / 2, border: 'none', cursor: 'pointer',
+              background: kidMuted ? '#DC2626' : 'rgba(255,255,255,0.15)', color: '#fff',
+              fontSize: compact ? 10 : 12, fontWeight: 900, whiteSpace: 'nowrap',
+            }}
+          >
+            {kidMuted ? <MicOff className={iconCls} /> : <Mic className={iconCls} />}
+            {kidMuted ? 'صوت الطفل مكتوم' : 'كتم الطفل'}
+          </button>
+        )}
+
         <button
           onClick={toggleCam}
           title={camOn ? 'إيقاف الكاميرا' : 'تشغيل الكاميرا'}

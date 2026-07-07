@@ -250,7 +250,7 @@ export default function KidSessionPage() {
             جارٍ التحميل...
           </div>
         }>
-          <DailyVideoCall url={meetingUrl} userName="الطفل" compact />
+          <DailyVideoCall url={meetingUrl} userName="الطفل" compact role="kid" />
         </Suspense>
         <div style={{ position: 'absolute', top: 4, right: 4, zIndex: 10, display: 'flex', gap: 4 }}>
           <button

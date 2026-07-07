@@ -3167,7 +3167,7 @@ ${notes ? `
               minWidth={380}
               minHeight={300}
             >
-              <DailyVideoCall url={jitsiUrl} userName={studentName ? `أخصائي ${studentName}` : 'الأخصائي'} />
+              <DailyVideoCall url={jitsiUrl} userName={studentName ? `أخصائي ${studentName}` : 'الأخصائي'} role="specialist" />
             </DraggableVideoPiP>
           )}
 

@@ -477,19 +477,6 @@ export default function SessionPage() {
   }, [id])
 
   const [jitsiEmbedded, setJitsiEmbedded] = useState(false)
-  const meetingWindowRef = useRef<Window | null>(null)
-
-  function handleToggleMeeting() {
-    if (!jitsiUrl) return
-    if (jitsiEmbedded) {
-      meetingWindowRef.current?.close()
-      meetingWindowRef.current = null
-      setJitsiEmbedded(false)
-    } else {
-      meetingWindowRef.current = window.open(jitsiUrl, 'amine-meeting', 'width=960,height=720,resizable=yes,scrollbars=no')
-      setJitsiEmbedded(true)
-    }
-  }
 
   // Daily.co embed URL — settings applied at room creation, no hash params needed
   const jitsiEmbedUrl = jitsiUrl ?? null
@@ -1812,7 +1799,7 @@ ${notes ? `
         chromeHidden={chromeHidden}
         jitsiUrl={jitsiUrl}
         jitsiEmbedded={jitsiEmbedded}
-        onToggleJitsiEmbedded={handleToggleMeeting}
+        onToggleJitsiEmbedded={() => setJitsiEmbedded(e => !e)}
         showWhiteboard={showWhiteboard}
         onToggleWhiteboard={() => setShowWhiteboard(w => !w)}
         promptBtnRef={promptBtnRef}
@@ -3114,15 +3101,23 @@ ${notes ? `
 
         <main className={`flex-1 flex items-center justify-center bg-gray-950 relative overflow-auto ${chromeHidden ? '' : 'pb-20 lg:pb-0'} ${kidMode ? 'hidden' : ''}`}>
 
-          {/* ── Meeting status indicator ── */}
-          {jitsiEmbedded && (
-            <div
-              style={{ position: 'absolute', bottom: 20, left: 20, zIndex: 50, background: '#166534', color: '#fff', borderRadius: 12, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 10, boxShadow: '0 4px 16px rgba(0,0,0,0.4)', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}
-              onClick={() => meetingWindowRef.current?.focus()}
+          {/* ── Embedded Daily.co iframe ── */}
+          {jitsiEmbedded && jitsiEmbedUrl && (
+            <DraggableVideoPiP
+              onClose={() => setJitsiEmbedded(false)}
+              label="📹 مقابلة"
+              initialBottom={20}
+              initialLeft={20}
+              minWidth={320}
+              minHeight={240}
             >
-              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#4ade80', display: 'inline-block', animation: 'pulse 1.5s infinite' }} />
-              المقابلة جارية — اضغط للتبديل
-            </div>
+              <iframe
+                src={jitsiEmbedUrl}
+                style={{ width: '100%', height: '100%', border: 'none', display: 'block' }}
+                allow="camera; microphone; fullscreen; display-capture; picture-in-picture; speaker-selection"
+                allowFullScreen
+              />
+            </DraggableVideoPiP>
           )}
 
           {/* ── Content presenter PiP — specialist drags/resizes over the session ── */}

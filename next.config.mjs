@@ -12,10 +12,10 @@ const ContentSecurityPolicy = [
   "font-src 'self' https://fonts.gstatic.com",
   // Images: self + data URIs (for SVG charts) + Cloudinary
   "img-src 'self' data: blob: https://res.cloudinary.com https://lh3.googleusercontent.com",
-  // Connect: self + Upstash Redis (via server-side only, but kept for safety) + Jitsi signaling
-  "connect-src 'self' https://*.upstash.io https://meet.jit.si wss://meet.jit.si",
-  // Frames: Jitsi Meet + YouTube embeds
-  "frame-src 'self' https://meet.jit.si https://www.youtube.com https://youtube.com",
+  // Connect: self + Upstash Redis + Daily.co signaling
+  "connect-src 'self' https://*.upstash.io https://*.daily.co wss://*.daily.co",
+  // Frames: Daily.co + YouTube embeds
+  "frame-src 'self' https://*.daily.co https://www.youtube.com https://youtube.com",
   // Media: self
   "media-src 'self' blob:",
   // Workers: self + blob (for Next.js SW)
@@ -42,7 +42,7 @@ const baseHeaders = [
 // no second Permissions-Policy header is ever merged by the browser
 const sessionHeaders = [
   ...baseHeaders,
-  { key: 'Permissions-Policy', value: 'geolocation=(), payment=(), display-capture=*' },
+  { key: 'Permissions-Policy', value: 'camera=*, microphone=*, display-capture=*, geolocation=(), payment=()' },
 ]
 
 // All other pages: lock down camera, mic, display-capture

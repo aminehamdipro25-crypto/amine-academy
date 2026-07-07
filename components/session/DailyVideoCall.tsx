@@ -57,15 +57,27 @@ export default function DailyVideoCall({ url, userName, compact = false }: Props
     const evs = ['joined-meeting', 'participant-joined', 'participant-updated', 'participant-left', 'track-started', 'track-stopped'] as const
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     evs.forEach(ev => call.on(ev as any, updateTracks))
-    const onJoined = () => { if (!cancelled) { setJoined(true); updateTracks() } }
-    const onError  = () => { if (!cancelled) setError('تعذر الاتصال بالمكالمة') }
+    const onJoined = () => { if (!cancelled) { setJoined(true); setError(''); updateTracks() } }
+    // Surface the REAL Daily error so we can diagnose (camera-in-use, expired
+    // room, blocked script, etc.) instead of a generic message.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const onError = (e: any) => {
+      // Camera/mic permission problems are non-fatal — the call still connects
+      // with the other person's video, so don't treat them as a hard failure.
+      const t = e?.errorMsg || e?.error?.type || ''
+      if (/permission|not-allowed|cam-in-use|mic-in-use|devices/i.test(String(t))) return
+      if (!cancelled) setError(`تعذر الاتصال: ${e?.errorMsg || 'خطأ غير معروف'}`)
+    }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     call.on('joined-meeting', onJoined as any)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     call.on('error', onError as any)
 
-    if (call.meetingState() === 'new') {
-      call.join({ url, userName }).catch(() => { if (!cancelled) setError('تعذر الاتصال بالمكالمة') })
+    const state = call.meetingState()
+    if (state === 'new' || state === 'left-meeting' || state === 'error') {
+      call.join({ url, userName }).catch((err: unknown) => {
+        if (!cancelled) setError(`تعذر الاتصال: ${err instanceof Error ? err.message : 'خطأ في الانضمام'}`)
+      })
     } else {
       updateTracks()
       setJoined(true)

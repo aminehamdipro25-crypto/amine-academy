@@ -4,8 +4,8 @@ import { Calendar, Clock, Video, Plus, CheckCircle, XCircle, AlertCircle } from 
 import type { Appointment, Student } from '@/lib/types'
 import { useLang, tr } from '@/lib/i18n'
 
-function jitsiUrl(url: string, name: string): string {
-  return `${url}#config.prejoinPageEnabled=false&config.startWithAudioMuted=false&userInfo.displayName=${encodeURIComponent(name)}`
+function meetingUrl(url: string): string {
+  return url
 }
 
 const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
@@ -241,7 +241,7 @@ export default function AppointmentsPage() {
                     </div>
                     {appt.meetingUrl && (
                       <a
-                        href={jitsiUrl(appt.meetingUrl, t.parentDisplayName)}
+                        href={meetingUrl(appt.meetingUrl)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center gap-2 font-black px-4 py-2.5 rounded-xl text-sm transition-all flex-shrink-0"

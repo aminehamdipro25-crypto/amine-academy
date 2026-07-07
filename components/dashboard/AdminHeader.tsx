@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Bell, Menu, Globe, MessageSquare, X, ChevronLeft } from 'lucide-react'
+import { Bell, Menu, Globe, MessageSquare, X, ChevronLeft, Calendar } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useRouter } from 'next/navigation'
@@ -15,6 +15,15 @@ interface Thread {
   unreadForAdmin: number
 }
 
+interface ApptNotification {
+  id: string
+  parentName: string
+  date: string
+  timeSlot: string
+  type: string
+  createdAt: string
+}
+
 export default function AdminHeader({ onMenuToggle, onUnreadChange }: { onMenuToggle?: () => void; onUnreadChange?: (n: number) => void }) {
   const pathname = usePathname()
   const router   = useRouter()
@@ -23,6 +32,7 @@ export default function AdminHeader({ onMenuToggle, onUnreadChange }: { onMenuTo
   const navT = tr[lang].adminNav
   const [totalUnread, setTotalUnread] = useState(0)
   const [threads, setThreads]         = useState<Thread[]>([])
+  const [apptNotifs, setApptNotifs]   = useState<ApptNotification[]>([])
   const [open, setOpen]               = useState(false)
   const [loading, setLoading]         = useState(false)
   const dropRef = useRef<HTMLDivElement>(null)
@@ -54,13 +64,26 @@ export default function AdminHeader({ onMenuToggle, onUnreadChange }: { onMenuTo
 
   const fetchUnread = useCallback(async () => {
     try {
-      const res = await fetch('/api/admin/messages', { credentials: 'include' })
-      if (!res.ok) return
-      const data = await res.json()
-      const count = data.totalUnread ?? 0
-      setTotalUnread(count)
-      onUnreadChange?.(count)
-      setThreads((data.threads ?? []).filter((t: Thread) => t.unreadForAdmin > 0).slice(0, 5))
+      const [msgRes, apptRes] = await Promise.all([
+        fetch('/api/admin/messages', { credentials: 'include' }),
+        fetch('/api/admin/notifications', { credentials: 'include' }),
+      ])
+      if (msgRes.ok) {
+        const data = await msgRes.json()
+        const msgCount = data.totalUnread ?? 0
+        setThreads((data.threads ?? []).filter((t: Thread) => t.unreadForAdmin > 0).slice(0, 5))
+        if (apptRes.ok) {
+          const apptData = await apptRes.json()
+          const notifs: ApptNotification[] = apptData.items ?? []
+          setApptNotifs(notifs)
+          const total = msgCount + notifs.length
+          setTotalUnread(total)
+          onUnreadChange?.(total)
+        } else {
+          setTotalUnread(msgCount)
+          onUnreadChange?.(msgCount)
+        }
+      }
     } catch { /* silent */ }
   }, [])
 
@@ -82,11 +105,18 @@ export default function AdminHeader({ onMenuToggle, onUnreadChange }: { onMenuTo
   }, [])
 
   async function openBell() {
+    const wasOpen = open
     setOpen(o => !o)
-    if (!open && totalUnread > 0) {
+    if (!wasOpen) {
       setLoading(true)
       await fetchUnread()
       setLoading(false)
+      // Mark appointment notifications as seen
+      if (apptNotifs.length > 0) {
+        fetch('/api/admin/notifications', { method: 'DELETE', credentials: 'include' }).catch(() => {})
+        setApptNotifs([])
+        setTotalUnread(prev => Math.max(0, prev - apptNotifs.length))
+      }
     }
   }
 
@@ -181,32 +211,55 @@ export default function AdminHeader({ onMenuToggle, onUnreadChange }: { onMenuTo
                 <div className="py-8 text-center">
                   <div className="w-5 h-5 border-2 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto" />
                 </div>
-              ) : threads.length === 0 ? (
+              ) : threads.length === 0 && apptNotifs.length === 0 ? (
                 <div className="py-10 text-center">
                   <MessageSquare className="w-8 h-8 text-gray-200 mx-auto mb-2" />
                   <p className="text-sm text-gray-400 font-medium">{t.noNewMessages}</p>
                 </div>
               ) : (
-                <div className="divide-y divide-gray-50 max-h-72 overflow-y-auto">
-                  {threads.map(t => (
+                <div className="divide-y divide-gray-50 max-h-80 overflow-y-auto">
+                  {/* Appointment notifications */}
+                  {apptNotifs.map(n => (
                     <button
-                      key={t.parentId}
+                      key={n.id}
+                      onClick={() => { router.push('/dashboard/appointments'); setOpen(false) }}
+                      className="w-full px-4 py-3 hover:bg-green-50 transition-colors text-right flex items-start gap-3"
+                    >
+                      <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center text-green-700 flex-shrink-0 mt-0.5">
+                        <Calendar className="w-4 h-4" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-sm font-bold text-gray-900 truncate">{n.parentName}</span>
+                          <span className="text-xs text-gray-400 flex-shrink-0">{timeAgo(n.createdAt)}</span>
+                        </div>
+                        <p className="text-xs text-green-700 truncate mt-0.5 font-medium">
+                          📅 موعد جديد — {n.date} {n.timeSlot}
+                        </p>
+                      </div>
+                      <span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0 mt-1.5" />
+                    </button>
+                  ))}
+                  {/* Message threads */}
+                  {threads.map(th => (
+                    <button
+                      key={th.parentId}
                       onClick={() => { router.push('/dashboard/messages'); setOpen(false) }}
                       className="w-full px-4 py-3 hover:bg-gray-50 transition-colors text-right flex items-start gap-3"
                     >
                       <div className="w-8 h-8 bg-brand-100 rounded-full flex items-center justify-center text-brand-700 font-black text-sm flex-shrink-0 mt-0.5">
-                        {t.parentName?.[0] ?? '؟'}
+                        {th.parentName?.[0] ?? '؟'}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-2">
-                          <span className="text-sm font-bold text-gray-900 truncate">{t.parentName}</span>
-                          <span className="text-xs text-gray-400 flex-shrink-0">{timeAgo(t.lastMessageAt)}</span>
+                          <span className="text-sm font-bold text-gray-900 truncate">{th.parentName}</span>
+                          <span className="text-xs text-gray-400 flex-shrink-0">{timeAgo(th.lastMessageAt)}</span>
                         </div>
-                        <p className="text-xs text-gray-500 truncate mt-0.5">{t.lastMessage}</p>
+                        <p className="text-xs text-gray-500 truncate mt-0.5">{th.lastMessage}</p>
                       </div>
-                      {t.unreadForAdmin > 0 && (
+                      {th.unreadForAdmin > 0 && (
                         <span className="w-5 h-5 bg-brand-600 rounded-full text-white text-[10px] font-black flex items-center justify-center flex-shrink-0 mt-0.5">
-                          {t.unreadForAdmin}
+                          {th.unreadForAdmin}
                         </span>
                       )}
                     </button>

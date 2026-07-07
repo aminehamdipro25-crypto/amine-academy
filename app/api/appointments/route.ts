@@ -5,6 +5,7 @@ import { createAppointment, updateAppointment, getParentAppointments, getParent,
 import { sendEmail, appointmentConfirmEmail } from '@/lib/mailer'
 import { tg, tgEsc } from '@/lib/telegram'
 import { createDailyRoom } from '@/lib/daily'
+import { redis } from '@/lib/redis'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -74,10 +75,11 @@ export async function POST(req: Request) {
     try {
       const parent = await getParent(payload.id)
       if (parent) {
+        const parentName = `${parent.firstName} ${parent.lastName}`
         await sendEmail({
           to:      parent.email,
           subject: 'تأكيد الموعد — أكاديمية أمين',
-          html:    appointmentConfirmEmail(`${parent.firstName} ${parent.lastName}`, date, timeSlot),
+          html:    appointmentConfirmEmail(parentName, date, timeSlot),
         })
         tg(
           `📅 <b>موعد جديد!</b>\n\n` +
@@ -89,6 +91,10 @@ export async function POST(req: Request) {
           (notes?.trim() ? `📝 ملاحظات: ${tgEsc(notes)}\n` : '') +
           `🕐 ${new Date().toLocaleString('fr-FR', { timeZone: 'Asia/Qatar' })}`
         ).catch(() => {})
+        // Push in-app notification for admin bell
+        redis.lpush('admin:new_appointment_notifications', JSON.stringify({
+          id: appt.id, parentName, date, timeSlot, type, createdAt: appt.createdAt,
+        })).catch(() => {})
       }
     } catch { /* email failure non-critical */ }
 

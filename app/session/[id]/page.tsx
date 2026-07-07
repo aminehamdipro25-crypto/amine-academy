@@ -1813,6 +1813,9 @@ ${notes ? `
         saving={saving}
         saved={saved}
         saveFailed={saveFailed}
+        kidUrl={kidUrl}
+        kidCopied={kidCopied}
+        onCopyKidUrl={copyKidUrl}
       />
 
       <SessionToolbar

@@ -3108,8 +3108,8 @@ ${notes ? `
               label="📹 مقابلة"
               initialBottom={20}
               initialLeft={20}
-              minWidth={320}
-              minHeight={240}
+              minWidth={460}
+              minHeight={360}
             >
               <iframe
                 src={jitsiEmbedUrl}

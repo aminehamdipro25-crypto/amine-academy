@@ -21,18 +21,20 @@ export default function DraggableVideoPiP({
   minWidth = 280,
   minHeight = 210,
 }: Props) {
-  const posRef      = useRef<{ x: number; y: number } | null>(null)
+  const posRef       = useRef<{ x: number; y: number } | null>(null)
   const [, forceUpdate] = useState(0)
-  const dragging    = useRef(false)
-  const dragOffset  = useRef({ x: 0, y: 0 })
+  const dragging     = useRef(false)
+  const resizing     = useRef(false)
+  const dragOffset   = useRef({ x: 0, y: 0 })
   const containerRef = useRef<HTMLDivElement>(null)
   const [collapsed, setCollapsed] = useState(false)
-  // Portal mount guard — avoids SSR mismatch
+  const [size, setSize] = useState({ w: minWidth, h: minHeight })
   const [mounted, setMounted] = useState(false)
   useEffect(() => { setMounted(true) }, [])
 
+  /* ── Drag ── */
   const onPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
-    if ((e.target as HTMLElement).closest('button')) return
+    if ((e.target as HTMLElement).closest('button, [data-resize]')) return
     e.currentTarget.setPointerCapture(e.pointerId)
     dragging.current = true
     const el = containerRef.current
@@ -44,27 +46,39 @@ export default function DraggableVideoPiP({
   }, [])
 
   const onPointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
-    if (!dragging.current || !containerRef.current) return
+    if (!containerRef.current) return
     const el = containerRef.current
-    const x = Math.max(0, Math.min(window.innerWidth  - el.offsetWidth,  e.clientX - dragOffset.current.x))
-    const y = Math.max(0, Math.min(window.innerHeight - el.offsetHeight, e.clientY - dragOffset.current.y))
-    el.style.left   = `${x}px`
-    el.style.top    = `${y}px`
-    el.style.bottom = 'auto'
-    posRef.current  = { x, y }
-  }, [])
+    if (dragging.current) {
+      const x = Math.max(0, Math.min(window.innerWidth  - el.offsetWidth,  e.clientX - dragOffset.current.x))
+      const y = Math.max(0, Math.min(window.innerHeight - el.offsetHeight, e.clientY - dragOffset.current.y))
+      el.style.left   = `${x}px`
+      el.style.top    = `${y}px`
+      el.style.bottom = 'auto'
+      posRef.current  = { x, y }
+    } else if (resizing.current) {
+      const rect = el.getBoundingClientRect()
+      const newW = Math.max(minWidth,  e.clientX - rect.left)
+      const newH = Math.max(minHeight, e.clientY - rect.top)
+      setSize({ w: newW, h: newH })
+    }
+  }, [minWidth, minHeight])
 
   const onPointerUp = useCallback(() => {
-    dragging.current = false
-    if (posRef.current) forceUpdate(n => n + 1)
+    if (dragging.current) { dragging.current = false; forceUpdate(n => n + 1) }
+    resizing.current = false
+  }, [])
+
+  /* ── Resize handle ── */
+  const onResizeDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    e.stopPropagation()
+    e.currentTarget.setPointerCapture(e.pointerId)
+    resizing.current = true
   }, [])
 
   const posStyle: React.CSSProperties = posRef.current
     ? { left: posRef.current.x, top: posRef.current.y, bottom: 'auto' }
     : { bottom: initialBottom, left: initialLeft }
 
-  // Render into document.body so position:fixed works from the viewport root,
-  // bypassing any stacking context from <main overflow-auto> or motion transforms.
   const pip = (
     <div
       ref={containerRef}
@@ -74,21 +88,21 @@ export default function DraggableVideoPiP({
       className="fixed flex flex-col overflow-hidden rounded-2xl shadow-2xl select-none"
       style={{
         ...posStyle,
-        width:  minWidth,
-        height: collapsed ? 36 : minHeight,
+        width:  size.w,
+        height: collapsed ? 36 : size.h,
         zIndex: 9999,
         background: '#111827',
         border: '2px solid rgba(255,255,255,0.15)',
-        cursor: 'grab',
+        cursor: dragging.current ? 'grabbing' : 'grab',
         touchAction: 'none',
         willChange: 'left, top',
-        transition: 'height 0.2s ease',
+        transition: collapsed ? 'height 0.2s ease' : undefined,
       }}
     >
-      {/* Drag handle / title bar */}
+      {/* Title bar */}
       <div
-        className="flex items-center justify-between px-2 py-1 flex-shrink-0"
-        style={{ background: 'rgba(0,0,0,0.6)', minHeight: 32 }}
+        className="flex items-center justify-between px-2 flex-shrink-0"
+        style={{ background: 'rgba(0,0,0,0.6)', minHeight: 28 }}
       >
         <div className="flex items-center gap-1.5">
           <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
@@ -114,10 +128,21 @@ export default function DraggableVideoPiP({
         </div>
       </div>
 
-      {/* Content — iframe lives here and never unmounts */}
+      {/* Content */}
       {!collapsed && (
         <div className="flex-1 relative overflow-hidden">
           {children}
+          {/* Resize handle — bottom-right corner */}
+          <div
+            data-resize
+            onPointerDown={onResizeDown}
+            style={{
+              position: 'absolute', bottom: 0, right: 0,
+              width: 18, height: 18, cursor: 'se-resize', zIndex: 10,
+              background: 'linear-gradient(135deg, transparent 50%, rgba(255,255,255,0.25) 50%)',
+              borderRadius: '0 0 8px 0',
+            }}
+          />
         </div>
       )}
     </div>

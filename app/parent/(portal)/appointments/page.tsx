@@ -1,12 +1,9 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
 import { Calendar, Clock, Video, Plus, CheckCircle, XCircle, AlertCircle } from 'lucide-react'
+import Link from 'next/link'
 import type { Appointment, Student } from '@/lib/types'
 import { useLang, tr } from '@/lib/i18n'
-
-function meetingUrl(url: string): string {
-  return url
-}
 
 const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
   scheduled: { bg: '#EFF6FF', color: '#1D4ED8' },
@@ -240,28 +237,18 @@ export default function AppointmentsPage() {
                       {appt.notes && <p className="text-gray-500 text-xs mt-2">{appt.notes}</p>}
                     </div>
                     {appt.meetingUrl && (
-                      <a
-                        href={meetingUrl(appt.meetingUrl)}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                      <Link
+                        href={`/session/${appt.id}/kid`}
                         className="flex items-center gap-2 font-black px-4 py-2.5 rounded-xl text-sm transition-all flex-shrink-0"
                         style={
                           live
                             ? { background: '#16A34A', color: '#FFFFFF', boxShadow: '0 4px 12px rgba(22,163,74,0.4)' }
                             : { background: '#F3EEFF', color: '#5A32D9', border: '1.5px solid #E8DBFF' }
                         }
-                        onMouseEnter={e => {
-                          if (live) (e.currentTarget as HTMLAnchorElement).style.background = '#15803D'
-                          else { (e.currentTarget as HTMLAnchorElement).style.background = '#E8DBFF' }
-                        }}
-                        onMouseLeave={e => {
-                          if (live) (e.currentTarget as HTMLAnchorElement).style.background = '#16A34A'
-                          else { (e.currentTarget as HTMLAnchorElement).style.background = '#F3EEFF' }
-                        }}
                       >
                         <Video className="w-4 h-4" />
                         {live ? t.joinNowButton : t.sessionLinkButton}
-                      </a>
+                      </Link>
                     )}
                   </div>
                   <div className="mt-3 pt-3 flex items-center justify-between gap-3" style={{ borderTop: '1px solid #F0E8FF' }}>

@@ -541,10 +541,18 @@ export default function SessionPage() {
     setShowContentModal(false)
     setContentInput('')
     setContentInputErr('')
+    // Publish to Redis so the parent/kid page can mirror it
+    if (id) fetch(`/api/sessions/${id}/content`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: embed }),
+    }).catch(() => {})
   }
 
   function stopContentPresenter() {
     setContentUrl(null)
+    // Clear from Redis
+    if (id) fetch(`/api/sessions/${id}/content`, { method: 'DELETE' }).catch(() => {})
   }
 
 

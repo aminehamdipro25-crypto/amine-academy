@@ -96,6 +96,7 @@ export default function KidSessionPage() {
   const prevId = useRef<string | null>(null)
   const [meetingUrl, setMeetingUrl] = useState<string | null>(null)
   const [videoHidden, setVideoHidden] = useState(false)
+  const [sharedContentUrl, setSharedContentUrl] = useState<string | null>(null)
 
   // Fetch meeting URL once on load
   useEffect(() => {
@@ -105,17 +106,22 @@ export default function KidSessionPage() {
       .catch(() => {})
   }, [id])
 
-  // Poll every 3 seconds for current exercise
+  // Poll every 3 seconds for current exercise AND shared content
   const poll = useCallback(async () => {
     try {
-      const r = await fetch(`/api/sessions/${id}/live`)
-      const { live: data } = await r.json() as { live: LiveState }
+      const [liveRes, contentRes] = await Promise.all([
+        fetch(`/api/sessions/${id}/live`),
+        fetch(`/api/sessions/${id}/content`),
+      ])
+      const { live: data } = await liveRes.json() as { live: LiveState }
+      const { contentUrl: cUrl } = await contentRes.json() as { contentUrl: string | null }
       if (data?.exerciseId !== prevId.current) {
         prevId.current = data?.exerciseId ?? null
         setDone(false)
         setNonce(n => n + 1)
         setLive(data)
       }
+      setSharedContentUrl(cUrl)
     } catch { /* ignore */ }
   }, [id])
 
@@ -219,9 +225,39 @@ export default function KidSessionPage() {
   const id_ = live.exerciseId
   const props = { onComplete: handleDone, onCancel: handleDone, difficulty, studentAge: 10 }
 
+  // When specialist is sharing content (screen share), show it fullscreen
+  if (sharedContentUrl && (done || !live)) {
+    return (
+      <div style={{ width: '100vw', height: '100dvh', overflow: 'hidden', background: '#000', position: 'relative' }}>
+        {teacherVideoBtn}
+        <iframe
+          src={sharedContentUrl}
+          allow="autoplay; fullscreen"
+          style={{ width: '100%', height: '100%', border: 'none' }}
+          title="محتوى مشترك"
+        />
+      </div>
+    )
+  }
+
   return (
-    <div style={{ width: '100vw', height: '100dvh', overflow: 'hidden', background: '#fff' }}>
+    <div style={{ width: '100vw', height: '100dvh', overflow: 'hidden', background: '#fff', position: 'relative' }}>
       {teacherVideoBtn}
+      {/* Shared content overlay — shown while exercise is active too */}
+      {sharedContentUrl && (
+        <div style={{
+          position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 100,
+          background: '#000',
+        }}>
+          <iframe
+            src={sharedContentUrl}
+            allow="autoplay; fullscreen"
+            style={{ width: '100%', height: '100%', border: 'none' }}
+            title="محتوى مشترك"
+          />
+          {teacherVideoBtn}
+        </div>
+      )}
       <Suspense fallback={
         <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100%' }}>
           <div style={{ width:48, height:48, borderRadius:'50%', border:'5px solid #A78BFA', borderTopColor:'transparent', animation:'spin 0.8s linear infinite' }} />

@@ -1,12 +1,13 @@
 'use client'
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Loader2, Eye, EyeOff } from 'lucide-react'
 import { useLang, tr } from '@/lib/i18n'
 
-export default function ParentLoginPage() {
+function LoginForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { lang } = useLang()
   const t = tr[lang].login
   const [form, setForm] = useState({ email: '', password: '' })
@@ -29,7 +30,8 @@ export default function ParentLoginPage() {
       })
       const data = await res.json()
       if (res.ok) {
-        router.push('/parent/dashboard')
+        const redirect = searchParams.get('redirect') || '/parent/dashboard'
+        router.push(redirect)
       } else {
         setError(data.error || t.errors.invalid)
       }
@@ -113,5 +115,13 @@ export default function ParentLoginPage() {
         </p>
       </div>
     </div>
+  )
+}
+
+export default function ParentLoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   )
 }

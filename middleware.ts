@@ -53,10 +53,17 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // ── Session Platform (owner or staff) ─────────────────────
-  // Kid pages (/session/[id]/kid) are public — no auth required so families
-  // can open the shared link without a dashboard account.
-  if (pathname.startsWith('/session') && !pathname.endsWith('/kid')) {
+  // ── Session Platform ──────────────────────────────────────
+  // /session/[id]/kid  → parent must be logged in (parent_token)
+  // /session/[id]      → specialist/staff must be logged in (admin/staff token)
+  if (pathname.match(/^\/session\/[^/]+\/kid$/)) {
+    const token   = request.cookies.get('parent_token')?.value
+    const payload = await verifyToken(token)
+    if (!payload || payload.role !== 'parent') {
+      const redirect = encodeURIComponent(pathname)
+      return NextResponse.redirect(new URL(`/parent/login?redirect=${redirect}`, request.url))
+    }
+  } else if (pathname.startsWith('/session')) {
     if (!(await isDashboardAuthorized(request))) {
       return NextResponse.redirect(new URL('/dashboard/login', request.url))
     }

@@ -40,13 +40,13 @@ export default function ParentPortalLayout({ children }: { children: React.React
   ]
 
   const secondaryNav = [
-    { href: '/parent/progress',           label: t.parentNav.progress,        icon: LineChart },
-    { href: '/parent/assessment',         label: t.parentNav.assessment,      icon: ClipboardCheck },
-    { href: '/parent/practice',           label: t.parentNav.practice,        icon: Sparkles },
-    { href: '/parent/family-challenge',   label: t.parentNav.familyChallenge, icon: Sparkles },
-    { href: '/parent/upgrade-plan',       label: t.parentNav.upgradePlan,     icon: Zap },
-    { href: '/parent/home-environment',   label: t.parentNav.homeEnv,         icon: Home },
-    { href: '/parent/account',            label: t.parentNav.account,         icon: UserCircle },
+    { href: '/parent/progress',           label: t.parentNav.progress,        icon: LineChart,      color: '#3B82F6', bg: '#DBEAFE' },
+    { href: '/parent/assessment',         label: t.parentNav.assessment,      icon: ClipboardCheck, color: '#F59E0B', bg: '#FEF3C7' },
+    { href: '/parent/practice',           label: t.parentNav.practice,        icon: Sparkles,       color: '#EC4899', bg: '#FCE7F3' },
+    { href: '/parent/family-challenge',   label: t.parentNav.familyChallenge, icon: Sparkles,       color: '#10B981', bg: '#D1FAE5' },
+    { href: '/parent/upgrade-plan',       label: t.parentNav.upgradePlan,     icon: Zap,            color: '#F97316', bg: '#FFEDD5' },
+    { href: '/parent/home-environment',   label: t.parentNav.homeEnv,         icon: Home,           color: '#06B6D4', bg: '#CFFAFE' },
+    { href: '/parent/account',            label: t.parentNav.account,         icon: UserCircle,     color: '#8B5CF6', bg: '#EDE9FE' },
   ]
 
   const allNav = [...primaryNav, ...secondaryNav]
@@ -174,6 +174,13 @@ export default function ParentPortalLayout({ children }: { children: React.React
               >
                 <MoreHorizontal className="w-3.5 h-3.5" />
                 <span className="hidden lg:inline">{t.parentNav.more}</span>
+                {!isSecondaryActive && !moreOpen && (
+                  <span className="hidden lg:flex gap-0.5 items-center">
+                    {secondaryNav.slice(0, 4).map(n => (
+                      <span key={n.href} className="w-1.5 h-1.5 rounded-full" style={{ background: n.color }} />
+                    ))}
+                  </span>
+                )}
                 <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${moreOpen ? 'rotate-180' : ''}`} />
                 {isSecondaryActive && <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#7C5CFC' }} />}
               </button>
@@ -191,7 +198,7 @@ export default function ParentPortalLayout({ children }: { children: React.React
                   }}
                 >
                   <div className="p-2">
-                    {secondaryNav.map(({ href, label, icon: Icon }) => {
+                    {secondaryNav.map(({ href, label, icon: Icon, color, bg }) => {
                       const active = isActive(href)
                       return (
                         <Link
@@ -202,7 +209,10 @@ export default function ParentPortalLayout({ children }: { children: React.React
                           onMouseEnter={e => { if (!active) (e.currentTarget as HTMLAnchorElement).style.background = '#FAFAFA' }}
                           onMouseLeave={e => { if (!active) (e.currentTarget as HTMLAnchorElement).style.background = '' }}
                         >
-                          <Icon className="w-4 h-4 flex-shrink-0" style={{ color: active ? '#6B46F0' : '#9CA3AF' }} />
+                          <div className="w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0"
+                            style={{ background: active ? '#EDE9FE' : bg }}>
+                            <Icon className="w-3.5 h-3.5" style={{ color: active ? '#6B46F0' : color }} />
+                          </div>
                           {label}
                         </Link>
                       )
@@ -402,10 +412,27 @@ export default function ParentPortalLayout({ children }: { children: React.React
           {/* More button — opens full-screen sheet */}
           <button
             onClick={() => setMobileMenu(true)}
-            className="flex flex-col items-center gap-1 px-2 py-1.5 rounded-2xl flex-1 transition-all duration-200 relative"
-            style={isSecondaryActive ? { color: '#6B46F0' } : { color: '#C4C9D4' }}
+            className="flex flex-col items-center gap-0.5 px-1.5 py-1.5 rounded-2xl flex-1 transition-all duration-200 relative"
+            style={isSecondaryActive ? { color: '#6B46F0', background: '#F3EEFF' } : { color: '#A78BFA' }}
           >
-            {isSecondaryActive && <span className="absolute inset-0 rounded-2xl" style={{ background: '#F3EEFF' }} />}
+            <style>{`@keyframes moredt{0%,100%{opacity:.5;transform:scale(1)}50%{opacity:1;transform:scale(1.4)}}`}</style>
+            {/* Rainbow discovery dots */}
+            {!isSecondaryActive && (
+              <div className="flex gap-0.5 mb-0.5 relative z-10">
+                {secondaryNav.slice(0, 5).map((n, i) => (
+                  <span
+                    key={n.href}
+                    className="rounded-full"
+                    style={{
+                      display: 'block', width: 5, height: 5, background: n.color,
+                      animation: `moredt ${1.1 + i * 0.13}s ease-in-out infinite`,
+                      animationDelay: `${i * 0.12}s`,
+                    }}
+                  />
+                ))}
+              </div>
+            )}
+            {isSecondaryActive && <div style={{ height: 9 }} />}
             <MoreHorizontal className="w-5 h-5 relative z-10" />
             <span className="text-[9px] font-black leading-none relative z-10">{t.parentNav.more}</span>
           </button>
@@ -446,6 +473,9 @@ export default function ParentPortalLayout({ children }: { children: React.React
             <div className="p-4 grid grid-cols-3 gap-3 overflow-y-auto" style={{ maxHeight: 'calc(82dvh - 130px)' }}>
               {allNav.map(({ href, label, icon: Icon }) => {
                 const active = isActive(href)
+                const sec = secondaryNav.find(n => n.href === href)
+                const iconColor = active ? '#6B46F0' : (sec?.color ?? '#6B46F0')
+                const iconBg    = active ? '#EDE9FE' : (sec?.bg    ?? '#F3F4F6')
                 return (
                   <Link
                     key={href}
@@ -458,9 +488,9 @@ export default function ParentPortalLayout({ children }: { children: React.React
                   >
                     <div
                       className="w-10 h-10 rounded-xl flex items-center justify-center"
-                      style={{ background: active ? '#EDE9FE' : '#F3F4F6' }}
+                      style={{ background: iconBg }}
                     >
-                      <Icon className="w-5 h-5" style={{ color: active ? '#6B46F0' : '#9CA3AF' }} />
+                      <Icon className="w-5 h-5" style={{ color: iconColor }} />
                     </div>
                     <span className="text-[11px] font-bold leading-tight">{label}</span>
                   </Link>

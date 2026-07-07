@@ -95,7 +95,28 @@ function CompactStrip({ sessions, upcomingSlots }: { sessions: SessionNode[]; up
   const all     = [...sessions.slice(-6), ...upcoming]
   const currIdx = sessions.length - 1
 
+  const totalStars  = sessions.reduce((s, n) => s + n.stars, 0)
+  const totalPoints = sessions.reduce((s, n) => s + n.stars * 10, 0)
+  const nextMile    = [4, 8, 12, 16, 20].find(m => m > sessions.length) ?? sessions.length + 4
+  const stepsToMile = nextMile - sessions.length
+
   return (
+    <div>
+    {sessions.length > 0 && (
+      <div className="flex items-center justify-between mb-1.5 px-1">
+        <div className="flex items-center gap-3">
+          <span className="inline-flex items-center gap-1 font-black" style={{ fontSize: 11, color: '#F59E0B' }}>
+            ⭐ {totalStars} نجمة
+          </span>
+          <span className="inline-flex items-center gap-1 font-black" style={{ fontSize: 11, color: '#6B46F0' }}>
+            🎯 {totalPoints} نقطة
+          </span>
+        </div>
+        <span className="font-bold" style={{ fontSize: 10, color: '#9CA3AF' }}>
+          {stepsToMile > 0 ? `🏆 ${stepsToMile} جلسات للإنجاز` : '🏆 أنجزت وحدة!'}
+        </span>
+      </div>
+    )}
     <div className="overflow-x-auto pb-2 -mx-1 px-1">
       <style>{`
         @keyframes pm-ping  { 0%,100%{transform:scale(1);opacity:.4} 50%{transform:scale(1.55);opacity:0} }
@@ -171,6 +192,7 @@ function CompactStrip({ sessions, upcomingSlots }: { sessions: SessionNode[]; up
           )
         })}
       </div>
+    </div>
     </div>
   )
 }
@@ -322,6 +344,44 @@ function SnakeMap({ sessions, upcomingSlots }: { sessions: SessionNode[]; upcomi
           )
         })}
       </svg>
+
+      {/* Unit banners — Duolingo-style milestone labels */}
+      {all.map((node, i) => {
+        if (!node.isMilestone) return null
+        const isUp = i < upcomingSlots
+        const { x, y } = centres[i]
+        const r = MILE_D / 2
+        const unitNum = Math.ceil(node.sessionNumber / 4)
+        return (
+          <div
+            key={`unit-${node.sessionId}`}
+            className="absolute rounded-xl px-2.5 py-1.5"
+            style={{
+              left: x + r + 10,
+              top: y - 20,
+              zIndex: 25,
+              background: isUp
+                ? 'rgba(107,70,240,0.1)'
+                : 'linear-gradient(135deg,#6B46F0,#9B79FF)',
+              border: isUp ? '1.5px dashed rgba(107,70,240,0.35)' : 'none',
+              boxShadow: isUp ? 'none' : '0 3px 14px rgba(107,70,240,0.35)',
+            }}
+          >
+            <div className="font-black leading-tight" style={{
+              fontSize: 9, whiteSpace: 'nowrap',
+              color: isUp ? 'rgba(107,70,240,0.6)' : 'white',
+            }}>
+              {isUp ? '🔒' : '🎖️'} وحدة {unitNum}
+            </div>
+            <div className="font-bold leading-tight" style={{
+              fontSize: 8, whiteSpace: 'nowrap',
+              color: isUp ? 'rgba(107,70,240,0.4)' : 'rgba(255,255,255,0.75)',
+            }}>
+              {isUp ? `${node.sessionNumber} جلسة` : `✓ ${node.sessionNumber} جلسة`}
+            </div>
+          </div>
+        )
+      })}
 
       {/* Nodes */}
       {all.map((node, i) => {

@@ -428,57 +428,84 @@ export default function ParentDashboardPage() {
       </motion.div>
 
       {/* ══ Journey Progress Map ══ */}
-      {progressMap.length > 0 && progressMap.some(p => p.totalSessions > 0) && (
-        <motion.div
-          variants={fadeUp}
-          className="rounded-3xl p-5 overflow-hidden"
-          style={{
-            background: '#FFFFFF',
-            border: '1px solid rgba(0,0,0,0.06)',
-            boxShadow: '0 4px 24px rgba(0,0,0,0.05)',
-          }}
-        >
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="font-black text-gray-900 text-sm">🗺️ خارطة الرحلة</h2>
-              <p className="text-gray-400 text-xs mt-0.5">
-                {progressMap[0]?.totalSessions > 0
-                  ? `${progressMap[0].totalSessions} جلسة مكتملة • ${progressMap[0].totalStars} نجمة`
-                  : 'جلساتك التفاعلية'}
-              </p>
-            </div>
-            <div className="flex items-center gap-2 text-[10px] font-bold text-gray-400">
-              <span className="inline-flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full inline-block" style={{ background: 'linear-gradient(135deg,#F59E0B,#FBBF24)' }} />
-                3★
-              </span>
-              <span className="inline-flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full inline-block" style={{ background: 'linear-gradient(135deg,#6B46F0,#9A7BFD)' }} />
-                2★
-              </span>
-              <span className="inline-flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full inline-block" style={{ background: 'linear-gradient(135deg,#06B6D4,#38BDF8)' }} />
-                1★
-              </span>
-            </div>
-          </div>
-
-          {progressMap.map(child => (
-            <div key={child.studentId}>
-              {progressMap.length > 1 && (
-                <p className="text-xs font-bold text-gray-500 mb-2">{child.studentName}</p>
-              )}
-              {child.sessions.length > 0 ? (
-                <ProgressMap sessions={child.sessions} compact upcomingSlots={3} />
-              ) : (
-                <div className="text-center py-4 text-gray-400 text-xs">
-                  لم تبدأ الجلسات بعد — ستظهر هنا بعد أول جلسة تفاعلية 🌱
+      {progressMap.length > 0 && progressMap.some(p => p.totalSessions > 0) && (() => {
+        const mapSessions  = progressMap.flatMap(p => p.sessions)
+        const mapPoints    = mapSessions.reduce((s, n) => s + n.stars * 10, 0)
+        const mapSessCount = mapSessions.filter(n => n.stars > 0).length
+        const nextMilePts  = MILESTONES.find(m => m > mapPoints) ?? MILESTONES[MILESTONES.length - 1]
+        const prevMilePts  = [...MILESTONES].reverse().find(m => m <= mapPoints) ?? 0
+        const mileProgress = nextMilePts > prevMilePts
+          ? Math.min(1, (mapPoints - prevMilePts) / (nextMilePts - prevMilePts))
+          : 1
+        const nextMileSess = [4, 8, 12, 16, 20].find(m => m > mapSessCount) ?? mapSessCount + 4
+        const stepsLeft    = nextMileSess - mapSessCount
+        return (
+          <motion.div
+            variants={fadeUp}
+            className="rounded-3xl p-5 overflow-hidden"
+            style={{
+              background: '#FFFFFF',
+              border: '1px solid rgba(0,0,0,0.06)',
+              boxShadow: '0 4px 24px rgba(0,0,0,0.05)',
+            }}
+          >
+            {/* Header */}
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex-1 min-w-0 me-3">
+                <h2 className="font-black text-gray-900 text-sm">🗺️ خارطة الرحلة</h2>
+                {/* Milestone progress bar */}
+                <div className="flex items-center gap-2 mt-1.5">
+                  <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: '#F3EEFF', maxWidth: 100 }}>
+                    <motion.div
+                      className="h-full rounded-full"
+                      initial={{ scaleX: 0 }}
+                      animate={{ scaleX: mileProgress }}
+                      transition={{ duration: 1.2, ease: 'easeOut', delay: 0.3 }}
+                      style={{ background: 'linear-gradient(90deg,#6B46F0,#9B79FF)', transformOrigin: 'left center' }}
+                    />
+                  </div>
+                  <span className="font-bold" style={{ fontSize: 10, color: '#9CA3AF', whiteSpace: 'nowrap' }}>
+                    {stepsLeft > 0 ? `🏆 ${stepsLeft} للإنجاز` : '🏆 إنجاز!'}
+                  </span>
                 </div>
-              )}
+                <div className="flex items-center gap-3 mt-1.5">
+                  <span className="font-black" style={{ fontSize: 11, color: '#F59E0B' }}>⭐ {mapSessions.reduce((s, n) => s + n.stars, 0)} نجمة</span>
+                  <span className="font-black" style={{ fontSize: 11, color: '#6B46F0' }}>🎯 {mapPoints} نقطة</span>
+                </div>
+              </div>
+              <div className="flex flex-col gap-1 text-[10px] font-bold text-gray-400 flex-shrink-0">
+                <span className="inline-flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full inline-block" style={{ background: 'linear-gradient(135deg,#F59E0B,#FBBF24)' }} />
+                  3★
+                </span>
+                <span className="inline-flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full inline-block" style={{ background: 'linear-gradient(135deg,#6B46F0,#9A7BFD)' }} />
+                  2★
+                </span>
+                <span className="inline-flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full inline-block" style={{ background: 'linear-gradient(135deg,#06B6D4,#38BDF8)' }} />
+                  1★
+                </span>
+              </div>
             </div>
-          ))}
-        </motion.div>
-      )}
+
+            {progressMap.map(child => (
+              <div key={child.studentId}>
+                {progressMap.length > 1 && (
+                  <p className="text-xs font-bold text-gray-500 mb-2">{child.studentName}</p>
+                )}
+                {child.sessions.length > 0 ? (
+                  <ProgressMap sessions={child.sessions} compact upcomingSlots={3} />
+                ) : (
+                  <div className="text-center py-4 text-gray-400 text-xs">
+                    لم تبدأ الجلسات بعد — ستظهر هنا بعد أول جلسة تفاعلية 🌱
+                  </div>
+                )}
+              </div>
+            ))}
+          </motion.div>
+        )
+      })()}
 
       {/* ══ Upcoming appointment banner ══ */}
       {upcomingAppointment && (

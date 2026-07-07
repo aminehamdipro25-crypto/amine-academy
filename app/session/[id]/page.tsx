@@ -1524,6 +1524,27 @@ ${notes ? `
     setManualChromeOverride(null)
   }, [exerciseActive, showWhiteboard])
 
+  const kidUrl = typeof window !== 'undefined' ? `${window.location.origin}/session/${id}/kid` : ''
+  const [kidCopied, setKidCopied] = useState(false)
+  function copyKidUrl() {
+    navigator.clipboard.writeText(kidUrl).then(() => { setKidCopied(true); setTimeout(() => setKidCopied(false), 2000) })
+  }
+
+  // Publish current exercise to Redis so the kid page can mirror it in real-time
+  useEffect(() => {
+    if (!id) return
+    if (activeView?.type === 'exercise') {
+      fetch(`/api/sessions/${id}/live`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ exerciseId: activeView.id, difficulty: activeDifficulty }),
+      }).catch(() => {})
+    } else if (activeView === null) {
+      fetch(`/api/sessions/${id}/live`, { method: 'DELETE' }).catch(() => {})
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeView?.id, id])
+
   // The prompt-card / timer / music popovers are portaled to document.body and
   // anchored to their toolbar button's on-screen position — they don't live
   // inside the header DOM, so hiding the header doesn't hide them. Without this,
@@ -3100,6 +3121,17 @@ ${notes ? `
         {/* Main exercise area */}
 
         <main className={`flex-1 flex items-center justify-center bg-gray-950 relative overflow-auto ${chromeHidden ? '' : 'pb-20 lg:pb-0'} ${kidMode ? 'hidden' : ''}`}>
+
+          {/* ── Kid page link badge ── */}
+          {kidUrl && (
+            <button
+              onClick={copyKidUrl}
+              style={{ position: 'absolute', bottom: 20, right: 20, zIndex: 50, background: kidCopied ? '#166534' : '#4C1D95', color: '#fff', borderRadius: 12, padding: '8px 14px', display: 'flex', alignItems: 'center', gap: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.4)', fontSize: 12, fontWeight: 700, border: 'none', cursor: 'pointer', transition: 'background 0.2s' }}
+              title="انسخ رابط الطفل وأرسله للعائلة"
+            >
+              {kidCopied ? '✓ تم النسخ!' : '👦 رابط الطفل'}
+            </button>
+          )}
 
           {/* ── Embedded Daily.co iframe ── */}
           {jitsiEmbedded && jitsiEmbedUrl && (

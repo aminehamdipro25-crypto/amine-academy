@@ -5,7 +5,7 @@
 // (no banner, no Leave button) covering the video.
 import { useEffect, useRef, useState, useCallback } from 'react'
 import Daily, { type DailyCall } from '@daily-co/daily-js'
-import { Mic, MicOff, Video, VideoOff } from 'lucide-react'
+import { Mic, MicOff, Video, VideoOff, RefreshCw } from 'lucide-react'
 
 interface Props {
   url: string
@@ -24,6 +24,14 @@ export default function DailyVideoCall({ url, userName, compact = false }: Props
   const [micOn, setMicOn]                 = useState(true)
   const [remotePresent, setRemotePresent] = useState(false)
   const [error, setError]                 = useState('')
+  const [retryNonce, setRetryNonce]       = useState(0)
+
+  const reconnect = useCallback(() => {
+    setError('')
+    setJoined(false)
+    setRemotePresent(false)
+    setRetryNonce(n => n + 1)
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -94,7 +102,7 @@ export default function DailyVideoCall({ url, userName, compact = false }: Props
       call.leave().catch(() => {}).finally(() => { call.destroy().catch(() => {}) })
       callRef.current = null
     }
-  }, [url, userName])
+  }, [url, userName, retryNonce])
 
   const toggleCam = useCallback(() => {
     const call = callRef.current
@@ -133,7 +141,20 @@ export default function DailyVideoCall({ url, userName, compact = false }: Props
           alignItems: 'center', justifyContent: 'center', gap: 8, color: 'rgba(255,255,255,0.6)',
         }}>
           {error ? (
-            <span style={{ fontSize: compact ? 11 : 13, fontWeight: 700, color: '#F87171' }}>{error}</span>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: 8, textAlign: 'center' }}>
+              <span style={{ fontSize: compact ? 11 : 13, fontWeight: 700, color: '#F87171' }}>{error}</span>
+              <button
+                onClick={reconnect}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer',
+                  background: '#7C5CFC', color: '#fff', border: 'none', borderRadius: 10,
+                  padding: compact ? '5px 12px' : '7px 16px', fontSize: compact ? 11 : 13, fontWeight: 900,
+                }}
+              >
+                <RefreshCw className={compact ? 'w-3 h-3' : 'w-3.5 h-3.5'} />
+                إعادة الاتصال
+              </button>
+            </div>
           ) : (
             <>
               <div style={{
@@ -190,6 +211,18 @@ export default function DailyVideoCall({ url, userName, compact = false }: Props
           }}
         >
           {camOn ? <Video className={iconCls} /> : <VideoOff className={iconCls} />}
+        </button>
+        {/* Reconnect — recover from a transient network drop without reloading */}
+        <button
+          onClick={reconnect}
+          title="إعادة الاتصال"
+          style={{
+            width: btnSize, height: btnSize, borderRadius: '50%', border: 'none', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'rgba(255,255,255,0.15)', color: '#fff',
+          }}
+        >
+          <RefreshCw className={iconCls} />
         </button>
       </div>
     </div>

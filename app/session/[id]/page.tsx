@@ -3146,7 +3146,7 @@ ${notes ? `
           )}
 
           {/* Start screen — readiness check then start */}
-          {!jitsiEmbedded && !activeView && !running && (() => {
+          {!activeView && !running && (() => {
             const readyComplete = readySleep > 0 && readyEnergy > 0 && readyMood > 0
             const avgReady = readyComplete ? (readySleep + readyEnergy + readyMood) / 3 : 0
             const readyLevel = avgReady >= 3.8 ? 'high' : avgReady >= 2.5 ? 'medium' : avgReady > 0 ? 'low' : 'none'
@@ -3369,7 +3369,7 @@ ${notes ? `
           })()}
 
           {/* Idle screen — shown when session is running but no exercise selected */}
-          {!jitsiEmbedded && !activeView && running && (
+          {!activeView && running && (
             <div className="text-center px-4 max-w-sm mx-auto" dir="rtl">
               {results.length === 0 ? (
                 /* First exercise prompt */

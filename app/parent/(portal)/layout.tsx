@@ -16,6 +16,7 @@ export default function ParentPortalLayout({ children }: { children: React.React
   const [scrolled, setScrolled]         = useState(false)
   const [moreOpen, setMoreOpen]         = useState(false)
   const [mobileMenu, setMobileMenu]     = useState(false)
+  const [unreadBell, setUnreadBell]     = useState(0)
   const moreRef = useRef<HTMLDivElement>(null)
   const { lang } = useLang()
   const dir = lang === 'ar' ? 'rtl' : 'ltr'
@@ -70,6 +71,19 @@ export default function ParentPortalLayout({ children }: { children: React.React
     const onScroll = () => setScrolled(window.scrollY > 8)
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
+  // Unread notifications badge
+  useEffect(() => {
+    function fetchUnread() {
+      fetch('/api/messages')
+        .then(r => r.ok ? r.json() : null)
+        .then(d => { if (d) setUnreadBell(d.unreadFromAdmin ?? 0) })
+        .catch(() => {})
+    }
+    fetchUnread()
+    const interval = setInterval(fetchUnread, 60000)
+    return () => clearInterval(interval)
   }, [])
 
   // ── Shared link style ──────────────────────────────────────────
@@ -192,13 +206,21 @@ export default function ParentPortalLayout({ children }: { children: React.React
             {/* Notifications */}
             <Link
               href="/parent/dashboard#notifications"
-              className="w-8 h-8 rounded-xl flex items-center justify-center transition-all flex-shrink-0"
+              className="w-8 h-8 rounded-xl flex items-center justify-center transition-all flex-shrink-0 relative"
               style={{ background: '#F3EEFF' }}
               title={t.common.notifications}
               onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = '#E8DBFF' }}
               onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = '#F3EEFF' }}
             >
               <Bell className="w-4 h-4" style={{ color: '#7C5CFC' }} />
+              {unreadBell > 0 && (
+                <span
+                  className="absolute -top-1 -right-1 w-4 h-4 text-white text-[9px] font-black rounded-full flex items-center justify-center"
+                  style={{ background: '#EF4444' }}
+                >
+                  {unreadBell > 9 ? '9+' : unreadBell}
+                </span>
+              )}
             </Link>
 
             <LangToggle variant="light" className="hidden md:flex" />

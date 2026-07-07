@@ -78,7 +78,7 @@ function AIChatTab() {
             <Phone className="w-3.5 h-3.5" /> {t.whatsappLabel}
           </a>
           <a
-            href="mailto:amine.hamdi.pro25@gmail.com"
+            href={`mailto:${process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'contact@amine-academy.com'}`}
             className="flex items-center gap-1.5 font-bold text-xs px-3 py-1.5 rounded-2xl transition-all"
             style={{ background: '#F3EEFF', color: '#5A32D9' }}
             onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = '#E8DBFF' }}
@@ -168,7 +168,7 @@ function AIChatTab() {
         </form>
         <p className="text-xs text-gray-400 text-center mt-2">
           {t.instantContactPrefix(tr[lang].portal.common.coachName)}{' '}
-          <a href="https://wa.me/97430653759" className="font-bold" style={{ color: '#16A34A' }}>{t.whatsappLabel}</a>
+          <a href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '21600000000'}`} className="font-bold" style={{ color: '#16A34A' }}>{t.whatsappLabel}</a>
         </p>
       </div>
     </div>

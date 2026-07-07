@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Calendar, Bell, MessageSquare, FileText, ChevronLeft, Zap, TrendingUp, Clock, Star, X } from 'lucide-react'
 import type { Parent, Student, Program } from '@/lib/types'
 import { useLang, tr } from '@/lib/i18n'
+import { EXERCISES } from '@/lib/session-constants'
 import { ACountUp } from '@/components/ui'
 import { staggerContainer, fadeUp, popIn, liftHover } from '@/lib/motion'
 import ProgressMap from '@/components/progress/ProgressMap'
@@ -36,6 +37,10 @@ const PLAN_COLOR: Record<string, { color: string; bg: string }> = {
 }
 
 const MILESTONES = [500, 1000, 2000, 5000]
+
+const EX_LABEL: Record<string, string> = Object.fromEntries(
+  EXERCISES.map(e => [e.id, `${e.icon} ${e.labelAr}`])
+)
 
 type NotifSeverity = 'urgent' | 'warning' | 'positive' | 'achievement' | 'info'
 
@@ -195,6 +200,15 @@ export default function ParentDashboardPage() {
   const totalPoints = children.reduce((s, c) => s + (c.totalPoints || 0), 0)
   const totalStreak = children.reduce((s, c) => s + (c.streak || 0), 0)
 
+  const isLive = (() => {
+    if (!upcomingAppointment) return false
+    try {
+      const dt = new Date(`${upcomingAppointment.date}T${upcomingAppointment.time}`)
+      const diffMs = dt.getTime() - Date.now()
+      return diffMs >= -10 * 60 * 1000 && diffMs <= 15 * 60 * 1000
+    } catch { return false }
+  })()
+
   // Compute notifications from available data
   const allNotifications = buildNotifications(children, unreadReports, upcomingAppointment, t, coachName)
   const visibleNotifications = allNotifications.filter(n => !dismissedNotifs.includes(n.id))
@@ -219,10 +233,12 @@ export default function ParentDashboardPage() {
             <div>
               <div className="flex items-center gap-2">
                 <p className="text-gray-400 text-sm font-medium">{greeting(t)}</p>
-                <span className="flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full" style={{ color: '#6B46F0', background: '#F3EEFF' }}>
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-gentle-pulse" />
-                  {t.liveLabel}
-                </span>
+                {isLive && (
+                  <span className="flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full" style={{ color: '#6B46F0', background: '#F3EEFF' }}>
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-gentle-pulse" />
+                    {t.liveLabel}
+                  </span>
+                )}
               </div>
               <h1 className="font-black text-2xl text-gray-900 mt-0.5 leading-tight">
                 {parent.firstName} {parent.lastName}
@@ -613,13 +629,13 @@ export default function ParentDashboardPage() {
                           </Link>
                         </div>
                         <div className="flex gap-1.5 flex-wrap">
-                          {todayExs.slice(0, 4).map((_, i) => (
+                          {todayExs.slice(0, 4).map((exId, i) => (
                             <span
                               key={i}
-                              className="text-xs font-bold px-2.5 py-0.5 rounded-full ltr-num"
+                              className="text-xs font-bold px-2.5 py-0.5 rounded-full"
                               style={{ background: '#BBF7D0', color: '#15803D' }}
                             >
-                              {t.exerciseN(i + 1)}
+                              {EX_LABEL[exId] || exId}
                             </span>
                           ))}
                           {todayExs.length > 4 && (

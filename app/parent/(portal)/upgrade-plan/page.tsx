@@ -282,7 +282,7 @@ export default function UpgradePlanPage() {
           </p>
         </div>
         <a
-          href="https://wa.me/21612345678"
+          href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '21600000000'}`}
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center gap-1.5 text-xs font-black px-4 py-2 rounded-xl text-white flex-shrink-0"

@@ -5,7 +5,9 @@ import type { SessionPayload, UserRole } from './types'
 // ── Token Generation ─────────────────────────────────────────
 
 export function generateId(prefix: 'AA' | 'AS' | 'AE' | 'AP' | 'AT'): string {
-  return `${prefix}-${Date.now().toString(36)}-${crypto.randomBytes(3).toString('hex')}`
+  // 12 random bytes = 96 bits. The appointment id doubles as the capability
+  // that protects a child's live session/video, so it must not be guessable.
+  return `${prefix}-${Date.now().toString(36)}-${crypto.randomBytes(12).toString('hex')}`
 }
 
 export function createToken(id: string, role: UserRole, ttlMs: number = 30 * 24 * 60 * 60 * 1000): string {

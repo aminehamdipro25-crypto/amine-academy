@@ -1,4 +1,5 @@
 const DAILY_API = 'https://api.daily.co/v1/rooms'
+const DAILY_TOKEN_API = 'https://api.daily.co/v1/meeting-tokens'
 
 // How far in the future a freshly-ensured room should stay valid.
 const ROOM_TTL_SEC = 12 * 3600
@@ -74,8 +75,37 @@ export async function ensureDailyRoom(name: string): Promise<string | null> {
         const updated = await upd.json() as DailyRoom
         return updated.url
       }
+      // Refresh failed AND the room is already expired → don't hand back a
+      // dead URL (would fail to join with no recovery). Signal failure instead.
+      if (exp <= now) return null
     }
     return room.url
+  } catch {
+    return null
+  }
+}
+
+// Mint a short-lived Daily meeting token scoped to one room. `isOwner` grants
+// the specialist owner privileges (needed for server-side moderation). Returns
+// null on any failure so the caller can fall back to a plain (untokened) join.
+export async function createMeetingToken(roomName: string, isOwner: boolean): Promise<string | null> {
+  const key = process.env.DAILY_API_KEY
+  if (!key) return null
+  try {
+    const res = await fetch(DAILY_TOKEN_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
+      body: JSON.stringify({
+        properties: {
+          room_name: roomName,
+          is_owner: isOwner,
+          exp: Math.floor(Date.now() / 1000) + 4 * 3600,
+        },
+      }),
+    })
+    if (!res.ok) return null
+    const data = await res.json() as { token?: string }
+    return data.token ?? null
   } catch {
     return null
   }

@@ -107,6 +107,7 @@ import LiveSessionCard from '@/components/session/LiveSessionCard'
 import SessionStarCounter from '@/components/session/SessionStarCounter'
 import { computeAdaptiveDecision } from '@/lib/session-adaptive'
 import ADHDScale       from '@/components/session/assessments/ADHDScale'
+import AutismScale      from '@/components/session/assessments/AutismScale'
 import LearningDifficultiesScale from '@/components/session/assessments/LearningDifficultiesScale'
 import AttentionDomainsScale from '@/components/session/assessments/AttentionDomainsScale'
 import {
@@ -2266,7 +2267,11 @@ ${notes ? `
                         {a.severity === 'none' ? 'طبيعي' : a.severity === 'mild' ? 'خفيف' : a.severity === 'moderate' ? 'متوسط' : 'شديد'}
                       </span>
                       <span className="text-gray-600 text-xs font-bold">
-                        {a.type === 'adhd' ? 'تقييم ADHD' : 'صعوبات التعلم'}
+                        {a.type === 'adhd' ? 'تقييم ADHD'
+                          : a.type === 'autism' ? 'مقياس التوحد'
+                          : a.type === 'attention-domains' ? 'أنماط الانتباه'
+                          : a.type === 'learning-difficulties' ? 'صعوبات التعلم'
+                          : a.type}
                       </span>
                     </div>
                   </div>
@@ -3606,6 +3611,13 @@ ${notes ? `
               <div className="bg-gray-900 rounded-2xl overflow-hidden">
                 {activeView.id === 'adhd' && (
                   <ADHDScale
+                    studentId={currentStudentId || id || ''}
+                    onComplete={handleAssessmentComplete}
+                    onCancel={handleCancel}
+                  />
+                )}
+                {activeView.id === 'autism' && (
+                  <AutismScale
                     studentId={currentStudentId || id || ''}
                     onComplete={handleAssessmentComplete}
                     onCancel={handleCancel}

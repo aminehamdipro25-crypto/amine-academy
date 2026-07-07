@@ -37,12 +37,26 @@ export default function DailyVideoCall({ url, userName, compact = false, role = 
   // Kid: whether the specialist has forced my mic off (locks my own button)
   const [micLocked, setMicLocked]         = useState(false)
 
+  // Reconnect on the EXISTING call instance (leave → rejoin) instead of
+  // tearing down the effect. Destroying and immediately recreating races the
+  // async destroy() against the new mount reusing the same instance, which can
+  // strand the call. Rejoining in place avoids that entirely.
   const reconnect = useCallback(() => {
     setError('')
     setJoined(false)
     setRemotePresent(false)
-    setRetryNonce(n => n + 1)
-  }, [])
+    const call = callRef.current
+    if (!call) { setRetryNonce(n => n + 1); return } // no instance yet → let the effect create one
+    ;(async () => {
+      try {
+        const st = call.meetingState()
+        if (st === 'joined-meeting' || st === 'joining-meeting') await call.leave()
+        await call.join({ url, userName })
+      } catch {
+        setError('تعذر الاتصال: فشل إعادة المحاولة')
+      }
+    })()
+  }, [url, userName])
 
   useEffect(() => {
     let cancelled = false
@@ -144,7 +158,10 @@ export default function DailyVideoCall({ url, userName, compact = false, role = 
       call.leave().catch(() => {}).finally(() => { call.destroy().catch(() => {}) })
       callRef.current = null
     }
-  }, [url, userName, retryNonce, role])
+    // retryNonce only changes in the no-instance fallback path of reconnect()
+    // (callRef was null), so re-running here just creates the missing instance
+    // — there is no live instance to race a destroy against.
+  }, [url, userName, role, retryNonce])
 
   // Specialist: toggle the kid's microphone remotely via app message
   const toggleKidMic = useCallback(() => {

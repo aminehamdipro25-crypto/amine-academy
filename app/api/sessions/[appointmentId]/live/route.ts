@@ -1,17 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isDashboardUser } from '@/lib/auth'
+import { authorizeSession } from '@/lib/session-access'
 import { redis } from '@/lib/redis'
 
 export const runtime = 'nodejs'
 
 function key(id: string) { return `session:live:${id}` }
 
-// GET — kid page polls this every 3 seconds (no auth needed)
+// GET — kid page polls this every 3 seconds. Authorized callers only
+// (specialist/staff or the owning parent).
 export async function GET(
   _req: NextRequest,
   { params }: { params: { appointmentId: string } }
 ) {
   try {
+    if (!await authorizeSession(params.appointmentId)) {
+      return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
+    }
     const data = await redis.get<{ exerciseId: string; difficulty: number }>(key(params.appointmentId))
     return NextResponse.json({ live: data ?? null })
   } catch {

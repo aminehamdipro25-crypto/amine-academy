@@ -32,13 +32,21 @@ export default function Whiteboard({ onClose, sessionId }: Props) {
 
   const getCtx = () => canvasRef.current?.getContext('2d') ?? null
 
-  // Broadcast a whiteboard mutation so the kid page can mirror it
+  // Current canvas aspect ratio (w/h) — sent so the kid can letterbox its own
+  // canvas to match and replay strokes without stretching.
+  const canvasAR = () => {
+    const c = canvasRef.current
+    return c && c.height ? c.width / c.height : 4 / 3
+  }
+
+  // Broadcast a whiteboard mutation so the kid page can mirror it. The current
+  // aspect ratio rides along on every message.
   const syncPost = useCallback((payload: Record<string, unknown>) => {
     if (!sessionId) return
     fetch(`/api/sessions/${sessionId}/whiteboard`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({ ...payload, ar: canvasAR() }),
     }).catch(() => {})
   }, [sessionId])
 

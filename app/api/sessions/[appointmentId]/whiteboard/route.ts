@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isDashboardUser } from '@/lib/auth'
+import { authorizeSession } from '@/lib/session-access'
 import { redis } from '@/lib/redis'
 
 export const runtime = 'nodejs'
@@ -7,19 +8,24 @@ export const runtime = 'nodejs'
 function key(id: string) { return `session:wb:${id}` }
 
 // Stroke: c=color, s=size, e=eraser, p=flat normalized points [x1,y1,x2,y2,...]
+// ar = specialist canvas aspect ratio (w/h) so the kid can letterbox its own
+// canvas to match and replay strokes without geometric distortion.
 export interface WBStroke { c: string; s: number; e: boolean; p: number[] }
-export interface WBState { active: boolean; strokes: WBStroke[]; rev: number }
+export interface WBState { active: boolean; strokes: WBStroke[]; rev: number; ar?: number }
 
-const EMPTY: WBState = { active: false, strokes: [], rev: 0 }
+const EMPTY: WBState = { active: false, strokes: [], rev: 0, ar: 4 / 3 }
 const MAX_STROKES = 600
 const TTL = 7200
 
-// GET — kid/parent page polls this (no auth; strokes contain no PII)
+// GET — kid/parent page polls this. Authorized callers only.
 export async function GET(
   _req: NextRequest,
   { params }: { params: { appointmentId: string } }
 ) {
   try {
+    if (!await authorizeSession(params.appointmentId)) {
+      return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
+    }
     const wb = await redis.get<WBState>(key(params.appointmentId))
     return NextResponse.json({ wb: wb ?? EMPTY })
   } catch {
@@ -40,12 +46,17 @@ export async function POST(
     const k = key(params.appointmentId)
     const wb = (await redis.get<WBState>(k)) ?? { ...EMPTY }
 
+    // Track the specialist's canvas aspect ratio (sent with open/stroke)
+    if (typeof body.ar === 'number' && body.ar > 0.1 && body.ar < 10) wb.ar = body.ar
+
     switch (body.action) {
       case 'open':
         wb.active = true
+        wb.rev++
         break
       case 'close':
         wb.active = false
+        wb.rev++
         break
       case 'stroke': {
         const s = body.stroke as WBStroke | undefined
@@ -55,6 +66,7 @@ export async function POST(
         // Cap stroke payload and total strokes to keep the Redis value bounded
         wb.strokes.push({ c: String(s.c).slice(0, 9), s: Math.min(Number(s.s) || 3, 60), e: !!s.e, p: s.p.slice(0, 2000).map(Number) })
         if (wb.strokes.length > MAX_STROKES) wb.strokes = wb.strokes.slice(-MAX_STROKES)
+        wb.rev++
         break
       }
       case 'undo':

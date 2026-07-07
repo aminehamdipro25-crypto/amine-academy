@@ -90,9 +90,12 @@ const PHYSICAL_IDS = ['jumping-jacks','obstacle-circuit','balance-walk','tiger-c
 
 type LiveState = { exerciseId: string; difficulty: number } | null
 type WBStroke = { c: string; s: number; e: boolean; p: number[] }
-type WBState  = { active: boolean; strokes: WBStroke[]; rev: number }
+type WBState  = { active: boolean; strokes: WBStroke[]; rev: number; ar?: number }
 
-// Read-only mirror of the specialist's whiteboard — replays normalized strokes
+// Read-only mirror of the specialist's whiteboard. Strokes are normalized 0..1
+// against the SPECIALIST canvas, so the kid canvas is letterboxed to the
+// specialist's aspect ratio (wb.ar) — otherwise independent x/y scaling would
+// stretch every drawing.
 function KidWhiteboardOverlay({ id }: { id: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [wb, setWb] = useState<WBState | null>(null)
@@ -122,6 +125,17 @@ function KidWhiteboardOverlay({ id }: { id: string }) {
     if (!ctx) return
     ctx.fillStyle = '#1F2937'
     ctx.fillRect(0, 0, c.width, c.height)
+
+    // Letterbox: compute a sub-rectangle of the kid canvas whose aspect ratio
+    // matches the specialist's (wb.ar). Strokes map into THIS box uniformly.
+    const ar = wb.ar && wb.ar > 0 ? wb.ar : 4 / 3
+    const cAR = c.width / c.height
+    let bw = c.width, bh = c.height, ox = 0, oy = 0
+    if (cAR > ar) { bw = c.height * ar; ox = (c.width - bw) / 2 }   // pillarbox
+    else          { bh = c.width / ar;  oy = (c.height - bh) / 2 }  // letterbox
+    const X = (nx: number) => ox + nx * bw
+    const Y = (ny: number) => oy + ny * bh
+
     for (const st of wb.strokes) {
       ctx.globalCompositeOperation = st.e ? 'destination-out' : 'source-over'
       ctx.strokeStyle = st.e ? 'rgba(0,0,0,1)' : st.c
@@ -132,19 +146,19 @@ function KidWhiteboardOverlay({ id }: { id: string }) {
       const pts = st.p
       if (pts.length === 2) {
         ctx.beginPath()
-        ctx.arc(pts[0] * c.width, pts[1] * c.height, st.s / 2, 0, Math.PI * 2)
+        ctx.arc(X(pts[0]), Y(pts[1]), st.s / 2, 0, Math.PI * 2)
         ctx.fill()
       } else {
         ctx.beginPath()
-        ctx.moveTo(pts[0] * c.width, pts[1] * c.height)
+        ctx.moveTo(X(pts[0]), Y(pts[1]))
         for (let i = 2; i < pts.length - 1; i += 2) {
-          ctx.lineTo(pts[i] * c.width, pts[i + 1] * c.height)
+          ctx.lineTo(X(pts[i]), Y(pts[i + 1]))
         }
         ctx.stroke()
       }
     }
     ctx.globalCompositeOperation = 'source-over'
-  }, [wb?.strokes.length, wb?.rev, wb])
+  }, [wb?.rev, wb])
 
   if (!wb?.active) return null
   return (

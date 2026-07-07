@@ -3,6 +3,7 @@ import { isDashboardUser } from '@/lib/auth'
 import { createAppointment, updateAppointment } from '@/lib/db'
 import { sendEmail, appointmentConfirmEmail } from '@/lib/mailer'
 import { getParent } from '@/lib/db'
+import { createDailyRoom } from '@/lib/daily'
 
 export const runtime = 'nodejs'
 
@@ -28,8 +29,8 @@ export async function POST(req: NextRequest) {
       notes: body.notes || '',
     })
 
-    const roomName = `AmineAcademy${appt.id.replace(/[^a-zA-Z0-9]/g, '')}`
-    const meetingUrl = `https://meet.jit.si/${roomName}`
+    const roomName = `amine-${appt.id.replace(/[^a-zA-Z0-9]/g, '').toLowerCase()}`
+    const meetingUrl = await createDailyRoom(roomName)
     await updateAppointment(appt.id, { meetingUrl })
 
     try {

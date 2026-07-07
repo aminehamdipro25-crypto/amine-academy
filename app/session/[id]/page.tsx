@@ -425,8 +425,7 @@ export default function SessionPage() {
     fetch(`/api/appointments/${id}`)
       .then(r => r.json())
       .then(({ appointment }) => {
-        // Always have a video room — use appointment URL or auto-generate from session ID
-        setJitsiUrl(appointment?.meetingUrl ?? `https://meet.jit.si/amine-academy-${id}`)
+        if (appointment?.meetingUrl) setJitsiUrl(appointment.meetingUrl)
         if (appointment?.type) {
           setAppointmentType(appointment.type)
           if (appointment.type === 'assessment' && !draftRestoredRef.current) setTab('assessments')
@@ -479,10 +478,8 @@ export default function SessionPage() {
 
   const [jitsiEmbedded, setJitsiEmbedded] = useState(false)
 
-  // Jitsi embed URL — camera+mic on, no lobby, no deep-link redirect
-  const jitsiEmbedUrl = jitsiUrl
-    ? `${jitsiUrl}#config.prejoinPageEnabled=false&config.startWithAudioMuted=false&config.startWithVideoMuted=false&config.disableDeepLinking=true&config.disableInitialGUM=false&interfaceConfig.FILM_STRIP_MAX_HEIGHT=0&userInfo.displayName=${encodeURIComponent('الأستاذ أمين')}`
-    : null
+  // Daily.co embed URL — settings applied at room creation, no hash params needed
+  const jitsiEmbedUrl = jitsiUrl ?? null
 
   // Content presenter (replaces broken native screen-share)
   const [contentUrl, setContentUrl]           = useState<string | null>(null)
@@ -3104,7 +3101,7 @@ ${notes ? `
 
         <main className={`flex-1 flex items-center justify-center bg-gray-950 relative overflow-auto ${chromeHidden ? '' : 'pb-20 lg:pb-0'} ${kidMode ? 'hidden' : ''}`}>
 
-          {/* ── Embedded Jitsi iframe ── */}
+          {/* ── Embedded Daily.co iframe ── */}
           {/* Always rendered as a small draggable PiP — never full-screen, never unmounts.
               Keeping one DraggableVideoPiP instance means the iframe is never destroyed,
               so the WebRTC connection stays alive when exercises start. */}

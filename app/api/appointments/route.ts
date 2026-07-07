@@ -4,6 +4,7 @@ import { verifyToken } from '@/lib/auth'
 import { createAppointment, updateAppointment, getParentAppointments, getParent, getStudentsByParent } from '@/lib/db'
 import { sendEmail, appointmentConfirmEmail } from '@/lib/mailer'
 import { tg, tgEsc } from '@/lib/telegram'
+import { createDailyRoom } from '@/lib/daily'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -65,9 +66,10 @@ export async function POST(req: Request) {
       throw bookingErr
     }
 
-    const roomName = `AmineAcademy${appt.id.replace(/[^a-zA-Z0-9]/g, '')}`
-    await updateAppointment(appt.id, { meetingUrl: `https://meet.jit.si/${roomName}` })
-    const appointment = { ...appt, meetingUrl: `https://meet.jit.si/${roomName}` }
+    const roomName = `amine-${appt.id.replace(/[^a-zA-Z0-9]/g, '').toLowerCase()}`
+    const meetingUrl = await createDailyRoom(roomName)
+    await updateAppointment(appt.id, { meetingUrl })
+    const appointment = { ...appt, meetingUrl }
 
     try {
       const parent = await getParent(payload.id)

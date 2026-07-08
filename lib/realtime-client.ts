@@ -62,7 +62,7 @@ export function subscribeSession(
   if (!client || !sessionId) return () => {}
 
   const channel = client.subscribe(channelFor(sessionId))
-  const EVENTS: SessionEvent[] = ['live', 'content', 'whiteboard', 'timer', 'noise', 'card', 'kid-status', 'presence']
+  const EVENTS: SessionEvent[] = ['live', 'content', 'whiteboard', 'timer', 'noise', 'card', 'kid-status', 'presence', 'readiness']
   const handlers = EVENTS.map(ev => {
     const h = () => onEvent(ev)
     channel.bind(ev, h)

@@ -176,6 +176,93 @@ function KidPromptCardOverlay({ cardId }: { cardId: string }) {
   )
 }
 
+const READY_COLORS = ['#EF4444', '#F97316', '#F59E0B', '#22C55E', '#3B82F6']
+const READY_QUESTIONS: { field: 'sleep' | 'energy' | 'mood'; label: string; icons: string[] }[] = [
+  { field: 'sleep',  label: 'كيف نمت الليلة؟ 😴',  icons: ['😴', '😟', '😐', '🙂', '🌟'] },
+  { field: 'energy', label: 'كم طاقتك الآن؟ ⚡',   icons: ['🔋', '😐', '🙂', '⚡', '🚀'] },
+  { field: 'mood',   label: 'كيف مزاجك اليوم؟ 😊', icons: ['😢', '😟', '😐', '🙂', '😄'] },
+]
+
+// The child answers the pre-session readiness check directly — same 3
+// questions the specialist used to fill in from observation, now tapped by
+// the child themselves (faces they recognize) and synced live to the
+// specialist's screen. Shown in place of the plain waiting screen whenever
+// the specialist has this phase open (readiness.active) and no exercise has
+// started yet.
+function KidReadinessScreen({
+  readiness,
+  onAnswer,
+}: {
+  readiness: { sleep: number; energy: number; mood: number }
+  onAnswer: (field: 'sleep' | 'energy' | 'mood', value: number) => void
+}) {
+  const allAnswered = readiness.sleep > 0 && readiness.energy > 0 && readiness.mood > 0
+
+  return (
+    <div
+      dir="rtl"
+      style={{
+        minHeight: '100dvh', display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center', textAlign: 'center',
+        background: 'linear-gradient(160deg,#FFF8F0 0%,#FFF3E8 45%,#F3EEFF 100%)',
+        padding: '24px 20px', gap: 0,
+      }}
+    >
+      <div style={{ width: '100%', maxWidth: 380 }}>
+        <div style={{ fontSize: 56, marginBottom: 6 }}>👋</div>
+        <div style={{ fontSize: 22, fontWeight: 900, color: '#6D28D9', marginBottom: 4 }}>
+          أخبرنا عن نفسك!
+        </div>
+        <div style={{ fontSize: 13, color: '#7C3AED', opacity: 0.7, marginBottom: 24 }}>
+          اضغط على الوجه الذي يشبهك 🌈
+        </div>
+
+        {READY_QUESTIONS.map(({ field, label, icons }) => {
+          const val = readiness[field]
+          return (
+            <div key={field} style={{ marginBottom: 22 }}>
+              <div style={{ fontSize: 15, fontWeight: 800, color: '#374151', marginBottom: 10 }}>{label}</div>
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
+                {icons.map((icon, i) => {
+                  const selected = val === i + 1
+                  const color = READY_COLORS[i]
+                  return (
+                    <button
+                      key={i}
+                      onClick={() => onAnswer(field, i + 1)}
+                      style={{
+                        flex: 1, maxWidth: 62, aspectRatio: '1', borderRadius: 18,
+                        fontSize: '1.85rem', border: selected ? `2.5px solid ${color}` : '2px solid #F3EEFF',
+                        background: selected ? `linear-gradient(135deg,${color}26,${color}12)` : '#FFFFFF',
+                        boxShadow: selected ? `0 8px 20px ${color}35` : '0 2px 8px rgba(0,0,0,0.04)',
+                        transform: selected ? 'scale(1.1) translateY(-2px)' : 'scale(1)',
+                        transition: 'all 0.2s', cursor: 'pointer',
+                      }}
+                    >
+                      {icon}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )
+        })}
+
+        <div
+          style={{
+            marginTop: 8, padding: '14px 18px', borderRadius: 18,
+            background: allAnswered ? 'linear-gradient(135deg,#D1FAE5,#A7F3D0)' : 'rgba(124,92,252,0.08)',
+            color: allAnswered ? '#065F46' : '#7C3AED',
+            fontSize: 14, fontWeight: 800, transition: 'all 0.3s',
+          }}
+        >
+          {allAnswered ? '🎉 رائع! ننتظر الأستاذ ليبدأ' : 'أجب على الأسئلة الثلاثة لنبدأ 🌟'}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // Read-only mirror of the specialist's whiteboard. Strokes are normalized 0..1
 // against the SPECIALIST canvas, so the kid canvas is letterboxed to the
 // specialist's aspect ratio (wb.ar) — otherwise independent x/y scaling would
@@ -276,6 +363,7 @@ export default function KidSessionPage() {
   const [wbActive, setWbActive] = useState(false)
   const [timerState, setTimerState] = useState<TimerState | null>(null)
   const [cardId, setCardId] = useState<string | null>(null)
+  const [readiness, setReadiness] = useState<{ active: boolean; sleep: number; energy: number; mood: number } | null>(null)
   const noiseHandleRef = useRef<NoiseHandle | null>(null)
   // Tracks whichever of {synthesized mode, custom audio URL} is currently
   // playing, so we only restart audio on an actual transition, not every poll.
@@ -352,6 +440,27 @@ export default function KidSessionPage() {
     } catch { /* ignore */ }
   }, [id])
 
+  const fetchReadiness = useCallback(async () => {
+    try {
+      const { readiness: r } = await (await fetch(`/api/sessions/${id}/readiness`)).json() as {
+        readiness: { active: boolean; sleep: number; energy: number; mood: number }
+      }
+      setReadiness(r ?? null)
+    } catch { /* ignore */ }
+  }, [id])
+
+  // Child taps a face — posts straight to the shared state; the specialist's
+  // screen picks it up the same way (poll + realtime), so either side always
+  // reflects the same answers.
+  const answerReadiness = useCallback((field: 'sleep' | 'energy' | 'mood', value: number) => {
+    setReadiness(r => r ? { ...r, [field]: value } : r)
+    fetch(`/api/sessions/${id}/readiness`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ [field]: value }),
+    }).catch(() => {})
+  }, [id])
+
   // Drive the noise/audio engine. There is no audio file to stream, so the
   // child's browser runs the SAME synthesis (lib/noise-synth.ts) or plays the
   // shared URL — started/stopped/switched only on an actual transition, never
@@ -379,8 +488,8 @@ export default function KidSessionPage() {
   }, [id])
 
   const pollAll = useCallback(() => {
-    fetchLive(); fetchContent(); fetchWbActive(); fetchTimer(); fetchCard(); fetchNoise()
-  }, [fetchLive, fetchContent, fetchWbActive, fetchTimer, fetchCard, fetchNoise])
+    fetchLive(); fetchContent(); fetchWbActive(); fetchTimer(); fetchCard(); fetchNoise(); fetchReadiness()
+  }, [fetchLive, fetchContent, fetchWbActive, fetchTimer, fetchCard, fetchNoise, fetchReadiness])
 
   // Stop any playing audio if the child navigates away mid-session
   useEffect(() => {
@@ -404,10 +513,11 @@ export default function KidSessionPage() {
       else if (ev === 'timer') fetchTimer()
       else if (ev === 'card') fetchCard()
       else if (ev === 'noise') fetchNoise()
+      else if (ev === 'readiness') fetchReadiness()
     })
     const iv = setInterval(pollAll, rt ? 6000 : 1000)
     return () => { unsub(); clearInterval(iv) }
-  }, [id, pollAll, fetchLive, fetchContent, fetchWbActive, fetchTimer, fetchCard, fetchNoise])
+  }, [id, pollAll, fetchLive, fetchContent, fetchWbActive, fetchTimer, fetchCard, fetchNoise, fetchReadiness])
 
   // Report status to specialist when exercise starts/finishes. `result` is
   // only present on a real completion (the exercise's onComplete callback
@@ -503,7 +613,13 @@ export default function KidSessionPage() {
   // ── Main content: waiting screen OR active exercise ───────────────────
   let mainContent: React.ReactNode
 
-  if (!live || done) {
+  if (readiness?.active && !live && !done) {
+    // Pre-session readiness — child answers the 3 questions themselves,
+    // synced live to the specialist. Replaces the plain waiting screen only
+    // during this phase; the moment the specialist starts/skips, `active`
+    // flips false and this falls through to the normal waiting/exercise flow.
+    mainContent = <KidReadinessScreen readiness={readiness} onAnswer={answerReadiness} />
+  } else if (!live || done) {
     mainContent = (
       <div
         dir="rtl"

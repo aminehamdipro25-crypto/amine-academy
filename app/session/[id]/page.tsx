@@ -310,11 +310,57 @@ export default function SessionPage() {
   const timerBtnRef  = useRef<HTMLDivElement>(null)
   const noiseBtnRef  = useRef<HTMLDivElement>(null)
 
-  // Pre-session readiness check
+  // Pre-session readiness check — the CHILD answers these on their own
+  // screen (faces they tap), synced here in real time; the specialist can
+  // also fill it in themselves as a fallback (non-verbal child, no second
+  // device). `active` tells the kid page to show the question screen at all.
   const [readyDone, setReadyDone]     = useState(false)
   const [readySleep, setReadySleep]   = useState(0)
   const [readyEnergy, setReadyEnergy] = useState(0)
   const [readyMood, setReadyMood]     = useState(0)
+  const readinessActiveRef = useRef(false) // avoids re-posting active:true every render
+
+  const postReadiness = useCallback((patch: Record<string, unknown>) => {
+    if (!id) return
+    fetch(`/api/sessions/${id}/readiness`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(patch),
+    }).catch(() => {})
+  }, [id])
+
+  // Open the readiness phase for the kid page the moment this screen would
+  // show (not yet running, no exercise, answers not yet confirmed) — once,
+  // not on every render — and start from a clean slate for this appointment.
+  useEffect(() => {
+    if (running || readyDone || activeView) return
+    if (readinessActiveRef.current) return
+    readinessActiveRef.current = true
+    postReadiness({ active: true, reset: true })
+  }, [running, readyDone, activeView, postReadiness])
+
+  // Pick up the child's live answers (poll + realtime wake-up). Only pulls
+  // sleep/energy/mood — `active`/`readyDone` stay under the specialist's
+  // own control so a kid tap can never itself start the session.
+  useEffect(() => {
+    if (!id) return
+    const fetchReadiness = async () => {
+      try {
+        const { readiness } = await (await fetch(`/api/sessions/${id}/readiness`)).json() as {
+          readiness: { sleep: number; energy: number; mood: number }
+        }
+        if (!readiness) return
+        setReadySleep(readiness.sleep)
+        setReadyEnergy(readiness.energy)
+        setReadyMood(readiness.mood)
+      } catch { /* ignore */ }
+    }
+    fetchReadiness()
+    const rt = realtimeEnabled()
+    const unsub = subscribeSession(id, ev => { if (ev === 'readiness') fetchReadiness() })
+    const iv = setInterval(fetchReadiness, rt ? 8000 : 1500)
+    return () => { unsub(); clearInterval(iv) }
+  }, [id])
 
   // Kiosk exercise queue
   const [exerciseQueue, setExerciseQueue] = useState<string[]>([])
@@ -3215,6 +3261,7 @@ ${notes ? `
                 setDifficulty(newDiff as 1|2|3)
               }
               setReadyDone(true)
+              postReadiness({ active: false })
               startSession()
             }
 
@@ -3302,12 +3349,14 @@ ${notes ? `
                           </div>
                         </div>
 
-                        {/* Questions */}
+                        {/* Questions — also answerable by the CHILD on their own
+                            screen (they tap the same faces); tapping here posts
+                            the same synced state so either side stays in view. */}
                         {[
-                          { label: 'نوم الطفل الليلة؟',   val: readySleep,  set: setReadySleep,  icons: ['😴','😟','😐','🙂','🌟'] },
-                          { label: 'طاقة الطفل الآن؟',    val: readyEnergy, set: setReadyEnergy, icons: ['🔋','😐','🙂','⚡','🚀'] },
-                          { label: 'مزاجه عند الدخول؟',   val: readyMood,   set: setReadyMood,   icons: ['😢','😟','😐','🙂','😄'] },
-                        ].map(({ label, val, set, icons }) => (
+                          { label: 'نوم الطفل الليلة؟',   field: 'sleep',  val: readySleep,  set: setReadySleep,  icons: ['😴','😟','😐','🙂','🌟'] },
+                          { label: 'طاقة الطفل الآن؟',    field: 'energy', val: readyEnergy, set: setReadyEnergy, icons: ['🔋','😐','🙂','⚡','🚀'] },
+                          { label: 'مزاجه عند الدخول؟',   field: 'mood',   val: readyMood,   set: setReadyMood,   icons: ['😢','😟','😐','🙂','😄'] },
+                        ].map(({ label, field, val, set, icons }) => (
                           <div key={label} className="mb-5">
                             <div className="flex items-center justify-between mb-3">
                               <p className="text-gray-700 text-sm font-bold">{label}</p>
@@ -3324,7 +3373,7 @@ ${notes ? `
                               {icons.map((icon, i) => (
                                 <button
                                   key={i}
-                                  onClick={() => set(i + 1)}
+                                  onClick={() => { set(i + 1); postReadiness({ [field]: i + 1 }) }}
                                   className="flex-1 flex items-center justify-center rounded-2xl transition-all duration-200 active:scale-90"
                                   style={{
                                     height: 60,
@@ -3370,7 +3419,7 @@ ${notes ? `
                         {/* Action buttons */}
                         <div className="flex gap-3">
                           <button
-                            onClick={() => { setReadyDone(true); startSession() }}
+                            onClick={() => { setReadyDone(true); postReadiness({ active: false }); startSession() }}
                             className="flex-1 py-3.5 rounded-2xl text-xs font-bold transition-all active:scale-95 bg-gray-50 text-gray-400 border border-gray-200 hover:bg-gray-100"
                           >
                             تخطّ ←

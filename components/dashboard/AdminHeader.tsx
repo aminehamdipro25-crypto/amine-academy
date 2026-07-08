@@ -97,27 +97,40 @@ export default function AdminHeader({ onMenuToggle, onUnreadChange }: { onMenuTo
   useEffect(() => {
     function onClickOutside(e: MouseEvent) {
       if (dropRef.current && !dropRef.current.contains(e.target as Node)) {
-        setOpen(false)
+        closeBell()
       }
     }
     document.addEventListener('mousedown', onClickOutside)
     return () => document.removeEventListener('mousedown', onClickOutside)
   }, [])
 
+  // Closing — clear the just-viewed appointment notifications from local
+  // state now that they've been marked seen server-side, so re-opening
+  // starts clean instead of briefly flashing already-handled items.
+  function closeBell() {
+    setOpen(false)
+    setApptNotifs([])
+  }
+
   async function openBell() {
-    const wasOpen = open
-    setOpen(o => !o)
-    if (!wasOpen) {
-      setLoading(true)
-      await fetchUnread()
-      setLoading(false)
-      // Mark appointment notifications as seen
-      if (apptNotifs.length > 0) {
+    if (open) { closeBell(); return }
+    setOpen(true)
+    setLoading(true)
+    await fetchUnread()
+    setLoading(false)
+
+    // Mark appointment notifications as seen server-side (so future polls
+    // don't re-count them) WITHOUT clearing the just-fetched local list —
+    // otherwise the dropdown wipes itself before the admin ever sees the
+    // notification it just fetched. Read the freshly-fetched count via the
+    // functional setState form rather than the (stale) `apptNotifs` closure.
+    setApptNotifs(current => {
+      if (current.length > 0) {
         fetch('/api/admin/notifications', { method: 'DELETE', credentials: 'include' }).catch(() => {})
-        setApptNotifs([])
-        setTotalUnread(prev => Math.max(0, prev - apptNotifs.length))
+        setTotalUnread(prev => Math.max(0, prev - current.length))
       }
-    }
+      return current
+    })
   }
 
   function timeAgo(iso: string) {
@@ -201,7 +214,7 @@ export default function AdminHeader({ onMenuToggle, onUnreadChange }: { onMenuTo
                     </span>
                   )}
                 </div>
-                <button onClick={() => setOpen(false)} className="text-gray-400 hover:text-gray-600">
+                <button onClick={closeBell} className="text-gray-400 hover:text-gray-600">
                   <X className="w-4 h-4" />
                 </button>
               </div>
@@ -222,7 +235,7 @@ export default function AdminHeader({ onMenuToggle, onUnreadChange }: { onMenuTo
                   {apptNotifs.map(n => (
                     <button
                       key={n.id}
-                      onClick={() => { router.push('/dashboard/appointments'); setOpen(false) }}
+                      onClick={() => { router.push('/dashboard/appointments'); closeBell() }}
                       className="w-full px-4 py-3 hover:bg-green-50 transition-colors text-right flex items-start gap-3"
                     >
                       <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center text-green-700 flex-shrink-0 mt-0.5">
@@ -244,7 +257,7 @@ export default function AdminHeader({ onMenuToggle, onUnreadChange }: { onMenuTo
                   {threads.map(th => (
                     <button
                       key={th.parentId}
-                      onClick={() => { router.push('/dashboard/messages'); setOpen(false) }}
+                      onClick={() => { router.push('/dashboard/messages'); closeBell() }}
                       className="w-full px-4 py-3 hover:bg-gray-50 transition-colors text-right flex items-start gap-3"
                     >
                       <div className="w-8 h-8 bg-brand-100 rounded-full flex items-center justify-center text-brand-700 font-black text-sm flex-shrink-0 mt-0.5">
@@ -271,7 +284,7 @@ export default function AdminHeader({ onMenuToggle, onUnreadChange }: { onMenuTo
               <div className="border-t border-gray-50 px-4 py-2.5">
                 <Link
                   href="/dashboard/messages"
-                  onClick={() => setOpen(false)}
+                  onClick={closeBell}
                   className="flex items-center justify-center gap-1.5 text-sm font-bold text-brand-600 hover:text-brand-700 transition-colors py-0.5"
                 >
                   {t.viewAllMessages}

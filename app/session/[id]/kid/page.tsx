@@ -202,10 +202,17 @@ function KidReadinessScreen({
     <div
       dir="rtl"
       style={{
+        // Not vertically centered, and with real bottom padding: while the
+        // call is live, Chrome/Android draw their own "camera/mic in use"
+        // control (a browser feature, not ours) fixed over the viewport's
+        // bottom-left corner. That's unavoidable, so instead we keep this
+        // screen's own content — especially the last question's face
+        // buttons — from ever landing under it, and let the page scroll if
+        // a short device needs it.
         minHeight: '100dvh', display: 'flex', flexDirection: 'column',
-        alignItems: 'center', justifyContent: 'center', textAlign: 'center',
+        alignItems: 'center', justifyContent: 'flex-start', textAlign: 'center',
         background: 'linear-gradient(160deg,#FFF8F0 0%,#FFF3E8 45%,#F3EEFF 100%)',
-        padding: '24px 20px', gap: 0,
+        padding: '24px 20px 200px', gap: 0, overflowY: 'auto',
       }}
     >
       <div style={{ width: '100%', maxWidth: 380 }}>

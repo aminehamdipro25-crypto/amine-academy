@@ -4,7 +4,7 @@ import { verifyToken } from '@/lib/auth'
 import { createAppointment, updateAppointment, getParentAppointments, getParent, getStudentsByParent } from '@/lib/db'
 import { sendEmail, appointmentConfirmEmail } from '@/lib/mailer'
 import { tg, tgEsc } from '@/lib/telegram'
-import { createDailyRoom } from '@/lib/daily'
+import { createDailyRoom, dailyRoomNameFor } from '@/lib/daily'
 import { redis } from '@/lib/redis'
 
 export const dynamic = 'force-dynamic'
@@ -75,8 +75,7 @@ export async function POST(req: Request) {
       throw bookingErr
     }
 
-    const roomName = `amine-${appt.id.replace(/[^a-zA-Z0-9]/g, '').toLowerCase()}`
-    const meetingUrl = await createDailyRoom(roomName)
+    const meetingUrl = await createDailyRoom(dailyRoomNameFor(appt.id))
     await updateAppointment(appt.id, { meetingUrl })
     const appointment = { ...appt, meetingUrl }
 

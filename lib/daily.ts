@@ -1,5 +1,20 @@
+import { createHash } from 'crypto'
+
 const DAILY_API = 'https://api.daily.co/v1/rooms'
 const DAILY_TOKEN_API = 'https://api.daily.co/v1/meeting-tokens'
+
+// Daily.co room names are capped at 41 characters. Deriving the room name
+// directly from the appointment ID (which needs to be long/high-entropy for
+// its OWN purpose — it's the API authorization key, unrelated to Daily's
+// constraints) risks exceeding that limit and having room creation silently
+// rejected or behave inconsistently — this was the actual root cause of
+// persistent "خطأ في الانضمام" join failures on longer appointment IDs.
+// Hash instead of truncate: truncating a long ID would make two different
+// appointment IDs sharing the same prefix collide onto the same Daily room.
+export function dailyRoomNameFor(appointmentId: string): string {
+  const hash = createHash('sha256').update(appointmentId).digest('hex').slice(0, 24)
+  return `amine-${hash}` // 6 + 24 = 30 chars, safely under the 41-char cap
+}
 
 // How far in the future a freshly-ensured room should stay valid.
 const ROOM_TTL_SEC = 12 * 3600

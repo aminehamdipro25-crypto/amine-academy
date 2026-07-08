@@ -156,7 +156,21 @@ export default function DailyVideoCall({ url, userName, compact = false, role = 
 
       call.join({ url, userName }).catch((err: unknown) => {
         clearJoinTimeout()
-        if (!cancelled) setError(`تعذر الاتصال: ${err instanceof Error ? err.message : 'خطأ في الانضمام'}`)
+        if (cancelled) return
+        // Daily's join() rejects with its own error shape (errorMsg /
+        // error.type / error.details), not a native Error — pull every
+        // field we can find instead of falling back to a vague message.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const anyErr = err as any
+        const detail =
+          (err instanceof Error && err.message) ||
+          anyErr?.errorMsg ||
+          anyErr?.error?.details ||
+          anyErr?.error?.type ||
+          (typeof anyErr === 'string' ? anyErr : '') ||
+          (() => { try { return JSON.stringify(anyErr) } catch { return '' } })() ||
+          'سبب غير معروف'
+        setError(`تعذر الاتصال: ${detail}`)
       })
 
       // Store cleanup handlers for the outer effect's return function

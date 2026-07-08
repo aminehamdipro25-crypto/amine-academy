@@ -273,7 +273,10 @@ export default function KidSessionPage() {
   const [timerState, setTimerState] = useState<TimerState | null>(null)
   const [cardId, setCardId] = useState<string | null>(null)
   const noiseHandleRef = useRef<NoiseHandle | null>(null)
-  const noiseModeRef = useRef<string | null>(null)
+  // Tracks whichever of {synthesized mode, custom audio URL} is currently
+  // playing, so we only restart audio on an actual transition, not every poll.
+  const noiseKeyRef = useRef<string | null>(null)
+  const customAudioElRef = useRef<HTMLAudioElement | null>(null)
 
   // Fetch meeting URL once on load
   useEffect(() => {
@@ -301,7 +304,7 @@ export default function KidSessionPage() {
       const { contentUrl: cUrl } = await contentRes.json() as { contentUrl: string | null }
       const { wb } = await wbRes.json() as { wb: WBState }
       const { timer } = await timerRes.json() as { timer: TimerState }
-      const { noise } = await noiseRes.json() as { noise: { active: boolean; mode: string } }
+      const { noise } = await noiseRes.json() as { noise: { active: boolean; mode: string; customUrl?: string | null } }
       const { card } = await cardRes.json() as { card: { cardId: string | null } }
 
       if (data?.exerciseId !== prevId.current) {
@@ -315,26 +318,35 @@ export default function KidSessionPage() {
       setTimerState(timer?.active ? timer : null)
       setCardId(card?.cardId ?? null)
 
-      // Start/stop/switch the noise engine only on an actual transition —
-      // re-creating it every poll would restart the audio from scratch.
+      // Start/stop/switch the audio only on an actual transition — re-creating
+      // it every poll would restart from scratch. `customUrl` (a real shared
+      // link) takes priority over the synthesized mode when both are present.
       const wantActive = noise?.active ?? false
-      const wantMode = noise?.mode ?? null
-      const isActive = !!noiseHandleRef.current
-      if (wantActive && (!isActive || noiseModeRef.current !== wantMode)) {
-        noiseHandleRef.current?.stop()
-        noiseHandleRef.current = wantMode ? startNoiseEngine(wantMode as Parameters<typeof startNoiseEngine>[0]) : null
-        noiseModeRef.current = wantMode
-      } else if (!wantActive && isActive) {
+      const wantKey = wantActive ? (noise.customUrl ? `url:${noise.customUrl}` : `mode:${noise.mode}`) : null
+      if (wantKey !== noiseKeyRef.current) {
         noiseHandleRef.current?.stop()
         noiseHandleRef.current = null
-        noiseModeRef.current = null
+        if (customAudioElRef.current) { customAudioElRef.current.pause(); customAudioElRef.current = null }
+
+        if (wantActive && noise.customUrl) {
+          const audio = new Audio(noise.customUrl)
+          audio.loop = true
+          audio.play().catch(() => {})
+          customAudioElRef.current = audio
+        } else if (wantActive) {
+          noiseHandleRef.current = startNoiseEngine(noise.mode as Parameters<typeof startNoiseEngine>[0])
+        }
+        noiseKeyRef.current = wantKey
       }
     } catch { /* ignore */ }
   }, [id])
 
-  // Stop the noise engine if the child navigates away mid-session
+  // Stop any playing audio if the child navigates away mid-session
   useEffect(() => {
-    return () => { noiseHandleRef.current?.stop() }
+    return () => {
+      noiseHandleRef.current?.stop()
+      customAudioElRef.current?.pause()
+    }
   }, [])
 
   useEffect(() => {

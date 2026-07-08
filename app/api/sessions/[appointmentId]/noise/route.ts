@@ -10,11 +10,18 @@ function key(id: string) { return `session:noise:${id}` }
 
 const VALID_MODES = ['white', 'rain', 'focus', 'calm', 'theta']
 
-interface NoiseState { active: boolean; mode: string }
-const EMPTY: NoiseState = { active: false, mode: 'calm' }
+// customUrl carries a real HTTPS audio URL the specialist pasted (see the
+// "share audio link" flow) — this is DISTINCT from local-device file
+// uploads, which create a blob: URL that only ever exists inside the
+// specialist's own browser and can never reach the child no matter how the
+// state is synced. When customUrl is set, the kid page plays that URL
+// directly instead of running the synthesized engine.
+interface NoiseState { active: boolean; mode: string; customUrl?: string | null }
+const EMPTY: NoiseState = { active: false, mode: 'calm', customUrl: null }
 
 // GET — kid page polls this; when active, it runs the SAME synthesis
-// locally (there's no audio file to stream — see lib/noise-synth.ts).
+// locally (there's no audio file to stream — see lib/noise-synth.ts), or
+// plays customUrl directly if one is set.
 export async function GET(
   _req: NextRequest,
   { params }: { params: { appointmentId: string } }
@@ -30,7 +37,8 @@ export async function GET(
   }
 }
 
-// POST — specialist starts/stops the noise engine, or changes mode
+// POST — specialist starts/stops the noise engine or a shared audio link,
+// or changes mode
 export async function POST(
   req: NextRequest,
   { params }: { params: { appointmentId: string } }
@@ -45,7 +53,16 @@ export async function POST(
       return NextResponse.json({ error: 'active مطلوب' }, { status: 400 })
     }
     const mode = VALID_MODES.includes(body.mode) ? body.mode : EMPTY.mode
-    const state: NoiseState = { active: body.active, mode }
+
+    let customUrl: string | null = null
+    if (body.customUrl) {
+      try {
+        const parsed = new URL(String(body.customUrl))
+        if (parsed.protocol === 'https:' || parsed.protocol === 'http:') customUrl = parsed.toString()
+      } catch { /* invalid URL — drop it, don't 400 the whole request */ }
+    }
+
+    const state: NoiseState = { active: body.active, mode, customUrl }
     await redis.set(key(params.appointmentId), state, { ex: 7200 })
     return NextResponse.json({ ok: true })
   } catch {

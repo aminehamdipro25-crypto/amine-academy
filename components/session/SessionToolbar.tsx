@@ -68,6 +68,7 @@ export default function SessionToolbar({
   screenSharing,
   onStartScreenShare,
   onStopScreenShare,
+  onShareAudioUrl,
 }: {
   toolbarRef: React.RefObject<HTMLDivElement>
   chromeHidden: boolean
@@ -114,14 +115,60 @@ export default function SessionToolbar({
   screenSharing: boolean
   onStartScreenShare: () => void
   onStopScreenShare: () => void
+  /** Pass a real https(s) URL to start sharing audio with the child, or null to stop. */
+  onShareAudioUrl: (url: string | null) => void
 }) {
   // ── Custom audio upload (local state — no session persistence needed) ──
+  // NOTE: this plays from a local blob: URL, which only ever exists inside
+  // THIS browser tab — it can never reach the child no matter how the
+  // session state is synced. Use "شارك رابط صوت" below to actually share
+  // audio with the child.
   const [customTrack, setCustomTrack] = useState<{ name: string; url: string } | null>(null)
   const [customPlaying, setCustomPlaying] = useState(false)
   const [customVolume, setCustomVolume] = useState(0.7)
   const [customLooping, setCustomLooping] = useState(true)
   const customAudioRef = useRef<HTMLAudioElement | null>(null)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
+
+  // ── Shared audio URL — a real https(s) link, played independently on both
+  // the specialist's and the child's devices in sync via the noise-state API.
+  const [sharedAudioInput, setSharedAudioInput] = useState('')
+  const [sharedAudioPlaying, setSharedAudioPlaying] = useState(false)
+  const [sharedAudioErr, setSharedAudioErr] = useState('')
+  const sharedAudioRef = useRef<HTMLAudioElement | null>(null)
+
+  useEffect(() => {
+    return () => { sharedAudioRef.current?.pause() }
+  }, [])
+
+  function playSharedAudio() {
+    const trimmed = sharedAudioInput.trim()
+    let url: URL
+    try {
+      url = new URL(trimmed)
+      if (url.protocol !== 'https:' && url.protocol !== 'http:') throw new Error()
+    } catch {
+      setSharedAudioErr('أدخل رابطاً صحيحاً (https://...)')
+      return
+    }
+    setSharedAudioErr('')
+    if (noiseRunning) onStopNoise()
+    if (customPlaying) { customAudioRef.current?.pause(); setCustomPlaying(false) }
+    sharedAudioRef.current?.pause()
+    const audio = new Audio(url.toString())
+    audio.loop = true
+    audio.play().catch(() => {})
+    sharedAudioRef.current = audio
+    setSharedAudioPlaying(true)
+    onShareAudioUrl(url.toString())
+  }
+
+  function stopSharedAudio() {
+    sharedAudioRef.current?.pause()
+    sharedAudioRef.current = null
+    setSharedAudioPlaying(false)
+    onShareAudioUrl(null)
+  }
 
   // Cleanup object URL on track change or unmount
   useEffect(() => {
@@ -147,8 +194,9 @@ export default function SessionToolbar({
       customAudioRef.current = null
     }
     if (customTrack) URL.revokeObjectURL(customTrack.url)
-    // Stop synthesis if running
+    // Stop synthesis / shared audio link if running
     if (noiseRunning) onStopNoise()
+    if (sharedAudioPlaying) stopSharedAudio()
 
     const url = URL.createObjectURL(file)
     const audio = new Audio(url)
@@ -189,12 +237,15 @@ export default function SessionToolbar({
     setCustomTrack(null)
   }
 
-  // If synthesis starts, pause custom audio
+  // If synthesis starts, pause custom/shared audio
   useEffect(() => {
-    if (noiseRunning && customPlaying) {
+    if (!noiseRunning) return
+    if (customPlaying) {
       customAudioRef.current?.pause()
       setCustomPlaying(false)
     }
+    if (sharedAudioPlaying) stopSharedAudio()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [noiseRunning])
 
   return (
@@ -347,13 +398,13 @@ export default function SessionToolbar({
         <button
           onClick={onToggleNoisePanel}
           className={`flex items-center gap-1.5 font-black px-2.5 py-1.5 rounded-lg text-xs transition-all ${
-            noiseRunning || customPlaying
+            noiseRunning || customPlaying || sharedAudioPlaying
               ? 'bg-cyan-600 text-white ring-1 ring-cyan-400/50'
               : 'bg-surface-page hover:bg-brand-50 text-gray-500'
           }`}
           title="موسيقى وترددات الاسترخاء والتركيز"
         >
-          🎵 {noiseRunning ? formatTime(noiseSecsLeft) : customPlaying ? '♪ يعزف' : 'موسيقى'}
+          🎵 {noiseRunning ? formatTime(noiseSecsLeft) : (customPlaying || sharedAudioPlaying) ? '♪ يعزف' : 'موسيقى'}
         </button>
       </div>
       <ToolbarPopover anchorRef={noiseBtnRef} open={showNoisePanel} onClose={onCloseNoisePanel}>
@@ -362,9 +413,42 @@ export default function SessionToolbar({
           style={{ minWidth: 250 }}
           dir="rtl"
         >
-          {/* ── Section A: Custom file upload ── */}
+          {/* ── Section A: Share audio link (this one reaches the child) ── */}
           <p className="text-gray-400 text-[10px] font-black mb-2 flex items-center gap-1">
-            📁 موسيقى من جهازك
+            🔗 رابط صوت — يصل للطفل أيضاً
+          </p>
+          <div className="mb-1 flex items-center gap-1.5">
+            <input
+              type="text"
+              dir="ltr"
+              value={sharedAudioInput}
+              onChange={e => { setSharedAudioInput(e.target.value); setSharedAudioErr('') }}
+              onKeyDown={e => { if (e.key === 'Enter') playSharedAudio() }}
+              placeholder="https://example.com/song.mp3"
+              className="flex-1 border border-gray-200 rounded-lg px-2.5 py-2 text-xs outline-none focus:ring-2 focus:ring-cyan-300 text-gray-800 placeholder-gray-300"
+            />
+            {sharedAudioPlaying ? (
+              <button
+                onClick={stopSharedAudio}
+                className="px-3 py-2 rounded-lg text-xs font-black bg-cyan-600 text-white flex-shrink-0"
+              >
+                ⏹ إيقاف
+              </button>
+            ) : (
+              <button
+                onClick={playSharedAudio}
+                className="px-3 py-2 rounded-lg text-xs font-black bg-cyan-50 text-cyan-700 border border-cyan-200 hover:bg-cyan-100 flex-shrink-0"
+              >
+                ▶ شارك
+              </button>
+            )}
+          </div>
+          {sharedAudioErr && <p className="text-red-500 text-[10px] font-bold mb-2">{sharedAudioErr}</p>}
+          <p className="text-gray-300 text-[9px] mb-3">رابط مباشر لملف صوتي (mp3/wav) — يعزف عندك وعند الطفل معاً</p>
+
+          {/* ── Section A2: Custom file upload — SPECIALIST-ONLY, doesn't sync ── */}
+          <p className="text-gray-400 text-[10px] font-black mb-2 flex items-center gap-1">
+            📁 موسيقى من جهازك <span className="text-amber-500 font-bold">(لك فقط، لا تصل للطفل)</span>
           </p>
 
           {!customTrack ? (
@@ -467,11 +551,12 @@ export default function SessionToolbar({
                   onClick={() => {
                     onSetNoiseMode(m.key)
                     if (noiseRunning) onStopNoise()
-                    // Also stop custom if switching to synthesis
+                    // Also stop custom/shared audio if switching to synthesis
                     if (customPlaying) {
                       customAudioRef.current?.pause()
                       setCustomPlaying(false)
                     }
+                    if (sharedAudioPlaying) stopSharedAudio()
                   }}
                   className={`py-2 px-1 rounded-xl text-[10px] font-black text-center transition-all leading-tight ${
                     noiseMode === m.key

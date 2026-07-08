@@ -295,12 +295,12 @@ export default function SessionPage() {
   const noiseHandleRef = useRef<NoiseHandle | null>(null)
   const noiseTimerRef  = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  const postNoiseState = useCallback((active: boolean, mode: NoiseMode) => {
+  const postNoiseState = useCallback((active: boolean, mode: NoiseMode, customUrl?: string | null) => {
     if (!id) return
     fetch(`/api/sessions/${id}/noise`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ active, mode }),
+      body: JSON.stringify({ active, mode, customUrl: customUrl ?? null }),
     }).catch(() => {})
   }, [id])
 
@@ -1878,6 +1878,7 @@ ${notes ? `
         screenSharing={!!contentUrl}
         onStartScreenShare={() => setShowContentModal(true)}
         onStopScreenShare={stopContentPresenter}
+        onShareAudioUrl={url => postNoiseState(!!url, noiseMode, url)}
       />
 
       <SessionPhaseBar

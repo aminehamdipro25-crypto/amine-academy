@@ -12,7 +12,7 @@ const isDev = process.env.NODE_ENV === 'development'
 // console error in every browser). Allow it everywhere Daily is allowed.
 const DAILY_ORIGINS = 'https://*.daily.co https://*.dailywebrtc.net'
 
-function buildCSP(frameSrc) {
+function buildCSP(frameSrc, mediaSrc) {
   return [
     "default-src 'self'",
     // Scripts: self + Next.js hydration inline scripts + Daily.co's call
@@ -27,8 +27,7 @@ function buildCSP(frameSrc) {
     // Connect: self + Upstash Redis + Daily.co signaling/call-engine fetches
     `connect-src 'self' https://*.upstash.io ${DAILY_ORIGINS} wss://*.daily.co wss://*.dailywebrtc.net`,
     `frame-src ${frameSrc}`,
-    // Media: self
-    "media-src 'self' blob:",
+    `media-src ${mediaSrc}`,
     // Workers: self + blob (for Next.js SW) + Daily's own workers
     `worker-src 'self' blob: ${DAILY_ORIGINS}`,
     // Object: none (no Flash, no plugins)
@@ -45,14 +44,16 @@ function buildCSP(frameSrc) {
 }
 
 // General pages: only Daily.co + YouTube embeds are ever needed
-const ContentSecurityPolicy = buildCSP(`'self' ${DAILY_ORIGINS} https://www.youtube.com https://youtube.com`)
+const ContentSecurityPolicy = buildCSP(`'self' ${DAILY_ORIGINS} https://www.youtube.com https://youtube.com`, "'self' blob:")
 
 // Session pages: the specialist can share ANY https:// URL via the in-session
-// "محتوى" feature (server-validated to http(s) only, dashboard-auth gated —
-// see /api/sessions/[id]/content). frame-src must allow https: broadly here,
-// or every non-YouTube share is silently blocked by our OWN policy before it
-// even reaches the target site's own framing rules.
-const SessionContentSecurityPolicy = buildCSP("'self' https: https://*.daily.co")
+// "محتوى" feature, and now audio URLs via "شارك رابط صوت" (both server-
+// validated to http(s) only, dashboard-auth gated — see
+// /api/sessions/[id]/content and /noise). frame-src/media-src must allow
+// https: broadly here, or every non-YouTube share / non-self audio link is
+// silently blocked by our OWN policy before it even reaches the target
+// site's own rules.
+const SessionContentSecurityPolicy = buildCSP("'self' https: https://*.daily.co", "'self' blob: https:")
 
 // Permissions-Policy directives this app doesn't use at all — locked down
 // everywhere, session pages included (camera/mic/display-capture are handled

@@ -5,6 +5,7 @@ import type { ExerciseResult } from '@/lib/types'
 import { PROMPT_CARDS } from '@/lib/session-constants'
 import { startNoiseEngine, type NoiseHandle } from '@/lib/noise-synth'
 import { formatTime } from '@/lib/session-helpers'
+import { subscribeSession, realtimeEnabled } from '@/lib/realtime-client'
 
 const DailyVideoCall = lazy(() => import('@/components/session/DailyVideoCall'))
 
@@ -183,9 +184,10 @@ function KidWhiteboardOverlay({ id }: { id: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [wb, setWb] = useState<WBState | null>(null)
 
-  // Fast poll while the overlay is mounted — this is the bottleneck for how
-  // quickly a stroke appears on the child's screen, so it runs faster than
-  // the main 1s poll below.
+  // Stroke content sync — the bottleneck for how quickly a drawn line appears
+  // on the child's screen. With realtime on, each pen-lift wakes this
+  // instantly (~100ms) and the interval is just a safety net; without it,
+  // fall back to a fast 500ms poll.
   useEffect(() => {
     let stop = false
     const tick = async () => {
@@ -196,8 +198,10 @@ function KidWhiteboardOverlay({ id }: { id: string }) {
       } catch { /* ignore */ }
     }
     tick()
-    const iv = setInterval(tick, 500)
-    return () => { stop = true; clearInterval(iv) }
+    const rt = realtimeEnabled()
+    const unsub = subscribeSession(id, ev => { if (ev === 'whiteboard') tick() })
+    const iv = setInterval(tick, rt ? 4000 : 500)
+    return () => { stop = true; unsub(); clearInterval(iv) }
   }, [id])
 
   // Redraw whenever strokes change
@@ -305,48 +309,62 @@ export default function KidSessionPage() {
     return () => clearInterval(iv)
   }, [id])
 
-  // Poll for current exercise, shared content, whiteboard open/close state,
-  // the specialist's timer/card, and drive the noise engine (see
-  // lib/noise-synth.ts — there is no audio file to stream, so the child's
-  // browser runs the SAME synthesis, started/stopped in lockstep here).
-  const poll = useCallback(async () => {
+  // Per-channel fetchers — each re-reads Redis (the source of truth) for ONE
+  // channel and applies it. A realtime wake-up event refreshes just the
+  // channel that changed; the safety-net interval refreshes all of them.
+  const fetchLive = useCallback(async () => {
     try {
-      const [liveRes, contentRes, wbRes, timerRes, noiseRes, cardRes] = await Promise.all([
-        fetch(`/api/sessions/${id}/live`),
-        fetch(`/api/sessions/${id}/content`),
-        fetch(`/api/sessions/${id}/whiteboard`),
-        fetch(`/api/sessions/${id}/timer`),
-        fetch(`/api/sessions/${id}/noise`),
-        fetch(`/api/sessions/${id}/card`),
-      ])
-      const { live: data } = await liveRes.json() as { live: LiveState }
-      const { contentUrl: cUrl } = await contentRes.json() as { contentUrl: string | null }
-      const { wb } = await wbRes.json() as { wb: WBState }
-      const { timer } = await timerRes.json() as { timer: TimerState }
-      const { noise } = await noiseRes.json() as { noise: { active: boolean; mode: string; customUrl?: string | null } }
-      const { card } = await cardRes.json() as { card: { cardId: string | null } }
-
+      const { live: data } = await (await fetch(`/api/sessions/${id}/live`)).json() as { live: LiveState }
       if (data?.exerciseId !== prevId.current) {
         prevId.current = data?.exerciseId ?? null
         setDone(false)
         setNonce(n => n + 1)
         setLive(data)
       }
-      setSharedContentUrl(cUrl)
-      setWbActive(!!wb?.active)
-      setTimerState(timer?.active ? timer : null)
-      setCardId(card?.cardId ?? null)
+    } catch { /* ignore */ }
+  }, [id])
 
-      // Start/stop/switch the audio only on an actual transition — re-creating
-      // it every poll would restart from scratch. `customUrl` (a real shared
-      // link) takes priority over the synthesized mode when both are present.
+  const fetchContent = useCallback(async () => {
+    try {
+      const { contentUrl } = await (await fetch(`/api/sessions/${id}/content`)).json() as { contentUrl: string | null }
+      setSharedContentUrl(contentUrl)
+    } catch { /* ignore */ }
+  }, [id])
+
+  const fetchWbActive = useCallback(async () => {
+    try {
+      const { wb } = await (await fetch(`/api/sessions/${id}/whiteboard`)).json() as { wb: WBState }
+      setWbActive(!!wb?.active)
+    } catch { /* ignore */ }
+  }, [id])
+
+  const fetchTimer = useCallback(async () => {
+    try {
+      const { timer } = await (await fetch(`/api/sessions/${id}/timer`)).json() as { timer: TimerState }
+      setTimerState(timer?.active ? timer : null)
+    } catch { /* ignore */ }
+  }, [id])
+
+  const fetchCard = useCallback(async () => {
+    try {
+      const { card } = await (await fetch(`/api/sessions/${id}/card`)).json() as { card: { cardId: string | null } }
+      setCardId(card?.cardId ?? null)
+    } catch { /* ignore */ }
+  }, [id])
+
+  // Drive the noise/audio engine. There is no audio file to stream, so the
+  // child's browser runs the SAME synthesis (lib/noise-synth.ts) or plays the
+  // shared URL — started/stopped/switched only on an actual transition, never
+  // re-created on an unrelated refresh.
+  const fetchNoise = useCallback(async () => {
+    try {
+      const { noise } = await (await fetch(`/api/sessions/${id}/noise`)).json() as { noise: { active: boolean; mode: string; customUrl?: string | null } }
       const wantActive = noise?.active ?? false
       const wantKey = wantActive ? (noise.customUrl ? `url:${noise.customUrl}` : `mode:${noise.mode}`) : null
       if (wantKey !== noiseKeyRef.current) {
         noiseHandleRef.current?.stop()
         noiseHandleRef.current = null
         if (customAudioElRef.current) { customAudioElRef.current.pause(); customAudioElRef.current = null }
-
         if (wantActive && noise.customUrl) {
           const audio = new Audio(noise.customUrl)
           audio.loop = true
@@ -360,6 +378,10 @@ export default function KidSessionPage() {
     } catch { /* ignore */ }
   }, [id])
 
+  const pollAll = useCallback(() => {
+    fetchLive(); fetchContent(); fetchWbActive(); fetchTimer(); fetchCard(); fetchNoise()
+  }, [fetchLive, fetchContent, fetchWbActive, fetchTimer, fetchCard, fetchNoise])
+
   // Stop any playing audio if the child navigates away mid-session
   useEffect(() => {
     return () => {
@@ -368,11 +390,24 @@ export default function KidSessionPage() {
     }
   }, [])
 
+  // Realtime: instant wake-ups via Pusher when configured (~100ms), falling
+  // back to fast polling (1s) when it isn't. With realtime on, the interval
+  // drops to a rare safety net that catches any missed event.
   useEffect(() => {
-    poll()
-    const iv = setInterval(poll, 1000)
-    return () => clearInterval(iv)
-  }, [poll])
+    if (!id) return
+    pollAll()
+    const rt = realtimeEnabled()
+    const unsub = subscribeSession(id, ev => {
+      if (ev === 'live') fetchLive()
+      else if (ev === 'content') fetchContent()
+      else if (ev === 'whiteboard') fetchWbActive()
+      else if (ev === 'timer') fetchTimer()
+      else if (ev === 'card') fetchCard()
+      else if (ev === 'noise') fetchNoise()
+    })
+    const iv = setInterval(pollAll, rt ? 6000 : 1000)
+    return () => { unsub(); clearInterval(iv) }
+  }, [id, pollAll, fetchLive, fetchContent, fetchWbActive, fetchTimer, fetchCard, fetchNoise])
 
   // Report status to specialist when exercise starts/finishes. `result` is
   // only present on a real completion (the exercise's onComplete callback

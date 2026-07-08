@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { isDashboardUser } from '@/lib/auth'
 import { authorizeSession } from '@/lib/session-access'
 import { isRateLimited } from '@/lib/rateLimit'
+import { publishSessionEvent } from '@/lib/realtime-server'
 import { redis } from '@/lib/redis'
 
 export const runtime = 'nodejs'
@@ -87,6 +88,7 @@ export async function POST(
     }
 
     await redis.set(k, wb, { ex: TTL })
+    await publishSessionEvent(params.appointmentId, 'whiteboard')
     return NextResponse.json({ ok: true })
   } catch {
     return NextResponse.json({ error: 'خطأ في الخادم' }, { status: 500 })

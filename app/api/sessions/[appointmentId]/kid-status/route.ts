@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { authorizeSession } from '@/lib/session-access'
 import { isRateLimited } from '@/lib/rateLimit'
+import { publishSessionEvent } from '@/lib/realtime-server'
 import { redis } from '@/lib/redis'
 
 export const runtime = 'nodejs'
@@ -60,6 +61,7 @@ export async function POST(
       errors: clampErr(body.errors),
     }
     await redis.set(key(params.appointmentId), status, { ex: 7200 })
+    await publishSessionEvent(params.appointmentId, 'kid-status')
     return NextResponse.json({ ok: true })
   } catch {
     return NextResponse.json({ ok: false })

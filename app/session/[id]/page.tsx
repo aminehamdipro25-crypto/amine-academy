@@ -107,6 +107,7 @@ import LiveSessionCard from '@/components/session/LiveSessionCard'
 import SessionStarCounter from '@/components/session/SessionStarCounter'
 import { computeAdaptiveDecision } from '@/lib/session-adaptive'
 import { startNoiseEngine, type NoiseMode, type NoiseHandle } from '@/lib/noise-synth'
+import { subscribeSession, realtimeEnabled } from '@/lib/realtime-client'
 import ADHDScale       from '@/components/session/assessments/ADHDScale'
 import AutismScale      from '@/components/session/assessments/AutismScale'
 import LearningDifficultiesScale from '@/components/session/assessments/LearningDifficultiesScale'
@@ -1532,26 +1533,34 @@ ${notes ? `
   const [kidEverPresent, setKidEverPresent] = useState(false)
   useEffect(() => {
     if (!id) return
-    const poll = async () => {
+    const fetchStatus = async () => {
       try {
-        const [statusRes, presenceRes] = await Promise.all([
-          fetch(`/api/sessions/${id}/kid-status`),
-          fetch(`/api/sessions/${id}/presence`),
-        ])
-        const { kidStatus: data } = await statusRes.json() as { kidStatus: KidStatus }
-        // Only update state when something actually changed
+        const { kidStatus: data } = await (await fetch(`/api/sessions/${id}/kid-status`)).json() as { kidStatus: KidStatus }
         if (JSON.stringify(data) !== JSON.stringify(kidStatusRef.current)) {
           kidStatusRef.current = data
           setKidStatus(data)
         }
-        const { kidPresent: present } = await presenceRes.json() as { kidPresent: boolean }
+      } catch { /* ignore */ }
+    }
+    const fetchPresence = async () => {
+      try {
+        const { kidPresent: present } = await (await fetch(`/api/sessions/${id}/presence`)).json() as { kidPresent: boolean }
         setKidPresent(present)
         if (present) setKidEverPresent(true)
       } catch { /* ignore */ }
     }
-    poll()
-    const iv = setInterval(poll, 1000)
-    return () => clearInterval(iv)
+    fetchStatus(); fetchPresence()
+    const rt = realtimeEnabled()
+    // kid-status arrives instantly via realtime; presence "left" is TTL-expiry
+    // (no event fires on leave) so it still needs a steady poll — a moderate
+    // 3s is enough to notice a departure without hammering the endpoint.
+    const unsub = subscribeSession(id, ev => {
+      if (ev === 'kid-status') fetchStatus()
+      else if (ev === 'presence') fetchPresence()
+    })
+    const statusIv = setInterval(fetchStatus, rt ? 8000 : 1000)
+    const presenceIv = setInterval(fetchPresence, rt ? 3000 : 1000)
+    return () => { unsub(); clearInterval(statusIv); clearInterval(presenceIv) }
   }, [id])
 
   // Publish current exercise to Redis so the kid page can mirror it in real-time.

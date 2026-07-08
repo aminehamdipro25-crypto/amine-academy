@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { isDashboardUser } from '@/lib/auth'
 import { authorizeSession } from '@/lib/session-access'
 import { isRateLimited } from '@/lib/rateLimit'
+import { publishSessionEvent } from '@/lib/realtime-server'
 import { redis } from '@/lib/redis'
 
 export const runtime = 'nodejs'
@@ -41,6 +42,7 @@ export async function POST(
       return NextResponse.json({ error: 'رابط غير صالح' }, { status: 400 })
     }
     await redis.set(key(params.appointmentId), { url: parsed.toString() }, { ex: 7200 })
+    await publishSessionEvent(params.appointmentId, 'content')
     return NextResponse.json({ ok: true })
   } catch {
     return NextResponse.json({ ok: false })
@@ -55,6 +57,7 @@ export async function DELETE(
   try {
     if (!await isDashboardUser()) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
     await redis.del(key(params.appointmentId))
+    await publishSessionEvent(params.appointmentId, 'content')
     return NextResponse.json({ ok: true })
   } catch {
     return NextResponse.json({ ok: false })

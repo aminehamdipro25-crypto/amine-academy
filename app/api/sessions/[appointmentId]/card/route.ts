@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { isDashboardUser } from '@/lib/auth'
 import { authorizeSession } from '@/lib/session-access'
 import { isRateLimited } from '@/lib/rateLimit'
+import { publishSessionEvent } from '@/lib/realtime-server'
 import { redis } from '@/lib/redis'
 
 export const runtime = 'nodejs'
@@ -44,6 +45,7 @@ export async function POST(
     const cardId = body?.cardId === null ? null : String(body?.cardId ?? '').slice(0, 40) || null
     const state: CardState = { cardId }
     await redis.set(key(params.appointmentId), state, { ex: 7200 })
+    await publishSessionEvent(params.appointmentId, 'card')
     return NextResponse.json({ ok: true })
   } catch {
     return NextResponse.json({ error: 'خطأ في الخادم' }, { status: 500 })

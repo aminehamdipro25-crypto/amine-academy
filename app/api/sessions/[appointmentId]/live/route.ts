@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { isDashboardUser } from '@/lib/auth'
 import { authorizeSession } from '@/lib/session-access'
 import { isRateLimited } from '@/lib/rateLimit'
+import { publishSessionEvent } from '@/lib/realtime-server'
 import { redis } from '@/lib/redis'
 
 export const runtime = 'nodejs'
@@ -39,6 +40,7 @@ export async function POST(
     const body = await req.json().catch(() => null)
     if (!body?.exerciseId) return NextResponse.json({ error: 'exerciseId مطلوب' }, { status: 400 })
     await redis.set(key(params.appointmentId), { exerciseId: body.exerciseId, difficulty: body.difficulty ?? 1 }, { ex: 14400 })
+    await publishSessionEvent(params.appointmentId, 'live')
     return NextResponse.json({ ok: true })
   } catch {
     return NextResponse.json({ error: 'خطأ في الخادم' }, { status: 500 })
@@ -55,6 +57,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
     }
     await redis.del(key(params.appointmentId))
+    await publishSessionEvent(params.appointmentId, 'live')
     return NextResponse.json({ ok: true })
   } catch {
     return NextResponse.json({ error: 'خطأ في الخادم' }, { status: 500 })

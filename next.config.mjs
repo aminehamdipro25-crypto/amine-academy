@@ -25,7 +25,10 @@ function buildCSP(frameSrc, mediaSrc) {
     // Images: self + data URIs (for SVG charts) + Cloudinary
     "img-src 'self' data: blob: https://res.cloudinary.com https://lh3.googleusercontent.com",
     // Connect: self + Upstash Redis + Daily.co signaling/call-engine fetches
-    `connect-src 'self' https://*.upstash.io ${DAILY_ORIGINS} wss://*.daily.co wss://*.dailywebrtc.net`,
+    // + Pusher realtime (WebSocket + SockJS HTTP fallback + stats). Without
+    // the Pusher origins here, the realtime WebSocket is CSP-blocked exactly
+    // the way Daily's bundle fetch was.
+    `connect-src 'self' https://*.upstash.io ${DAILY_ORIGINS} wss://*.daily.co wss://*.dailywebrtc.net wss://*.pusher.com https://*.pusher.com wss://*.pusherapp.com https://*.pusherapp.com`,
     `frame-src ${frameSrc}`,
     `media-src ${mediaSrc}`,
     // Workers: self + blob (for Next.js SW) + Daily's own workers

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isDashboardUser } from '@/lib/auth'
 import { authorizeSession } from '@/lib/session-access'
+import { publishSessionEvent } from '@/lib/realtime-server'
 import { redis } from '@/lib/redis'
 
 export const runtime = 'nodejs'
@@ -59,7 +60,13 @@ export async function POST(
       }
     }
 
+    // Publish only on the FIRST heartbeat of a presence window (when the key
+    // didn't exist yet) so "arrived" is instant, without spamming an event on
+    // every 10s heartbeat. "Left" is TTL-expiry, which Pusher can't signal —
+    // the other side catches that via its background presence poll.
+    const existed = await redis.get<string>(key(params.appointmentId, role))
     await redis.set(key(params.appointmentId, role), '1', { ex: TTL })
+    if (!existed) await publishSessionEvent(params.appointmentId, 'presence')
     return NextResponse.json({ ok: true })
   } catch {
     return NextResponse.json({ ok: false })

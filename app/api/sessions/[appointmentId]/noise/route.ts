@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { isDashboardUser } from '@/lib/auth'
 import { authorizeSession } from '@/lib/session-access'
 import { isRateLimited } from '@/lib/rateLimit'
+import { publishSessionEvent } from '@/lib/realtime-server'
 import { redis } from '@/lib/redis'
 
 export const runtime = 'nodejs'
@@ -64,6 +65,7 @@ export async function POST(
 
     const state: NoiseState = { active: body.active, mode, customUrl }
     await redis.set(key(params.appointmentId), state, { ex: 7200 })
+    await publishSessionEvent(params.appointmentId, 'noise')
     return NextResponse.json({ ok: true })
   } catch {
     return NextResponse.json({ error: 'خطأ في الخادم' }, { status: 500 })

@@ -363,7 +363,11 @@ export default function KidSessionPage() {
   const [live, setLive] = useState<LiveState>(null)
   const [done, setDone] = useState(false)
   const [nonce, setNonce] = useState(0)
-  const prevId = useRef<string | null>(null)
+  // Tracks the current "activation" = `${exerciseId}:${seed}`. A restart of
+  // the SAME exercise keeps exerciseId but mints a new seed, so keying on
+  // exerciseId alone (as before) silently ignored restarts — the child kept
+  // the old board and never re-seeded. Including the seed catches restarts.
+  const activationRef = useRef<string | null>(null)
   const [meetingUrl, setMeetingUrl] = useState<string | null>(null)
   const [videoHidden, setVideoHidden] = useState(false)
   const [sharedContentUrl, setSharedContentUrl] = useState<string | null>(null)
@@ -410,11 +414,20 @@ export default function KidSessionPage() {
   const fetchLive = useCallback(async () => {
     try {
       const { live: data } = await (await fetch(`/api/sessions/${id}/live`)).json() as { live: LiveState }
-      if (data?.exerciseId !== prevId.current) {
-        prevId.current = data?.exerciseId ?? null
+      // A NEW activation = a different exercise OR the same exercise restarted
+      // (the specialist mints a fresh seed on every start AND restart). On a
+      // new activation we remount (nonce bump) so the exercise re-seeds and
+      // re-runs from scratch, and clear `done`. A difficulty-only change (same
+      // exercise, same seed — e.g. the adaptive engine nudging the level)
+      // updates the prop WITHOUT a remount, mirroring the specialist side.
+      const activation = data ? `${data.exerciseId}:${data.seed ?? ''}` : null
+      if (activation !== activationRef.current) {
+        activationRef.current = activation
         setDone(false)
         setNonce(n => n + 1)
         setLive(data)
+      } else {
+        setLive(prev => JSON.stringify(prev) === JSON.stringify(data) ? prev : data)
       }
     } catch { /* ignore */ }
   }, [id])
@@ -551,10 +564,13 @@ export default function KidSessionPage() {
     if (live?.exerciseId) reportStatus(live.exerciseId, 'done', result)
   }, [live?.exerciseId, reportStatus])
 
-  // Report active when a new exercise is received
+  // Report active on every NEW activation — depends on `nonce` (which bumps
+  // on every start AND restart), not just exerciseId, so a restart of the
+  // same exercise re-reports "active" and the specialist's status flips back
+  // from "أنهى" to "يتفاعل الآن" instead of staying stuck on the old result.
   useEffect(() => {
     if (live?.exerciseId) reportStatus(live.exerciseId, 'active')
-  }, [live?.exerciseId, reportStatus])
+  }, [nonce, live?.exerciseId, reportStatus])
 
   const difficulty = (live?.difficulty ?? 1) as 1|2|3
 
@@ -683,7 +699,7 @@ export default function KidSessionPage() {
           <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
         </div>
       }>
-        <div key={`${id_}-${nonce}`} style={{ width:'100%', height:'100%' }}>
+        <div key={`${id_}-${live.seed ?? ''}-${nonce}`} style={{ width:'100%', height:'100%' }}>
           {id_ === 'memory-cards'         && <MemoryCards          {...props} />}
           {id_ === 'sequence-memory'      && <SequenceMemory       {...props} />}
           {id_ === 'n-back'               && <NBackTask            {...props} />}

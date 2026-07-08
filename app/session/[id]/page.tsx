@@ -1626,10 +1626,21 @@ ${notes ? `
   // exercise that shuffles its own content (card layout, word order, etc.)
   // produces the EXACT same result on both screens instead of each side
   // rolling its own Math.random(). See lib/seeded-random.ts.
-  const [activeSeed, setActiveSeed] = useState(0)
-  useEffect(() => {
-    if (activeView?.type === 'exercise') setActiveSeed(Math.floor(Math.random() * 2 ** 31))
-  }, [activeView?.type, activeView?.id, exerciseRestartNonce])
+  //
+  // Computed DURING render via a guarded ref (not a post-mount useEffect):
+  // the exercise component captures `seed` once in its own useRef on mount,
+  // so the seed MUST already be correct on that first render. An effect that
+  // set the seed a tick later left the specialist's own board on a stale
+  // seed (it never re-mounted) while the child received the fresh one — so
+  // the two boards diverged despite all the seeding work. The ref only
+  // recomputes when the activation key changes, so it's stable across
+  // unrelated re-renders and identical under StrictMode's double-render.
+  const seedRef = useRef<{ key: string; seed: number }>({ key: '', seed: 0 })
+  const seedKey = activeView?.type === 'exercise' ? `${activeView.id}:${exerciseRestartNonce}` : ''
+  if (seedKey && seedRef.current.key !== seedKey) {
+    seedRef.current = { key: seedKey, seed: Math.floor(Math.random() * 2 ** 31) }
+  }
+  const activeSeed = seedRef.current.seed
 
   // Publish current exercise to Redis so the kid page can mirror it in real-time.
   // Re-runs on activeDifficulty too, so an adaptive-engine level change for the
@@ -1888,6 +1899,40 @@ ${notes ? `
           {rtStatus === 'connected' ? 'مباشر' : rtStatus === 'connecting' ? 'اتصال...' : 'تحديث دوري'}
         </span>
       </div>
+
+      {/* ── Live child-status indicator — ALWAYS visible (independent of the
+          auto-hiding header). The same active/done+score signal also lives in
+          the header, but the header collapses the moment an exercise starts —
+          exactly when the specialist most needs to know whether the child is
+          engaging and how they scored. This floating pill surfaces it during
+          the exercise itself. Shown whenever an exercise is running, or the
+          child has left. ── */}
+      {(exerciseActive || (kidEverPresent && !kidPresent)) && (() => {
+        const left = kidEverPresent && !kidPresent
+        const forThis = kidStatus && kidStatus.exerciseId === activeExerciseId
+        const done = forThis && kidStatus!.status === 'done'
+        const active = forThis && kidStatus!.status === 'active'
+        const tone = left ? { bg: '#FEF2F2', bd: '#FCA5A5', fg: '#B91C1C' }
+                   : done ? { bg: '#ECFDF5', bd: '#6EE7B7', fg: '#047857' }
+                   : active ? { bg: '#EFF6FF', bd: '#93C5FD', fg: '#1D4ED8' }
+                   : { bg: '#FFFBEB', bd: '#FCD34D', fg: '#B45309' }
+        const icon = left ? '🔴' : done ? '✅' : active ? '🧒' : '⏳'
+        const label = left ? 'غادر الطفل الجلسة'
+                    : done ? `الطفل أنهى${typeof kidStatus!.score === 'number' ? ` — ${kidStatus!.score}%` : ' التمرين'}`
+                    : active ? 'الطفل يتفاعل الآن'
+                    : 'بانتظار الطفل...'
+        return (
+          <div
+            className="fixed top-3 left-3 z-[485] flex items-center gap-2 rounded-full px-3 py-1.5 shadow-lg select-none animate-in fade-in duration-300"
+            style={{ background: tone.bg, border: `1.5px solid ${tone.bd}`, color: tone.fg }}
+            dir="rtl"
+            title={label}
+          >
+            <span className="text-base leading-none">{icon}</span>
+            <span className="text-xs font-black ltr-num whitespace-nowrap">{label}</span>
+          </div>
+        )
+      })()}
 
       {/* ── Child Lock Overlay — floating indicator when session is locked ── */}
       {sessionLocked && (

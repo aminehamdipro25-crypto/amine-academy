@@ -57,7 +57,14 @@ export default function DraggableVideoPiP({
       const y = Math.max(0, Math.min(window.innerHeight - el.offsetHeight, e.clientY - dragOffset.current.y))
       el.style.left   = `${x}px`
       el.style.top    = `${y}px`
+      // Clear BOTH far-edge anchors — the box can start anchored to the
+      // bottom-left (initialBottom/Left) OR the top-right (initialTop/Right).
+      // If we only set `left`/`top` without releasing `right`/`bottom`, a
+      // top-right-anchored box has both `left` and `right` set at once, so the
+      // browser keeps honoring the original `right` and the box refuses to
+      // move. Releasing both makes `left`/`top` the sole anchors while dragging.
       el.style.bottom = 'auto'
+      el.style.right  = 'auto'
       posRef.current  = { x, y }
     } else if (resizing.current) {
       const rect = el.getBoundingClientRect()

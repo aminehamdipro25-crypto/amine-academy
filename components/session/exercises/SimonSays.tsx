@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import type { ExerciseResult } from '@/lib/types'
+import { createRng, randIntWithRng } from '@/lib/seeded-random'
 
 const COLORS = [
   { id: 0, bg: 'bg-red-500',    active: 'bg-red-300',    label: 'أحمر',   emoji: '🔴' },
@@ -14,9 +15,11 @@ interface Props {
   onCancel: () => void
   studentAge: number
   difficulty?: 1|2|3
+  seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
 }
 
-export default function SimonSays({ onComplete, onCancel, studentAge, difficulty = 1 }: Props) {
+export default function SimonSays({ onComplete, onCancel, studentAge, difficulty = 1, seed }: Props) {
+  const rng = useRef(createRng(seed ?? Date.now())).current
   const startLen = difficulty === 1 ? 2 : difficulty === 2 ? 3 : 4
   const [sequence, setSequence] = useState<number[]>([])
   const [activeBtn, setActiveBtn] = useState<number | null>(null)
@@ -44,7 +47,7 @@ export default function SimonSays({ onComplete, onCancel, studentAge, difficulty
 
   useEffect(() => {
     const len = startLen + level - 1
-    const seq = Array.from({ length: len }, () => Math.floor(Math.random() * 4))
+    const seq = Array.from({ length: len }, () => randIntWithRng(rng, 0, 3))
     setSequence(seq)
     const t = setTimeout(() => flashSequence(seq), 500)
     return () => clearTimeout(t)

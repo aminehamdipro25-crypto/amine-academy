@@ -1,12 +1,14 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import type { ExerciseResult } from '@/lib/types'
+import { createRng, pickWithRng, type Rng } from '@/lib/seeded-random'
 
 interface Props {
   onComplete: (r: ExerciseResult) => void
   onCancel: () => void
   studentAge: number
   difficulty?: 1|2|3
+  seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
 }
 
 const COLORS = [
@@ -30,13 +32,14 @@ function getConfig(difficulty: 1|2|3, age: number) {
   return { size, colors, studySec }
 }
 
-function makeGrid(size: number, colors: typeof COLORS): string[][] {
+function makeGrid(rng: Rng, size: number, colors: typeof COLORS): string[][] {
   return Array.from({ length: size }, () =>
-    Array.from({ length: size }, () => colors[Math.floor(Math.random() * colors.length)].key)
+    Array.from({ length: size }, () => pickWithRng(rng, colors).key)
   )
 }
 
-export default function ColorGrid({ onComplete, onCancel, studentAge, difficulty = 1 }: Props) {
+export default function ColorGrid({ onComplete, onCancel, studentAge, difficulty = 1, seed }: Props) {
+  const rng    = useRef(createRng(seed ?? Date.now())).current
   const cfg    = getConfig(difficulty, studentAge)
   const ROUNDS = difficulty === 1 ? 2 : difficulty === 2 ? 3 : 4
 
@@ -53,7 +56,7 @@ export default function ColorGrid({ onComplete, onCancel, studentAge, difficulty
   useEffect(() => () => clearTimeout(timerRef.current), [])
 
   function startRound(r: number) {
-    const grid = makeGrid(cfg.size, cfg.colors)
+    const grid = makeGrid(rng, cfg.size, cfg.colors)
     setTarget(grid)
     setAnswer(Array.from({ length: cfg.size }, () => Array(cfg.size).fill('')))
     setSelColor(cfg.colors[0].key)

@@ -1,12 +1,14 @@
 'use client'
 import { useState, useMemo, useRef, useEffect } from 'react'
 import type { ExerciseResult } from '@/lib/types'
+import { createRng, shuffleWithRng } from '@/lib/seeded-random'
 
 interface Props {
   onComplete: (r: ExerciseResult) => void
   onCancel:   () => void
   studentAge: number
   difficulty?: 1|2|3
+  seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
 }
 
 // Colors: index → hex
@@ -63,13 +65,12 @@ function getConflicts(grid: (number|null)[], size: number): Set<number> {
   return bad
 }
 
-function shuffle<T>(arr:T[]):T[] { return [...arr].sort(()=>Math.random()-.5) }
-
-export default function ColorSudoku({ onComplete, onCancel, difficulty=1, studentAge }: Props) {
+export default function ColorSudoku({ onComplete, onCancel, difficulty=1, studentAge, seed }: Props) {
+  const rng    = useRef(createRng(seed ?? Date.now())).current
   const isYoung = studentAge < 9
   const size   = (difficulty===3 && !isYoung) ? 6 : 4
   const colors = size===6 ? COLORS6 : COLORS4
-  const puzzles= useMemo(()=>shuffle(size===6 ? PUZZLES_6 : PUZZLES_4),[size])
+  const puzzles= useMemo(()=>shuffleWithRng(rng, size===6 ? PUZZLES_6 : PUZZLES_4),[size])
   const COUNT  = difficulty===1 ? 3 : difficulty===2 ? 4 : 5
 
   const [idx,      setIdx]    = useState(0)

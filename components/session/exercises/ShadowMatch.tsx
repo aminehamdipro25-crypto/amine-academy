@@ -1,12 +1,14 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import type { ExerciseResult } from '@/lib/types'
+import { createRng, shuffleWithRng, randIntWithRng } from '@/lib/seeded-random'
 
 interface Props {
   onComplete: (r: ExerciseResult) => void
   onCancel: () => void
   studentAge: number
   difficulty?: 1|2|3
+  seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
 }
 
 interface EmojiPair {
@@ -42,8 +44,8 @@ interface Question {
   correctIndex: number
 }
 
-function buildQuestions(count: number, difficulty: 1|2|3): Question[] {
-  const shuffled = [...EMOJI_POOL].sort(() => Math.random() - 0.5)
+function buildQuestions(count: number, difficulty: 1|2|3, rng: () => number): Question[] {
+  const shuffled = shuffleWithRng(rng, EMOJI_POOL)
   const questions: Question[] = []
 
   for (let i = 0; i < count && i < shuffled.length; i++) {
@@ -57,8 +59,8 @@ function buildQuestions(count: number, difficulty: 1|2|3): Question[] {
     }
 
     const numDistractors = 2
-    const distractors = [...distractorPool].sort(() => Math.random() - 0.5).slice(0, numDistractors)
-    const correctIndex = Math.floor(Math.random() * (numDistractors + 1))
+    const distractors = shuffleWithRng(rng, distractorPool).slice(0, numDistractors)
+    const correctIndex = randIntWithRng(rng, 0, numDistractors)
     const choices = [...distractors]
     choices.splice(correctIndex, 0, target)
 
@@ -69,10 +71,11 @@ function buildQuestions(count: number, difficulty: 1|2|3): Question[] {
 
 type ChoiceState = 'idle' | 'correct' | 'wrong' | 'reveal'
 
-export default function ShadowMatch({ onComplete, onCancel, difficulty = 1 }: Props) {
+export default function ShadowMatch({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+  const rng = useRef(createRng(seed ?? Date.now())).current
   const totalQuestions = difficulty === 1 ? 6 : difficulty === 2 ? 8 : 10
 
-  const [questions] = useState<Question[]>(() => buildQuestions(totalQuestions, difficulty))
+  const [questions] = useState<Question[]>(() => buildQuestions(totalQuestions, difficulty, rng))
   const [idx, setIdx] = useState(0)
   const [choiceStates, setChoiceStates] = useState<ChoiceState[]>(['idle', 'idle', 'idle'])
   const [answered, setAnswered] = useState(false)

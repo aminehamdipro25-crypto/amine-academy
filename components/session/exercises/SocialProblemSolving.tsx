@@ -1,12 +1,14 @@
 'use client'
 import { useState, useRef, useCallback, useEffect } from 'react'
 import type { ExerciseResult } from '@/lib/types'
+import { createRng, shuffleWithRng } from '@/lib/seeded-random'
 
 interface Props {
   onComplete: (r: ExerciseResult) => void
   onCancel: () => void
   studentAge: number
   difficulty?: 1|2|3
+  seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
 }
 
 interface Scenario {
@@ -90,20 +92,17 @@ const ALL_SCENARIOS: Scenario[] = [
   },
 ]
 
-function shuffle<T>(arr: T[]): T[] {
-  return [...arr].sort(() => Math.random() - 0.5)
-}
-
-function buildQueue(difficulty: 1|2|3): Scenario[] {
+function buildQueue(difficulty: 1|2|3, rng: () => number): Scenario[] {
   if (difficulty === 1) return ALL_SCENARIOS.slice(0, 5)
   if (difficulty === 2) return ALL_SCENARIOS.slice(0, 8)
-  return shuffle(ALL_SCENARIOS)
+  return shuffleWithRng(rng, ALL_SCENARIOS)
 }
 
 type ChoiceState = 'idle' | 'correct' | 'wrong' | 'reveal'
 
-export default function SocialProblemSolving({ onComplete, onCancel, difficulty = 1 }: Props) {
-  const [queue] = useState<Scenario[]>(() => buildQueue(difficulty))
+export default function SocialProblemSolving({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+  const rng = useRef(createRng(seed ?? Date.now())).current
+  const [queue] = useState<Scenario[]>(() => buildQueue(difficulty, rng))
   const [idx, setIdx] = useState(0)
   const [choiceStates, setChoiceStates] = useState<ChoiceState[]>(['idle', 'idle', 'idle'])
   const [answered, setAnswered] = useState(false)

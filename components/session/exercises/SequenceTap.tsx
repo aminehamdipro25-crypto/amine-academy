@@ -1,17 +1,20 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import type { ExerciseResult } from '@/lib/types'
+import { createRng, randIntWithRng } from '@/lib/seeded-random'
 
 interface Props {
   onComplete: (r: ExerciseResult) => void
   onCancel:   () => void
   studentAge: number
   difficulty?: 1|2|3
+  seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
 }
 
 const COLORS = ['#EF4444','#3B82F6','#22C55E','#F59E0B','#8B5CF6','#EC4899']
 
-export default function SequenceTap({ onComplete, onCancel, difficulty = 1 }: Props) {
+export default function SequenceTap({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+  const rng     = useRef(createRng(seed ?? Date.now())).current
   const SEQ_LEN = difficulty === 1 ? 3 : difficulty === 2 ? 4 : 5
   const ROUNDS  = 5
   const COUNT   = difficulty === 1 ? 4 : difficulty === 2 ? 5 : 6
@@ -44,7 +47,7 @@ export default function SequenceTap({ onComplete, onCancel, difficulty = 1 }: Pr
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const newRound = useCallback(() => {
-    const seq = Array.from({ length: SEQ_LEN }, () => Math.floor(Math.random() * COUNT))
+    const seq = Array.from({ length: SEQ_LEN }, () => randIntWithRng(rng, 0, COUNT - 1))
     setSequence(seq)
     timerIds.current.push(setTimeout(() => playSequence(seq), 300))
   }, [SEQ_LEN, COUNT, playSequence])

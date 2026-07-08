@@ -104,11 +104,12 @@ function ClockFace({ h, m, size = 190 }: { h: number; m: number; size?: number }
   )
 }
 
-export default function ClockReading({ onComplete, onCancel, difficulty = 1, studentAge }: Props) {
+export default function ClockReading({ onComplete, onCancel, difficulty = 1, studentAge, seed }: Props) {
+  const rng = useRef(createRng(seed ?? Date.now())).current
   const qs = useMemo<CQ[]>(() => {
-    if (difficulty === 1) return shuffle(HOUR_QS)
-    if (difficulty === 2) return shuffle([...HOUR_QS.slice(0, 4), ...HALF_QS])
-    return shuffle([...HALF_QS.slice(0, 4), ...QUARTER_QS])
+    if (difficulty === 1) return shuffleWithRng(rng, HOUR_QS)
+    if (difficulty === 2) return shuffleWithRng(rng, [...HOUR_QS.slice(0, 4), ...HALF_QS])
+    return shuffleWithRng(rng, [...HALF_QS.slice(0, 4), ...QUARTER_QS])
   }, [difficulty])
 
   const isYoung = studentAge < 8
@@ -126,7 +127,7 @@ export default function ClockReading({ onComplete, onCancel, difficulty = 1, stu
   useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current) }, [])
 
   const q = subset[idx]
-  const choices = useMemo(() => shuffle([...q.choices]), [idx]) // eslint-disable-line
+  const choices = useMemo(() => shuffleWithRng(rng, [...q.choices]), [idx]) // eslint-disable-line
 
   function handleChoice(c: string) {
     if (chosen) return

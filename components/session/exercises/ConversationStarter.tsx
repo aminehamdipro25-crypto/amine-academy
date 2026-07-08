@@ -1,12 +1,14 @@
 'use client'
 import { useState, useMemo, useRef, useEffect } from 'react'
 import type { ExerciseResult } from '@/lib/types'
+import { createRng, shuffleWithRng } from '@/lib/seeded-random'
 
 interface Props {
   onComplete: (r: ExerciseResult) => void
   onCancel:   () => void
   studentAge: number
   difficulty?: 1|2|3
+  seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
 }
 
 interface Scenario {
@@ -41,9 +43,8 @@ const SCENARIOS: Scenario[] = [
   { emoji:'🎯', situation:'تريد أن تتعرف على هواية صديقك', correct:'ماذا تحب أن تفعل في وقت فراغك؟', wrong:['هواياتك مملة بالتأكيد','لا أهتم بما تحب أنت'] },
 ]
 
-function shuffle<T>(arr: T[]): T[] { return [...arr].sort(() => Math.random() - 0.5) }
-
-export default function ConversationStarter({ onComplete, onCancel, difficulty = 1 }: Props) {
+export default function ConversationStarter({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+  const rng      = useRef(createRng(seed ?? Date.now())).current
   const count    = difficulty === 1 ? 4 : difficulty === 2 ? 6 : 8
   const questions = SCENARIOS.slice(0, count)
 
@@ -56,7 +57,7 @@ export default function ConversationStarter({ onComplete, onCancel, difficulty =
   useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current) }, [])
 
   const q = questions[idx]
-  const choices = useMemo(() => shuffle([q.correct, ...q.wrong]), [idx]) // eslint-disable-line react-hooks/exhaustive-deps
+  const choices = useMemo(() => shuffleWithRng(rng, [q.correct, ...q.wrong]), [idx]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleChoice(c: string) {
     if (chosen) return

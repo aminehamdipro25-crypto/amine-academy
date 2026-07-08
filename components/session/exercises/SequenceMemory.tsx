@@ -16,9 +16,10 @@ const COLORS = [
   '#6366F1', // 8 indigo
 ]
 
-interface Props { onComplete: (r: ExerciseResult) => void; onCancel: () => void; studentAge: number; difficulty?: 1|2|3 }
+interface Props { onComplete: (r: ExerciseResult) => void; onCancel: () => void; studentAge: number; difficulty?: 1|2|3; seed?: number /* shared seed for identical content on both screens — see lib/seeded-random.ts */ }
 
-export default function SequenceMemory({ onComplete, onCancel, difficulty = 1 }: Props) {
+export default function SequenceMemory({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+  const rng         = useRef(createRng(seed ?? Date.now())).current
   const startRef    = useRef(Date.now())
   const maxLvlRef   = useRef(0)     // ref — avoids stale closure on setState
   const errRef      = useRef(0)
@@ -56,7 +57,7 @@ export default function SequenceMemory({ onComplete, onCancel, difficulty = 1 }:
 
   useEffect(() => {
     const len = startLen + level - 1
-    const seq = Array.from({ length: len }, () => Math.floor(Math.random() * 9))
+    const seq = Array.from({ length: len }, () => randIntWithRng(rng, 0, 8))
     setSequence(seq)
     const t = setTimeout(() => playSequence(seq), 600)
     return () => clearTimeout(t)

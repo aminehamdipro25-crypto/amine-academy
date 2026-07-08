@@ -1,53 +1,54 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import type { ExerciseResult } from '@/lib/types'
+import { createRng, shuffleWithRng, pickWithRng, randIntWithRng, randBoolWithRng, type Rng } from '@/lib/seeded-random'
 
 interface Props {
   onComplete: (r: ExerciseResult) => void
   onCancel:   () => void
   studentAge: number
   difficulty?: 1|2|3
+  seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
 }
 
-function shuffle<T>(arr: T[]): T[] { return [...arr].sort(() => Math.random() - 0.5) }
-
-function genQuestion(difficulty: 1|2|3): { text: string; answer: number; choices: number[] } {
+function genQuestion(rng: Rng, difficulty: 1|2|3): { text: string; answer: number; choices: number[] } {
   let a: number, b: number, op: string, answer: number
   if (difficulty === 1) {
-    a = 1 + Math.floor(Math.random() * 5)
-    b = 1 + Math.floor(Math.random() * 5)
+    a = randIntWithRng(rng, 1, 5)
+    b = randIntWithRng(rng, 1, 5)
     op = '+'; answer = a + b
   } else if (difficulty === 2) {
-    a = 1 + Math.floor(Math.random() * 10)
-    b = 1 + Math.floor(Math.random() * Math.min(a, 10))
-    op = Math.random() < 0.5 ? '+' : '-'
+    a = randIntWithRng(rng, 1, 10)
+    b = randIntWithRng(rng, 1, Math.min(a, 10))
+    op = randBoolWithRng(rng) ? '+' : '-'
     answer = op === '+' ? a + b : a - b
   } else {
     const ops = ['+','-','×'] as const
-    op = ops[Math.floor(Math.random() * ops.length)]
+    op = pickWithRng(rng, ops)
     if (op === '×') {
-      a = 2 + Math.floor(Math.random() * 4)
-      b = 2 + Math.floor(Math.random() * 4)
+      a = randIntWithRng(rng, 2, 5)
+      b = randIntWithRng(rng, 2, 5)
       answer = a * b
     } else {
-      a = 1 + Math.floor(Math.random() * 15)
-      b = 1 + Math.floor(Math.random() * Math.min(a, 15))
+      a = randIntWithRng(rng, 1, 15)
+      b = randIntWithRng(rng, 1, Math.min(a, 15))
       answer = op === '+' ? a + b : a - b
     }
   }
   const wrongs = new Set<number>()
   while (wrongs.size < 2) {
-    const w = answer + (Math.random() < 0.5 ? 1 : -1) * (1 + Math.floor(Math.random() * 3))
+    const w = answer + (randBoolWithRng(rng) ? 1 : -1) * randIntWithRng(rng, 1, 3)
     if (w !== answer && w >= 0) wrongs.add(w)
   }
-  return { text: `${a} ${op} ${b} = ?`, answer, choices: shuffle([answer, ...Array.from(wrongs)]) }
+  return { text: `${a} ${op} ${b} = ?`, answer, choices: shuffleWithRng(rng, [answer, ...Array.from(wrongs)]) }
 }
 
-export default function MathFlash({ onComplete, onCancel, difficulty = 1 }: Props) {
+export default function MathFlash({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+  const rng = useRef(createRng(seed ?? Date.now())).current
   const TOTAL    = difficulty === 1 ? 8 : difficulty === 2 ? 10 : 12
   const SHOW_MS  = difficulty === 1 ? 3000 : difficulty === 2 ? 2000 : 1500
 
-  const [q,       setQ]       = useState(() => genQuestion(difficulty))
+  const [q,       setQ]       = useState(() => genQuestion(rng, difficulty))
   const [phase,   setPhase]   = useState<'show'|'answer'|'feedback'>('show')
   const [chosen,  setChosen]  = useState<number | null>(null)
   const [idx,     setIdx]     = useState(0)
@@ -57,11 +58,11 @@ export default function MathFlash({ onComplete, onCancel, difficulty = 1 }: Prop
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const nextQ = useCallback(() => {
-    setQ(genQuestion(difficulty))
+    setQ(genQuestion(rng, difficulty))
     setPhase('show')
     setChosen(null)
     timerRef.current = setTimeout(() => setPhase('answer'), SHOW_MS)
-  }, [difficulty, SHOW_MS])
+  }, [difficulty, SHOW_MS, rng])
 
   useEffect(() => {
     timerRef.current = setTimeout(() => setPhase('answer'), SHOW_MS)

@@ -1,10 +1,18 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import type { ExerciseResult } from '@/lib/types'
+import { createRng, randIntWithRng } from '@/lib/seeded-random'
 
-interface Props { onComplete: (r: ExerciseResult) => void; onCancel: () => void; studentAge: number; difficulty?: 1|2|3 }
+interface Props {
+  onComplete: (r: ExerciseResult) => void
+  onCancel: () => void
+  studentAge: number
+  difficulty?: 1|2|3
+  seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
+}
 
-export default function NBackTask({ onComplete, onCancel, difficulty = 1 }: Props) {
+export default function NBackTask({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+  const rng         = useRef(createRng(seed ?? Date.now())).current
   const n           = difficulty === 1 ? 1 : difficulty === 2 ? 2 : 3
   const totalTrials = difficulty === 1 ? 15 : difficulty === 2 ? 20 : 25
   const displayMs   = 2000
@@ -43,7 +51,7 @@ export default function NBackTask({ onComplete, onCancel, difficulty = 1 }: Prop
       setPhase('done')
       return
     }
-    const pos = Math.floor(Math.random() * 9)
+    const pos = randIntWithRng(rng, 0, 8)
     respondRef.current = false
     histRef.current = [...histRef.current, pos]
     setHistory([...histRef.current])

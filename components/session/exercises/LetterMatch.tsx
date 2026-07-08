@@ -1,6 +1,7 @@
 'use client'
 import { useState, useRef, useEffect } from 'react'
 import type { ExerciseResult } from '@/lib/types'
+import { createRng, pickWithRng, shuffleWithRng } from '@/lib/seeded-random'
 
 const LETTER_GROUPS = [
   ['ب','ت','ث','ن'],
@@ -23,10 +24,12 @@ interface Props {
   onCancel: () => void
   studentAge: number
   difficulty?: 1|2|3
+  seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
 }
 
-export default function LetterMatch({ onComplete, onCancel, studentAge, difficulty = 1 }: Props) {
+export default function LetterMatch({ onComplete, onCancel, studentAge, difficulty = 1, seed }: Props) {
   const totalRounds = difficulty === 1 ? 10 : difficulty === 2 ? 15 : 20
+  const rng = useRef(createRng(seed ?? Date.now())).current
   const startRef = useRef(Date.now())
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [round, setRound] = useState(0)
@@ -39,12 +42,12 @@ export default function LetterMatch({ onComplete, onCancel, studentAge, difficul
   useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current) }, [])
 
   function pickRound() {
-    const group = LETTER_GROUPS[Math.floor(Math.random() * LETTER_GROUPS.length)]
-    const targetLetter = group[Math.floor(Math.random() * group.length)]
+    const group = pickWithRng(rng, LETTER_GROUPS)
+    const targetLetter = pickWithRng(rng, group)
     // Build 4 choices: target + 3 from same group or other groups
     const pool = [...group, ...LETTER_GROUPS.flat()].filter(l => l !== targetLetter)
-    const distractors = Array.from(new Set(pool)).sort(() => Math.random() - 0.5).slice(0, 3)
-    const choices = [targetLetter, ...distractors].sort(() => Math.random() - 0.5)
+    const distractors = shuffleWithRng(rng, Array.from(new Set(pool))).slice(0, 3)
+    const choices = shuffleWithRng(rng, [targetLetter, ...distractors])
     return { targetLetter, choices }
   }
 

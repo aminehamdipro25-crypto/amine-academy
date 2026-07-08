@@ -1,12 +1,14 @@
 'use client'
 import { useState, useRef, useEffect } from 'react'
 import type { ExerciseResult } from '@/lib/types'
+import { createRng, shuffleWithRng, type Rng } from '@/lib/seeded-random'
 
 interface Props {
   onComplete: (r: ExerciseResult) => void
   onCancel: () => void
   studentAge: number
   difficulty?: 1|2|3
+  seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
 }
 
 interface WordItem {
@@ -55,10 +57,10 @@ const WORDS_HARD: WordItem[] = [
   { word: 'حديقة',  hint: '🌳', category: 'أماكن', minAge: 9 },
 ]
 
-function shuffleStr(str: string): string {
+function shuffleStr(rng: Rng, str: string): string {
   const arr = str.split('')
   for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(rng() * (i + 1));
     [arr[i], arr[j]] = [arr[j], arr[i]]
   }
   // Ensure it's different from the original
@@ -68,21 +70,22 @@ function shuffleStr(str: string): string {
   return arr.join('')
 }
 
-function getWordPool(difficulty: 1|2|3, age: number): WordItem[] {
+function getWordPool(rng: Rng, difficulty: 1|2|3, age: number): WordItem[] {
   let pool: WordItem[] = []
   if (difficulty >= 1) pool = [...pool, ...WORDS_EASY]
   if (difficulty >= 2) pool = [...pool, ...WORDS_MEDIUM.filter(w => !w.minAge || w.minAge <= age)]
   if (difficulty >= 3) pool = [...pool, ...WORDS_HARD.filter(w => !w.minAge || w.minAge <= age)]
-  return pool.sort(() => Math.random() - 0.5)
+  return shuffleWithRng(rng, pool)
 }
 
-export default function WordBuilder({ onComplete, onCancel, studentAge, difficulty = 1 }: Props) {
+export default function WordBuilder({ onComplete, onCancel, studentAge, difficulty = 1, seed }: Props) {
+  const rng = useRef(createRng(seed ?? Date.now())).current
   const ROUNDS = difficulty === 1 ? 4 : difficulty === 2 ? 5 : 6
-  const pool   = useRef(getWordPool(difficulty, studentAge))
+  const pool   = useRef(getWordPool(rng, difficulty, studentAge))
 
   const [round, setRound]         = useState(0)
   const [wordItem, setWordItem]    = useState<WordItem>(pool.current[0])
-  const [shuffled, setShuffled]    = useState<string[]>(() => shuffleStr(pool.current[0].word).split(''))
+  const [shuffled, setShuffled]    = useState<string[]>(() => shuffleStr(rng, pool.current[0].word).split(''))
   const [selected, setSelected]    = useState<string[]>([])
   const [usedIdxs, setUsedIdxs]   = useState<number[]>([])
   const [feedback, setFeedback]    = useState<'correct' | 'wrong' | null>(null)
@@ -133,7 +136,7 @@ export default function WordBuilder({ onComplete, onCancel, studentAge, difficul
           const nextWord  = pool.current[nextRound % pool.current.length]
           setRound(nextRound)
           setWordItem(nextWord)
-          setShuffled(shuffleStr(nextWord.word).split(''))
+          setShuffled(shuffleStr(rng, nextWord.word).split(''))
           setSelected([])
           setUsedIdxs([])
         }

@@ -2,12 +2,14 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import type { ExerciseResult } from '@/lib/types'
 import { speakArabic, cancelSpeech } from '@/lib/speech'
+import { createRng, shuffleWithRng, type Rng } from '@/lib/seeded-random'
 
 interface Props {
   onComplete: (r: ExerciseResult) => void
   onCancel: () => void
   studentAge: number
   difficulty?: 1 | 2 | 3
+  seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
 }
 
 interface WordPair {
@@ -70,23 +72,14 @@ const ALL_PAIRS: WordPair[] = [
   { a: 'كتاب',   b: 'كثاب',   areSame: false },
 ]
 
-function getPairs(difficulty: 1 | 2 | 3): WordPair[] {
-  const same = shuffle(ALL_PAIRS.filter(p => p.areSame))
-  const easy = shuffle(ALL_PAIRS.filter(p => !p.areSame).slice(0, 12))
-  const hard  = shuffle(ALL_PAIRS.filter(p => !p.areSame).slice(12))
+function getPairs(difficulty: 1 | 2 | 3, rng: Rng): WordPair[] {
+  const same = shuffleWithRng(rng, ALL_PAIRS.filter(p => p.areSame))
+  const easy = shuffleWithRng(rng, ALL_PAIRS.filter(p => !p.areSame).slice(0, 12))
+  const hard  = shuffleWithRng(rng, ALL_PAIRS.filter(p => !p.areSame).slice(12))
   // d=1: 4 same + 4 easy = 8, d=2: 6 same + 4 easy + 4 hard = 14, d=3: 10 same + 6 easy + 8 hard = 24
-  if (difficulty === 1) return shuffle([...same.slice(0, 4), ...easy.slice(0, 4)])
-  if (difficulty === 2) return shuffle([...same.slice(0, 6), ...easy.slice(0, 4), ...hard.slice(0, 4)])
-  return shuffle([...same.slice(0, 10), ...easy.slice(0, 6), ...hard.slice(0, 8)])
-}
-
-function shuffle<T>(arr: T[]): T[] {
-  const a = [...arr]
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[a[i], a[j]] = [a[j], a[i]]
-  }
-  return a
+  if (difficulty === 1) return shuffleWithRng(rng, [...same.slice(0, 4), ...easy.slice(0, 4)])
+  if (difficulty === 2) return shuffleWithRng(rng, [...same.slice(0, 6), ...easy.slice(0, 4), ...hard.slice(0, 4)])
+  return shuffleWithRng(rng, [...same.slice(0, 10), ...easy.slice(0, 6), ...hard.slice(0, 8)])
 }
 
 function speak(text: string): void {
@@ -95,8 +88,9 @@ function speak(text: string): void {
 
 type Phase = 'playing' | 'answer' | 'feedback' | 'done'
 
-export default function SoundDiscrimination({ onComplete, onCancel, difficulty = 1 }: Props) {
-  const pairs = useRef<WordPair[]>(getPairs(difficulty))
+export default function SoundDiscrimination({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+  const rng = useRef(createRng(seed ?? Date.now())).current
+  const pairs = useRef<WordPair[]>(getPairs(difficulty, rng))
   const [qIdx, setQIdx]       = useState(0)
   const [phase, setPhase]     = useState<Phase>('playing')
   const [correct, setCorrect] = useState(0)

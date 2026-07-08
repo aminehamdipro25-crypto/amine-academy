@@ -1,17 +1,20 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import type { ExerciseResult } from '@/lib/types'
+import { createRng, randBoolWithRng } from '@/lib/seeded-random'
 
 interface Props {
   onComplete: (r: ExerciseResult) => void
   onCancel:   () => void
   studentAge: number
   difficulty?: 1|2|3
+  seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
 }
 
 type Phase = 'idle' | 'red' | 'yellow' | 'green' | 'feedback'
 
-export default function TrafficLight({ onComplete, onCancel, difficulty = 1 }: Props) {
+export default function TrafficLight({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+  const rng = useRef(createRng(seed ?? Date.now())).current
   const ROUNDS       = 6
   const RED_MS       = difficulty === 1 ? 2000 : difficulty === 2 ? 1500 : 1000
   const YELLOW_MS    = 800
@@ -71,7 +74,7 @@ export default function TrafficLight({ onComplete, onCancel, difficulty = 1 }: P
       setPhase('red')
       timerRef.current = setTimeout(() => {
         // trick: sometimes briefly flash green then go back
-        if (Math.random() < TRICK_CHANCE) {
+        if (randBoolWithRng(rng, TRICK_CHANCE)) {
           trickRef.current = true
           setPhase('green')
           timerRef.current = setTimeout(() => {

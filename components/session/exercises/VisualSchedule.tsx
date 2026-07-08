@@ -1,6 +1,7 @@
 'use client'
 import { useState, useRef, useEffect } from 'react'
 import type { ExerciseResult } from '@/lib/types'
+import { createRng, shuffleWithRng, pickWithRng, type Rng } from '@/lib/seeded-random'
 
 const SCHEDULES = [
   {
@@ -43,13 +44,15 @@ interface Props {
   onCancel: () => void
   studentAge: number
   difficulty?: 1|2|3
+  seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
 }
 
-function shuffle<T>(arr: T[]): T[] {
-  return [...arr].sort(() => Math.random() - 0.5)
+function shuffle<T>(rng: Rng, arr: T[]): T[] {
+  return shuffleWithRng(rng, arr)
 }
 
-export default function VisualSchedule({ onComplete, onCancel, difficulty = 1 }: Props) {
+export default function VisualSchedule({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+  const rng = useRef(createRng(seed ?? Date.now())).current
   const itemCount = difficulty === 1 ? 4 : difficulty === 2 ? 5 : 6
   const startRef = useRef(Date.now())
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -61,9 +64,9 @@ export default function VisualSchedule({ onComplete, onCancel, difficulty = 1 }:
   }, [])
 
   const [scheduleData] = useState(() => {
-    const s = SCHEDULES[Math.floor(Math.random() * SCHEDULES.length)]
+    const s = pickWithRng(rng, SCHEDULES)
     const items = s.items.slice(0, itemCount)
-    return { name: s.name, items, shuffled: shuffle(items) }
+    return { name: s.name, items, shuffled: shuffle(rng, items) }
   })
   const [placed, setPlaced]     = useState<typeof scheduleData.items[0][]>([])
   const [errors, setErrors]     = useState(0)

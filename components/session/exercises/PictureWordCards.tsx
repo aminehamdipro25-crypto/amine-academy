@@ -2,12 +2,14 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import type { ExerciseResult } from '@/lib/types'
 import { speakArabic } from '@/lib/speech'
+import { createRng, shuffleWithRng, type Rng } from '@/lib/seeded-random'
 
 interface Props {
   onComplete: (r: ExerciseResult) => void
   onCancel: () => void
   studentAge: number
   difficulty?: 1 | 2 | 3
+  seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
 }
 
 interface Card {
@@ -89,14 +91,7 @@ const CATEGORY_EMOJI: Record<string, string> = {
   'أشياء': '🎒',
 }
 
-function shuffle<T>(arr: T[]): T[] {
-  const a = [...arr]
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[a[i], a[j]] = [a[j], a[i]]
-  }
-  return a
-}
+function shuffle<T>(arr: T[], rng: Rng): T[] { return shuffleWithRng(rng, arr) }
 
 function speakWord(word: string): void {
   speakArabic(word, 0.75)
@@ -110,10 +105,10 @@ function getRatingScore(r: Rating): number {
 
 // builds the 4 answer cards for a game round: the target + 3 distractors,
 // preferring same-category distractors so the choice is a real discrimination test
-function buildChoiceCards(card: Card): Card[] {
+function buildChoiceCards(card: Card, rng: Rng): Card[] {
   const sameCat = ALL_CARDS.filter(c => c.category === card.category && c.word !== card.word)
   const otherCat = ALL_CARDS.filter(c => c.category !== card.category)
-  const pool = [...shuffle(sameCat), ...shuffle(otherCat)]
+  const pool = [...shuffle(sameCat, rng), ...shuffle(otherCat, rng)]
   const seen = new Set<string>([card.word])
   const distractors: Card[] = []
   for (const c of pool) {
@@ -122,7 +117,7 @@ function buildChoiceCards(card: Card): Card[] {
     seen.add(c.word)
     distractors.push(c)
   }
-  return shuffle([card, ...distractors])
+  return shuffle([card, ...distractors], rng)
 }
 
 type Phase = 'mode' | 'category' | 'cards' | 'results'
@@ -132,7 +127,9 @@ export default function PictureWordCards({
   onCancel,
   studentAge: _studentAge,
   difficulty = 1,
+  seed,
 }: Props) {
+  const rng = useRef(createRng(seed ?? Date.now())).current
   const startRef = useRef(Date.now())
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -163,9 +160,9 @@ export default function PictureWordCards({
   function startWithCategory(cat: string) {
     setSelectedCategory(cat)
     const pool = cat === 'كل الفئات' ? ALL_CARDS : ALL_CARDS.filter(c => c.category === cat)
-    const shuffled = shuffle(pool).slice(0, maxCards)
+    const shuffled = shuffle(pool, rng).slice(0, maxCards)
     setDeck(shuffled)
-    setGameChoices(mode === 'game' ? shuffled.map(c => buildChoiceCards(c)) : [])
+    setGameChoices(mode === 'game' ? shuffled.map(c => buildChoiceCards(c, rng)) : [])
     setCardIdx(0)
     setRatings([])
     setGameAnswers([])

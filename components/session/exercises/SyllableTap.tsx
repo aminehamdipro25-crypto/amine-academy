@@ -2,12 +2,14 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import type { ExerciseResult } from '@/lib/types'
 import { speakArabic, cancelSpeech } from '@/lib/speech'
+import { createRng, shuffleWithRng } from '@/lib/seeded-random'
 
 interface Props {
   onComplete: (r: ExerciseResult) => void
   onCancel:   () => void
   studentAge: number
   difficulty?: 1|2|3
+  seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
 }
 
 interface W { word: string; plain: string; emoji: string; syllables: number }
@@ -41,13 +43,12 @@ const ALL_WORDS: W[] = [
   { word:'مُستشفى',  plain:'مستشفى',  emoji:'🏥', syllables:4 },
 ]
 
-function shuffle<T>(arr: T[]): T[] { return [...arr].sort(() => Math.random() - 0.5) }
-
 function speak(text: string) {
   speakArabic(text, 0.65)
 }
 
-export default function SyllableTap({ onComplete, onCancel, difficulty = 1, studentAge }: Props) {
+export default function SyllableTap({ onComplete, onCancel, difficulty = 1, studentAge, seed }: Props) {
+  const rng = useRef(createRng(seed ?? Date.now())).current
   const words: W[] = useMemo(() => {
     let pool: W[]
     if (difficulty === 1) pool = ALL_WORDS.filter(w => w.syllables <= 2)
@@ -56,8 +57,8 @@ export default function SyllableTap({ onComplete, onCancel, difficulty = 1, stud
     // Under 7: cap at 2 syllables regardless
     if (studentAge < 7) pool = pool.filter(w => w.syllables <= 2)
     const count = difficulty === 1 ? 6 : difficulty === 2 ? 10 : 14
-    return shuffle(pool).slice(0, count)
-  }, [difficulty, studentAge])
+    return shuffleWithRng(rng, pool).slice(0, count)
+  }, [difficulty, studentAge, rng])
 
   const count = words.length
   const [idx,     setIdx]     = useState(0)

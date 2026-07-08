@@ -2,12 +2,14 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react'
 import type { ExerciseResult } from '@/lib/types'
 import { speakArabic } from '@/lib/speech'
+import { createRng, shuffleWithRng } from '@/lib/seeded-random'
 
 interface Props {
   onComplete: (r: ExerciseResult) => void
   onCancel:   () => void
   studentAge: number
   difficulty?: 1|2|3
+  seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
 }
 
 interface Q { word: string; emoji: string; choices: string[] }
@@ -35,11 +37,10 @@ const ALL: Q[] = [
   { word:'مظلة',  emoji:'☂️', choices:['مظلة','مضلة','مظلت']    },
 ]
 
-function shuffle<T>(arr: T[]): T[] { return [...arr].sort(() => Math.random() - 0.5) }
-
-export default function SpellingBee({ onComplete, onCancel, difficulty = 1 }: Props) {
+export default function SpellingBee({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+  const rng = useRef(createRng(seed ?? Date.now())).current
   const count = difficulty === 1 ? 6 : difficulty === 2 ? 10 : 14
-  const [qs]  = useState<Q[]>(() => shuffle(ALL).slice(0, count))
+  const [qs]  = useState<Q[]>(() => shuffleWithRng(rng, ALL).slice(0, count))
 
   const [idx,     setIdx]     = useState(0)
   const [chosen,  setChosen]  = useState<string | null>(null)
@@ -55,7 +56,7 @@ export default function SpellingBee({ onComplete, onCancel, difficulty = 1 }: Pr
   }, [])
 
   const q = qs[idx]
-  const shuffledChoices = useMemo(() => shuffle(q.choices), [idx]) // eslint-disable-line react-hooks/exhaustive-deps
+  const shuffledChoices = useMemo(() => shuffleWithRng(rng, q.choices), [idx]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleChoice(c: string) {
     if (chosen) return

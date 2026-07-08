@@ -1,6 +1,7 @@
 'use client'
 import { useState, useCallback, useRef, useEffect } from 'react'
 import type { ExerciseResult } from '@/lib/types'
+import { createRng, shuffleWithRng, type Rng } from '@/lib/seeded-random'
 
 const ITEMS = [
   { emoji: '🐱', label: 'قطة' },
@@ -32,20 +33,22 @@ interface Props {
   onCancel: () => void
   studentAge: number
   difficulty?: 1|2|3
+  seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
 }
 
-function shuffle<T>(arr: T[]): T[] {
-  return [...arr].sort(() => Math.random() - 0.5)
+function shuffle<T>(rng: Rng, arr: T[]): T[] {
+  return shuffleWithRng(rng, arr)
 }
 
-function buildRound(optionCount: number) {
-  const shuffled = shuffle(ITEMS)
+function buildRound(rng: Rng, optionCount: number) {
+  const shuffled = shuffle(rng, ITEMS)
   const target = shuffled[0]
-  const options = shuffle(shuffled.slice(0, optionCount))
+  const options = shuffle(rng, shuffled.slice(0, optionCount))
   return { target, options }
 }
 
-export default function VisualMatch({ onComplete, onCancel, difficulty = 1 }: Props) {
+export default function VisualMatch({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+  const rng = useRef(createRng(seed ?? Date.now())).current
   const optionCount = difficulty === 1 ? 3 : difficulty === 2 ? 4 : 6
   const startRef = useRef(Date.now())
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -58,7 +61,7 @@ export default function VisualMatch({ onComplete, onCancel, difficulty = 1 }: Pr
   const [selected, setSelected] = useState<number | null>(null)
   const [correctIdx, setCorrectIdx] = useState<number | null>(null)
   const [phase, setPhase] = useState<'play'|'feedback'>('play')
-  const [roundData, setRoundData] = useState(() => buildRound(optionCount))
+  const [roundData, setRoundData] = useState(() => buildRound(rng, optionCount))
 
   const handleSelect = useCallback((idx: number) => {
     if (phase !== 'play') return
@@ -87,7 +90,7 @@ export default function VisualMatch({ onComplete, onCancel, difficulty = 1 }: Pr
         return
       }
       setRound(nextRound)
-      setRoundData(buildRound(optionCount))
+      setRoundData(buildRound(rng, optionCount))
       setSelected(null)
       setCorrectIdx(null)
       setPhase('play')

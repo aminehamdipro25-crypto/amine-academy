@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import type { ExerciseResult } from '@/lib/types'
+import { createRng } from '@/lib/seeded-random'
 
 const TRIALS = 10
 
@@ -9,11 +10,13 @@ interface Props {
   onCancel: () => void
   studentAge: number
   difficulty?: 1|2|3
+  seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
 }
 
 type Phase = 'ready' | 'waiting' | 'flash' | 'early' | 'result'
 
-export default function ReactionGame({ onComplete, onCancel, difficulty = 1 }: Props) {
+export default function ReactionGame({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+  const rng = useRef(createRng(seed ?? Date.now())).current
   const minDelay = difficulty === 1 ? 1200 : difficulty === 2 ? 900 : 600
   const maxDelay = difficulty === 1 ? 3200 : difficulty === 2 ? 2600 : 2000
 
@@ -35,9 +38,9 @@ export default function ReactionGame({ onComplete, onCancel, difficulty = 1 }: P
   useEffect(() => () => clearTimer(), [])
 
   const scheduleFlash = useCallback(() => {
-    const delay = minDelay + Math.random() * (maxDelay - minDelay)
-    const x = 15 + Math.random() * 70
-    const y = 20 + Math.random() * 60
+    const delay = minDelay + rng() * (maxDelay - minDelay)
+    const x = 15 + rng() * 70
+    const y = 20 + rng() * 60
     setPos({ x, y })
     timerRef.current = setTimeout(() => {
       flashStartRef.current = Date.now()

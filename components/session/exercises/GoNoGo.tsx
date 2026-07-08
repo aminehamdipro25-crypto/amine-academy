@@ -1,22 +1,25 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import type { ExerciseResult } from '@/lib/types'
+import { createRng, randBoolWithRng } from '@/lib/seeded-random'
 
 interface Props {
   onComplete: (r: ExerciseResult) => void
   onCancel: () => void
   studentAge: number
   difficulty?: 1 | 2 | 3
+  seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
 }
 
 type Phase = 'ready' | 'iti' | 'show' | 'feedback' | 'result'
 
-export default function GoNoGo({ onComplete, onCancel, difficulty = 1 }: Props) {
+export default function GoNoGo({ onComplete, onCancel, difficulty = 1, seed }: Props) {
   const totalTrials = difficulty === 1 ? 15 : difficulty === 2 ? 20 : 25
   const goRate      = difficulty === 1 ? 0.70 : difficulty === 2 ? 0.60 : 0.50
   const displayMs   = difficulty === 3 ? 600 : difficulty === 2 ? 700 : 800
   const itiMinMs    = 400
   const itiMaxMs    = 800
+  const rng         = useRef(createRng(seed ?? Date.now())).current
 
   const [phase, setPhase]       = useState<Phase>('ready')
   const [trial, setTrial]       = useState(0)
@@ -76,15 +79,15 @@ export default function GoNoGo({ onComplete, onCancel, difficulty = 1 }: Props) 
     setPhase('feedback')
     timerRef.current = setTimeout(() => {
       if (nextTrial >= totalTrials) { finish(); return }
-      const itiDelay = itiMinMs + Math.random() * (itiMaxMs - itiMinMs)
+      const itiDelay = itiMinMs + rng() * (itiMaxMs - itiMinMs)
       setPhase('iti')
       timerRef.current = setTimeout(() => runTrial(nextTrial), itiDelay)
     }, 420)
-  }, [totalTrials, finish, itiMinMs, itiMaxMs]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [totalTrials, finish, itiMinMs, itiMaxMs, rng]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const runTrial = useCallback((n: number) => {
     clearTimer()
-    const go = Math.random() < goRate
+    const go = randBoolWithRng(rng, goRate)
     isGoRef.current  = go
     trialRef.current = n
     if (go) goCountRef.current++
@@ -106,7 +109,7 @@ export default function GoNoGo({ onComplete, onCancel, difficulty = 1 }: Props) 
         }
       }
     }, isGoRef.current ? displayMs : displayMs + 200)
-  }, [goRate, displayMs, clearTimer, showFeedback])
+  }, [goRate, displayMs, clearTimer, showFeedback, rng])
 
   function handlePress() {
     if (phase !== 'show') return

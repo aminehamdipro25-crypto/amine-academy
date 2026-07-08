@@ -2,12 +2,14 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
 import type { ExerciseResult } from '@/lib/types'
 import { speakArabic } from '@/lib/speech'
+import { createRng, shuffleWithRng } from '@/lib/seeded-random'
 
 interface Props {
   onComplete: (r: ExerciseResult) => void
   onCancel:   () => void
   studentAge: number
   difficulty?: 1|2|3
+  seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
 }
 
 interface Q {
@@ -67,13 +69,12 @@ const HARD_QS: Q[] = [
   { display:'أيّ كلمة مكتوبة بشكل صحيح؟', target:'تلميذ',choices:['تلميذ','تلميز','ثلميذ','تلمث'],type:'word' },
 ]
 
-function shuffle<T>(arr: T[]): T[] { return [...arr].sort(() => Math.random() - 0.5) }
-
 function speak(text: string) {
   speakArabic(text, 0.75)
 }
 
-export default function LetterReversal({ onComplete, onCancel, difficulty = 1, studentAge }: Props) {
+export default function LetterReversal({ onComplete, onCancel, difficulty = 1, studentAge, seed }: Props) {
+  const rng = useRef(createRng(seed ?? Date.now())).current
   const isYoung = studentAge < 9
 
   const allQs: Q[] = useMemo(() => {
@@ -93,7 +94,7 @@ export default function LetterReversal({ onComplete, onCancel, difficulty = 1, s
   useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current) }, [])
 
   const q = allQs[idx]
-  const choices = useMemo(() => shuffle([...q.choices]), [idx]) // eslint-disable-line
+  const choices = useMemo(() => shuffleWithRng(rng, q.choices), [idx]) // eslint-disable-line
 
   function handleChoice(c: string) {
     if (chosen) return

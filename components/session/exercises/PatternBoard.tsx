@@ -1,12 +1,14 @@
 'use client'
 import { useState, useMemo, useRef, useEffect } from 'react'
 import type { ExerciseResult } from '@/lib/types'
+import { createRng, shuffleWithRng, type Rng } from '@/lib/seeded-random'
 
 interface Props {
   onComplete: (r: ExerciseResult) => void
   onCancel:   () => void
   studentAge: number
   difficulty?: 1|2|3
+  seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
 }
 
 interface Pattern { name:string; size:3|4|5; ref:(string|null)[] }
@@ -44,13 +46,14 @@ const HARD: Pattern[] = [
   { name:'الحرف X',        size:5,ref:[R,null,null,null,R, null,B,null,B,null, null,null,G,null,null, null,B,null,B,null, R,null,null,null,R] },
 ]
 
-function shuffle<T>(arr:T[]):T[] { return [...arr].sort(()=>Math.random()-.5) }
+function shuffle<T>(arr:T[], rng: Rng):T[] { return shuffleWithRng(rng, arr) }
 
-export default function PatternBoard({ onComplete, onCancel, difficulty=1, studentAge }: Props) {
+export default function PatternBoard({ onComplete, onCancel, difficulty=1, studentAge, seed }: Props) {
+  const rng = useRef(createRng(seed ?? Date.now())).current
   const patterns = useMemo(()=>{
-    if (difficulty===1) return shuffle(EASY)
-    if (difficulty===2) return shuffle(MEDIUM)
-    return shuffle(HARD)
+    if (difficulty===1) return shuffle(EASY, rng)
+    if (difficulty===2) return shuffle(MEDIUM, rng)
+    return shuffle(HARD, rng)
   },[difficulty])
 
   const COUNT  = difficulty===1 ? (studentAge<7 ? 4 : 6) : difficulty===2 ? 5 : 6

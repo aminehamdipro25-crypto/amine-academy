@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import type { ExerciseResult } from '@/lib/types'
+import { createRng, randIntWithRng, pickWithRng, type Rng } from '@/lib/seeded-random'
 
 // All stimuli emojis (target will be picked from these)
 const DISTRACTOR_POOL = [
@@ -23,16 +24,17 @@ interface Props {
   onCancel: () => void
   studentAge: number
   difficulty?: 1 | 2 | 3
+  seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
 }
 
-function buildSequence(totalStimuli: number): StimRecord[] {
+function buildSequence(totalStimuli: number, rng: Rng): StimRecord[] {
   const seq: StimRecord[] = []
   // Ensure roughly TARGET_RATE targets, placed randomly but not back-to-back
   const targetCount = Math.round(totalStimuli * TARGET_RATE)
   const flags: boolean[] = Array(totalStimuli).fill(false)
   let placed = 0
   while (placed < targetCount) {
-    const idx = Math.floor(Math.random() * totalStimuli)
+    const idx = randIntWithRng(rng, 0, totalStimuli - 1)
     if (!flags[idx] && (idx === 0 || !flags[idx - 1])) {
       flags[idx] = true
       placed++
@@ -43,7 +45,7 @@ function buildSequence(totalStimuli: number): StimRecord[] {
       seq.push({ emoji: TARGET_EMOJI, isTarget: true })
     } else {
       seq.push({
-        emoji: DISTRACTOR_POOL[Math.floor(Math.random() * DISTRACTOR_POOL.length)],
+        emoji: pickWithRng(rng, DISTRACTOR_POOL),
         isTarget: false,
       })
     }
@@ -51,7 +53,8 @@ function buildSequence(totalStimuli: number): StimRecord[] {
   return seq
 }
 
-export default function SustainedAttention({ onComplete, onCancel, difficulty = 1 }: Props) {
+export default function SustainedAttention({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+  const rng = useRef(createRng(seed ?? Date.now())).current
   const totalStimuli = difficulty === 1 ? 15 : difficulty === 2 ? 20 : 25
   const displayMs = difficulty === 1 ? 1800 : difficulty === 2 ? 1500 : 1200
 
@@ -138,7 +141,7 @@ export default function SustainedAttention({ onComplete, onCancel, difficulty = 
   }, [displayMs, finishGame])
 
   function startGame() {
-    seqRef.current = buildSequence(totalStimuli)
+    seqRef.current = buildSequence(totalStimuli, rng)
     hitsRef.current = 0
     missesRef.current = 0
     falseAlarmsRef.current = 0

@@ -1,12 +1,14 @@
 'use client'
 import { useState, useMemo, useRef, useEffect } from 'react'
 import type { ExerciseResult } from '@/lib/types'
+import { createRng, shuffleWithRng } from '@/lib/seeded-random'
 
 interface Props {
   onComplete: (r: ExerciseResult) => void
   onCancel:   () => void
   studentAge: number
   difficulty?: 1|2|3
+  seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
 }
 
 interface Q {
@@ -91,11 +93,10 @@ const ALL: Q[] = [
   },
 ]
 
-function shuffle<T>(arr: T[]): T[] { return [...arr].sort(() => Math.random() - 0.5) }
-
-export default function LogicSort({ onComplete, onCancel, difficulty = 1 }: Props) {
+export default function LogicSort({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+  const rng = useRef(createRng(seed ?? Date.now())).current
   const count = difficulty === 1 ? 4 : difficulty === 2 ? 6 : 9
-  const [qs]  = useState<Q[]>(() => shuffle(ALL).slice(0, count))
+  const [qs]  = useState<Q[]>(() => shuffleWithRng(rng, ALL).slice(0, count))
 
   const [idx,    setIdx]    = useState(0)
   const [slots,  setSlots]  = useState<number[]>([])   // values in placed order
@@ -109,7 +110,7 @@ export default function LogicSort({ onComplete, onCancel, difficulty = 1 }: Prop
   useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current) }, [])
 
   const q = qs[idx]
-  const shuffled = useMemo(() => shuffle(q.items.map(i => i.value)), [idx]) // eslint-disable-line react-hooks/exhaustive-deps
+  const shuffled = useMemo(() => shuffleWithRng(rng, q.items.map(i => i.value)), [idx]) // eslint-disable-line react-hooks/exhaustive-deps
   const [handItems, setHandItems] = useState<number[]>(() => shuffled)
 
   function handlePlace(v: number) {
@@ -147,7 +148,7 @@ export default function LogicSort({ onComplete, onCancel, difficulty = 1 }: Prop
           setIdx(next)
           setSlots([])
           setResult(null)
-          const ns = shuffle(qs[next].items.map(i => i.value))
+          const ns = shuffleWithRng(rng, qs[next].items.map(i => i.value))
           setHandItems(ns)
         }
       }, 1500)

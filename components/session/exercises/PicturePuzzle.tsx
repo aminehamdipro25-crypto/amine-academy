@@ -1,12 +1,14 @@
 'use client'
 import { useState, useMemo, useRef, useEffect } from 'react'
 import type { ExerciseResult } from '@/lib/types'
+import { createRng, shuffleWithRng, type Rng } from '@/lib/seeded-random'
 
 interface Props {
   onComplete: (r: ExerciseResult) => void
   onCancel:   () => void
   studentAge: number
   difficulty?: 1|2|3
+  seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
 }
 
 // Each puzzle: a 2×2 or 3×3 grid of emoji pieces
@@ -111,13 +113,14 @@ const HARD: Puzzle[] = [
   },
 ]
 
-function shuffle<T>(arr: T[]): T[] { return [...arr].sort(() => Math.random() - 0.5) }
+function shuffle<T>(arr: T[], rng: Rng): T[] { return shuffleWithRng(rng, arr) }
 
-export default function PicturePuzzle({ onComplete, onCancel, difficulty = 1, studentAge }: Props) {
+export default function PicturePuzzle({ onComplete, onCancel, difficulty = 1, studentAge, seed }: Props) {
+  const rng = useRef(createRng(seed ?? Date.now())).current
   const puzzles = useMemo<Puzzle[]>(() => {
-    if (difficulty === 1) return shuffle(EASY)
-    if (difficulty === 2) return shuffle([...EASY.slice(0,2), ...MEDIUM])
-    return shuffle([...MEDIUM, ...HARD])
+    if (difficulty === 1) return shuffle(EASY, rng)
+    if (difficulty === 2) return shuffle([...EASY.slice(0,2), ...MEDIUM], rng)
+    return shuffle([...MEDIUM, ...HARD], rng)
   }, [difficulty])
 
   const isYoung = studentAge < 8
@@ -138,7 +141,7 @@ export default function PicturePuzzle({ onComplete, onCancel, difficulty = 1, st
 
   // Reset puzzle when idx changes
   useEffect(() => {
-    const s = shuffle([...p.grid])
+    const s = shuffle([...p.grid], rng)
     setScrambled(s)
     setPlaced(Array(p.grid.length).fill(null))
     setSelected(null)

@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import type { ExerciseResult } from '@/lib/types'
+import { createRng, randIntWithRng, randBoolWithRng, pickWithRng, type Rng } from '@/lib/seeded-random'
 
 const TOTAL_ROUNDS = 4
 
@@ -9,6 +10,7 @@ interface Props {
   onCancel: () => void
   studentAge: number
   difficulty?: 1 | 2 | 3
+  seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
 }
 
 interface RoundConfig {
@@ -37,9 +39,9 @@ function getRoundConfig(difficulty: 1 | 2 | 3): RoundConfig {
   return { cols: 7, rows: 6, twoDigit: true, targetCount: 9, timeLimitSec: 38 }
 }
 
-function buildRound(cfg: RoundConfig): { grid: Cell[]; target: number } {
+function buildRound(cfg: RoundConfig, rng: Rng): { grid: Cell[]; target: number } {
   const total = cfg.cols * cfg.rows
-  const target = cfg.twoDigit ? 10 + Math.floor(Math.random() * 90) : 1 + Math.floor(Math.random() * 9)
+  const target = cfg.twoDigit ? randIntWithRng(rng, 10, 99) : randIntWithRng(rng, 1, 9)
 
   const cells: Cell[] = []
   for (let i = 0; i < cfg.targetCount; i++) cells.push({ value: target, isTarget: true })
@@ -47,23 +49,24 @@ function buildRound(cfg: RoundConfig): { grid: Cell[]; target: number } {
   while (cells.length < total) {
     let v: number
     if (cfg.twoDigit) {
-      v = 10 + Math.floor(Math.random() * 90)
-    } else if (CONFUSABLE[target] && Math.random() < 0.35) {
+      v = randIntWithRng(rng, 10, 99)
+    } else if (CONFUSABLE[target] && randBoolWithRng(rng, 0.35)) {
       const opts = CONFUSABLE[target]
-      v = opts[Math.floor(Math.random() * opts.length)]
+      v = pickWithRng(rng, opts)
     } else {
-      v = 1 + Math.floor(Math.random() * 9)
+      v = randIntWithRng(rng, 1, 9)
     }
     if (v !== target) cells.push({ value: v, isTarget: false })
   }
   for (let i = cells.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
+    const j = Math.floor(rng() * (i + 1))
     ;[cells[i], cells[j]] = [cells[j], cells[i]]
   }
   return { grid: cells, target }
 }
 
-export default function NumberSearch({ onComplete, onCancel, difficulty = 1 }: Props) {
+export default function NumberSearch({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+  const rng = useRef(createRng(seed ?? Date.now())).current
   const cfg = getRoundConfig(difficulty)
 
   const [phase, setPhase] = useState<Phase>('intro')
@@ -95,7 +98,7 @@ export default function NumberSearch({ onComplete, onCancel, difficulty = 1 }: P
   }, [])
 
   function startRound(roundNum: number) {
-    const { grid: g, target: t } = buildRound(cfg)
+    const { grid: g, target: t } = buildRound(cfg, rng)
     setGrid(g)
     setTarget(t)
     setFoundIdx(new Set())

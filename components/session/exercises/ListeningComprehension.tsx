@@ -2,12 +2,14 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import type { ExerciseResult } from '@/lib/types'
 import { speakArabic } from '@/lib/speech'
+import { createRng, shuffleWithRng } from '@/lib/seeded-random'
 
 interface Props {
   onComplete: (r: ExerciseResult) => void
   onCancel: () => void
   studentAge: number
   difficulty?: 1 | 2 | 3
+  seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
 }
 
 interface Question {
@@ -30,15 +32,6 @@ const ALL_QUESTIONS: Question[] = [
   { sentence: 'النجوم تظهر في السماء ليلاً', q: 'متى تظهر النجوم؟', choices: ['🌞 نهاراً', '🌙 ليلاً', '🌅 صباحاً'], ans: 1 },
 ]
 
-function shuffle<T>(arr: T[]): T[] {
-  const a = [...arr]
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[a[i], a[j]] = [a[j], a[i]]
-  }
-  return a
-}
-
 function speakText(text: string): Promise<void> {
   return speakArabic(text, 0.8)
 }
@@ -50,7 +43,9 @@ export default function ListeningComprehension({
   onCancel,
   studentAge: _studentAge,
   difficulty = 1,
+  seed,
 }: Props) {
+  const rng = useRef(createRng(seed ?? Date.now())).current
   const startRef = useRef(Date.now())
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -67,7 +62,7 @@ export default function ListeningComprehension({
   // Build question list based on difficulty
   useEffect(() => {
     if (difficulty === 3) {
-      setQuestions(shuffle([...ALL_QUESTIONS]))
+      setQuestions(shuffleWithRng(rng, ALL_QUESTIONS))
     } else if (difficulty === 1) {
       setQuestions(ALL_QUESTIONS.slice(0, 6))
     } else {
@@ -79,7 +74,7 @@ export default function ListeningComprehension({
     setCorrect(0)
     setErrors(0)
     startRef.current = Date.now()
-  }, [difficulty])
+  }, [difficulty, rng])
 
   // Check TTS support
   useEffect(() => {

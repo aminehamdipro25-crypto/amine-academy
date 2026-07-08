@@ -1,12 +1,14 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import type { ExerciseResult } from '@/lib/types'
+import { createRng, type Rng } from '@/lib/seeded-random'
 
 interface Props {
   onComplete: (r: ExerciseResult) => void
   onCancel: () => void
   studentAge: number
   difficulty?: 1|2|3
+  seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
 }
 
 interface NumberItem {
@@ -21,23 +23,23 @@ const CONTAINER_W = 380
 const CONTAINER_H = 320
 const BTN = 64 // w-16 h-16
 
-function generatePositions(count: number): { x: number; y: number }[] {
+function generatePositions(count: number, rng: Rng): { x: number; y: number }[] {
   const positions: { x: number; y: number }[] = []
   const maxX = CONTAINER_W - BTN - 8
   const maxY = CONTAINER_H - BTN - 8
   let attempts = 0
   while (positions.length < count && attempts < 3000) {
     attempts++
-    const x = 8 + Math.random() * maxX
-    const y = 8 + Math.random() * maxY
+    const x = 8 + rng() * maxX
+    const y = 8 + rng() * maxY
     const ok = positions.every(p => Math.hypot(p.x - x, p.y - y) > BTN + 8)
     if (ok) positions.push({ x, y })
   }
   return positions
 }
 
-function buildRound(max: number): NumberItem[] {
-  const positions = generatePositions(max)
+function buildRound(max: number, rng: Rng): NumberItem[] {
+  const positions = generatePositions(max, rng)
   return Array.from({ length: max }, (_, i) => ({
     value: i + 1,
     x: positions[i]?.x ?? 8 + (i % 5) * 70,
@@ -46,13 +48,14 @@ function buildRound(max: number): NumberItem[] {
   }))
 }
 
-export default function NumberSequence({ onComplete, onCancel, difficulty = 1 }: Props) {
+export default function NumberSequence({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+  const rng = useRef(createRng(seed ?? Date.now())).current
   const maxNumber = difficulty === 1 ? 5 : difficulty === 2 ? 7 : 9
 
   const [phase, setPhase] = useState<'playing' | 'between' | 'done'>('playing')
   const [round, setRound] = useState(1)
   const [nextExpected, setNextExpected] = useState(1)
-  const [items, setItems] = useState<NumberItem[]>(() => buildRound(maxNumber))
+  const [items, setItems] = useState<NumberItem[]>(() => buildRound(maxNumber, rng))
   const [roundErrors, setRoundErrors] = useState(0)
   const [roundScores, setRoundScores] = useState<number[]>([])
   const [totalErrors, setTotalErrors] = useState(0)
@@ -63,7 +66,7 @@ export default function NumberSequence({ onComplete, onCancel, difficulty = 1 }:
   useEffect(() => () => clearTimer(), [])
 
   const startNextRound = useCallback((nextRound: number) => {
-    setItems(buildRound(maxNumber))
+    setItems(buildRound(maxNumber, rng))
     setNextExpected(1)
     setRoundErrors(0)
     setRound(nextRound)

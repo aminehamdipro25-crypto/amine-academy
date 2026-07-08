@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import type { ExerciseResult } from '@/lib/types'
+import { createRng, randBoolWithRng } from '@/lib/seeded-random'
 
 const TOTAL = 24
 
@@ -9,12 +10,14 @@ interface Props {
   onCancel: () => void
   studentAge: number
   difficulty?: 1|2|3
+  seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
 }
 
 type Phase = 'ready' | 'wait' | 'go' | 'stop' | 'result'
 type Fb    = 'hit' | 'miss' | 'stop-ok' | 'stop-err' | null
 
-export default function StopSignal({ onComplete, onCancel, difficulty = 1 }: Props) {
+export default function StopSignal({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+  const rng = useRef(createRng(seed ?? Date.now())).current
   const displayMs = difficulty === 1 ? 1000 : difficulty === 2 ? 750 : 550
   const stopRate  = difficulty === 1 ? 0.25 : difficulty === 2 ? 0.30 : 0.35
 
@@ -61,14 +64,14 @@ export default function StopSignal({ onComplete, onCancel, difficulty = 1 }: Pro
 
   const runTrial = useCallback((n: number) => {
     if (n >= TOTAL) { finish(); return }
-    const stop = Math.random() < stopRate
+    const stop = randBoolWithRng(rng, stopRate)
     setIsStop(stop)
     tappedRef.current = false
     setFb(null)
     setTrial(n)
     setPhase('wait')
 
-    const iti = 600 + Math.random() * 900
+    const iti = 600 + rng() * 900
     timerRef.current = setTimeout(() => {
       setPhase(stop ? 'stop' : 'go')
       timerRef.current = setTimeout(() => {

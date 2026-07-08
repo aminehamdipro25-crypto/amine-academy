@@ -1,6 +1,7 @@
 'use client'
 import { useState, useRef, useEffect } from 'react'
 import type { ExerciseResult } from '@/lib/types'
+import { createRng, shuffleWithRng } from '@/lib/seeded-random'
 
 const ACTIONS = [
   { emoji: '👋', label: 'لوّح بيدك' },
@@ -22,21 +23,19 @@ interface Props {
   onCancel: () => void
   studentAge: number
   difficulty?: 1|2|3
+  seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
 }
 
-function shuffle<T>(arr: T[]): T[] {
-  return [...arr].sort(() => Math.random() - 0.5)
-}
-
-export default function ImitationMirror({ onComplete, onCancel, difficulty = 1 }: Props) {
+export default function ImitationMirror({ onComplete, onCancel, difficulty = 1, seed }: Props) {
   const perRound  = difficulty === 1 ? 3 : difficulty === 2 ? 4 : 5
   const ROUNDS    = 3
   const startRef  = useRef(Date.now())
   const timerRef  = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const rng       = useRef(createRng(seed ?? Date.now())).current
 
   useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current) }, [])
 
-  const [actions] = useState(() => shuffle(ACTIONS).slice(0, perRound * ROUNDS))
+  const [actions] = useState(() => shuffleWithRng(rng, ACTIONS).slice(0, perRound * ROUNDS))
   const [round,   setRound]   = useState(0)
   const [step,    setStep]    = useState(0)
   const [correct, setCorrect] = useState(0)

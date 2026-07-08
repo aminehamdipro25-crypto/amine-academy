@@ -1,12 +1,14 @@
 'use client'
 import { useState, useMemo, useRef, useEffect } from 'react'
 import type { ExerciseResult } from '@/lib/types'
+import { createRng, shuffleWithRng } from '@/lib/seeded-random'
 
 interface Props {
   onComplete: (r: ExerciseResult) => void
   onCancel:   () => void
   studentAge: number
   difficulty?: 1|2|3
+  seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
 }
 
 interface Emotion { emoji: string; label: string; distractors: string[] }
@@ -30,11 +32,10 @@ const ALL_EMOTIONS: Emotion[] = [
   { emoji: '🤗', label: 'ودود',     distractors: ['سعيد', 'هادئ'] },
 ]
 
-function shuffle<T>(arr: T[]): T[] { return [...arr].sort(() => Math.random() - 0.5) }
-
-export default function EmotionMirror({ onComplete, onCancel, difficulty = 1 }: Props) {
+export default function EmotionMirror({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+  const rng             = useRef(createRng(seed ?? Date.now())).current
   const count           = difficulty === 1 ? 8 : difficulty === 2 ? 12 : 16
-  const [questions]     = useState<Emotion[]>(() => shuffle(ALL_EMOTIONS).slice(0, count))
+  const [questions]     = useState<Emotion[]>(() => shuffleWithRng(rng, ALL_EMOTIONS).slice(0, count))
 
   const [idx,      setIdx]      = useState(0)
   const [chosen,   setChosen]   = useState<string | null>(null)
@@ -43,7 +44,7 @@ export default function EmotionMirror({ onComplete, onCancel, difficulty = 1 }: 
   const [startMs]               = useState(Date.now())
 
   const q = questions[idx]
-  const choices = useMemo(() => shuffle([q.label, ...q.distractors]), [idx]) // eslint-disable-line react-hooks/exhaustive-deps
+  const choices = useMemo(() => shuffleWithRng(rng, [q.label, ...q.distractors]), [idx]) // eslint-disable-line react-hooks/exhaustive-deps
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current) }, [])
 

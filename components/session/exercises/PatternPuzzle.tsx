@@ -1,12 +1,14 @@
 'use client'
 import { useState, useMemo, useRef, useEffect } from 'react'
 import type { ExerciseResult } from '@/lib/types'
+import { createRng, shuffleWithRng, type Rng } from '@/lib/seeded-random'
 
 interface Props {
   onComplete: (r: ExerciseResult) => void
   onCancel:   () => void
   studentAge: number
   difficulty?: 1|2|3
+  seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
 }
 
 interface Puzzle {
@@ -47,9 +49,10 @@ const ALL_PUZZLES: Puzzle[] = [
   { sequence:['🐱','🐭','🐰','🦊','🐱','🐭','🐰','?'],  answer:'🦊', choices:['🦊','🐻','🐼'] },
 ]
 
-function shuffle<T>(arr: T[]): T[] { return [...arr].sort(() => Math.random() - 0.5) }
+function shuffle<T>(arr: T[], rng: Rng): T[] { return shuffleWithRng(rng, arr) }
 
-export default function PatternPuzzle({ onComplete, onCancel, difficulty = 1 }: Props) {
+export default function PatternPuzzle({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+  const rng = useRef(createRng(seed ?? Date.now())).current
   const count = difficulty === 1 ? 6 : difficulty === 2 ? 12 : 20
   const puzzles = useMemo(() => ALL_PUZZLES.slice(0, count), [count])
 
@@ -63,7 +66,7 @@ export default function PatternPuzzle({ onComplete, onCancel, difficulty = 1 }: 
   useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current) }, [])
 
   const p = puzzles[idx]
-  const shuffledChoices = useMemo(() => shuffle(p.choices), [idx]) // eslint-disable-line react-hooks/exhaustive-deps
+  const shuffledChoices = useMemo(() => shuffle(p.choices, rng), [idx]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleChoice(c: string) {
     if (chosen) return

@@ -1,12 +1,14 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import type { ExerciseResult } from '@/lib/types'
+import { createRng, shuffleWithRng, type Rng } from '@/lib/seeded-random'
 
 interface Props {
   onComplete: (r: ExerciseResult) => void
   onCancel: () => void
   studentAge: number
   difficulty?: 1|2|3
+  seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
 }
 
 interface Story {
@@ -25,26 +27,23 @@ const ALL_STORIES: Story[] = [
   { title: 'رحلة المطر',    steps: ['☁️ سحاب', '⚡ رعد', '🌧️ مطر', '🌈 قوس قزح'] },
 ]
 
-function shuffle<T>(arr: T[]): T[] {
-  return [...arr].sort(() => Math.random() - 0.5)
-}
-
-function buildQueue(difficulty: 1|2|3): Story[] {
+function buildQueue(difficulty: 1|2|3, rng: Rng): Story[] {
   if (difficulty === 1) {
     const shortSteps = ALL_STORIES.filter(s => s.steps.length <= 4)
-    return shuffle(shortSteps).slice(0, 6)
+    return shuffleWithRng(rng, shortSteps).slice(0, 6)
   } else if (difficulty === 2) {
     const fourStep = ALL_STORIES.filter(s => s.steps.length === 4)
-    return shuffle(fourStep).slice(0, 6)
+    return shuffleWithRng(rng, fourStep).slice(0, 6)
   } else {
-    return shuffle(ALL_STORIES).slice(0, 8)
+    return shuffleWithRng(rng, ALL_STORIES).slice(0, 8)
   }
 }
 
 type SlotItem = string | null
 
-export default function StorySequencing({ onComplete, onCancel, difficulty = 1 }: Props) {
-  const [queue] = useState<Story[]>(() => buildQueue(difficulty))
+export default function StorySequencing({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+  const rng = useRef(createRng(seed ?? Date.now())).current
+  const [queue] = useState<Story[]>(() => buildQueue(difficulty, rng))
   const [storyIdx, setStoryIdx] = useState(0)
   const [slots, setSlots] = useState<SlotItem[]>([])
   const [cards, setCards] = useState<{ text: string; placed: boolean }[]>([])
@@ -64,7 +63,7 @@ export default function StorySequencing({ onComplete, onCancel, difficulty = 1 }
     const story = queue[idx]
     if (!story) return
     setSlots(Array(story.steps.length).fill(null))
-    setCards(shuffle(story.steps).map(t => ({ text: t, placed: false })))
+    setCards(shuffleWithRng(rng, story.steps).map(t => ({ text: t, placed: false })))
     setSelectedCard(null)
     setSelectedSlot(null)
     setChecking(false)

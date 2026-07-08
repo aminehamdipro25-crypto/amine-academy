@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import type { ExerciseResult } from '@/lib/types'
+import { createRng, pickWithRng } from '@/lib/seeded-random'
 
 interface Target { id: number; x: number; y: number; size: number; born: number; emoji: string }
 
@@ -11,9 +12,11 @@ interface Props {
   onCancel: () => void
   studentAge: number
   difficulty?: 1|2|3
+  seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
 }
 
-export default function TapTarget({ onComplete, onCancel, studentAge, difficulty = 1 }: Props) {
+export default function TapTarget({ onComplete, onCancel, studentAge, difficulty = 1, seed }: Props) {
+  const rng = useRef(createRng(seed ?? Date.now())).current
   const duration = 45  // seconds
   const targetLife = difficulty === 1 ? 2500 : difficulty === 2 ? 1800 : 1200
   const spawnRate = difficulty === 1 ? 1800 : difficulty === 2 ? 1200 : 800
@@ -35,12 +38,12 @@ export default function TapTarget({ onComplete, onCancel, studentAge, difficulty
     if (!areaRef.current) return
     const rect = areaRef.current.getBoundingClientRect()
     const margin = targetSize
-    const x = margin + Math.random() * (rect.width - margin * 2)
-    const y = margin + Math.random() * (rect.height - margin * 2)
+    const x = margin + rng() * (rect.width - margin * 2)
+    const y = margin + rng() * (rect.height - margin * 2)
     const id = nextId.current++
     setTargets(t => [...t, {
       id, x, y, size: targetSize, born: Date.now(),
-      emoji: EMOJIS[Math.floor(Math.random() * EMOJIS.length)]
+      emoji: pickWithRng(rng, EMOJIS)
     }])
     setTimeout(() => {
       setTargets(t => {

@@ -1,12 +1,14 @@
 'use client'
 import { useState, useMemo, useRef, useEffect } from 'react'
 import type { ExerciseResult } from '@/lib/types'
+import { createRng, shuffleWithRng, pickWithRng, randIntWithRng } from '@/lib/seeded-random'
 
 interface Props {
   onComplete: (r: ExerciseResult) => void
   onCancel:   () => void
   studentAge: number
   difficulty?: 1|2|3
+  seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
 }
 
 type Dir = 'up'|'down'|'left'|'right'
@@ -14,26 +16,25 @@ const DIR_EMOJI: Record<Dir, string> = { up:'⬆️', down:'⬇️', left:'⬅�
 const DIR_AR:    Record<Dir, string> = { up:'فوق', down:'تحت', left:'يسار', right:'يمين' }
 const DIRS: Dir[] = ['up','down','left','right']
 
-function shuffle<T>(arr: T[]): T[] { return [...arr].sort(() => Math.random() - 0.5) }
-
 interface Q { grid: Dir[][]; row: number; col: number; answer: Dir }
 
-function genGrid(size: number): Q {
+function genGrid(rng: ReturnType<typeof createRng>, size: number): Q {
   const grid: Dir[][] = Array.from({ length: size }, () =>
-    Array.from({ length: size }, () => DIRS[Math.floor(Math.random() * 4)])
+    Array.from({ length: size }, () => pickWithRng(rng, DIRS))
   )
-  const row = Math.floor(Math.random() * size)
-  const col = Math.floor(Math.random() * size)
+  const row = randIntWithRng(rng, 0, size - 1)
+  const col = randIntWithRng(rng, 0, size - 1)
   const answer = grid[row][col]
   return { grid, row, col, answer }
 }
 
-export default function DirectionFollow({ onComplete, onCancel, difficulty = 1 }: Props) {
+export default function DirectionFollow({ onComplete, onCancel, difficulty = 1, seed }: Props) {
   const SIZE  = difficulty === 1 ? 3 : difficulty === 2 ? 4 : 5
   const TOTAL = difficulty === 1 ? 6 : difficulty === 2 ? 8 : 10
+  const rng   = useRef(createRng(seed ?? Date.now())).current
 
   const [idx,     setIdx]     = useState(0)
-  const [q,       setQ]       = useState<Q>(() => genGrid(SIZE))
+  const [q,       setQ]       = useState<Q>(() => genGrid(rng, SIZE))
   const [chosen,  setChosen]  = useState<Dir | null>(null)
   const [correct, setCorrect] = useState(0)
   const [errors,  setErrors]  = useState(0)
@@ -41,7 +42,7 @@ export default function DirectionFollow({ onComplete, onCancel, difficulty = 1 }
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current) }, [])
 
-  const choices = useMemo(() => shuffle([...DIRS]), [idx]) // eslint-disable-line react-hooks/exhaustive-deps
+  const choices = useMemo(() => shuffleWithRng(rng, DIRS), [idx]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleChoice(d: Dir) {
     if (chosen) return
@@ -67,7 +68,7 @@ export default function DirectionFollow({ onComplete, onCancel, difficulty = 1 }
         })
       } else {
         setIdx(next)
-        setQ(genGrid(SIZE))
+        setQ(genGrid(rng, SIZE))
         setChosen(null)
       }
     }, 1300)

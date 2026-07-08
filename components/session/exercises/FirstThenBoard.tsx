@@ -1,6 +1,7 @@
 'use client'
 import { useState, useRef, useEffect } from 'react'
 import type { ExerciseResult } from '@/lib/types'
+import { createRng } from '@/lib/seeded-random'
 
 // ABA First-Then visual schedule — the child completes a short on-screen
 // tapping task (أولاً) then receives an animated reward (ثم).
@@ -28,14 +29,14 @@ interface Props {
   onCancel:   () => void
   studentAge: number
   difficulty?: 1|2|3
+  seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
 }
 
 type Phase = 'intro' | 'task' | 'reward'
 
-function shuffle<T>(arr: T[]): T[] { return [...arr].sort(() => Math.random() - 0.5) }
-
-export default function FirstThenBoard({ onComplete, onCancel, difficulty = 1 }: Props) {
+export default function FirstThenBoard({ onComplete, onCancel, difficulty = 1, seed }: Props) {
   const startRef  = useRef(Date.now())
+  const rng       = useRef(createRng(seed ?? Date.now())).current
   const TOTAL     = difficulty === 1 ? 2 : difficulty === 2 ? 3 : 4
   const [round,   setRound]   = useState(0)
   const [correct, setCorrect] = useState(0)
@@ -66,8 +67,8 @@ export default function FirstThenBoard({ onComplete, onCancel, difficulty = 1 }:
       ids.push(setTimeout(() => {
         spawned.push({
           id: i,
-          x: 15 + Math.random() * 68, // % within container
-          y: 15 + Math.random() * 65,
+          x: 15 + rng() * 68, // % within container
+          y: 15 + rng() * 65,
           collected: false,
         })
         setTargets([...spawned])

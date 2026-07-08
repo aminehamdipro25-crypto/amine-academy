@@ -1,10 +1,17 @@
 'use client'
 import { useState, useRef, useEffect } from 'react'
 import type { ExerciseResult } from '@/lib/types'
+import { createRng, randIntWithRng, type Rng } from '@/lib/seeded-random'
 
 const TOTAL = 16
 
-interface Props { onComplete: (r: ExerciseResult) => void; onCancel: () => void; studentAge: number; difficulty?: 1|2|3 }
+interface Props {
+  onComplete: (r: ExerciseResult) => void
+  onCancel: () => void
+  studentAge: number
+  difficulty?: 1|2|3
+  seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
+}
 
 const COLORS = [
   { nameAr: 'أحمر',    hex: '#ef4444', bg: 'bg-red-500',    shadow: 'shadow-red-500/40'    },
@@ -15,17 +22,18 @@ const COLORS = [
   { nameAr: 'برتقالي', hex: '#f97316', bg: 'bg-orange-500', shadow: 'shadow-orange-500/40' },
 ]
 
-function makeTrial() {
-  const wordIdx = Math.floor(Math.random() * COLORS.length)
+function makeTrial(rng: Rng) {
+  const wordIdx = randIntWithRng(rng, 0, COLORS.length - 1)
   let inkIdx = wordIdx
-  while (inkIdx === wordIdx) inkIdx = Math.floor(Math.random() * COLORS.length)
+  while (inkIdx === wordIdx) inkIdx = randIntWithRng(rng, 0, COLORS.length - 1)
   return { wordIdx, inkIdx }
 }
 
-export default function StroopTest({ onComplete, onCancel, difficulty = 1 }: Props) {
+export default function StroopTest({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+  const rng = useRef(createRng(seed ?? Date.now())).current
   const [started, setStarted]   = useState(false)
   const [trial, setTrial]       = useState(0)
-  const [current, setCurrent]   = useState(() => makeTrial())
+  const [current, setCurrent]   = useState(() => makeTrial(rng))
   const [correct, setCorrect]   = useState(0)
   const [errors, setErrors]     = useState(0)
   const [feedback, setFeedback] = useState<'correct'|'wrong'|null>(null)
@@ -60,7 +68,7 @@ export default function StroopTest({ onComplete, onCancel, difficulty = 1 }: Pro
   function start() {
     startRef.current = Date.now()
     trialStart.current = Date.now()
-    setCurrent(makeTrial())
+    setCurrent(makeTrial(rng))
     setStarted(true)
   }
 
@@ -88,7 +96,7 @@ export default function StroopTest({ onComplete, onCancel, difficulty = 1 }: Pro
         })
       } else {
         setTrial(next)
-        setCurrent(makeTrial())
+        setCurrent(makeTrial(rng))
       }
     }, difficulty === 3 ? 350 : 550)
   }

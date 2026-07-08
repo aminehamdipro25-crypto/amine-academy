@@ -1,12 +1,14 @@
 'use client'
 import { useState, useMemo, useRef, useEffect } from 'react'
 import type { ExerciseResult } from '@/lib/types'
+import { createRng, shuffleWithRng, type Rng } from '@/lib/seeded-random'
 
 interface Props {
   onComplete: (r: ExerciseResult) => void
   onCancel:   () => void
   studentAge: number
   difficulty?: 1|2|3
+  seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
 }
 
 interface Item {
@@ -72,10 +74,8 @@ function makeChangeQ(item: Item, budget: number): Question {
   }
 }
 
-function shuffle<T>(arr: T[]): T[] { return [...arr].sort(() => Math.random() - 0.5) }
-
-function buildQuestions(difficulty: 1|2|3, _studentAge: number): Question[] {
-  const items = shuffle(SHOP_ITEMS)
+function buildQuestions(rng: Rng, difficulty: 1|2|3, _studentAge: number): Question[] {
+  const items = shuffleWithRng(rng, SHOP_ITEMS)
   if (difficulty === 1) {
     // Easy: count coins 1–10
     return [2, 3, 5, 4, 6, 7].map(n => makeCountQ(n))
@@ -118,9 +118,10 @@ function CoinButton({ value, onClick }: { value: number; onClick: () => void }) 
   )
 }
 
-export default function MoneyCounter({ onComplete, onCancel, difficulty = 1, studentAge }: Props) {
+export default function MoneyCounter({ onComplete, onCancel, difficulty = 1, studentAge, seed }: Props) {
+  const rng = useRef(createRng(seed ?? Date.now())).current
   const TOTAL = difficulty === 1 ? 5 : difficulty === 2 ? 6 : 6
-  const qs    = useMemo(() => buildQuestions(difficulty, studentAge).slice(0, TOTAL), [difficulty, studentAge]) // eslint-disable-line
+  const qs    = useMemo(() => buildQuestions(rng, difficulty, studentAge).slice(0, TOTAL), [difficulty, studentAge]) // eslint-disable-line
 
   const [idx,       setIdx]       = useState(0)
   const [collected, setCollected] = useState(0)  // running sum of tapped coins / chosen option
@@ -183,7 +184,7 @@ export default function MoneyCounter({ onComplete, onCancel, difficulty = 1, stu
     const opts = new Set<number>([correct])
     const candidates = [correct - 2, correct - 1, correct + 1, correct + 2, correct + 3]
     for (const c of candidates) { if (c >= 0 && opts.size < 4) opts.add(c) }
-    return shuffle([...opts])
+    return shuffleWithRng(rng, [...opts])
   }, [idx]) // eslint-disable-line
 
   const isCorrectFeedback = phase === 'feedback' &&

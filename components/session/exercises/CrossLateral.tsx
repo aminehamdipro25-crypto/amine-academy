@@ -8,11 +8,13 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import type { ExerciseResult } from '@/lib/types'
 import { useVoiceInstruction } from '@/lib/hooks/useVoiceInstruction'
 import { speakArabic } from '@/lib/speech'
+import { createRng } from '@/lib/seeded-random'
 
 interface Props {
   onComplete: (r: ExerciseResult) => void
   onCancel: () => void
   difficulty?: 1 | 2 | 3
+  seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
 }
 
 const CFG = {
@@ -32,10 +34,11 @@ const HAND_COLORS: Record<'L' | 'R', string> = {
   L: '#3B82F6', // blue  — left  side / right hand
 }
 
-function rng(lo: number, hi: number) { return lo + Math.random() * (hi - lo) }
+function randRange(r: ReturnType<typeof createRng>, lo: number, hi: number) { return lo + r() * (hi - lo) }
 
-export default function CrossLateral({ onComplete, onCancel, difficulty = 1 }: Props) {
+export default function CrossLateral({ onComplete, onCancel, difficulty = 1, seed }: Props) {
   const cfg = CFG[difficulty]
+  const rng = useRef(createRng(seed ?? Date.now())).current
   const { speak, stop } = useVoiceInstruction()
 
   const [phase, setPhase]         = useState<'intro' | 'playing'>('intro')
@@ -79,8 +82,8 @@ export default function CrossLateral({ onComplete, onCancel, difficulty = 1 }: P
 
     // Alternate sides so every tap crosses the midline
     const nextSide: 'L' | 'R' = nextRound % 2 === 0 ? 'R' : 'L'
-    const x = nextSide === 'R' ? rng(60, 88) : rng(12, 40)
-    const y = rng(20, 78)
+    const x = nextSide === 'R' ? randRange(rng, 60, 88) : randRange(rng, 12, 40)
+    const y = randRange(rng, 20, 78)
 
     setRound(nextRound)
     setSide(nextSide)

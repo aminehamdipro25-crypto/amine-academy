@@ -1,12 +1,14 @@
 'use client'
 import { useState, useRef, useEffect } from 'react'
 import type { ExerciseResult } from '@/lib/types'
+import { createRng, pickWithRng, randIntWithRng, randBoolWithRng, type Rng } from '@/lib/seeded-random'
 
 interface Props {
   onComplete: (r: ExerciseResult) => void
   onCancel: () => void
   studentAge: number
   difficulty?: 1|2|3
+  seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
 }
 
 // Each pattern = a 3x3 arrangement of symbols + colors
@@ -18,28 +20,27 @@ const SHAPES = ['●', '■', '▲', '★', '◆', '♥']
 const COLORS = ['#EF4444','#3B82F6','#22C55E','#EAB308','#A855F7','#F97316']
 const BGSIZES: Record<number,number> = { 1: 3, 2: 3, 3: 4 }
 
-function randInt(n: number) { return Math.floor(Math.random() * n) }
-function randColor() { return COLORS[randInt(COLORS.length)] }
-function randShape() { return SHAPES[randInt(SHAPES.length)] }
+function randColor(rng: Rng) { return pickWithRng(rng, COLORS) }
+function randShape(rng: Rng) { return pickWithRng(rng, SHAPES) }
 
-function makePattern(size: number): Cell[] {
-  const density = 0.65 + Math.random() * 0.25
+function makePattern(size: number, rng: Rng): Cell[] {
+  const density = 0.65 + rng() * 0.25
   return Array.from({ length: size * size }, () =>
-    Math.random() < density
-      ? { shape: randShape(), color: randColor() }
+    rng() < density
+      ? { shape: randShape(rng), color: randColor(rng) }
       : null
   )
 }
 
-function mutatePattern(cells: Cell[], mutations: number): Cell[] {
+function mutatePattern(cells: Cell[], mutations: number, rng: Rng): Cell[] {
   const copy = cells.map(c => c ? { ...c } : null)
   for (let i = 0; i < mutations; i++) {
-    const idx = randInt(copy.length)
+    const idx = randIntWithRng(rng, 0, copy.length - 1)
     if (copy[idx]) {
-      if (Math.random() < 0.5) copy[idx]!.color = randColor()
-      else copy[idx]!.shape = randShape()
+      if (randBoolWithRng(rng)) copy[idx]!.color = randColor(rng)
+      else copy[idx]!.shape = randShape(rng)
     } else {
-      copy[idx] = { shape: randShape(), color: randColor() }
+      copy[idx] = { shape: randShape(rng), color: randColor(rng) }
     }
   }
   return copy
@@ -53,10 +54,10 @@ function rotatePattern(cells: Cell[], size: number): Cell[] {
   return result
 }
 
-function shuffleArray<T>(arr: T[]): T[] {
+function shuffleArray<T>(arr: T[], rng: Rng): T[] {
   const a = [...arr]
   for (let i = a.length - 1; i > 0; i--) {
-    const j = randInt(i + 1);
+    const j = Math.floor(rng() * (i + 1));
     [a[i], a[j]] = [a[j], a[i]]
   }
   return a
@@ -68,21 +69,21 @@ interface Trial {
   size: number
 }
 
-function makeTrial(size: number, difficulty: 1|2|3): Trial {
-  const reference = makePattern(size)
+function makeTrial(size: number, difficulty: 1|2|3, rng: Rng): Trial {
+  const reference = makePattern(size, rng)
   const mutations = difficulty === 1 ? 2 : difficulty === 2 ? 1 : 1
-  const wrong1 = mutatePattern(reference, mutations)
-  const wrong2 = mutatePattern(reference, mutations)
+  const wrong1 = mutatePattern(reference, mutations, rng)
+  const wrong2 = mutatePattern(reference, mutations, rng)
   const wrong3 = difficulty === 3
     ? rotatePattern(reference, size)
-    : mutatePattern(reference, mutations + 1)
+    : mutatePattern(reference, mutations + 1, rng)
 
   const choices = shuffleArray([
     { cells: reference.map(c => c ? { ...c } : null), correct: true },
     { cells: wrong1, correct: false },
     { cells: wrong2, correct: false },
     { cells: wrong3, correct: false },
-  ])
+  ], rng)
   return { reference, choices, size }
 }
 
@@ -117,13 +118,14 @@ function PatternGrid({ cells, size, highlight = false }: { cells: Cell[]; size: 
   )
 }
 
-export default function PatternMatch({ onComplete, onCancel, studentAge, difficulty = 1 }: Props) {
+export default function PatternMatch({ onComplete, onCancel, studentAge, difficulty = 1, seed }: Props) {
+  const rng    = useRef(createRng(seed ?? Date.now())).current
   const size   = BGSIZES[difficulty] || 3
   const ROUNDS = difficulty === 1 ? 4 : difficulty === 2 ? 5 : 6
 
   const [started, setStarted]    = useState(false)
   const [round, setRound]        = useState(0)
-  const [trial, setTrial]        = useState<Trial>(() => makeTrial(size, difficulty))
+  const [trial, setTrial]        = useState<Trial>(() => makeTrial(size, difficulty, rng))
   const [selected, setSelected]  = useState<number | null>(null)
   const [feedback, setFeedback]  = useState<'correct' | 'wrong' | null>(null)
   const [scores, setScores]      = useState<number[]>([])
@@ -158,7 +160,7 @@ export default function PatternMatch({ onComplete, onCancel, studentAge, difficu
         })
       } else {
         setRound(r => r + 1)
-        setTrial(makeTrial(size, difficulty))
+        setTrial(makeTrial(size, difficulty, rng))
       }
     }, 700)
   }

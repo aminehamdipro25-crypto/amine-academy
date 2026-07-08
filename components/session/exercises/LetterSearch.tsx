@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import type { ExerciseResult } from '@/lib/types'
 import { speakArabic, cancelSpeech } from '@/lib/speech'
+import { createRng, shuffleWithRng, pickWithRng, randBoolWithRng, type Rng } from '@/lib/seeded-random'
 
 // ── Clinically-relevant Arabic confusion pairs ──────────────────────────────
 // Letters that children with dyslexia / visual-processing difficulties confuse
@@ -39,22 +40,14 @@ interface Props {
   onCancel:   () => void
   studentAge: number
   difficulty?: 1|2|3
+  seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
-function shuffle<T>(arr: T[]): T[] {
-  const a = [...arr]
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[a[i], a[j]] = [a[j], a[i]]
-  }
-  return a
-}
-
-function buildGrid(targetCount: number): { cells: Cell[]; target: string } {
-  const group  = CONFUSION_GROUPS[Math.floor(Math.random() * CONFUSION_GROUPS.length)]
-  const target = group[Math.floor(Math.random() * group.length)]
+function buildGrid(rng: Rng, targetCount: number): { cells: Cell[]; target: string } {
+  const group  = pickWithRng(rng, CONFUSION_GROUPS)
+  const target = pickWithRng(rng, group)
   const sibs   = group.filter(l => l !== target)
   const others = ALL_LETTERS.filter(l => l !== target)
 
@@ -64,12 +57,12 @@ function buildGrid(targetCount: number): { cells: Cell[]; target: string } {
   // Fill remaining cells: ~40% same-group distractors (clinically harder), rest random pool
   while (cells.length < TOTAL) {
     const letter =
-      sibs.length > 0 && Math.random() < 0.40
-        ? sibs[Math.floor(Math.random() * sibs.length)]
-        : others[Math.floor(Math.random() * others.length)]
+      sibs.length > 0 && randBoolWithRng(rng, 0.40)
+        ? pickWithRng(rng, sibs)
+        : pickWithRng(rng, others)
     cells.push({ letter, target: false })
   }
-  return { cells: shuffle(cells), target }
+  return { cells: shuffleWithRng(rng, cells), target }
 }
 
 // ── Embedded keyframe animations ────────────────────────────────────────────
@@ -103,7 +96,8 @@ const BG = 'linear-gradient(135deg, #EFF6FF 0%, #E0E7FF 100%)'
 
 // ── Component ────────────────────────────────────────────────────────────────
 
-export default function LetterSearch({ onComplete, onCancel, difficulty = 1 }: Props) {
+export default function LetterSearch({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+  const rng = useRef(createRng(seed ?? Date.now())).current
   const cfg = CONFIGS[difficulty]
 
   const [phase,    setPhase]    = useState<Phase>('intro')
@@ -178,7 +172,7 @@ export default function LetterSearch({ onComplete, onCancel, difficulty = 1 }: P
         return
       }
       // Inline next-round setup to avoid stale-closure from startRound dep
-      const { cells: nc, target: nt } = buildGrid(cfg.targets)
+      const { cells: nc, target: nt } = buildGrid(rng, cfg.targets)
       setCells(nc)
       setTarget(nt)
       setFound(new Set())
@@ -190,7 +184,7 @@ export default function LetterSearch({ onComplete, onCancel, difficulty = 1 }: P
       roundDone.current = false
       setPhase('playing')
     }, 1500)
-  }, [round, totFound, totErr, cfg.rounds, cfg.targets, cfg.timeLimit, finish])
+  }, [round, totFound, totErr, cfg.rounds, cfg.targets, cfg.timeLimit, finish, rng])
 
   // ── countdown timer ───────────────────────────────────────────────────────
   useEffect(() => {
@@ -221,7 +215,7 @@ export default function LetterSearch({ onComplete, onCancel, difficulty = 1 }: P
 
   // ── start game ────────────────────────────────────────────────────────────
   function startGame() {
-    const { cells: nc, target: nt } = buildGrid(cfg.targets)
+    const { cells: nc, target: nt } = buildGrid(rng, cfg.targets)
     startRef.current = Date.now()
     setCells(nc); setTarget(nt)
     setFound(new Set()); setRErr(0)

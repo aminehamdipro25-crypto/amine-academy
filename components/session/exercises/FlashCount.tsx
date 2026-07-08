@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import type { ExerciseResult } from '@/lib/types'
+import { createRng, pickWithRng, randIntWithRng, randBoolWithRng } from '@/lib/seeded-random'
 
 const DISPLAY_EMOJIS = ['⭐', '🎯', '🦋', '🌟', '🍎', '🐬']
 const TOTAL_ROUNDS = 6
@@ -16,18 +17,19 @@ interface Props {
   onCancel: () => void
   studentAge: number
   difficulty?: 1 | 2 | 3
+  seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
 }
 
 type Phase = 'intro' | 'flash' | 'answer' | 'feedback' | 'result'
 
-function randomPositions(count: number): EmojiPos[] {
+function randomPositions(rng: ReturnType<typeof createRng>, count: number): EmojiPos[] {
   const positions: EmojiPos[] = []
   const MIN_DIST = 18  // minimum % distance between centers
   let attempts = 0
   while (positions.length < count && attempts < 500) {
     attempts++
-    const x = 8 + Math.random() * 76
-    const y = 8 + Math.random() * 72
+    const x = 8 + rng() * 76
+    const y = 8 + rng() * 72
     const tooClose = positions.some(p =>
       Math.hypot(p.x - x, p.y - y) < MIN_DIST
     )
@@ -36,8 +38,8 @@ function randomPositions(count: number): EmojiPos[] {
   // Fallback: just place them if spacing failed
   while (positions.length < count) {
     positions.push({
-      x: 10 + Math.random() * 78,
-      y: 10 + Math.random() * 78,
+      x: 10 + rng() * 78,
+      y: 10 + rng() * 78,
     })
   }
   return positions
@@ -49,17 +51,18 @@ function getCountRange(difficulty: 1 | 2 | 3): [number, number] {
   return [5, 9]
 }
 
-function buildOptions(correct: number): number[] {
+function buildOptions(rng: ReturnType<typeof createRng>, correct: number): number[] {
   const opts = new Set<number>([correct])
   while (opts.size < 3) {
-    const delta = Math.floor(Math.random() * 3) + 1
-    const candidate = Math.random() < 0.5 ? correct + delta : correct - delta
+    const delta = randIntWithRng(rng, 1, 3)
+    const candidate = randBoolWithRng(rng) ? correct + delta : correct - delta
     if (candidate >= 1 && candidate !== correct) opts.add(candidate)
   }
   return Array.from(opts).sort((a, b) => a - b)
 }
 
-export default function FlashCount({ onComplete, onCancel, difficulty = 1 }: Props) {
+export default function FlashCount({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+  const rng = useRef(createRng(seed ?? Date.now())).current
   const [minCount, maxCount] = getCountRange(difficulty)
 
   const [phase, setPhase] = useState<Phase>('intro')
@@ -105,10 +108,10 @@ export default function FlashCount({ onComplete, onCancel, difficulty = 1 }: Pro
   }, [difficulty, minCount, maxCount, onComplete])
 
   const startRound = useCallback((roundNum: number) => {
-    const count = minCount + Math.floor(Math.random() * (maxCount - minCount + 1))
-    const pos = randomPositions(count)
-    const e = DISPLAY_EMOJIS[Math.floor(Math.random() * DISPLAY_EMOJIS.length)]
-    const opts = buildOptions(count)
+    const count = randIntWithRng(rng, minCount, maxCount)
+    const pos = randomPositions(rng, count)
+    const e = pickWithRng(rng, DISPLAY_EMOJIS)
+    const opts = buildOptions(rng, count)
     setCurrentCount(count)
     setPositions(pos)
     setEmoji(e)
@@ -121,7 +124,7 @@ export default function FlashCount({ onComplete, onCancel, difficulty = 1 }: Pro
     timerRef.current = setTimeout(() => {
       setPhase('answer')
     }, FLASH_DURATION_MS)
-  }, [minCount, maxCount])
+  }, [minCount, maxCount, rng])
 
   function handleStart() {
     startRef.current = Date.now()

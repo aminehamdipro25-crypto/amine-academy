@@ -1,6 +1,7 @@
 'use client'
 import { useState, useRef, useEffect } from 'react'
 import type { ExerciseResult } from '@/lib/types'
+import { createRng, shuffleWithRng, pickWithRng } from '@/lib/seeded-random'
 
 const TOTAL = 14
 
@@ -9,6 +10,7 @@ interface Props {
   onCancel: () => void
   studentAge: number
   difficulty?: 1|2|3
+  seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
 }
 
 interface Emotion {
@@ -32,25 +34,22 @@ const ADVANCED: Emotion[] = [
   { emoji: '🥰', nameAr: 'محب',    key: 'loving'    },
 ]
 
-function shuffle<T>(arr: T[]): T[] {
-  return [...arr].sort(() => Math.random() - 0.5)
-}
-
-function makeTrial(emotions: Emotion[], difficulty: 1|2|3) {
-  const target = emotions[Math.floor(Math.random() * emotions.length)]
+function makeTrial(rng: ReturnType<typeof createRng>, emotions: Emotion[], difficulty: 1|2|3) {
+  const target = pickWithRng(rng, emotions)
   const pool   = difficulty === 1 ? BASIC : ADVANCED
   // Pick 3 distractors (different from target)
-  const distractors = shuffle(pool.filter(e => e.key !== target.key)).slice(0, 3)
-  const choices = shuffle([target, ...distractors])
+  const distractors = shuffleWithRng(rng, pool.filter(e => e.key !== target.key)).slice(0, 3)
+  const choices = shuffleWithRng(rng, [target, ...distractors])
   return { target, choices }
 }
 
-export default function EmotionCards({ onComplete, onCancel, studentAge, difficulty = 1 }: Props) {
+export default function EmotionCards({ onComplete, onCancel, studentAge, difficulty = 1, seed }: Props) {
+  const rng = useRef(createRng(seed ?? Date.now())).current
   const emotions = studentAge <= 9 || difficulty === 1 ? BASIC : ADVANCED
 
   const [started, setStarted]   = useState(false)
   const [trial, setTrial]       = useState(0)
-  const [current, setCurrent]   = useState(() => makeTrial(emotions, difficulty))
+  const [current, setCurrent]   = useState(() => makeTrial(rng, emotions, difficulty))
   const [feedback, setFeedback] = useState<'correct'|'wrong'|null>(null)
   const [result, setResult]     = useState<ExerciseResult | null>(null)
 
@@ -63,7 +62,7 @@ export default function EmotionCards({ onComplete, onCancel, studentAge, difficu
 
   function start() {
     startRef.current = Date.now()
-    setCurrent(makeTrial(emotions, difficulty))
+    setCurrent(makeTrial(rng, emotions, difficulty))
     setStarted(true)
   }
 
@@ -91,7 +90,7 @@ export default function EmotionCards({ onComplete, onCancel, studentAge, difficu
         })
       } else {
         setTrial(next)
-        setCurrent(makeTrial(emotions, difficulty))
+        setCurrent(makeTrial(rng, emotions, difficulty))
       }
     }, 600)
   }

@@ -1,12 +1,14 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import type { ExerciseResult } from '@/lib/types'
+import { createRng, pickWithRng, type Rng } from '@/lib/seeded-random'
 
 interface Props {
   onComplete: (r: ExerciseResult) => void
   onCancel: () => void
   studentAge: number
   difficulty?: 1|2|3
+  seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
 }
 
 const REWARD_EMOJIS = ['🌟', '⭐', '🏆', '🎯', '🎈']
@@ -24,12 +26,13 @@ function getDelayRange(difficulty: 1|2|3): [number, number] {
   return [2000, 4000]
 }
 
-function randomDelay(difficulty: 1|2|3): number {
+function randomDelay(rng: Rng, difficulty: 1|2|3): number {
   const [min, max] = getDelayRange(difficulty)
-  return min + Math.random() * (max - min)
+  return min + rng() * (max - min)
 }
 
-export default function WaitingGame({ onComplete, onCancel, difficulty = 1 }: Props) {
+export default function WaitingGame({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+  const rng = useRef(createRng(seed ?? Date.now())).current
   const [round, setRound] = useState(1)
   const [phase, setPhase] = useState<RoundPhase>('waiting')
   const [opacity, setOpacity] = useState(0)
@@ -38,7 +41,7 @@ export default function WaitingGame({ onComplete, onCancel, difficulty = 1 }: Pr
   const [earlyTaps, setEarlyTaps] = useState(0)
   const [misses, setMisses] = useState(0)
   const [emoji] = useState<string[]>(() =>
-    Array.from({ length: TOTAL_ROUNDS }, () => REWARD_EMOJIS[Math.floor(Math.random() * REWARD_EMOJIS.length)])
+    Array.from({ length: TOTAL_ROUNDS }, () => pickWithRng(rng, REWARD_EMOJIS))
   )
 
   const startRef = useRef(Date.now())
@@ -121,7 +124,7 @@ export default function WaitingGame({ onComplete, onCancel, difficulty = 1 }: Pr
   // Start each round's delay countdown
   useEffect(() => {
     if (phase === 'waiting') {
-      const delay = randomDelay(difficulty)
+      const delay = randomDelay(rng, difficulty)
       delayTimerRef.current = setTimeout(() => {
         startFade(round, hits, earlyTaps, misses)
       }, delay)

@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import type { ExerciseResult } from '@/lib/types'
+import { createRng, shuffleWithRng } from '@/lib/seeded-random'
 
 const WORD_BANK = [
   'شمس','قمر','نجم','بحر','جبل','شجرة','زهرة','طائر','سمكة','فيل',
@@ -17,11 +18,13 @@ interface Props {
   onCancel: () => void
   studentAge: number
   difficulty?: 1|2|3
+  seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
 }
 
 interface ResultData { hits: number; falseAlarms: number; acc: number; dur: number }
 
-export default function WordRecall({ onComplete, onCancel, studentAge: _studentAge, difficulty = 1 }: Props) {
+export default function WordRecall({ onComplete, onCancel, studentAge: _studentAge, difficulty = 1, seed }: Props) {
+  const rng = useRef(createRng(seed ?? Date.now())).current
   const wordCount   = difficulty === 1 ? 4 : difficulty === 2 ? 6 : 8
   const displayTime = difficulty === 1 ? 10 : difficulty === 2 ? 8 : 6
   const startRef    = useRef(Date.now())
@@ -36,10 +39,10 @@ export default function WordRecall({ onComplete, onCancel, studentAge: _studentA
   useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current) }, [])
 
   useEffect(() => {
-    const shuffled = [...WORD_BANK].sort(() => Math.random() - 0.5)
+    const shuffled = shuffleWithRng(rng, WORD_BANK)
     const targets = shuffled.slice(0, wordCount)
     const distractors = shuffled.slice(wordCount, wordCount + wordCount)
-    const choices = [...targets, ...distractors].sort(() => Math.random() - 0.5)
+    const choices = shuffleWithRng(rng, [...targets, ...distractors])
     setTargetWords(targets)
     setAllChoices(choices)
     setCountdown(displayTime)

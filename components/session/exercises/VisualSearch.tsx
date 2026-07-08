@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import type { ExerciseResult } from '@/lib/types'
+import { createRng, shuffleWithRng, randIntWithRng, type Rng } from '@/lib/seeded-random'
 
 const EMOJI_POOL = [
   '🌟','🍎','🐶','🚗','🌈','🎯','🐬','🦋','🍓','🎪',
@@ -16,6 +17,7 @@ interface Props {
   onCancel: () => void
   studentAge: number
   difficulty?: 1 | 2 | 3
+  seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
 }
 
 interface RoundData {
@@ -26,11 +28,11 @@ interface RoundData {
 
 type Phase = 'playing' | 'feedback' | 'done'
 
-function buildRound(gridSize: number): RoundData {
+function buildRound(rng: Rng, gridSize: number): RoundData {
   const pool = [...EMOJI_POOL]
-  const shuffled = pool.sort(() => Math.random() - 0.5)
+  const shuffled = shuffleWithRng(rng, pool)
   const total = gridSize * gridSize
-  const targetIndex = Math.floor(Math.random() * total)
+  const targetIndex = randIntWithRng(rng, 0, total - 1)
   const target = shuffled[0]
   const distractors = shuffled.slice(1, total)
   // Ensure distractors fill the grid — if not enough unique, repeat with different ones
@@ -45,11 +47,12 @@ function buildRound(gridSize: number): RoundData {
   return { target, grid, targetIndex }
 }
 
-export default function VisualSearch({ onComplete, onCancel, difficulty = 1 }: Props) {
+export default function VisualSearch({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+  const rng = useRef(createRng(seed ?? Date.now())).current
   const gridSize = difficulty === 1 ? 3 : difficulty === 2 ? 4 : 5
 
   const [round, setRound] = useState(0)
-  const [roundData, setRoundData] = useState<RoundData>(() => buildRound(gridSize))
+  const [roundData, setRoundData] = useState<RoundData>(() => buildRound(rng, gridSize))
   const [errors, setErrors] = useState(0)
   const [roundErrors, setRoundErrors] = useState(0)
   const [phase, setPhase] = useState<Phase>('playing')
@@ -110,7 +113,7 @@ export default function VisualSearch({ onComplete, onCancel, difficulty = 1 }: P
           finishGame(errors + roundErrors, newTimes)
         } else {
           setRound(nextRound)
-          setRoundData(buildRound(gridSize))
+          setRoundData(buildRound(rng, gridSize))
           setRoundErrors(0)
           setRoundStart(Date.now())
           setPhase('playing')

@@ -1,17 +1,20 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import type { ExerciseResult } from '@/lib/types'
+import { createRng } from '@/lib/seeded-random'
 
 interface Props {
   onComplete: (r: ExerciseResult) => void
   onCancel:   () => void
   studentAge: number
   difficulty?: 1|2|3
+  seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
 }
 
 interface Dot { x: number; y: number; dx: number; dy: number; isTarget: boolean; id: number }
 
-export default function TargetTracking({ onComplete, onCancel, difficulty = 1 }: Props) {
+export default function TargetTracking({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+  const rng = useRef(createRng(seed ?? Date.now())).current
   const DURATION = difficulty === 1 ? 20 : difficulty === 2 ? 30 : 40
   const SPEED    = difficulty === 1 ? 1.5 : difficulty === 2 ? 2 : 2.8
   const W = 340, H = 300
@@ -33,10 +36,10 @@ export default function TargetTracking({ onComplete, onCancel, difficulty = 1 }:
     const count = difficulty === 1 ? 4 : difficulty === 2 ? 6 : 8
     const ds: Dot[] = Array.from({ length: count }, (_, i) => ({
       id: i, isTarget: i === 0,
-      x: 40 + Math.random() * (W - 80),
-      y: 40 + Math.random() * (H - 80),
-      dx: (Math.random() - 0.5) * SPEED * 2,
-      dy: (Math.random() - 0.5) * SPEED * 2,
+      x: 40 + rng() * (W - 80),
+      y: 40 + rng() * (H - 80),
+      dx: (rng() - 0.5) * SPEED * 2,
+      dy: (rng() - 0.5) * SPEED * 2,
     }))
     dotsRef.current = ds
     setDots(ds)

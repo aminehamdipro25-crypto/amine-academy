@@ -1,15 +1,18 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import type { ExerciseResult } from '@/lib/types'
+import { createRng, randIntWithRng } from '@/lib/seeded-random'
 
 interface Props {
   onComplete: (r: ExerciseResult) => void
   onCancel:   () => void
   studentAge: number
   difficulty?: 1|2|3
+  seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
 }
 
-export default function SpanExtension({ onComplete, onCancel, difficulty = 1 }: Props) {
+export default function SpanExtension({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+  const rng = useRef(createRng(seed ?? Date.now())).current
   const START_LEN  = difficulty === 1 ? 2 : difficulty === 2 ? 3 : 4
   const ROUNDS     = 5
   const SHOW_MS    = 800  // ms per digit
@@ -26,8 +29,8 @@ export default function SpanExtension({ onComplete, onCancel, difficulty = 1 }: 
 
 
   const genSeq = useCallback((len: number) =>
-    Array.from({ length: len }, () => Math.floor(Math.random() * 9) + 1)
-  , [])
+    Array.from({ length: len }, () => randIntWithRng(rng, 1, 9))
+  , [rng])
 
   const timerIds = useRef<ReturnType<typeof setTimeout>[]>([])
   const clearAll = () => { timerIds.current.forEach(clearTimeout); timerIds.current = [] }

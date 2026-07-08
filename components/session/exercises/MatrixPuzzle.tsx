@@ -1,12 +1,14 @@
 'use client'
 import { useState, useMemo, useRef, useEffect } from 'react'
 import type { ExerciseResult } from '@/lib/types'
+import { createRng, shuffleWithRng } from '@/lib/seeded-random'
 
 interface Props {
   onComplete: (r: ExerciseResult) => void
   onCancel:   () => void
   studentAge: number
   difficulty?: 1|2|3
+  seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
 }
 
 // 3×3 grid — the last cell (index 8) is always "?" and holds the answer
@@ -15,8 +17,6 @@ interface MP {
   answer:  string
   choices: [string,string,string,string]
 }
-
-function shuffle<T>(arr: T[]): T[] { return [...arr].sort(() => Math.random() - 0.5) }
 
 // ── EASY: repeating columns (same emoji in each column) ───────────────────────
 const EASY: MP[] = [
@@ -54,12 +54,13 @@ const HARD: MP[] = [
   { grid:['🎯','🎲','🎸', '🎲','🎸','🎯', '🎸','🎯','?'], answer:'🎲', choices:['🎲','🎯','🎸','🎮'] },
 ]
 
-export default function MatrixPuzzle({ onComplete, onCancel, difficulty = 1, studentAge }: Props) {
+export default function MatrixPuzzle({ onComplete, onCancel, difficulty = 1, studentAge, seed }: Props) {
+  const rng = useRef(createRng(seed ?? Date.now())).current
   const puzzles = useMemo(() => {
-    if (difficulty === 1) return shuffle(EASY)
-    if (difficulty === 2) return shuffle([...EASY.slice(0, 4), ...MEDIUM])
-    return shuffle([...MEDIUM, ...HARD])
-  }, [difficulty])
+    if (difficulty === 1) return shuffleWithRng(rng, EASY)
+    if (difficulty === 2) return shuffleWithRng(rng, [...EASY.slice(0, 4), ...MEDIUM])
+    return shuffleWithRng(rng, [...MEDIUM, ...HARD])
+  }, [difficulty, rng])
 
   const count = difficulty === 1 ? 6 : difficulty === 2 ? 10 : 14
   const subset = puzzles.slice(0, count)
@@ -73,7 +74,7 @@ export default function MatrixPuzzle({ onComplete, onCancel, difficulty = 1, stu
   useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current) }, [])
 
   const p = subset[idx]
-  const choices = useMemo(() => shuffle([...p.choices]), [idx]) // eslint-disable-line
+  const choices = useMemo(() => shuffleWithRng(rng, p.choices), [idx]) // eslint-disable-line
 
   function handleChoice(c: string) {
     if (chosen) return

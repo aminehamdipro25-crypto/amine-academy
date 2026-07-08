@@ -1,17 +1,17 @@
 'use client'
 import { useState, useMemo, useRef, useEffect } from 'react'
 import type { ExerciseResult } from '@/lib/types'
+import { createRng, shuffleWithRng } from '@/lib/seeded-random'
 
 interface Props {
   onComplete: (r: ExerciseResult) => void
   onCancel:   () => void
   studentAge: number
   difficulty?: 1|2|3
+  seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
 }
 
 interface Scene { name:string; emoji:string; svg:string; cols:number; rows:number }
-
-function shuffle<T>(arr: T[]): T[] { return [...arr].sort(() => Math.random() - 0.5) }
 
 const S: Record<string,string> = {
 rainbow:`<svg viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg"><rect width="300" height="300" fill="#BFDBFE"/><rect x="0" y="240" width="300" height="60" fill="#4ADE80"/><path d="M10,260 Q150,30 290,260" fill="none" stroke="#DC2626" stroke-width="22"/><path d="M23,265 Q150,55 277,265" fill="none" stroke="#EA580C" stroke-width="19"/><path d="M36,270 Q150,80 264,270" fill="none" stroke="#CA8A04" stroke-width="16"/><path d="M49,275 Q150,105 251,275" fill="none" stroke="#16A34A" stroke-width="14"/><path d="M62,280 Q150,125 238,280" fill="none" stroke="#2563EB" stroke-width="12"/><path d="M75,285 Q150,145 225,285" fill="none" stroke="#7C3AED" stroke-width="10"/><ellipse cx="60" cy="60" rx="38" ry="24" fill="white"/><ellipse cx="240" cy="70" rx="42" ry="26" fill="white"/><ellipse cx="150" cy="40" rx="28" ry="18" fill="white"/></svg>`,
@@ -157,12 +157,13 @@ function SlotGhost({ slotIdx, cols, rows, cell, active, onClick }: {
 
 // ── Main export ──────────────────────────────────────────────────────────────
 
-export default function JigsawPuzzle({ onComplete, onCancel, difficulty=1, studentAge }: Props) {
+export default function JigsawPuzzle({ onComplete, onCancel, difficulty=1, studentAge, seed }: Props) {
+  const rng = useRef(createRng(seed ?? Date.now())).current
   const scenes = useMemo(() => {
-    if (difficulty===1) return shuffle(EASY_SCENES)
-    if (difficulty===2) return shuffle(MEDIUM_SCENES)
-    return shuffle(HARD_SCENES)
-  }, [difficulty])
+    if (difficulty===1) return shuffleWithRng(rng, EASY_SCENES)
+    if (difficulty===2) return shuffleWithRng(rng, MEDIUM_SCENES)
+    return shuffleWithRng(rng, HARD_SCENES)
+  }, [difficulty, rng])
 
   const COUNT  = difficulty===1 ? (studentAge<8 ? 3 : 5) : difficulty===2 ? 4 : 5
   const subset = scenes.slice(0, COUNT)
@@ -182,7 +183,7 @@ export default function JigsawPuzzle({ onComplete, onCancel, difficulty=1, stude
 
   useEffect(() => {
     const ids = Array.from({ length: TOTAL }, (_, i) => i)
-    setScrambled(shuffle(ids))
+    setScrambled(shuffleWithRng(rng, ids))
     setPlaced(Array(TOTAL).fill(null))
     setSelected(null)
     setPhase('puzzle')

@@ -47,6 +47,12 @@ export default function AppointmentsPage() {
   const [loadingSlots, setLoadingSlots] = useState(false)
   const [cancellingId, setCancellingId] = useState<string | null>(null)
   const [cancelError, setCancelError] = useState('')
+  // Whether the specialist has ACTUALLY opened each appointment's session
+  // right now — the scheduled-time window alone ("isSessionLive") only means
+  // "join button should be enabled", not "someone is really there"; showing
+  // "الجلسة جارية الآن" from the clock alone reads as a lie when the
+  // specialist hasn't started yet. Confirmed via a live presence heartbeat.
+  const [presence, setPresence] = useState<Record<string, boolean>>({})
 
   useEffect(() => {
     Promise.all([
@@ -127,6 +133,33 @@ export default function AppointmentsPage() {
   const upcoming = appointments.filter(a => a.status === 'scheduled')
   const past = appointments.filter(a => a.status !== 'scheduled')
 
+  // Poll real presence only for appointments whose scheduled-time window
+  // says "maybe live" — no point checking ones that clearly haven't started
+  // or already ended today.
+  useEffect(() => {
+    const candidates = upcoming.filter(a => isSessionLive(a.date, a.timeSlot))
+    if (candidates.length === 0) return
+    let stopped = false
+    const check = async () => {
+      const results = await Promise.all(
+        candidates.map(async a => {
+          try {
+            const r = await fetch(`/api/sessions/${a.id}/presence`)
+            const d = await r.json()
+            return [a.id, !!d?.present] as const
+          } catch {
+            return [a.id, false] as const
+          }
+        })
+      )
+      if (!stopped) setPresence(prev => ({ ...prev, ...Object.fromEntries(results) }))
+    }
+    check()
+    const iv = setInterval(check, 10_000)
+    return () => { stopped = true; clearInterval(iv) }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appointments])
+
   if (loading) return (
     <div className="flex items-center justify-center py-20">
       <div className="text-4xl animate-pulse">📅</div>
@@ -196,7 +229,12 @@ export default function AppointmentsPage() {
         ) : (
           <div className="space-y-3">
             {upcoming.map(appt => {
-              const live = isSessionLive(appt.date, appt.timeSlot)
+              // Require BOTH the scheduled-time window AND a confirmed
+              // presence heartbeat from the specialist's own session page —
+              // the clock alone previously showed "live" purely because the
+              // time was near, even when no one had actually opened the
+              // session, which read as a false/broken status to parents.
+              const live = isSessionLive(appt.date, appt.timeSlot) && !!presence[appt.id]
               return (
                 <div
                   key={appt.id}

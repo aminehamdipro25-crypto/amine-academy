@@ -1503,6 +1503,21 @@ ${notes ? `
   }, [exerciseActive, showWhiteboard])
 
 
+  // Presence heartbeat — lets the parent portal know the specialist
+  // genuinely has this session open right now (not just that the scheduled
+  // time window is near), so "الجلسة جارية الآن" reflects reality instead of
+  // a pure clock guess. Runs regardless of running/exercise state — just
+  // having the tab open counts as "present".
+  useEffect(() => {
+    if (!id) return
+    const beat = () => {
+      fetch(`/api/sessions/${id}/presence`, { method: 'POST' }).catch(() => {})
+    }
+    beat()
+    const iv = setInterval(beat, 10_000)
+    return () => clearInterval(iv)
+  }, [id])
+
   // Poll kid status — specialist sees when kid receives / finishes an exercise,
   // and the score/accuracy/errors once they complete it.
   type KidStatus = { exerciseId: string; status: 'active' | 'done'; ts: number; score?: number; accuracy?: number; errors?: number } | null

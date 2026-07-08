@@ -2,26 +2,35 @@
 
 const isDev = process.env.NODE_ENV === 'development'
 
+// Daily.co's SDK does NOT confine itself to *.daily.co — the actual call
+// engine bundle (call-machine-object-bundle.js) loads from *.dailywebrtc.net,
+// a completely separate domain. Every prior video fix (room name, tokens,
+// destroy-before-create) was masking this: the SDK's own bundle fetch was
+// being blocked by our CSP the entire time ("Failed to load call object
+// bundle... TypeError: Failed to fetch" is what a CSP-blocked fetch looks
+// like from inside Daily's SDK — it doesn't surface as an explicit CSP
+// console error in every browser). Allow it everywhere Daily is allowed.
+const DAILY_ORIGINS = 'https://*.daily.co https://*.dailywebrtc.net'
+
 function buildCSP(frameSrc) {
   return [
     "default-src 'self'",
-    // Scripts: self + Next.js hydration inline scripts + Daily.co call machine
-    // (daily-js call-object mode loads its bundle from c.daily.co) + wasm for
-    // Daily's audio processing
-    `script-src 'self' ${isDev ? "'unsafe-eval'" : ''} 'unsafe-inline' 'wasm-unsafe-eval' https://*.daily.co`,
+    // Scripts: self + Next.js hydration inline scripts + Daily.co's call
+    // machine bundle + wasm for Daily's audio processing
+    `script-src 'self' ${isDev ? "'unsafe-eval'" : ''} 'unsafe-inline' 'wasm-unsafe-eval' ${DAILY_ORIGINS}`,
     // Styles: self + inline (Tailwind generates inline styles) + Google Fonts
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     // Fonts: self + Google Fonts
     "font-src 'self' https://fonts.gstatic.com",
     // Images: self + data URIs (for SVG charts) + Cloudinary
     "img-src 'self' data: blob: https://res.cloudinary.com https://lh3.googleusercontent.com",
-    // Connect: self + Upstash Redis + Daily.co signaling
-    "connect-src 'self' https://*.upstash.io https://*.daily.co wss://*.daily.co",
+    // Connect: self + Upstash Redis + Daily.co signaling/call-engine fetches
+    `connect-src 'self' https://*.upstash.io ${DAILY_ORIGINS} wss://*.daily.co wss://*.dailywebrtc.net`,
     `frame-src ${frameSrc}`,
     // Media: self
     "media-src 'self' blob:",
-    // Workers: self + blob (for Next.js SW)
-    "worker-src 'self' blob:",
+    // Workers: self + blob (for Next.js SW) + Daily's own workers
+    `worker-src 'self' blob: ${DAILY_ORIGINS}`,
     // Object: none (no Flash, no plugins)
     "object-src 'none'",
     // Base URI: self
@@ -36,7 +45,7 @@ function buildCSP(frameSrc) {
 }
 
 // General pages: only Daily.co + YouTube embeds are ever needed
-const ContentSecurityPolicy = buildCSP("'self' https://*.daily.co https://www.youtube.com https://youtube.com")
+const ContentSecurityPolicy = buildCSP(`'self' ${DAILY_ORIGINS} https://www.youtube.com https://youtube.com`)
 
 // Session pages: the specialist can share ANY https:// URL via the in-session
 // "محتوى" feature (server-validated to http(s) only, dashboard-auth gated —

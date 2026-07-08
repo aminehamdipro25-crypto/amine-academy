@@ -3,6 +3,7 @@ import { getAllAppointments, getParent } from '@/lib/db'
 import { sendEmail, appointmentReminderEmail } from '@/lib/mailer'
 import { redis } from '@/lib/redis'
 import { tg, tgEsc } from '@/lib/telegram'
+import { safeCompare } from '@/lib/password'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -14,7 +15,8 @@ export const runtime = 'nodejs'
 export async function GET(req: Request) {
   const secret = process.env.CRON_SECRET
   if (!secret) return NextResponse.json({ error: 'not configured' }, { status: 503 })
-  if (req.headers.get('authorization') !== `Bearer ${secret}`) {
+  const provided = req.headers.get('authorization') ?? ''
+  if (!safeCompare(provided, `Bearer ${secret}`)) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   }
 

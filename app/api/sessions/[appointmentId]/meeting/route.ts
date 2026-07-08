@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAppointment } from '@/lib/db'
-import { ensureDailyRoom, createMeetingToken } from '@/lib/daily'
+import { ensureDailyRoom } from '@/lib/daily'
 import { authorizeSession } from '@/lib/session-access'
 import { isRateLimited } from '@/lib/rateLimit'
 
@@ -10,17 +10,25 @@ export const runtime = 'nodejs'
 // specialist/staff running it, or the parent who owns the appointment) — this
 // closes the enumeration hole where anyone guessing an appointmentId could
 // pull the room URL and join a child's video call.
-// Also refreshes the room's expiry and attaches a short-lived meeting token.
+// Also refreshes the room's expiry so it's never handed back expired.
+//
+// Deliberately NOT attaching a Daily meeting token here (?t=...): the rooms
+// are not privacy:'private', so a token isn't required to join, and doing so
+// added an untested join-time failure mode (bad/rejected token → the whole
+// call fails) for a security benefit that's already covered by the auth
+// gate above, which is the real, load-bearing control. Revisit only paired
+// with switching rooms to privacy:'private' and testing the join live.
 export async function GET(
   _req: NextRequest,
   { params }: { params: { appointmentId: string } }
 ) {
   try {
-    const role = await authorizeSession(params.appointmentId)
-    if (!role) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
+    if (!await authorizeSession(params.appointmentId)) {
+      return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
+    }
 
-    // This call reaches out to the Daily.co API (room refresh + token mint) —
-    // cap retries so a reconnect loop can't hammer Daily's API.
+    // This call reaches out to the Daily.co API (room refresh) — cap retries
+    // so a reconnect loop can't hammer Daily's API.
     const rl = await isRateLimited(`session_meeting_get:${params.appointmentId}`, 20, 60)
     if (rl.limited) return NextResponse.json({ error: 'طلبات كثيرة جداً' }, { status: 429 })
 
@@ -38,9 +46,6 @@ export async function GET(
     if (roomName) {
       const fresh = await ensureDailyRoom(roomName)
       if (fresh) url = fresh
-      // Attach a token (owner for the specialist). Falls back to plain URL.
-      const token = await createMeetingToken(roomName, role === 'dashboard')
-      if (token) url = `${url.split(/[?#]/)[0]}?t=${token}`
     }
     return NextResponse.json({ meetingUrl: url })
   } catch {

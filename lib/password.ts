@@ -22,3 +22,14 @@ export function verifyPassword(plain: string, stored: string): boolean {
     return crypto.timingSafeEqual(a, b)
   } catch { return false }
 }
+
+// Constant-time comparison for plain-text shared secrets (ADMIN_PASSWORD,
+// CRON_SECRET) — these aren't hashed, so a naive `===` leaks timing
+// information proportional to the number of matching leading characters.
+// Hashing both sides to a fixed length before comparing keeps the check
+// constant-time regardless of the inputs' lengths differing.
+export function safeCompare(a: string, b: string): boolean {
+  const ha = crypto.createHash('sha256').update(a).digest()
+  const hb = crypto.createHash('sha256').update(b).digest()
+  return crypto.timingSafeEqual(ha, hb)
+}

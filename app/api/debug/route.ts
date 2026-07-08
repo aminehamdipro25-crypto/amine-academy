@@ -1,12 +1,16 @@
 import { NextResponse } from 'next/server'
 import { redis } from '@/lib/redis'
+import { isDashboardUser } from '@/lib/auth'
 
 export const runtime = 'nodejs'
 
-export async function GET(req: Request) {
-  const host = req.headers.get('host') || ''
-  const isLocalhost = host.startsWith('localhost') || host.startsWith('127.0.0.1')
-  if (!isLocalhost) {
+export async function GET() {
+  // The Host header is client-controlled — an attacker can send an arbitrary
+  // `Host: localhost` header while still reaching the real production
+  // deployment, so it must never gate a security decision. Require a real
+  // dashboard session in production; NODE_ENV covers actual local dev.
+  const isLocalDev = process.env.NODE_ENV !== 'production'
+  if (!isLocalDev && !await isDashboardUser()) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 })
   }
 

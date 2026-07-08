@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { isDashboardUser, isOwnerUser } from '@/lib/auth'
+import { isDashboardUser, isOwnerUser, revokeSession } from '@/lib/auth'
 import { getParent, updateParent, getStudentsByParent, getParentAppointments, deleteParentFull } from '@/lib/db'
 import { hashPassword } from '@/lib/password'
 import type { SubscriptionStatus } from '@/lib/types'
@@ -76,6 +76,15 @@ export async function PATCH(
     }
 
     await updateParent(id, updates)
+
+    // Kill any existing session immediately on suspension or a forced
+    // password reset — otherwise the restriction/new-password only takes
+    // effect at the parent's NEXT login; their currently-open session (or a
+    // stolen token) would keep working with full access regardless.
+    if (updates.subscriptionStatus === 'suspended' || updates.passwordHash) {
+      await revokeSession(id)
+    }
+
     return NextResponse.json({ ok: true })
   } catch (e) {
     console.error('[admin/clients/patch]', e)

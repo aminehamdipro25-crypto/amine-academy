@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { isRateLimited, getClientIp } from '@/lib/rateLimit'
 import { createAdminSession } from '@/lib/auth'
 import { audit } from '@/lib/audit'
+import { safeCompare } from '@/lib/password'
 
 export const runtime = 'nodejs'
 
@@ -24,7 +25,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'not configured' }, { status: 503 })
     }
 
-    if (!password || password !== ADMIN_PASSWORD) {
+    if (!password || !safeCompare(password, ADMIN_PASSWORD)) {
       return NextResponse.json({ error: 'كلمة مرور خاطئة' }, { status: 401 })
     }
 

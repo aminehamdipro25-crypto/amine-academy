@@ -70,16 +70,30 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'غير مصرح' }, { status: 403 })
     }
 
+    // domainScores/recommendations are parent-authored free text that later
+    // flows verbatim into the specialist's AI program-generation prompt
+    // (formatAssessmentsForPrompt in ai-generate-program) — cap length/count
+    // so a parent can't inject arbitrarily long prompt-steering text there.
+    const safeDomainScores: Record<string, number> = {}
+    if (domainScores && typeof domainScores === 'object' && !Array.isArray(domainScores)) {
+      for (const [k, v] of Object.entries(domainScores).slice(0, 20)) {
+        safeDomainScores[String(k).slice(0, 60)] = Math.min(1000, Math.max(-1000, Number(v) || 0))
+      }
+    }
+    const safeRecommendations = Array.isArray(recommendations)
+      ? recommendations.slice(0, 20).map(r => String(r).slice(0, 300))
+      : []
+
     const id = `AR-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`
     const result: AssessmentResult = {
       id,
       studentId: String(studentId).trim(),
       type,
-      domainScores: domainScores || {},
+      domainScores: safeDomainScores,
       totalScore: Number(totalScore) || 0,
       severity: severity || 'none',
-      recommendations: Array.isArray(recommendations) ? recommendations : [],
-      answers: Array.isArray(answers) ? answers : [],
+      recommendations: safeRecommendations,
+      answers: Array.isArray(answers) ? answers.slice(0, 200) : [],
       completedAt: new Date().toISOString(),
       createdAt: new Date().toISOString(),
     }

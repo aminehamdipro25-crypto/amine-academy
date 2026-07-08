@@ -8,6 +8,8 @@ import type { AgeGroup, Diagnosis } from '@/lib/types'
 
 export const runtime = 'nodejs'
 
+const VALID_DIAGNOSES: Diagnosis[] = ['ADHD', 'AUTISM', 'ADHD+AUTISM', 'OTHER']
+
 function calcAgeGroup(birthDate: string): AgeGroup {
   const age = Math.floor((Date.now() - new Date(birthDate).getTime()) / (1000 * 60 * 60 * 24 * 365.25))
   if (age <= 11) return '5-11'
@@ -71,8 +73,12 @@ export async function POST(req: NextRequest) {
       lastName: child.lastName?.trim() || newParent.lastName,
       birthDate: child.birthDate,
       ageGroup: calcAgeGroup(child.birthDate),
-      diagnosis: (child.diagnosis as Diagnosis) || 'ADHD',
-      severityLevel: (child.severityLevel as 1 | 2 | 3) || 1,
+      // Runtime-validated against the actual Diagnosis union — this is public,
+      // unauthenticated registration input that later flows unescaped into
+      // AI-generated program/report prompts and email templates, so it must
+      // never be allowed to carry arbitrary attacker-supplied text.
+      diagnosis: (VALID_DIAGNOSES.includes(child.diagnosis) ? child.diagnosis : 'OTHER') as Diagnosis,
+      severityLevel: ([1, 2, 3].includes(Number(child.severityLevel)) ? Number(child.severityLevel) : 1) as 1 | 2 | 3,
       sensoryProfile: {
         visualSensitivity: child.visualSensitivity || 'medium',
         audioSensitivity: child.audioSensitivity || 'medium',

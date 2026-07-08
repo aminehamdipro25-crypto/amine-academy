@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getAllParents, getStudentsByParent, getStudentGameHistory } from '@/lib/db'
 import { sendEmail, weeklyProgressEmail } from '@/lib/mailer'
+import { safeCompare } from '@/lib/password'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -8,7 +9,8 @@ export const runtime = 'nodejs'
 export async function GET(req: Request) {
   const secret = process.env.CRON_SECRET
   if (!secret) return NextResponse.json({ error: 'not configured' }, { status: 503 })
-  if (req.headers.get('authorization') !== `Bearer ${secret}`) {
+  const provided = req.headers.get('authorization') ?? ''
+  if (!safeCompare(provided, `Bearer ${secret}`)) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   }
 

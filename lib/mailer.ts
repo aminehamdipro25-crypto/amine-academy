@@ -70,7 +70,7 @@ function wrap(color: string, content: string): string {
 
 export function welcomeParentEmail(parentName: string, activationCode: string): string {
   return wrap('#5b6ef2', `
-    <h2 style="color:#1e293b;font-size:20px;margin:0 0 16px">مرحباً ${parentName}! 🎉</h2>
+    <h2 style="color:#1e293b;font-size:20px;margin:0 0 16px">مرحباً ${escHtml(parentName)}! 🎉</h2>
     <p style="color:#475569;line-height:1.8">شكراً لتسجيلك في أكاديمية أمين الدولية. نحن هنا لدعم طفلك في رحلته نحو التطور.</p>
     <div style="background:#f0f4ff;border-radius:12px;padding:24px;text-align:center;margin:24px 0">
       <p style="color:#64748b;margin:0 0 8px;font-size:14px">رمز التفعيل الخاص بك</p>
@@ -84,10 +84,10 @@ export function welcomeParentEmail(parentName: string, activationCode: string): 
 export function appointmentConfirmEmail(parentName: string, date: string, time: string): string {
   return wrap('#4ade80', `
     <h2 style="color:#1e293b;font-size:20px;margin:0 0 16px">تم تأكيد موعدك ✅</h2>
-    <p style="color:#475569;line-height:1.8">السيد/ة ${parentName}، تم تأكيد موعد المتابعة مع الأستاذ أمين.</p>
+    <p style="color:#475569;line-height:1.8">السيد/ة ${escHtml(parentName)}، تم تأكيد موعد المتابعة مع الأستاذ أمين.</p>
     <div style="background:#f0fdf4;border-left:3px solid #4ade80;border-radius:4px;padding:16px;margin:24px 0">
-      <p style="margin:0;color:#166534">📅 التاريخ: ${date}</p>
-      <p style="margin:8px 0 0;color:#166534">⏰ الوقت: ${time}</p>
+      <p style="margin:0;color:#166534">📅 التاريخ: ${escHtml(date)}</p>
+      <p style="margin:8px 0 0;color:#166534">⏰ الوقت: ${escHtml(time)}</p>
     </div>
     <p style="color:#64748b;font-size:14px">سيتواصل معك الأستاذ أمين قبل 30 دقيقة من الموعد.</p>
   `)
@@ -129,12 +129,12 @@ export function appointmentReminderEmail(
 
   return wrap('#7C5CFC', `
     <h2 style="color:#1e293b;font-size:20px;margin:0 0 16px">${whenEmoji} تذكير بموعد جلستك ${whenText}</h2>
-    <p style="color:#475569;line-height:1.8">السيد/ة ${parentName}، لديك جلسة مع الأستاذ أمين <strong>${whenText}</strong>.</p>
+    <p style="color:#475569;line-height:1.8">السيد/ة ${escHtml(parentName)}، لديك جلسة مع الأستاذ أمين <strong>${whenText}</strong>.</p>
 
     <div style="background:#F3EEFF;border-left:3px solid #7C5CFC;border-radius:4px;padding:20px;margin:24px 0">
-      <p style="margin:0 0 10px;color:#5A32D9;font-size:16px;font-weight:800">${typeAr[type] || type}</p>
-      <p style="margin:0 0 6px;color:#374151">📅 التاريخ: <strong>${date}</strong></p>
-      <p style="margin:0;color:#374151">⏰ الوقت: <strong style="direction:ltr;display:inline-block">${timeSlot}</strong></p>
+      <p style="margin:0 0 10px;color:#5A32D9;font-size:16px;font-weight:800">${escHtml(typeAr[type] || type)}</p>
+      <p style="margin:0 0 6px;color:#374151">📅 التاريخ: <strong>${escHtml(date)}</strong></p>
+      <p style="margin:0;color:#374151">⏰ الوقت: <strong style="direction:ltr;display:inline-block">${escHtml(timeSlot)}</strong></p>
     </div>
 
     <div style="background:#F0FFF4;border-left:3px solid #4ade80;border-radius:4px;padding:16px;margin:20px 0">
@@ -215,18 +215,18 @@ export function weeklyProgressEmail(
 
     let highlight: string | null = null
     if (bestGame && bestGame[1].avgScore >= 70 && bestGame[1].plays >= 2) {
-      highlight = `🌟 نقطة قوة ${student.firstName}: <strong>${GAME_LABELS_AR[bestGame[0]] ?? bestGame[0]}</strong> بمتوسط ${bestGame[1].avgScore}% على مدى ${bestGame[1].plays} محاولة!`
+      highlight = `🌟 نقطة قوة ${escHtml(student.firstName)}: <strong>${escHtml(GAME_LABELS_AR[bestGame[0]] ?? bestGame[0])}</strong> بمتوسط ${bestGame[1].avgScore}% على مدى ${bestGame[1].plays} محاولة!`
     } else if (improvement > 0) {
-      highlight = `📈 تحسّن أداء ${student.firstName} بنسبة ${improvement}% هذا الأسبوع، استمروا بهذا الزخم!`
+      highlight = `📈 تحسّن أداء ${escHtml(student.firstName)} بنسبة ${improvement}% هذا الأسبوع، استمروا بهذا الزخم!`
     } else if (thisWeek?.gamesPlayed) {
-      highlight = `💪 لعب ${student.firstName} ${thisWeek.gamesPlayed} تمرين هذا الأسبوع، الاستمرارية هي الأهم!`
+      highlight = `💪 لعب ${escHtml(student.firstName)} ${thisWeek.gamesPlayed} تمرين هذا الأسبوع، الاستمرارية هي الأهم!`
     }
 
     return `
       <div style="background:#f8faff;border-radius:12px;padding:20px;margin-bottom:16px;border:1px solid #e2e8f0">
         <h3 style="color:#1e293b;margin:0 0 12px;font-size:16px;font-weight:800">
-          ${student.firstName} ${student.lastName}
-          <span style="font-size:12px;color:#64748b;font-weight:400;margin-right:8px">${student.diagnosis}</span>
+          ${escHtml(student.firstName)} ${escHtml(student.lastName)}
+          <span style="font-size:12px;color:#64748b;font-weight:400;margin-right:8px">${escHtml(student.diagnosis)}</span>
         </h3>
         ${highlight ? `
         <div style="background:linear-gradient(135deg,#fef3c7,#fde68a);border-radius:10px;padding:12px 16px;margin-bottom:16px">
@@ -261,7 +261,7 @@ export function weeklyProgressEmail(
   }).join('')
 
   return wrap('#5b6ef2', `
-    <h2 style="color:#1e293b;font-size:20px;margin:0 0 8px">تقرير الأسبوع: ${parentName} 📊</h2>
+    <h2 style="color:#1e293b;font-size:20px;margin:0 0 8px">تقرير الأسبوع: ${escHtml(parentName)} 📊</h2>
     <p style="color:#475569;font-size:14px;margin:0 0 20px">إليك ملخص نشاط طفلك خلال الأسبوع الماضي في أكاديمية أمين:</p>
     ${studentsHtml}
     <div style="background:#f0fdf4;border-left:3px solid #4ade80;border-radius:4px;padding:12px 16px;margin-top:20px">

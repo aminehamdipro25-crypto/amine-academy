@@ -525,6 +525,11 @@ export async function deleteParentFull(parentId: string): Promise<void> {
     ['DEL', `students:parent:${parentId}`],
     ['DEL', `appointments:parent:${parentId}`],
     ['LREM', 'parents:index', '0', parentId],
+    // Kill any live session immediately — without this, a parent's existing
+    // token stays valid (verifyToken only checks the JWT sig/exp + that this
+    // key's sessionId still matches) until it naturally expires, even though
+    // the account record is gone. Matters most when an admin deletes a client.
+    ['DEL', `sess:${parentId}`],
   ]
 
   for (const sid of studentIds) {

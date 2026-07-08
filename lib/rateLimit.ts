@@ -28,5 +28,20 @@ export async function isRateLimited(
 }
 
 export function getClientIp(req: Request): string {
-  return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
+  // Vercel's edge sets/appends the true client IP as it proxies the request —
+  // it does NOT strip a spoofed X-Forwarded-For an attacker sends; it appends
+  // its own hop after it. Taking the FIRST entry (as this used to) trusts
+  // whatever the client claims, letting anyone bypass every rate limit in the
+  // app (admin login, activation codes, etc.) by sending a fresh
+  // X-Forwarded-For value on each request. x-real-ip is set directly by
+  // Vercel's proxy and is not client-settable — prefer it; otherwise take the
+  // LAST X-Forwarded-For entry, which is the one Vercel's own edge appended.
+  const real = req.headers.get('x-real-ip')
+  if (real) return real.trim()
+  const xff = req.headers.get('x-forwarded-for')
+  if (xff) {
+    const parts = xff.split(',').map(s => s.trim()).filter(Boolean)
+    if (parts.length) return parts[parts.length - 1]
+  }
+  return 'unknown'
 }

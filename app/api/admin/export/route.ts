@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyAdminSession } from '@/lib/auth'
+import { audit } from '@/lib/audit'
+import { getClientIp } from '@/lib/rateLimit'
 import {
   getAllParents, getStudentsByParent, getAllExercises, getAllAppointments,
   getAllPendingPayments, getStudentReports, getAssessmentProfile, getStudentGameResults,
@@ -17,10 +19,11 @@ async function isAdmin(): Promise<boolean> {
 // Full data dump for manual backup — everything lives only in Upstash Redis
 // with no automated snapshotting, so this is the owner's one way to get a
 // point-in-time copy of clients/payments/clinical records off-platform.
-export async function GET() {
+export async function GET(req: Request) {
   if (!(await isAdmin())) {
     return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
   }
+  await audit({ action: 'data_export', actorId: 'owner', actorRole: 'owner', ip: getClientIp(req) })
   try {
     const parents = await getAllParents()
     const [exercises, appointments, payments, students] = await Promise.all([

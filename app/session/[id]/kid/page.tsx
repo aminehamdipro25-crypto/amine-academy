@@ -100,7 +100,9 @@ function KidWhiteboardOverlay({ id }: { id: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [wb, setWb] = useState<WBState | null>(null)
 
-  // Fast poll (1s) while the overlay is mounted
+  // Fast poll while the overlay is mounted — this is the bottleneck for how
+  // quickly a stroke appears on the child's screen, so it runs faster than
+  // the main 1s poll below.
   useEffect(() => {
     let stop = false
     const tick = async () => {
@@ -111,7 +113,7 @@ function KidWhiteboardOverlay({ id }: { id: string }) {
       } catch { /* ignore */ }
     }
     tick()
-    const iv = setInterval(tick, 1000)
+    const iv = setInterval(tick, 500)
     return () => { stop = true; clearInterval(iv) }
   }, [id])
 
@@ -194,7 +196,7 @@ export default function KidSessionPage() {
       .catch(() => {})
   }, [id])
 
-  // Poll every 3 seconds for current exercise, shared content, and whiteboard
+  // Poll for current exercise, shared content, and whiteboard open/close state
   const poll = useCallback(async () => {
     try {
       const [liveRes, contentRes, wbRes] = await Promise.all([
@@ -218,7 +220,7 @@ export default function KidSessionPage() {
 
   useEffect(() => {
     poll()
-    const iv = setInterval(poll, 3000)
+    const iv = setInterval(poll, 1000)
     return () => clearInterval(iv)
   }, [poll])
 

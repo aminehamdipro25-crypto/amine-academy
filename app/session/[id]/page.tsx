@@ -1592,7 +1592,7 @@ ${notes ? `
       } catch { /* ignore */ }
     }
     poll()
-    const iv = setInterval(poll, 3000)
+    const iv = setInterval(poll, 1000)
     return () => clearInterval(iv)
   }, [id])
 

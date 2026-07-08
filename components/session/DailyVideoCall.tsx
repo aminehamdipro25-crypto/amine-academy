@@ -19,6 +19,8 @@ interface Props {
 // App-message payload the specialist sends to control the kid's mic
 type MicCmd = { t: 'kid-mic'; on: boolean }
 
+const JOIN_TIMEOUT_MS = 15000
+
 export default function DailyVideoCall({ url, userName, compact = false, role = 'specialist' }: Props) {
   const callRef        = useRef<DailyCall | null>(null)
   const localVideoRef  = useRef<HTMLVideoElement>(null)
@@ -37,130 +39,151 @@ export default function DailyVideoCall({ url, userName, compact = false, role = 
   // Kid: whether the specialist has forced my mic off (locks my own button)
   const [micLocked, setMicLocked]         = useState(false)
 
-  // Reconnect on the EXISTING call instance (leave → rejoin) instead of
-  // tearing down the effect. Destroying and immediately recreating races the
-  // async destroy() against the new mount reusing the same instance, which can
-  // strand the call. Rejoining in place avoids that entirely.
   const reconnect = useCallback(() => {
     setError('')
     setJoined(false)
     setRemotePresent(false)
-    const call = callRef.current
-    if (!call) { setRetryNonce(n => n + 1); return } // no instance yet → let the effect create one
-    ;(async () => {
-      try {
-        const st = call.meetingState()
-        if (st === 'joined-meeting' || st === 'joining-meeting') await call.leave()
-        await call.join({ url, userName })
-      } catch {
-        setError('تعذر الاتصال: فشل إعادة المحاولة')
-      }
-    })()
-  }, [url, userName])
+    setRetryNonce(n => n + 1)
+  }, [])
 
   useEffect(() => {
     let cancelled = false
-    // Reuse an existing instance (Daily allows one per page; React strict
-    // mode double-mounts effects in dev)
-    const call: DailyCall = Daily.getCallInstance() ?? Daily.createCallObject()
-    callRef.current = call
-
-    const updateTracks = () => {
-      if (cancelled) return
-      const parts = call.participants()
-      const local = parts.local
-      const lv = local?.tracks?.video
-      if (localVideoRef.current && lv?.persistentTrack) {
-        localVideoRef.current.srcObject = new MediaStream([lv.persistentTrack])
-      }
-      const remote = Object.values(parts).find(p => !p.local)
-      setRemotePresent(!!remote)
-      if (remote) {
-        const rv = remote.tracks?.video
-        if (remoteVideoRef.current && rv?.persistentTrack) {
-          remoteVideoRef.current.srcObject = new MediaStream([rv.persistentTrack])
-        }
-        const ra = remote.tracks?.audio
-        if (remoteAudioRef.current && ra?.persistentTrack) {
-          remoteAudioRef.current.srcObject = new MediaStream([ra.persistentTrack])
-        }
-      }
-    }
+    let joinTimeoutId: ReturnType<typeof setTimeout> | null = null
 
     const evs = ['joined-meeting', 'participant-joined', 'participant-updated', 'participant-left', 'track-started', 'track-stopped'] as const
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    evs.forEach(ev => call.on(ev as any, updateTracks))
-    const onJoined = () => { if (!cancelled) { setJoined(true); setError(''); updateTracks() } }
 
-    // Specialist: when the kid (re)joins, re-assert the current mute state so a
-    // reconnecting child doesn't come back un-muted against the specialist's wish
-    const onParticipantJoined = () => {
-      if (cancelled || role !== 'specialist') return
-      if (kidMutedRef.current) {
-        try { call.sendAppMessage({ t: 'kid-mic', on: false } as MicCmd, '*') } catch { /* ignore */ }
+    async function init() {
+      // Always start from a guaranteed-clean instance. Reusing whatever
+      // Daily.getCallInstance() happens to return risks inheriting a call
+      // object left in a broken/stuck state by a previous failed attempt on
+      // this page (e.g. a prior join that errored, or a leftover from
+      // navigating away and back without a full reload) — every mount of
+      // this component destroys any stale instance first, then creates a
+      // fresh one, so a broken previous attempt can never carry over.
+      const existing = Daily.getCallInstance()
+      if (existing) {
+        try { await existing.destroy() } catch { /* already gone / never joined */ }
       }
-    }
-    // Kid: obey the specialist's mic commands
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const onAppMessage = (e: any) => {
-      if (cancelled || role !== 'kid') return
-      const data = e?.data as MicCmd | undefined
-      if (data?.t !== 'kid-mic') return
-      call.setLocalAudio(data.on)
-      setMicOn(data.on)
-      setMicLocked(!data.on)
-    }
-    if (role === 'specialist') {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      call.on('participant-joined', onParticipantJoined as any)
-    }
-    if (role === 'kid') {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      call.on('app-message', onAppMessage as any)
-    }
-    // Surface the REAL Daily error so we can diagnose (camera-in-use, expired
-    // room, blocked script, etc.) instead of a generic message.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const onError = (e: any) => {
-      // Camera/mic permission problems are non-fatal — the call still connects
-      // with the other person's video, so don't treat them as a hard failure.
-      const t = e?.errorMsg || e?.error?.type || ''
-      if (/permission|not-allowed|cam-in-use|mic-in-use|devices/i.test(String(t))) return
-      if (!cancelled) setError(`تعذر الاتصال: ${e?.errorMsg || 'خطأ غير معروف'}`)
-    }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    call.on('joined-meeting', onJoined as any)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    call.on('error', onError as any)
+      if (cancelled) return
 
-    const state = call.meetingState()
-    if (state === 'new' || state === 'left-meeting' || state === 'error') {
+      const call = Daily.createCallObject()
+      callRef.current = call
+
+      const updateTracks = () => {
+        if (cancelled) return
+        const parts = call.participants()
+        const local = parts.local
+        const lv = local?.tracks?.video
+        if (localVideoRef.current && lv?.persistentTrack) {
+          localVideoRef.current.srcObject = new MediaStream([lv.persistentTrack])
+        }
+        const remote = Object.values(parts).find(p => !p.local)
+        setRemotePresent(!!remote)
+        if (remote) {
+          const rv = remote.tracks?.video
+          if (remoteVideoRef.current && rv?.persistentTrack) {
+            remoteVideoRef.current.srcObject = new MediaStream([rv.persistentTrack])
+          }
+          const ra = remote.tracks?.audio
+          if (remoteAudioRef.current && ra?.persistentTrack) {
+            remoteAudioRef.current.srcObject = new MediaStream([ra.persistentTrack])
+          }
+        }
+      }
+
+      const clearJoinTimeout = () => {
+        if (joinTimeoutId) { clearTimeout(joinTimeoutId); joinTimeoutId = null }
+      }
+
+      const onJoined = () => {
+        clearJoinTimeout()
+        if (!cancelled) { setJoined(true); setError(''); updateTracks() }
+      }
+
+      // Specialist: when the kid (re)joins, re-assert the current mute state so a
+      // reconnecting child doesn't come back un-muted against the specialist's wish
+      const onParticipantJoined = () => {
+        if (cancelled || role !== 'specialist') return
+        if (kidMutedRef.current) {
+          try { call.sendAppMessage({ t: 'kid-mic', on: false } as MicCmd, '*') } catch { /* ignore */ }
+        }
+      }
+      // Kid: obey the specialist's mic commands
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const onAppMessage = (e: any) => {
+        if (cancelled || role !== 'kid') return
+        const data = e?.data as MicCmd | undefined
+        if (data?.t !== 'kid-mic') return
+        call.setLocalAudio(data.on)
+        setMicOn(data.on)
+        setMicLocked(!data.on)
+      }
+      // Surface the REAL Daily error so we can diagnose (camera-in-use, expired
+      // room, blocked script, etc.) instead of a generic message.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const onError = (e: any) => {
+        clearJoinTimeout()
+        // Camera/mic permission problems are non-fatal — the call still connects
+        // with the other person's video, so don't treat them as a hard failure.
+        const t = e?.errorMsg || e?.error?.type || ''
+        if (/permission|not-allowed|cam-in-use|mic-in-use|devices/i.test(String(t))) return
+        if (!cancelled) setError(`تعذر الاتصال: ${e?.errorMsg || 'خطأ غير معروف'}`)
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      evs.forEach(ev => call.on(ev as any, updateTracks))
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      call.on('joined-meeting', onJoined as any)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      call.on('error', onError as any)
+      if (role === 'specialist') {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        call.on('participant-joined', onParticipantJoined as any)
+      }
+      if (role === 'kid') {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        call.on('app-message', onAppMessage as any)
+      }
+
+      // Hard timeout — if Daily's join() never resolves (network stall, a
+      // hung signaling connection), don't leave the UI stuck on "جارٍ
+      // الاتصال..." forever with no way out.
+      joinTimeoutId = setTimeout(() => {
+        if (!cancelled && call.meetingState() !== 'joined-meeting') {
+          setError('تعذر الاتصال: انتهت المهلة — تحقق من الاتصال بالإنترنت')
+        }
+      }, JOIN_TIMEOUT_MS)
+
       call.join({ url, userName }).catch((err: unknown) => {
+        clearJoinTimeout()
         if (!cancelled) setError(`تعذر الاتصال: ${err instanceof Error ? err.message : 'خطأ في الانضمام'}`)
       })
-    } else {
-      updateTracks()
-      setJoined(true)
+
+      // Store cleanup handlers for the outer effect's return function
+      cleanupRef.current = () => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        evs.forEach(ev => call.off(ev as any, updateTracks))
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        call.off('joined-meeting', onJoined as any)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        call.off('error', onError as any)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        call.off('participant-joined', onParticipantJoined as any)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        call.off('app-message', onAppMessage as any)
+        call.leave().catch(() => {}).finally(() => { call.destroy().catch(() => {}) })
+      }
     }
+
+    const cleanupRef = { current: null as (() => void) | null }
+    init()
 
     return () => {
       cancelled = true
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      evs.forEach(ev => call.off(ev as any, updateTracks))
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      call.off('joined-meeting', onJoined as any)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      call.off('error', onError as any)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      call.off('participant-joined', onParticipantJoined as any)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      call.off('app-message', onAppMessage as any)
-      call.leave().catch(() => {}).finally(() => { call.destroy().catch(() => {}) })
+      if (joinTimeoutId) clearTimeout(joinTimeoutId)
+      cleanupRef.current?.()
       callRef.current = null
     }
-    // retryNonce only changes in the no-instance fallback path of reconnect()
-    // (callRef was null), so re-running here just creates the missing instance
-    // — there is no live instance to race a destroy against.
   }, [url, userName, role, retryNonce])
 
   // Specialist: toggle the kid's microphone remotely via app message

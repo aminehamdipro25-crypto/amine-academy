@@ -558,7 +558,12 @@ export default function KidSessionPage() {
   const teacherVideo = meetingUrl && (
     <>
       <div style={{
-        position: 'fixed', bottom: 12, left: 12, zIndex: 9999,
+        // top-right, not bottom-left: Chrome/Android both dock their own
+        // "camera/mic in use" control bubble at the viewport's bottom-left
+        // corner, which used to sit directly on top of this box (and the
+        // readiness face-buttons behind it) — this collision is a browser
+        // feature we can't reposition, so we move ourselves instead.
+        position: 'fixed', top: 12, right: 12, zIndex: 9999,
         // Bigger by default so the teacher is clearly visible — a child's
         // main need is to see the specialist. ▼ shrinks it out of the way
         // when an exercise needs the space.
@@ -600,7 +605,7 @@ export default function KidSessionPage() {
         <button
           onClick={() => setVideoHidden(false)}
           style={{
-            position: 'fixed', bottom: 12, left: 12, zIndex: 9999,
+            position: 'fixed', top: 12, right: 12, zIndex: 9999,
             padding: '10px 14px', borderRadius: 14, border: 'none', cursor: 'pointer',
             background: 'linear-gradient(135deg,#6D28D9,#9333EA)', color: '#fff',
             fontWeight: 900, fontSize: 13, boxShadow: '0 4px 20px rgba(109,40,217,0.4)',

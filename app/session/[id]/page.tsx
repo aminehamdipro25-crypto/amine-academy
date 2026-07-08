@@ -1857,7 +1857,7 @@ ${notes ? `
           specialist can tell "instant sync" from "polling fallback" at a
           glance instead of guessing from feel. ── */}
       <div
-        className="fixed bottom-3 left-3 z-[480] flex items-center gap-1.5 rounded-full px-2.5 py-1 select-none"
+        className="fixed bottom-3 right-3 z-[480] flex items-center gap-1.5 rounded-full px-2.5 py-1 select-none"
         style={{ background: 'rgba(10,10,20,0.7)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.1)' }}
         dir="rtl"
         title={
@@ -3257,8 +3257,8 @@ ${notes ? `
             <DraggableVideoPiP
               onClose={() => setJitsiEmbedded(false)}
               label="📹 مقابلة"
-              initialBottom={20}
-              initialLeft={20}
+              initialTop={90}
+              initialRight={20}
               minWidth={380}
               minHeight={300}
             >
@@ -3271,8 +3271,8 @@ ${notes ? `
             <DraggableVideoPiP
               onClose={stopContentPresenter}
               label="🖥 محتوى"
-              initialBottom={20}
-              initialLeft={320}
+              initialTop={90}
+              initialRight={420}
               minWidth={360}
               minHeight={240}
             >

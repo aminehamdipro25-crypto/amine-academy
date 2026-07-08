@@ -6,6 +6,8 @@ interface Props {
   children: React.ReactNode
   initialBottom?: number
   initialLeft?: number
+  initialTop?: number
+  initialRight?: number
   onClose: () => void
   label?: string
   minWidth?: number
@@ -14,8 +16,10 @@ interface Props {
 
 export default function DraggableVideoPiP({
   children,
-  initialBottom = 20,
-  initialLeft = 20,
+  initialBottom,
+  initialLeft,
+  initialTop,
+  initialRight,
   onClose,
   label = '📹 مقابلة',
   minWidth = 280,
@@ -75,9 +79,19 @@ export default function DraggableVideoPiP({
     resizing.current = true
   }, [])
 
+  // Corner defaults to top/right (unless the caller pins bottom/left) —
+  // Chrome and Android both dock their own "camera/mic in use" control
+  // bubble at the viewport's bottom-left corner, which used to sit right on
+  // top of our own PiP box there, covering the video and the readiness
+  // face-buttons underneath it. Anchoring away from that corner avoids the
+  // collision with a browser feature we can't reposition or suppress.
+  const anchor: React.CSSProperties =
+    initialTop !== undefined || initialRight !== undefined
+      ? { top: initialTop ?? 20, right: initialRight ?? 20 }
+      : { bottom: initialBottom ?? 20, left: initialLeft ?? 20 }
   const posStyle: React.CSSProperties = posRef.current
-    ? { left: posRef.current.x, top: posRef.current.y, bottom: 'auto' }
-    : { bottom: initialBottom, left: initialLeft }
+    ? { left: posRef.current.x, top: posRef.current.y, bottom: 'auto', right: 'auto' }
+    : anchor
 
   const pip = (
     <div

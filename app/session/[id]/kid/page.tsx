@@ -449,11 +449,14 @@ export default function KidSessionPage() {
     <>
       <div style={{
         position: 'fixed', bottom: 12, left: 12, zIndex: 9999,
-        width:  videoSmall ? 120 : 'min(240px, 40vw)',
-        height: videoSmall ? 90  : 180,
+        // Bigger by default so the teacher is clearly visible — a child's
+        // main need is to see the specialist. ▼ shrinks it out of the way
+        // when an exercise needs the space.
+        width:  videoSmall ? 130 : 'min(340px, 62vw)',
+        height: videoSmall ? 98  : 'min(255px, 46vw)',
         borderRadius: 14, overflow: 'hidden',
         boxShadow: '0 8px 32px rgba(0,0,0,0.35)',
-        border: '2px solid rgba(255,255,255,0.3)',
+        border: '2px solid rgba(255,255,255,0.35)',
         background: '#111827',
         display: videoHidden ? 'none' : 'block',
       }}>

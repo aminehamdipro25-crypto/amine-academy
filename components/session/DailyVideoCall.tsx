@@ -59,7 +59,13 @@ export default function DailyVideoCall({ url, userName, compact = false, role = 
           showLeaveButton: false,
           showFullscreenButton: false,
           showUserNameChangeUI: false,
-          activeSpeakerMode: false,
+          showParticipantsBar: false,
+          // Kid: hide their own tile + use active-speaker mode so the
+          // SPECIALIST fills the whole box (the child's #1 need is to see the
+          // teacher, not a small grid dominated by Daily's mic banner).
+          // Specialist: keep the grid so they see both themselves and the kid.
+          showLocalVideo: role !== 'kid',
+          activeSpeakerMode: role === 'kid',
           iframeStyle: {
             position: 'absolute', top: '0', left: '0',
             width: '100%', height: '100%', border: '0',

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { isDashboardUser } from '@/lib/auth'
+import { isDashboardUser, getDashboardActorId } from '@/lib/auth'
 import { getStudent } from '@/lib/db'
+import { isRateLimited } from '@/lib/rateLimit'
 import Anthropic from '@anthropic-ai/sdk'
 
 export const runtime = 'nodejs'
@@ -23,6 +24,12 @@ export async function POST(req: NextRequest) {
   if (!(await isDashboardUser())) {
     return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
   }
+
+  // Each call costs real money against the Anthropic API — cap per-actor so
+  // a compromised/left-open dashboard session can't run it unbounded.
+  const actorId = (await getDashboardActorId()) ?? 'unknown'
+  const rl = await isRateLimited(`ai_analyze:${actorId}`, 30, 3600)
+  if (rl.limited) return NextResponse.json({ error: 'طلبات كثيرة جداً، حاول لاحقاً' }, { status: 429 })
 
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) {

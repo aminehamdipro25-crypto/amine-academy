@@ -280,14 +280,19 @@ export async function getStudentReports(studentId: string): Promise<ProgressRepo
 // ── Activation Codes ──────────────────────────────────────────
 
 export async function createActivationCode(email: string): Promise<string> {
-  const code = Math.floor(100000 + Math.random() * 900000).toString()
+  // crypto.randomInt is a CSPRNG (unlike Math.random) — this code doubles as
+  // a credential gating account activation, so it must not be predictable.
+  const { randomInt } = await import('crypto')
+  const code = randomInt(100000, 1000000).toString()
   await redis.set(`activation:${email}`, code, { ex: 86400 })
   return code
 }
 
 export async function verifyActivationCode(email: string, code: string): Promise<boolean> {
   const stored = await redis.get<string>(`activation:${email}`)
-  return stored === code
+  if (!stored) return false
+  const { safeCompare } = await import('./password')
+  return safeCompare(stored, code)
 }
 
 export async function deleteActivationCode(email: string): Promise<void> {

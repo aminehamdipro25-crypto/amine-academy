@@ -28,6 +28,10 @@ function buildCSP(frameSrc) {
     "base-uri 'self'",
     // Form action: self
     "form-action 'self'",
+    // Modern clickjacking defense (CSP-level) — kept alongside the legacy
+    // X-Frame-Options header below for browsers that only honor one or the
+    // other.
+    "frame-ancestors 'self'",
   ].filter(Boolean).join('; ')
 }
 
@@ -41,6 +45,13 @@ const ContentSecurityPolicy = buildCSP("'self' https://*.daily.co https://www.yo
 // even reaches the target site's own framing rules.
 const SessionContentSecurityPolicy = buildCSP("'self' https: https://*.daily.co")
 
+// Permissions-Policy directives this app doesn't use at all — locked down
+// everywhere, session pages included (camera/mic/display-capture are handled
+// separately per-route below since /session/* genuinely needs them).
+const UNUSED_PERMISSIONS =
+  'usb=(), midi=(), payment=(), geolocation=(), interest-cohort=(), browsing-topics=(), ' +
+  'accelerometer=(), gyroscope=(), magnetometer=(), fullscreen=(self), clipboard-write=(self)'
+
 const baseHeaders = [
   { key: 'X-DNS-Prefetch-Control', value: 'on' },
   { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
@@ -48,6 +59,18 @@ const baseHeaders = [
   { key: 'X-Content-Type-Options', value: 'nosniff' },
   { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
   { key: 'X-Children-Privacy', value: 'COPPA-compliant' },
+  // Isolates our pages' `window` from cross-origin popups/openers — blocks a
+  // class of cross-origin-window (XS-Leak) attacks. Safe here: every
+  // window.open() in the app opens a blank same-origin print window, never a
+  // cross-origin popup that needs opener access.
+  { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
+  // Prevents other sites from loading our resources directly (images, JSON
+  // responses, etc.) cross-origin. Deliberately NOT setting
+  // Cross-Origin-Embedder-Policy (require-corp) — that would also require
+  // every third-party resource we load (Daily.co's call bundle/WASM/workers,
+  // YouTube embeds, Google Fonts) to send a matching CORP/CORS header, which
+  // isn't guaranteed and risks silently breaking the video call.
+  { key: 'Cross-Origin-Resource-Policy', value: 'same-site' },
 ]
 
 // Session page needs display-capture for screen sharing + the widened
@@ -56,14 +79,14 @@ const baseHeaders = [
 const sessionHeaders = [
   ...baseHeaders,
   { key: 'Content-Security-Policy', value: SessionContentSecurityPolicy },
-  { key: 'Permissions-Policy', value: 'camera=*, microphone=*, display-capture=*, geolocation=(), payment=()' },
+  { key: 'Permissions-Policy', value: `camera=*, microphone=*, display-capture=*, ${UNUSED_PERMISSIONS}` },
 ]
 
 // All other pages: restrictive CSP + lock down camera, mic, display-capture
 const securityHeaders = [
   ...baseHeaders,
   { key: 'Content-Security-Policy', value: ContentSecurityPolicy },
-  { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), payment=()' },
+  { key: 'Permissions-Policy', value: `camera=(), microphone=(), display-capture=(), ${UNUSED_PERMISSIONS}` },
 ]
 
 const nextConfig = {

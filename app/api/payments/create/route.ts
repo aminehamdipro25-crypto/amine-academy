@@ -7,6 +7,7 @@ import { getSiteSettings } from '@/lib/site-settings'
 import { sendEmail } from '@/lib/mailer'
 import { tg, tgEsc } from '@/lib/telegram'
 import { verifyToken } from '@/lib/auth'
+import { isRateLimited, getClientIp } from '@/lib/rateLimit'
 import type { PaymentMethod } from '@/lib/types'
 
 const METHOD_LABELS: Record<PaymentMethod, string> = {
@@ -31,6 +32,16 @@ function esc(s: string): string {
 
 export async function POST(req: NextRequest) {
   try {
+    // Unauthenticated (guest checkout) — cap requests per-IP so this can't be
+    // used to spam the email/Telegram notifications or flood pending-payment
+    // records for free.
+    const rl = await isRateLimited(`payment_create:${getClientIp(req)}`, 10, 3600)
+    if (rl.limited) {
+      return rl.unavailable
+        ? NextResponse.json({ error: 'الخدمة غير متوفرة مؤقتًا، يرجى المحاولة بعد قليل' }, { status: 503 })
+        : NextResponse.json({ error: 'حاول مجدداً بعد ساعة' }, { status: 429 })
+    }
+
     const body = await req.json()
     const { plan, currency, guestName, guestEmail, guestPhone, method } = body
 

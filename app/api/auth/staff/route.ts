@@ -3,6 +3,7 @@ import { isRateLimited, getClientIp } from '@/lib/rateLimit'
 import { createStaffSession } from '@/lib/auth'
 import { getStaffByEmail, updateStaff } from '@/lib/db'
 import { verifyPassword } from '@/lib/password'
+import { audit } from '@/lib/audit'
 
 export const runtime = 'nodejs'
 
@@ -30,6 +31,7 @@ export async function POST(req: Request) {
 
     const token = await createStaffSession(staff.id)
     await updateStaff(staff.id, { lastLoginAt: new Date().toISOString() })
+    await audit({ action: 'login', actorId: staff.id, actorRole: 'staff', ip })
 
     const res = NextResponse.json({ ok: true, name: staff.name })
     res.cookies.set('staff_token', token, {

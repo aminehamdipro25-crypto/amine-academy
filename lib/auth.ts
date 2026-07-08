@@ -4,6 +4,24 @@ import type { SessionPayload, UserRole } from './types'
 
 // ── Token Generation ─────────────────────────────────────────
 
+// Every session token (parent/student/admin/staff) is only as strong as
+// this secret's entropy. This WARNS (server logs only) rather than blocking
+// login on a short secret — a hard failure here risks locking every user
+// (including the owner) out of a live production platform if the deployed
+// secret happens to be shorter than recommended; a one-time log line is a
+// safe way to flag it for rotation without any outage risk.
+const MIN_AUTH_SECRET_LENGTH = 32
+let warnedShortSecret = false
+function getAuthSecretForSigning(): string {
+  const secret = process.env.AUTH_SECRET
+  if (!secret) throw new Error('AUTH_SECRET not configured')
+  if (secret.length < MIN_AUTH_SECRET_LENGTH && !warnedShortSecret) {
+    warnedShortSecret = true
+    console.warn(`[auth] AUTH_SECRET is shorter than the recommended ${MIN_AUTH_SECRET_LENGTH} characters — rotate to a longer value when convenient.`)
+  }
+  return secret
+}
+
 export function generateId(prefix: 'AA' | 'AS' | 'AE' | 'AP' | 'AT'): string {
   // 12 random bytes = 96 bits. The appointment id doubles as the capability
   // that protects a child's live session/video, so it must not be guessable.
@@ -11,8 +29,7 @@ export function generateId(prefix: 'AA' | 'AS' | 'AE' | 'AP' | 'AT'): string {
 }
 
 export function createToken(id: string, role: UserRole, ttlMs: number = 30 * 24 * 60 * 60 * 1000): string {
-  const SECRET = process.env.AUTH_SECRET
-  if (!SECRET) throw new Error('AUTH_SECRET not configured')
+  const SECRET = getAuthSecretForSigning()
   const sessionId = crypto.randomBytes(16).toString('hex')
   const payload: SessionPayload = {
     id,
@@ -98,8 +115,7 @@ async function _webcryptoHmac(secret: string, data: string): Promise<string> {
 
 /** Create admin session token — format: `raw64hex.timestamp.hmacHex` */
 async function _buildAdminToken(): Promise<string> {
-  const SECRET = process.env.AUTH_SECRET
-  if (!SECRET) throw new Error('AUTH_SECRET not configured')
+  const SECRET = getAuthSecretForSigning()
   // Raw random component
   const rawBytes = new Uint8Array(32)
   globalThis.crypto.getRandomValues(rawBytes)
@@ -174,8 +190,7 @@ export async function revokeAdminSession(token: string): Promise<void> {
 // Format: `staff.<staffId-base64url>.<timestamp>.<hmacHex>`
 
 async function _buildStaffToken(staffId: string): Promise<string> {
-  const SECRET = process.env.AUTH_SECRET
-  if (!SECRET) throw new Error('AUTH_SECRET not configured')
+  const SECRET = getAuthSecretForSigning()
   const idEnc = btoa(staffId).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
   const ts  = Date.now().toString()
   const sig = await _webcryptoHmac(SECRET, `staff.${idEnc}.${ts}`)

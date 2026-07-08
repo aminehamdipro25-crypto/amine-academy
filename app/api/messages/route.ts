@@ -6,6 +6,7 @@ import { verifyToken } from '@/lib/auth'
 import { sendMessage, getThreadMessages, markThreadRead, getUnreadCount } from '@/lib/db'
 import { getParent } from '@/lib/db'
 import { sendEmail, newMessageAdminEmail } from '@/lib/mailer'
+import { isRateLimited } from '@/lib/rateLimit'
 
 export async function GET(req: NextRequest) {
   try {
@@ -42,6 +43,12 @@ export async function POST(req: NextRequest) {
     if (!payload || payload.role !== 'parent') {
       return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
     }
+
+    // Authenticated but still capped — each message triggers an email to the
+    // specialist, so this prevents a compromised/malicious parent session
+    // from flooding the inbox / Resend quota.
+    const rl = await isRateLimited(`message_post:${payload.id}`, 30, 3600)
+    if (rl.limited) return NextResponse.json({ error: 'رسائل كثيرة جداً، حاول لاحقاً' }, { status: 429 })
 
     const parentId = payload.id
     const body = await req.json()

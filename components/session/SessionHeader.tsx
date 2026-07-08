@@ -37,6 +37,8 @@ export default function SessionHeader({
   saveFailed,
   kidStatus,
   activeExerciseId,
+  kidPresent,
+  kidEverPresent,
 }: {
   headerRef: React.RefObject<HTMLElement>
   chromeHidden: boolean
@@ -65,6 +67,12 @@ export default function SessionHeader({
   saveFailed: boolean
   kidStatus: { exerciseId: string; status: 'active' | 'done'; ts: number; score?: number; accuracy?: number; errors?: number } | null
   activeExerciseId: string | null
+  /** True once the child's page has confirmed presence at least once, and
+      still is right now — see the presence heartbeat in kid/page.tsx. */
+  kidPresent: boolean
+  /** Gates the "غادر الجلسة" badge so it never flashes before the child's
+      very first heartbeat has had a chance to land. */
+  kidEverPresent: boolean
 }) {
   return (
     <header
@@ -267,6 +275,19 @@ export default function SessionHeader({
         >
           ▶ ابدأ
         </button>
+      )}
+
+      {/* Child left the session — only once we've seen at least one real
+          heartbeat, so this never flashes on page load before the child's
+          own tab has had a chance to connect and send its first one. */}
+      {kidEverPresent && !kidPresent && (
+        <div
+          className="flex items-center gap-1 px-2 py-1 rounded-lg flex-shrink-0 border animate-in fade-in duration-300 bg-red-50 text-red-700 border-red-300"
+          title="لا توصل نبضة حضور من جهاز الطفل خلال آخر 15 ثانية — قد يكون أغلق الصفحة أو فقد الاتصال"
+        >
+          <span className="text-sm">🔴</span>
+          <span className="text-[10px] font-black hidden sm:inline">غادر الطفل الجلسة</span>
+        </div>
       )}
 
       {/* Kid status indicator — shows when kid is active or done */}

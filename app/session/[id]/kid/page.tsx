@@ -286,6 +286,25 @@ export default function KidSessionPage() {
       .catch(() => {})
   }, [id])
 
+  // Presence heartbeat — lets the specialist know the child is genuinely
+  // still on this page (not just that an exercise once started). Without
+  // this, closing the tab / losing connection / navigating away looked
+  // identical to "still here, just not doing anything" from the specialist's
+  // side — no signal at all when the child actually left.
+  useEffect(() => {
+    if (!id) return
+    const beat = () => {
+      fetch(`/api/sessions/${id}/presence`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: 'kid' }),
+      }).catch(() => {})
+    }
+    beat()
+    const iv = setInterval(beat, 10_000)
+    return () => clearInterval(iv)
+  }, [id])
+
   // Poll for current exercise, shared content, whiteboard open/close state,
   // the specialist's timer/card, and drive the noise engine (see
   // lib/noise-synth.ts — there is no audio file to stream, so the child's

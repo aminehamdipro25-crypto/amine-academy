@@ -5,16 +5,20 @@ import { redis } from '@/lib/redis'
 
 export const runtime = 'nodejs'
 
-function key(id: string) { return `session:presence:${id}` }
+function key(id: string, role: 'specialist' | 'kid') { return `session:presence:${role}:${id}` }
 
-// Short TTL — a stale key must expire quickly (~15s after the specialist's
-// tab closes/crashes/loses network) so "is the specialist actually here"
-// stays accurate rather than lingering true long after they've left.
+// Short TTL — a stale key must expire quickly (~15s after a tab closes,
+// crashes, loses network, or the child navigates away) so "is X actually
+// here right now" stays accurate rather than lingering true long after
+// they've left.
 const TTL = 15
 
-// GET — parent portal checks this to show "الجلسة جارية الآن" only when the
-// specialist genuinely has the session open, not just because the scheduled
-// time window is near. Authorized callers only (owning parent / staff).
+// GET — either side checks the OTHER's presence:
+//   - parent portal / specialist checks the child's presence, to show
+//     "🔴 الطفل غادر الجلسة" instead of silently showing nothing when the
+//     kid page closes/crashes/loses connection.
+//   - parent portal checks the specialist's presence for "الجلسة جارية الآن".
+// Authorized callers only (owning parent / staff).
 export async function GET(
   _req: NextRequest,
   { params }: { params: { appointmentId: string } }
@@ -23,21 +27,39 @@ export async function GET(
     if (!await authorizeSession(params.appointmentId)) {
       return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
     }
-    const present = await redis.get<string>(key(params.appointmentId))
-    return NextResponse.json({ present: !!present })
+    const [specialist, kid] = await Promise.all([
+      redis.get<string>(key(params.appointmentId, 'specialist')),
+      redis.get<string>(key(params.appointmentId, 'kid')),
+    ])
+    return NextResponse.json({ present: !!specialist, specialistPresent: !!specialist, kidPresent: !!kid })
   } catch {
-    return NextResponse.json({ present: false })
+    return NextResponse.json({ present: false, specialistPresent: false, kidPresent: false })
   }
 }
 
-// POST — specialist's session page heartbeats this every ~10s while open.
+// POST — either side heartbeats this every ~10s while their page is open.
+// `role` picks which presence key to touch; each is authorized separately
+// so a parent/kid can only ever mark THEIR OWN presence, never the
+// specialist's, and vice versa.
 export async function POST(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: { appointmentId: string } }
 ) {
   try {
-    if (!await isDashboardUser()) return NextResponse.json({ ok: false }, { status: 401 })
-    await redis.set(key(params.appointmentId), '1', { ex: TTL })
+    const body = await req.json().catch(() => null)
+    const role = body?.role === 'kid' ? 'kid' : 'specialist'
+
+    if (role === 'specialist') {
+      if (!await isDashboardUser()) return NextResponse.json({ ok: false }, { status: 401 })
+    } else {
+      // Kid page authenticates as the owning parent (see middleware.ts) —
+      // authorizeSession's parent branch covers this correctly.
+      if (!await authorizeSession(params.appointmentId)) {
+        return NextResponse.json({ ok: false }, { status: 401 })
+      }
+    }
+
+    await redis.set(key(params.appointmentId, role), '1', { ex: TTL })
     return NextResponse.json({ ok: true })
   } catch {
     return NextResponse.json({ ok: false })

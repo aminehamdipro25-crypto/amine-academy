@@ -1519,21 +1519,34 @@ ${notes ? `
   }, [id])
 
   // Poll kid status — specialist sees when kid receives / finishes an exercise,
-  // and the score/accuracy/errors once they complete it.
+  // and the score/accuracy/errors once they complete it. Also polls the
+  // child's presence heartbeat — without this, a closed tab / lost
+  // connection / navigating away looked EXACTLY like "still here, just not
+  // doing anything" from the specialist's side. `kidEverPresent` gates the
+  // "غادر الجلسة" badge so it never flashes before the child has even had a
+  // chance to send their first heartbeat.
   type KidStatus = { exerciseId: string; status: 'active' | 'done'; ts: number; score?: number; accuracy?: number; errors?: number } | null
   const [kidStatus, setKidStatus] = useState<KidStatus>(null)
   const kidStatusRef = useRef<KidStatus>(null)
+  const [kidPresent, setKidPresent] = useState(true)
+  const [kidEverPresent, setKidEverPresent] = useState(false)
   useEffect(() => {
     if (!id) return
     const poll = async () => {
       try {
-        const r = await fetch(`/api/sessions/${id}/kid-status`)
-        const { kidStatus: data } = await r.json() as { kidStatus: KidStatus }
+        const [statusRes, presenceRes] = await Promise.all([
+          fetch(`/api/sessions/${id}/kid-status`),
+          fetch(`/api/sessions/${id}/presence`),
+        ])
+        const { kidStatus: data } = await statusRes.json() as { kidStatus: KidStatus }
         // Only update state when something actually changed
         if (JSON.stringify(data) !== JSON.stringify(kidStatusRef.current)) {
           kidStatusRef.current = data
           setKidStatus(data)
         }
+        const { kidPresent: present } = await presenceRes.json() as { kidPresent: boolean }
+        setKidPresent(present)
+        if (present) setKidEverPresent(true)
       } catch { /* ignore */ }
     }
     poll()
@@ -1830,6 +1843,8 @@ ${notes ? `
         saveFailed={saveFailed}
         kidStatus={kidStatus}
         activeExerciseId={activeExerciseId}
+        kidPresent={kidPresent}
+        kidEverPresent={kidEverPresent}
       />
 
       <SessionToolbar

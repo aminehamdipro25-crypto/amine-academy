@@ -1,0 +1,54 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { isDashboardUser } from '@/lib/auth'
+import { authorizeSession } from '@/lib/session-access'
+import { isRateLimited } from '@/lib/rateLimit'
+import { redis } from '@/lib/redis'
+
+export const runtime = 'nodejs'
+
+function key(id: string) { return `session:noise:${id}` }
+
+const VALID_MODES = ['white', 'rain', 'focus', 'calm', 'theta']
+
+interface NoiseState { active: boolean; mode: string }
+const EMPTY: NoiseState = { active: false, mode: 'calm' }
+
+// GET — kid page polls this; when active, it runs the SAME synthesis
+// locally (there's no audio file to stream — see lib/noise-synth.ts).
+export async function GET(
+  _req: NextRequest,
+  { params }: { params: { appointmentId: string } }
+) {
+  try {
+    if (!await authorizeSession(params.appointmentId)) {
+      return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
+    }
+    const state = await redis.get<NoiseState>(key(params.appointmentId))
+    return NextResponse.json({ noise: state ?? EMPTY })
+  } catch {
+    return NextResponse.json({ noise: EMPTY })
+  }
+}
+
+// POST — specialist starts/stops the noise engine, or changes mode
+export async function POST(
+  req: NextRequest,
+  { params }: { params: { appointmentId: string } }
+) {
+  try {
+    if (!await isDashboardUser()) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
+    const rl = await isRateLimited(`session_noise_post:${params.appointmentId}`, 60, 60)
+    if (rl.limited) return NextResponse.json({ error: 'طلبات كثيرة جداً' }, { status: 429 })
+
+    const body = await req.json().catch(() => null)
+    if (typeof body?.active !== 'boolean') {
+      return NextResponse.json({ error: 'active مطلوب' }, { status: 400 })
+    }
+    const mode = VALID_MODES.includes(body.mode) ? body.mode : EMPTY.mode
+    const state: NoiseState = { active: body.active, mode }
+    await redis.set(key(params.appointmentId), state, { ex: 7200 })
+    return NextResponse.json({ ok: true })
+  } catch {
+    return NextResponse.json({ error: 'خطأ في الخادم' }, { status: 500 })
+  }
+}

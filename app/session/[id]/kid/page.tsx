@@ -2,6 +2,9 @@
 import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react'
 import { useParams } from 'next/navigation'
 import type { ExerciseResult } from '@/lib/types'
+import { PROMPT_CARDS } from '@/lib/session-constants'
+import { startNoiseEngine, type NoiseHandle } from '@/lib/noise-synth'
+import { formatTime } from '@/lib/session-helpers'
 
 const DailyVideoCall = lazy(() => import('@/components/session/DailyVideoCall'))
 
@@ -92,6 +95,85 @@ const PHYSICAL_IDS = ['jumping-jacks','obstacle-circuit','balance-walk','tiger-c
 type LiveState = { exerciseId: string; difficulty: number } | null
 type WBStroke = { c: string; s: number; e: boolean; p: number[] }
 type WBState  = { active: boolean; strokes: WBStroke[]; rev: number; ar?: number }
+type TimerState = { active: boolean; total: number; countUp: boolean; running: boolean; left: number; ts: number }
+
+// Read-only countdown/countup display mirroring the specialist's timer.
+// `left`/`ts` are a snapshot — while running, the displayed value is
+// extrapolated from elapsed wall-clock time since `ts` and re-synced on
+// every poll, so it ticks smoothly between polls without drifting.
+function KidTimerDisplay({ timer }: { timer: TimerState }) {
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    if (!timer.running) return
+    const iv = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(iv)
+  }, [timer.running])
+
+  const elapsed = timer.running ? Math.floor((now - timer.ts) / 1000) : 0
+  const rawLeft = timer.countUp ? timer.left + elapsed : timer.left - elapsed
+  const left = Math.max(0, Math.min(timer.total, rawLeft))
+  const isDone = timer.countUp ? left >= timer.total : left <= 0
+  const pct = timer.total > 0 ? left / timer.total : 0
+  const numColor = timer.countUp ? '#22C55E'
+    : pct <= 0.1 ? '#EF4444'
+    : pct <= 0.25 ? '#F59E0B'
+    : '#22C55E'
+
+  return (
+    <div
+      className="fixed z-[150] flex flex-col items-center justify-center select-none"
+      style={{
+        bottom: 80, left: '50%', transform: 'translateX(-50%)',
+        background: 'rgba(0,0,0,0.88)', borderRadius: 24, backdropFilter: 'blur(12px)',
+        border: `2px solid ${numColor}88`, boxShadow: `0 0 40px ${numColor}22`,
+        minWidth: 210, padding: '20px 32px',
+      }}
+    >
+      {isDone ? (
+        <div className="flex flex-col items-center gap-1">
+          <div style={{ fontSize: '3rem', lineHeight: 1 }}>🌟</div>
+          <div className="text-white font-black text-lg mt-1">أحسنت! انتهى الوقت</div>
+        </div>
+      ) : (
+        <>
+          <div
+            className="font-black ltr-num"
+            style={{ fontSize: '3.5rem', color: numColor, fontVariantNumeric: 'tabular-nums', letterSpacing: '0.05em' }}
+          >
+            {formatTime(left)}
+          </div>
+          <div className="w-full h-1.5 rounded-full mt-2 overflow-hidden" style={{ background: 'rgba(255,255,255,0.1)' }}>
+            <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${pct * 100}%`, background: numColor }} />
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+// Full-screen prompt card overlay — mirrors the specialist's own card exactly
+// (see the "Prompt Card Full-Screen Overlay" block in app/session/[id]/page.tsx),
+// looked up locally from the shared PROMPT_CARDS constant by id.
+function KidPromptCardOverlay({ cardId }: { cardId: string }) {
+  const card = PROMPT_CARDS.find(c => c.id === cardId)
+  if (!card) return null
+  return (
+    <div
+      className="fixed inset-0 z-[300] flex flex-col items-center justify-center select-none"
+      style={{ background: card.bg }}
+      dir="rtl"
+    >
+      <div className="text-center">
+        <div className="leading-none mb-8" style={{ fontSize: '10rem', filter: `drop-shadow(0 0 40px ${card.glow}88)` }}>
+          {card.emoji}
+        </div>
+        <div className="text-white font-black" style={{ fontSize: '4.5rem', textShadow: `0 4px 30px rgba(0,0,0,0.4), 0 0 60px ${card.glow}66` }}>
+          {card.text}
+        </div>
+      </div>
+    </div>
+  )
+}
 
 // Read-only mirror of the specialist's whiteboard. Strokes are normalized 0..1
 // against the SPECIALIST canvas, so the kid canvas is letterboxed to the
@@ -188,6 +270,10 @@ export default function KidSessionPage() {
   const [videoHidden, setVideoHidden] = useState(false)
   const [sharedContentUrl, setSharedContentUrl] = useState<string | null>(null)
   const [wbActive, setWbActive] = useState(false)
+  const [timerState, setTimerState] = useState<TimerState | null>(null)
+  const [cardId, setCardId] = useState<string | null>(null)
+  const noiseHandleRef = useRef<NoiseHandle | null>(null)
+  const noiseModeRef = useRef<string | null>(null)
 
   // Fetch meeting URL once on load
   useEffect(() => {
@@ -197,17 +283,27 @@ export default function KidSessionPage() {
       .catch(() => {})
   }, [id])
 
-  // Poll for current exercise, shared content, and whiteboard open/close state
+  // Poll for current exercise, shared content, whiteboard open/close state,
+  // the specialist's timer/card, and drive the noise engine (see
+  // lib/noise-synth.ts — there is no audio file to stream, so the child's
+  // browser runs the SAME synthesis, started/stopped in lockstep here).
   const poll = useCallback(async () => {
     try {
-      const [liveRes, contentRes, wbRes] = await Promise.all([
+      const [liveRes, contentRes, wbRes, timerRes, noiseRes, cardRes] = await Promise.all([
         fetch(`/api/sessions/${id}/live`),
         fetch(`/api/sessions/${id}/content`),
         fetch(`/api/sessions/${id}/whiteboard`),
+        fetch(`/api/sessions/${id}/timer`),
+        fetch(`/api/sessions/${id}/noise`),
+        fetch(`/api/sessions/${id}/card`),
       ])
       const { live: data } = await liveRes.json() as { live: LiveState }
       const { contentUrl: cUrl } = await contentRes.json() as { contentUrl: string | null }
       const { wb } = await wbRes.json() as { wb: WBState }
+      const { timer } = await timerRes.json() as { timer: TimerState }
+      const { noise } = await noiseRes.json() as { noise: { active: boolean; mode: string } }
+      const { card } = await cardRes.json() as { card: { cardId: string | null } }
+
       if (data?.exerciseId !== prevId.current) {
         prevId.current = data?.exerciseId ?? null
         setDone(false)
@@ -216,8 +312,30 @@ export default function KidSessionPage() {
       }
       setSharedContentUrl(cUrl)
       setWbActive(!!wb?.active)
+      setTimerState(timer?.active ? timer : null)
+      setCardId(card?.cardId ?? null)
+
+      // Start/stop/switch the noise engine only on an actual transition —
+      // re-creating it every poll would restart the audio from scratch.
+      const wantActive = noise?.active ?? false
+      const wantMode = noise?.mode ?? null
+      const isActive = !!noiseHandleRef.current
+      if (wantActive && (!isActive || noiseModeRef.current !== wantMode)) {
+        noiseHandleRef.current?.stop()
+        noiseHandleRef.current = wantMode ? startNoiseEngine(wantMode as Parameters<typeof startNoiseEngine>[0]) : null
+        noiseModeRef.current = wantMode
+      } else if (!wantActive && isActive) {
+        noiseHandleRef.current?.stop()
+        noiseHandleRef.current = null
+        noiseModeRef.current = null
+      }
     } catch { /* ignore */ }
   }, [id])
+
+  // Stop the noise engine if the child navigates away mid-session
+  useEffect(() => {
+    return () => { noiseHandleRef.current?.stop() }
+  }, [])
 
   useEffect(() => {
     poll()
@@ -468,6 +586,10 @@ export default function KidSessionPage() {
       )}
       {/* Whiteboard mirror — above shared content */}
       {wbActive && <KidWhiteboardOverlay id={id} />}
+      {/* Specialist's visible timer — motivates/paces the child through a task */}
+      {timerState && <KidTimerDisplay timer={timerState} />}
+      {/* Specialist's prompt card — full-screen, above everything but the video */}
+      {cardId && <KidPromptCardOverlay cardId={cardId} />}
       {/* Teacher video call — always on top, mounted once for the whole session */}
       {teacherVideo}
     </>

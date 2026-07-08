@@ -106,6 +106,7 @@ import DailyVideoCall from '@/components/session/DailyVideoCall'
 import LiveSessionCard from '@/components/session/LiveSessionCard'
 import SessionStarCounter from '@/components/session/SessionStarCounter'
 import { computeAdaptiveDecision } from '@/lib/session-adaptive'
+import { startNoiseEngine, type NoiseMode, type NoiseHandle } from '@/lib/noise-synth'
 import ADHDScale       from '@/components/session/assessments/ADHDScale'
 import AutismScale      from '@/components/session/assessments/AutismScale'
 import LearningDifficultiesScale from '@/components/session/assessments/LearningDifficultiesScale'
@@ -229,9 +230,19 @@ export default function SessionPage() {
     antecedent: '', behavior: '', consequence: '', intensity: 2,
   })
 
-  // Prompt Cards
+  // Prompt Cards — only the id travels over the wire; the kid page looks up
+  // the same PROMPT_CARDS constant to render the full card.
   const [promptCard, setPromptCard]               = useState<typeof PROMPT_CARDS[0] | null>(null)
   const [promptPickerOpen, setPromptPickerOpen]   = useState(false)
+
+  useEffect(() => {
+    if (!id) return
+    fetch(`/api/sessions/${id}/card`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cardId: promptCard?.id ?? null }),
+    }).catch(() => {})
+  }, [id, promptCard])
 
   // Homework Builder
   const [hwOpen, setHwOpen]       = useState(false)
@@ -275,15 +286,23 @@ export default function SessionPage() {
   // Forces a full remount of the active exercise component to restart it mid-game.
   const [exerciseRestartNonce, setExerciseRestartNonce] = useState(0)
 
-  // White noise / focus music
+  // White noise / focus music — synthesized locally (lib/noise-synth.ts);
+  // the child's browser runs the SAME engine, triggered via /api/sessions/[id]/noise
   const [showNoisePanel, setShowNoisePanel] = useState(false)
-  const [noiseMode, setNoiseMode]           = useState<'white' | 'rain' | 'focus' | 'calm' | 'theta'>('calm')
+  const [noiseMode, setNoiseMode]           = useState<NoiseMode>('calm')
   const [noiseRunning, setNoiseRunning]     = useState(false)
   const [noiseSecsLeft, setNoiseSecsLeft]   = useState(5 * 60)
-  const noiseCtxRef   = useRef<AudioContext | null>(null)
-  const noiseSrcRef   = useRef<AudioBufferSourceNode | null>(null)
-  const noiseEnvRef   = useRef<GainNode | null>(null)
-  const noiseTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const noiseHandleRef = useRef<NoiseHandle | null>(null)
+  const noiseTimerRef  = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  const postNoiseState = useCallback((active: boolean, mode: NoiseMode) => {
+    if (!id) return
+    fetch(`/api/sessions/${id}/noise`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ active, mode }),
+    }).catch(() => {})
+  }, [id])
 
   // Toolbar dropdown anchors (positions for portal-rendered popovers)
   const promptBtnRef = useRef<HTMLDivElement>(null)
@@ -639,6 +658,25 @@ export default function SessionPage() {
     return () => clearTimeout(t)
   }, [studentTimerRunning, studentTimerLeft, studentTimerCountUp, studentTimerTotal])
 
+  // Publish the timer snapshot to Redis on every meaningful change (start,
+  // each tick while running, pause/resume, reset, show/hide) so the kid page
+  // can mirror it — it derives the live countdown from this snapshot's `ts`
+  // rather than needing sub-second sync.
+  useEffect(() => {
+    if (!id) return
+    fetch(`/api/sessions/${id}/timer`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        active: showStudentTimer,
+        total: studentTimerTotal,
+        countUp: studentTimerCountUp,
+        running: studentTimerRunning,
+        left: studentTimerLeft,
+      }),
+    }).catch(() => {})
+  }, [id, showStudentTimer, studentTimerTotal, studentTimerCountUp, studentTimerRunning, studentTimerLeft])
+
   function startSession() {
     setRunning(true)
     startRef.current = Date.now()
@@ -690,139 +728,31 @@ export default function SessionPage() {
   }
 
   function startNoise() {
-    if (typeof window === 'undefined') return
-    try {
-      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
-      const ctx = new AudioCtx()
-      noiseCtxRef.current = ctx
+    const handle = startNoiseEngine(noiseMode)
+    if (!handle) return // Web Audio unavailable
+    noiseHandleRef.current = handle
 
-      const masterGain = ctx.createGain()
-      // Fade the whole output in from silence instead of jumping straight to
-      // the target level — an instant gain step is a broadband click, the
-      // main source of "dirty"/harsh sound on start.
-      const envGain = ctx.createGain()
-      envGain.gain.value = 0
-      envGain.gain.linearRampToValueAtTime(1, ctx.currentTime + 0.6)
-      masterGain.connect(envGain)
-      envGain.connect(ctx.destination)
-      noiseEnvRef.current = envGain
-
-      if (noiseMode === 'focus' || noiseMode === 'theta') {
-        // Clean binaural beat: two pure sine tones, no noise floor at all,
-        // panned hard left/right so the interaural frequency difference is
-        // perceived as a single pulsing beat. Needs stereo headphones —
-        // amplitude-modulated broadband noise (the old approach) is the
-        // harsher, "impure"-sounding way to do this.
-        masterGain.gain.value = 0.05
-        const beatHz  = noiseMode === 'focus' ? 40 : 6 // gamma vs theta range
-        const carrier = 200
-        for (const pan of [-1, 1]) {
-          const osc = ctx.createOscillator()
-          osc.type = 'sine'
-          osc.frequency.value = carrier + (pan * beatHz) / 2
-          const panner = ctx.createStereoPanner()
-          panner.pan.value = pan
-          osc.connect(panner)
-          panner.connect(masterGain)
-          osc.start()
-        }
-      } else {
-        masterGain.gain.value = noiseMode === 'calm' ? 0.045 : 0.09
-
-        const rate = ctx.sampleRate
-        const buf  = ctx.createBuffer(1, rate * 3, rate)
-        const data = buf.getChannelData(0)
-        for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1
-
-        const src = ctx.createBufferSource()
-        src.buffer = buf
-        src.loop = true
-        noiseSrcRef.current = src
-
-        if (noiseMode === 'rain') {
-          const lp = ctx.createBiquadFilter()
-          lp.type = 'lowpass'
-          lp.frequency.value = 800
-          src.connect(lp)
-          lp.connect(masterGain)
-        } else if (noiseMode === 'calm') {
-          // Quiet, heavily-filtered noise bed under a slow consonant pad —
-          // gentle ambient texture (no sudden hits, no melody) shown to lower
-          // heart rate/anxiety in slow ambient-music research.
-          const lp = ctx.createBiquadFilter()
-          lp.type = 'lowpass'
-          lp.frequency.value = 400
-          src.connect(lp)
-          lp.connect(masterGain)
-
-          // Sustained open chord (A2-E3-A3-C#4), each voice breathing in and
-          // out at ~0.1Hz — about 6 cycles/min, matching a relaxed breathing rate.
-          const padFreqs = [110, 164.81, 220, 277.18]
-          padFreqs.forEach((freq, idx) => {
-            const osc = ctx.createOscillator()
-            osc.type = 'sine'
-            osc.frequency.value = freq
-            const oscGain = ctx.createGain()
-            const baseLevel = 0.05 / (idx + 1)
-            oscGain.gain.value = baseLevel
-            osc.connect(oscGain)
-            oscGain.connect(masterGain)
-            osc.start()
-
-            const breathe = ctx.createOscillator()
-            breathe.type = 'sine'
-            breathe.frequency.value = 0.1
-            const breatheGain = ctx.createGain()
-            breatheGain.gain.value = baseLevel * 0.6
-            breathe.connect(breatheGain)
-            breatheGain.connect(oscGain.gain)
-            breathe.start()
-          })
-        } else {
-          src.connect(masterGain)
-        }
-        src.start()
-      }
-
-      setNoiseRunning(true)
-      setNoiseSecsLeft(5 * 60)
-      const interval = setInterval(() => {
-        setNoiseSecsLeft(s => {
-          if (s <= 1) { stopNoise(); return 5 * 60 }
-          return s - 1
-        })
-      }, 1000)
-      noiseTimerRef.current = interval
-    } catch { /* silently ignore if Web Audio unavailable */ }
+    setNoiseRunning(true)
+    setNoiseSecsLeft(5 * 60)
+    postNoiseState(true, noiseMode)
+    const interval = setInterval(() => {
+      setNoiseSecsLeft(s => {
+        if (s <= 1) { stopNoise(); return 5 * 60 }
+        return s - 1
+      })
+    }, 1000)
+    noiseTimerRef.current = interval
   }
 
   function stopNoise() {
-    // Capture the live nodes before clearing the refs — a fade-out is
-    // scheduled async below, and if the therapist hits start again before
-    // it finishes, the refs will already point at a brand-new context.
-    // Closing/stopping must act on what THIS call started, not on
-    // whatever the refs hold by the time the timeout fires.
-    const ctx = noiseCtxRef.current
-    const env = noiseEnvRef.current
-    const src = noiseSrcRef.current
-    if (ctx && env) {
-      const now = ctx.currentTime
-      env.gain.cancelScheduledValues(now)
-      env.gain.setValueAtTime(env.gain.value, now)
-      env.gain.linearRampToValueAtTime(0, now + 0.3) // fade-out avoids a stop click
-    }
-    setTimeout(() => {
-      if (src) { try { src.stop() } catch { /* already stopped */ } }
-      if (ctx) { ctx.close().catch(() => {}) }
-    }, ctx ? 320 : 0)
-    noiseSrcRef.current = null
-    noiseCtxRef.current = null
-    noiseEnvRef.current = null
+    noiseHandleRef.current?.stop()
+    noiseHandleRef.current = null
     if (noiseTimerRef.current) {
       clearInterval(noiseTimerRef.current)
       noiseTimerRef.current = null
     }
     setNoiseRunning(false)
+    postNoiseState(false, noiseMode)
   }
 
   // Stop the noise/binaural audio engine if the specialist navigates away
@@ -832,8 +762,7 @@ export default function SessionPage() {
   // during unmount.
   useEffect(() => {
     return () => {
-      if (noiseSrcRef.current) { try { noiseSrcRef.current.stop() } catch { /* already stopped */ } }
-      if (noiseCtxRef.current) { noiseCtxRef.current.close().catch(() => {}) }
+      noiseHandleRef.current?.stop()
       if (noiseTimerRef.current) clearInterval(noiseTimerRef.current)
       if (phaseToastTimerRef.current) clearTimeout(phaseToastTimerRef.current)
       if (achievementToastTimerRef.current) clearTimeout(achievementToastTimerRef.current)

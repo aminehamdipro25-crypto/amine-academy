@@ -2,12 +2,14 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import type { ExerciseResult } from '@/lib/types'
 import { speakArabic } from '@/lib/speech'
+import { createRng, shuffleWithRng } from '@/lib/seeded-random'
 
 interface Props {
   onComplete: (r: ExerciseResult) => void
   onCancel: () => void
   studentAge: number
   difficulty?: 1 | 2 | 3
+  seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
 }
 
 const WORD_POOLS = {
@@ -28,15 +30,6 @@ function getSeqLen(difficulty: 1 | 2 | 3) {
   return 7
 }
 
-function shuffle<T>(arr: T[]): T[] {
-  const a = [...arr]
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[a[i], a[j]] = [a[j], a[i]]
-  }
-  return a
-}
-
 function speak(text: string, rate = 0.8): Promise<void> {
   return speakArabic(text, rate)
 }
@@ -55,7 +48,9 @@ export default function AuditoryMemory({
   onCancel,
   studentAge: _studentAge,
   difficulty = 1,
+  seed,
 }: Props) {
+  const rng = useRef(createRng(seed ?? Date.now())).current
   const seqLen = getSeqLen(difficulty)
   const pool = getPool(difficulty)
   const ROUNDS = 3
@@ -80,10 +75,10 @@ export default function AuditoryMemory({
 
   // Build a new round's data
   const buildRound = useCallback(() => {
-    const seq = shuffle(pool).slice(0, seqLen)
+    const seq = shuffleWithRng(rng, pool).slice(0, seqLen)
     // choices: all seq words + 2-3 extras from pool not in seq, max 10
-    const extras = shuffle(pool.filter(w => !seq.includes(w))).slice(0, Math.min(3, 10 - seqLen))
-    const choices = shuffle([...seq, ...extras]).slice(0, 10)
+    const extras = shuffleWithRng(rng, pool.filter(w => !seq.includes(w))).slice(0, Math.min(3, 10 - seqLen))
+    const choices = shuffleWithRng(rng, [...seq, ...extras]).slice(0, 10)
     return { sequence: seq, choices, activeIdx: null, selected: Array(seqLen).fill(null) }
   }, [pool, seqLen])
 

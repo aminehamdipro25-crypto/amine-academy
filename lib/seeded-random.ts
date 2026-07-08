@@ -36,3 +36,12 @@ export function shuffleWithRng<T>(rng: Rng, arr: readonly T[]): T[] {
 export function pickWithRng<T>(rng: Rng, arr: readonly T[]): T {
   return arr[Math.floor(rng() * arr.length)]
 }
+
+// Inclusive [min, max] integer, e.g. random spawn position/index ranges.
+export function randIntWithRng(rng: Rng, min: number, max: number): number {
+  return min + Math.floor(rng() * (max - min + 1))
+}
+
+export function randBoolWithRng(rng: Rng, trueChance = 0.5): boolean {
+  return rng() < trueChance
+}

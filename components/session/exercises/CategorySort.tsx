@@ -1,12 +1,14 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import type { ExerciseResult } from '@/lib/types'
+import { createRng, shuffleWithRng } from '@/lib/seeded-random'
 
 interface Props {
   onComplete: (r: ExerciseResult) => void
   onCancel: () => void
   studentAge: number
   difficulty?: 1 | 2 | 3
+  seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
 }
 
 interface Item {
@@ -89,12 +91,13 @@ const SETS: Record<1 | 2 | 3, CategorySet> = {
 
 type Feedback = 'correct' | 'wrong' | null
 
-export default function CategorySort({ onComplete, onCancel, difficulty = 1 }: Props) {
+export default function CategorySort({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+  const rng = useRef(createRng(seed ?? Date.now())).current
   const set = SETS[difficulty]
   const startRef = useRef(Date.now())
   const shakeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const [items] = useState<Item[]>(() => [...set.items].sort(() => Math.random() - 0.5))
+  const [items] = useState<Item[]>(() => shuffleWithRng(rng, set.items))
   const [currentIndex, setCurrentIndex] = useState(0)
   const [correct, setCorrect] = useState(0)
   const [errors, setErrors] = useState(0)

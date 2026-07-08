@@ -2,12 +2,14 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import type { ExerciseResult } from '@/lib/types'
 import { speakArabic, cancelSpeech } from '@/lib/speech'
+import { createRng, shuffleWithRng } from '@/lib/seeded-random'
 
 interface Props {
   onComplete: (r: ExerciseResult) => void
   onCancel: () => void
   studentAge: number
   difficulty?: 1 | 2 | 3
+  seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
 }
 
 interface Question {
@@ -49,22 +51,14 @@ function getQuestions(difficulty: 1 | 2 | 3): Question[] {
   return ALL_QUESTIONS
 }
 
-function shuffle<T>(arr: T[]): T[] {
-  const a = [...arr]
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[a[i], a[j]] = [a[j], a[i]]
-  }
-  return a
-}
-
 function speak(text: string): void {
   speakArabic(text, 0.85)
 }
 
 type Phase = 'playing' | 'answer' | 'feedback' | 'done'
 
-export default function RhymeDetection({ onComplete, onCancel, difficulty = 1 }: Props) {
+export default function RhymeDetection({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+  const rng       = useRef(createRng(seed ?? Date.now())).current
   const questions = useRef<Question[]>(getQuestions(difficulty))
   const [qIdx, setQIdx]         = useState(0)
   const [phase, setPhase]       = useState<Phase>('playing')
@@ -85,7 +79,7 @@ export default function RhymeDetection({ onComplete, onCancel, difficulty = 1 }:
 
   // Build shuffled choices for this question
   useEffect(() => {
-    const c = shuffle([q.correct, ...q.wrong])
+    const c = shuffleWithRng(rng, [q.correct, ...q.wrong])
     setChoices(c)
     setSelected(null)
     setFeedback(null)

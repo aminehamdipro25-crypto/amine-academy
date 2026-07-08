@@ -2,12 +2,14 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react'
 import type { ExerciseResult } from '@/lib/types'
 import { speakArabic } from '@/lib/speech'
+import { createRng, shuffleWithRng } from '@/lib/seeded-random'
 
 interface Props {
   onComplete: (r: ExerciseResult) => void
   onCancel:   () => void
   studentAge: number
   difficulty?: 1|2|3
+  seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
 }
 
 interface Card { emoji: string; word: string; sentence: string; question: string; correct: string; wrong: [string,string] }
@@ -21,9 +23,8 @@ const CARDS: Card[] = [
   { emoji:'🌧️', word:'المطر', sentence:'المطر يسقط في الشتاء ويسقي النباتات.', question:'متى يسقط المطر؟', correct:'في الشتاء', wrong:['في الصيف','في الربيع'] },
 ]
 
-function shuffle<T>(arr: T[]): T[] { return [...arr].sort(() => Math.random() - 0.5) }
-
-export default function ReadingCards({ onComplete, onCancel, difficulty = 1 }: Props) {
+export default function ReadingCards({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+  const rng   = useRef(createRng(seed ?? Date.now())).current
   const count = difficulty === 1 ? 3 : difficulty === 2 ? 5 : 6
   const cards = CARDS.slice(0, count)
 
@@ -42,7 +43,7 @@ export default function ReadingCards({ onComplete, onCancel, difficulty = 1 }: P
   }, [])
 
   const c = cards[idx]
-  const choices = useMemo(() => shuffle([c.correct, ...c.wrong]), [idx]) // eslint-disable-line react-hooks/exhaustive-deps
+  const choices = useMemo(() => shuffleWithRng(rng, [c.correct, ...c.wrong]), [idx]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleChoice(ch: string) {
     if (chosen) return

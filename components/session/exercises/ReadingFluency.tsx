@@ -2,12 +2,14 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import type { ExerciseResult } from '@/lib/types'
 import { speakArabic, cancelSpeech } from '@/lib/speech'
+import { createRng, shuffleWithRng } from '@/lib/seeded-random'
 
 interface Props {
   onComplete: (r: ExerciseResult) => void
   onCancel:   () => void
   studentAge: number
   difficulty?: 1|2|3
+  seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
 }
 
 // ── Word banks ─────────────────────────────────────────────────
@@ -31,14 +33,11 @@ const LEVEL_LABELS: Record<1|2|3, string> = {
   3: 'كلمات مركبة',
 }
 
-function shuffle<T>(arr: T[]): T[] {
-  return [...arr].sort(() => Math.random() - 0.5)
-}
-
-export default function ReadingFluency({ onComplete, onCancel, difficulty = 1 }: Props) {
+export default function ReadingFluency({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+  const rng        = useRef(createRng(seed ?? Date.now())).current
   const totalTime  = TIME_MAP[difficulty]
   // useMemo ensures the word order is stable across re-renders
-  const words      = useMemo(() => shuffle(WORD_BANKS[difficulty]), [difficulty]) // eslint-disable-line react-hooks/exhaustive-deps
+  const words      = useMemo(() => shuffleWithRng(rng, WORD_BANKS[difficulty]), [difficulty]) // eslint-disable-line react-hooks/exhaustive-deps
   const totalWords = words.length
 
   const [phase,      setPhase]      = useState<'playing'|'done'>('playing')

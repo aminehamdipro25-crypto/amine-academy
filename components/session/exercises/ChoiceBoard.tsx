@@ -1,12 +1,14 @@
 'use client'
 import { useState, useMemo, useRef, useEffect } from 'react'
 import type { ExerciseResult } from '@/lib/types'
+import { createRng, shuffleWithRng } from '@/lib/seeded-random'
 
 interface Props {
   onComplete: (r: ExerciseResult) => void
   onCancel:   () => void
   studentAge: number
   difficulty?: 1|2|3
+  seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
 }
 
 const ALL_ACTIVITIES = [
@@ -41,9 +43,8 @@ const ROUNDS = [
   { prompt: 'اختر نشاطاً إبداعياً تفعله الآن',        count: 4 },
 ]
 
-function shuffle<T>(arr: T[]): T[] { return [...arr].sort(() => Math.random() - 0.5) }
-
-export default function ChoiceBoard({ onComplete, onCancel, difficulty = 1 }: Props) {
+export default function ChoiceBoard({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+  const rng         = useRef(createRng(seed ?? Date.now())).current
   const totalRounds = difficulty === 1 ? 2 : difficulty === 2 ? 4 : 6
   const [idx,     setIdx]     = useState(0)
   const [picks,   setPicks]   = useState<string[]>([])
@@ -54,7 +55,7 @@ export default function ChoiceBoard({ onComplete, onCancel, difficulty = 1 }: Pr
 
   const round       = ROUNDS[idx % ROUNDS.length]
   const optionCount = round.count
-  const options     = useMemo(() => shuffle(ALL_ACTIVITIES).slice(0, optionCount), [idx, optionCount])
+  const options     = useMemo(() => shuffleWithRng(rng, ALL_ACTIVITIES).slice(0, optionCount), [idx, optionCount])
 
   function handlePick(id: string) {
     if (chosen) return

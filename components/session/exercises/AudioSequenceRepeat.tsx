@@ -2,12 +2,14 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import type { ExerciseResult } from '@/lib/types'
 import { speakArabic, cancelSpeech } from '@/lib/speech'
+import { createRng, shuffleWithRng } from '@/lib/seeded-random'
 
 interface Props {
   onComplete: (r: ExerciseResult) => void
   onCancel:   () => void
   studentAge: number
   difficulty?: 1|2|3
+  seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
 }
 
 const ANIMALS = [
@@ -21,9 +23,8 @@ const ANIMALS = [
   { emoji: '🐴', name: 'حصان' },
 ]
 
-function shuffle<T>(arr: T[]): T[] { return [...arr].sort(() => Math.random() - 0.5) }
-
-export default function AudioSequenceRepeat({ onComplete, onCancel, difficulty = 1 }: Props) {
+export default function AudioSequenceRepeat({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+  const rng     = useRef(createRng(seed ?? Date.now())).current
   const SEQ_LEN = difficulty === 1 ? 2 : difficulty === 2 ? 3 : 4
   const ROUNDS  = 4
 
@@ -58,7 +59,7 @@ export default function AudioSequenceRepeat({ onComplete, onCancel, difficulty =
   }, [speak]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const startRound = useCallback(() => {
-    const used = shuffle(Array.from({length: ANIMALS.length}, (_, i) => i)).slice(0, SEQ_LEN)
+    const used = shuffleWithRng(rng, Array.from({length: ANIMALS.length}, (_, i) => i)).slice(0, SEQ_LEN)
     setSequence(used)
     setTapped([])
     playSequence(used)
@@ -113,7 +114,7 @@ export default function AudioSequenceRepeat({ onComplete, onCancel, difficulty =
     } else {
       setRound(next)
       setTapped([])
-      const used = shuffle(Array.from({length: ANIMALS.length}, (_, i) => i)).slice(0, SEQ_LEN)
+      const used = shuffleWithRng(rng, Array.from({length: ANIMALS.length}, (_, i) => i)).slice(0, SEQ_LEN)
       setSequence(used)
       playSequence(used)
     }

@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import type { ExerciseResult } from '@/lib/types'
+import { createRng, randIntWithRng } from '@/lib/seeded-random'
 
 // 9 vivid, clearly distinct colours — one per grid position
 const COLORS = [

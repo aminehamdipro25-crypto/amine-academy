@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react'
 import { useParams } from 'next/navigation'
+import type { ExerciseResult } from '@/lib/types'
 
 const DailyVideoCall = lazy(() => import('@/components/session/DailyVideoCall'))
 
@@ -224,18 +225,29 @@ export default function KidSessionPage() {
     return () => clearInterval(iv)
   }, [poll])
 
-  // Report status to specialist when exercise starts/finishes
-  const reportStatus = useCallback((exerciseId: string, status: 'active' | 'done') => {
+  // Report status to specialist when exercise starts/finishes. `result` is
+  // only present on a real completion (the exercise's onComplete callback
+  // passes its full score/accuracy/errors) — a cancel has none — so the
+  // specialist can see not just THAT the child finished, but how they did.
+  const reportStatus = useCallback((exerciseId: string, status: 'active' | 'done', result?: ExerciseResult) => {
     fetch(`/api/sessions/${id}/kid-status`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ exerciseId, status }),
+      body: JSON.stringify({
+        exerciseId,
+        status,
+        score: result?.score,
+        accuracy: result?.accuracy,
+        errors: result?.errors,
+      }),
     }).catch(() => {})
   }, [id])
 
-  const handleDone = useCallback(() => {
+  // Exercise calls this with a full result object on completion; the same
+  // handler is reused for onCancel, which calls it with no arguments.
+  const handleDone = useCallback((result?: ExerciseResult) => {
     setDone(true)
-    if (live?.exerciseId) reportStatus(live.exerciseId, 'done')
+    if (live?.exerciseId) reportStatus(live.exerciseId, 'done', result)
   }, [live?.exerciseId, reportStatus])
 
   // Report active when a new exercise is received

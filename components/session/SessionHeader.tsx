@@ -63,7 +63,7 @@ export default function SessionHeader({
   saving: boolean
   saved: boolean
   saveFailed: boolean
-  kidStatus: { exerciseId: string; status: 'active' | 'done'; ts: number } | null
+  kidStatus: { exerciseId: string; status: 'active' | 'done'; ts: number; score?: number; accuracy?: number; errors?: number } | null
   activeExerciseId: string | null
 }) {
   return (
@@ -277,11 +277,17 @@ export default function SessionHeader({
               ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
               : 'bg-blue-50 text-blue-700 border-blue-200'
           }`}
-          title={kidStatus.status === 'done' ? 'الطفل أنهى التمرين' : 'الطفل يؤدي التمرين الآن'}
+          title={
+            kidStatus.status === 'done'
+              ? `الطفل أنهى التمرين${typeof kidStatus.score === 'number' ? ` — النتيجة ${kidStatus.score}%` : ''}`
+              : 'الطفل يؤدي التمرين الآن'
+          }
         >
           <span className="text-sm">{kidStatus.status === 'done' ? '✅' : '🧒'}</span>
-          <span className="text-[10px] font-black hidden sm:inline">
-            {kidStatus.status === 'done' ? 'أنهى التمرين' : 'يتفاعل الآن'}
+          <span className="text-[10px] font-black hidden sm:inline ltr-num">
+            {kidStatus.status === 'done'
+              ? (typeof kidStatus.score === 'number' ? `أنهى — ${kidStatus.score}%` : 'أنهى التمرين')
+              : 'يتفاعل الآن'}
           </span>
         </div>
       )}

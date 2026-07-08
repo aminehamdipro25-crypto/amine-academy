@@ -1574,8 +1574,9 @@ ${notes ? `
   }, [exerciseActive, showWhiteboard])
 
 
-  // Poll kid status — specialist sees when kid receives / finishes an exercise
-  type KidStatus = { exerciseId: string; status: 'active' | 'done'; ts: number } | null
+  // Poll kid status — specialist sees when kid receives / finishes an exercise,
+  // and the score/accuracy/errors once they complete it.
+  type KidStatus = { exerciseId: string; status: 'active' | 'done'; ts: number; score?: number; accuracy?: number; errors?: number } | null
   const [kidStatus, setKidStatus] = useState<KidStatus>(null)
   const kidStatusRef = useRef<KidStatus>(null)
   useEffect(() => {

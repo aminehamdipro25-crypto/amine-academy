@@ -1621,6 +1621,16 @@ ${notes ? `
     return unsub
   }, [])
 
+  // Minted fresh each time a NEW exercise activation starts (including a
+  // manual restart) — shared with the kid page via the `live` channel so an
+  // exercise that shuffles its own content (card layout, word order, etc.)
+  // produces the EXACT same result on both screens instead of each side
+  // rolling its own Math.random(). See lib/seeded-random.ts.
+  const [activeSeed, setActiveSeed] = useState(0)
+  useEffect(() => {
+    if (activeView?.type === 'exercise') setActiveSeed(Math.floor(Math.random() * 2 ** 31))
+  }, [activeView?.type, activeView?.id, exerciseRestartNonce])
+
   // Publish current exercise to Redis so the kid page can mirror it in real-time.
   // Re-runs on activeDifficulty too, so an adaptive-engine level change for the
   // SAME exercise re-publishes instead of leaving the kid on the old level.
@@ -1630,7 +1640,7 @@ ${notes ? `
       fetch(`/api/sessions/${id}/live`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ exerciseId: activeView.id, difficulty: activeDifficulty }),
+        body: JSON.stringify({ exerciseId: activeView.id, difficulty: activeDifficulty, seed: activeSeed }),
       }).catch(() => {})
     } else {
       // Nothing active OR a non-exercise view (e.g. an assessment) — clear the
@@ -1638,7 +1648,7 @@ ${notes ? `
       // while the specialist is doing something else entirely.
       fetch(`/api/sessions/${id}/live`, { method: 'DELETE' }).catch(() => {})
     }
-  }, [activeView?.id, activeView?.type, activeDifficulty, id])
+  }, [activeView?.id, activeView?.type, activeDifficulty, activeSeed, id])
 
   // The prompt-card / timer / music popovers are portaled to document.body and
   // anchored to their toolbar button's on-screen position — they don't live
@@ -3578,7 +3588,7 @@ ${notes ? `
                 <div className="w-8 h-8 rounded-full border-4 border-brand-500 border-t-transparent animate-spin" />
               </div>
             }>
-              {activeView.id === 'memory-cards'    && <MemoryCards onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'memory-cards'    && <MemoryCards onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} seed={activeSeed} />}
               {activeView.id === 'sequence-memory' && <SequenceMemory onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
               {activeView.id === 'n-back'          && <NBackTask onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
               {activeView.id === 'word-recall'     && <WordRecall onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}

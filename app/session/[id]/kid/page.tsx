@@ -93,7 +93,7 @@ const StoryReader          = lazy(() => import('@/components/session/exercises/S
 
 const PHYSICAL_IDS = ['jumping-jacks','obstacle-circuit','balance-walk','tiger-crawl','ball-throw','stretching','body-percussion']
 
-type LiveState = { exerciseId: string; difficulty: number } | null
+type LiveState = { exerciseId: string; difficulty: number; seed?: number } | null
 type WBStroke = { c: string; s: number; e: boolean; p: number[] }
 type WBState  = { active: boolean; strokes: WBStroke[]; rev: number; ar?: number }
 type TimerState = { active: boolean; total: number; countUp: boolean; running: boolean; left: number; ts: number }
@@ -670,7 +670,10 @@ export default function KidSessionPage() {
   } else {
     // ── Exercise renderer ────────────────────────────────────────────────
     const id_ = live.exerciseId
-    const props = { onComplete: handleDone, onCancel: handleDone, difficulty, studentAge: 10 }
+    // `seed` (minted by the specialist, carried over the `live` channel) is
+    // only declared on exercises that actually consume it (see
+    // lib/seeded-random.ts) — harmless extra prop for the rest.
+    const props = { onComplete: handleDone, onCancel: handleDone, difficulty, studentAge: 10, seed: live.seed }
 
     mainContent = (
     <div style={{ width: '100vw', height: '100dvh', overflow: 'hidden', background: '#fff', position: 'relative' }}>

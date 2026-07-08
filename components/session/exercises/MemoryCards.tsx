@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import type { ExerciseResult } from '@/lib/types'
+import { createRng, shuffleWithRng, pickWithRng } from '@/lib/seeded-random'
 
 const EMOJI_SETS = [
   ['🦋','🌟','🐬','🌈','🎯','🍓','🦄','🎪','🌺','🏆','🎨','🎭'],
@@ -8,11 +9,20 @@ const EMOJI_SETS = [
 ]
 
 interface Card { id: number; emoji: string; flipped: boolean; matched: boolean }
-interface Props { onComplete: (r: ExerciseResult) => void; onCancel: () => void; studentAge: number; difficulty?: 1|2|3 }
+interface Props {
+  onComplete: (r: ExerciseResult) => void
+  onCancel: () => void
+  studentAge: number
+  difficulty?: 1|2|3
+  /** Shared with the other party's screen over the `live` channel so both
+   *  sides deal the exact same card layout — see lib/seeded-random.ts. */
+  seed?: number
+}
 
-export default function MemoryCards({ onComplete, onCancel, difficulty = 1 }: Props) {
+export default function MemoryCards({ onComplete, onCancel, difficulty = 1, seed }: Props) {
   const pairCount  = difficulty === 1 ? 6 : difficulty === 2 ? 8 : 10
-  const emojiSet        = useRef(EMOJI_SETS[Math.floor(Math.random() * EMOJI_SETS.length)]).current
+  const rng             = useRef(createRng(seed ?? Date.now())).current
+  const emojiSet        = useRef(pickWithRng(rng, EMOJI_SETS)).current
   const startRef        = useRef(Date.now())
   const matchTimerRef   = useRef<ReturnType<typeof setTimeout>>()
   const completeTimerRef= useRef<ReturnType<typeof setTimeout>>()
@@ -41,8 +51,7 @@ export default function MemoryCards({ onComplete, onCancel, difficulty = 1 }: Pr
 
   useEffect(() => {
     const emojis = emojiSet.slice(0, pairCount)
-    const pairs  = [...emojis, ...emojis]
-      .sort(() => Math.random() - 0.5)
+    const pairs  = shuffleWithRng(rng, [...emojis, ...emojis])
       .map((emoji, i) => ({ id: i, emoji, flipped: true, matched: false }))
     setCards(pairs)
     setPreviewing(true)

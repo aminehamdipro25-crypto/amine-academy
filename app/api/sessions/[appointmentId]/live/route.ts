@@ -19,7 +19,7 @@ export async function GET(
     if (!await authorizeSession(params.appointmentId)) {
       return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
     }
-    const data = await redis.get<{ exerciseId: string; difficulty: number }>(key(params.appointmentId))
+    const data = await redis.get<{ exerciseId: string; difficulty: number; seed?: number }>(key(params.appointmentId))
     return NextResponse.json({ live: data ?? null })
   } catch {
     return NextResponse.json({ live: null })
@@ -39,7 +39,12 @@ export async function POST(
     if (rl.limited) return NextResponse.json({ error: 'طلبات كثيرة جداً' }, { status: 429 })
     const body = await req.json().catch(() => null)
     if (!body?.exerciseId) return NextResponse.json({ error: 'exerciseId مطلوب' }, { status: 400 })
-    await redis.set(key(params.appointmentId), { exerciseId: body.exerciseId, difficulty: body.difficulty ?? 1 }, { ex: 14400 })
+    // `seed` (minted once by the specialist per exercise activation) lets
+    // exercises that shuffle their own content reproduce the EXACT same
+    // layout on the child's screen instead of each side randomizing
+    // independently — see lib/seeded-random.ts.
+    const seed = Number.isFinite(body.seed) ? Math.trunc(body.seed) : undefined
+    await redis.set(key(params.appointmentId), { exerciseId: body.exerciseId, difficulty: body.difficulty ?? 1, seed }, { ex: 14400 })
     await publishSessionEvent(params.appointmentId, 'live')
     return NextResponse.json({ ok: true })
   } catch {

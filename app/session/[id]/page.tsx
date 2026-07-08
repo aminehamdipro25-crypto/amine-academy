@@ -107,7 +107,7 @@ import LiveSessionCard from '@/components/session/LiveSessionCard'
 import SessionStarCounter from '@/components/session/SessionStarCounter'
 import { computeAdaptiveDecision } from '@/lib/session-adaptive'
 import { startNoiseEngine, type NoiseMode, type NoiseHandle } from '@/lib/noise-synth'
-import { subscribeSession, realtimeEnabled } from '@/lib/realtime-client'
+import { subscribeSession, realtimeEnabled, subscribeConnectionState, type RealtimeStatus } from '@/lib/realtime-client'
 import ADHDScale       from '@/components/session/assessments/ADHDScale'
 import AutismScale      from '@/components/session/assessments/AutismScale'
 import LearningDifficultiesScale from '@/components/session/assessments/LearningDifficultiesScale'
@@ -1609,6 +1609,18 @@ ${notes ? `
     return () => { unsub(); clearInterval(statusIv); clearInterval(presenceIv) }
   }, [id])
 
+  // Visible realtime status — so "is the live sync actually on" is something
+  // the specialist can see instead of guess. 'disabled'/'unavailable' both
+  // mean the app is silently and correctly using its polling fallback (not
+  // broken) — most likely because the Pusher env vars aren't fully set in
+  // Vercel yet, or were added without a redeploy (NEXT_PUBLIC_* vars are
+  // baked in at build time).
+  const [rtStatus, setRtStatus] = useState<RealtimeStatus>('disabled')
+  useEffect(() => {
+    const unsub = subscribeConnectionState(setRtStatus)
+    return unsub
+  }, [])
+
   // Publish current exercise to Redis so the kid page can mirror it in real-time.
   // Re-runs on activeDifficulty too, so an adaptive-engine level change for the
   // SAME exercise re-publishes instead of leaving the kid on the old level.
@@ -1840,6 +1852,32 @@ ${notes ? `
           {chromeHidden ? <Maximize2 className="w-[18px] h-[18px]" strokeWidth={2.5} /> : <Minimize2 className="w-[18px] h-[18px]" strokeWidth={2.5} />}
         </button>
       )}
+
+      {/* ── Realtime status badge — small, unobtrusive, always visible so the
+          specialist can tell "instant sync" from "polling fallback" at a
+          glance instead of guessing from feel. ── */}
+      <div
+        className="fixed bottom-3 left-3 z-[480] flex items-center gap-1.5 rounded-full px-2.5 py-1 select-none"
+        style={{ background: 'rgba(10,10,20,0.7)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.1)' }}
+        dir="rtl"
+        title={
+          rtStatus === 'connected' ? 'التزامن اللحظي يعمل الآن (Pusher متصل)'
+          : rtStatus === 'connecting' ? 'جارٍ الاتصال بخدمة التزامن اللحظي...'
+          : rtStatus === 'disabled' ? 'التزامن اللحظي غير مُفعّل — يعمل التطبيق بالتحديث الدوري (كل ثانية). أضف مفاتيح Pusher في Vercel وأعد النشر لتفعيله'
+          : 'تعذّر الاتصال بخدمة التزامن اللحظي — يعمل التطبيق بالتحديث الدوري كبديل آمن'
+        }
+      >
+        <div
+          className="w-1.5 h-1.5 rounded-full"
+          style={{
+            background: rtStatus === 'connected' ? '#22C55E' : rtStatus === 'connecting' ? '#F59E0B' : '#6B7280',
+            animation: rtStatus === 'connecting' ? 'pulse 1.5s ease-in-out infinite' : undefined,
+          }}
+        />
+        <span className="text-[10px] font-black text-white/60">
+          {rtStatus === 'connected' ? 'مباشر' : rtStatus === 'connecting' ? 'اتصال...' : 'تحديث دوري'}
+        </span>
+      </div>
 
       {/* ── Child Lock Overlay — floating indicator when session is locked ── */}
       {sessionLocked && (

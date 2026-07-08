@@ -135,11 +135,19 @@ export default function DraggableVideoPiP({
         </div>
       )}
 
-      {/* Content */}
-      {!collapsed && (
-        <div className="flex-1 relative overflow-hidden" style={{ height: '100%' }}>
-          {children}
-          {/* Resize handle — bottom-right corner */}
+      {/* Content — kept mounted even while collapsed. The video call inside
+          negotiates its own camera/mic on mount; unmounting it on every
+          minimize click (as this used to do) tore down and rebuilt the
+          whole Daily call each time, which is what caused the video to look
+          "half-blocked" after collapsing/expanding a few times. Only
+          visibility toggles now; the call itself stays alive throughout. */}
+      <div
+        className="flex-1 relative overflow-hidden"
+        style={{ height: '100%', visibility: collapsed ? 'hidden' : 'visible', pointerEvents: collapsed ? 'none' : 'auto' }}
+      >
+        {children}
+        {/* Resize handle — bottom-right corner */}
+        {!collapsed && (
           <div
             data-resize
             onPointerDown={onResizeDown}
@@ -150,8 +158,8 @@ export default function DraggableVideoPiP({
               borderRadius: '0 0 8px 0',
             }}
           />
-        </div>
-      )}
+        )}
+      </div>
     </div>
   )
 

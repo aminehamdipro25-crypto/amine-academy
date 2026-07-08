@@ -75,3 +75,32 @@ export function subscribeSession(
     release()
   }
 }
+
+export type RealtimeStatus = 'disabled' | 'connecting' | 'connected' | 'unavailable'
+
+/**
+ * Reports the actual Pusher connection state, so the UI can show whether
+ * realtime is truly live rather than silently falling back to polling. Ends
+ * a common ambiguity: "sync feels slow" could mean Pusher isn't configured,
+ * isn't deployed yet (NEXT_PUBLIC_* vars are build-time-inlined — adding
+ * them in Vercel needs a fresh redeploy), or the socket is stuck connecting.
+ */
+export function subscribeConnectionState(onChange: (status: RealtimeStatus) => void): () => void {
+  const client = acquire()
+  if (!client) {
+    onChange('disabled')
+    return () => {}
+  }
+  const handler = () => {
+    const state = client.connection.state
+    if (state === 'connected') onChange('connected')
+    else if (state === 'connecting' || state === 'disconnected') onChange('connecting')
+    else onChange('unavailable') // 'unavailable' | 'failed'
+  }
+  client.connection.bind('state_change', handler)
+  handler()
+  return () => {
+    client.connection.unbind('state_change', handler)
+    release()
+  }
+}

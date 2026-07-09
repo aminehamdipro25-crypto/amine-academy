@@ -12,6 +12,19 @@ function localeFor(lang: Lang) {
   return lang === 'en' ? 'en-US' : lang === 'fr' ? 'fr-FR' : 'ar'
 }
 
+// Absolute start time (ms) of an appointment from its date + timeSlot. Built
+// from the parts in LOCAL time (not `new Date(date)`, which parses a bare
+// "YYYY-MM-DD" as UTC midnight and drifts across timezones). timeSlot may be
+// "16:00" or "16:00-16:45" — we read the leading HH:MM.
+function apptStartMs(a: { date: string; timeSlot: string }): number {
+  const [y, mo, d] = a.date.split('-').map(Number)
+  const tm = a.timeSlot.match(/(\d{1,2}):(\d{2})/)
+  const h  = tm ? Number(tm[1]) : 0
+  const mi = tm ? Number(tm[2]) : 0
+  if (!y || !mo || !d) return new Date(a.date).getTime()   // fallback for odd formats
+  return new Date(y, mo - 1, d, h, mi).getTime()
+}
+
 const AVATAR_GRADIENTS = [
   'from-brand-600 to-purple-600',
   'from-blue-500 to-cyan-600',
@@ -55,16 +68,34 @@ export default function AppointmentsView({ appointments, parents, error }: {
 
   const parentMap = Object.fromEntries(parents.map(p => [p.id, p]))
 
-  const upcoming  = appointments.filter(a => a.status === 'scheduled')
+  // "Upcoming" = a scheduled appointment whose start time hasn't passed yet
+  // (+1h grace so a session that's already in progress still counts). This is
+  // the fix for the reported bug: previously ANY scheduled appointment — even
+  // long-past ones never marked done/cancelled — counted as upcoming, and
+  // being the oldest dates they filled the top-3 spotlight, so a newly-booked
+  // FUTURE appointment (which does appear in the notification bell) was sorted
+  // to the bottom and never showed here. Now upcoming is future-only and
+  // sorted soonest-first, so a new booking surfaces immediately.
+  const GRACE_MS = 60 * 60 * 1000
+  const now = Date.now()
+  const scheduled = appointments.filter(a => a.status === 'scheduled')
+  const upcoming = scheduled
+    .filter(a => apptStartMs(a) >= now - GRACE_MS)
+    .sort((a, b) => apptStartMs(a) - apptStartMs(b))          // soonest first
+  // Past-due but still 'scheduled' — overdue, needs the specialist to mark it
+  // done/cancelled. Kept in the full list below (so nothing vanishes), just
+  // never allowed to crowd the upcoming spotlight.
+  const pastDue = scheduled
+    .filter(a => apptStartMs(a) < now - GRACE_MS)
+    .sort((a, b) => apptStartMs(b) - apptStartMs(a))          // most-recent overdue first
   const completed = appointments.filter(a => a.status === 'completed')
   const cancelled = appointments.filter(a => ['cancelled', 'no-show'].includes(a.status))
 
-  upcoming.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-
   const allSorted = [
     ...upcoming,
+    ...pastDue,
     ...appointments.filter(a => a.status !== 'scheduled').sort(
-      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+      (a, b) => apptStartMs(b) - apptStartMs(a)
     ),
   ]
 
@@ -128,7 +159,7 @@ export default function AppointmentsView({ appointments, parents, error }: {
           </div>
           <motion.div className="space-y-2" variants={staggerContainer}>
             <AnimatePresence initial={false}>
-              {upcoming.slice(0, 3).map((appt, idx) => {
+              {upcoming.slice(0, 5).map((appt, idx) => {
                 const parent = parentMap[appt.parentId]
                 const type = TYPE_CFG[appt.type]
                 const gradient = AVATAR_GRADIENTS[idx % AVATAR_GRADIENTS.length]

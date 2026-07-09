@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
-import type { ExerciseResult } from '@/lib/types'
+import type { ExerciseResult, ExerciseProgressUpdate } from '@/lib/types'
 import { createRng, pickWithRng, type Rng } from '@/lib/seeded-random'
 
 interface Props {
@@ -9,6 +9,7 @@ interface Props {
   studentAge: number
   difficulty?: 1|2|3
   seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
+  onProgress?: (p: ExerciseProgressUpdate) => void // live per-answer feedback to the specialist
 }
 
 const COLORS = [
@@ -38,7 +39,7 @@ function makeGrid(rng: Rng, size: number, colors: typeof COLORS): string[][] {
   )
 }
 
-export default function ColorGrid({ onComplete, onCancel, studentAge, difficulty = 1, seed }: Props) {
+export default function ColorGrid({ onComplete, onCancel, studentAge, difficulty = 1, seed, onProgress }: Props) {
   const rng    = useRef(createRng(seed ?? Date.now())).current
   const cfg    = getConfig(difficulty, studentAge)
   const ROUNDS = difficulty === 1 ? 2 : difficulty === 2 ? 3 : 4
@@ -88,6 +89,17 @@ export default function ColorGrid({ onComplete, onCancel, studentAge, difficulty
     const newScores = [...scores, score]
     setScores(newScores)
     setPhase('feedback')
+
+    // A recall round counts as "correct" when it clears the pass threshold (≥60%).
+    const roundPassed = score >= 60
+    const passedCount = newScores.filter(s => s >= 60).length
+    onProgress?.({
+      answered: newScores.length,
+      total: ROUNDS,
+      correct: passedCount,
+      errors: newScores.length - passedCount,
+      lastCorrect: roundPassed,
+    })
 
     if (round + 1 >= ROUNDS) {
       timerRef.current = setTimeout(() => {

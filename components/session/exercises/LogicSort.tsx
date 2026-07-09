@@ -1,6 +1,6 @@
 'use client'
 import { useState, useMemo, useRef, useEffect } from 'react'
-import type { ExerciseResult } from '@/lib/types'
+import type { ExerciseResult, ExerciseProgressUpdate } from '@/lib/types'
 import { createRng, shuffleWithRng } from '@/lib/seeded-random'
 
 interface Props {
@@ -9,6 +9,7 @@ interface Props {
   studentAge: number
   difficulty?: 1|2|3
   seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
+  onProgress?: (p: ExerciseProgressUpdate) => void // live per-answer feedback to the specialist
 }
 
 interface Q {
@@ -93,7 +94,7 @@ const ALL: Q[] = [
   },
 ]
 
-export default function LogicSort({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+export default function LogicSort({ onComplete, onCancel, difficulty = 1, seed, onProgress }: Props) {
   const rng = useRef(createRng(seed ?? Date.now())).current
   const count = difficulty === 1 ? 4 : difficulty === 2 ? 6 : 9
   const [qs]  = useState<Q[]>(() => shuffleWithRng(rng, ALL).slice(0, count))
@@ -130,6 +131,7 @@ export default function LogicSort({ onComplete, onCancel, difficulty = 1, seed }
       setResult(isCorrect ? 'correct' : 'wrong')
       if (isCorrect) setCorrect(nc)
       else           setErrors(ne)
+      onProgress?.({ answered: idx + 1, total: count, correct: nc, errors: ne, lastCorrect: isCorrect })
 
       timerRef.current = setTimeout(() => {
         const next = idx + 1

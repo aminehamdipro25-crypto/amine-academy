@@ -1,6 +1,6 @@
 'use client'
 import { useState, useMemo, useRef, useEffect } from 'react'
-import type { ExerciseResult } from '@/lib/types'
+import type { ExerciseResult, ExerciseProgressUpdate } from '@/lib/types'
 import { createRng, shuffleWithRng } from '@/lib/seeded-random'
 
 interface Props {
@@ -9,6 +9,7 @@ interface Props {
   studentAge: number
   difficulty?: 1|2|3
   seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
+  onProgress?: (p: ExerciseProgressUpdate) => void // live per-answer feedback to the specialist
 }
 
 // Colors: index → hex
@@ -65,7 +66,7 @@ function getConflicts(grid: (number|null)[], size: number): Set<number> {
   return bad
 }
 
-export default function ColorSudoku({ onComplete, onCancel, difficulty=1, studentAge, seed }: Props) {
+export default function ColorSudoku({ onComplete, onCancel, difficulty=1, studentAge, seed, onProgress }: Props) {
   const rng    = useRef(createRng(seed ?? Date.now())).current
   const isYoung = studentAge < 9
   const size   = (difficulty===3 && !isYoung) ? 6 : 4
@@ -116,6 +117,7 @@ export default function ColorSudoku({ onComplete, onCancel, difficulty=1, studen
       const ok = next.every((v,i)=>v===solution[i])
       const nc = correct + (ok?1:0)
       if (ok) setCorrect(nc)
+      onProgress?.({ answered: idx+1, total: COUNT, correct: nc, errors: (idx+1)-nc, lastCorrect: ok })
       setPhase('done')
       timerRef.current = setTimeout(()=>{
         if (idx+1>=COUNT) {

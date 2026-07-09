@@ -1,6 +1,6 @@
 'use client'
 import { useState, useRef, useEffect } from 'react'
-import type { ExerciseResult } from '@/lib/types'
+import type { ExerciseResult, ExerciseProgressUpdate } from '@/lib/types'
 import { createRng, pickWithRng, randIntWithRng, randBoolWithRng, type Rng } from '@/lib/seeded-random'
 
 interface Props {
@@ -9,6 +9,7 @@ interface Props {
   studentAge: number
   difficulty?: 1|2|3
   seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
+  onProgress?: (p: ExerciseProgressUpdate) => void // live per-answer feedback to the specialist
 }
 
 // Each pattern = a 3x3 arrangement of symbols + colors
@@ -118,7 +119,7 @@ function PatternGrid({ cells, size, highlight = false }: { cells: Cell[]; size: 
   )
 }
 
-export default function PatternMatch({ onComplete, onCancel, studentAge, difficulty = 1, seed }: Props) {
+export default function PatternMatch({ onComplete, onCancel, studentAge, difficulty = 1, seed, onProgress }: Props) {
   const rng    = useRef(createRng(seed ?? Date.now())).current
   const size   = BGSIZES[difficulty] || 3
   const ROUNDS = difficulty === 1 ? 4 : difficulty === 2 ? 5 : 6
@@ -141,6 +142,9 @@ export default function PatternMatch({ onComplete, onCancel, studentAge, difficu
     setFeedback(isCorrect ? 'correct' : 'wrong')
     const newScores = [...scores, isCorrect ? 100 : 0]
     setScores(newScores)
+    const nc = newScores.filter(s => s === 100).length
+    const ne = newScores.filter(s => s === 0).length
+    onProgress?.({ answered: round + 1, total: ROUNDS, correct: nc, errors: ne, lastCorrect: isCorrect })
 
     timerRef.current = setTimeout(() => {
       setFeedback(null)

@@ -94,7 +94,7 @@ const StoryReader          = lazy(() => import('@/components/session/exercises/S
 
 const PHYSICAL_IDS = ['jumping-jacks','obstacle-circuit','balance-walk','tiger-crawl','ball-throw','stretching','body-percussion']
 
-type LiveState = { exerciseId: string; difficulty: number; seed?: number } | null
+type LiveState = { exerciseId: string; difficulty: number; seed?: number; locked?: boolean } | null
 type WBStroke = { c: string; s: number; e: boolean; p: number[] }
 type WBState  = { active: boolean; strokes: WBStroke[]; rev: number; ar?: number }
 type TimerState = { active: boolean; total: number; countUp: boolean; running: boolean; left: number; ts: number }
@@ -783,6 +783,10 @@ export default function KidSessionPage() {
   // Exercise calls this with a full result object on completion; the same
   // handler is reused for onCancel, which calls it with no arguments.
   const handleDone = useCallback((result?: ExerciseResult) => {
+    // While the specialist has locked the session, ignore the child's own
+    // "exit" tap (a cancel = no result) so they stay on the exercise. A real
+    // completion (result present) still goes through.
+    if (!result && live?.locked) return
     setDone(true)
     if (live?.exerciseId) {
       reportStatus(live.exerciseId, 'done', result)
@@ -801,7 +805,7 @@ export default function KidSessionPage() {
         })
       }
     }
-  }, [live?.exerciseId, reportStatus, id])
+  }, [live?.exerciseId, live?.locked, reportStatus, id])
 
   // Report active on every NEW activation — depends on `nonce` (which bumps
   // on every start AND restart), not just exerciseId, so a restart of the
@@ -817,15 +821,22 @@ export default function KidSessionPage() {
   // Mounted ONCE for the whole session so the call never drops between
   // screens; hiding only collapses the box (audio keeps playing).
   const [videoSmall, setVideoSmall] = useState(false)
+  // Draggable position for the teacher video. null = default (top-right). Once
+  // the child drags it, we pin left/top so they can move it out of the way of
+  // whatever the exercise shows — the specialist can drag their PiP, so the
+  // child gets the same freedom. The Daily iframe swallows pointer events, so
+  // dragging is done via a dedicated grab handle at the top of the box.
+  const [videoPos, setVideoPos] = useState<{ x: number; y: number } | null>(null)
+  const videoBoxRef = useRef<HTMLDivElement>(null)
+  const videoDragRef = useRef<{ dx: number; dy: number } | null>(null)
   const teacherVideo = meetingUrl && (
     <>
-      <div style={{
-        // top-right, not bottom-left: Chrome/Android both dock their own
-        // "camera/mic in use" control bubble at the viewport's bottom-left
-        // corner, which used to sit directly on top of this box (and the
-        // readiness face-buttons behind it) — this collision is a browser
-        // feature we can't reposition, so we move ourselves instead.
-        position: 'fixed', top: 12, right: 12, zIndex: 9999,
+      <div ref={videoBoxRef} style={{
+        // Default top-right; Chrome/Android dock their own "camera in use"
+        // bubble at the bottom-left corner, so we start away from it. Once
+        // dragged, `videoPos` pins left/top and releases right.
+        position: 'fixed', zIndex: 9999,
+        ...(videoPos ? { left: videoPos.x, top: videoPos.y, right: 'auto' } : { top: 12, right: 12 }),
         // Bigger by default so the teacher is clearly visible — a child's
         // main need is to see the specialist. ▼ shrinks it out of the way
         // when an exercise needs the space.
@@ -837,6 +848,32 @@ export default function KidSessionPage() {
         background: '#111827',
         display: videoHidden ? 'none' : 'block',
       }}>
+        {/* Drag handle — the only grabbable strip (the video iframe below
+            captures its own pointer events, so the box can't be dragged by it). */}
+        <div
+          onPointerDown={e => {
+            const el = videoBoxRef.current; if (!el) return
+            e.currentTarget.setPointerCapture(e.pointerId)
+            const rect = el.getBoundingClientRect()
+            videoDragRef.current = { dx: e.clientX - rect.left, dy: e.clientY - rect.top }
+          }}
+          onPointerMove={e => {
+            if (!videoDragRef.current || !videoBoxRef.current) return
+            const el = videoBoxRef.current
+            const x = Math.max(0, Math.min(window.innerWidth  - el.offsetWidth,  e.clientX - videoDragRef.current.dx))
+            const y = Math.max(0, Math.min(window.innerHeight - el.offsetHeight, e.clientY - videoDragRef.current.dy))
+            setVideoPos({ x, y })
+          }}
+          onPointerUp={() => { videoDragRef.current = null }}
+          style={{
+            position: 'absolute', top: 0, left: 0, right: 0, height: 22, zIndex: 9,
+            cursor: 'grab', touchAction: 'none',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'linear-gradient(to bottom, rgba(0,0,0,0.5), transparent)',
+          }}
+        >
+          <span style={{ color: 'rgba(255,255,255,0.75)', fontSize: 12, letterSpacing: 2, lineHeight: 1 }}>⋯</span>
+        </div>
         <Suspense fallback={
           <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.5)', fontSize: 11, fontWeight: 700 }}>
             جارٍ التحميل...

@@ -19,7 +19,7 @@ export async function GET(
     if (!await authorizeSession(params.appointmentId)) {
       return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
     }
-    const data = await redis.get<{ exerciseId: string; difficulty: number; seed?: number }>(key(params.appointmentId))
+    const data = await redis.get<{ exerciseId: string; difficulty: number; seed?: number; locked?: boolean }>(key(params.appointmentId))
     return NextResponse.json({ live: data ?? null })
   } catch {
     return NextResponse.json({ live: null })
@@ -44,7 +44,11 @@ export async function POST(
     // layout on the child's screen instead of each side randomizing
     // independently — see lib/seeded-random.ts.
     const seed = Number.isFinite(body.seed) ? Math.trunc(body.seed) : undefined
-    await redis.set(key(params.appointmentId), { exerciseId: body.exerciseId, difficulty: body.difficulty ?? 1, seed }, { ex: 14400 })
+    // `locked` = the specialist has locked the session to keep the child on
+    // the current exercise; the kid page then ignores the child's own "exit"
+    // tap so they can't wander off mid-task.
+    const locked = body.locked === true
+    await redis.set(key(params.appointmentId), { exerciseId: body.exerciseId, difficulty: body.difficulty ?? 1, seed, locked }, { ex: 14400 })
     await publishSessionEvent(params.appointmentId, 'live')
     return NextResponse.json({ ok: true })
   } catch {

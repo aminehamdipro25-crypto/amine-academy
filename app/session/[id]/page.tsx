@@ -1702,7 +1702,10 @@ ${notes ? `
       fetch(`/api/sessions/${id}/live`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ exerciseId: activeView.id, difficulty: activeDifficulty, seed: activeSeed }),
+        // `locked` rides along so the child's page can block its own exit tap
+        // while the session is locked. Re-posts when the lock toggles (it's in
+        // the deps) so the child sees the lock go on/off immediately.
+        body: JSON.stringify({ exerciseId: activeView.id, difficulty: activeDifficulty, seed: activeSeed, locked: sessionLocked }),
       }).catch(() => {})
     } else {
       // Nothing active OR a non-exercise view (e.g. an assessment) — clear the
@@ -1710,7 +1713,7 @@ ${notes ? `
       // while the specialist is doing something else entirely.
       fetch(`/api/sessions/${id}/live`, { method: 'DELETE' }).catch(() => {})
     }
-  }, [activeView?.id, activeView?.type, activeDifficulty, activeSeed, id])
+  }, [activeView?.id, activeView?.type, activeDifficulty, activeSeed, sessionLocked, id])
 
   // The prompt-card / timer / music popovers are portaled to document.body and
   // anchored to their toolbar button's on-screen position — they don't live

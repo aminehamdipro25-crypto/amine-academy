@@ -1,6 +1,6 @@
 'use client'
 import { useState, useMemo, useRef, useEffect } from 'react'
-import type { ExerciseResult } from '@/lib/types'
+import type { ExerciseResult, ExerciseProgressUpdate } from '@/lib/types'
 import { createRng, shuffleWithRng, type Rng } from '@/lib/seeded-random'
 
 interface Props {
@@ -9,6 +9,7 @@ interface Props {
   studentAge: number
   difficulty?: 1|2|3
   seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
+  onProgress?: (p: ExerciseProgressUpdate) => void // live per-answer feedback to the specialist
 }
 
 // Each puzzle: a 2×2 or 3×3 grid of emoji pieces
@@ -115,7 +116,7 @@ const HARD: Puzzle[] = [
 
 function shuffle<T>(arr: T[], rng: Rng): T[] { return shuffleWithRng(rng, arr) }
 
-export default function PicturePuzzle({ onComplete, onCancel, difficulty = 1, studentAge, seed }: Props) {
+export default function PicturePuzzle({ onComplete, onCancel, difficulty = 1, studentAge, seed, onProgress }: Props) {
   const rng = useRef(createRng(seed ?? Date.now())).current
   const puzzles = useMemo<Puzzle[]>(() => {
     if (difficulty === 1) return shuffle(EASY, rng)
@@ -174,6 +175,7 @@ export default function PicturePuzzle({ onComplete, onCancel, difficulty = 1, st
       const nc = correct + (isCorrect ? 1 : 0)
       if (isCorrect) setCorrect(nc)
       setPhase('done')
+      onProgress?.({ answered: idx + 1, total: count, correct: nc, errors: (idx + 1) - nc, lastCorrect: isCorrect })
 
       timerRef.current = setTimeout(() => {
         if (idx + 1 >= count) {

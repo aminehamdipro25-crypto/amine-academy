@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
-import type { ExerciseResult } from '@/lib/types'
+import type { ExerciseResult, ExerciseProgressUpdate } from '@/lib/types'
 import { createRng, randIntWithRng, pickWithRng, type Rng } from '@/lib/seeded-random'
 
 // All stimuli emojis (target will be picked from these)
@@ -25,6 +25,7 @@ interface Props {
   studentAge: number
   difficulty?: 1 | 2 | 3
   seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
+  onProgress?: (p: ExerciseProgressUpdate) => void // live per-answer feedback to the specialist
 }
 
 function buildSequence(totalStimuli: number, rng: Rng): StimRecord[] {
@@ -53,7 +54,7 @@ function buildSequence(totalStimuli: number, rng: Rng): StimRecord[] {
   return seq
 }
 
-export default function SustainedAttention({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+export default function SustainedAttention({ onComplete, onCancel, difficulty = 1, seed, onProgress }: Props) {
   const rng = useRef(createRng(seed ?? Date.now())).current
   const totalStimuli = difficulty === 1 ? 15 : difficulty === 2 ? 20 : 25
   const displayMs = difficulty === 1 ? 1800 : difficulty === 2 ? 1500 : 1200
@@ -132,13 +133,20 @@ export default function SustainedAttention({ onComplete, onCancel, difficulty = 
       // Check miss
       if (stim.isTarget && !pressedRef.current) {
         missesRef.current++
+        onProgress?.({
+          answered: idx + 1,
+          total: totalStimuli,
+          correct: hitsRef.current,
+          errors: missesRef.current + falseAlarmsRef.current,
+          lastCorrect: false,
+        })
       }
       // Gap between stimuli (200ms blank)
       timerRef.current = setTimeout(() => {
         runStimulus(idx + 1)
       }, 200)
     }, displayMs)
-  }, [displayMs, finishGame])
+  }, [displayMs, finishGame, totalStimuli, onProgress])
 
   function startGame() {
     seqRef.current = buildSequence(totalStimuli, rng)
@@ -157,13 +165,21 @@ export default function SustainedAttention({ onComplete, onCancel, difficulty = 
     pressedRef.current = true
     setPressed(true)
     const stim = seqRef.current[stimIdx]
-    if (stim && stim.isTarget && showStimulus) {
+    const isHit = !!(stim && stim.isTarget && showStimulus)
+    if (isHit) {
       hitsRef.current++
       setFlashFeedback('hit')
     } else {
       falseAlarmsRef.current++
       setFlashFeedback('false-alarm')
     }
+    onProgress?.({
+      answered: stimIdx + 1,
+      total: totalStimuli,
+      correct: hitsRef.current,
+      errors: missesRef.current + falseAlarmsRef.current,
+      lastCorrect: isHit,
+    })
     // feedback disappears after 400ms but don't clear the stimulus timer
     if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current)
     feedbackTimerRef.current = setTimeout(() => setFlashFeedback(null), 400)

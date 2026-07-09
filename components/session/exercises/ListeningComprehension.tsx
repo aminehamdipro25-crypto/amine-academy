@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
-import type { ExerciseResult } from '@/lib/types'
+import type { ExerciseResult, ExerciseProgressUpdate } from '@/lib/types'
 import { speakArabic } from '@/lib/speech'
 import { createRng, shuffleWithRng } from '@/lib/seeded-random'
 
@@ -10,6 +10,7 @@ interface Props {
   studentAge: number
   difficulty?: 1 | 2 | 3
   seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
+  onProgress?: (p: ExerciseProgressUpdate) => void // live per-answer feedback to the specialist
 }
 
 interface Question {
@@ -44,6 +45,7 @@ export default function ListeningComprehension({
   studentAge: _studentAge,
   difficulty = 1,
   seed,
+  onProgress,
 }: Props) {
   const rng = useRef(createRng(seed ?? Date.now())).current
   const startRef = useRef(Date.now())
@@ -105,6 +107,7 @@ export default function ListeningComprehension({
     const ne = errors  + (isCorrect ? 0 : 1)
     if (isCorrect) setCorrect(nc)
     else setErrors(ne)
+    onProgress?.({ answered: currentIdx + 1, total, correct: nc, errors: ne, lastCorrect: isCorrect })
     setPhase('feedback')
 
     timerRef.current = setTimeout(() => {

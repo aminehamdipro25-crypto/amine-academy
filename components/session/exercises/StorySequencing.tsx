@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
-import type { ExerciseResult } from '@/lib/types'
+import type { ExerciseResult, ExerciseProgressUpdate } from '@/lib/types'
 import { createRng, shuffleWithRng, type Rng } from '@/lib/seeded-random'
 
 interface Props {
@@ -9,6 +9,7 @@ interface Props {
   studentAge: number
   difficulty?: 1|2|3
   seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
+  onProgress?: (p: ExerciseProgressUpdate) => void // live per-answer feedback to the specialist
 }
 
 interface Story {
@@ -41,7 +42,7 @@ function buildQueue(difficulty: 1|2|3, rng: Rng): Story[] {
 
 type SlotItem = string | null
 
-export default function StorySequencing({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+export default function StorySequencing({ onComplete, onCancel, difficulty = 1, seed, onProgress }: Props) {
   const rng = useRef(createRng(seed ?? Date.now())).current
   const [queue] = useState<Story[]>(() => buildQueue(difficulty, rng))
   const [storyIdx, setStoryIdx] = useState(0)
@@ -136,6 +137,14 @@ export default function StorySequencing({ onComplete, onCancel, difficulty = 1, 
     const errors = isCorrect ? 0 : total - correctPositions
     const newErrors = totalErrors + errors
     setTotalErrors(newErrors)
+    const correctStories = newScores.filter(s => s === 100).length
+    onProgress?.({
+      answered: newScores.length,
+      total: queue.length,
+      correct: correctStories,
+      errors: newScores.length - correctStories,
+      lastCorrect: isCorrect,
+    })
 
     timerRef.current = setTimeout(() => {
       if (storyIdx + 1 >= queue.length) {

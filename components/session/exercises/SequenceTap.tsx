@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
-import type { ExerciseResult } from '@/lib/types'
+import type { ExerciseResult, ExerciseProgressUpdate } from '@/lib/types'
 import { createRng, randIntWithRng } from '@/lib/seeded-random'
 
 interface Props {
@@ -9,11 +9,12 @@ interface Props {
   studentAge: number
   difficulty?: 1|2|3
   seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
+  onProgress?: (p: ExerciseProgressUpdate) => void // live per-answer feedback to the specialist
 }
 
 const COLORS = ['#EF4444','#3B82F6','#22C55E','#F59E0B','#8B5CF6','#EC4899']
 
-export default function SequenceTap({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+export default function SequenceTap({ onComplete, onCancel, difficulty = 1, seed, onProgress }: Props) {
   const rng     = useRef(createRng(seed ?? Date.now())).current
   const SEQ_LEN = difficulty === 1 ? 3 : difficulty === 2 ? 4 : 5
   const ROUNDS  = 5
@@ -65,6 +66,7 @@ export default function SequenceTap({ onComplete, onCancel, difficulty = 1, seed
       setErrors(ne)
       setFeedback('wrong')
       setPhase('feedback')
+      onProgress?.({ answered: round + 1, total: ROUNDS, correct: score, errors: ne, lastCorrect: false })
       timerIds.current.push(setTimeout(() => advance(false, score, ne), 1300))
     } else {
       setTapped(next)
@@ -73,6 +75,7 @@ export default function SequenceTap({ onComplete, onCancel, difficulty = 1, seed
         setPhase('feedback')
         const ns = score + 1
         setScore(ns)
+        onProgress?.({ answered: round + 1, total: ROUNDS, correct: ns, errors, lastCorrect: true })
         timerIds.current.push(setTimeout(() => advance(true, ns, errors), 1300))
       }
     }

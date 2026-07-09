@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
-import type { ExerciseResult } from '@/lib/types'
+import type { ExerciseResult, ExerciseProgressUpdate } from '@/lib/types'
 import { createRng, randBoolWithRng } from '@/lib/seeded-random'
 
 const TOTAL = 24
@@ -11,12 +11,13 @@ interface Props {
   studentAge: number
   difficulty?: 1|2|3
   seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
+  onProgress?: (p: ExerciseProgressUpdate) => void // live per-answer feedback to the specialist
 }
 
 type Phase = 'ready' | 'wait' | 'go' | 'stop' | 'result'
 type Fb    = 'hit' | 'miss' | 'stop-ok' | 'stop-err' | null
 
-export default function StopSignal({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+export default function StopSignal({ onComplete, onCancel, difficulty = 1, seed, onProgress }: Props) {
   const rng = useRef(createRng(seed ?? Date.now())).current
   const displayMs = difficulty === 1 ? 1000 : difficulty === 2 ? 750 : 550
   const stopRate  = difficulty === 1 ? 0.25 : difficulty === 2 ? 0.30 : 0.35
@@ -78,11 +79,18 @@ export default function StopSignal({ onComplete, onCancel, difficulty = 1, seed 
         if (!tappedRef.current) {
           if (stop) { stopOkRef.current++;  setFb('stop-ok') }
           else      { goMissRef.current++;  setFb('miss')    }
+          onProgress?.({
+            answered: goHitsRef.current + goMissRef.current + stopOkRef.current + stopErrRef.current,
+            total: TOTAL,
+            correct: goHitsRef.current + stopOkRef.current,
+            errors: goMissRef.current + stopErrRef.current,
+            lastCorrect: stop,
+          })
         }
         timerRef.current = setTimeout(() => runTrial(n + 1), 500)
       }, displayMs)
     }, iti)
-  }, [stopRate, displayMs, finish])
+  }, [stopRate, displayMs, finish, onProgress])
 
   function handleTap() {
     if (phase !== 'go' && phase !== 'stop') return
@@ -96,6 +104,13 @@ export default function StopSignal({ onComplete, onCancel, difficulty = 1, seed 
       stopErrRef.current++
       setFb('stop-err')
     }
+    onProgress?.({
+      answered: goHitsRef.current + goMissRef.current + stopOkRef.current + stopErrRef.current,
+      total: TOTAL,
+      correct: goHitsRef.current + stopOkRef.current,
+      errors: goMissRef.current + stopErrRef.current,
+      lastCorrect: phase === 'go',
+    })
     timerRef.current = setTimeout(() => runTrial(trial + 1), 500)
   }
 

@@ -1,15 +1,16 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
-import type { ExerciseResult } from '@/lib/types'
+import type { ExerciseResult, ExerciseProgressUpdate } from '@/lib/types'
 
 interface Props {
   onComplete: (r: ExerciseResult) => void
   onCancel:   () => void
   studentAge: number
   difficulty?: 1|2|3
+  onProgress?: (p: ExerciseProgressUpdate) => void // live per-answer feedback to the specialist
 }
 
-export default function FingerGym({ onComplete, onCancel, difficulty = 1 }: Props) {
+export default function FingerGym({ onComplete, onCancel, difficulty = 1, onProgress }: Props) {
   const BEAT_MS    = difficulty === 1 ? 1500 : difficulty === 2 ? 1000 : 700
   const TOTAL_BEATS= difficulty === 1 ? 8 : difficulty === 2 ? 12 : 15
   const WINDOW_MS  = 300
@@ -60,6 +61,7 @@ export default function FingerGym({ onComplete, onCancel, difficulty = 1 }: Prop
       if (litRef.current) {
         missedRef.current++
         setMissed(missedRef.current)
+        onProgress?.({ answered: accurateRef.current + missedRef.current, total: TOTAL_BEATS, correct: accurateRef.current, errors: missedRef.current, lastCorrect: false })
       }
       litRef.current = true
       beatTimeRef.current = Date.now()
@@ -87,6 +89,7 @@ export default function FingerGym({ onComplete, onCancel, difficulty = 1 }: Prop
     if (litRef.current && diff <= WINDOW_MS) {
       accurateRef.current++
       setAccurate(accurateRef.current)
+      onProgress?.({ answered: accurateRef.current + missedRef.current, total: TOTAL_BEATS, correct: accurateRef.current, errors: missedRef.current, lastCorrect: true })
       litRef.current = false
       setLit(false)
     }

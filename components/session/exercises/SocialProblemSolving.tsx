@@ -1,6 +1,6 @@
 'use client'
 import { useState, useRef, useCallback, useEffect } from 'react'
-import type { ExerciseResult } from '@/lib/types'
+import type { ExerciseResult, ExerciseProgressUpdate } from '@/lib/types'
 import { createRng, shuffleWithRng } from '@/lib/seeded-random'
 
 interface Props {
@@ -9,6 +9,7 @@ interface Props {
   studentAge: number
   difficulty?: 1|2|3
   seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
+  onProgress?: (p: ExerciseProgressUpdate) => void // live per-answer feedback to the specialist
 }
 
 interface Scenario {
@@ -100,7 +101,7 @@ function buildQueue(difficulty: 1|2|3, rng: () => number): Scenario[] {
 
 type ChoiceState = 'idle' | 'correct' | 'wrong' | 'reveal'
 
-export default function SocialProblemSolving({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+export default function SocialProblemSolving({ onComplete, onCancel, difficulty = 1, seed, onProgress }: Props) {
   const rng = useRef(createRng(seed ?? Date.now())).current
   const [queue] = useState<Scenario[]>(() => buildQueue(difficulty, rng))
   const [idx, setIdx] = useState(0)
@@ -149,6 +150,7 @@ export default function SocialProblemSolving({ onComplete, onCancel, difficulty 
       setChoiceStates(states)
       const newCorrect = correctCount + 1
       setCorrectCount(newCorrect)
+      onProgress?.({ answered: idx + 1, total: queue.length, correct: newCorrect, errors: wrongCount, lastCorrect: true })
       timerRef.current = setTimeout(() => advance(newCorrect, wrongCount, idx + 1), 1800)
     } else {
       states[choiceIdx] = 'wrong'
@@ -156,6 +158,7 @@ export default function SocialProblemSolving({ onComplete, onCancel, difficulty 
       setChoiceStates(states)
       const newWrong = wrongCount + 1
       setWrongCount(newWrong)
+      onProgress?.({ answered: idx + 1, total: queue.length, correct: correctCount, errors: newWrong, lastCorrect: false })
       timerRef.current = setTimeout(() => advance(correctCount, newWrong, idx + 1), 1800)
     }
   }

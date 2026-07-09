@@ -5,7 +5,7 @@
 // tracking, the child physically reaches across the midline to tap targets on
 // a touchscreen or with a mouse, producing the same therapeutic crossing motion.
 import { useState, useRef, useEffect, useCallback } from 'react'
-import type { ExerciseResult } from '@/lib/types'
+import type { ExerciseResult, ExerciseProgressUpdate } from '@/lib/types'
 import { useVoiceInstruction } from '@/lib/hooks/useVoiceInstruction'
 import { speakArabic } from '@/lib/speech'
 import { createRng } from '@/lib/seeded-random'
@@ -15,6 +15,7 @@ interface Props {
   onCancel: () => void
   difficulty?: 1 | 2 | 3
   seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
+  onProgress?: (p: ExerciseProgressUpdate) => void // live per-answer feedback to the specialist
 }
 
 const CFG = {
@@ -36,7 +37,7 @@ const HAND_COLORS: Record<'L' | 'R', string> = {
 
 function randRange(r: ReturnType<typeof createRng>, lo: number, hi: number) { return lo + r() * (hi - lo) }
 
-export default function CrossLateral({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+export default function CrossLateral({ onComplete, onCancel, difficulty = 1, seed, onProgress }: Props) {
   const cfg = CFG[difficulty]
   const rng = useRef(createRng(seed ?? Date.now())).current
   const { speak, stop } = useVoiceInstruction()
@@ -94,9 +95,10 @@ export default function CrossLateral({ onComplete, onCancel, difficulty = 1, see
     timerRef.current = setTimeout(() => {
       missRef.current += 1
       setFeedback('miss')
+      onProgress?.({ answered: hitsRef.current + missRef.current, total: cfg.rounds, correct: hitsRef.current, errors: missRef.current, lastCorrect: false })
       timerRef.current = setTimeout(() => advance(nextRound + 1), 650)
     }, cfg.timeoutMs)
-  }, [cfg, onComplete])
+  }, [cfg, onComplete, onProgress])
 
   function handleHit() {
     if (feedback !== null) return
@@ -104,6 +106,7 @@ export default function CrossLateral({ onComplete, onCancel, difficulty = 1, see
     hitsRef.current += 1
     setHitsDisplay(hitsRef.current)
     setFeedback('hit')
+    onProgress?.({ answered: hitsRef.current + missRef.current, total: cfg.rounds, correct: hitsRef.current, errors: missRef.current, lastCorrect: true })
     speakArabic('ممتاز', 1.1)
     timerRef.current = setTimeout(() => advance(round + 1), 420)
   }

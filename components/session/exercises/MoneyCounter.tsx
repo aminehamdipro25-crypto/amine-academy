@@ -1,6 +1,6 @@
 'use client'
 import { useState, useMemo, useRef, useEffect } from 'react'
-import type { ExerciseResult } from '@/lib/types'
+import type { ExerciseResult, ExerciseProgressUpdate } from '@/lib/types'
 import { createRng, shuffleWithRng, type Rng } from '@/lib/seeded-random'
 
 interface Props {
@@ -9,6 +9,7 @@ interface Props {
   studentAge: number
   difficulty?: 1|2|3
   seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
+  onProgress?: (p: ExerciseProgressUpdate) => void // live per-answer feedback to the specialist
 }
 
 interface Item {
@@ -118,7 +119,7 @@ function CoinButton({ value, onClick }: { value: number; onClick: () => void }) 
   )
 }
 
-export default function MoneyCounter({ onComplete, onCancel, difficulty = 1, studentAge, seed }: Props) {
+export default function MoneyCounter({ onComplete, onCancel, difficulty = 1, studentAge, seed, onProgress }: Props) {
   const rng = useRef(createRng(seed ?? Date.now())).current
   const TOTAL = difficulty === 1 ? 5 : difficulty === 2 ? 6 : 6
   const qs    = useMemo(() => buildQuestions(rng, difficulty, studentAge).slice(0, TOTAL), [difficulty, studentAge]) // eslint-disable-line
@@ -146,6 +147,7 @@ export default function MoneyCounter({ onComplete, onCancel, difficulty = 1, stu
     if (isCorrect) setCorrect(nc)
     else setErrors(ne)
     setHistory(h => [...h, isCorrect])
+    onProgress?.({ answered: idx + 1, total: TOTAL, correct: nc, errors: ne, lastCorrect: isCorrect })
     setPhase('feedback')
     timerRef.current = setTimeout(() => {
       if (idx + 1 >= TOTAL) {

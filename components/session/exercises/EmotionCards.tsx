@@ -1,6 +1,6 @@
 'use client'
 import { useState, useRef, useEffect } from 'react'
-import type { ExerciseResult } from '@/lib/types'
+import type { ExerciseResult, ExerciseProgressUpdate } from '@/lib/types'
 import { createRng, shuffleWithRng, pickWithRng } from '@/lib/seeded-random'
 
 const TOTAL = 14
@@ -11,6 +11,7 @@ interface Props {
   studentAge: number
   difficulty?: 1|2|3
   seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
+  onProgress?: (p: ExerciseProgressUpdate) => void // live per-answer feedback to the specialist
 }
 
 interface Emotion {
@@ -43,7 +44,7 @@ function makeTrial(rng: ReturnType<typeof createRng>, emotions: Emotion[], diffi
   return { target, choices }
 }
 
-export default function EmotionCards({ onComplete, onCancel, studentAge, difficulty = 1, seed }: Props) {
+export default function EmotionCards({ onComplete, onCancel, studentAge, difficulty = 1, seed, onProgress }: Props) {
   const rng = useRef(createRng(seed ?? Date.now())).current
   const emotions = studentAge <= 9 || difficulty === 1 ? BASIC : ADVANCED
 
@@ -72,6 +73,7 @@ export default function EmotionCards({ onComplete, onCancel, studentAge, difficu
     if (isCorrect) correctRef.current++
     else           errRef.current++
     setFeedback(isCorrect ? 'correct' : 'wrong')
+    onProgress?.({ answered: trial + 1, total: TOTAL, correct: correctRef.current, errors: errRef.current, lastCorrect: isCorrect })
 
     timerRef.current = setTimeout(() => {
       setFeedback(null)

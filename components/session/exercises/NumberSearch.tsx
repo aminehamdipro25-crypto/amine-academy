@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
-import type { ExerciseResult } from '@/lib/types'
+import type { ExerciseResult, ExerciseProgressUpdate } from '@/lib/types'
 import { createRng, randIntWithRng, randBoolWithRng, pickWithRng, type Rng } from '@/lib/seeded-random'
 
 const TOTAL_ROUNDS = 4
@@ -11,6 +11,7 @@ interface Props {
   studentAge: number
   difficulty?: 1 | 2 | 3
   seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
+  onProgress?: (p: ExerciseProgressUpdate) => void // live per-answer feedback to the specialist
 }
 
 interface RoundConfig {
@@ -65,7 +66,7 @@ function buildRound(cfg: RoundConfig, rng: Rng): { grid: Cell[]; target: number 
   return { grid: cells, target }
 }
 
-export default function NumberSearch({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+export default function NumberSearch({ onComplete, onCancel, difficulty = 1, seed, onProgress }: Props) {
   const rng = useRef(createRng(seed ?? Date.now())).current
   const cfg = getRoundConfig(difficulty)
 
@@ -189,16 +190,20 @@ export default function NumberSearch({ onComplete, onCancel, difficulty = 1, see
       const next = new Set(foundIdx)
       next.add(idx)
       setFoundIdx(next)
+      const cumCorrect = totalCorrect + next.size
+      onProgress?.({ answered: cumCorrect, total: cfg.targetCount * TOTAL_ROUNDS, correct: cumCorrect, errors: totalWrong + roundWrong, lastCorrect: true })
       if (next.size >= cfg.targetCount) {
         endRound(next.size, roundWrong)
       }
     } else {
+      const cumCorrect = totalCorrect + foundIdx.size
+      onProgress?.({ answered: cumCorrect, total: cfg.targetCount * TOTAL_ROUNDS, correct: cumCorrect, errors: totalWrong + roundWrong + 1, lastCorrect: false })
       setRoundWrong(w => w + 1)
       setWrongIdx(idx)
       if (wrongFlashRef.current) clearTimeout(wrongFlashRef.current)
       wrongFlashRef.current = setTimeout(() => setWrongIdx(null), 350)
     }
-  }, [phase, grid, foundIdx, roundWrong, cfg.targetCount, endRound])
+  }, [phase, grid, foundIdx, roundWrong, cfg.targetCount, endRound, totalCorrect, totalWrong, onProgress])
 
   if (phase === 'done') return null
 

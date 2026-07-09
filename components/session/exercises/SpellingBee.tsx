@@ -1,6 +1,6 @@
 'use client'
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react'
-import type { ExerciseResult } from '@/lib/types'
+import type { ExerciseResult, ExerciseProgressUpdate } from '@/lib/types'
 import { speakArabic } from '@/lib/speech'
 import { createRng, shuffleWithRng } from '@/lib/seeded-random'
 
@@ -10,6 +10,7 @@ interface Props {
   studentAge: number
   difficulty?: 1|2|3
   seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
+  onProgress?: (p: ExerciseProgressUpdate) => void // live per-answer feedback to the specialist
 }
 
 interface Q { word: string; emoji: string; choices: string[] }
@@ -37,7 +38,7 @@ const ALL: Q[] = [
   { word:'مظلة',  emoji:'☂️', choices:['مظلة','مضلة','مظلت']    },
 ]
 
-export default function SpellingBee({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+export default function SpellingBee({ onComplete, onCancel, difficulty = 1, seed, onProgress }: Props) {
   const rng = useRef(createRng(seed ?? Date.now())).current
   const count = difficulty === 1 ? 6 : difficulty === 2 ? 10 : 14
   const [qs]  = useState<Q[]>(() => shuffleWithRng(rng, ALL).slice(0, count))
@@ -66,6 +67,7 @@ export default function SpellingBee({ onComplete, onCancel, difficulty = 1, seed
     const ne = errors  + (isCorrect ? 0 : 1)
     if (isCorrect) { setCorrect(nc); speak('ممتاز') }
     else           { setErrors(ne);  speak('حاول مرة أخرى') }
+    onProgress?.({ answered: idx + 1, total: count, correct: nc, errors: ne, lastCorrect: isCorrect })
 
     timerRef.current = setTimeout(() => {
       const next = idx + 1

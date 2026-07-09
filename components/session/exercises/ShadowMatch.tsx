@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
-import type { ExerciseResult } from '@/lib/types'
+import type { ExerciseResult, ExerciseProgressUpdate } from '@/lib/types'
 import { createRng, shuffleWithRng, randIntWithRng } from '@/lib/seeded-random'
 
 interface Props {
@@ -9,6 +9,7 @@ interface Props {
   studentAge: number
   difficulty?: 1|2|3
   seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
+  onProgress?: (p: ExerciseProgressUpdate) => void // live per-answer feedback to the specialist
 }
 
 interface EmojiPair {
@@ -71,7 +72,7 @@ function buildQuestions(count: number, difficulty: 1|2|3, rng: () => number): Qu
 
 type ChoiceState = 'idle' | 'correct' | 'wrong' | 'reveal'
 
-export default function ShadowMatch({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+export default function ShadowMatch({ onComplete, onCancel, difficulty = 1, seed, onProgress }: Props) {
   const rng = useRef(createRng(seed ?? Date.now())).current
   const totalQuestions = difficulty === 1 ? 6 : difficulty === 2 ? 8 : 10
 
@@ -118,12 +119,14 @@ export default function ShadowMatch({ onComplete, onCancel, difficulty = 1, seed
       setChoiceStates(states)
       const newCorrect = correctCount + 1
       setCorrectCount(newCorrect)
+      onProgress?.({ answered: idx + 1, total: questions.length, correct: newCorrect, errors: (idx + 1) - newCorrect, lastCorrect: true })
       timerRef.current = setTimeout(() => advance(newCorrect, idx + 1), 800)
     } else {
       const states: ChoiceState[] = ['idle', 'idle', 'idle']
       states[choiceIdx] = 'wrong'
       states[q.correctIndex] = 'reveal'
       setChoiceStates(states)
+      onProgress?.({ answered: idx + 1, total: questions.length, correct: correctCount, errors: (idx + 1) - correctCount, lastCorrect: false })
       timerRef.current = setTimeout(() => advance(correctCount, idx + 1), 1200)
     }
   }

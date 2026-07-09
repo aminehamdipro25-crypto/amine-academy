@@ -1,6 +1,6 @@
 'use client'
 import { useState, useMemo, useRef, useEffect } from 'react'
-import type { ExerciseResult } from '@/lib/types'
+import type { ExerciseResult, ExerciseProgressUpdate } from '@/lib/types'
 import { createRng, shuffleWithRng } from '@/lib/seeded-random'
 
 interface Props {
@@ -9,6 +9,7 @@ interface Props {
   studentAge: number
   difficulty?: 1|2|3
   seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
+  onProgress?: (p: ExerciseProgressUpdate) => void // live per-answer feedback to the specialist
 }
 
 // 3×3 grid — the last cell (index 8) is always "?" and holds the answer
@@ -54,7 +55,7 @@ const HARD: MP[] = [
   { grid:['🎯','🎲','🎸', '🎲','🎸','🎯', '🎸','🎯','?'], answer:'🎲', choices:['🎲','🎯','🎸','🎮'] },
 ]
 
-export default function MatrixPuzzle({ onComplete, onCancel, difficulty = 1, studentAge, seed }: Props) {
+export default function MatrixPuzzle({ onComplete, onCancel, difficulty = 1, studentAge, seed, onProgress }: Props) {
   const rng = useRef(createRng(seed ?? Date.now())).current
   const puzzles = useMemo(() => {
     if (difficulty === 1) return shuffleWithRng(rng, EASY)
@@ -84,6 +85,7 @@ export default function MatrixPuzzle({ onComplete, onCancel, difficulty = 1, stu
     const ne = errors  + (isCorrect ? 0 : 1)
     if (isCorrect) setCorrect(nc)
     else           setErrors(ne)
+    onProgress?.({ answered: idx + 1, total: count, correct: nc, errors: ne, lastCorrect: isCorrect })
 
     timerRef.current = setTimeout(() => {
       if (idx + 1 >= count) {

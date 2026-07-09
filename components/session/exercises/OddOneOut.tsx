@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
-import type { ExerciseResult } from '@/lib/types'
+import type { ExerciseResult, ExerciseProgressUpdate } from '@/lib/types'
 
 interface Question {
   items: string[]
@@ -24,11 +24,12 @@ interface Props {
   onCancel: () => void
   studentAge: number
   difficulty?: 1 | 2 | 3
+  onProgress?: (p: ExerciseProgressUpdate) => void // live per-answer feedback to the specialist
 }
 
 type ItemFeedback = 'correct' | 'wrong' | null
 
-export default function OddOneOut({ onComplete, onCancel, difficulty = 1 }: Props) {
+export default function OddOneOut({ onComplete, onCancel, difficulty = 1, onProgress }: Props) {
   const totalQuestions = difficulty === 1 ? 5 : difficulty === 2 ? 7 : 8
   const questions = ALL_QUESTIONS.slice(0, totalQuestions)
 
@@ -77,6 +78,7 @@ export default function OddOneOut({ onComplete, onCancel, difficulty = 1 }: Prop
     const nc = correct + (isCorrect ? 1 : 0)
     const ne = errors  + (isCorrect ? 0 : 1)
     if (isCorrect) setCorrect(nc); else setErrors(ne)
+    onProgress?.({ answered: qIndex + 1, total: totalQuestions, correct: nc, errors: ne, lastCorrect: isCorrect })
     setFeedback(isCorrect ? 'correct' : 'wrong')
     setShowExplain(true)
     timerRef.current = setTimeout(() => {
@@ -90,7 +92,7 @@ export default function OddOneOut({ onComplete, onCancel, difficulty = 1 }: Prop
         setQIndex(nextQ)
       }
     }, 1500)
-  }, [feedback, questions, qIndex, totalQuestions, errors, correct, finishGame])
+  }, [feedback, questions, qIndex, totalQuestions, errors, correct, finishGame, onProgress])
 
   if (done) return null
 

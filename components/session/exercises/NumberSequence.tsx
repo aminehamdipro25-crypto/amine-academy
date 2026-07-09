@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
-import type { ExerciseResult } from '@/lib/types'
+import type { ExerciseResult, ExerciseProgressUpdate } from '@/lib/types'
 import { createRng, type Rng } from '@/lib/seeded-random'
 
 interface Props {
@@ -9,6 +9,7 @@ interface Props {
   studentAge: number
   difficulty?: 1|2|3
   seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
+  onProgress?: (p: ExerciseProgressUpdate) => void // live per-answer feedback to the specialist
 }
 
 interface NumberItem {
@@ -48,7 +49,7 @@ function buildRound(max: number, rng: Rng): NumberItem[] {
   }))
 }
 
-export default function NumberSequence({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+export default function NumberSequence({ onComplete, onCancel, difficulty = 1, seed, onProgress }: Props) {
   const rng = useRef(createRng(seed ?? Date.now())).current
   const maxNumber = difficulty === 1 ? 5 : difficulty === 2 ? 7 : 9
 
@@ -79,6 +80,8 @@ export default function NumberSequence({ onComplete, onCancel, difficulty = 1, s
     if (item.value === nextExpected) {
       setItems(prev => prev.map(n => n.value === item.value ? { ...n, state: 'correct' } : n))
       const newNext = nextExpected + 1
+      const cumCorrect = (round - 1) * maxNumber + (newNext - 1)
+      onProgress?.({ answered: cumCorrect, total: maxNumber * ROUNDS, correct: cumCorrect, errors: totalErrors + roundErrors, lastCorrect: true })
 
       if (newNext > maxNumber) {
         // Round complete
@@ -114,6 +117,8 @@ export default function NumberSequence({ onComplete, onCancel, difficulty = 1, s
       }
     } else {
       // Wrong tap
+      const cumCorrect = (round - 1) * maxNumber + (nextExpected - 1)
+      onProgress?.({ answered: cumCorrect, total: maxNumber * ROUNDS, correct: cumCorrect, errors: totalErrors + roundErrors + 1, lastCorrect: false })
       setRoundErrors(prev => prev + 1)
       setItems(prev => prev.map(n => n.value === item.value ? { ...n, state: 'wrong' } : n))
       timerRef.current = setTimeout(() => {

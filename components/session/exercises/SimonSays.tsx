@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
-import type { ExerciseResult } from '@/lib/types'
+import type { ExerciseResult, ExerciseProgressUpdate } from '@/lib/types'
 import { createRng, randIntWithRng } from '@/lib/seeded-random'
 
 const COLORS = [
@@ -16,9 +16,10 @@ interface Props {
   studentAge: number
   difficulty?: 1|2|3
   seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
+  onProgress?: (p: ExerciseProgressUpdate) => void // live per-answer feedback to the specialist
 }
 
-export default function SimonSays({ onComplete, onCancel, studentAge, difficulty = 1, seed }: Props) {
+export default function SimonSays({ onComplete, onCancel, studentAge, difficulty = 1, seed, onProgress }: Props) {
   const rng = useRef(createRng(seed ?? Date.now())).current
   const startLen = difficulty === 1 ? 2 : difficulty === 2 ? 3 : 4
   const [sequence, setSequence] = useState<number[]>([])
@@ -81,6 +82,7 @@ export default function SimonSays({ onComplete, onCancel, studentAge, difficulty
     if (sequence[pos] !== id) {
       errRef.current++
       setErrors(errRef.current)
+      onProgress?.({ answered: correctTapsRef.current + errRef.current, total: 0, correct: correctTapsRef.current, errors: errRef.current, lastCorrect: false })
       setPhase('wrong')
       if (level > maxLevelRef.current) maxLevelRef.current = level
       if (errRef.current >= 3) {
@@ -90,6 +92,7 @@ export default function SimonSays({ onComplete, onCancel, studentAge, difficulty
       setTimeout(() => flashSequence(sequence), 1200)
     } else {
       correctTapsRef.current++
+      onProgress?.({ answered: correctTapsRef.current + errRef.current, total: 0, correct: correctTapsRef.current, errors: errRef.current, lastCorrect: true })
       if (newSeq.length === sequence.length) {
         if (level > maxLevelRef.current) maxLevelRef.current = level
         if (level >= 10) {

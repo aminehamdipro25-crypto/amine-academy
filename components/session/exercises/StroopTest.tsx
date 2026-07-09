@@ -1,6 +1,6 @@
 'use client'
 import { useState, useRef, useEffect } from 'react'
-import type { ExerciseResult } from '@/lib/types'
+import type { ExerciseResult, ExerciseProgressUpdate } from '@/lib/types'
 import { createRng, randIntWithRng, type Rng } from '@/lib/seeded-random'
 
 const TOTAL = 16
@@ -11,6 +11,7 @@ interface Props {
   studentAge: number
   difficulty?: 1|2|3
   seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
+  onProgress?: (p: ExerciseProgressUpdate) => void // live per-answer feedback to the specialist
 }
 
 const COLORS = [
@@ -29,7 +30,7 @@ function makeTrial(rng: Rng) {
   return { wordIdx, inkIdx }
 }
 
-export default function StroopTest({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+export default function StroopTest({ onComplete, onCancel, difficulty = 1, seed, onProgress }: Props) {
   const rng = useRef(createRng(seed ?? Date.now())).current
   const [started, setStarted]   = useState(false)
   const [trial, setTrial]       = useState(0)
@@ -77,6 +78,7 @@ export default function StroopTest({ onComplete, onCancel, difficulty = 1, seed 
     rtsRef.current.push(rt)
     if (isCorrect) { correctRef.current++; setCorrect(correctRef.current) }
     else           { errRef.current++;     setErrors(errRef.current) }
+    onProgress?.({ answered: trial + 1, total: TOTAL, correct: correctRef.current, errors: errRef.current, lastCorrect: isCorrect })
     setFeedback(isCorrect ? 'correct' : 'wrong')
     settleTimerRef.current = setTimeout(() => {
       setFeedback(null)

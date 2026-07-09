@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
-import type { ExerciseResult } from '@/lib/types'
+import type { ExerciseResult, ExerciseProgressUpdate } from '@/lib/types'
 import { createRng, randIntWithRng } from '@/lib/seeded-random'
 
 // 9 vivid, clearly distinct colours — one per grid position
@@ -16,9 +16,9 @@ const COLORS = [
   '#6366F1', // 8 indigo
 ]
 
-interface Props { onComplete: (r: ExerciseResult) => void; onCancel: () => void; studentAge: number; difficulty?: 1|2|3; seed?: number /* shared seed for identical content on both screens — see lib/seeded-random.ts */ }
+interface Props { onComplete: (r: ExerciseResult) => void; onCancel: () => void; studentAge: number; difficulty?: 1|2|3; seed?: number /* shared seed for identical content on both screens — see lib/seeded-random.ts */; onProgress?: (p: ExerciseProgressUpdate) => void /* live per-answer feedback to the specialist */ }
 
-export default function SequenceMemory({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+export default function SequenceMemory({ onComplete, onCancel, difficulty = 1, seed, onProgress }: Props) {
   const rng         = useRef(createRng(seed ?? Date.now())).current
   const startRef    = useRef(Date.now())
   const maxLvlRef   = useRef(0)     // ref — avoids stale closure on setState
@@ -95,6 +95,7 @@ export default function SequenceMemory({ onComplete, onCancel, difficulty = 1, s
       const newErr = errRef.current + 1
       errRef.current = newErr
       setErrors(newErr)
+      onProgress?.({ answered: correctRef.current + newErr, total: 0, correct: correctRef.current, errors: newErr, lastCorrect: false })
 
       // Update max level reached
       if (level > maxLvlRef.current) maxLvlRef.current = level
@@ -109,6 +110,7 @@ export default function SequenceMemory({ onComplete, onCancel, difficulty = 1, s
     } else {
       // ── Correct tap ──
       correctRef.current++
+      onProgress?.({ answered: correctRef.current + errRef.current, total: 0, correct: correctRef.current, errors: errRef.current, lastCorrect: true })
       setTapFlash({ idx, ok: true })
       timerIds.current.push(setTimeout(() => setTapFlash(null), 280))
       setPlayerSeq(newPlayer)

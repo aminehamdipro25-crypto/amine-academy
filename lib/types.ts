@@ -184,6 +184,18 @@ export interface ExerciseResult {
   completedAt:     string
 }
 
+// Live per-answer progress an exercise emits WHILE the child plays — distinct
+// from ExerciseResult (the final summary on completion). Streamed to the
+// specialist so they watch the child answer in real time instead of only
+// seeing the end score. All exercises call onProgress(...) at each answer.
+export interface ExerciseProgressUpdate {
+  answered: number        // items answered so far this run
+  total: number           // total items in this run (0 if unknown/open-ended)
+  correct: number         // correct answers so far
+  errors: number          // wrong answers so far
+  lastCorrect?: boolean   // was the most recent answer correct (omit for a neutral tick)
+}
+
 export interface SessionObservations {
   attention:    1|2|3|4|5
   cooperation:  1|2|3|4|5

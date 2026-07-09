@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react'
 import { useParams } from 'next/navigation'
-import type { ExerciseResult } from '@/lib/types'
+import type { ExerciseResult, ExerciseProgressUpdate } from '@/lib/types'
 import { PROMPT_CARDS } from '@/lib/session-constants'
 import { startNoiseEngine, type NoiseHandle } from '@/lib/noise-synth'
 import { formatTime } from '@/lib/session-helpers'
@@ -557,12 +557,45 @@ export default function KidSessionPage() {
     }).catch(() => {})
   }, [id])
 
+  // Live per-answer progress — the child's exercise calls onProgress(...) at
+  // each answer; we forward it to the specialist so they watch the child play
+  // in real time (current item, correct/wrong counts, last-answer ✓/✗) rather
+  // than only seeing the end score. Throttled: an exercise that fires rapidly
+  // (e.g. fast tap games) is coalesced to at most ~1 post / 350ms, and the
+  // latest payload always wins so the final state is never dropped.
+  const latestProgressRef = useRef<{ exerciseId: string; p: ExerciseProgressUpdate } | null>(null)
+  const lastProgressSentRef = useRef(0)
+  const progressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const flushProgress = useCallback(() => {
+    const payload = latestProgressRef.current
+    if (!payload) return
+    lastProgressSentRef.current = Date.now()
+    fetch(`/api/sessions/${id}/progress`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ exerciseId: payload.exerciseId, ...payload.p }),
+    }).catch(() => {})
+  }, [id])
+  const postProgress = useCallback((exerciseId: string, p: ExerciseProgressUpdate) => {
+    latestProgressRef.current = { exerciseId, p }
+    const since = Date.now() - lastProgressSentRef.current
+    if (progressTimerRef.current) clearTimeout(progressTimerRef.current)
+    if (since >= 350) flushProgress()
+    else progressTimerRef.current = setTimeout(flushProgress, 350 - since)
+  }, [flushProgress])
+  useEffect(() => () => { if (progressTimerRef.current) clearTimeout(progressTimerRef.current) }, [])
+
   // Exercise calls this with a full result object on completion; the same
   // handler is reused for onCancel, which calls it with no arguments.
   const handleDone = useCallback((result?: ExerciseResult) => {
     setDone(true)
-    if (live?.exerciseId) reportStatus(live.exerciseId, 'done', result)
-  }, [live?.exerciseId, reportStatus])
+    if (live?.exerciseId) {
+      reportStatus(live.exerciseId, 'done', result)
+      // Clear the live progress bar the moment the exercise ends, so the
+      // specialist's panel doesn't linger on a full bar between exercises.
+      fetch(`/api/sessions/${id}/progress`, { method: 'DELETE' }).catch(() => {})
+    }
+  }, [live?.exerciseId, reportStatus, id])
 
   // Report active on every NEW activation — depends on `nonce` (which bumps
   // on every start AND restart), not just exerciseId, so a restart of the
@@ -689,7 +722,12 @@ export default function KidSessionPage() {
     // `seed` (minted by the specialist, carried over the `live` channel) is
     // only declared on exercises that actually consume it (see
     // lib/seeded-random.ts) — harmless extra prop for the rest.
-    const props = { onComplete: handleDone, onCancel: handleDone, difficulty, studentAge: 10, seed: live.seed }
+    const props = {
+      onComplete: handleDone, onCancel: handleDone, difficulty, studentAge: 10, seed: live.seed,
+      // Live per-answer feedback to the specialist. Only exercises that call
+      // onProgress emit it; the rest simply never invoke it (optional prop).
+      onProgress: (p: ExerciseProgressUpdate) => postProgress(live.exerciseId, p),
+    }
 
     mainContent = (
     <div style={{ width: '100vw', height: '100dvh', overflow: 'hidden', background: '#fff', position: 'relative' }}>

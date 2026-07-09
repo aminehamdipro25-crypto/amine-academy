@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
-import type { ExerciseResult } from '@/lib/types'
+import type { ExerciseResult, ExerciseProgressUpdate } from '@/lib/types'
 import { createRng, shuffleWithRng, pickWithRng } from '@/lib/seeded-random'
 
 const EMOJI_SETS = [
@@ -17,9 +17,11 @@ interface Props {
   /** Shared with the other party's screen over the `live` channel so both
    *  sides deal the exact same card layout — see lib/seeded-random.ts. */
   seed?: number
+  /** Emits live per-answer progress to the specialist — see ExerciseProgressUpdate. */
+  onProgress?: (p: ExerciseProgressUpdate) => void
 }
 
-export default function MemoryCards({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+export default function MemoryCards({ onComplete, onCancel, difficulty = 1, seed, onProgress }: Props) {
   const pairCount  = difficulty === 1 ? 6 : difficulty === 2 ? 8 : 10
   const rng             = useRef(createRng(seed ?? Date.now())).current
   const emojiSet        = useRef(pickWithRng(rng, EMOJI_SETS)).current
@@ -93,6 +95,7 @@ export default function MemoryCards({ onComplete, onCancel, difficulty = 1, seed
           setMatches(nm)
           setFlipped([])
           setLocked(false)
+          onProgress?.({ answered: nm, total: pairCount, correct: nm, errors, lastCorrect: true })
           if (nm === pairCount) {
             const dur = Math.round((Date.now() - startRef.current) / 1000)
             setDone(true)
@@ -113,7 +116,9 @@ export default function MemoryCards({ onComplete, onCancel, difficulty = 1, seed
           }
         }, 350)
       } else {
-        setErrors(e => e + 1)
+        const ne = errors + 1
+        setErrors(ne)
+        onProgress?.({ answered: matches, total: pairCount, correct: matches, errors: ne, lastCorrect: false })
         mismatchTimerRef.current = setTimeout(() => {
           setCards(c => c.map(card => card.id === a || card.id === b ? { ...card, flipped: false } : card))
           setFlipped([])
@@ -123,7 +128,7 @@ export default function MemoryCards({ onComplete, onCancel, difficulty = 1, seed
     } else {
       setFlipped(newFlipped)
     }
-  }, [previewing, locked, cards, flipped, matches, pairCount, errors, onComplete])
+  }, [previewing, locked, cards, flipped, matches, pairCount, errors, onComplete, onProgress])
 
   const cols = pairCount <= 6 ? 3 : pairCount <= 8 ? 4 : 5
   const fmt  = (s: number) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`

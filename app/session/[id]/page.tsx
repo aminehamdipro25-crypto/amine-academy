@@ -1577,6 +1577,12 @@ ${notes ? `
   const kidStatusRef = useRef<KidStatus>(null)
   const [kidPresent, setKidPresent] = useState(true)
   const [kidEverPresent, setKidEverPresent] = useState(false)
+  // Live per-answer progress streamed from the child's exercise (see the
+  // progress API + the floating panel below) — lets the specialist watch the
+  // child answer in real time, not just the final score.
+  type LiveProgress = { exerciseId: string; answered: number; total: number; correct: number; errors: number; lastCorrect: boolean | null; ts: number } | null
+  const [liveProgress, setLiveProgress] = useState<LiveProgress>(null)
+  const liveProgressRef = useRef<LiveProgress>(null)
   useEffect(() => {
     if (!id) return
     const fetchStatus = async () => {
@@ -1595,18 +1601,31 @@ ${notes ? `
         if (present) setKidEverPresent(true)
       } catch { /* ignore */ }
     }
-    fetchStatus(); fetchPresence()
+    const fetchProgress = async () => {
+      try {
+        const { progress: data } = await (await fetch(`/api/sessions/${id}/progress`)).json() as { progress: LiveProgress }
+        if (JSON.stringify(data) !== JSON.stringify(liveProgressRef.current)) {
+          liveProgressRef.current = data
+          setLiveProgress(data)
+        }
+      } catch { /* ignore */ }
+    }
+    fetchStatus(); fetchPresence(); fetchProgress()
     const rt = realtimeEnabled()
     // kid-status arrives instantly via realtime; presence "left" is TTL-expiry
     // (no event fires on leave) so it still needs a steady poll — a moderate
     // 3s is enough to notice a departure without hammering the endpoint.
+    // Live progress arrives via the 'progress' wake-up; the fallback poll is
+    // brisk (1.5s) so per-answer feedback still feels live without Pusher.
     const unsub = subscribeSession(id, ev => {
       if (ev === 'kid-status') fetchStatus()
       else if (ev === 'presence') fetchPresence()
+      else if (ev === 'progress') fetchProgress()
     })
     const statusIv = setInterval(fetchStatus, rt ? 8000 : 1000)
     const presenceIv = setInterval(fetchPresence, rt ? 3000 : 1000)
-    return () => { unsub(); clearInterval(statusIv); clearInterval(presenceIv) }
+    const progressIv = setInterval(fetchProgress, rt ? 6000 : 1500)
+    return () => { unsub(); clearInterval(statusIv); clearInterval(presenceIv); clearInterval(progressIv) }
   }, [id])
 
   // Visible realtime status — so "is the live sync actually on" is something
@@ -1930,6 +1949,53 @@ ${notes ? `
           >
             <span className="text-base leading-none">{icon}</span>
             <span className="text-xs font-black ltr-num whitespace-nowrap">{label}</span>
+          </div>
+        )
+      })()}
+
+      {/* ── Live per-answer progress — the child's answers streamed in real
+          time. Always visible (independent of the auto-hiding header) so the
+          specialist watches the child work: how far along, how many right/
+          wrong, and a flash of the last answer. Shown only for the exercise
+          currently active, while it's running. ── */}
+      {exerciseActive && liveProgress && liveProgress.exerciseId === activeExerciseId && (() => {
+        const { answered, total, correct, errors, lastCorrect } = liveProgress
+        const pct = total > 0 ? Math.min(100, Math.round((answered / total) * 100)) : 0
+        return (
+          <div
+            className="fixed top-14 left-3 z-[485] rounded-2xl px-3 py-2.5 shadow-lg select-none animate-in fade-in slide-in-from-top-1 duration-300"
+            style={{ background: 'rgba(255,255,255,0.97)', border: '1.5px solid #E5E7EB', minWidth: 180, backdropFilter: 'blur(8px)' }}
+            dir="rtl"
+            title="تقدّم الطفل اللحظي في التمرين الحالي"
+          >
+            <div className="flex items-center justify-between gap-2 mb-1.5">
+              <span className="text-[11px] font-black text-gray-500">تقدّم الطفل مباشرةً</span>
+              {lastCorrect !== null && (
+                <span
+                  key={liveProgress.ts}
+                  className="text-sm animate-in zoom-in duration-300"
+                  title={lastCorrect ? 'آخر إجابة: صحيحة' : 'آخر إجابة: خاطئة'}
+                >
+                  {lastCorrect ? '✅' : '❌'}
+                </span>
+              )}
+            </div>
+            {/* Progress bar */}
+            <div className="h-2 rounded-full overflow-hidden mb-2" style={{ background: '#EEF2F7' }}>
+              <div
+                className="h-2 rounded-full transition-all duration-500"
+                style={{ width: `${pct}%`, background: 'linear-gradient(90deg,#6366F1,#8B5CF6)' }}
+              />
+            </div>
+            <div className="flex items-center justify-between gap-3 ltr-num">
+              <span className="text-[11px] font-black text-gray-600">
+                {total > 0 ? `${answered}/${total}` : `${answered}`}
+              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-black text-emerald-600">✓ {correct}</span>
+                <span className="text-[11px] font-black text-red-500">✗ {errors}</span>
+              </div>
+            </div>
           </div>
         )
       })()}

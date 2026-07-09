@@ -27,6 +27,7 @@ export type SessionEvent =
   | 'kid-status'
   | 'presence'
   | 'readiness'
+  | 'progress'
 
 let cached: Pusher | null = null
 let resolved = false

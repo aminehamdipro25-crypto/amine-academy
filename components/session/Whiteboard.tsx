@@ -50,10 +50,18 @@ export default function Whiteboard({ onClose, sessionId }: Props) {
     }).catch(() => {})
   }, [sessionId])
 
-  // Mark board open/closed for the kid page
+  // Mark board open/closed for the kid page — with a heartbeat. This is the
+  // ONLY synced channel with an auto open/close pair, so it's the only one
+  // that can get stuck: a single dropped/raced `open` POST (or a stray
+  // `close` from a remount) would leave the child's board closed forever
+  // while the specialist's own canvas still renders. Re-asserting `open`
+  // every few seconds guarantees the child's board opens even if the first
+  // POST failed. The route treats a repeat `open` as idempotent (no rev bump)
+  // so the child doesn't redraw on each heartbeat.
   useEffect(() => {
     syncPost({ action: 'open' })
-    return () => syncPost({ action: 'close' })
+    const hb = setInterval(() => syncPost({ action: 'open' }), 3000)
+    return () => { clearInterval(hb); syncPost({ action: 'close' }) }
   }, [syncPost])
 
   // Save state for undo

@@ -623,7 +623,9 @@ export default function KidSessionPage() {
 
   const fetchWbActive = useCallback(async () => {
     try {
-      const { wb } = await (await fetch(`/api/sessions/${id}/whiteboard`)).json() as { wb: WBState }
+      const r = await fetch(`/api/sessions/${id}/whiteboard`)
+      if (!r.ok) return   // keep last state on a transient error, don't force-close the board
+      const { wb } = await r.json() as { wb?: WBState }
       setWbActive(!!wb?.active)
     } catch { /* ignore */ }
   }, [id])

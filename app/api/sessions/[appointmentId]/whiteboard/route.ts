@@ -57,8 +57,10 @@ export async function POST(
 
     switch (body.action) {
       case 'open':
-        wb.active = true
-        wb.rev++
+        // Idempotent — only bump rev on the FIRST open, so the specialist's
+        // 3s "open" heartbeat (which guards against a dropped open POST) does
+        // not force the child to redraw on every tick.
+        if (!wb.active) { wb.active = true; wb.rev++ }
         break
       case 'close':
         wb.active = false

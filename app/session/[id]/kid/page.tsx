@@ -6,6 +6,7 @@ import { PROMPT_CARDS } from '@/lib/session-constants'
 import { startNoiseEngine, type NoiseHandle } from '@/lib/noise-synth'
 import { formatTime } from '@/lib/session-helpers'
 import { subscribeSession, realtimeEnabled, subscribeConnectionState } from '@/lib/realtime-client'
+import { playCorrect, playWrong } from '@/lib/feedback-sound'
 
 const DailyVideoCall = lazy(() => import('@/components/session/DailyVideoCall'))
 
@@ -219,6 +220,84 @@ function KidReactionBurst({ reaction, onDone }: { reaction: { type: string; id: 
   )
 }
 
+// Brief screen-edge glow on each answer — green for correct, soft red for
+// wrong. Subtle (inset shadow, non-interactive) so it reinforces the answer
+// without covering the exercise. Paired with the feedback sound.
+function KidAnswerGlow({ correct, onDone }: { correct: boolean; onDone: () => void }) {
+  useEffect(() => {
+    const t = setTimeout(onDone, 650)
+    return () => clearTimeout(t)
+  }, [onDone])
+  const rgb = correct ? '34,197,94' : '244,114,114'
+  return (
+    <div
+      aria-hidden
+      style={{
+        position: 'fixed', inset: 0, zIndex: 9998, pointerEvents: 'none',
+        boxShadow: `inset 0 0 90px 22px rgba(${rgb},0.5)`,
+        animation: 'kidGlowFade 0.65s ease-out forwards',
+      }}
+    >
+      <style>{`@keyframes kidGlowFade { 0%{opacity:0} 18%{opacity:1} 100%{opacity:0} }`}</style>
+    </div>
+  )
+}
+
+// The child's progress map — a Duolingo-style path of the exercises they've
+// finished this session, each a lit node with its earned stars, plus the
+// total and a pulsing "next" node. Shown between exercises so the child sees
+// their journey grow and stays motivated (the specialist asked for this to
+// appear every time).
+function KidProgressMap({ stars, done }: { stars: { id: string; stars: number }[]; done: boolean }) {
+  const total = stars.reduce((s, x) => s + x.stars, 0)
+  return (
+    <div
+      dir="rtl"
+      style={{
+        minHeight: '100dvh', display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center', textAlign: 'center',
+        background: 'linear-gradient(160deg,#FFF0FA 0%,#EEF0FF 40%,#F0FFF8 70%,#FFFBF0 100%)',
+        padding: '28px 20px', gap: 16,
+      }}
+    >
+      <div style={{ fontSize: 60, lineHeight: 1, animation: 'kidBounce 2s infinite' }}>{done ? '🌟' : '🗺️'}</div>
+      <div style={{ fontSize: 25, fontWeight: 900, color: '#6D28D9' }}>{done ? 'أحسنت! 🎉' : 'رحلتك اليوم'}</div>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#fff', borderRadius: 999, padding: '8px 18px', boxShadow: '0 6px 20px rgba(124,92,252,0.18)' }}>
+        <span style={{ fontSize: 24 }}>⭐</span>
+        <span style={{ fontSize: 26, fontWeight: 900, color: '#F59E0B' }}>{total}</span>
+        <span style={{ fontSize: 13, fontWeight: 800, color: '#9CA3AF' }}>نجمة</span>
+      </div>
+
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, justifyContent: 'center', maxWidth: 340, marginTop: 4 }}>
+        {stars.map((s, i) => (
+          <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+            <div style={{ width: 46, height: 46, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg,#7C5CFC,#C084FC)', color: '#fff', fontWeight: 900, fontSize: 15, boxShadow: '0 4px 12px rgba(124,92,252,0.4)' }}>
+              {i + 1}
+            </div>
+            <div style={{ fontSize: 10 }}>{'⭐'.repeat(s.stars)}</div>
+          </div>
+        ))}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+          <div style={{ width: 46, height: 46, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F3EEFF', border: '2px dashed #C4B5FD', color: '#A78BFA', fontWeight: 900, fontSize: 20, animation: 'kidPulse 1.4s ease-in-out infinite' }}>
+            {done ? '🎯' : '⏳'}
+          </div>
+          <div style={{ fontSize: 10, color: '#A78BFA', fontWeight: 800 }}>التالي</div>
+        </div>
+      </div>
+
+      <div style={{ fontSize: 15, color: '#7C3AED', opacity: 0.75, maxWidth: 300 }}>
+        {done ? 'رائع! سيختار الأستاذ التمرين التالي' : (stars.length ? 'استعد للتمرين التالي! 🚀' : 'في انتظار الأستاذ ليبدأ...')}
+      </div>
+
+      <style>{`
+        @keyframes kidBounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-14px)} }
+        @keyframes kidPulse  { 0%,100%{transform:scale(1);opacity:.7} 50%{transform:scale(1.12);opacity:1} }
+      `}</style>
+    </div>
+  )
+}
+
 // The child answers the pre-session readiness check directly — same 3
 // questions the specialist used to fill in from observation, now tapped by
 // the child themselves (faces they recognize) and synced live to the
@@ -416,11 +495,28 @@ export default function KidSessionPage() {
   // stored reaction repeatedly doesn't loop the animation.
   const [reactionBurst, setReactionBurst] = useState<{ type: string; id: number } | null>(null)
   const lastReactionIdRef = useRef(0)
+  // The child's own session progress — one entry per completed exercise, with
+  // 1–3 stars by score. Persisted to localStorage (keyed by session) so a
+  // reload keeps the child's stars. Drives the progress map shown between
+  // exercises, the motivator the specialist wanted the child to see each time.
+  const [kidStars, setKidStars] = useState<{ id: string; stars: number }[]>([])
+  // Unified per-answer feedback (sound + screen glow), driven off the same
+  // onProgress the exercises already emit — so all 60 get consistent feedback.
+  const [answerGlow, setAnswerGlow] = useState<{ correct: boolean; id: number } | null>(null)
   const noiseHandleRef = useRef<NoiseHandle | null>(null)
   // Tracks whichever of {synthesized mode, custom audio URL} is currently
   // playing, so we only restart audio on an actual transition, not every poll.
   const noiseKeyRef = useRef<string | null>(null)
   const customAudioElRef = useRef<HTMLAudioElement | null>(null)
+
+  // Restore the child's star progress for this session on load.
+  useEffect(() => {
+    if (!id) return
+    try {
+      const raw = localStorage.getItem(`kid-stars:${id}`)
+      if (raw) setKidStars(JSON.parse(raw))
+    } catch { /* ignore */ }
+  }, [id])
 
   // Fetch the meeting URL, RETRYING until it succeeds. A single failed fetch
   // (transient network/Redis blip on load) used to leave the child with no
@@ -675,6 +771,15 @@ export default function KidSessionPage() {
   }, [flushProgress])
   useEffect(() => () => { if (progressTimerRef.current) clearTimeout(progressTimerRef.current) }, [])
 
+  // Unified per-answer feedback for the CHILD — a gentle sound plus a brief
+  // screen-edge glow, fired from the same onProgress the exercises already
+  // emit. This gives every one of the 60 exercises consistent, clear
+  // right/wrong feedback without changing any of them.
+  const feedbackAnswer = useCallback((correct: boolean) => {
+    if (correct) playCorrect(); else playWrong()
+    setAnswerGlow({ correct, id: Date.now() })
+  }, [])
+
   // Exercise calls this with a full result object on completion; the same
   // handler is reused for onCancel, which calls it with no arguments.
   const handleDone = useCallback((result?: ExerciseResult) => {
@@ -684,6 +789,17 @@ export default function KidSessionPage() {
       // Clear the live progress bar the moment the exercise ends, so the
       // specialist's panel doesn't linger on a full bar between exercises.
       fetch(`/api/sessions/${id}/progress`, { method: 'DELETE' }).catch(() => {})
+      // Award stars for a real completion (not a cancel) and persist, so the
+      // progress map the child sees between exercises grows each time.
+      if (result && typeof result.score === 'number') {
+        const stars = result.score >= 80 ? 3 : result.score >= 50 ? 2 : 1
+        const exId = live.exerciseId
+        setKidStars(prev => {
+          const next = [...prev, { id: exId, stars }]
+          try { localStorage.setItem(`kid-stars:${id}`, JSON.stringify(next)) } catch { /* ignore */ }
+          return next
+        })
+      }
     }
   }, [live?.exerciseId, reportStatus, id])
 
@@ -771,41 +887,10 @@ export default function KidSessionPage() {
     // flips false and this falls through to the normal waiting/exercise flow.
     mainContent = <KidReadinessScreen readiness={readiness} onAnswer={answerReadiness} />
   } else if (!live || done) {
-    mainContent = (
-      <div
-        dir="rtl"
-        style={{
-          minHeight: '100dvh', display: 'flex', flexDirection: 'column',
-          alignItems: 'center', justifyContent: 'center', textAlign: 'center',
-          background: 'linear-gradient(160deg,#FFF0FA 0%,#EEF0FF 40%,#F0FFF8 70%,#FFFBF0 100%)',
-          padding: 24, gap: 24,
-        }}
-      >
-        {/* Animated stars */}
-        <div style={{ fontSize: 72, lineHeight: 1, animation: 'bounce 2s infinite' }}>
-          {done ? '🌟' : '⏳'}
-        </div>
-        <div style={{ fontSize: 28, fontWeight: 900, color: '#6D28D9' }}>
-          {done ? 'أحسنت! 🎉' : 'في انتظار الأستاذ...'}
-        </div>
-        <div style={{ fontSize: 16, color: '#7C3AED', opacity: 0.7, maxWidth: 300 }}>
-          {done
-            ? 'انتهيت بتميز! سيختار الأستاذ التمرين التالي'
-            : 'سيبدأ التمرين قريباً، ابقَ مستعداً!'}
-        </div>
-        {/* Pulsing ring */}
-        <div style={{
-          width: 80, height: 80, borderRadius: '50%',
-          border: '4px solid #A78BFA',
-          animation: 'ping 1.5s cubic-bezier(0,0,0.2,1) infinite',
-          opacity: 0.4,
-        }} />
-        <style>{`
-          @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-16px)} }
-          @keyframes ping   { 0%{transform:scale(1);opacity:.6} 100%{transform:scale(2);opacity:0} }
-        `}</style>
-      </div>
-    )
+    // Between exercises (and before the first) — show the child their progress
+    // map: the journey they've completed today with stars, plus a pulsing
+    // "next" node. Grows every time so it keeps motivating them.
+    mainContent = <KidProgressMap stars={kidStars} done={done} />
   } else {
     // ── Exercise renderer ────────────────────────────────────────────────
     const id_ = live.exerciseId
@@ -814,9 +899,12 @@ export default function KidSessionPage() {
     // lib/seeded-random.ts) — harmless extra prop for the rest.
     const props = {
       onComplete: handleDone, onCancel: handleDone, difficulty, studentAge: 10, seed: live.seed,
-      // Live per-answer feedback to the specialist. Only exercises that call
-      // onProgress emit it; the rest simply never invoke it (optional prop).
-      onProgress: (p: ExerciseProgressUpdate) => postProgress(live.exerciseId, p),
+      // Live per-answer feedback to the specialist, AND unified child-side
+      // feedback (sound + glow). Only exercises that call onProgress emit it.
+      onProgress: (p: ExerciseProgressUpdate) => {
+        postProgress(live.exerciseId, p)
+        if (typeof p.lastCorrect === 'boolean') feedbackAnswer(p.lastCorrect)
+      },
     }
 
     mainContent = (
@@ -939,6 +1027,10 @@ export default function KidSessionPage() {
       {/* Specialist's encouragement burst — celebratory overlay above all */}
       {reactionBurst && (
         <KidReactionBurst key={reactionBurst.id} reaction={reactionBurst} onDone={() => setReactionBurst(null)} />
+      )}
+      {/* Unified per-answer glow — green/soft-red edge flash on each answer */}
+      {answerGlow && (
+        <KidAnswerGlow key={answerGlow.id} correct={answerGlow.correct} onDone={() => setAnswerGlow(null)} />
       )}
     </>
   )

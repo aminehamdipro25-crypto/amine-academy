@@ -177,6 +177,47 @@ lib/                            # مساعدات، أنواع، ثوابت
 
 ---
 
+## 3.9 المزامنة اللحظية بين الأخصائي والطفل (المحور الأساسي — جلسة 13)
+
+> جوهر المنصة: الأخصائي يُدير الجلسة على `/session/[id]` والطفل يدخل من بوابة الوالدين على `/session/[id]/kid`، ويتفاعلان مع **نفس** المحتوى لحظياً مع فيديو متبادل.
+
+### البنية: "إيقاظ + Redis مصدر الحقيقة"
+- **`lib/realtime-server.ts`** — نشر أحداث Pusher (server). كل تغيير يكتب في Redis (المصدر الدائم) ثم يُرسل نبضة إيقاظ صغيرة فقط؛ المستقبِل يُعيد جلب البيانات من الـ API المُصادَق. `SessionEvent`: `live | content | whiteboard | timer | noise | card | kid-status | presence | readiness | progress | reaction`.
+- **`lib/realtime-client.ts`** — اشتراك Pusher (client)، اتصال واحد مُشترك لكل تبويب (ref-counted). `realtimeEnabled()`، `subscribeSession()`، `subscribeConnectionState()`.
+- **التدهور الرشيق:** إن غابت مفاتيح Pusher، النشر no-op والعملاء يعملون بالتحديث الدوري (poll). المنصة تعمل بدون Pusher؛ إضافته ترفع اللحظية من ~1s إلى ~100ms بلا تغيير كود.
+- **مفاتيح Pusher الستة في Vercel** (`NEXT_PUBLIC_*` تُبنى وقت البناء → تحتاج إعادة نشر). مؤشر عائم عند الأخصائي يُظهر «مباشر / تحديث دوري».
+
+### الفيديو — Daily.co Prebuilt Iframe
+- `components/session/DailyVideoCall.tsx` — انتقل من call-object إلى `DailyIframe.createFrame` (prebuilt) — أنهى نهائياً خطأ CSP لتحميل bundle من `*.dailywebrtc.net`. الكاميرا تعمل عبر `Permissions-Policy: camera=*` على `/session/*` + `allow=` على iframe.
+- `lib/daily.ts`: `dailyRoomNameFor()` = `amine-${sha256(id).slice(0,24)}` — فكّ ربط طول اسم الغرفة عن طول الـ appointmentId (حدّ 41 حرف).
+- `DraggableVideoPiP` — صندوق قابل للسحب؛ يبقى الاتصال حياً عند التصغير (لا يُهدم)، ويُحرّر `right/bottom` عند السحب حتى يتحرك فعلاً.
+
+### تطابق المحتوى — بذرة عشوائية مشتركة
+- **`lib/seeded-random.ts`** — PRNG حتمي (mulberry32): `createRng`, `shuffleWithRng`, `pickWithRng`, `randIntWithRng`, `randBoolWithRng`.
+- **المشكلة الجذرية:** كل تمرين يُحمَّل كشجرتين React مستقلتين؛ أي `Math.random()` يُنتج محتوى مختلفاً على كل شاشة. **الحل:** الأخصائي يُنشئ `seed` واحداً لكل تمرين (يُحسب أثناء الرسم عبر ref محروس — لا useEffect، حتى يكون صحيحاً من أول render)، يُرسل عبر قناة `live`. حُوّلت **كل التمارين الـ63** لاستخدام البذرة → نفس البطاقات/الأسئلة/المواضع تماماً على الشاشتين.
+
+### رؤية إجابات الطفل لحظياً (Live per-answer feedback)
+- **`ExerciseProgressUpdate`** (`lib/types.ts`): `{ answered, total, correct, errors, lastCorrect? }`.
+- مسار `/api/sessions/[id]/progress` (POST من الطفل مُخفَّف، GET للأخصائي، حدث `progress`، TTL قصير).
+- **60 تمريناً** تستدعي `onProgress` عند كل إجابة (قيم مُحسبة مسبقاً nc/ne؛ tap-games مستمرة تستخدم refs و`total:0`). الـ19 المتبقية أدوات استرخاء/تقييم ذاتي (لا صح/خطأ).
+- **لوحة عائمة عند الأخصائي** (مستقلة عن الرأس المُخفى): شريط تقدم + ✓/✗ + وميض آخر إجابة.
+
+### أدوات تحكم الأخصائي — انفجارات التشجيع
+- مسار `/api/sessions/[id]/reaction` (POST للأخصائي فقط، `{type, id}` بـ nonce، TTL 60s، حدث `reaction`).
+- شريط عائم (⭐🎉👏❤️👍🌈) يُطلق احتفال ملء الشاشة على جهاز الطفل (`KidReactionBurst`).
+
+### تجربة الطفل
+- **`lib/feedback-sound.ts`** — نغمات Web Audio موحّدة عبر كل التمارين (تُشغَّل من `onProgress` بلا لمس أي تمرين): نغمة صاعدة للصحيح، هادئة للخطأ (ليست جرس حاد — مهم لذوي الاحتياجات) + وميض حواف أخضر/أحمر (`KidAnswerGlow`).
+- **`KidProgressMap`** — خارطة تقدم (Duolingo-style) تظهر بين التمارين: عقدة لكل تمرين مُنجز بنجومه (1-3 حسب النتيجة) + مجموع النجوم + عقدة «التالي» تنبض. محفوظة في localStorage (`kid-stars:{id}`) فتبقى بعد إعادة التحميل. تحل محل شاشة الانتظار الساكنة.
+- **`KidReadinessScreen`** — الطفل يجيب تقييم الجاهزية بنفسه (وجوه/رموز)، يُزامَن حياً للأخصائي.
+
+### الحضور والموثوقية
+- `presence` — نبض ثنائي المفتاح (`session:presence:{specialist|kid}:{id}`، TTL 15s) → مؤشر «غادر الطفل» صادق.
+- **إعادة محاولة رابط الفيديو** (kid) حتى ينجح (backoff مُقيَّد بـ10s) — فشل واحد كان يترك الطفل بلا فيديو كامل الجلسة.
+- **إعادة مزامنة عند عودة الاتصال** (الطرفان) — عند إعادة اتصال Pusher تُعاد مزامنة كل القنوات فوراً بدل انتظار الـ poll.
+
+---
+
 ## 4. إصلاحات الأخطاء الكبرى
 
 ### 4.1 React Strict Mode — Double-Fire (24 ملف)
@@ -218,6 +259,18 @@ TargetTracking, PhysicalExercise, ReadingCards, LetterMatch, EmotionCards, Emoti
 - حفظ الجلسات والتقييمات (data loss صامت) → إصلاح
 - مقاطع فيديو طويلة جداً (library) → استبدال بمقاطع ≤30 ثانية
 
+### 4.4 إصلاحات جلسة 13 (المزامنة اللحظية)
+
+| الخطأ | السبب الجذري | الإصلاح |
+|---|---|---|
+| التمارين مختلفة بين الشاشتين | البذرة تُضبط في useEffect بعد mount فيلتقط الأخصائي بذرة قديمة | حساب البذرة أثناء الرسم عبر ref محروس |
+| إعادة التمرين لا تصل للطفل | fetchLive يتفاعل مع تغيّر exerciseId فقط، والإعادة تُبقيه | المراقبة على `(exerciseId + seed)` |
+| إجابة الطفل لا تظهر للأخصائي | المؤشر داخل الرأس الذي يُخفى عند التمرين | مؤشر عائم دائم الظهور |
+| الكاميرا لا تتحرك | السحب يضبط left دون تحرير right | تحرير `right/bottom` عند السحب |
+| الفيديو "شبه محجوب" | PiP يهدم مكالمة Daily عند كل تصغير | إبقاء الاتصال حياً (إخفاء CSS فقط) |
+| صناديق الفيديو تُغطّى بشريط المتصفح | كلها في الزاوية السفلى اليسرى (مكان شريط كاميرا المتصفح) | نقلها للزاوية العلوية اليمنى |
+| المواعيد الجديدة لا تظهر في "القادمة" | "قادمة" = أي `scheduled` بلا فحص تاريخ، مرتبة من الأقدم، والبقعة تعرض 3 فقط | "قادمة" = مستقبلية فعلاً (تاريخ+وقت ≥ الآن)، الأقرب أولاً، والمتأخرة في قائمة منفصلة |
+
 ---
 
 ## 5. أمان المشروع — الحالة الراهنة
@@ -253,11 +306,13 @@ TargetTracking, PhysicalExercise, ReadingCards, LetterMatch, EmotionCards, Emoti
 | Next.js 14 (App Router) | Framework الأساسي |
 | TypeScript | كل الكود |
 | Tailwind CSS | التصميم |
-| Redis (Upstash) | جلسات المصادقة، التخزين المؤقت |
+| Redis (Upstash) | جلسات المصادقة، حالة الجلسة اللحظية، التخزين المؤقت |
 | Resend | إرسال الإيميلات |
-| Jitsi Meet | مكالمات الفيديو |
+| Daily.co (Prebuilt Iframe) | مكالمات الفيديو المتبادلة في الجلسة |
+| Pusher (pusher / pusher-js) | المزامنة اللحظية (إيقاظ + Redis مصدر الحقيقة) |
+| Web Audio API | نغمات التغذية الراجعة + توليد الموسيقى/الضوضاء |
 | Web Speech API | TTS في التمارين |
-| React useRef/useMemo | ثبات الحالة في التمارين |
+| React useRef/useMemo | ثبات الحالة والبذور في التمارين |
 
 ---
 
@@ -267,18 +322,30 @@ TargetTracking, PhysicalExercise, ReadingCards, LetterMatch, EmotionCards, Emoti
 
 ```tsx
 'use client'
-import { useState, useRef, useEffect, useMemo } from 'react'
+import { useState, useRef, useEffect } from 'react'
+import type { ExerciseResult, ExerciseProgressUpdate } from '@/lib/types'
+import { createRng, shuffleWithRng } from '@/lib/seeded-random'
 
-export default function MyExercise({ onComplete, onCancel, difficulty = 1 }) {
+interface Props {
+  onComplete: (r: ExerciseResult) => void
+  onCancel: () => void
+  studentAge: number
+  difficulty?: 1|2|3
+  seed?: number                                        // بذرة مشتركة → نفس المحتوى على الشاشتين
+  onProgress?: (p: ExerciseProgressUpdate) => void     // تغذية راجعة لحظية للأخصائي/الطفل
+}
+
+export default function MyExercise({ onComplete, onCancel, difficulty = 1, seed, onProgress }: Props) {
+  // ✅ RNG حتمي من البذرة المشتركة — بدل Math.random المستقل
+  const rng      = useRef(createRng(seed ?? Date.now())).current
   const startRef = useRef(Date.now())
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const doneRef  = useRef(false)  // فقط إذا كان هناك setInterval
 
   // ✅ إلغاء التايمر عند unmount
   useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current) }, [])
 
-  // ✅ shuffle ثابت بين re-renders
-  const choices = useMemo(() => shuffle(rawChoices), [idx])
+  // ✅ shuffle حتمي (نفس الترتيب على الجهازين)
+  const choices = shuffleWithRng(rng, rawChoices)
 
   function handleAnswer(answer: string) {
     // ✅ pre-compute قبل setState لتجنب stale closure
@@ -286,6 +353,9 @@ export default function MyExercise({ onComplete, onCancel, difficulty = 1 }) {
     const ne = errors  + (isCorrect ? 0 : 1)
     if (isCorrect) setCorrect(nc)
     else           setErrors(ne)
+
+    // ✅ بثّ التقدم اللحظي (قيم مُحسبة مسبقاً، لا state قديم)
+    onProgress?.({ answered: idx + 1, total, correct: nc, errors: ne, lastCorrect: isCorrect })
 
     // ✅ تتبع التايمر
     timerRef.current = setTimeout(() => {
@@ -296,6 +366,8 @@ export default function MyExercise({ onComplete, onCancel, difficulty = 1 }) {
   }
 }
 ```
+
+> **ملاحظة:** لا تستخدم `Math.random()` في التمارين إطلاقاً — استخدم `rng()` أو مساعدات `lib/seeded-random.ts` حتى يبقى المحتوى متطابقاً بين شاشة الأخصائي والطفل.
 
 ---
 
@@ -314,4 +386,5 @@ export default function MyExercise({ onComplete, onCancel, difficulty = 1 }) {
 | التاسعة | توسيع محتوى التمارين، NumberSearch، تحرير مدة المراحل |
 | العاشرة | إعادة تصميم Readiness Screen، Light Theme للجلسة |
 | الحادية عشرة | استخراج مكونات session/page.tsx (6 مراحل refactor) |
-| الثانية عشرة | إصلاح React Strict Mode bugs في 24 تمرين (هذه الجلسة) |
+| الثانية عشرة | إصلاح React Strict Mode bugs في 24 تمرين |
+| الثالثة عشرة | **المزامنة اللحظية الكاملة:** Pusher (إيقاظ + Redis)، Daily prebuilt iframe، بذرة عشوائية مشتركة عبر 63 تمرين، رؤية إجابات الطفل لحظياً (60 تمرين + لوحة أخصائي)، انفجارات التشجيع، خارطة تقدم الطفل + نجوم + تغذية راجعة صوتية موحّدة، تقييم جاهزية يجيبه الطفل، تقوية الموثوقية (إعادة محاولة الفيديو + إعادة مزامنة عند الاتصال)، إصلاح المواعيد القادمة (هذه الجلسة) |

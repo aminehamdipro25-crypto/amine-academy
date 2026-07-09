@@ -5,7 +5,7 @@ import type { ExerciseResult, ExerciseProgressUpdate } from '@/lib/types'
 import { PROMPT_CARDS } from '@/lib/session-constants'
 import { startNoiseEngine, type NoiseHandle } from '@/lib/noise-synth'
 import { formatTime } from '@/lib/session-helpers'
-import { subscribeSession, realtimeEnabled } from '@/lib/realtime-client'
+import { subscribeSession, realtimeEnabled, subscribeConnectionState } from '@/lib/realtime-client'
 
 const DailyVideoCall = lazy(() => import('@/components/session/DailyVideoCall'))
 
@@ -381,12 +381,28 @@ export default function KidSessionPage() {
   const noiseKeyRef = useRef<string | null>(null)
   const customAudioElRef = useRef<HTMLAudioElement | null>(null)
 
-  // Fetch meeting URL once on load
+  // Fetch the meeting URL, RETRYING until it succeeds. A single failed fetch
+  // (transient network/Redis blip on load) used to leave the child with no
+  // video for the entire session and no way to recover. Now we back off and
+  // keep trying (capped at 10s) until we have a URL, then stop.
   useEffect(() => {
-    fetch(`/api/sessions/${id}/meeting`)
-      .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d?.meetingUrl) setMeetingUrl(d.meetingUrl) })
-      .catch(() => {})
+    if (!id) return
+    let cancelled = false
+    let attempt = 0
+    const tryFetch = async () => {
+      if (cancelled) return
+      try {
+        const r = await fetch(`/api/sessions/${id}/meeting`)
+        const d = r.ok ? await r.json() : null
+        if (d?.meetingUrl) { if (!cancelled) setMeetingUrl(d.meetingUrl); return }
+      } catch { /* fall through to retry */ }
+      if (cancelled) return
+      attempt++
+      const delay = Math.min(10000, 1000 * 2 ** Math.min(attempt, 4))
+      setTimeout(tryFetch, delay)
+    }
+    tryFetch()
+    return () => { cancelled = true }
   }, [id])
 
   // Presence heartbeat — lets the specialist know the child is genuinely
@@ -536,7 +552,24 @@ export default function KidSessionPage() {
       else if (ev === 'readiness') fetchReadiness()
     })
     const iv = setInterval(pollAll, rt ? 6000 : 1000)
-    return () => { unsub(); clearInterval(iv) }
+    // Reconnect re-sync: while the realtime socket is down, wake-up events are
+    // lost — the child could miss the specialist starting an exercise, a card,
+    // the timer, etc. The interval eventually catches up, but on reconnect we
+    // re-sync ALL channels immediately so the child snaps back to the current
+    // state instead of waiting up to 6s. Only fires on a true reconnect (after
+    // a drop), never on the first connect (mount already polled).
+    let seenConnected = false
+    let droppedSince = false
+    const unsubConn = subscribeConnectionState(st => {
+      if (st === 'connected') {
+        if (droppedSince) pollAll()
+        seenConnected = true
+        droppedSince = false
+      } else if (seenConnected) {
+        droppedSince = true
+      }
+    })
+    return () => { unsub(); unsubConn(); clearInterval(iv) }
   }, [id, pollAll, fetchLive, fetchContent, fetchWbActive, fetchTimer, fetchCard, fetchNoise, fetchReadiness])
 
   // Report status to specialist when exercise starts/finishes. `result` is

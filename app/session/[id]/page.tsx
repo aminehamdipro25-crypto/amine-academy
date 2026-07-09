@@ -1625,7 +1625,21 @@ ${notes ? `
     const statusIv = setInterval(fetchStatus, rt ? 8000 : 1000)
     const presenceIv = setInterval(fetchPresence, rt ? 3000 : 1000)
     const progressIv = setInterval(fetchProgress, rt ? 6000 : 1500)
-    return () => { unsub(); clearInterval(statusIv); clearInterval(presenceIv); clearInterval(progressIv) }
+    // Reconnect re-sync — on a realtime reconnect, immediately re-pull the
+    // child's status/presence/progress instead of waiting for the next poll,
+    // so a network blip doesn't leave the specialist looking at stale info.
+    let seenConnected = false
+    let droppedSince = false
+    const unsubConn = subscribeConnectionState(st => {
+      if (st === 'connected') {
+        if (droppedSince) { fetchStatus(); fetchPresence(); fetchProgress() }
+        seenConnected = true
+        droppedSince = false
+      } else if (seenConnected) {
+        droppedSince = true
+      }
+    })
+    return () => { unsub(); unsubConn(); clearInterval(statusIv); clearInterval(presenceIv); clearInterval(progressIv) }
   }, [id])
 
   // Visible realtime status — so "is the live sync actually on" is something

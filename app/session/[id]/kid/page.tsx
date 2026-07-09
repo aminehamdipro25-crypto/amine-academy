@@ -518,6 +518,35 @@ export default function KidSessionPage() {
     } catch { /* ignore */ }
   }, [id])
 
+  // Unlock audio on the child's FIRST tap. Mobile browsers (esp. Android
+  // Chrome) block programmatically-triggered speech and Web-Audio until a
+  // user gesture — and the listening exercises auto-play their prompt, so
+  // without this the child would hear nothing on the first play. One real
+  // tap primes both engines for the rest of the session (the child still has
+  // a "🔊 tap to listen" button as a fallback in each listening exercise).
+  useEffect(() => {
+    let unlocked = false
+    const unlock = () => {
+      if (unlocked) return
+      unlocked = true
+      try {
+        if ('speechSynthesis' in window) {
+          const u = new SpeechSynthesisUtterance(' ')
+          u.volume = 0
+          window.speechSynthesis.speak(u)
+        }
+      } catch { /* ignore */ }
+      window.removeEventListener('pointerdown', unlock)
+      window.removeEventListener('touchstart', unlock)
+    }
+    window.addEventListener('pointerdown', unlock)
+    window.addEventListener('touchstart', unlock)
+    return () => {
+      window.removeEventListener('pointerdown', unlock)
+      window.removeEventListener('touchstart', unlock)
+    }
+  }, [])
+
   // Fetch the meeting URL, RETRYING until it succeeds. A single failed fetch
   // (transient network/Redis blip on load) used to leave the child with no
   // video for the entire session and no way to recover. Now we back off and

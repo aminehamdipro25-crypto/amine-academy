@@ -1,6 +1,6 @@
 'use client'
 import { useState, useRef, useEffect, useCallback } from 'react'
-import type { ExerciseResult } from '@/lib/types'
+import type { ExerciseResult, ExerciseProgressUpdate } from '@/lib/types'
 import { speakArabic, cancelSpeech } from '@/lib/speech'
 import { createRng, shuffleWithRng, pickWithRng, randBoolWithRng, type Rng } from '@/lib/seeded-random'
 
@@ -41,6 +41,7 @@ interface Props {
   studentAge: number
   difficulty?: 1|2|3
   seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
+  onProgress?: (p: ExerciseProgressUpdate) => void // live per-answer feedback to the specialist
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -96,7 +97,7 @@ const BG = 'linear-gradient(135deg, #EFF6FF 0%, #E0E7FF 100%)'
 
 // ── Component ────────────────────────────────────────────────────────────────
 
-export default function LetterSearch({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+export default function LetterSearch({ onComplete, onCancel, difficulty = 1, seed, onProgress }: Props) {
   const rng = useRef(createRng(seed ?? Date.now())).current
   const cfg = CONFIGS[difficulty]
 
@@ -163,6 +164,8 @@ export default function LetterSearch({ onComplete, onCancel, difficulty = 1, see
     setTotFound(tf)
     setTotErr(te)
     setCleared(foundNow >= cfg.targets)
+    // Scored per round: answered = rounds done, correct/errors = cumulative target taps
+    onProgress?.({ answered: round + 1, total: cfg.rounds, correct: tf, errors: te, lastCorrect: foundNow >= cfg.targets })
     setPhase('between')
 
     timerRef.current = setTimeout(() => {
@@ -184,7 +187,7 @@ export default function LetterSearch({ onComplete, onCancel, difficulty = 1, see
       roundDone.current = false
       setPhase('playing')
     }, 1500)
-  }, [round, totFound, totErr, cfg.rounds, cfg.targets, cfg.timeLimit, finish, rng])
+  }, [round, totFound, totErr, cfg.rounds, cfg.targets, cfg.timeLimit, finish, rng, onProgress])
 
   // ── countdown timer ───────────────────────────────────────────────────────
   useEffect(() => {

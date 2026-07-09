@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
-import type { ExerciseResult } from '@/lib/types'
+import type { ExerciseResult, ExerciseProgressUpdate } from '@/lib/types'
 import { createRng, pickWithRng, randIntWithRng, randBoolWithRng } from '@/lib/seeded-random'
 
 const DISPLAY_EMOJIS = ['⭐', '🎯', '🦋', '🌟', '🍎', '🐬']
@@ -18,6 +18,7 @@ interface Props {
   studentAge: number
   difficulty?: 1 | 2 | 3
   seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
+  onProgress?: (p: ExerciseProgressUpdate) => void // live per-answer feedback to the specialist
 }
 
 type Phase = 'intro' | 'flash' | 'answer' | 'feedback' | 'result'
@@ -61,7 +62,7 @@ function buildOptions(rng: ReturnType<typeof createRng>, correct: number): numbe
   return Array.from(opts).sort((a, b) => a - b)
 }
 
-export default function FlashCount({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+export default function FlashCount({ onComplete, onCancel, difficulty = 1, seed, onProgress }: Props) {
   const rng = useRef(createRng(seed ?? Date.now())).current
   const [minCount, maxCount] = getCountRange(difficulty)
 
@@ -142,6 +143,7 @@ export default function FlashCount({ onComplete, onCancel, difficulty = 1, seed 
     const ne = isCorrect ? errors : errors + 1
     if (isCorrect) setCorrect(nc)
     else setErrors(ne)
+    onProgress?.({ answered: round + 1, total: TOTAL_ROUNDS, correct: nc, errors: ne, lastCorrect: isCorrect })
 
     if (timerRef.current) clearTimeout(timerRef.current)
     timerRef.current = setTimeout(() => {
@@ -152,7 +154,7 @@ export default function FlashCount({ onComplete, onCancel, difficulty = 1, seed 
         startRound(nextRound)
       }
     }, 900)
-  }, [phase, currentCount, round, errors, correct, finishGame, startRound])
+  }, [phase, currentCount, round, errors, correct, finishGame, startRound, onProgress])
 
   // Intro
   if (phase === 'intro') {

@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
-import type { ExerciseResult } from '@/lib/types'
+import type { ExerciseResult, ExerciseProgressUpdate } from '@/lib/types'
 import { speakArabic } from '@/lib/speech'
 import { createRng, shuffleWithRng } from '@/lib/seeded-random'
 
@@ -10,6 +10,7 @@ interface Props {
   studentAge: number
   difficulty?: 1 | 2 | 3
   seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
+  onProgress?: (p: ExerciseProgressUpdate) => void // live per-answer feedback to the specialist
 }
 
 const WORD_POOLS = {
@@ -49,6 +50,7 @@ export default function AuditoryMemory({
   studentAge: _studentAge,
   difficulty = 1,
   seed,
+  onProgress,
 }: Props) {
   const rng = useRef(createRng(seed ?? Date.now())).current
   const seqLen = getSeqLen(difficulty)
@@ -179,6 +181,16 @@ export default function AuditoryMemory({
     setTotalErrors(newErrors)
     setFeedbackCorrect(correct)
     setPhase('feedback')
+
+    // Each round fills all seqLen slots, so counts are word-level and cumulative
+    const answeredWords = newScores.length * seqLen
+    onProgress?.({
+      answered: answeredWords,
+      total: ROUNDS * seqLen,
+      correct: answeredWords - newErrors,
+      errors: newErrors,
+      lastCorrect: correct === sequence.length,
+    })
 
     if (newScores.length >= ROUNDS) {
       const avgScore = Math.round(newScores.reduce((a, b) => a + b, 0) / ROUNDS)

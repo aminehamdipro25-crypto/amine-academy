@@ -1,6 +1,6 @@
 'use client'
 import { useState, useRef } from 'react'
-import type { ExerciseResult } from '@/lib/types'
+import type { ExerciseResult, ExerciseProgressUpdate } from '@/lib/types'
 import { createRng, shuffleWithRng } from '@/lib/seeded-random'
 
 interface Props {
@@ -9,6 +9,7 @@ interface Props {
   studentAge: number
   difficulty?: 1|2|3
   seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
+  onProgress?: (p: ExerciseProgressUpdate) => void  // live per-answer feedback to the specialist
 }
 
 interface Choice {
@@ -209,7 +210,7 @@ const SCENARIOS: Scenario[] = [
   },
 ]
 
-export default function SocialScenarios({ onComplete, onCancel, studentAge, difficulty = 1, seed }: Props) {
+export default function SocialScenarios({ onComplete, onCancel, studentAge, difficulty = 1, seed, onProgress }: Props) {
   const rng = useRef(createRng(seed ?? Date.now())).current
   const totalScenariosTarget = difficulty === 1 ? 2 : difficulty === 2 ? 3 : 4
 
@@ -236,9 +237,12 @@ export default function SocialScenarios({ onComplete, onCancel, studentAge, diff
   function pick(choice: Choice) {
     if (selected) return
     setSelected(choice)
-    const score = choice.type === 'assertive' || choice.type === 'prosocial' ? 100 : choice.type === 'passive' ? 50 : 25
+    const isGood = choice.type === 'assertive' || choice.type === 'prosocial'
+    const score = isGood ? 100 : choice.type === 'passive' ? 50 : 25
     setScores(prev => [...prev, score])
-    if (choice.type === 'passive' || choice.type === 'aggressive') setPoorChoices(c => c + 1)
+    const ne = poorChoices + (isGood ? 0 : 1)
+    if (!isGood) setPoorChoices(ne)
+    onProgress?.({ answered: idx + 1, total: totalScenarios, correct: (idx + 1) - ne, errors: ne, lastCorrect: isGood })
   }
 
   function next() {

@@ -1,6 +1,6 @@
 'use client'
 import { useState, useRef, useCallback, useEffect } from 'react'
-import type { ExerciseResult } from '@/lib/types'
+import type { ExerciseResult, ExerciseProgressUpdate } from '@/lib/types'
 import { speakArabic, cancelSpeech } from '@/lib/speech'
 import { createRng, shuffleWithRng } from '@/lib/seeded-random'
 
@@ -10,6 +10,7 @@ interface Props {
   studentAge: number
   difficulty?: 1|2|3
   seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
+  onProgress?: (p: ExerciseProgressUpdate) => void // live per-answer feedback to the specialist
 }
 
 const ANIMALS = [
@@ -23,7 +24,7 @@ const ANIMALS = [
   { emoji: '🐴', name: 'حصان' },
 ]
 
-export default function AudioSequenceRepeat({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+export default function AudioSequenceRepeat({ onComplete, onCancel, difficulty = 1, seed, onProgress }: Props) {
   const rng     = useRef(createRng(seed ?? Date.now())).current
   const SEQ_LEN = difficulty === 1 ? 2 : difficulty === 2 ? 3 : 4
   const ROUNDS  = 4
@@ -84,6 +85,8 @@ export default function AudioSequenceRepeat({ onComplete, onCancel, difficulty =
       setFeedback('wrong')
       setPhase('feedback')
       speak('خطأ')
+      // totalScore accrues +100 per fully-correct round, so totalScore/100 = correct rounds so far
+      onProgress?.({ answered: round + 1, total: ROUNDS, correct: totalScore / 100, errors: newErrors, lastCorrect: false })
       timerIds.current.push(setTimeout(() => advanceRound(0, newErrors), 1400))
     } else if (newTapped.length === sequence.length) {
       // All correct
@@ -91,6 +94,7 @@ export default function AudioSequenceRepeat({ onComplete, onCancel, difficulty =
       setPhase('feedback')
       setTotalScore(s => s + 100)
       speak('ممتاز')
+      onProgress?.({ answered: round + 1, total: ROUNDS, correct: totalScore / 100 + 1, errors, lastCorrect: true })
       timerIds.current.push(setTimeout(() => advanceRound(100), 1400))
     }
     // else: partial match, keep going

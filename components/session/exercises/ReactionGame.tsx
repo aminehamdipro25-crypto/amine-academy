@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
-import type { ExerciseResult } from '@/lib/types'
+import type { ExerciseResult, ExerciseProgressUpdate } from '@/lib/types'
 import { createRng } from '@/lib/seeded-random'
 
 const TRIALS = 10
@@ -11,11 +11,12 @@ interface Props {
   studentAge: number
   difficulty?: 1|2|3
   seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
+  onProgress?: (p: ExerciseProgressUpdate) => void // live per-answer feedback to the specialist
 }
 
 type Phase = 'ready' | 'waiting' | 'flash' | 'early' | 'result'
 
-export default function ReactionGame({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+export default function ReactionGame({ onComplete, onCancel, difficulty = 1, seed, onProgress }: Props) {
   const rng = useRef(createRng(seed ?? Date.now())).current
   const minDelay = difficulty === 1 ? 1200 : difficulty === 2 ? 900 : 600
   const maxDelay = difficulty === 1 ? 3200 : difficulty === 2 ? 2600 : 2000
@@ -72,6 +73,8 @@ export default function ReactionGame({ onComplete, onCancel, difficulty = 1, see
       clearTimer()
       earlyRef.current++
       setEarlyCount(earlyRef.current)
+      // Early press = a wrong answer; successful trials so far === times.length === trial
+      onProgress?.({ answered: trial, total: TRIALS, correct: trial, errors: earlyRef.current, lastCorrect: false })
       setPhase('early')
       timerRef.current = setTimeout(() => {
         setPhase('waiting')
@@ -84,6 +87,7 @@ export default function ReactionGame({ onComplete, onCancel, difficulty = 1, see
       setTimes(timesRef.current)
       setLastTime(rt)
       const nextTrial = trial + 1
+      onProgress?.({ answered: nextTrial, total: TRIALS, correct: nextTrial, errors: earlyRef.current, lastCorrect: true })
       if (nextTrial >= TRIALS) {
         const r = buildResult(timesRef.current, earlyRef.current)
         setResult(r)

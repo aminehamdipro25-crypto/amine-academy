@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
-import type { ExerciseResult } from '@/lib/types'
+import type { ExerciseResult, ExerciseProgressUpdate } from '@/lib/types'
 import { speakArabic, cancelSpeech } from '@/lib/speech'
 import { createRng, shuffleWithRng, type Rng } from '@/lib/seeded-random'
 
@@ -10,6 +10,7 @@ interface Props {
   studentAge: number
   difficulty?: 1 | 2 | 3
   seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
+  onProgress?: (p: ExerciseProgressUpdate) => void  // live per-answer feedback to the specialist
 }
 
 interface WordPair {
@@ -88,7 +89,7 @@ function speak(text: string): void {
 
 type Phase = 'playing' | 'answer' | 'feedback' | 'done'
 
-export default function SoundDiscrimination({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+export default function SoundDiscrimination({ onComplete, onCancel, difficulty = 1, seed, onProgress }: Props) {
   const rng = useRef(createRng(seed ?? Date.now())).current
   const pairs = useRef<WordPair[]>(getPairs(difficulty, rng))
   const [qIdx, setQIdx]       = useState(0)
@@ -147,6 +148,7 @@ export default function SoundDiscrimination({ onComplete, onCancel, difficulty =
     setErrors(newErrors)
     setFeedback(isCorrect ? 'correct' : 'wrong')
     setPhase('feedback')
+    onProgress?.({ answered: qIdx + 1, total, correct: newCorrect, errors: newErrors, lastCorrect: isCorrect })
 
     timerRef.current = setTimeout(() => {
       setFeedback(null)

@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
-import type { ExerciseResult } from '@/lib/types'
+import type { ExerciseResult, ExerciseProgressUpdate } from '@/lib/types'
 import { createRng, pickWithRng } from '@/lib/seeded-random'
 
 interface Target { id: number; x: number; y: number; size: number; born: number; emoji: string }
@@ -13,9 +13,10 @@ interface Props {
   studentAge: number
   difficulty?: 1|2|3
   seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
+  onProgress?: (p: ExerciseProgressUpdate) => void  // live per-answer feedback to the specialist
 }
 
-export default function TapTarget({ onComplete, onCancel, studentAge, difficulty = 1, seed }: Props) {
+export default function TapTarget({ onComplete, onCancel, studentAge, difficulty = 1, seed, onProgress }: Props) {
   const rng = useRef(createRng(seed ?? Date.now())).current
   const duration = 45  // seconds
   const targetLife = difficulty === 1 ? 2500 : difficulty === 2 ? 1800 : 1200
@@ -48,11 +49,14 @@ export default function TapTarget({ onComplete, onCancel, studentAge, difficulty
     setTimeout(() => {
       setTargets(t => {
         const exists = t.find(tt => tt.id === id)
-        if (exists) { missesRef.current++; setMisses(missesRef.current) }
+        if (exists) {
+          missesRef.current++; setMisses(missesRef.current)
+          onProgress?.({ answered: hitsRef.current + missesRef.current, total: 0, correct: hitsRef.current, errors: missesRef.current, lastCorrect: false })
+        }
         return t.filter(tt => tt.id !== id)
       })
     }, targetLife)
-  }, [targetSize, targetLife])
+  }, [targetSize, targetLife, onProgress])
 
   useEffect(() => {
     if (done) return
@@ -99,6 +103,7 @@ export default function TapTarget({ onComplete, onCancel, studentAge, difficulty
     setTargets(t => t.filter(tt => tt.id !== id))
     hitsRef.current++
     setHits(hitsRef.current)
+    onProgress?.({ answered: hitsRef.current + missesRef.current, total: 0, correct: hitsRef.current, errors: missesRef.current, lastCorrect: true })
   }
 
   return (

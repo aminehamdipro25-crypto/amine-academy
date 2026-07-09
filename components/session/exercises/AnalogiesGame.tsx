@@ -1,6 +1,6 @@
 'use client'
 import { useState, useMemo, useRef, useEffect } from 'react'
-import type { ExerciseResult } from '@/lib/types'
+import type { ExerciseResult, ExerciseProgressUpdate } from '@/lib/types'
 import { createRng, shuffleWithRng } from '@/lib/seeded-random'
 
 interface Props {
@@ -9,6 +9,7 @@ interface Props {
   studentAge: number
   difficulty?: 1|2|3
   seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
+  onProgress?: (p: ExerciseProgressUpdate) => void // live per-answer feedback to the specialist
 }
 
 interface Q { text: string; correct: string; wrong: [string, string] }
@@ -32,7 +33,7 @@ const ALL: Q[] = [
   { text:'المظلة تحمي من المطر مثل النظارة الشمسية تحمي من', correct:'الشمس', wrong:['البرد', 'الرياح'] },
 ]
 
-export default function AnalogiesGame({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+export default function AnalogiesGame({ onComplete, onCancel, difficulty = 1, seed, onProgress }: Props) {
   const rng             = useRef(createRng(seed ?? Date.now())).current
   const count          = difficulty === 1 ? 5 : difficulty === 2 ? 8 : 12
   const [questions]    = useState<Q[]>(() => shuffleWithRng(rng, ALL).slice(0, count))
@@ -56,6 +57,7 @@ export default function AnalogiesGame({ onComplete, onCancel, difficulty = 1, se
     const ne = errors + (isCorrect ? 0 : 1)
     setCorrect(nc)
     setErrors(ne)
+    onProgress?.({ answered: idx + 1, total: count, correct: nc, errors: ne, lastCorrect: isCorrect })
 
     timerRef.current = setTimeout(() => {
       const next = idx + 1

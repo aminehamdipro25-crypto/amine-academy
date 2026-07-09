@@ -1,6 +1,6 @@
 'use client'
 import { useState, useRef, useEffect } from 'react'
-import type { ExerciseResult } from '@/lib/types'
+import type { ExerciseResult, ExerciseProgressUpdate } from '@/lib/types'
 import { createRng, shuffleWithRng } from '@/lib/seeded-random'
 
 const ACTIONS = [
@@ -24,9 +24,10 @@ interface Props {
   studentAge: number
   difficulty?: 1|2|3
   seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
+  onProgress?: (p: ExerciseProgressUpdate) => void // live per-answer feedback to the specialist
 }
 
-export default function ImitationMirror({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+export default function ImitationMirror({ onComplete, onCancel, difficulty = 1, seed, onProgress }: Props) {
   const perRound  = difficulty === 1 ? 3 : difficulty === 2 ? 4 : 5
   const ROUNDS    = 3
   const startRef  = useRef(Date.now())
@@ -50,6 +51,7 @@ export default function ImitationMirror({ onComplete, onCancel, difficulty = 1, 
     const c = correct + (ok ? 1 : 0)
     const w = wrong   + (ok ? 0 : 1)
     if (ok) setCorrect(c); else setWrong(w)
+    onProgress?.({ answered: round * perRound + step + 1, total: ROUNDS * perRound, correct: c, errors: w, lastCorrect: ok })
 
     timerRef.current = setTimeout(() => {
       setFlash(null)

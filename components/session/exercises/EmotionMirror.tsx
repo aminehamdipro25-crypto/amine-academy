@@ -1,6 +1,6 @@
 'use client'
 import { useState, useMemo, useRef, useEffect } from 'react'
-import type { ExerciseResult } from '@/lib/types'
+import type { ExerciseResult, ExerciseProgressUpdate } from '@/lib/types'
 import { createRng, shuffleWithRng } from '@/lib/seeded-random'
 
 interface Props {
@@ -9,6 +9,7 @@ interface Props {
   studentAge: number
   difficulty?: 1|2|3
   seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
+  onProgress?: (p: ExerciseProgressUpdate) => void // live per-answer feedback to the specialist
 }
 
 interface Emotion { emoji: string; label: string; distractors: string[] }
@@ -32,7 +33,7 @@ const ALL_EMOTIONS: Emotion[] = [
   { emoji: '🤗', label: 'ودود',     distractors: ['سعيد', 'هادئ'] },
 ]
 
-export default function EmotionMirror({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+export default function EmotionMirror({ onComplete, onCancel, difficulty = 1, seed, onProgress }: Props) {
   const rng             = useRef(createRng(seed ?? Date.now())).current
   const count           = difficulty === 1 ? 8 : difficulty === 2 ? 12 : 16
   const [questions]     = useState<Emotion[]>(() => shuffleWithRng(rng, ALL_EMOTIONS).slice(0, count))
@@ -56,6 +57,7 @@ export default function EmotionMirror({ onComplete, onCancel, difficulty = 1, se
     const ne = errors + (isCorrect ? 0 : 1)
     setCorrect(nc)
     setErrors(ne)
+    onProgress?.({ answered: idx + 1, total: count, correct: nc, errors: ne, lastCorrect: isCorrect })
 
     timerRef.current = setTimeout(() => {
       const nextIdx = idx + 1

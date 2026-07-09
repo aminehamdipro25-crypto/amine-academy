@@ -1,6 +1,6 @@
 'use client'
 import { useState, useMemo, useRef, useEffect } from 'react'
-import type { ExerciseResult } from '@/lib/types'
+import type { ExerciseResult, ExerciseProgressUpdate } from '@/lib/types'
 import { createRng, shuffleWithRng, pickWithRng, randIntWithRng } from '@/lib/seeded-random'
 
 interface Props {
@@ -9,6 +9,7 @@ interface Props {
   studentAge: number
   difficulty?: 1|2|3
   seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
+  onProgress?: (p: ExerciseProgressUpdate) => void // live per-answer feedback to the specialist
 }
 
 type Dir = 'up'|'down'|'left'|'right'
@@ -28,7 +29,7 @@ function genGrid(rng: ReturnType<typeof createRng>, size: number): Q {
   return { grid, row, col, answer }
 }
 
-export default function DirectionFollow({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+export default function DirectionFollow({ onComplete, onCancel, difficulty = 1, seed, onProgress }: Props) {
   const SIZE  = difficulty === 1 ? 3 : difficulty === 2 ? 4 : 5
   const TOTAL = difficulty === 1 ? 6 : difficulty === 2 ? 8 : 10
   const rng   = useRef(createRng(seed ?? Date.now())).current
@@ -52,6 +53,7 @@ export default function DirectionFollow({ onComplete, onCancel, difficulty = 1, 
     const ne = errors + (isCorrect ? 0 : 1)
     setCorrect(nc)
     setErrors(ne)
+    onProgress?.({ answered: idx + 1, total: TOTAL, correct: nc, errors: ne, lastCorrect: isCorrect })
 
     timerRef.current = setTimeout(() => {
       const next = idx + 1

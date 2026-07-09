@@ -1,6 +1,6 @@
 'use client'
 import { useState, useRef, useEffect } from 'react'
-import type { ExerciseResult } from '@/lib/types'
+import type { ExerciseResult, ExerciseProgressUpdate } from '@/lib/types'
 import { createRng, pickWithRng, shuffleWithRng } from '@/lib/seeded-random'
 
 const LETTER_GROUPS = [
@@ -25,9 +25,10 @@ interface Props {
   studentAge: number
   difficulty?: 1|2|3
   seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
+  onProgress?: (p: ExerciseProgressUpdate) => void // live per-answer feedback to the specialist
 }
 
-export default function LetterMatch({ onComplete, onCancel, studentAge, difficulty = 1, seed }: Props) {
+export default function LetterMatch({ onComplete, onCancel, studentAge, difficulty = 1, seed, onProgress }: Props) {
   const totalRounds = difficulty === 1 ? 10 : difficulty === 2 ? 15 : 20
   const rng = useRef(createRng(seed ?? Date.now())).current
   const startRef = useRef(Date.now())
@@ -55,8 +56,11 @@ export default function LetterMatch({ onComplete, onCancel, studentAge, difficul
     if (feedback || done) return
     const isCorrect = letter === target.targetLetter
     setFeedback(isCorrect ? 'correct' : 'wrong')
-    if (isCorrect) setCorrect(c => c + 1)
-    else setErrors(e => e + 1)
+    const nc = correct + (isCorrect ? 1 : 0)
+    const ne = errors  + (isCorrect ? 0 : 1)
+    if (isCorrect) setCorrect(nc)
+    else setErrors(ne)
+    onProgress?.({ answered: round + 1, total: totalRounds, correct: nc, errors: ne, lastCorrect: isCorrect })
     timerRef.current = setTimeout(() => {
       const nextRound = round + 1
       if (nextRound >= totalRounds) {

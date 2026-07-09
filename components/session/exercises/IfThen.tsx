@@ -1,6 +1,6 @@
 'use client'
 import { useState, useMemo, useRef, useEffect } from 'react'
-import type { ExerciseResult } from '@/lib/types'
+import type { ExerciseResult, ExerciseProgressUpdate } from '@/lib/types'
 import { createRng, shuffleWithRng } from '@/lib/seeded-random'
 
 interface Props {
@@ -9,6 +9,7 @@ interface Props {
   studentAge: number
   difficulty?: 1|2|3
   seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
+  onProgress?: (p: ExerciseProgressUpdate) => void // live per-answer feedback to the specialist
 }
 
 interface Q { cause: string; emoji: string; correct: string; wrong: [string, string] }
@@ -42,7 +43,7 @@ const ALL: Q[] = [
   { cause:'إذا قرأنا كتاباً جديداً',              emoji:'📚', correct:'نتعلم أشياء جديدة وتزداد مفرداتنا', wrong:['نضيع الوقت','نصبح خائفين'] },
 ]
 
-export default function IfThen({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+export default function IfThen({ onComplete, onCancel, difficulty = 1, seed, onProgress }: Props) {
   const rng   = useRef(createRng(seed ?? Date.now())).current
   const count = difficulty === 1 ? 6 : difficulty === 2 ? 12 : 20
   const qs    = ALL.slice(0, count)
@@ -67,6 +68,7 @@ export default function IfThen({ onComplete, onCancel, difficulty = 1, seed }: P
     const ne = errors  + (isCorrect ? 0 : 1)
     if (isCorrect) setCorrect(nc)
     else           setErrors(ne)
+    onProgress?.({ answered: idx + 1, total: count, correct: nc, errors: ne, lastCorrect: isCorrect })
 
     timerRef.current = setTimeout(() => {
       const next = idx + 1

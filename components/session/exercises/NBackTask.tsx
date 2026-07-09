@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
-import type { ExerciseResult } from '@/lib/types'
+import type { ExerciseResult, ExerciseProgressUpdate } from '@/lib/types'
 import { createRng, randIntWithRng } from '@/lib/seeded-random'
 
 interface Props {
@@ -9,9 +9,10 @@ interface Props {
   studentAge: number
   difficulty?: 1|2|3
   seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
+  onProgress?: (p: ExerciseProgressUpdate) => void // live per-answer feedback to the specialist
 }
 
-export default function NBackTask({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+export default function NBackTask({ onComplete, onCancel, difficulty = 1, seed, onProgress }: Props) {
   const rng         = useRef(createRng(seed ?? Date.now())).current
   const n           = difficulty === 1 ? 1 : difficulty === 2 ? 2 : 3
   const totalTrials = difficulty === 1 ? 15 : difficulty === 2 ? 20 : 25
@@ -69,6 +70,7 @@ export default function NBackTask({ onComplete, onCancel, difficulty = 1, seed }
         const isTarget = hist.length > n && hist[hist.length - 1 - n] === hist[hist.length - 1]
         if (isTarget) { wrongRef.current++; setWrong(wrongRef.current); setFeedback('miss') }
         else          { correctRef.current++; setCorrect(correctRef.current); setFeedback('cr') }
+        onProgress?.({ answered: correctRef.current + wrongRef.current, total: totalTrials, correct: correctRef.current, errors: wrongRef.current, lastCorrect: !isTarget })
       }
       setCurrent(null)
       setPhase('iti')
@@ -93,6 +95,7 @@ export default function NBackTask({ onComplete, onCancel, difficulty = 1, seed }
       wrongRef.current++; setWrong(wrongRef.current)
       setFeedback(answer ? 'fa' : 'miss')
     }
+    onProgress?.({ answered: correctRef.current + wrongRef.current, total: totalTrials, correct: correctRef.current, errors: wrongRef.current, lastCorrect: isCorrect })
   }
 
   if (phase === 'intro') {

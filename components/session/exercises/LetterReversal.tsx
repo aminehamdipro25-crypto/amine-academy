@@ -1,6 +1,6 @@
 'use client'
 import { useState, useMemo, useRef, useEffect } from 'react'
-import type { ExerciseResult } from '@/lib/types'
+import type { ExerciseResult, ExerciseProgressUpdate } from '@/lib/types'
 import { speakArabic } from '@/lib/speech'
 import { createRng, shuffleWithRng } from '@/lib/seeded-random'
 
@@ -10,6 +10,7 @@ interface Props {
   studentAge: number
   difficulty?: 1|2|3
   seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
+  onProgress?: (p: ExerciseProgressUpdate) => void // live per-answer feedback to the specialist
 }
 
 interface Q {
@@ -73,7 +74,7 @@ function speak(text: string) {
   speakArabic(text, 0.75)
 }
 
-export default function LetterReversal({ onComplete, onCancel, difficulty = 1, studentAge, seed }: Props) {
+export default function LetterReversal({ onComplete, onCancel, difficulty = 1, studentAge, seed, onProgress }: Props) {
   const rng = useRef(createRng(seed ?? Date.now())).current
   const isYoung = studentAge < 9
 
@@ -104,6 +105,7 @@ export default function LetterReversal({ onComplete, onCancel, difficulty = 1, s
     const ne = errors  + (isCorrect ? 0 : 1)
     if (isCorrect) { setCorrect(nc); speak('ممتاز') }
     else           { setErrors(ne);  speak(q.target) }
+    onProgress?.({ answered: idx + 1, total: count, correct: nc, errors: ne, lastCorrect: isCorrect })
 
     timerRef.current = setTimeout(() => {
       if (idx + 1 >= count) {

@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
-import type { ExerciseResult } from '@/lib/types'
+import type { ExerciseResult, ExerciseProgressUpdate } from '@/lib/types'
 import { createRng, randBoolWithRng } from '@/lib/seeded-random'
 
 interface Props {
@@ -9,11 +9,12 @@ interface Props {
   studentAge: number
   difficulty?: 1 | 2 | 3
   seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
+  onProgress?: (p: ExerciseProgressUpdate) => void // live per-answer feedback to the specialist
 }
 
 type Phase = 'ready' | 'iti' | 'show' | 'feedback' | 'result'
 
-export default function GoNoGo({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+export default function GoNoGo({ onComplete, onCancel, difficulty = 1, seed, onProgress }: Props) {
   const totalTrials = difficulty === 1 ? 15 : difficulty === 2 ? 20 : 25
   const goRate      = difficulty === 1 ? 0.70 : difficulty === 2 ? 0.60 : 0.50
   const displayMs   = difficulty === 3 ? 600 : difficulty === 2 ? 700 : 800
@@ -74,6 +75,9 @@ export default function GoNoGo({ onComplete, onCancel, difficulty = 1, seed }: P
   }, [totalTrials, difficulty])
 
   const showFeedback = useCallback((text: string, type: 'good'|'bad', nextTrial: number) => {
+    // nextTrial = trials resolved so far (incl. this one); refs already incremented above.
+    const errs = fasRef.current + missesRef.current
+    onProgress?.({ answered: nextTrial, total: totalTrials, correct: nextTrial - errs, errors: errs, lastCorrect: type === 'good' })
     setFbText(text)
     setFbType(type)
     setPhase('feedback')
@@ -83,7 +87,7 @@ export default function GoNoGo({ onComplete, onCancel, difficulty = 1, seed }: P
       setPhase('iti')
       timerRef.current = setTimeout(() => runTrial(nextTrial), itiDelay)
     }, 420)
-  }, [totalTrials, finish, itiMinMs, itiMaxMs, rng]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [totalTrials, finish, itiMinMs, itiMaxMs, rng, onProgress]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const runTrial = useCallback((n: number) => {
     clearTimer()

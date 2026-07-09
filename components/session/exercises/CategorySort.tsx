@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
-import type { ExerciseResult } from '@/lib/types'
+import type { ExerciseResult, ExerciseProgressUpdate } from '@/lib/types'
 import { createRng, shuffleWithRng } from '@/lib/seeded-random'
 
 interface Props {
@@ -9,6 +9,7 @@ interface Props {
   studentAge: number
   difficulty?: 1 | 2 | 3
   seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
+  onProgress?: (p: ExerciseProgressUpdate) => void // live per-answer feedback to the specialist
 }
 
 interface Item {
@@ -91,7 +92,7 @@ const SETS: Record<1 | 2 | 3, CategorySet> = {
 
 type Feedback = 'correct' | 'wrong' | null
 
-export default function CategorySort({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+export default function CategorySort({ onComplete, onCancel, difficulty = 1, seed, onProgress }: Props) {
   const rng = useRef(createRng(seed ?? Date.now())).current
   const set = SETS[difficulty]
   const startRef = useRef(Date.now())
@@ -116,6 +117,8 @@ export default function CategorySort({ onComplete, onCancel, difficulty = 1, see
       if (feedback !== null || done) return
       const item = items[currentIndex]
       const isCorrect = item.category === categoryKey
+      const nc = correct + (isCorrect ? 1 : 0)
+      const ne = errors + (isCorrect ? 0 : 1)
 
       if (isCorrect) {
         setFeedback('correct')
@@ -124,6 +127,7 @@ export default function CategorySort({ onComplete, onCancel, difficulty = 1, see
         setFeedback('wrong')
         setErrors(e => e + 1)
       }
+      onProgress?.({ answered: currentIndex + 1, total: items.length, correct: nc, errors: ne, lastCorrect: isCorrect })
 
       shakeTimerRef.current = setTimeout(() => {
         setFeedback(null)
@@ -150,7 +154,7 @@ export default function CategorySort({ onComplete, onCancel, difficulty = 1, see
         }
       }, 700)
     },
-    [feedback, done, items, currentIndex, correct, errors, onComplete, difficulty]
+    [feedback, done, items, currentIndex, correct, errors, onComplete, difficulty, onProgress]
   )
 
   if (done) return null

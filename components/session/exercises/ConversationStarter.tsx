@@ -1,6 +1,6 @@
 'use client'
 import { useState, useMemo, useRef, useEffect } from 'react'
-import type { ExerciseResult } from '@/lib/types'
+import type { ExerciseResult, ExerciseProgressUpdate } from '@/lib/types'
 import { createRng, shuffleWithRng } from '@/lib/seeded-random'
 
 interface Props {
@@ -9,6 +9,7 @@ interface Props {
   studentAge: number
   difficulty?: 1|2|3
   seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
+  onProgress?: (p: ExerciseProgressUpdate) => void // live per-answer feedback to the specialist
 }
 
 interface Scenario {
@@ -43,7 +44,7 @@ const SCENARIOS: Scenario[] = [
   { emoji:'🎯', situation:'تريد أن تتعرف على هواية صديقك', correct:'ماذا تحب أن تفعل في وقت فراغك؟', wrong:['هواياتك مملة بالتأكيد','لا أهتم بما تحب أنت'] },
 ]
 
-export default function ConversationStarter({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+export default function ConversationStarter({ onComplete, onCancel, difficulty = 1, seed, onProgress }: Props) {
   const rng      = useRef(createRng(seed ?? Date.now())).current
   const count    = difficulty === 1 ? 4 : difficulty === 2 ? 6 : 8
   const questions = SCENARIOS.slice(0, count)
@@ -67,6 +68,7 @@ export default function ConversationStarter({ onComplete, onCancel, difficulty =
     const ne = errors + (isCorrect ? 0 : 1)
     setCorrect(nc)
     setErrors(ne)
+    onProgress?.({ answered: idx + 1, total: count, correct: nc, errors: ne, lastCorrect: isCorrect })
 
     timerRef.current = setTimeout(() => {
       const next = idx + 1

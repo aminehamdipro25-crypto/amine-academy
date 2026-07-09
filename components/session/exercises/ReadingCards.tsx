@@ -1,6 +1,6 @@
 'use client'
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react'
-import type { ExerciseResult } from '@/lib/types'
+import type { ExerciseResult, ExerciseProgressUpdate } from '@/lib/types'
 import { speakArabic } from '@/lib/speech'
 import { createRng, shuffleWithRng } from '@/lib/seeded-random'
 
@@ -10,6 +10,7 @@ interface Props {
   studentAge: number
   difficulty?: 1|2|3
   seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
+  onProgress?: (p: ExerciseProgressUpdate) => void // live per-answer feedback to the specialist
 }
 
 interface Card { emoji: string; word: string; sentence: string; question: string; correct: string; wrong: [string,string] }
@@ -23,7 +24,7 @@ const CARDS: Card[] = [
   { emoji:'🌧️', word:'المطر', sentence:'المطر يسقط في الشتاء ويسقي النباتات.', question:'متى يسقط المطر؟', correct:'في الشتاء', wrong:['في الصيف','في الربيع'] },
 ]
 
-export default function ReadingCards({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+export default function ReadingCards({ onComplete, onCancel, difficulty = 1, seed, onProgress }: Props) {
   const rng   = useRef(createRng(seed ?? Date.now())).current
   const count = difficulty === 1 ? 3 : difficulty === 2 ? 5 : 6
   const cards = CARDS.slice(0, count)
@@ -49,20 +50,22 @@ export default function ReadingCards({ onComplete, onCancel, difficulty = 1, see
     if (chosen) return
     setChosen(ch)
     const isCorrect = ch === c.correct
-    if (isCorrect) setCorrect(v => v + 1)
-    else           setErrors(v => v + 1)
+    const nc = correct + (isCorrect ? 1 : 0)
+    const ne = errors  + (isCorrect ? 0 : 1)
+    if (isCorrect) setCorrect(nc)
+    else           setErrors(ne)
+    onProgress?.({ answered: idx + 1, total: count, correct: nc, errors: ne, lastCorrect: isCorrect })
 
     timerRef.current = setTimeout(() => {
       const next = idx + 1
       if (next >= count) {
-        const nc = correct + (isCorrect ? 1 : 0)
         onComplete({
           exerciseType:    'reading-cards',
           exerciseLabelAr: 'بطاقات القراءة',
           score:    Math.round((nc / count) * 100),
           accuracy: Math.round((nc / count) * 100),
           duration: Math.round((Date.now() - startMs) / 1000),
-          errors:   errors + (isCorrect ? 0 : 1),
+          errors:   ne,
           metadata: { total: count, correct: nc },
           completedAt: new Date().toISOString(),
         })

@@ -1,6 +1,6 @@
 'use client'
 import { useState, useMemo, useRef, useEffect } from 'react'
-import type { ExerciseResult } from '@/lib/types'
+import type { ExerciseResult, ExerciseProgressUpdate } from '@/lib/types'
 import { createRng, shuffleWithRng } from '@/lib/seeded-random'
 
 interface Props {
@@ -9,6 +9,7 @@ interface Props {
   studentAge: number
   difficulty?: 1|2|3
   seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
+  onProgress?: (p: ExerciseProgressUpdate) => void // live per-answer feedback to the specialist
 }
 
 interface Scene { name:string; emoji:string; svg:string; cols:number; rows:number }
@@ -157,7 +158,7 @@ function SlotGhost({ slotIdx, cols, rows, cell, active, onClick }: {
 
 // ── Main export ──────────────────────────────────────────────────────────────
 
-export default function JigsawPuzzle({ onComplete, onCancel, difficulty=1, studentAge, seed }: Props) {
+export default function JigsawPuzzle({ onComplete, onCancel, difficulty=1, studentAge, seed, onProgress }: Props) {
   const rng = useRef(createRng(seed ?? Date.now())).current
   const scenes = useMemo(() => {
     if (difficulty===1) return shuffleWithRng(rng, EASY_SCENES)
@@ -215,6 +216,7 @@ export default function JigsawPuzzle({ onComplete, onCancel, difficulty=1, stude
       const ok = np.every((v, i) => v === i)
       const nc = correct + (ok ? 1 : 0)
       if (ok) setCorrect(nc)
+      onProgress?.({ answered: idx + 1, total: COUNT, correct: nc, errors: (idx + 1) - nc, lastCorrect: ok })
       setPhase('done')
       timerRef.current = setTimeout(() => {
         if (idx + 1 >= COUNT) {

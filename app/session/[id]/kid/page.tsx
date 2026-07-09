@@ -183,6 +183,42 @@ const READY_QUESTIONS: { field: 'sleep' | 'energy' | 'mood'; label: string; icon
   { field: 'mood',   label: 'كيف مزاجك اليوم؟ 😊', icons: ['😢', '😟', '😐', '🙂', '😄'] },
 ]
 
+// Full-screen encouragement burst fired by the specialist. A big central
+// pop plus a shower of the same emoji rising up the screen, then it clears
+// itself. Purely decorative and non-interactive (pointerEvents:none) so it
+// never blocks the child mid-exercise.
+const REACTION_EMOJI: Record<string, string> = {
+  star: '⭐', celebrate: '🎉', clap: '👏', love: '❤️', rainbow: '🌈', thumbs: '👍',
+}
+function KidReactionBurst({ reaction, onDone }: { reaction: { type: string; id: number }; onDone: () => void }) {
+  const emoji = REACTION_EMOJI[reaction.type] ?? '⭐'
+  useEffect(() => {
+    const t = setTimeout(onDone, 2600)
+    return () => clearTimeout(t)
+  }, [onDone])
+  const pieces = Array.from({ length: 16 }, (_, i) => ({
+    left: 4 + (i * 61) % 92,
+    delay: (i % 8) * 80,
+    dur: 1500 + (i % 5) * 280,
+    size: 30 + (i % 4) * 16,
+  }))
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 10000, pointerEvents: 'none', overflow: 'hidden' }} aria-hidden>
+      <style>{`
+        @keyframes kidReactPop  { 0%{transform:translate(-50%,-50%) scale(0.2);opacity:0} 40%{transform:translate(-50%,-50%) scale(1.15);opacity:1} 100%{transform:translate(-50%,-50%) scale(1.5);opacity:0} }
+        @keyframes kidReactRise { 0%{transform:translateY(20px) scale(0.4);opacity:0} 15%{opacity:1} 100%{transform:translateY(-70vh) scale(1.15);opacity:0} }
+      `}</style>
+      <div style={{ position: 'absolute', top: '40%', left: '50%', fontSize: 128, animation: 'kidReactPop 1.4s ease-out forwards' }}>{emoji}</div>
+      {pieces.map((p, i) => (
+        <div key={i} style={{
+          position: 'absolute', bottom: -40, left: `${p.left}%`, fontSize: p.size,
+          animation: `kidReactRise ${p.dur}ms cubic-bezier(0.22,0.61,0.36,1) ${p.delay}ms forwards`,
+        }}>{emoji}</div>
+      ))}
+    </div>
+  )
+}
+
 // The child answers the pre-session readiness check directly — same 3
 // questions the specialist used to fill in from observation, now tapped by
 // the child themselves (faces they recognize) and synced live to the
@@ -375,6 +411,11 @@ export default function KidSessionPage() {
   const [timerState, setTimerState] = useState<TimerState | null>(null)
   const [cardId, setCardId] = useState<string | null>(null)
   const [readiness, setReadiness] = useState<{ active: boolean; sleep: number; energy: number; mood: number } | null>(null)
+  // Live encouragement burst fired by the specialist (star/celebrate/…). We
+  // only animate a reaction whose id we haven't shown yet, so polling the same
+  // stored reaction repeatedly doesn't loop the animation.
+  const [reactionBurst, setReactionBurst] = useState<{ type: string; id: number } | null>(null)
+  const lastReactionIdRef = useRef(0)
   const noiseHandleRef = useRef<NoiseHandle | null>(null)
   // Tracks whichever of {synthesized mode, custom audio URL} is currently
   // playing, so we only restart audio on an actual transition, not every poll.
@@ -485,6 +526,21 @@ export default function KidSessionPage() {
     } catch { /* ignore */ }
   }, [id])
 
+  const fetchReaction = useCallback(async () => {
+    try {
+      const { reaction } = await (await fetch(`/api/sessions/${id}/reaction`)).json() as {
+        reaction: { type: string; id: number } | null
+      }
+      // Only fire the animation for a reaction we haven't shown yet. On first
+      // load, adopt whatever's stored as already-seen so a stale reaction from
+      // moments ago doesn't burst on the child the instant they open the page.
+      if (reaction && reaction.id !== lastReactionIdRef.current) {
+        if (lastReactionIdRef.current !== 0) setReactionBurst(reaction)
+        lastReactionIdRef.current = reaction.id
+      }
+    } catch { /* ignore */ }
+  }, [id])
+
   // Child taps a face — posts straight to the shared state; the specialist's
   // screen picks it up the same way (poll + realtime), so either side always
   // reflects the same answers.
@@ -524,8 +580,8 @@ export default function KidSessionPage() {
   }, [id])
 
   const pollAll = useCallback(() => {
-    fetchLive(); fetchContent(); fetchWbActive(); fetchTimer(); fetchCard(); fetchNoise(); fetchReadiness()
-  }, [fetchLive, fetchContent, fetchWbActive, fetchTimer, fetchCard, fetchNoise, fetchReadiness])
+    fetchLive(); fetchContent(); fetchWbActive(); fetchTimer(); fetchCard(); fetchNoise(); fetchReadiness(); fetchReaction()
+  }, [fetchLive, fetchContent, fetchWbActive, fetchTimer, fetchCard, fetchNoise, fetchReadiness, fetchReaction])
 
   // Stop any playing audio if the child navigates away mid-session
   useEffect(() => {
@@ -550,6 +606,7 @@ export default function KidSessionPage() {
       else if (ev === 'card') fetchCard()
       else if (ev === 'noise') fetchNoise()
       else if (ev === 'readiness') fetchReadiness()
+      else if (ev === 'reaction') fetchReaction()
     })
     const iv = setInterval(pollAll, rt ? 6000 : 1000)
     // Reconnect re-sync: while the realtime socket is down, wake-up events are
@@ -570,7 +627,7 @@ export default function KidSessionPage() {
       }
     })
     return () => { unsub(); unsubConn(); clearInterval(iv) }
-  }, [id, pollAll, fetchLive, fetchContent, fetchWbActive, fetchTimer, fetchCard, fetchNoise, fetchReadiness])
+  }, [id, pollAll, fetchLive, fetchContent, fetchWbActive, fetchTimer, fetchCard, fetchNoise, fetchReadiness, fetchReaction])
 
   // Report status to specialist when exercise starts/finishes. `result` is
   // only present on a real completion (the exercise's onComplete callback
@@ -879,6 +936,10 @@ export default function KidSessionPage() {
       {cardId && <KidPromptCardOverlay cardId={cardId} />}
       {/* Teacher video call — always on top, mounted once for the whole session */}
       {teacherVideo}
+      {/* Specialist's encouragement burst — celebratory overlay above all */}
+      {reactionBurst && (
+        <KidReactionBurst key={reactionBurst.id} reaction={reactionBurst} onDone={() => setReactionBurst(null)} />
+      )}
     </>
   )
 }

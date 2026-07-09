@@ -329,6 +329,24 @@ export default function SessionPage() {
     }).catch(() => {})
   }, [id])
 
+  // Fire a live encouragement burst on the child's screen (star, celebration,
+  // clap…). A quick brief flash on the button gives the specialist feedback
+  // that it was sent even though the animation plays on the child's device.
+  const [reactionFlash, setReactionFlash] = useState<string | null>(null)
+  const reactionFlashTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const sendReaction = useCallback((type: string) => {
+    if (!id) return
+    setReactionFlash(type)
+    if (reactionFlashTimer.current) clearTimeout(reactionFlashTimer.current)
+    reactionFlashTimer.current = setTimeout(() => setReactionFlash(null), 600)
+    fetch(`/api/sessions/${id}/reaction`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type }),
+    }).catch(() => {})
+  }, [id])
+  useEffect(() => () => { if (reactionFlashTimer.current) clearTimeout(reactionFlashTimer.current) }, [])
+
   // Open the readiness phase for the kid page the moment this screen would
   // show (not yet running, no exercise, answers not yet confirmed) — once,
   // not on every render — and start from a clean slate for this appointment.
@@ -1905,6 +1923,36 @@ ${notes ? `
         >
           {chromeHidden ? <Maximize2 className="w-[18px] h-[18px]" strokeWidth={2.5} /> : <Minimize2 className="w-[18px] h-[18px]" strokeWidth={2.5} />}
         </button>
+      )}
+
+      {/* ── Encouragement bar — the specialist fires a live celebratory burst
+          onto the child's screen (instant positive reinforcement they control).
+          Always reachable during active session work, even with chrome hidden. ── */}
+      {(running || exerciseActive) && (
+        <div
+          className="fixed bottom-3 left-1/2 -translate-x-1/2 z-[486] flex items-center gap-1 rounded-full px-2 py-1.5 shadow-lg select-none"
+          style={{ background: 'rgba(10,10,20,0.72)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.12)' }}
+          dir="rtl"
+          title="أرسل تشجيعاً يظهر على شاشة الطفل"
+        >
+          {[
+            { t: 'star', e: '⭐' }, { t: 'celebrate', e: '🎉' }, { t: 'clap', e: '👏' },
+            { t: 'love', e: '❤️' }, { t: 'thumbs', e: '👍' }, { t: 'rainbow', e: '🌈' },
+          ].map(({ t, e }) => (
+            <button
+              key={t}
+              onClick={() => sendReaction(t)}
+              className="flex items-center justify-center rounded-full transition-transform active:scale-90 hover:scale-110"
+              style={{
+                width: 34, height: 34, fontSize: 19,
+                background: reactionFlash === t ? 'rgba(124,92,252,0.55)' : 'transparent',
+                transform: reactionFlash === t ? 'scale(1.25)' : undefined,
+              }}
+            >
+              {e}
+            </button>
+          ))}
+        </div>
       )}
 
       {/* ── Realtime status badge — small, unobtrusive, always visible so the

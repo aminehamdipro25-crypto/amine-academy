@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
-import type { ExerciseResult } from '@/lib/types'
+import type { ExerciseResult, ExerciseProgressUpdate } from '@/lib/types'
 import { createRng, shuffleWithRng } from '@/lib/seeded-random'
 
 const WORD_BANK = [
@@ -19,11 +19,12 @@ interface Props {
   studentAge: number
   difficulty?: 1|2|3
   seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
+  onProgress?: (p: ExerciseProgressUpdate) => void // live per-answer feedback to the specialist
 }
 
 interface ResultData { hits: number; falseAlarms: number; acc: number; dur: number }
 
-export default function WordRecall({ onComplete, onCancel, studentAge: _studentAge, difficulty = 1, seed }: Props) {
+export default function WordRecall({ onComplete, onCancel, studentAge: _studentAge, difficulty = 1, seed, onProgress }: Props) {
   const rng = useRef(createRng(seed ?? Date.now())).current
   const wordCount   = difficulty === 1 ? 4 : difficulty === 2 ? 6 : 8
   const displayTime = difficulty === 1 ? 10 : difficulty === 2 ? 8 : 6
@@ -70,6 +71,7 @@ export default function WordRecall({ onComplete, onCancel, studentAge: _studentA
     const acc         = Math.max(0, Math.round(((hits - falseAlarms) / wordCount) * 100))
     setResult({ hits, falseAlarms, acc, dur })
     setPhase('done')
+    onProgress?.({ answered: wordCount, total: wordCount, correct: hits, errors: falseAlarms })
     timerRef.current = setTimeout(() => {
       onComplete({
         exerciseType:    'word-recall',

@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
-import type { ExerciseResult } from '@/lib/types'
+import type { ExerciseResult, ExerciseProgressUpdate } from '@/lib/types'
 import { createRng, shuffleWithRng, randIntWithRng, type Rng } from '@/lib/seeded-random'
 
 const EMOJI_POOL = [
@@ -18,6 +18,7 @@ interface Props {
   studentAge: number
   difficulty?: 1 | 2 | 3
   seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
+  onProgress?: (p: ExerciseProgressUpdate) => void // live per-answer feedback to the specialist
 }
 
 interface RoundData {
@@ -47,7 +48,7 @@ function buildRound(rng: Rng, gridSize: number): RoundData {
   return { target, grid, targetIndex }
 }
 
-export default function VisualSearch({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+export default function VisualSearch({ onComplete, onCancel, difficulty = 1, seed, onProgress }: Props) {
   const rng = useRef(createRng(seed ?? Date.now())).current
   const gridSize = difficulty === 1 ? 3 : difficulty === 2 ? 4 : 5
 
@@ -106,6 +107,7 @@ export default function VisualSearch({ onComplete, onCancel, difficulty = 1, see
       setFeedback('correct')
       setRoundTimes(newTimes)
       setTotalTime(t => t + elapsed)
+      onProgress?.({ answered: round + 1, total: TOTAL_ROUNDS, correct: round + 1, errors, lastCorrect: true })
       const nextRound = round + 1
       timerRef.current = setTimeout(() => {
         setFeedback(null)
@@ -125,12 +127,13 @@ export default function VisualSearch({ onComplete, onCancel, difficulty = 1, see
       setRoundErrors(e => e + 1)
       setShakeIdx(idx)
       setFeedback('wrong')
+      onProgress?.({ answered: round + 1, total: TOTAL_ROUNDS, correct: round, errors: errors + 1, lastCorrect: false })
       timerRef.current = setTimeout(() => {
         setShakeIdx(null)
         setFeedback(null)
       }, 500)
     }
-  }, [phase, roundData.targetIndex, round, roundTimes, roundStart, errors, roundErrors, gridSize, finishGame])
+  }, [phase, roundData.targetIndex, round, roundTimes, roundStart, errors, roundErrors, gridSize, finishGame, onProgress])
 
   if (phase === 'done') return null
 

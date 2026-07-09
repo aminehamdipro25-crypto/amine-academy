@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
-import type { ExerciseResult } from '@/lib/types'
+import type { ExerciseResult, ExerciseProgressUpdate } from '@/lib/types'
 import { createRng } from '@/lib/seeded-random'
 
 interface Props {
@@ -9,11 +9,12 @@ interface Props {
   studentAge: number
   difficulty?: 1|2|3
   seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
+  onProgress?: (p: ExerciseProgressUpdate) => void // live per-answer feedback to the specialist
 }
 
 interface Dot { x: number; y: number; dx: number; dy: number; isTarget: boolean; id: number }
 
-export default function TargetTracking({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+export default function TargetTracking({ onComplete, onCancel, difficulty = 1, seed, onProgress }: Props) {
   const rng = useRef(createRng(seed ?? Date.now())).current
   const DURATION = difficulty === 1 ? 20 : difficulty === 2 ? 30 : 40
   const SPEED    = difficulty === 1 ? 1.5 : difficulty === 2 ? 2 : 2.8
@@ -99,9 +100,11 @@ export default function TargetTracking({ onComplete, onCancel, difficulty = 1, s
     if (dot.isTarget) {
       hitsRef.current++
       setHits(hitsRef.current)
+      onProgress?.({ answered: hitsRef.current + falseRef.current, total: 0, correct: hitsRef.current, errors: falseRef.current, lastCorrect: true })
     } else {
       falseRef.current++
       setFalseTaps(falseRef.current)
+      onProgress?.({ answered: hitsRef.current + falseRef.current, total: 0, correct: hitsRef.current, errors: falseRef.current, lastCorrect: false })
     }
   }
 

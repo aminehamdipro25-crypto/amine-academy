@@ -1,6 +1,6 @@
 'use client'
 import { useState, useCallback, useRef, useEffect } from 'react'
-import type { ExerciseResult } from '@/lib/types'
+import type { ExerciseResult, ExerciseProgressUpdate } from '@/lib/types'
 import { createRng, shuffleWithRng, type Rng } from '@/lib/seeded-random'
 
 const ITEMS = [
@@ -34,6 +34,7 @@ interface Props {
   studentAge: number
   difficulty?: 1|2|3
   seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
+  onProgress?: (p: ExerciseProgressUpdate) => void // live per-answer feedback to the specialist
 }
 
 function shuffle<T>(rng: Rng, arr: T[]): T[] {
@@ -47,7 +48,7 @@ function buildRound(rng: Rng, optionCount: number) {
   return { target, options }
 }
 
-export default function VisualMatch({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+export default function VisualMatch({ onComplete, onCancel, difficulty = 1, seed, onProgress }: Props) {
   const rng = useRef(createRng(seed ?? Date.now())).current
   const optionCount = difficulty === 1 ? 3 : difficulty === 2 ? 4 : 6
   const startRef = useRef(Date.now())
@@ -74,6 +75,7 @@ export default function VisualMatch({ onComplete, onCancel, difficulty = 1, seed
     const newErrors  = errors  + (isCorrect ? 0 : 1)
     if (isCorrect) setCorrect(newCorrect)
     else setErrors(newErrors)
+    onProgress?.({ answered: round + 1, total: TOTAL_ROUNDS, correct: newCorrect, errors: newErrors, lastCorrect: isCorrect })
     timerRef.current = setTimeout(() => {
       const nextRound = round + 1
       if (nextRound >= TOTAL_ROUNDS) {
@@ -95,7 +97,7 @@ export default function VisualMatch({ onComplete, onCancel, difficulty = 1, seed
       setCorrectIdx(null)
       setPhase('play')
     }, 800)
-  }, [phase, roundData, correct, errors, round, optionCount, onComplete, difficulty])
+  }, [phase, roundData, correct, errors, round, optionCount, onComplete, difficulty, onProgress])
 
   const { target, options } = roundData
   const progress = (round / TOTAL_ROUNDS) * 100

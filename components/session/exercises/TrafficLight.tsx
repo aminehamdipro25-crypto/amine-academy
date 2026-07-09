@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
-import type { ExerciseResult } from '@/lib/types'
+import type { ExerciseResult, ExerciseProgressUpdate } from '@/lib/types'
 import { createRng, randBoolWithRng } from '@/lib/seeded-random'
 
 interface Props {
@@ -9,11 +9,12 @@ interface Props {
   studentAge: number
   difficulty?: 1|2|3
   seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
+  onProgress?: (p: ExerciseProgressUpdate) => void // live per-answer feedback to the specialist
 }
 
 type Phase = 'idle' | 'red' | 'yellow' | 'green' | 'feedback'
 
-export default function TrafficLight({ onComplete, onCancel, difficulty = 1, seed }: Props) {
+export default function TrafficLight({ onComplete, onCancel, difficulty = 1, seed, onProgress }: Props) {
   const rng = useRef(createRng(seed ?? Date.now())).current
   const ROUNDS       = 6
   const RED_MS       = difficulty === 1 ? 2000 : difficulty === 2 ? 1500 : 1000
@@ -41,6 +42,11 @@ export default function TrafficLight({ onComplete, onCancel, difficulty = 1, see
     if (result === 'hit')   setScore(s => s + 1)
     if (result === 'false') setFalseStarts(s => s + 1)
 
+    const isHit = result === 'hit'
+    const answered = round + 1
+    const nc = score + (isHit ? 1 : 0)
+    onProgress?.({ answered, total: ROUNDS, correct: nc, errors: answered - nc, lastCorrect: isHit })
+
     timerRef.current = setTimeout(() => {
       setFeedback(null)
       const next = round + 1
@@ -63,7 +69,7 @@ export default function TrafficLight({ onComplete, onCancel, difficulty = 1, see
         setPhase('idle')
       }
     }, 1200)
-  }, [round, score, falseStarts, startMs, ROUNDS, difficulty, onComplete])
+  }, [round, score, falseStarts, startMs, ROUNDS, difficulty, onComplete, onProgress])
 
   // Run the traffic light sequence when phase is 'idle'
   useEffect(() => {

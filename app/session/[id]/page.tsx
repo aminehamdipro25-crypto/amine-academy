@@ -3844,7 +3844,7 @@ ${notes ? `
               {activeView.id === 'cross-lateral'      && <CrossLateral       onComplete={handleExerciseComplete} onCancel={handleCancel} difficulty={activeDifficulty} seed={activeSeed} />}
               {activeView.id === 'reading-fluency'    && <ReadingFluency     onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} seed={activeSeed} />}
               {activeView.id === 'letter-search'      && <LetterSearch       onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} seed={activeSeed} />}
-              {activeView.id === 'story-reader'       && <StoryReader        onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'story-reader'       && <StoryReader        onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} sessionId={id} />}
               {/* ── Physical exercises ── */}
               {['jumping-jacks','obstacle-circuit','balance-walk','tiger-crawl','ball-throw','stretching','body-percussion'].includes(activeView.id) && (
                 <PhysicalExercise id={activeView.id} onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />

@@ -1062,7 +1062,7 @@ export default function KidSessionPage() {
           {id_ === 'cross-lateral'        && <CrossLateral         {...props} />}
           {id_ === 'reading-fluency'      && <ReadingFluency       {...props} />}
           {id_ === 'letter-search'        && <LetterSearch         {...props} />}
-          {id_ === 'story-reader'         && <StoryReader          {...props} />}
+          {id_ === 'story-reader'         && <StoryReader          {...props} sessionId={id} mirror />}
           {PHYSICAL_IDS.includes(id_)     && <PhysicalExercise id={id_} {...props} />}
         </div>
       </Suspense>

@@ -29,6 +29,7 @@ export type SessionEvent =
   | 'readiness'
   | 'progress'
   | 'reaction'
+  | 'reader'
 
 let cached: Pusher | null = null
 let resolved = false

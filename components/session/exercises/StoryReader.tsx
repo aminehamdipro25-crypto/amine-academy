@@ -1,6 +1,7 @@
 'use client'
 import { useState, useRef, useEffect } from 'react'
 import type { ExerciseResult } from '@/lib/types'
+import { subscribeSession, realtimeEnabled } from '@/lib/realtime-client'
 
 type DecorType = 'forest' | 'water' | 'meadow' | 'school' | 'home' | 'stars'
 interface SceneDef { skyTop: string; skyBot: string; ground: string; chars: string[]; decor: DecorType }
@@ -596,6 +597,11 @@ interface Props {
   onCancel: () => void
   studentAge: number
   difficulty?: 1 | 2 | 3
+  // Story navigation is SPECIALIST-driven and mirrored to the child. The
+  // specialist passes `sessionId` (it publishes its state); the child passes
+  // `sessionId` + `mirror` (it follows the specialist's state, read-only).
+  sessionId?: string
+  mirror?: boolean
 }
 
 // ─── Choice button colors ─────────────────────────────────────────────────────
@@ -612,7 +618,7 @@ const CHOICE_COLORS = [
 const DIFF_LABEL: Record<number, string> = { 1: 'سَهل', 2: 'مُتَوَسِّط', 3: 'صَعب' }
 const DIFF_COLOR: Record<number, string> = { 1: '#22C55E', 2: '#F59E0B', 3: '#EF4444' }
 
-export default function StoryReader({ onComplete, onCancel, studentAge, difficulty = 1 }: Props) {
+export default function StoryReader({ onComplete, onCancel, studentAge, difficulty = 1, sessionId, mirror = false }: Props) {
   const startRef = useRef(Date.now())
   const doneRef  = useRef(false)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -634,7 +640,47 @@ export default function StoryReader({ onComplete, onCancel, studentAge, difficul
   const cleanTimer = () => { if (timerRef.current) clearTimeout(timerRef.current) }
   useEffect(() => () => { cleanTimer() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── Specialist → child sync ────────────────────────────────────────────
+  // Controller (specialist): publish the reader's navigation state whenever it
+  // changes, so the child's screen follows exactly what the specialist reads.
+  useEffect(() => {
+    if (!sessionId || mirror) return
+    fetch(`/api/sessions/${sessionId}/reader`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ storyId: story?.id ?? null, phase, pageIdx, qIdx, selected, showFB }),
+    }).catch(() => {})
+  }, [sessionId, mirror, story, phase, pageIdx, qIdx, selected, showFB])
+
+  // Mirror (child): follow the specialist's published state. All local
+  // controls are disabled below, so the child simply watches the specialist
+  // turn pages and drive the quiz.
+  useEffect(() => {
+    if (!sessionId || !mirror) return
+    let stop = false
+    const apply = async () => {
+      try {
+        const r = await fetch(`/api/sessions/${sessionId}/reader`)
+        if (!r.ok || stop) return
+        const { reader } = await r.json() as { reader: null | { storyId: string | null; phase: 'pick'|'read'|'quiz'|'done'; pageIdx: number; qIdx: number; selected: number | null; showFB: boolean } }
+        if (!reader || stop) return
+        setStory(reader.storyId ? (STORIES.find(s => s.id === reader.storyId) ?? null) : null)
+        setPhase(reader.phase)
+        setPageIdx(reader.pageIdx)
+        setQIdx(reader.qIdx)
+        setSelected(reader.selected)
+        setShowFB(reader.showFB)
+      } catch { /* ignore */ }
+    }
+    apply()
+    const rt = realtimeEnabled()
+    const unsub = subscribeSession(sessionId, ev => { if (ev === 'reader') apply() })
+    const iv = setInterval(apply, rt ? 5000 : 800)
+    return () => { stop = true; unsub(); clearInterval(iv) }
+  }, [sessionId, mirror])
+
   function startStory(s: Story) {
+    if (mirror) return
     startRef.current = Date.now()
     doneRef.current = false
     setPageIdx(0); setQIdx(0); setSelected(null); setShowFB(false); setCorrect(0)
@@ -643,6 +689,7 @@ export default function StoryReader({ onComplete, onCancel, studentAge, difficul
   }
 
   function nextPage() {
+    if (mirror) return
     if (!story) return
     cleanTimer()
     if (pageIdx < story.pages.length - 1) {
@@ -653,11 +700,13 @@ export default function StoryReader({ onComplete, onCancel, studentAge, difficul
   }
 
   function prevPage() {
+    if (mirror) return
     cleanTimer()
     if (pageIdx > 0) setPageIdx(p => p - 1)
   }
 
   function handleChoice(idx: number) {
+    if (mirror) return
     if (!story || selected !== null || showFB) return
     setSelected(idx)
     setShowFB(true)
@@ -692,6 +741,19 @@ export default function StoryReader({ onComplete, onCancel, studentAge, difficul
   const currentScene = story ? scenes[pageIdx] : null
   const totalPages   = story?.pages.length ?? 0
   const q            = phase === 'quiz' && story ? story.questions[qIdx] : null
+
+  // ── Mirror (child) waiting screen — the specialist hasn't opened a story
+  // yet. The child never sees the picker; the specialist chooses. ──
+  if (mirror && phase === 'pick') {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-4 p-8 text-center" dir="rtl" style={{ background: '#FAFAFA' }}>
+        <div className="text-6xl" style={{ animation: 'bounce 2s infinite' }}>📚</div>
+        <div className="text-xl font-black" style={{ color: '#6D28D9' }}>وقت القصة!</div>
+        <div className="text-sm" style={{ color: '#94A3B8', maxWidth: 260 }}>سيختار الأستاذ قصة جميلة لنقرأها معاً…</div>
+        <style>{`@keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }`}</style>
+      </div>
+    )
+  }
 
   // ── PICK phase ──
   if (phase === 'pick') {

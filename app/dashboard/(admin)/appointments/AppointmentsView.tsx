@@ -49,6 +49,28 @@ export default function AppointmentsView({ appointments, parents, error }: {
   const router = useRouter()
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
+  // Mark a real session as held → status 'completed', so it's counted in the
+  // "sessions per child" stat. (Held+saved sessions auto-complete on the "حفظ"
+  // action; this is for sessions done offline or marked retroactively.)
+  async function handleSetStatus(id: string, status: 'completed', e: React.MouseEvent) {
+    e.preventDefault(); e.stopPropagation()
+    if (deletingId) return
+    setDeletingId(id)
+    try {
+      const r = await fetch(`/api/admin/appointments/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      })
+      if (r.ok) router.refresh()
+      else window.alert('تعذّر تحديث حالة الموعد.')
+    } catch {
+      window.alert('تعذّر تحديث حالة الموعد.')
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
   // Permanently delete an appointment (distinct from cancelling). Confirms
   // first — this can't be undone — then refreshes the server-rendered list.
   async function handleDelete(id: string, e: React.MouseEvent) {
@@ -336,6 +358,17 @@ export default function AppointmentsView({ appointments, parents, error }: {
                         <Video className="w-3.5 h-3.5" />
                         {t.meetingLabel}
                       </a>
+                    )}
+                    {appt.status === 'scheduled' && (
+                      <button
+                        onClick={(e) => handleSetStatus(appt.id, 'completed', e)}
+                        disabled={deletingId === appt.id}
+                        title="تعليم الحصة كمُنجزة (تُحتسب في إحصائيات عدد الحصص لكل طفل)"
+                        className="inline-flex items-center gap-1.5 text-xs font-black text-emerald-600 bg-emerald-50 hover:bg-emerald-100 disabled:opacity-50 px-3 py-1.5 rounded-xl transition-colors"
+                      >
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        تمّت
+                      </button>
                     )}
                     <button
                       onClick={(e) => handleDelete(appt.id, e)}

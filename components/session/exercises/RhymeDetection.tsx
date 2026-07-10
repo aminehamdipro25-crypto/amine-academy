@@ -111,6 +111,7 @@ export default function RhymeDetection({ onComplete, onCancel, difficulty = 1, s
 
   function handleChoice(choice: string) {
     if (phase !== 'answer') return
+    if (timerRef.current) clearTimeout(timerRef.current) // dedup same-tick double-tap → single onComplete
     setSelected(choice)
     const isCorrect = choice === q.correct
     const newCorrect = correct + (isCorrect ? 1 : 0)

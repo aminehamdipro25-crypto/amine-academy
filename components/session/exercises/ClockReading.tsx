@@ -132,6 +132,10 @@ export default function ClockReading({ onComplete, onCancel, difficulty = 1, stu
 
   function handleChoice(c: string) {
     if (chosen) return
+    // Cancel any pending timer first, so a same-tick double-tap (both calls see
+    // chosen===null before React flushes) can't schedule two advance/complete
+    // timers — which double-fired onComplete and over-advanced the index.
+    if (timerRef.current) clearTimeout(timerRef.current)
     setChosen(c)
     const isCorrect = c === q.label
     const nc = correct + (isCorrect ? 1 : 0)

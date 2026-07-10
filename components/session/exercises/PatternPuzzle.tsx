@@ -71,6 +71,7 @@ export default function PatternPuzzle({ onComplete, onCancel, difficulty = 1, se
 
   function handleChoice(c: string) {
     if (chosen) return
+    if (timerRef.current) clearTimeout(timerRef.current) // dedup same-tick double-tap → single onComplete
     setChosen(c)
     const isCorrect = c === p.answer
     const nc = correct + (isCorrect ? 1 : 0)

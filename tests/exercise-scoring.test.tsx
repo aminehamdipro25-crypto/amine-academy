@@ -1,9 +1,15 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { render, screen, cleanup, act, fireEvent } from '@testing-library/react'
+import type { ComponentType } from 'react'
 import MathFlash from '../components/session/exercises/MathFlash'
 import SpellingBee from '../components/session/exercises/SpellingBee'
 import OddOneOut from '../components/session/exercises/OddOneOut'
+import AnalogiesGame from '../components/session/exercises/AnalogiesGame'
+import RhymeDetection from '../components/session/exercises/RhymeDetection'
+import IfThen from '../components/session/exercises/IfThen'
+import ClockReading from '../components/session/exercises/ClockReading'
+import PatternPuzzle from '../components/session/exercises/PatternPuzzle'
 
 // Component-level regression tests for exercise SCORING and the single-fire
 // guarantee. The comprehensive review found several exercises that could call
@@ -105,5 +111,50 @@ describe('OddOneOut single-fire', () => {
       act(() => { vi.advanceTimersByTime(1600) })
     }
     expect(onComplete).toHaveBeenCalledTimes(1)
+  })
+})
+
+// ── Generic driver: many exercises are "pick a choice → feedback → next", and
+// clicking ANY choice advances the item. This drives such an exercise to
+// completion by clicking the first non-control button each step (double-
+// tapping to also exercise the same-tick double-fire guard), advancing fake
+// timers between. It asserts onComplete fires EXACTLY once — the regression
+// that keeps catching real bugs (OddOneOut above was found this way).
+const CONTROL = /إنهاء|إلغاء|إغلاق|استمع|استماع|🔊|↺|إعادة|تخط|إعادة المحاولة/
+
+function driveChoiceExercise(
+  Comp: ComponentType<{ onComplete: (r: unknown) => void; onCancel: () => void; studentAge: number; difficulty?: 1|2|3; seed?: number }>,
+  seed: number,
+) {
+  vi.useFakeTimers()
+  const onComplete = vi.fn()
+  const { container } = render(
+    <Comp onComplete={onComplete} onCancel={() => {}} studentAge={8} difficulty={1} seed={seed} />,
+  )
+  for (let step = 0; step < 60 && onComplete.mock.calls.length === 0; step++) {
+    const choices = Array.from(container.querySelectorAll('button'))
+      .filter(b => !(b as HTMLButtonElement).disabled && !CONTROL.test(b.textContent ?? ''))
+    if (choices.length > 0) {
+      // click twice — a well-guarded exercise ignores the 2nd (same-tick) tap
+      act(() => { fireEvent.click(choices[0]); fireEvent.click(choices[0]) })
+    }
+    act(() => { vi.advanceTimersByTime(2500) })
+  }
+  return onComplete
+}
+
+describe.each([
+  ['AnalogiesGame', AnalogiesGame, 5],
+  ['RhymeDetection', RhymeDetection, 11],
+  ['IfThen', IfThen, 13],
+  ['ClockReading', ClockReading, 21],
+  ['PatternPuzzle', PatternPuzzle, 31],
+] as const)('single-fire: %s', (_name, Comp, seed) => {
+  it('drives to completion with exactly one onComplete (double-taps guarded)', () => {
+    const onComplete = driveChoiceExercise(Comp as never, seed)
+    expect(onComplete).toHaveBeenCalledTimes(1)
+    const result = onComplete.mock.calls[0][0] as { score: number }
+    expect(result.score).toBeGreaterThanOrEqual(0)
+    expect(result.score).toBeLessThanOrEqual(100)
   })
 })

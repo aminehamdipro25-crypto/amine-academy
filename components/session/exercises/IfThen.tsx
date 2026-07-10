@@ -62,6 +62,7 @@ export default function IfThen({ onComplete, onCancel, difficulty = 1, seed, onP
 
   function handleChoice(c: string) {
     if (chosen) return
+    if (timerRef.current) clearTimeout(timerRef.current) // dedup same-tick double-tap → single onComplete
     setChosen(c)
     const isCorrect = c === q.correct
     const nc = correct + (isCorrect ? 1 : 0)

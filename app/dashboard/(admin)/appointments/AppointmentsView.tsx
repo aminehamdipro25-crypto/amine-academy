@@ -1,5 +1,7 @@
 'use client'
-import { Calendar, Clock, Video, AlertCircle, CheckCircle2, XCircle, User, Plus, MonitorPlay, ChevronLeft, MessageCircle } from 'lucide-react'
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { Calendar, Clock, Video, AlertCircle, CheckCircle2, XCircle, User, Plus, MonitorPlay, ChevronLeft, MessageCircle, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { staggerContainer, fadeUp, popIn, liftHover, tapOnly } from '@/lib/motion'
@@ -43,6 +45,27 @@ export default function AppointmentsView({ appointments, parents, error }: {
   const t = tr[lang].adminAppointments
   const navT = tr[lang].adminNav
   const adminT = tr[lang].adminChrome
+
+  const router = useRouter()
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+
+  // Permanently delete an appointment (distinct from cancelling). Confirms
+  // first — this can't be undone — then refreshes the server-rendered list.
+  async function handleDelete(id: string, e: React.MouseEvent) {
+    e.preventDefault(); e.stopPropagation()
+    if (deletingId) return
+    if (!window.confirm('حذف هذا الموعد نهائياً؟ لا يمكن التراجع عن هذا الإجراء.')) return
+    setDeletingId(id)
+    try {
+      const r = await fetch(`/api/admin/appointments/${id}`, { method: 'DELETE' })
+      if (r.ok) router.refresh()
+      else window.alert('تعذّر حذف الموعد. حاول مرة أخرى.')
+    } catch {
+      window.alert('تعذّر حذف الموعد. تحقّق من الاتصال.')
+    } finally {
+      setDeletingId(null)
+    }
+  }
 
   const STATUS_CFG: Record<string, { label: string; dot: string; badge: string; icon: React.ComponentType<{className?: string}> }> = {
     scheduled: { label: t.status.scheduled, dot: 'bg-blue-500',    badge: 'bg-blue-100 text-blue-700 ring-1 ring-blue-200',     icon: Clock },
@@ -314,9 +337,14 @@ export default function AppointmentsView({ appointments, parents, error }: {
                         {t.meetingLabel}
                       </a>
                     )}
-                    <div className="w-7 h-7 rounded-xl bg-gray-50 group-hover:bg-brand-50 flex items-center justify-center transition-colors">
-                      <ChevronLeft className="w-4 h-4 text-gray-300 group-hover:text-brand-500 transition-colors" />
-                    </div>
+                    <button
+                      onClick={(e) => handleDelete(appt.id, e)}
+                      disabled={deletingId === appt.id}
+                      title="حذف الموعد نهائياً"
+                      className="inline-flex items-center justify-center w-7 h-7 rounded-xl text-red-500 bg-red-50 hover:bg-red-100 disabled:opacity-50 transition-colors"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 </div>
               </motion.div>

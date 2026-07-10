@@ -1,5 +1,5 @@
-import { getAllParents, getAllExercises, getAllAppointments, getAllPendingPayments } from '@/lib/db'
-import type { Parent, Exercise, Appointment, PendingPayment } from '@/lib/types'
+import { getAllParents, getAllExercises, getAllAppointments, getAllPendingPayments, getStudentsByParent } from '@/lib/db'
+import type { Parent, Exercise, Appointment, PendingPayment, Student } from '@/lib/types'
 import AnalyticsView from './AnalyticsView'
 
 export const dynamic = 'force-dynamic'
@@ -18,6 +18,10 @@ export interface AnalyticsData {
   catCounts: Record<string, number>
   months: { year: number; month: number; count: number }[]
   apptStats: { scheduled: number; completed: number; cancelled: number }
+  // Number of sessions each child has had — `completed` = held sessions,
+  // `upcoming` = still scheduled. Names only (the specialist's own clients),
+  // no other PII. Sorted by held sessions.
+  sessionsPerChild: { name: string; completed: number; upcoming: number }[]
 }
 
 // Only aggregate, non-identifying figures may leave this function — the raw
@@ -26,7 +30,7 @@ export interface AnalyticsData {
 // since Server Component -> Client Component props are serialized into the
 // page's payload regardless of which fields the UI actually renders.
 function computeAnalytics(
-  parents: Parent[], exercises: Exercise[], appointments: Appointment[], payments: PendingPayment[]
+  parents: Parent[], exercises: Exercise[], appointments: Appointment[], payments: PendingPayment[], students: Student[]
 ): AnalyticsData {
   const confirmedPayments = payments.filter(p => p.status === 'confirmed')
   const revenueByCurrency: Record<string, number> = {}
@@ -88,6 +92,22 @@ function computeAnalytics(
     cancelled: appointments.filter(a => a.status === 'cancelled').length,
   }
 
+  // Sessions per child — grouped by the appointment's studentId.
+  const perChild: Record<string, { name: string; completed: number; upcoming: number }> = {}
+  for (const s of students) {
+    perChild[s.id] = { name: `${s.firstName} ${s.lastName}`.trim() || 'طفل', completed: 0, upcoming: 0 }
+  }
+  for (const a of appointments) {
+    const rec = perChild[a.studentId]
+    if (!rec) continue
+    if (a.status === 'completed') rec.completed++
+    else if (a.status === 'scheduled') rec.upcoming++
+  }
+  const sessionsPerChild = Object.values(perChild)
+    .filter(r => r.completed > 0 || r.upcoming > 0)
+    .sort((a, b) => b.completed - a.completed || b.upcoming - a.upcoming)
+    .slice(0, 30)
+
   return {
     totalClients: parents.length,
     totalExercises: exercises.length,
@@ -101,6 +121,7 @@ function computeAnalytics(
     catCounts,
     months,
     apptStats,
+    sessionsPerChild,
   }
 }
 
@@ -115,7 +136,9 @@ export default async function AnalyticsPage() {
       getAllAppointments(),
       getAllPendingPayments(),
     ])
-    data = computeAnalytics(parents, exercises, appointments, payments)
+    // Gather all students (per parent) to name the per-child session counts.
+    const students = (await Promise.all(parents.map(p => getStudentsByParent(p.id)))).flat()
+    data = computeAnalytics(parents, exercises, appointments, payments, students)
   } catch {
     error = true
   }

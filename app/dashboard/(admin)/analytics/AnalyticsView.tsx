@@ -41,6 +41,7 @@ const EMPTY_DATA: AnalyticsData = {
   catCounts: {},
   months: [],
   apptStats: { scheduled: 0, completed: 0, cancelled: 0 },
+  sessionsPerChild: [],
 }
 
 export default function AnalyticsView({ data, error }: { data: AnalyticsData | null; error: boolean }) {
@@ -51,7 +52,7 @@ export default function AnalyticsView({ data, error }: { data: AnalyticsData | n
 
   const d = data ?? EMPTY_DATA
   const { totalClients, totalExercises, totalAppointments, revenueByCurrency, revenueLast30dByCurrency,
-    hasConfirmedPayments, statusCounts, planCounts, topCountries, catCounts, months, apptStats } = d
+    hasConfirmedPayments, statusCounts, planCounts, topCountries, catCounts, months, apptStats, sessionsPerChild } = d
 
   const maxMonthCount = Math.max(...months.map(m => m.count), 1)
 
@@ -279,6 +280,52 @@ export default function AnalyticsView({ data, error }: { data: AnalyticsData | n
             </span>{' '}
             {t.cancellationRateSuffix}
           </p>
+        )}
+      </motion.div>
+
+      {/* ── Sessions per child ── */}
+      <motion.div variants={fadeUp} className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="font-black text-gray-900 flex items-center gap-2 text-sm">
+            <Users className="w-4 h-4 text-brand-500" />
+            {lang === 'en' ? 'Sessions per child' : 'عدد الحصص لكل طفل'}
+          </h2>
+          {sessionsPerChild.length > 0 && (
+            <span className="text-[11px] text-gray-400 font-medium">
+              {lang === 'en' ? `${sessionsPerChild.length} children` : `${sessionsPerChild.length} طفل`}
+            </span>
+          )}
+        </div>
+        {sessionsPerChild.length === 0 ? (
+          <p className="text-gray-400 text-sm text-center py-6">
+            {lang === 'en' ? 'No sessions recorded yet' : 'لا توجد حصص مُسجّلة بعد'}
+          </p>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {sessionsPerChild.map((c, i) => (
+              <div key={`${c.name}-${i}`} className="flex items-center justify-between gap-3 bg-gray-50 rounded-2xl px-4 py-2.5">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-8 h-8 rounded-xl flex items-center justify-center text-white font-black text-xs flex-shrink-0"
+                    style={{ background: 'linear-gradient(135deg,#7C5CFC,#C084FC)' }}>
+                    {(c.name || '?').charAt(0).toUpperCase()}
+                  </div>
+                  <span className="font-bold text-gray-800 text-sm truncate">{c.name}</span>
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0 ltr-num">
+                  <span title={lang === 'en' ? 'held sessions' : 'حصص مُنجزة'}
+                    className="inline-flex items-center gap-1 text-xs font-black text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg">
+                    ✓ {c.completed}
+                  </span>
+                  {c.upcoming > 0 && (
+                    <span title={lang === 'en' ? 'upcoming' : 'قادمة'}
+                      className="inline-flex items-center gap-1 text-xs font-black text-blue-700 bg-blue-50 px-2.5 py-1 rounded-lg">
+                      🕒 {c.upcoming}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
         )}
       </motion.div>
     </motion.div>

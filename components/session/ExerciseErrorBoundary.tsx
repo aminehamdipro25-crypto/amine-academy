@@ -1,5 +1,6 @@
 'use client'
 import { Component, type ReactNode } from 'react'
+import { reportError } from '@/lib/client-error-monitor'
 
 // If a single exercise throws mid-session, React unmounts the WHOLE tree —
 // the specialist or (worse) the child is left staring at a blank screen with
@@ -37,9 +38,12 @@ export default class ExerciseErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error) {
-    // Not swallowed: log it, and hand it to the optional monitor hook.
+    // Not swallowed: log it AND report it to the in-app error monitor
+    // (مراقبة الأخطاء) — React boundaries stop the error before window.onerror
+    // sees it, so without this an exercise crash would never appear there.
     // eslint-disable-next-line no-console
     console.error('[exercise-error-boundary]', error)
+    reportError(error, { source: 'exercise', audience: this.props.audience ?? 'specialist', exercise: String(this.props.resetKey ?? '') })
     this.props.onError?.(error)
   }
 

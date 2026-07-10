@@ -247,6 +247,20 @@ export async function updateAppointment(id: string, updates: Partial<Appointment
   await redis.set(`appointment:${id}`, { ...current, ...updates })
 }
 
+// Permanently remove an appointment — the record plus both index lists. Used
+// by the admin to clear appointments outright (distinct from cancelling, which
+// only changes status). Orphaned session artifacts (short-TTL Redis keys) age
+// out on their own.
+export async function deleteAppointment(id: string): Promise<void> {
+  const appt = await getAppointment(id)
+  const cmds: [string, ...string[]][] = [
+    ['DEL', `appointment:${id}`],
+    ['LREM', 'appointments:index', '0', id],
+  ]
+  if (appt) cmds.push(['LREM', `appointments:parent:${appt.parentId}`, '0', id])
+  await redis.pipeline(cmds)
+}
+
 export async function getParentAppointments(parentId: string): Promise<Appointment[]> {
   const ids = await redis.lrange(`appointments:parent:${parentId}`, 0, 20)
   const appts = await Promise.all(ids.map(id => getAppointment(id)))

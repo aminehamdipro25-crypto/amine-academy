@@ -1,8 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isDashboardUser } from '@/lib/auth'
-import { getAppointment, updateAppointment } from '@/lib/db'
+import { getAppointment, updateAppointment, deleteAppointment } from '@/lib/db'
 
 export const runtime = 'nodejs'
+
+// DELETE — permanently remove an appointment (admin only).
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    if (!await isDashboardUser()) {
+      return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
+    }
+    const { id } = await params
+    await deleteAppointment(id)
+    return NextResponse.json({ ok: true })
+  } catch (e) {
+    console.error('[admin/appointments/delete]', e)
+    return NextResponse.json({ error: 'حدث خطأ في الخادم' }, { status: 500 })
+  }
+}
 
 const VALID_STATUSES = ['scheduled', 'completed', 'cancelled', 'no-show'] as const
 

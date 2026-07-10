@@ -103,6 +103,7 @@ import QuickObsPanel from '@/components/session/QuickObsPanel'
 import IncidentPanel, { type IncidentEntry } from '@/components/session/IncidentPanel'
 import DraggableVideoPiP from '@/components/session/DraggableVideoPiP'
 import DailyVideoCall from '@/components/session/DailyVideoCall'
+import ExerciseErrorBoundary from '@/components/session/ExerciseErrorBoundary'
 import LiveSessionCard from '@/components/session/LiveSessionCard'
 import SessionStarCounter from '@/components/session/SessionStarCounter'
 import { computeAdaptiveDecision } from '@/lib/session-adaptive'
@@ -3764,6 +3765,7 @@ ${notes ? `
                 <div className="w-8 h-8 rounded-full border-4 border-brand-500 border-t-transparent animate-spin" />
               </div>
             }>
+              <ExerciseErrorBoundary audience="specialist" resetKey={`${activeView.id}-${exerciseRestartNonce}`}>
               {activeView.id === 'memory-cards'    && <MemoryCards onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} seed={activeSeed} />}
               {activeView.id === 'sequence-memory' && <SequenceMemory onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} seed={activeSeed} />}
               {activeView.id === 'n-back'          && <NBackTask onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} seed={activeSeed} />}
@@ -3849,6 +3851,7 @@ ${notes ? `
               {['jumping-jacks','obstacle-circuit','balance-walk','tiger-crawl','ball-throw','stretching','body-percussion'].includes(activeView.id) && (
                 <PhysicalExercise id={activeView.id} onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />
               )}
+              </ExerciseErrorBoundary>
             </Suspense>
             </motion.div>
             )}

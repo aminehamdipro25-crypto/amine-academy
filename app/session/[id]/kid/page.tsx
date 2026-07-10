@@ -7,6 +7,7 @@ import { startNoiseEngine, type NoiseHandle } from '@/lib/noise-synth'
 import { formatTime } from '@/lib/session-helpers'
 import { subscribeSession, realtimeEnabled, subscribeConnectionState } from '@/lib/realtime-client'
 import { playCorrect, playWrong } from '@/lib/feedback-sound'
+import ExerciseErrorBoundary from '@/components/session/ExerciseErrorBoundary'
 
 const DailyVideoCall = lazy(() => import('@/components/session/DailyVideoCall'))
 
@@ -989,6 +990,7 @@ export default function KidSessionPage() {
           <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
         </div>
       }>
+        <ExerciseErrorBoundary audience="kid" resetKey={`${id_}-${nonce}`}>
         <div key={`${id_}-${live.seed ?? ''}-${nonce}`} style={{ width:'100%', height:'100%' }}>
           {id_ === 'memory-cards'         && <MemoryCards          {...props} />}
           {id_ === 'sequence-memory'      && <SequenceMemory       {...props} />}
@@ -1071,6 +1073,7 @@ export default function KidSessionPage() {
           {id_ === 'story-reader'         && <StoryReader          {...props} sessionId={id} mirror />}
           {PHYSICAL_IDS.includes(id_)     && <PhysicalExercise id={id_} {...props} />}
         </div>
+        </ExerciseErrorBoundary>
       </Suspense>
     </div>
     )

@@ -56,6 +56,10 @@ export default function OddOneOut({ onComplete, onCancel, difficulty = 1, seed, 
   const [done, setDone] = useState(false)
   const startRef = useRef(Date.now())
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Ref lock (not just the `feedback` STATE) so two taps in the SAME React
+  // batch — a fast double-tap, common in this population — can't both pass the
+  // guard and each schedule a completion, double-firing onComplete.
+  const lockRef = useRef(false)
 
   useEffect(() => {
     startRef.current = Date.now()
@@ -85,7 +89,8 @@ export default function OddOneOut({ onComplete, onCancel, difficulty = 1, seed, 
   }, [totalQuestions, difficulty, onComplete])
 
   const handleSelect = useCallback((idx: number) => {
-    if (feedback !== null) return
+    if (lockRef.current || feedback !== null) return
+    lockRef.current = true
     const q = questions[qIndex]
     setSelectedIdx(idx)
     const isCorrect = idx === q.odd
@@ -104,6 +109,7 @@ export default function OddOneOut({ onComplete, onCancel, difficulty = 1, seed, 
         finishGame(nc, ne)
       } else {
         setQIndex(nextQ)
+        lockRef.current = false   // unlock for the next question
       }
     }, 1500)
   }, [feedback, questions, qIndex, totalQuestions, errors, correct, finishGame, onProgress])

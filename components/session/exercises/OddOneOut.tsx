@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import type { ExerciseResult, ExerciseProgressUpdate } from '@/lib/types'
+import { createRng, shuffleWithRng } from '@/lib/seeded-random'
 
 interface Question {
   items: string[]
@@ -24,14 +25,27 @@ interface Props {
   onCancel: () => void
   studentAge: number
   difficulty?: 1 | 2 | 3
+  seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
   onProgress?: (p: ExerciseProgressUpdate) => void // live per-answer feedback to the specialist
 }
 
 type ItemFeedback = 'correct' | 'wrong' | null
 
-export default function OddOneOut({ onComplete, onCancel, difficulty = 1, onProgress }: Props) {
+export default function OddOneOut({ onComplete, onCancel, difficulty = 1, seed, onProgress }: Props) {
   const totalQuestions = difficulty === 1 ? 5 : difficulty === 2 ? 7 : 8
-  const questions = ALL_QUESTIONS.slice(0, totalQuestions)
+  const rng = useRef(createRng(seed ?? Date.now())).current
+  // Shuffle each question's items (with the shared seed, so both screens
+  // match) and recompute the odd item's new position. Previously every
+  // question had odd:3 with items in fixed order, so the answer was ALWAYS
+  // the 4th button — a child could tap the last cell every time and score
+  // 100% without reasoning. Computed once per mount.
+  const questions = useRef<Question[]>(
+    ALL_QUESTIONS.slice(0, totalQuestions).map(q => {
+      const oddItem = q.items[q.odd]
+      const items = shuffleWithRng(rng, q.items)
+      return { items, odd: items.indexOf(oddItem), explain: q.explain }
+    })
+  ).current
 
   const [qIndex, setQIndex] = useState(0)
   const [correct, setCorrect] = useState(0)

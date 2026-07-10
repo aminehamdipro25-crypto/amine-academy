@@ -47,6 +47,30 @@ function mutatePattern(cells: Cell[], mutations: number, rng: Rng): Cell[] {
   return copy
 }
 
+function cellsEqual(a: Cell[], b: Cell[]): boolean {
+  if (a.length !== b.length) return false
+  for (let i = 0; i < a.length; i++) {
+    const x = a[i], y = b[i]
+    if (!x && !y) continue
+    if (!x || !y) return false
+    if (x.shape !== y.shape || x.color !== y.color) return false
+  }
+  return true
+}
+
+// A distractor MUST differ from the reference (and ideally from the other
+// distractors) — otherwise a "wrong" choice can render pixel-identical to the
+// reference, and a child picking the grid that looks exactly like it is scored
+// wrong. mutatePattern can no-op (it may re-pick the same color/shape), so we
+// retry until the result is genuinely distinct (capped to avoid any loop).
+function distinctMutation(reference: Cell[], mutations: number, rng: Rng, avoid: Cell[][] = []): Cell[] {
+  let cand = mutatePattern(reference, mutations, rng)
+  for (let tries = 0; tries < 20 && (cellsEqual(cand, reference) || avoid.some(a => cellsEqual(cand, a))); tries++) {
+    cand = mutatePattern(reference, mutations + (tries > 8 ? 1 : 0), rng)
+  }
+  return cand
+}
+
 function rotatePattern(cells: Cell[], size: number): Cell[] {
   const result: Cell[] = Array(size * size).fill(null)
   for (let r = 0; r < size; r++)
@@ -73,11 +97,12 @@ interface Trial {
 function makeTrial(size: number, difficulty: 1|2|3, rng: Rng): Trial {
   const reference = makePattern(size, rng)
   const mutations = difficulty === 1 ? 2 : difficulty === 2 ? 1 : 1
-  const wrong1 = mutatePattern(reference, mutations, rng)
-  const wrong2 = mutatePattern(reference, mutations, rng)
-  const wrong3 = difficulty === 3
-    ? rotatePattern(reference, size)
-    : mutatePattern(reference, mutations + 1, rng)
+  const wrong1 = distinctMutation(reference, mutations, rng)
+  const wrong2 = distinctMutation(reference, mutations, rng, [wrong1])
+  const rotated = rotatePattern(reference, size)
+  const wrong3 = difficulty === 3 && !cellsEqual(rotated, reference)
+    ? rotated  // a rotation of a symmetric pattern can equal the reference — only use it when it differs
+    : distinctMutation(reference, mutations + 1, rng, [wrong1, wrong2])
 
   const choices = shuffleArray([
     { cells: reference.map(c => c ? { ...c } : null), correct: true },

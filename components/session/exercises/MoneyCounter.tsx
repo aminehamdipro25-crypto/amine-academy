@@ -189,13 +189,15 @@ export default function MoneyCounter({ onComplete, onCancel, difficulty = 1, stu
     return shuffleWithRng(rng, [...opts])
   }, [idx]) // eslint-disable-line
 
-  const isCorrectFeedback = phase === 'feedback' &&
-    (q.type === 'change'
-      ? true   // we set result in handleChangeChoice
-      : collected === q.targetAmount)
-
   // For change questions: explicit choice
   const [changeChosen, setChangeChosen] = useState<number | null>(null)
+
+  const isCorrectFeedback = phase === 'feedback' &&
+    (q.type === 'change'
+      // A WRONG change answer must not show green — base the color on whether
+      // the chosen change actually equals the target.
+      ? changeChosen === q.targetAmount
+      : collected === q.targetAmount)
   useEffect(() => { setChangeChosen(null) }, [idx])
 
   function handleChangeChoice(v: number) {

@@ -92,6 +92,8 @@ export default function WordBuilder({ onComplete, onCancel, studentAge, difficul
   const [feedback, setFeedback]    = useState<'correct' | 'wrong' | null>(null)
   const [scores, setScores]        = useState<number[]>([])
   const [started, setStarted]      = useState(false)
+  const [wrongTotal, setWrongTotal] = useState(0)   // total wrong attempts (for errors)
+  const roundErredRef = useRef(false)               // did the CURRENT word have a wrong attempt
   const startRef = useRef(Date.now())
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -108,20 +110,37 @@ export default function WordBuilder({ onComplete, onCancel, studentAge, difficul
       const built = newSelected.join('')
       const isCorrect = built === wordItem.word
       setFeedback(isCorrect ? 'correct' : 'wrong')
-      const newScores = [...scores, isCorrect ? 100 : 0]
+
+      // A wrong build lets the child retry the SAME word — so it must NOT
+      // record a score entry (that pushed answered past total and averaged
+      // over raw attempts, double-penalizing). It only counts as an error and
+      // marks the round as erred; exactly ONE score is recorded per word, on
+      // the correct build.
+      if (!isCorrect) {
+        const ne = wrongTotal + 1
+        setWrongTotal(ne)
+        roundErredRef.current = true
+        onProgress?.({ answered: round + 1, total: ROUNDS, correct: scores.length, errors: ne, lastCorrect: false })
+        timerRef.current = setTimeout(() => {
+          setFeedback(null)
+          setSelected([])
+          setUsedIdxs([])
+        }, 900)
+        return
+      }
+
+      // Correct — one score for this word: full marks if solved first try,
+      // partial if it took a retry.
+      const roundScore = roundErredRef.current ? 60 : 100
+      roundErredRef.current = false
+      const newScores = [...scores, roundScore]
       setScores(newScores)
-      onProgress?.({ answered: newScores.length, total: ROUNDS, correct: newScores.filter(s => s === 100).length, errors: newScores.filter(s => s === 0).length, lastCorrect: isCorrect })
+      onProgress?.({ answered: round + 1, total: ROUNDS, correct: newScores.filter(s => s === 100).length, errors: wrongTotal, lastCorrect: true })
 
       timerRef.current = setTimeout(() => {
         setFeedback(null)
-        if (!isCorrect) {
-          // Reset for retry
-          setSelected([])
-          setUsedIdxs([])
-          return
-        }
         if (round + 1 >= ROUNDS) {
-          const avg = Math.round(newScores.reduce((a, b) => a + b, 0) / newScores.length)
+          const avg = Math.round(newScores.reduce((a, b) => a + b, 0) / ROUNDS)
           const dur = Math.round((Date.now() - startRef.current) / 1000)
           onComplete({
             exerciseType: 'word-builder',
@@ -129,7 +148,7 @@ export default function WordBuilder({ onComplete, onCancel, studentAge, difficul
             score: avg,
             accuracy: avg,
             duration: dur,
-            errors: newScores.filter(s => s === 0).length,
+            errors: wrongTotal,
             metadata: { rounds: ROUNDS, scores: newScores },
             completedAt: new Date().toISOString(),
           })

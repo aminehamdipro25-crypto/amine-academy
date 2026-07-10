@@ -72,7 +72,10 @@ export default function ColorSudoku({ onComplete, onCancel, difficulty=1, studen
   const size   = (difficulty===3 && !isYoung) ? 6 : 4
   const colors = size===6 ? COLORS6 : COLORS4
   const puzzles= useMemo(()=>shuffleWithRng(rng, size===6 ? PUZZLES_6 : PUZZLES_4),[size])
-  const COUNT  = difficulty===1 ? 3 : difficulty===2 ? 4 : 5
+  // Never ask for more rounds than there are distinct puzzles — otherwise
+  // `puzzles[idx % length]` repeats boards the child then solves from memory
+  // (the 6×6 pool has only 2, so difficulty 3 used to recycle them).
+  const COUNT  = Math.min(puzzles.length, difficulty===1 ? 3 : difficulty===2 ? 4 : 5)
 
   const [idx,      setIdx]    = useState(0)
   const [grid,     setGrid]   = useState<(number|null)[]>([])

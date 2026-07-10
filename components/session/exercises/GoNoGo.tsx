@@ -213,8 +213,12 @@ export default function GoNoGo({ onComplete, onCancel, difficulty = 1, seed, onP
         </div>
       </div>
 
-      {/* Arena */}
-      <div className="flex-1 flex flex-col items-center justify-center gap-8 px-6">
+      {/* Arena — whole area is tappable during 'show' so a press on a No-Go (red)
+          trial reaches handlePress and is scored as a false alarm (impulse). */}
+      <div
+        onClick={handlePress}
+        className={`flex-1 flex flex-col items-center justify-center gap-8 px-6 ${phase === 'show' ? 'cursor-pointer' : ''}`}
+      >
         {/* Stimulus */}
         <div className="w-52 h-52 flex items-center justify-center">
           {phase === 'show' && (

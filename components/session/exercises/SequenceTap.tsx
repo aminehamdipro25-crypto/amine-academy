@@ -30,6 +30,7 @@ export default function SequenceTap({ onComplete, onCancel, difficulty = 1, seed
   const [errors,   setErrors]   = useState(0)
   const [startMs]               = useState(Date.now())
   const timerIds = useRef<ReturnType<typeof setTimeout>[]>([])
+  const resolvedRef = useRef(false)   // guard — a round resolves (schedules advance) at most once, even on rapid double-taps
 
   const clearAll = () => { timerIds.current.forEach(clearTimeout); timerIds.current = [] }
 
@@ -48,6 +49,7 @@ export default function SequenceTap({ onComplete, onCancel, difficulty = 1, seed
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const newRound = useCallback(() => {
+    resolvedRef.current = false   // arm the guard for the new round
     const seq = Array.from({ length: SEQ_LEN }, () => randIntWithRng(rng, 0, COUNT - 1))
     setSequence(seq)
     timerIds.current.push(setTimeout(() => playSequence(seq), 300))
@@ -62,6 +64,8 @@ export default function SequenceTap({ onComplete, onCancel, difficulty = 1, seed
     const next    = [...tapped, idx]
 
     if (idx !== correct) {
+      if (resolvedRef.current) return
+      resolvedRef.current = true
       const ne = errors + 1
       setErrors(ne)
       setFeedback('wrong')
@@ -71,6 +75,8 @@ export default function SequenceTap({ onComplete, onCancel, difficulty = 1, seed
     } else {
       setTapped(next)
       if (next.length === sequence.length) {
+        if (resolvedRef.current) return
+        resolvedRef.current = true
         setFeedback('correct')
         setPhase('feedback')
         const ns = score + 1

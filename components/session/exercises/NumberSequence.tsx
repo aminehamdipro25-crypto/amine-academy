@@ -91,7 +91,9 @@ export default function NumberSequence({ onComplete, onCancel, difficulty = 1, s
         setTotalErrors(prev => prev + roundErrors)
 
         if (round >= ROUNDS) {
-          // All rounds done — small delay then finish
+          // All rounds done — disable tiles immediately so stray taps during the
+          // completion delay don't flash "wrong" (scoring already latched below).
+          setPhase('done')
           timerRef.current = setTimeout(() => {
             const avg = Math.round(newScores.reduce((a, b) => a + b, 0) / newScores.length)
             const totalNums = maxNumber * ROUNDS

@@ -161,6 +161,9 @@ export default function SustainedAttention({ onComplete, onCancel, difficulty = 
 
   function handlePress() {
     if (phase !== 'playing') return
+    // Ignore presses during the inter-stimulus blank — a late tap after the
+    // stimulus is off must not be scored as a false alarm.
+    if (!showStimulus) return
     if (pressedRef.current) return
     pressedRef.current = true
     setPressed(true)

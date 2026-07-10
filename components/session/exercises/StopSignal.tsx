@@ -77,6 +77,10 @@ export default function StopSignal({ onComplete, onCancel, difficulty = 1, seed,
       setPhase(stop ? 'stop' : 'go')
       timerRef.current = setTimeout(() => {
         if (!tappedRef.current) {
+          // Deadline passed with no tap — latch the trial and hide the stimulus
+          // BEFORE scheduling the next trial so a late tap can't double-count it.
+          tappedRef.current = true
+          setPhase('wait')
           if (stop) { stopOkRef.current++;  setFb('stop-ok') }
           else      { goMissRef.current++;  setFb('miss')    }
           onProgress?.({

@@ -64,6 +64,7 @@ export default function VisualSearch({ onComplete, onCancel, difficulty = 1, see
   const [roundTimes, setRoundTimes] = useState<number[]>([])
   const startRef = useRef(Date.now())
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const doneRef = useRef(false)   // guard — onComplete fires at most once
 
   useEffect(() => {
     startRef.current = Date.now()
@@ -74,6 +75,8 @@ export default function VisualSearch({ onComplete, onCancel, difficulty = 1, see
   }, [])
 
   const finishGame = useCallback((finalErrors: number, times: number[]) => {
+    if (doneRef.current) return
+    doneRef.current = true
     const dur = Math.round((Date.now() - startRef.current) / 1000)
     const avgTime = times.length > 0 ? times.reduce((a, b) => a + b, 0) / times.length : 0
     // Slowness penalty: if avg > 5s, subtract up to 20 points
@@ -104,6 +107,10 @@ export default function VisualSearch({ onComplete, onCancel, difficulty = 1, see
       // Correct
       const elapsed = Date.now() - roundStart
       const newTimes = [...roundTimes, elapsed]
+      // Lock the round immediately — the top-of-handler `phase !== 'playing'` guard now
+      // blocks a stray tap during the 600ms window, so it can't re-run this branch
+      // (double finishGame / an extra buildRound that would desync the seeded RNG).
+      setPhase('feedback')
       setFeedback('correct')
       setRoundTimes(newTimes)
       setTotalTime(t => t + elapsed)

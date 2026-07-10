@@ -99,6 +99,9 @@ export default function SimonSays({ onComplete, onCancel, studentAge, difficulty
           finish()
           return
         }
+        // Lock the grid between levels — 'watch' disables buttons (disabled={phase !== 'input'})
+        // so a stray tap in the 800ms window can't run press() with pos===sequence.length.
+        setPhase('watch')
         setTimeout(() => setLevel(l => l + 1), 800)
       }
     }

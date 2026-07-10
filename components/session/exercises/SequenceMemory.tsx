@@ -24,6 +24,7 @@ export default function SequenceMemory({ onComplete, onCancel, difficulty = 1, s
   const maxLvlRef   = useRef(0)     // ref — avoids stale closure on setState
   const errRef      = useRef(0)
   const correctRef  = useRef(0)
+  const endedRef    = useRef(false)   // guard — onComplete fires at most once; blocks stray taps after end
   const timerIds    = useRef<ReturnType<typeof setTimeout>[]>([])
 
   useEffect(() => () => { timerIds.current.forEach(clearTimeout); timerIds.current = [] }, [])
@@ -64,6 +65,8 @@ export default function SequenceMemory({ onComplete, onCancel, difficulty = 1, s
   }, [level, startLen, playSequence])
 
   function endGame(reachedLevel: number, totalErr: number) {
+    if (endedRef.current) return
+    endedRef.current = true
     const dur = Math.round((Date.now() - startRef.current) / 1000)
     const total = correctRef.current + totalErr
     const acc   = total > 0 ? Math.round((correctRef.current / total) * 100) : 0
@@ -81,6 +84,7 @@ export default function SequenceMemory({ onComplete, onCancel, difficulty = 1, s
   }
 
   function handleTap(idx: number) {
+    if (endedRef.current) return
     if (phase !== 'repeat') return
 
     const newPlayer = [...playerSeq, idx]
@@ -123,6 +127,9 @@ export default function SequenceMemory({ onComplete, onCancel, difficulty = 1, s
           endGame(MAX_LEVEL, errRef.current)
           return
         }
+        // Lock the grid between levels — 'watch' disables buttons (disabled={phase !== 'repeat'})
+        // so a stray tap in the 700ms window can't run handleTap with pos===sequence.length.
+        setPhase('watch')
         timerIds.current.push(setTimeout(() => setLevel(l => l + 1), 700))
       }
     }

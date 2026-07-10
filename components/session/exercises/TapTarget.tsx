@@ -34,6 +34,7 @@ export default function TapTarget({ onComplete, onCancel, studentAge, difficulty
   const hitsRef = useRef(0)
   const missesRef = useRef(0)
   const finishedRef = useRef(false)
+  const expiryTimers = useRef<ReturnType<typeof setTimeout>[]>([])
 
   const spawnTarget = useCallback(() => {
     if (!areaRef.current) return
@@ -46,7 +47,7 @@ export default function TapTarget({ onComplete, onCancel, studentAge, difficulty
       id, x, y, size: targetSize, born: Date.now(),
       emoji: pickWithRng(rng, EMOJIS)
     }])
-    setTimeout(() => {
+    const expiry = setTimeout(() => {
       setTargets(t => {
         const exists = t.find(tt => tt.id === id)
         if (exists) {
@@ -56,7 +57,21 @@ export default function TapTarget({ onComplete, onCancel, studentAge, difficulty
         return t.filter(tt => tt.id !== id)
       })
     }, targetLife)
+    expiryTimers.current.push(expiry)
   }, [targetSize, targetLife, onProgress])
+
+  // Clear any outstanding per-target expiry timers on unmount
+  useEffect(() => () => {
+    expiryTimers.current.forEach(clearTimeout)
+    expiryTimers.current = []
+  }, [])
+
+  // Clear outstanding expiry timers once the game ends so no post-completion miss fires
+  useEffect(() => {
+    if (!done) return
+    expiryTimers.current.forEach(clearTimeout)
+    expiryTimers.current = []
+  }, [done])
 
   useEffect(() => {
     if (done) return

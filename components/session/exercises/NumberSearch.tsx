@@ -89,6 +89,10 @@ export default function NumberSearch({ onComplete, onCancel, difficulty = 1, see
   const roundStartRef = useRef(Date.now())
   const wrongFlashRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const advanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Mirror found/wrong in refs so the countdown tick can read live values
+  // without re-creating its interval on every tap (which caused a soft-lock).
+  const foundIdxRef = useRef<Set<number>>(new Set())
+  const roundWrongRef = useRef(0)
 
   useEffect(() => {
     startRef.current = Date.now()
@@ -108,6 +112,10 @@ export default function NumberSearch({ onComplete, onCancel, difficulty = 1, see
     setRoundMissed(0)
     setTimeLeft(cfg.timeLimitSec)
     setRound(roundNum)
+    // Keep the refs (read by the tap-independent countdown) in sync with the
+    // fresh round.
+    foundIdxRef.current = new Set()
+    roundWrongRef.current = 0
     roundStartRef.current = Date.now()
     setPhase('playing')
   }
@@ -170,16 +178,21 @@ export default function NumberSearch({ onComplete, onCancel, difficulty = 1, see
     }, 1400)
   }, [cfg.targetCount, round, roundTimesMs, totalCorrect, totalWrong, totalMissed, finishGame])
 
-  // countdown — ends the round on timeout, crediting whatever was found so far
+  // countdown — ends the round on timeout, crediting whatever was found so far.
+  // Deps are ONLY [phase, timeLeft, endRound] — NOT foundIdx/roundWrong. Those
+  // used to be here, so every tap re-ran this effect, cleared the pending
+  // 1s setTimeout and started a fresh one; a child tapping faster than once a
+  // second reset the timer forever → the round never timed out → soft-lock.
+  // The current found/wrong counts are read from refs at timeout instead.
   useEffect(() => {
     if (phase !== 'playing') return
     if (timeLeft <= 0) {
-      endRound(foundIdx.size, roundWrong)
+      endRound(foundIdxRef.current.size, roundWrongRef.current)
       return
     }
     const t = setTimeout(() => setTimeLeft(s => s - 1), 1000)
     return () => clearTimeout(t)
-  }, [phase, timeLeft, foundIdx.size, roundWrong, endRound])
+  }, [phase, timeLeft, endRound])
 
   const handleTap = useCallback((idx: number) => {
     if (phase !== 'playing') return
@@ -190,6 +203,7 @@ export default function NumberSearch({ onComplete, onCancel, difficulty = 1, see
       const next = new Set(foundIdx)
       next.add(idx)
       setFoundIdx(next)
+      foundIdxRef.current = next
       const cumCorrect = totalCorrect + next.size
       onProgress?.({ answered: cumCorrect, total: cfg.targetCount * TOTAL_ROUNDS, correct: cumCorrect, errors: totalWrong + roundWrong, lastCorrect: true })
       if (next.size >= cfg.targetCount) {
@@ -199,6 +213,7 @@ export default function NumberSearch({ onComplete, onCancel, difficulty = 1, see
       const cumCorrect = totalCorrect + foundIdx.size
       onProgress?.({ answered: cumCorrect, total: cfg.targetCount * TOTAL_ROUNDS, correct: cumCorrect, errors: totalWrong + roundWrong + 1, lastCorrect: false })
       setRoundWrong(w => w + 1)
+      roundWrongRef.current += 1
       setWrongIdx(idx)
       if (wrongFlashRef.current) clearTimeout(wrongFlashRef.current)
       wrongFlashRef.current = setTimeout(() => setWrongIdx(null), 350)

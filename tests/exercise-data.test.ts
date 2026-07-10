@@ -4,6 +4,7 @@ import { ALL_QUESTIONS as ODD_QS } from '../components/session/exercises/OddOneO
 import { ALL as ANALOGIES } from '../components/session/exercises/AnalogiesGame'
 import { ALL as IF_THEN } from '../components/session/exercises/IfThen'
 import { ALL as SPELLING } from '../components/session/exercises/SpellingBee'
+import { ALL_QUESTIONS as RHYME } from '../components/session/exercises/RhymeDetection'
 
 // Data-validity regression tests. The comprehensive review found content
 // bugs that no type check or runtime path would catch — e.g. a ClockReading
@@ -108,6 +109,7 @@ describe('OddOneOut data', () => {
 describe.each([
   ['AnalogiesGame', ANALOGIES],
   ['IfThen', IF_THEN],
+  ['RhymeDetection', RHYME],
 ])('%s data', (_name, bank) => {
   it('no distractor equals the correct answer', () => {
     for (const q of bank) {

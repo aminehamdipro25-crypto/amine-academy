@@ -19,7 +19,7 @@ interface Question {
   wrong:   [string, string]
 }
 
-const ALL_QUESTIONS: Question[] = [
+export const ALL_QUESTIONS: Question[] = [
   { word: 'قمر',   correct: 'شجر',   wrong: ['باب',   'سمك']   },
   { word: 'بيت',   correct: 'زيت',   wrong: ['قلم',   'ولد']   },
   { word: 'ليل',   correct: 'خيل',   wrong: ['شمس',   'قمر']   },

@@ -976,7 +976,13 @@ export default function KidSessionPage() {
     }
 
     mainContent = (
-    <div style={{ width: '100vw', height: '100dvh', overflow: 'hidden', background: '#fff', position: 'relative' }}>
+    // Dark stage — MUST match the specialist's exercise stage (bg-gray-950).
+    // Many exercises are dark-themed (white text on translucent-white tiles)
+    // and paint no background of their own; on a white container they rendered
+    // white-on-white and were invisible to the child (the "spelling doesn't
+    // show" bug). Light-themed exercises paint their own full-bleed background,
+    // so they're unaffected — this makes both screens render identically.
+    <div style={{ width: '100vw', height: '100dvh', overflow: 'hidden', background: '#030712', position: 'relative' }}>
       <Suspense fallback={
         <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100%' }}>
           <div style={{ width:48, height:48, borderRadius:'50%', border:'5px solid #A78BFA', borderTopColor:'transparent', animation:'spin 0.8s linear infinite' }} />

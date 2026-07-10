@@ -14,7 +14,7 @@ interface Props {
 
 interface Q { text: string; correct: string; wrong: [string, string] }
 
-const ALL: Q[] = [
+export const ALL: Q[] = [
   { text:'القلم للكتابة مثل السكين لـ',     correct:'القطع',    wrong:['النوم',   'الطيران'] },
   { text:'السمكة في الماء مثل الطائر في',    correct:'الهواء',   wrong:['الأرض',   'النار']   },
   { text:'الليل مظلم مثل النهار',             correct:'مضيء',     wrong:['بارد',    'هادئ']    },

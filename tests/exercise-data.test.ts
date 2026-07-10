@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest'
 import { HOUR_QS, HALF_QS, QUARTER_QS } from '../components/session/exercises/ClockReading'
 import { ALL_QUESTIONS as ODD_QS } from '../components/session/exercises/OddOneOut'
+import { ALL as ANALOGIES } from '../components/session/exercises/AnalogiesGame'
+import { ALL as IF_THEN } from '../components/session/exercises/IfThen'
+import { ALL as SPELLING } from '../components/session/exercises/SpellingBee'
 
 // Data-validity regression tests. The comprehensive review found content
 // bugs that no type check or runtime path would catch — e.g. a ClockReading
@@ -94,6 +97,52 @@ describe('OddOneOut data', () => {
   it('has at least 4 items per question (a 2×2 grid)', () => {
     for (const q of ODD_QS) {
       expect(q.items.length).toBeGreaterThanOrEqual(4)
+    }
+  })
+})
+
+// Multiple-choice banks where the correct answer is mixed with distractors.
+// The critical invariant (the ClockReading-bug class): a distractor must never
+// equal the correct answer — otherwise a child picking a genuinely-correct-
+// looking choice is scored wrong.
+describe.each([
+  ['AnalogiesGame', ANALOGIES],
+  ['IfThen', IF_THEN],
+])('%s data', (_name, bank) => {
+  it('no distractor equals the correct answer', () => {
+    for (const q of bank) {
+      for (const w of q.wrong) {
+        expect(w, `correct "${q.correct}"`).not.toBe(q.correct)
+      }
+    }
+  })
+  it('the two distractors differ from each other', () => {
+    for (const q of bank) {
+      expect(q.wrong[0], q.correct).not.toBe(q.wrong[1])
+    }
+  })
+  it('correct and distractors are non-empty', () => {
+    for (const q of bank) {
+      expect(q.correct.trim().length).toBeGreaterThan(0)
+      for (const w of q.wrong) expect(w.trim().length).toBeGreaterThan(0)
+    }
+  })
+})
+
+describe('SpellingBee data', () => {
+  it('the correct spelling is present among the choices', () => {
+    for (const q of SPELLING) {
+      expect(q.choices, q.word).toContain(q.word)
+    }
+  })
+  it('choices are distinct (the correct word appears once, no duplicate)', () => {
+    for (const q of SPELLING) {
+      expect(new Set(q.choices).size, q.word).toBe(q.choices.length)
+    }
+  })
+  it('each item offers at least two choices', () => {
+    for (const q of SPELLING) {
+      expect(q.choices.length).toBeGreaterThanOrEqual(2)
     }
   })
 })

@@ -14,7 +14,7 @@ interface Props {
 
 interface Q { cause: string; emoji: string; correct: string; wrong: [string, string] }
 
-const ALL: Q[] = [
+export const ALL: Q[] = [
   // طبيعة وعلوم
   { cause:'إذا سقط الكوب على الأرض',        emoji:'🥛', correct:'ينكسر ويتسكب',                  wrong:['يطير','يكبر'] },
   { cause:'إذا زرعنا بذرة وسقيناها',         emoji:'🌱', correct:'تنمو وتصبح نباتاً',             wrong:['تذوب','تطير'] },

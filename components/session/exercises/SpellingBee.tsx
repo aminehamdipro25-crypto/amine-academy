@@ -15,7 +15,7 @@ interface Props {
 
 interface Q { word: string; emoji: string; choices: string[] }
 
-const ALL: Q[] = [
+export const ALL: Q[] = [
   { word:'قلم',  emoji:'✏️', choices:['قلم','قلن','كلم']   },
   { word:'كتاب', emoji:'📚', choices:['كتاب','كتاج','ختاب'] },
   { word:'شمس',  emoji:'☀️', choices:['شمس','شمص','سمش']   },

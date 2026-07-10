@@ -9,7 +9,7 @@ interface Question {
   explain: string
 }
 
-const ALL_QUESTIONS: Question[] = [
+export const ALL_QUESTIONS: Question[] = [
   { items: ['🐶', '🐱', '🐭', '🍎'], odd: 3, explain: 'الفاكهة تختلف عن الحيوانات' },
   { items: ['🚗', '🚌', '✈️', '🌸'], odd: 3, explain: 'الوردة ليست وسيلة نقل' },
   { items: ['🔴', '🔵', '🟡', '🍊'], odd: 3, explain: 'البرتقال ليس لوناً' },

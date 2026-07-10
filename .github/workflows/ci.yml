@@ -1,0 +1,35 @@
+name: CI
+
+# Runs on every push to main and on every pull request. Gates the two things
+# that must never regress: the TypeScript contract (the project's standing
+# "zero TS errors" rule) and the test suite (seeded-RNG determinism that keeps
+# the specialist's and child's screens identical, exercise-data validity, the
+# Daily room-name cap, auth/rate-limit helpers). To make these BLOCK a merge,
+# enable branch protection on `main` requiring the "test" check.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    name: Typecheck & test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript (zero errors required)
+        run: npx tsc --noEmit
+
+      - name: Unit tests
+        run: npm test

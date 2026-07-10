@@ -58,6 +58,10 @@ export default function EmotionCards({ onComplete, onCancel, studentAge, difficu
   const errRef     = useRef(0)
   const startRef   = useRef(Date.now())
   const timerRef   = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Ref lock so a same-tick double-tap can't run answer() twice and double-
+  // increment the score refs (the `feedback` state guard alone doesn't flush
+  // between two taps in one React batch).
+  const answeringRef = useRef(false)
 
   useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current) }, [])
 
@@ -68,7 +72,9 @@ export default function EmotionCards({ onComplete, onCancel, studentAge, difficu
   }
 
   function answer(key: string) {
-    if (feedback !== null) return
+    if (answeringRef.current || feedback !== null) return
+    answeringRef.current = true
+    if (timerRef.current) clearTimeout(timerRef.current)
     const isCorrect = key === current.target.key
     if (isCorrect) correctRef.current++
     else           errRef.current++
@@ -93,6 +99,7 @@ export default function EmotionCards({ onComplete, onCancel, studentAge, difficu
       } else {
         setTrial(next)
         setCurrent(makeTrial(rng, emotions, difficulty))
+        answeringRef.current = false   // unlock for the next trial
       }
     }, 600)
   }

@@ -10,6 +10,9 @@ import RhymeDetection from '../components/session/exercises/RhymeDetection'
 import IfThen from '../components/session/exercises/IfThen'
 import ClockReading from '../components/session/exercises/ClockReading'
 import PatternPuzzle from '../components/session/exercises/PatternPuzzle'
+import EmotionCards from '../components/session/exercises/EmotionCards'
+import LetterMatch from '../components/session/exercises/LetterMatch'
+import VisualMatch from '../components/session/exercises/VisualMatch'
 
 // Component-level regression tests for exercise SCORING and the single-fire
 // guarantee. The comprehensive review found several exercises that could call
@@ -134,9 +137,15 @@ function driveChoiceExercise(
   for (let step = 0; step < 60 && onComplete.mock.calls.length === 0; step++) {
     const choices = Array.from(container.querySelectorAll('button'))
       .filter(b => !(b as HTMLButtonElement).disabled && !CONTROL.test(b.textContent ?? ''))
-    if (choices.length > 0) {
-      // click twice — a well-guarded exercise ignores the 2nd (same-tick) tap
+    if (choices.length > 1) {
+      // A real multiple-choice question: click the first choice TWICE — a
+      // well-guarded exercise ignores the 2nd (same-tick) tap.
       act(() => { fireEvent.click(choices[0]); fireEvent.click(choices[0]) })
+    } else if (choices.length === 1) {
+      // A lone actionable button = a start ("ابدأ") or completion ("متابعة")
+      // screen. Click ONCE — in the real app that button unmounts the
+      // exercise, so double-tapping it isn't a reachable scenario.
+      act(() => { fireEvent.click(choices[0]) })
     }
     act(() => { vi.advanceTimersByTime(2500) })
   }
@@ -149,6 +158,12 @@ describe.each([
   ['IfThen', IfThen, 13],
   ['ClockReading', ClockReading, 21],
   ['PatternPuzzle', PatternPuzzle, 31],
+  ['EmotionCards', EmotionCards, 3],
+  ['LetterMatch', LetterMatch, 17],
+  ['VisualMatch', VisualMatch, 37],
+  // NOTE: LetterReversal & ShadowMatch only advance on the CORRECT answer, so
+  // the generic "click first choice" driver can't complete them — they'd need
+  // a targeted driver. Not a bug; left out of this generic suite.
 ] as const)('single-fire: %s', (_name, Comp, seed) => {
   it('drives to completion with exactly one onComplete (double-taps guarded)', () => {
     const onComplete = driveChoiceExercise(Comp as never, seed)

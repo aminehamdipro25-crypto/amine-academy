@@ -66,6 +66,7 @@ export default function VisualMatch({ onComplete, onCancel, difficulty = 1, seed
 
   const handleSelect = useCallback((idx: number) => {
     if (phase !== 'play') return
+    if (timerRef.current) clearTimeout(timerRef.current) // dedup same-tick double-tap → single onComplete
     const isCorrect = roundData.options[idx].emoji === roundData.target.emoji
     const cIdx = roundData.options.findIndex(o => o.emoji === roundData.target.emoji)
     setSelected(idx)

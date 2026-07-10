@@ -54,6 +54,7 @@ export default function LetterMatch({ onComplete, onCancel, studentAge, difficul
 
   function answer(letter: string) {
     if (feedback || done) return
+    if (timerRef.current) clearTimeout(timerRef.current) // dedup same-tick double-tap → single onComplete
     const isCorrect = letter === target.targetLetter
     setFeedback(isCorrect ? 'correct' : 'wrong')
     const nc = correct + (isCorrect ? 1 : 0)

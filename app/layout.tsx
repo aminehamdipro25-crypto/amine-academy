@@ -22,6 +22,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 5,
   viewportFit: 'cover',
+  themeColor: '#7c3aed',
 }
 
 export const metadata: Metadata = {
@@ -43,6 +44,22 @@ export const metadata: Metadata = {
     siteName: 'أكاديمية أمين الدولية',
   },
   twitter: { card: 'summary_large_image' },
+  // Home-screen / tab icons. iOS Safari uses `apple`; it doesn't read the web
+  // manifest, so the apple-touch-icon must be declared here for "Add to Home
+  // Screen" on iPhone/iPad to show the real icon instead of a screenshot.
+  icons: {
+    icon: [
+      { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icon-512.png', sizes: '512x512', type: 'image/png' },
+      { url: '/icon.svg', type: 'image/svg+xml' },
+    ],
+    apple: [{ url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
+  },
+  appleWebApp: {
+    capable: true,
+    title: 'أكاديمية أمين',
+    statusBarStyle: 'default',
+  },
   robots: { index: true, follow: true },
   verification: {
     google: process.env.GOOGLE_SITE_VERIFICATION,

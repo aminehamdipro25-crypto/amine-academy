@@ -12,6 +12,29 @@ function ActivateForm() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [done, setDone] = useState(false)
+  const [resending, setResending] = useState(false)
+  const [resendMsg, setResendMsg] = useState('')
+
+  async function resend() {
+    setError('')
+    setResendMsg('')
+    if (!email || !email.includes('@')) { setError('أدخل بريدك الإلكتروني أولاً لإعادة إرسال الرمز'); return }
+    setResending(true)
+    try {
+      const res = await fetch('/api/auth/resend-activation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim().toLowerCase() }),
+      })
+      const data = await res.json()
+      if (res.ok) setResendMsg(data.message || 'أرسلنا رمزاً جديداً إن كان بريدك مسجّلاً.')
+      else setError(data.error || 'تعذّر إرسال الرمز، حاول مجدداً')
+    } catch {
+      setError('تعذّر الاتصال، حاول مجدداً')
+    } finally {
+      setResending(false)
+    }
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
@@ -99,12 +122,31 @@ function ActivateForm() {
           </button>
         </form>
 
-        <p className="text-center text-xs text-gray-400 mt-5">
-          لم تستلم الرمز؟{' '}
-          <Link href="/parent/login" className="text-brand-600 font-bold hover:underline">
-            سجّل الدخول مباشرة
-          </Link>
-        </p>
+        {resendMsg && (
+          <div className="mt-4 bg-green-50 border border-green-100 text-green-700 text-sm font-medium px-4 py-3 rounded-xl text-center">
+            {resendMsg}
+          </div>
+        )}
+
+        <div className="text-center text-xs text-gray-400 mt-5 space-y-2">
+          <p>
+            لم تستلم الرمز؟{' '}
+            <button
+              type="button"
+              onClick={resend}
+              disabled={resending}
+              className="text-brand-600 font-bold hover:underline disabled:opacity-50"
+            >
+              {resending ? 'جارٍ الإرسال…' : 'إعادة إرسال الرمز'}
+            </button>
+          </p>
+          <p>
+            أو{' '}
+            <Link href="/parent/login" className="text-brand-600 font-bold hover:underline">
+              سجّل الدخول مباشرة
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   )

@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { useLang, tr } from '@/lib/i18n'
 import LangToggle from '@/components/shared/LangToggle'
+import InstallAppButton from '@/components/InstallAppButton'
 
 export default function StudentPortalLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
@@ -58,6 +59,7 @@ export default function StudentPortalLayout({ children }: { children: React.Reac
               <span className="text-white/80 text-xs">{t.common.day}</span>
             </div>
           )}
+          <InstallAppButton iconOnly label="ثبّت التطبيق" />
           <LangToggle />
         </div>
       </header>

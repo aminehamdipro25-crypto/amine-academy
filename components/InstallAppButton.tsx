@@ -11,7 +11,11 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
 }
 
-export default function InstallAppButton({ className, label = 'ثبّت التطبيق' }: { className?: string; label?: string }) {
+export default function InstallAppButton({
+  className,
+  label = 'ثبّت التطبيق',
+  iconOnly = false,
+}: { className?: string; label?: string; iconOnly?: boolean }) {
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null)
   const [installed, setInstalled] = useState(false)
 
@@ -48,6 +52,21 @@ export default function InstallAppButton({ className, label = 'ثبّت التط
     // Whatever they chose, the event is single-use — clear it either way.
     setDeferred(null)
     if (outcome === 'accepted') setInstalled(true)
+  }
+
+  if (iconOnly) {
+    return (
+      <button
+        type="button"
+        onClick={install}
+        title={label}
+        aria-label={label}
+        className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 transition-all hover:opacity-90 active:scale-95"
+        style={{ background: '#F3EEFF' }}
+      >
+        <Download className="w-4 h-4" style={{ color: '#7C5CFC' }} />
+      </button>
+    )
   }
 
   return (

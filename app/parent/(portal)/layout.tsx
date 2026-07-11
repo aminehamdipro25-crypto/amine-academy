@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { useLang, tr } from '@/lib/i18n'
 import LangToggle from '@/components/shared/LangToggle'
+import InstallAppButton from '@/components/InstallAppButton'
 import AcademyLogo from '@/components/shared/AcademyLogo'
 import ParentOnboarding from '@/components/parent/ParentOnboarding'
 
@@ -232,6 +233,9 @@ export default function ParentPortalLayout({ children }: { children: React.React
                 {activeItem.label}
               </span>
             )}
+
+            {/* Install app (self-hides if installed / unsupported) */}
+            <InstallAppButton iconOnly />
 
             {/* Notifications bell */}
             <div ref={bellRef} className="relative flex-shrink-0">

@@ -315,7 +315,9 @@ function RegisterForm() {
 
         <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
 
-          {/* Honeypot — off-screen, hidden from real users; only bots fill it. */}
+          {/* Honeypot — hidden from real users; only bots fill it. Uses the
+              sr-only clip recipe (NOT left:-9999px, which on an RTL page
+              stretched the document ~10000px wide and broke the layout). */}
           <input
             type="text"
             name="company"
@@ -324,7 +326,17 @@ function RegisterForm() {
             aria-hidden="true"
             value={hp}
             onChange={e => setHp(e.target.value)}
-            style={{ position: 'absolute', left: '-9999px', width: 1, height: 1, opacity: 0 }}
+            style={{
+              position: 'absolute',
+              width: '1px',
+              height: '1px',
+              padding: 0,
+              margin: '-1px',
+              overflow: 'hidden',
+              clip: 'rect(0, 0, 0, 0)',
+              whiteSpace: 'nowrap',
+              border: 0,
+            }}
           />
 
           {/* ── Step 1: Parent ── */}

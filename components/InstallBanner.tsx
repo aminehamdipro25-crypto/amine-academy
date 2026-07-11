@@ -76,28 +76,28 @@ export default function InstallBanner() {
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 90, opacity: 0 }}
           transition={{ type: 'spring', damping: 24, stiffness: 280 }}
-          className="fixed z-[60] bottom-4 inset-x-4 sm:inset-x-auto sm:right-4 sm:max-w-sm"
+          // Centered horizontally so it clears the floating chat (bottom-left) and
+          // accessibility (bottom-right) buttons; lifted above them on mobile.
+          className="fixed z-[60] left-1/2 -translate-x-1/2 bottom-24 sm:bottom-6 w-[calc(100%-2rem)] max-w-md"
           dir="rtl"
         >
           <div
-            className="bg-white rounded-2xl border border-brand-100 p-3.5 flex items-center gap-3"
+            className="bg-white rounded-2xl border border-brand-100 p-4 flex items-center gap-3"
             style={{ boxShadow: '0 20px 60px rgba(107,70,240,0.28)' }}
           >
             <div className="rounded-xl overflow-hidden flex-shrink-0 shadow-sm">
-              <AcademyLogo size={46} />
+              <AcademyLogo size={48} />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-black text-gray-900 text-sm">ثبّت تطبيق أكاديمية أمين</p>
+              <p className="font-black text-gray-900 text-sm sm:text-base whitespace-nowrap">ثبّت تطبيق أكاديمية أمين</p>
               <p className="text-gray-500 text-xs mt-0.5 leading-snug">
-                {ios
-                  ? 'اضغط زر المشاركة ⬆️ ثم «إضافة إلى الشاشة الرئيسية»'
-                  : 'وصول أسرع من شاشتك الرئيسية — بلا متجر ولا تحميل'}
+                {ios ? 'من زر المشاركة ⬆️ اختر «إضافة إلى الشاشة الرئيسية»' : 'وصول أسرع من شاشتك الرئيسية'}
               </p>
             </div>
             {!ios && (
               <button
                 onClick={install}
-                className="flex-shrink-0 inline-flex items-center gap-1.5 text-white text-sm font-black px-4 py-2 rounded-xl transition-all hover:opacity-90 active:scale-95"
+                className="flex-shrink-0 inline-flex items-center gap-1.5 text-white text-sm font-black px-5 py-2.5 rounded-xl transition-all hover:opacity-90 active:scale-95"
                 style={{ background: 'linear-gradient(135deg, #7C5CFC, #6B46F0)' }}
               >
                 <Download className="w-4 h-4" /> ثبّت

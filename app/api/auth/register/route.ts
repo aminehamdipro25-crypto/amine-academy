@@ -57,7 +57,11 @@ export async function POST(req: NextRequest) {
       phone: parent.phone?.trim() || '',
       country: parent.country || '',
       subscriptionStatus: 'pending',
-      subscriptionPlan: (['basic', 'standard', 'premium'].includes(plan) ? plan : 'basic') as 'basic' | 'standard' | 'premium',
+      // Store the plan the parent actually chose. The pricing UI uses the
+      // session/weekly/monthly vocabulary (basic/standard/premium are the legacy
+      // aliases); both are valid Parent plans. The old check only accepted the
+      // legacy set, so every registrant was silently saved as 'basic'.
+      subscriptionPlan: (['basic', 'standard', 'premium', 'session', 'weekly', 'monthly'].includes(plan) ? plan : 'weekly') as 'basic' | 'standard' | 'premium' | 'session' | 'weekly' | 'monthly',
       subscriptionExpiry: null,
       childrenIds: [],
       lastLoginAt: null,

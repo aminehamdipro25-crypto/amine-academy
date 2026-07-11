@@ -12,12 +12,18 @@ const isDev = process.env.NODE_ENV === 'development'
 // console error in every browser). Allow it everywhere Daily is allowed.
 const DAILY_ORIGINS = 'https://*.daily.co https://*.dailywebrtc.net'
 
+// Google reCAPTCHA v3 (bot protection on public signup). The api.js loader +
+// its challenge iframe come from www.google.com; supporting assets from
+// www.gstatic.com. Only active when the reCAPTCHA env keys are set — but the
+// CSP allowance is harmless when they aren't (nothing loads from these).
+const RECAPTCHA_ORIGINS = 'https://www.google.com https://www.gstatic.com'
+
 function buildCSP(frameSrc, mediaSrc) {
   return [
     "default-src 'self'",
     // Scripts: self + Next.js hydration inline scripts + Daily.co's call
     // machine bundle + wasm for Daily's audio processing
-    `script-src 'self' ${isDev ? "'unsafe-eval'" : ''} 'unsafe-inline' 'wasm-unsafe-eval' ${DAILY_ORIGINS}`,
+    `script-src 'self' ${isDev ? "'unsafe-eval'" : ''} 'unsafe-inline' 'wasm-unsafe-eval' ${DAILY_ORIGINS} ${RECAPTCHA_ORIGINS}`,
     // Styles: self + inline (Tailwind generates inline styles) + Google Fonts
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     // Fonts: self + Google Fonts
@@ -28,7 +34,7 @@ function buildCSP(frameSrc, mediaSrc) {
     // + Pusher realtime (WebSocket + SockJS HTTP fallback + stats). Without
     // the Pusher origins here, the realtime WebSocket is CSP-blocked exactly
     // the way Daily's bundle fetch was.
-    `connect-src 'self' https://*.upstash.io ${DAILY_ORIGINS} wss://*.daily.co wss://*.dailywebrtc.net wss://*.pusher.com https://*.pusher.com wss://*.pusherapp.com https://*.pusherapp.com`,
+    `connect-src 'self' https://*.upstash.io ${DAILY_ORIGINS} wss://*.daily.co wss://*.dailywebrtc.net wss://*.pusher.com https://*.pusher.com wss://*.pusherapp.com https://*.pusherapp.com ${RECAPTCHA_ORIGINS}`,
     `frame-src ${frameSrc}`,
     `media-src ${mediaSrc}`,
     // Workers: self + blob (for Next.js SW) + Daily's own workers
@@ -47,7 +53,7 @@ function buildCSP(frameSrc, mediaSrc) {
 }
 
 // General pages: only Daily.co + YouTube embeds are ever needed
-const ContentSecurityPolicy = buildCSP(`'self' ${DAILY_ORIGINS} https://www.youtube.com https://youtube.com`, "'self' blob:")
+const ContentSecurityPolicy = buildCSP(`'self' ${DAILY_ORIGINS} https://www.youtube.com https://youtube.com https://www.google.com`, "'self' blob:")
 
 // Session pages: the specialist can share ANY https:// URL via the in-session
 // "محتوى" feature, and now audio URLs via "شارك رابط صوت" (both server-

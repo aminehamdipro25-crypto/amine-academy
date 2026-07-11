@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import { getRecaptchaToken, preloadRecaptcha } from '@/lib/recaptcha-client'
 import { Loader2, Check, AlertCircle, Clock, Calendar, Brain } from 'lucide-react'
 
 // ── Zod Schemas ────────────────────────────────────────────────
@@ -153,6 +154,10 @@ function RegisterForm() {
   const [hp, setHp] = useState('')
   const formLoadedAtRef = useRef(Date.now())
 
+  // Warm up reCAPTCHA (no-op unless the site key is configured) so the token
+  // is ready instantly at submit.
+  useEffect(() => { preloadRecaptcha() }, [])
+
   // Load real prices from API settings
   useEffect(() => {
     fetch('/api/public/settings')
@@ -209,6 +214,9 @@ function RegisterForm() {
     const c = form2.getValues()
     const ctrl = new AbortController()
     const tid = setTimeout(() => ctrl.abort(), 20000)
+    // reCAPTCHA v3 token (empty string when not configured — server treats that
+    // as "skip captcha" and relies on the honeypot + timing traps).
+    const recaptchaToken = await getRecaptchaToken('register')
     try {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
@@ -236,6 +244,7 @@ function RegisterForm() {
           // Bot traps — verified server-side.
           hp,
           formLoadedAt: formLoadedAtRef.current,
+          recaptchaToken,
         }),
       })
       const data = await res.json()

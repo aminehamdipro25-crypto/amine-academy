@@ -4,6 +4,7 @@ import { hashPassword } from '@/lib/password'
 import { sendEmail, welcomeParentEmail } from '@/lib/mailer'
 import { tg, tgEsc } from '@/lib/telegram'
 import { isRateLimited, getClientIp } from '@/lib/rateLimit'
+import { verifyRecaptcha } from '@/lib/recaptcha'
 import type { AgeGroup, Diagnosis } from '@/lib/types'
 
 export const runtime = 'nodejs'
@@ -42,6 +43,12 @@ export async function POST(req: NextRequest) {
     const loadedAt = Number(body.formLoadedAt)
     if (Number.isFinite(loadedAt) && loadedAt > 0 && Date.now() - loadedAt < 2500) {
       return NextResponse.json({ error: 'يرجى إعادة المحاولة بعد لحظات' }, { status: 400 })
+    }
+    //  3) reCAPTCHA v3 — only enforced when the server key is configured;
+    //     otherwise skipped (honeypot + timing remain the active defense).
+    const captcha = await verifyRecaptcha(body.recaptchaToken, 'register')
+    if (!captcha.ok) {
+      return NextResponse.json({ error: 'تعذّر التحقق من أنك لست روبوتاً، يرجى المحاولة مجدداً' }, { status: 400 })
     }
 
     const { parent, child, plan, assessment } = body

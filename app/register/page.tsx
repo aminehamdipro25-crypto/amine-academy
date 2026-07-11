@@ -147,6 +147,11 @@ function RegisterForm() {
   const [apiPrices, setApiPrices] = useState<Record<PlanId, Record<Currency, number>> | null>(null)
   const [consent, setConsent] = useState(false)
   const formTopRef = useRef<HTMLDivElement>(null)
+  // Keyless bot traps (captcha-equivalent, no external service): a hidden
+  // honeypot field real users never see + fill, and the moment the form was
+  // shown so the API can reject inhumanly-fast submissions.
+  const [hp, setHp] = useState('')
+  const formLoadedAtRef = useRef(Date.now())
 
   // Load real prices from API settings
   useEffect(() => {
@@ -228,6 +233,9 @@ function RegisterForm() {
           // Free flow: book the assessment instead of paying. Paid flow: omit.
           ...(freeMode ? { assessment: { date: preferredDate, timeSlot: preferredSlot } } : {}),
           consentGivenAt: new Date().toISOString(),
+          // Bot traps — verified server-side.
+          hp,
+          formLoadedAt: formLoadedAtRef.current,
         }),
       })
       const data = await res.json()
@@ -297,6 +305,18 @@ function RegisterForm() {
         </div>
 
         <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+
+          {/* Honeypot — off-screen, hidden from real users; only bots fill it. */}
+          <input
+            type="text"
+            name="company"
+            tabIndex={-1}
+            autoComplete="off"
+            aria-hidden="true"
+            value={hp}
+            onChange={e => setHp(e.target.value)}
+            style={{ position: 'absolute', left: '-9999px', width: 1, height: 1, opacity: 0 }}
+          />
 
           {/* ── Step 1: Parent ── */}
           {step === 1 && (

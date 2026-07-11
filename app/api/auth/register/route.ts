@@ -30,6 +30,20 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json().catch(() => null)
     if (!body) return NextResponse.json({ error: 'بيانات غير صالحة' }, { status: 400 })
+
+    // Keyless bot protection (captcha-equivalent, no third-party service):
+    //  1) Honeypot — a hidden field only bots fill. If present, reject.
+    //  2) Submit timing — a human takes seconds to fill 3 steps; a sub-2.5s
+    //     submit is automated. Only enforced when the client sent a timestamp,
+    //     so a stale cached client is never wrongly blocked.
+    if (typeof body.hp === 'string' && body.hp.trim() !== '') {
+      return NextResponse.json({ error: 'تعذّر إتمام التسجيل، حاول مجدداً' }, { status: 400 })
+    }
+    const loadedAt = Number(body.formLoadedAt)
+    if (Number.isFinite(loadedAt) && loadedAt > 0 && Date.now() - loadedAt < 2500) {
+      return NextResponse.json({ error: 'يرجى إعادة المحاولة بعد لحظات' }, { status: 400 })
+    }
+
     const { parent, child, plan, assessment } = body
 
     step = 'validate'
@@ -57,6 +71,7 @@ export async function POST(req: NextRequest) {
       phone: parent.phone?.trim() || '',
       country: parent.country || '',
       subscriptionStatus: 'pending',
+      emailVerified: false,
       // Store the plan the parent actually chose. The pricing UI uses the
       // session/weekly/monthly vocabulary (basic/standard/premium are the legacy
       // aliases); both are valid Parent plans. The old check only accepted the

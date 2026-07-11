@@ -31,9 +31,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'الحساب غير موجود' }, { status: 404 })
     }
 
-    if (parent.subscriptionStatus === 'pending') {
-      await updateParent(parent.id, { subscriptionStatus: 'active' })
-    }
+    // Mark the email as verified (isActive), and — for the pending-on-signup
+    // case — open portal access. Login stays gated until this runs, so email
+    // verification is mandatory before any account can be used.
+    await updateParent(parent.id, {
+      emailVerified: true,
+      ...(parent.subscriptionStatus === 'pending' ? { subscriptionStatus: 'active' as const } : {}),
+    })
 
     await deleteActivationCode(email)
 

@@ -23,6 +23,11 @@ export interface Parent {
   subscriptionStatus: SubscriptionStatus
   subscriptionPlan: 'basic' | 'standard' | 'premium' | 'session' | 'weekly' | 'monthly'
   subscriptionExpiry: string | null
+  // Set true once the parent enters the emailed activation code. An explicit
+  // record that the email address was proven to be theirs, independent of
+  // subscription/payment state. Optional for backward compatibility with
+  // accounts created before this field existed.
+  emailVerified?: boolean
   childrenIds: string[]
   createdAt: string
   lastLoginAt: string | null

@@ -26,6 +26,30 @@ interface Exercise {
   contraindications?: string[]
 }
 
+// Reference-library protocols that ALSO have an interactive on-screen game the
+// specialist can run inside a live session. Keyed by the stable English title
+// (client-side, so no DB re-seed needed). id = the session picker id; ar = its
+// Arabic game label shown to the specialist.
+const PLAYABLE_MAP: Record<string, { id: string; ar: string }> = {
+  'Jumping Jacks':                    { id: 'jumping-jacks',        ar: 'القفز المتباعد' },
+  'Obstacle Circuit':                 { id: 'obstacle-circuit',     ar: 'مسار العوائق' },
+  'Balance Walk':                     { id: 'balance-walk',         ar: 'المشي على التوازن' },
+  'Cross-Lateral Crawl':              { id: 'cross-lateral',        ar: 'الزحف المتقاطع' },
+  'Ball Throw & Catch':               { id: 'ball-throw',           ar: 'رمي والتقاط الكرة' },
+  'Stretching & Flexibility':         { id: 'stretching',           ar: 'التمدد والمرونة' },
+  'Body Percussion':                  { id: 'body-percussion',      ar: 'الإيقاع الجسدي' },
+  'Simon Says — Advanced Inhibition': { id: 'simon-says',           ar: 'سايمون يقول' },
+  'Reaction Time Training':           { id: 'reaction-game',        ar: 'زمن رد الفعل' },
+  'Box Breathing 4-4-4-4':            { id: 'breathing',            ar: 'التنفس الموجّه' },
+  'Bubble Breathing':                 { id: 'breathing',            ar: 'التنفس الموجّه' },
+  'Sensory Body Scan':                { id: 'body-scan',            ar: 'مسح الجسد' },
+  'Progressive Muscle Relaxation':    { id: 'body-scan',            ar: 'مسح الجسد' },
+  '5-4-3-2-1 Grounding Technique':    { id: 'calm-corner',          ar: 'ركن الهدوء' },
+  'Animal Sound Discrimination':      { id: 'sound-discrimination', ar: 'تمييز الأصوات' },
+  'Reverse Sequence Challenge':       { id: 'sequence-memory',      ar: 'تسلسل الذاكرة' },
+  'Digital Tracking & Scan':          { id: 'visual-search',        ar: 'البحث البصري' },
+}
+
 const CATEGORY_CONFIG: Record<string, { label: string; bg: string; text: string; glow: string; icon: React.ComponentType<{className?: string}> }> = {
   motor:   { label: 'حركي',          bg: 'bg-blue-600',   text: 'text-blue-700',   glow: 'shadow-blue-500/20',   icon: Activity },
   focus:   { label: 'تركيز وانتباه', bg: 'bg-violet-600', text: 'text-violet-700', glow: 'shadow-violet-500/20', icon: Brain },
@@ -318,6 +342,12 @@ export default function ExercisesPage() {
                       <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
                       <span className="text-xs font-black text-gray-700 ltr-num">{ex.points}</span>
                     </div>
+                    {PLAYABLE_MAP[ex.title] && (
+                      <span className="flex items-center gap-1 bg-brand-600/10 text-brand-700 rounded-xl px-2.5 py-1 text-[11px] font-black"
+                        title="لهذا البروتوكول نسخة تفاعلية على الشاشة يمكن تشغيلها داخل الجلسة">
+                        🎮 لعبة
+                      </span>
+                    )}
                   </div>
 
                   {/* Tags */}
@@ -405,6 +435,16 @@ export default function ExercisesPage() {
                   <p className="text-xs font-black text-gray-400 uppercase tracking-wider mb-1.5">الوصف</p>
                   <p className="text-gray-700 text-sm leading-relaxed">{viewEx.descriptionAr}</p>
                 </div>
+
+                {/* Interactive-game cross reference */}
+                {PLAYABLE_MAP[viewEx.title] && (
+                  <div className="rounded-2xl p-4" style={{ background: 'rgba(107,70,240,0.06)', border: '1px solid rgba(107,70,240,0.2)' }}>
+                    <p className="text-xs font-black text-brand-700 mb-1">🎮 نسخة تفاعلية على الشاشة</p>
+                    <p className="text-xs text-gray-600 leading-relaxed">
+                      هذا البروتوكول له لعبة تفاعلية باسم «{PLAYABLE_MAP[viewEx.title].ar}» — اختَرها من قائمة التمارين أثناء الجلسة المباشرة مع الطفل ليلعبها على شاشته.
+                    </p>
+                  </div>
+                )}
 
                 {/* Steps */}
                 {steps.length > 0 && (

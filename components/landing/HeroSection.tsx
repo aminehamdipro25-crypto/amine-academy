@@ -6,6 +6,7 @@ import { motion } from 'framer-motion'
 import { useLang, tr, pickLang } from '@/lib/i18n'
 import LangToggle from '@/components/shared/LangToggle'
 import AcademyLogo from '@/components/shared/AcademyLogo'
+import InstallAppButton from '@/components/InstallAppButton'
 
 type SessionRole = 'owner' | 'staff' | 'parent' | 'student' | null
 
@@ -286,6 +287,10 @@ export default function HeroSection() {
               <Play className="w-4 h-4 fill-current" style={{ color: '#B99AFF' }} />
               {t.hero.cta2}
             </Link>
+            {/* Appears only when the browser can install the app (self-hides otherwise) */}
+            <InstallAppButton
+              className="flex items-center justify-center gap-2 font-bold text-base px-6 py-3.5 rounded-2xl transition-all hover:-translate-y-0.5 text-brand-700 bg-white border-[1.5px] border-brand-200 hover:bg-brand-50"
+            />
           </div>
 
           {/* Stats — inline row */}

@@ -1,8 +1,7 @@
-// Amine Academy brand mark — a stylized brain (two hemispheres) with the
-// bilingual monogram «A» + «أ» set inside it, plus a spark accent. The Latin A
-// and Arabic alef together also read as "AI", nodding to the platform's
-// AI-driven sessions. Single source of truth: change it here and it updates
-// everywhere the component is used (landing, footer, parent portal, demo).
+// Amine Academy brand mark — the original stylized brain, with a bold outline
+// «A» in its center and the Arabic «أ» nested inside the A's triangle (bilingual
+// monogram). Single source of truth: change it here and it updates everywhere
+// the component is used (landing, footer, parent portal, demo, dashboard).
 export default function AcademyLogo({ size = 44 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -18,19 +17,22 @@ export default function AcademyLogo({ size = 44 }: { size?: number }) {
         </linearGradient>
       </defs>
       <rect width="44" height="44" rx="13" fill="url(#aaLogoBg)" />
-      {/* Brain hemispheres */}
-      <g stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" fill="none" strokeLinecap="round">
-        <path d="M21.2 7.5 C13.5 7 9.5 10.5 10 16 C7.5 17.5 8 21.5 10.8 22" />
-        <path d="M22.8 7.5 C30.5 7 34.5 10.5 34 16 C36.5 17.5 36 21.5 33.2 22" />
-        <path d="M15.5 11 C13.8 12.5 14.6 14.5 16.5 14.6" />
-        <path d="M28.5 11 C30.2 12.5 29.4 14.5 27.5 14.6" />
+      {/* Brain hemispheres (the original design) */}
+      <path d="M10 26 C10 21 12 17 17 15 C17 12 19 10 22 10" stroke="rgba(255,255,255,0.6)" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+      <path d="M10 26 C10 29 11.5 31 14 31 L16 31" stroke="rgba(255,255,255,0.6)" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+      <circle cx="11.5" cy="20" r="2" fill="rgba(255,255,255,0.25)" />
+      <path d="M34 26 C34 21 32 17 27 15 C27 12 25 10 22 10" stroke="rgba(255,255,255,0.6)" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+      <path d="M34 26 C34 29 32.5 31 30 31 L28 31" stroke="rgba(255,255,255,0.6)" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+      <circle cx="32.5" cy="20" r="2" fill="rgba(255,255,255,0.25)" />
+      {/* Outline A with the Arabic أ nested inside its triangle */}
+      <g stroke="white" strokeWidth="2.2" fill="none" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M15.3 30.5 L22 16 L28.7 30.5" />
+        <path d="M18 25.3 L26 25.3" />
       </g>
-      <line x1="22" y1="8" x2="22" y2="14.5" stroke="rgba(255,255,255,0.3)" strokeWidth="1" strokeDasharray="1.4 1.4" />
-      {/* Bilingual monogram — Latin A + Arabic أ */}
-      <text x="17.3" y="33.5" fontFamily="Arial, Helvetica, sans-serif" fontSize="14.5" fontWeight="900" fill="white" textAnchor="middle">A</text>
-      <text x="27" y="33.5" fontFamily="Tahoma, Arial, sans-serif" fontSize="13.5" fontWeight="900" fill="white" textAnchor="middle">أ</text>
+      <line x1="22" y1="20.4" x2="22" y2="24.6" stroke="white" strokeWidth="1.7" strokeLinecap="round" />
+      <path d="M20.8 19 L23.2 19 L22 20.6 Z" fill="white" />
       {/* Spark */}
-      <g transform="translate(33.5, 5)">
+      <g transform="translate(30, 7)">
         <path d="M3 0 L3.7 2.3 L6 3 L3.7 3.7 L3 6 L2.3 3.7 L0 3 L2.3 2.3 Z" fill="url(#aaLogoStar)" opacity="0.95" />
       </g>
     </svg>

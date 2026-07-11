@@ -34,20 +34,25 @@ export default function Image() {
             border: '1px solid rgba(255,255,255,0.3)',
           }}
         >
-          {/* Brain icon placeholder */}
+          {/* Brand mark — bilingual A + أ monogram on the brand gradient */}
           <div
             style={{
-              width: 96,
-              height: 96,
-              borderRadius: 24,
-              background: 'white',
+              width: 120,
+              height: 120,
+              borderRadius: 32,
+              background: 'linear-gradient(135deg, #7C5CFC 0%, #5B8EFF 55%, #2ABFA3 100%)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: 56,
+              gap: 6,
+              color: 'white',
+              fontSize: 66,
+              fontWeight: 900,
+              boxShadow: '0 8px 30px rgba(0,0,0,0.15)',
             }}
           >
-            🧠
+            <span>A</span>
+            <span>أ</span>
           </div>
 
           {/* Title */}

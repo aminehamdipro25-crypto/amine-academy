@@ -4,10 +4,11 @@ import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import {
   LayoutDashboard, Users, Dumbbell, Calendar,
-  BarChart3, FileText, LogOut, Brain,
+  BarChart3, FileText, LogOut,
   ClipboardList, BookOpen, Settings, CreditCard, MessageSquare,
   Zap, UserCog, PersonStanding, Target, ShieldAlert, ScrollText,
 } from 'lucide-react'
+import AcademyLogo from '@/components/shared/AcademyLogo'
 import { useLang, tr } from '@/lib/i18n'
 
 export default function AdminSidebar({ onClose, unreadMessages = 0 }: { onClose?: () => void; unreadMessages?: number }) {
@@ -49,8 +50,8 @@ export default function AdminSidebar({ onClose, unreadMessages = 0 }: { onClose?
       {/* Logo */}
       <div className="px-5 py-5 border-b border-gray-100">
         <div className="flex items-center gap-3">
-          <div className="relative w-10 h-10 flex-shrink-0 rounded-xl bg-[#6B46F0] flex items-center justify-center shadow-md">
-            <Brain className="w-5 h-5 text-white" />
+          <div className="relative flex-shrink-0 shadow-md rounded-xl overflow-hidden">
+            <AcademyLogo size={40} />
           </div>
           <div>
             <div className="text-gray-900 font-black text-sm leading-none tracking-tight">أكاديمية أمين</div>

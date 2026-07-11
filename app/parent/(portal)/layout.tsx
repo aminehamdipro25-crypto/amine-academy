@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, Users, LineChart, Calendar, MessageSquare, FileText,
   LogOut, Dumbbell, Bell, ClipboardCheck, ChevronDown, Sparkles,
-  UserCircle, Zap, Home, MoreHorizontal, X,
+  UserCircle, Zap, Home, MoreHorizontal, X, BookOpen,
 } from 'lucide-react'
 import { useLang, tr } from '@/lib/i18n'
 import LangToggle from '@/components/shared/LangToggle'
@@ -42,6 +42,7 @@ export default function ParentPortalLayout({ children }: { children: React.React
   const secondaryNav = [
     { href: '/parent/progress',           label: t.parentNav.progress,        icon: LineChart,      color: '#3B82F6', bg: '#DBEAFE' },
     { href: '/parent/assessment',         label: t.parentNav.assessment,      icon: ClipboardCheck, color: '#F59E0B', bg: '#FEF3C7' },
+    { href: '/parent/stories',            label: t.parentNav.stories,         icon: BookOpen,       color: '#7C3AED', bg: '#EDE9FE' },
     { href: '/parent/practice',           label: t.parentNav.practice,        icon: Sparkles,       color: '#EC4899', bg: '#FCE7F3' },
     { href: '/parent/family-challenge',   label: t.parentNav.familyChallenge, icon: Sparkles,       color: '#10B981', bg: '#D1FAE5' },
     { href: '/parent/upgrade-plan',       label: t.parentNav.upgradePlan,     icon: Zap,            color: '#F97316', bg: '#FFEDD5' },

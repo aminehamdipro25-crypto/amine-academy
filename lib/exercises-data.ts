@@ -74,7 +74,7 @@ export const DEFAULT_EXERCISES: Omit<Exercise, 'id' | 'createdAt'>[] = [
     title: 'Bubble Breathing',
     titleAr: 'تنفس الفقاعات',
     description: 'Slow diaphragmatic breathing to activate the parasympathetic system and sharpen focus',
-    descriptionAr: 'تنفس بطني بطيء لتنشيط الجهاز العصبي السمبثاوي وتحسين التركيز',
+    descriptionAr: 'تنفس بطني بطيء لتنشيط الجهاز العصبي الباراسمبثاوي (نظير الوَدّي) وتحسين التركيز',
     category: 'focus',
     ageGroups: ['5-11'],
     diagnoses: ['ADHD', 'AUTISM', 'ADHD+AUTISM'],
@@ -96,7 +96,7 @@ export const DEFAULT_EXERCISES: Omit<Exercise, 'id' | 'createdAt'>[] = [
     equipment: ['bubble wand (optional)'],
     contraindications: ['respiratory conditions'],
     psychologyObjective: 'Activate parasympathetic nervous system; the extended exhale reduces cortisol and prepares prefrontal cortex for focused work',
-    psychologyObjectiveAr: 'تنشيط الجهاز العصبي السمبثاوي؛ الزفير الممتد يخفض الكورتيزول ويهيئ الفص الجبهي للتركيز',
+    psychologyObjectiveAr: 'تنشيط الجهاز العصبي الباراسمبثاوي (نظير الوَدّي)؛ الزفير الممتد يخفض الكورتيزول ويهيئ الفص الجبهي للتركيز',
   },
   {
     title: 'Stop & Listen Game',
@@ -309,8 +309,8 @@ export const DEFAULT_EXERCISES: Omit<Exercise, 'id' | 'createdAt'>[] = [
     ],
     equipment: [],
     contraindications: ['asthma', 'respiratory conditions'],
-    psychologyObjective: 'Rapidly shift autonomic nervous system from sympathetic (fight/flight) to parasympathetic state; proven to reduce anxiety and restore prefrontal cortex function within 90 seconds',
-    psychologyObjectiveAr: 'تحويل سريع للجهاز العصبي اللاإرادي من حالة التعاطف (قتال/هروب) إلى حالة السمبثاوي؛ مثبت علمياً في تخفيض القلق واستعادة وظيفة الفص الجبهي خلال 90 ثانية',
+    psychologyObjective: 'Rapidly shift autonomic nervous system from sympathetic (fight/flight) toward a parasympathetic state; helps reduce anxiety and restore prefrontal cortex function',
+    psychologyObjectiveAr: 'تحويل سريع للجهاز العصبي اللاإرادي من حالة الوَدّي (قتال/هروب) إلى حالة الباراسمبثاوي (نظير الوَدّي)؛ يساعد على تخفيض القلق واستعادة وظيفة الفص الجبهي',
   },
   {
     title: 'Focused Listening Protocol',
@@ -436,7 +436,7 @@ export const DEFAULT_EXERCISES: Omit<Exercise, 'id' | 'createdAt'>[] = [
     equipment: ['yoga mat', 'text passage'],
     contraindications: ['cardiac conditions'],
     psychologyObjective: 'Integrates the full neurological reset cycle: parasympathetic activation → dopamine boost → prefrontal engagement → somatic consolidation; evidence base: Ratey J., "Spark" (2008)',
-    psychologyObjectiveAr: 'يدمج دورة إعادة الضبط العصبي الكاملة: تنشيط سمبثاوي → رفع دوبامين → إشراك الفص الجبهي → توطيد جسدي؛ المرجع العلمي: Ratey J.، "Spark" (2008)',
+    psychologyObjectiveAr: 'يدمج دورة إعادة الضبط العصبي الكاملة: تنشيط باراسمبثاوي → رفع دوبامين → إشراك الفص الجبهي → توطيد جسدي؛ المرجع العلمي: Ratey J.، "Spark" (2008)',
   },
   {
     title: 'Distraction Inoculation Training',
@@ -559,7 +559,7 @@ export const DEFAULT_EXERCISES: Omit<Exercise, 'id' | 'createdAt'>[] = [
     ],
     equipment: ['zone chart poster', 'stress ball'],
     contraindications: [],
-    psychologyObjective: 'Lewin & Kuypers Zone of Regulation framework: builds interoceptive awareness, emotional vocabulary, and self-regulation without shame — bridges feeling and action',
+    psychologyObjective: 'Kuypers\' Zone of Regulation framework (2011): builds interoceptive awareness, emotional vocabulary, and self-regulation without shame — bridges feeling and action',
     psychologyObjectiveAr: 'إطار مناطق التنظيم: يبني الوعي الداخلي بالجسم، المفردات العاطفية، والتنظيم الذاتي دون إحساس بالخجل — يجسر الشعور والفعل',
   },
 
@@ -695,8 +695,8 @@ export const DEFAULT_EXERCISES: Omit<Exercise, 'id' | 'createdAt'>[] = [
     ],
     equipment: ['score card'],
     contraindications: [],
-    psychologyObjective: 'Baddeley\'s working memory model: phonological loop + visuospatial sketchpad training via reverse span increases central executive capacity, shown to reduce ADHD symptoms (Cogmed meta-analysis, 2014)',
-    psychologyObjectiveAr: 'نموذج الذاكرة العاملة لباديلي: تدريب الحلقة الصوتية والمفكرة البصرية عبر الامتداد المعكوس يزيد سعة المدير التنفيذي المركزي، ثبت تقليله أعراض ADHD (تحليل كوغميد، 2014)',
+    psychologyObjective: 'Baddeley\'s working memory model: phonological loop + visuospatial sketchpad training via reverse span exercises central executive capacity, with evidence for near-transfer gains on trained working-memory tasks',
+    psychologyObjectiveAr: 'نموذج الذاكرة العاملة لباديلي: تدريب الحلقة الصوتية والمفكرة البصرية عبر الامتداد المعكوس يُمرّن سعة المدير التنفيذي المركزي، مع أدلة على مكاسب قريبة النقل في مهام الذاكرة العاملة المُدرَّبة',
   },
 
   // ══════════════════════════════════════════════════════════════
@@ -731,8 +731,8 @@ export const DEFAULT_EXERCISES: Omit<Exercise, 'id' | 'createdAt'>[] = [
     ],
     equipment: ['conversation cards'],
     contraindications: [],
-    psychologyObjective: 'PEERS UCLA protocol (Laugeson 2014): only evidence-based social skills program with RCT for ASD teens showing 88% success in friendship quality at 5-year follow-up',
-    psychologyObjectiveAr: 'بروتوكول PEERS جامعة UCLA (لوجيسون 2014): البرنامج الوحيد للمهارات الاجتماعية المعتمد بدراسة عشوائية مضبوطة يُظهر نجاحاً 88% في جودة الصداقة في متابعة 5 سنوات',
+    psychologyObjective: 'PEERS UCLA protocol (Laugeson 2014): an evidence-based social skills program with randomized-controlled-trial support for ASD teens, improving friendship quality and social engagement',
+    psychologyObjectiveAr: 'بروتوكول PEERS جامعة UCLA (لوجيسون 2014): برنامج للمهارات الاجتماعية مدعوم بدراسات عشوائية مضبوطة لدى المراهقين ذوي اضطراب طيف التوحد، يحسّن جودة الصداقة والانخراط الاجتماعي',
   },
 
   // ══════════════════════════════════════════════════════════════
@@ -835,8 +835,8 @@ export const DEFAULT_EXERCISES: Omit<Exercise, 'id' | 'createdAt'>[] = [
     ],
     equipment: ['metronome app (free)', 'floor space'],
     contraindications: ['hearing impairment — use visual metronome'],
-    psychologyObjective: 'Interactive Metronome studies (Shaffer 2001): timing training reduces ADHD symptoms by 35% through cerebellar-prefrontal loop strengthening, improving temporal processing fundamental to attention and impulse control',
-    psychologyObjectiveAr: 'دراسات الميترونوم التفاعلي (شافر 2001): يقلل تدريب التوقيت أعراض ADHD بنسبة 35% عبر تقوية الحلقة المخيخية-الجبهية، مما يحسن المعالجة الزمنية الأساسية للانتباه وكبح الاندفاعية',
+    psychologyObjective: 'Interactive Metronome studies (Shaffer 2001): timing training can reduce ADHD symptoms through cerebellar-prefrontal loop strengthening, improving temporal processing fundamental to attention and impulse control',
+    psychologyObjectiveAr: 'دراسات الميترونوم التفاعلي (شافر 2001): قد يقلل تدريب التوقيت أعراض ADHD عبر تقوية الحلقة المخيخية-الجبهية، مما يحسن المعالجة الزمنية الأساسية للانتباه وكبح الاندفاعية',
   },
 
   // ══════════════════════════════════════════════════════════════
@@ -845,8 +845,8 @@ export const DEFAULT_EXERCISES: Omit<Exercise, 'id' | 'createdAt'>[] = [
   {
     title: 'Deep Pressure & Proprioceptive Reset',
     titleAr: 'بروتوكول الضغط العميق وإعادة ضبط الحس العميق',
-    description: 'Wilbarger Deep Pressure Protocol: structured deep-touch input to arms/back/legs calms the nervous system within 90 seconds — evidence-based sensory diet for hyper/hyposensitive children',
-    descriptionAr: 'بروتوكول ويلبارجر للضغط العميق: مدخلات لمس عميق منظمة على الذراعين/الظهر/الساقين تهدئ الجهاز العصبي في 90 ثانية — نظام غذاء حسي معتمد للأطفال فرطي/ناقصي الحساسية',
+    description: 'Wilbarger-style Deep Pressure Protocol: structured deep-touch input to arms/back/legs aims to calm the nervous system as part of a sensory diet for hyper/hyposensitive children (apply only under OT guidance)',
+    descriptionAr: 'بروتوكول ويلبارجر للضغط العميق: مدخلات لمس عميق منظمة على الذراعين/الظهر/الساقين تهدف إلى تهدئة الجهاز العصبي ضمن نظام حسي منظّم للأطفال فرطي/ناقصي الحساسية (يُطبَّق بإشراف مختص علاج وظيفي)',
     category: 'sensory',
     ageGroups: ['5-11', '12-17'],
     diagnoses: ['AUTISM', 'ADHD+AUTISM'],
@@ -1072,9 +1072,9 @@ export const DEFAULT_EXERCISES: Omit<Exercise, 'id' | 'createdAt'>[] = [
       'المرحلة 5 — التهدئة (5 دقائق): عرضيات بطيئة مع تنفس يقظ، اخرج ببطء',
     ],
     equipment: ['swimming pool', 'kickboard', 'nose clip if needed'],
-    contraindications: ['ear infections', 'open wounds', 'seizure disorder without supervision'],
-    psychologyObjective: 'Water\'s hydrostatic pressure provides full-body deep pressure equivalent to weighted vest therapy; rhythmic bilateral movements activate cerebellum-prefrontal circuits; 20 min of aerobic swimming = 3-4 hour ADHD symptom reduction (Verret 2012)',
-    psychologyObjectiveAr: 'ضغط الماء الهيدروستاتيكي يوفر ضغطاً عميقاً كاملاً للجسم مكافئاً لعلاج السترة الثقيلة؛ الحركات الثنائية الإيقاعية تنشط دوائر المخيخ-الجبهية؛ 20 دقيقة سباحة هوائية = تخفيض أعراض ADHD لـ4-3 ساعات (فيريت 2012)',
+    contraindications: ['requires constant 1:1 adult/lifeguard supervision at all times', 'child who cannot swim or lacks water-safety skills (high drowning/elopement risk)', 'ear infections', 'open wounds', 'seizure disorder'],
+    psychologyObjective: 'Water\'s hydrostatic pressure provides full-body deep-pressure input similar to weighted-vest therapy; rhythmic bilateral movements engage cerebellum-prefrontal circuits; aerobic swimming supports attention and arousal regulation (Verret 2012)',
+    psychologyObjectiveAr: 'ضغط الماء الهيدروستاتيكي يوفر ضغطاً عميقاً كاملاً للجسم مشابهاً لعلاج السترة الثقيلة؛ الحركات الثنائية الإيقاعية تُشرِك دوائر المخيخ-الجبهية؛ السباحة الهوائية تدعم تنظيم الانتباه والإثارة (فيريت 2012)',
   },
 
   // ══════════════════════════════════════════════════════════════
@@ -1129,7 +1129,7 @@ export const DEFAULT_EXERCISES: Omit<Exercise, 'id' | 'createdAt'>[] = [
       'Cat-Cow (1 min): on hands and knees, arch back up (cat) then sag down (cow), sync with breathing',
       'Warrior I (1 min each side): step forward, arms up, hold still — feel the strength',
       'Tree Pose (1 min each foot): balance on one foot, hands in prayer — use a wall if needed',
-      'Downward Dog (1 min): hips up, back flat, push through hands — child calls it "mountain pose"',
+      'Downward Dog (1 min): hips up, back flat, push through hands — body makes an upside-down V',
       'Corpse Pose / Relaxation (3 min): lie flat, eyes closed, no movement — professor narrates body scan',
     ],
     instructionsAr: [
@@ -1141,8 +1141,8 @@ export const DEFAULT_EXERCISES: Omit<Exercise, 'id' | 'createdAt'>[] = [
     ],
     equipment: ['yoga mat or soft floor'],
     contraindications: ['joint hypermobility — avoid deep stretches', 'balance disorders without support'],
-    psychologyObjective: 'Jensen & Kenny (2004) RCT: 20-session yoga program reduced ADHD symptoms by 31%; vestibular input from balance poses + controlled breathing activates parasympathetic system within 90 seconds',
-    psychologyObjectiveAr: 'تجربة معشاة (جنسن وكيني 2004): برنامج يوغا 20 جلسة قلّص أعراض ADHD بنسبة 31%؛ المدخلات الدهليزية من أوضاع التوازن + التنفس المتحكم ينشط الجهاز السمبثاوي في 90 ثانية',
+    psychologyObjective: 'Jensen & Kenny (2004) RCT: a 20-session yoga program improved ADHD symptom measures; vestibular input from balance poses + controlled breathing helps activate the parasympathetic system',
+    psychologyObjectiveAr: 'تجربة معشاة (جنسن وكيني 2004): برنامج يوغا من 20 جلسة حسّن مقاييس أعراض ADHD؛ المدخلات الدهليزية من أوضاع التوازن + التنفس المتحكم تساعد على تنشيط الجهاز الباراسمبثاوي (نظير الوَدّي)',
   },
 
   // ══════════════════════════════════════════════════════════════
@@ -1211,8 +1211,8 @@ export const DEFAULT_EXERCISES: Omit<Exercise, 'id' | 'createdAt'>[] = [
     ],
     equipment: [],
     contraindications: [],
-    psychologyObjective: 'CBT sensory grounding: interrupts the amygdala hijack by forcing prefrontal cortex engagement through deliberate sensory cataloguing; Shapiro (2018) shows 73% reduction in acute anxiety within 2 minutes',
-    psychologyObjectiveAr: 'التأريض الحسي CBT: يقاطع اختطاف اللوزة الدماغية بإجبار الفص الجبهي على الانخراط من خلال الجرد الحسي المتعمد؛ شابيرو (2018) يُظهر انخفاضاً بنسبة 73% في القلق الحاد خلال دقيقتين',
+    psychologyObjective: 'CBT sensory grounding: interrupts the amygdala hijack by engaging the prefrontal cortex through deliberate sensory cataloguing; grounding techniques of this kind help reduce acute anxiety (Shapiro 2018)',
+    psychologyObjectiveAr: 'التأريض الحسي CBT: يقاطع اختطاف اللوزة الدماغية بإشراك الفص الجبهي من خلال الجرد الحسي المتعمد؛ تساعد تقنيات التأريض من هذا النوع على تخفيف القلق الحاد (شابيرو 2018)',
   },
 
   // ══════════════════════════════════════════════════════════════
@@ -1347,8 +1347,8 @@ export const DEFAULT_EXERCISES: Omit<Exercise, 'id' | 'createdAt'>[] = [
     ],
     equipment: ['mat or smooth floor'],
     contraindications: ['knee pain', 'wrist injury'],
-    psychologyObjective: 'Cross-lateral movement enhances interhemispheric communication via the corpus callosum — Brain Gym research and Dennison (2010) report improved reading, coordination, and attention following regular cross-lateral activities',
-    psychologyObjectiveAr: 'الحركة المتقاطعة تُعزز التواصل بين نصفَي الدماغ عبر الجسم الثفني — أبحاث Brain Gym ودينيسون (2010) يوثّقان تحسّن القراءة والتنسيق والانتباه بعد تمارين متقاطعة منتظمة',
+    psychologyObjective: 'Cross-lateral (contralateral) movements — where a limb crosses the body midline — build bilateral motor coordination, body awareness, and sustained attention through a structured, rhythmic sequence children can follow',
+    psychologyObjectiveAr: 'الحركات المتقاطعة (عبور الطرف لمنتصف الجسم) تبني التناسق الحركي الثنائي والوعي بالجسم والانتباه المستمر عبر تسلسل منظّم وإيقاعي يسهل على الطفل متابعته',
   },
 
   // ══════════════════════════════════════════════════════════════

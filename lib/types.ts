@@ -132,6 +132,10 @@ export interface Appointment {
   meetingUrl?: string
   notes: string
   createdAt: string
+  // True when this is the free intake/assessment session a parent booked at
+  // sign-up (before any payment). Lets the specialist tell a free first-visit
+  // apart from a paid session in the appointments list.
+  isFreeIntake?: boolean
 }
 
 // ── Progress Report ───────────────────────────────────────────

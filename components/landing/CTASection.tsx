@@ -93,7 +93,7 @@ export default function CTASection() {
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 sm:gap-4 mb-6">
           <motion.div whileHover={{ y: -2 }} whileTap={{ scale: 0.97 }}>
             <Link
-              href="/#plans"
+              href="/register?free=1"
               className="flex items-center justify-center gap-2 font-black text-base sm:text-lg px-8 py-3.5 sm:py-4 rounded-2xl transition-colors"
               style={{
                 background: '#6B46F0',

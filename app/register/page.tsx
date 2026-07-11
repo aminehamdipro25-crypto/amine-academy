@@ -124,12 +124,21 @@ const STEPS = [
   { id: 3, label: 'اختيار الخطة' },
 ]
 
+// Preferred time slots offered for the free assessment session. The specialist
+// confirms/adjusts the exact time afterwards, so these are "requested" windows.
+const ASSESSMENT_SLOTS = ['16:00-16:45', '17:00-17:45', '18:00-18:45', '19:00-19:45', '20:00-20:45']
+
 function RegisterForm() {
   const router       = useRouter()
   const searchParams = useSearchParams()
   const [step, setStep]       = useState(1)
   const [loading, setLoading] = useState(false)
   const [apiError, setApiError] = useState('')
+  // Free assessment flow (?free=1) — the parent books a free first session
+  // instead of choosing a paid plan. Everything else in the form is identical.
+  const freeMode = searchParams.get('free') === '1'
+  const [preferredDate, setPreferredDate] = useState('')
+  const [preferredSlot, setPreferredSlot] = useState('')
   // Pre-select plan from URL param (e.g. /register?plan=weekly&currency=QAR)
   const urlPlan = searchParams.get('plan') as PlanId | null
   const urlCurrency = (searchParams.get('currency') as Currency | null) ?? 'QAR'
@@ -216,20 +225,27 @@ function RegisterForm() {
             audioSensitivity: c.audioSensitivity,
           },
           plan,
+          // Free flow: book the assessment instead of paying. Paid flow: omit.
+          ...(freeMode ? { assessment: { date: preferredDate, timeSlot: preferredSlot } } : {}),
           consentGivenAt: new Date().toISOString(),
         }),
       })
       const data = await res.json()
       if (res.ok) {
-        // Go directly to payment — pass plan + pre-fill contact info
-        const qs = new URLSearchParams({
-          plan,
-          currency,
-          email: p.email,
-          name:  `${p.firstName} ${p.lastName}`,
-          phone: p.phone,
-        }).toString()
-        router.push(`/checkout?${qs}`)
+        if (freeMode) {
+          // Free assessment booked — confirmation screen, no payment.
+          router.push('/register/success?free=1')
+        } else {
+          // Go directly to payment — pass plan + pre-fill contact info
+          const qs = new URLSearchParams({
+            plan,
+            currency,
+            email: p.email,
+            name:  `${p.firstName} ${p.lastName}`,
+            phone: p.phone,
+          }).toString()
+          router.push(`/checkout?${qs}`)
+        }
       } else {
         setApiError(data.error || 'حدث خطأ — يرجى المحاولة مجدداً')
       }
@@ -259,7 +275,9 @@ function RegisterForm() {
         {/* Header */}
         <div className="text-center mb-8">
           <Link href="/" className="text-brand-600 font-black text-2xl">أكاديمية أمين</Link>
-          <p className="text-gray-500 text-sm mt-2">إنشاء حساب جديد</p>
+          <p className="text-gray-500 text-sm mt-2">
+            {freeMode ? '🎁 احجز جلستك التقييمية المجانية — بدون دفع' : 'إنشاء حساب جديد'}
+          </p>
         </div>
 
         {/* Steps */}
@@ -271,7 +289,7 @@ function RegisterForm() {
                 step > s.id  ? 'bg-green-500 text-white' : 'bg-gray-100 text-white'
               }`}>
                 {step > s.id ? <Check className="w-3.5 h-3.5" /> : <span className="ltr-num">{s.id}</span>}
-                <span className="hidden sm:inline">{s.label}</span>
+                <span className="hidden sm:inline">{freeMode && s.id === 3 ? 'حجز الجلسة المجانية' : s.label}</span>
               </div>
               {i < STEPS.length - 1 && <div className="w-6 h-px bg-gray-200" />}
             </div>
@@ -426,8 +444,52 @@ function RegisterForm() {
             </div>
           )}
 
-          {/* ── Step 3: Plan ── */}
-          {step === 3 && (
+          {/* ── Step 3 (free flow): Book the assessment session ── */}
+          {step === 3 && freeMode && (
+            <div className="space-y-4" dir="rtl">
+              <div className="rounded-2xl p-4" style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.3)' }}>
+                <h2 className="font-black text-xl text-gray-900 mb-1">🎁 جلستك التقييمية المجانية</h2>
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  أول لقاء تعريفي وتقييم مع الأستاذ أمين — <b>مجاناً وبدون أي التزام</b>.
+                  اختر يوماً ووقتاً مفضّلاً وسنؤكّد الموعد معك.
+                </p>
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">اليوم المفضّل</label>
+                <input
+                  type="date"
+                  value={preferredDate}
+                  min={new Date(Date.now() + 86400000).toISOString().slice(0, 10)}
+                  onChange={e => setPreferredDate(e.target.value)}
+                  className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-gray-900 focus:border-brand-500 outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">الوقت المفضّل</label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {ASSESSMENT_SLOTS.map(slot => (
+                    <button
+                      key={slot}
+                      type="button"
+                      onClick={() => setPreferredSlot(slot)}
+                      className="px-3 py-2.5 rounded-xl border-2 text-sm font-bold ltr-num transition-all"
+                      style={preferredSlot === slot
+                        ? { border: '2px solid #10B981', background: 'rgba(16,185,129,0.08)', color: '#047857' }
+                        : { border: '2px solid #E5E7EB', background: '#fff', color: '#374151' }}
+                    >
+                      {slot.replace('-', ' - ')}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <p className="text-xs text-gray-400 text-center pt-1">
+                لن تُطالَب بأي دفع في هذه الخطوة — الجلسة التقييمية مجانية بالكامل.
+              </p>
+            </div>
+          )}
+
+          {/* ── Step 3 (paid flow): Plan ── */}
+          {step === 3 && !freeMode && (
             <div className="space-y-4" dir="rtl">
               <div className="flex items-center justify-between mb-1">
                 <h2 className="font-black text-xl text-gray-900">اختر خطتك</h2>
@@ -566,12 +628,20 @@ function RegisterForm() {
                 className="flex-1 bg-brand-600 text-white font-bold py-3 rounded-xl hover:bg-brand-700 transition-colors">
                 التالي ←
               </button>
-            ) : (
-              <button type="button" onClick={handleSubmit} disabled={loading || !consent}
-                className={`flex-1 bg-brand-600 text-white font-bold py-3 rounded-xl transition-colors ${(loading || !consent) ? 'opacity-60 cursor-not-allowed' : 'hover:bg-brand-700'}`}>
-                {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : !consent ? 'يجب الموافقة على سياسة الخصوصية' : 'إكمال التسجيل ✓'}
-              </button>
-            )}
+            ) : (() => {
+              const missingBooking = freeMode && (!preferredDate || !preferredSlot)
+              const disabled = loading || !consent || missingBooking
+              return (
+                <button type="button" onClick={handleSubmit} disabled={disabled}
+                  className={`flex-1 bg-brand-600 text-white font-bold py-3 rounded-xl transition-colors ${disabled ? 'opacity-60 cursor-not-allowed' : 'hover:bg-brand-700'}`}>
+                  {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" />
+                    : !consent ? 'يجب الموافقة على سياسة الخصوصية'
+                    : missingBooking ? 'اختر يوماً ووقتاً للجلسة'
+                    : freeMode ? 'احجز الجلسة المجانية 🎁'
+                    : 'إكمال التسجيل ✓'}
+                </button>
+              )
+            })()}
           </div>
         </div>
 

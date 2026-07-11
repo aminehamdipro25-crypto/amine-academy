@@ -302,10 +302,18 @@ export default function AppointmentsView({ appointments, parents, error }: {
                       </p>
                     </div>
                   </div>
-                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-black ${status.badge}`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
-                    {status.label}
-                  </span>
+                  <div className="flex flex-col items-end gap-1">
+                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-black ${status.badge}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
+                      {status.label}
+                    </span>
+                    {appt.isFreeIntake && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200"
+                        title="جلسة تقييمية مجانية حجزها الولي عند التسجيل (قبل الاشتراك)">
+                        🎁 تقييم مجاني
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 {/* Date + time block */}

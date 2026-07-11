@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createParent, getParentByEmail, createStudent, updateParent, createActivationCode } from '@/lib/db'
+import { createParent, getParentByEmail, createStudent, updateParent, createActivationCode, createAppointment } from '@/lib/db'
 import { hashPassword } from '@/lib/password'
 import { sendEmail, welcomeParentEmail } from '@/lib/mailer'
 import { tg, tgEsc } from '@/lib/telegram'
@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json().catch(() => null)
     if (!body) return NextResponse.json({ error: 'بيانات غير صالحة' }, { status: 400 })
-    const { parent, child, plan } = body
+    const { parent, child, plan, assessment } = body
 
     step = 'validate'
     if (!parent?.email?.trim() || !parent?.password || !parent?.firstName?.trim() || !parent?.lastName?.trim())
@@ -112,19 +112,47 @@ export async function POST(req: NextRequest) {
       console.warn('[register] email skipped:', (mailErr as Error).message)
     }
 
+    // Free assessment booking — when the parent came through the "free
+    // assessment session" flow they pick a preferred date/time instead of paying.
+    // Create it as an intake appointment the specialist confirms. A taken slot
+    // (or any Redis hiccup) must NOT fail the whole registration — the account
+    // is already created; the specialist can schedule manually.
+    step = 'assessment'
+    let assessmentBooked = false
+    if (assessment?.date && assessment?.timeSlot) {
+      try {
+        await createAppointment({
+          parentId: newParent.id,
+          studentId: student.id,
+          date: String(assessment.date),
+          timeSlot: String(assessment.timeSlot),
+          type: 'assessment',
+          isFreeIntake: true,
+          status: 'scheduled',
+          meetingUrl: '',
+          notes: 'جلسة تقييمية مجانية — أول لقاء تعريفي وتقييم (قبل الاشتراك)',
+        })
+        assessmentBooked = true
+      } catch (apptErr) {
+        console.warn('[register] free assessment not booked:', (apptErr as Error).message)
+      }
+    }
+
     // Telegram notification (non-blocking)
     tg(
-      `🆕 <b>تسجيل جديد!</b>\n\n` +
+      `🆕 <b>${assessment ? 'حجز جلسة تقييمية مجانية!' : 'تسجيل جديد!'}</b>\n\n` +
       `👤 ${tgEsc(newParent.firstName)} ${tgEsc(newParent.lastName)}\n` +
       `📧 ${tgEsc(newParent.email)}\n` +
       `📱 ${tgEsc(newParent.phone || 'لم يُذكر')}\n` +
       `🧒 الطفل: ${tgEsc(student.firstName)} ${tgEsc(student.lastName)}\n` +
       `🏷 التشخيص: ${tgEsc(student.diagnosis)} | العمر: ${tgEsc(student.ageGroup)}\n` +
-      `📦 الخطة: ${tgEsc(newParent.subscriptionPlan)}\n` +
+      (assessment
+        ? `🎁 تقييم مجاني${assessmentBooked ? `: ${tgEsc(String(assessment.date))} ${tgEsc(String(assessment.timeSlot))}` : ' — يحتاج جدولة يدوية (الوقت المطلوب محجوز)'}\n`
+        : `📦 الخطة: ${tgEsc(newParent.subscriptionPlan)}\n`) +
       `🕐 ${new Date().toLocaleString('fr-FR', { timeZone: 'Asia/Qatar' })}`
     ).catch(() => {})
 
-    return NextResponse.json({ ok: true, parentId: newParent.id })
+    return NextResponse.json({ ok: true, parentId: newParent.id, assessment: !!assessment, booked: assessmentBooked })
   } catch (err) {
     const msg = (err as Error).message || String(err)
     console.error(`[register] failed at step="${step}":`, msg)

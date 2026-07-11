@@ -238,7 +238,7 @@ export default function InteractiveSessionSection() {
         {/* CTA */}
         <div className="text-center">
           <Link
-            href="/register"
+            href="/register?free=1"
             className="inline-flex items-center gap-3 font-black text-lg px-10 py-4 rounded-2xl transition-all hover:-translate-y-0.5"
             style={{
               background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',

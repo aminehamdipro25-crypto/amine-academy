@@ -218,7 +218,7 @@ export default function HeroSection() {
             </Link>
           ) : (
             <Link
-              href="/#plans"
+              href="/register?free=1"
               className="font-black text-xs sm:text-sm px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl text-white transition-all hover:opacity-90 active:scale-95"
               style={{
                 background: '#6B46F0',
@@ -264,7 +264,7 @@ export default function HeroSection() {
           {/* CTAs */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-start gap-3">
             <Link
-              href="/#plans"
+              href="/register?free=1"
               className="flex items-center justify-center gap-2 font-black text-base px-8 py-3.5 rounded-2xl text-white transition-all hover:-translate-y-0.5 active:scale-95"
               style={{
                 background: '#6B46F0',

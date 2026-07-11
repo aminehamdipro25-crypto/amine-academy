@@ -1,7 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
-import { ArrowLeft, ArrowRight, Play, LayoutDashboard, Sparkles } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Play, LayoutDashboard, Sparkles, Users, Award, Heart } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useLang, tr, pickLang } from '@/lib/i18n'
 import LangToggle from '@/components/shared/LangToggle'
@@ -296,19 +296,22 @@ export default function HeroSection() {
             </Link>
           </div>
 
-          {/* Stats — inline row */}
-          <div
-            className="flex items-center gap-4 sm:gap-8 pt-2"
-            style={{ borderTop: '1px solid rgba(107,70,240,0.10)' }}
-          >
+          {/* Stats — cards */}
+          <div className="grid grid-cols-3 gap-2.5 sm:gap-3 pt-3">
             {[
-              { value: '+200', label: t.hero.stats.children },
-              { value: '+5',   label: t.hero.stats.years },
-              { value: '98%',  label: t.hero.stats.satisfaction },
-            ].map(({ value, label }) => (
-              <div key={label}>
-                <div className="font-black text-2xl ltr-num" style={{ color: '#6B46F0' }}>{value}</div>
-                <div className="text-slate-400 text-xs leading-tight mt-0.5">{label}</div>
+              { icon: Users, value: '+200', label: t.hero.stats.children,     color: '#6B46F0', bg: 'rgba(107,70,240,0.10)' },
+              { icon: Award, value: '+5',   label: t.hero.stats.years,        color: '#0EA5A3', bg: 'rgba(42,191,163,0.12)' },
+              { icon: Heart, value: '98%',  label: t.hero.stats.satisfaction, color: '#F0663C', bg: 'rgba(240,102,60,0.12)' },
+            ].map(({ icon: Icon, value, label, color, bg }) => (
+              <div
+                key={label}
+                className="rounded-2xl bg-white/70 border border-brand-100 px-2.5 py-3 text-center shadow-sm backdrop-blur-sm"
+              >
+                <div className="w-8 h-8 mx-auto rounded-xl flex items-center justify-center mb-1.5" style={{ background: bg }}>
+                  <Icon className="w-4 h-4" style={{ color }} />
+                </div>
+                <div className="font-black text-xl sm:text-2xl ltr-num leading-none" style={{ color: '#4A20C8' }}>{value}</div>
+                <div className="text-slate-600 text-[11px] font-bold leading-tight mt-1">{label}</div>
               </div>
             ))}
           </div>

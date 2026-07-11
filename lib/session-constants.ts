@@ -146,7 +146,7 @@ export const EXERCISES = [
   // ── عسر قراءة ─────────────────────────────────────
   { id:'letter-reversal',       labelAr:'تمييز الحروف',            icon:'🔡', category:'تعلّم',             color:'bg-orange-50 border-orange-200',   ageMin:5,  ageMax:14,  tags:['عسر قراءة'] },
   // ── بصري / محاكاة ─────────────────────────────────
-  { id:'matrix-puzzle',         labelAr:'أحجية المصفوفة',          icon:'🔲', category:'إدراكي',            color:'bg-violet-50 border-violet-200',   ageMin:6,  ageMax:22 },
+  // (matrix-puzzle مُعرّف في مجموعة «بازل» أدناه — أُزيل التكرار هنا)
   { id:'clock-reading',         labelAr:'قراءة الساعة',            icon:'🕐', category:'معرفي',             color:'bg-sky-50 border-sky-200',         ageMin:5,  ageMax:14 },
   // ── حركي ─────────────────────────────────────────
   { id:'sequence-tap',          labelAr:'النقر بالتسلسل',          icon:'🟣', category:'حركي',             color:'bg-purple-50 border-purple-200',   ageMin:5,  ageMax:22 },

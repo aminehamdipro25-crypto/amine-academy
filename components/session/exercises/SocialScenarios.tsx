@@ -230,6 +230,7 @@ export default function SocialScenarios({ onComplete, onCancel, studentAge, diff
   const [scores, setScores] = useState<number[]>([])
   const [poorChoices, setPoorChoices] = useState(0)
   const startRef = useRef(Date.now())
+  const doneRef = useRef(false)
 
   const scenario = queue[idx]
   const totalScenarios = queue.length
@@ -249,6 +250,8 @@ export default function SocialScenarios({ onComplete, onCancel, studentAge, diff
     setSelected(null)
     setShowDiscussion(false)
     if (idx + 1 >= totalScenarios) {
+      if (doneRef.current) return // guard double-tap on the final "إنهاء وحفظ"
+      doneRef.current = true
       const avg = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)
       const dur = Math.round((Date.now() - startRef.current) / 1000)
       onComplete({

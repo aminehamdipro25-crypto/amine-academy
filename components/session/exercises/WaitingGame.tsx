@@ -49,12 +49,14 @@ export default function WaitingGame({ onComplete, onCancel, difficulty = 1, seed
   const rafRef = useRef<number | null>(null)
   const delayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const windowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const resultTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const opacityRef = useRef(0)
   const phaseRef = useRef<RoundPhase>('waiting')
 
   const clearTimers = () => {
     if (delayTimerRef.current) { clearTimeout(delayTimerRef.current); delayTimerRef.current = null }
     if (windowTimerRef.current) { clearTimeout(windowTimerRef.current); windowTimerRef.current = null }
+    if (resultTimerRef.current) { clearTimeout(resultTimerRef.current); resultTimerRef.current = null }
     if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null }
   }
 
@@ -68,7 +70,7 @@ export default function WaitingGame({ onComplete, onCancel, difficulty = 1, seed
     phaseRef.current = 'result'
     setLastResult(result)
 
-    setTimeout(() => {
+    resultTimerRef.current = setTimeout(() => {
       if (currentRound >= TOTAL_ROUNDS) {
         const score = Math.round((newHits / TOTAL_ROUNDS) * 100)
         onComplete({
@@ -136,10 +138,15 @@ export default function WaitingGame({ onComplete, onCancel, difficulty = 1, seed
   }, [round, phase])
 
   function handleTap() {
-    if (phase === 'waiting') return // before emoji appears — ignore
-    if (phase === 'result') return
+    // Guard on the synchronous phaseRef, not the async `phase` state: two taps
+    // in the same React batch both read stale `phase` and each call finishRound
+    // → double onComplete. finishRound flips phaseRef to 'result' immediately,
+    // so the second same-tick tap sees 'result' here and bails.
+    const ph = phaseRef.current
+    if (ph === 'waiting') return // before emoji appears — ignore
+    if (ph === 'result') return
 
-    if (phase === 'fading') {
+    if (ph === 'fading') {
       if (opacityRef.current < READY_THRESHOLD) {
         // Early tap
         const newEarly = earlyTaps + 1
@@ -154,7 +161,7 @@ export default function WaitingGame({ onComplete, onCancel, difficulty = 1, seed
       return
     }
 
-    if (phase === 'ready') {
+    if (ph === 'ready') {
       const newHits = hits + 1
       setHits(newHits)
       finishRound('hit', newHits, earlyTaps, misses, round)

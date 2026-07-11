@@ -65,6 +65,7 @@ export default function WordRecall({ onComplete, onCancel, studentAge: _studentA
   }
 
   function submit() {
+    if (timerRef.current) return // guard double-tap on "تأكيد" — completion already scheduled
     const hits        = Array.from(selected).filter(w => targetWords.includes(w)).length
     const falseAlarms = Array.from(selected).filter(w => !targetWords.includes(w)).length
     const dur         = Math.round((Date.now() - startRef.current) / 1000)

@@ -57,6 +57,7 @@ export default function VerbalFluency({ onComplete, onCancel, studentAge, diffic
   const [done, setDone] = useState(false)
   const startRef = useRef(Date.now())
   const doneRef  = useRef(false)
+  const submittedRef = useRef(false)
 
   useEffect(() => {
     if (!running || timeLeft <= 0) return
@@ -97,6 +98,8 @@ export default function VerbalFluency({ onComplete, onCancel, studentAge, diffic
   }
 
   function submit() {
+    if (submittedRef.current) return // guard double-tap on "حفظ النتيجة"
+    submittedRef.current = true
     const dur = Math.round((Date.now() - startRef.current) / 1000)
     const pct = Math.min(100, Math.round((count / benchmark.target) * 100))
     onComplete({

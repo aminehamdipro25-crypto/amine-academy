@@ -32,15 +32,25 @@ export default function SimonSays({ onComplete, onCancel, studentAge, difficulty
   const errRef = useRef(0)
   const maxLevelRef = useRef(0)
   const correctTapsRef = useRef(0)
+  // Track every setTimeout and mark the component dead on unmount, so neither
+  // the tracked timers nor the async flashSequence loop call setState after the
+  // exercise is torn down (was firing setActiveBtn/setPhase/setLevel post-unmount).
+  const timersRef = useRef<ReturnType<typeof setTimeout>[]>([])
+  const deadRef = useRef(false)
+  const track = (t: ReturnType<typeof setTimeout>) => { timersRef.current.push(t); return t }
+  useEffect(() => () => { deadRef.current = true; timersRef.current.forEach(clearTimeout) }, [])
 
   const flashSequence = useCallback(async (seq: number[]) => {
     setPhase('watch')
     await new Promise(r => setTimeout(r, 800))
+    if (deadRef.current) return
     for (const c of seq) {
       setActiveBtn(c)
       await new Promise(r => setTimeout(r, 700))
+      if (deadRef.current) return
       setActiveBtn(null)
       await new Promise(r => setTimeout(r, 350))
+      if (deadRef.current) return
     }
     setPhase('input')
     setPlayerSeq([])
@@ -75,7 +85,7 @@ export default function SimonSays({ onComplete, onCancel, studentAge, difficulty
   function press(id: number) {
     if (phase !== 'input') return
     setActiveBtn(id)
-    setTimeout(() => setActiveBtn(null), 300)
+    track(setTimeout(() => setActiveBtn(null), 300))
     const newSeq = [...playerSeq, id]
     setPlayerSeq(newSeq)
     const pos = newSeq.length - 1
@@ -89,7 +99,7 @@ export default function SimonSays({ onComplete, onCancel, studentAge, difficulty
         finish()
         return
       }
-      setTimeout(() => flashSequence(sequence), 1200)
+      track(setTimeout(() => flashSequence(sequence), 1200))
     } else {
       correctTapsRef.current++
       onProgress?.({ answered: correctTapsRef.current + errRef.current, total: 0, correct: correctTapsRef.current, errors: errRef.current, lastCorrect: true })
@@ -102,7 +112,7 @@ export default function SimonSays({ onComplete, onCancel, studentAge, difficulty
         // Lock the grid between levels — 'watch' disables buttons (disabled={phase !== 'input'})
         // so a stray tap in the 800ms window can't run press() with pos===sequence.length.
         setPhase('watch')
-        setTimeout(() => setLevel(l => l + 1), 800)
+        track(setTimeout(() => setLevel(l => l + 1), 800))
       }
     }
   }

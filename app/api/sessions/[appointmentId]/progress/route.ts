@@ -70,8 +70,9 @@ export async function POST(
     }
     // Short TTL — progress is only meaningful live; it should not linger for
     // the next session. kid-status (with the final score) is the durable
-    // record. 30 min covers the longest single exercise comfortably.
-    await redis.set(key(params.appointmentId), state, { ex: 1800 })
+    // record. 90 min so the specialist's live panel never blanks mid-session,
+    // even across a long unscored relaxation/discussion block.
+    await redis.set(key(params.appointmentId), state, { ex: 5400 })
     await publishSessionEvent(params.appointmentId, 'progress')
     return NextResponse.json({ ok: true })
   } catch {

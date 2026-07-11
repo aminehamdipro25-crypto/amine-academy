@@ -12,7 +12,11 @@ function key(id: string, role: 'specialist' | 'kid') { return `session:presence:
 // crashes, loses network, or the child navigates away) so "is X actually
 // here right now" stays accurate rather than lingering true long after
 // they've left.
-const TTL = 15
+// Heartbeats fire every 10s on both sides. A 15s TTL left only a 5s margin, so
+// one dropped/slow beat during a brief network blip flashed a false "left"
+// indicator until the next beat. 30s absorbs a missed beat while still marking a
+// genuinely-gone participant within ~two heartbeats.
+const TTL = 30
 
 // GET — either side checks the OTHER's presence:
 //   - parent portal / specialist checks the child's presence, to show

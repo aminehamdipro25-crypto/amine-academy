@@ -26,8 +26,9 @@ export default function SequenceMemory({ onComplete, onCancel, difficulty = 1, s
   const correctRef  = useRef(0)
   const endedRef    = useRef(false)   // guard — onComplete fires at most once; blocks stray taps after end
   const timerIds    = useRef<ReturnType<typeof setTimeout>[]>([])
+  const deadRef     = useRef(false)   // stops the async playSequence loop after unmount
 
-  useEffect(() => () => { timerIds.current.forEach(clearTimeout); timerIds.current = [] }, [])
+  useEffect(() => () => { deadRef.current = true; timerIds.current.forEach(clearTimeout); timerIds.current = [] }, [])
 
   const startLen  = difficulty === 1 ? 3 : difficulty === 2 ? 4 : 5
   const MAX_ERR   = 3
@@ -47,11 +48,14 @@ export default function SequenceMemory({ onComplete, onCancel, difficulty = 1, s
     setActive(null)
     setPlayerSeq([])
     await new Promise<void>(r => setTimeout(r, 800))
+    if (deadRef.current) return
     for (const idx of seq) {
       setActive(idx)
       await new Promise<void>(r => setTimeout(r, 700))
+      if (deadRef.current) return
       setActive(null)
       await new Promise<void>(r => setTimeout(r, 300))
+      if (deadRef.current) return
     }
     setPhase('repeat')
   }, [])

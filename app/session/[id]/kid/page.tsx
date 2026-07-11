@@ -94,6 +94,12 @@ const LetterSearch         = lazy(() => import('@/components/session/exercises/L
 const StoryReader          = lazy(() => import('@/components/session/exercises/StoryReader'))
 
 const PHYSICAL_IDS = ['jumping-jacks','obstacle-circuit','balance-walk','tiger-crawl','ball-throw','stretching','body-percussion']
+// Clinical assessment scales the specialist fills in privately (ADHD / autism /
+// SNAP-IV / learning-difficulties). They broadcast over the `live` channel like
+// any exercise, but have no child-facing game — without this the child stared at
+// a blank black stage while the specialist rated them. Route them to the calm
+// waiting/progress screen instead.
+const SPECIALIST_ONLY_IDS = ['adhd','autism','attention-domains','learning-difficulties']
 
 type LiveState = { exerciseId: string; difficulty: number; seed?: number; locked?: boolean } | null
 type WBStroke = { c: string; s: number; e: boolean; p: number[] }
@@ -955,10 +961,11 @@ export default function KidSessionPage() {
     // during this phase; the moment the specialist starts/skips, `active`
     // flips false and this falls through to the normal waiting/exercise flow.
     mainContent = <KidReadinessScreen readiness={readiness} onAnswer={answerReadiness} />
-  } else if (!live || done) {
-    // Between exercises (and before the first) — show the child their progress
-    // map: the journey they've completed today with stars, plus a pulsing
-    // "next" node. Grows every time so it keeps motivating them.
+  } else if (!live || done || SPECIALIST_ONLY_IDS.includes(live.exerciseId)) {
+    // Between exercises (and before the first), or while the specialist is
+    // filling a private assessment scale (no child game) — show the child their
+    // progress map: the journey they've completed today with stars, plus a
+    // pulsing "next" node. Grows every time so it keeps motivating them.
     mainContent = <KidProgressMap stars={kidStars} done={done} />
   } else {
     // ── Exercise renderer ────────────────────────────────────────────────

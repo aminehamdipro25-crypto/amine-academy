@@ -39,9 +39,9 @@ const ALL_WORDS: W[] = [
   { word:'سَيّارة',  plain:'سيارة', emoji:'🚗', syllables:3 },
   { word:'حَديقة',   plain:'حديقة', emoji:'🌿', syllables:3 },
   { word:'طَيّارة',  plain:'طيارة', emoji:'✈️', syllables:3 },
+  { word:'مُستَشفى', plain:'مستشفى', emoji:'🏥', syllables:3 }, // مُس-تَش-فى = 3 مقاطع
   // 4 syllables
   { word:'تِلِفزيون', plain:'تلفزيون', emoji:'📺', syllables:4 },
-  { word:'مُستشفى',  plain:'مستشفى',  emoji:'🏥', syllables:4 },
 ]
 
 function speak(text: string) {

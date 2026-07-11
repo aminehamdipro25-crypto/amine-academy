@@ -48,14 +48,11 @@ export default function Image() {
               </linearGradient>
             </defs>
             <rect width="44" height="44" rx="13" fill="url(#ogBg)" />
-            <path d="M10 26 C10 21 12 17 17 15 C17 12 19 10 22 10" stroke="rgba(255,255,255,0.45)" strokeWidth="1.6" strokeLinecap="round" fill="none" />
-            <path d="M10 26 C10 29 11.5 31 14 31 L16 31" stroke="rgba(255,255,255,0.45)" strokeWidth="1.6" strokeLinecap="round" fill="none" />
-            <path d="M34 26 C34 21 32 17 27 15 C27 12 25 10 22 10" stroke="rgba(255,255,255,0.45)" strokeWidth="1.6" strokeLinecap="round" fill="none" />
-            <path d="M34 26 C34 29 32.5 31 30 31 L28 31" stroke="rgba(255,255,255,0.45)" strokeWidth="1.6" strokeLinecap="round" fill="none" />
-            <path d="M14 31 L21.4 15.5" stroke="#fff" strokeWidth="2.7" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-            <path d="M17.4 25.6 L26.6 25.6" stroke="#fff" strokeWidth="2.7" fill="none" strokeLinecap="round" />
-            <path d="M22.6 15.5 L30 31" stroke="url(#ogGold)" strokeWidth="2.7" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-            <circle cx="31.4" cy="13.2" r="1.8" fill="url(#ogGold)" />
+            <path d="M22 6 C15.5 4.5 9.5 8 9.5 14 C6.5 15 6.5 20 9.5 22 C9 26 12.5 29 16.5 28 C17.5 31 26.5 31 27.5 28 C31.5 29 35 26 34.5 22 C37.5 20 37.5 15 34.5 14 C34.5 8 28.5 4.5 22 6 Z" fill="rgba(255,255,255,0.15)" />
+            <path d="M12 33 L21.2 11" stroke="#fff" strokeWidth="3.4" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M16.3 26 L27.7 26" stroke="#fff" strokeWidth="3.4" fill="none" strokeLinecap="round" />
+            <path d="M22.8 11 L32 33" stroke="url(#ogGold)" strokeWidth="3.4" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+            <circle cx="32.8" cy="9" r="2.2" fill="url(#ogGold)" />
           </svg>
 
           {/* Title */}

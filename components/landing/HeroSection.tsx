@@ -6,7 +6,6 @@ import { motion } from 'framer-motion'
 import { useLang, tr, pickLang } from '@/lib/i18n'
 import LangToggle from '@/components/shared/LangToggle'
 import AcademyLogo from '@/components/shared/AcademyLogo'
-import InstallAppButton from '@/components/InstallAppButton'
 
 type SessionRole = 'owner' | 'staff' | 'parent' | 'student' | null
 
@@ -263,34 +262,38 @@ export default function HeroSection() {
           </p>
 
           {/* CTAs */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-start gap-3">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             <Link
               href="/register?free=1"
-              className="flex items-center justify-center gap-2 font-black text-base px-8 py-3.5 rounded-2xl text-white transition-all hover:-translate-y-0.5 active:scale-95"
+              className="group relative overflow-hidden flex items-center justify-center gap-2 font-black text-base px-8 py-4 rounded-2xl text-white transition-all hover:-translate-y-0.5 active:scale-[0.98] whitespace-nowrap"
               style={{
-                background: '#6B46F0',
-                boxShadow: '0 8px 32px rgba(107,70,240,0.28)',
+                background: 'linear-gradient(135deg, #8B6BFF 0%, #6B46F0 55%, #4A20C8 100%)',
+                boxShadow: '0 10px 34px rgba(107,70,240,0.42)',
               }}
             >
-              {t.hero.cta1}
-              {isRtl ? <ArrowLeft className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
+              <span className="relative z-10">{t.hero.cta1}</span>
+              <span className="relative z-10">{isRtl ? <ArrowLeft className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}</span>
+              {/* shine sweep on hover */}
+              <span
+                className="pointer-events-none absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out"
+                style={{ background: 'linear-gradient(115deg, transparent 35%, rgba(255,255,255,0.28) 50%, transparent 65%)' }}
+              />
             </Link>
             <Link
               href="/demo"
-              className="flex items-center justify-center gap-2 font-bold text-base px-6 py-3.5 rounded-2xl transition-all hover:-translate-y-0.5"
+              className="group flex items-center justify-center gap-2.5 font-bold text-base px-6 py-4 rounded-2xl transition-all hover:-translate-y-0.5"
               style={{
                 color: '#6B46F0',
-                background: 'rgba(255,255,255,0.95)',
-                border: '1.5px solid rgba(107,70,240,0.20)',
+                background: '#FFFFFF',
+                border: '1.5px solid rgba(107,70,240,0.22)',
+                boxShadow: '0 6px 20px rgba(107,70,240,0.08)',
               }}
             >
-              <Play className="w-4 h-4 fill-current" style={{ color: '#B99AFF' }} />
+              <span className="w-6 h-6 rounded-full flex items-center justify-center transition-colors group-hover:bg-brand-100" style={{ background: 'rgba(107,70,240,0.10)' }}>
+                <Play className="w-3 h-3 fill-current" style={{ color: '#6B46F0' }} />
+              </span>
               {t.hero.cta2}
             </Link>
-            {/* Appears only when the browser can install the app (self-hides otherwise) */}
-            <InstallAppButton
-              className="flex items-center justify-center gap-2 font-bold text-base px-6 py-3.5 rounded-2xl transition-all hover:-translate-y-0.5 text-brand-700 bg-white border-[1.5px] border-brand-200 hover:bg-brand-50"
-            />
           </div>
 
           {/* Stats — inline row */}

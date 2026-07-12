@@ -55,6 +55,7 @@ export async function POST(req: NextRequest) {
       totalExercises,
       pointsEarned,
       behaviorRatings = [],
+      realStats = null,
     } = body as {
       studentId: string
       type: string
@@ -64,6 +65,10 @@ export async function POST(req: NextRequest) {
       totalExercises: number
       pointsEarned: number
       behaviorRatings: { metric: string; score: number }[]
+      realStats: {
+        count: number; avgScore: number; avgAccuracy: number
+        hasPrev: boolean; prevAvgAccuracy: number | null; accuracyDelta: number | null
+      } | null
     }
 
     const student = await getStudent(studentId)
@@ -88,7 +93,15 @@ export async function POST(req: NextRequest) {
 • التمارين المكتملة: ${completedExercises} من ${totalExercises} (${completionPct}%)
 • النقاط المكتسبة: ${pointsEarned} نقطة
 
-═══ التقييم السلوكي المعياري ═══
+${realStats && realStats.count > 0 ? `═══ الأداء المقيس فعلياً (من نشاط الطفل في المنصة) ═══
+• عدد التمارين المُنجزة فعلياً: ${realStats.count}
+• متوسط الدقة: ${realStats.avgAccuracy}% | متوسط الأداء: ${realStats.avgScore}%
+${realStats.hasPrev && realStats.accuracyDelta !== null
+  ? `• التغيّر عن الفترة السابقة: ${realStats.accuracyDelta >= 0 ? '+' : ''}${realStats.accuracyDelta}% في الدقة (من ${realStats.prevAvgAccuracy}% إلى ${realStats.avgAccuracy}%) — ${realStats.accuracyDelta >= 0 ? 'تحسّن مؤكد بالأرقام' : 'تراجع يستحق المتابعة'}`
+  : '• هذه أول فترة متابعة موثّقة (لا مقارنة سابقة بعد)'}
+اذكر هذه الأرقام الحقيقية صراحةً في الملخص لأنها دليل موضوعي على التقدّم.
+
+` : ''}═══ التقييم السلوكي المعياري ═══
 ${ratingsText || '• لم تُحدَّد تقييمات سلوكية لهذه الجلسة'}
 
 ═══ تعليمات الكتابة ═══

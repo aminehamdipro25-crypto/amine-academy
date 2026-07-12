@@ -8,6 +8,20 @@ import {
 import type { Parent, Student } from '@/lib/types'
 import { useToast } from '@/components/ui/Toast'
 
+// Real gameplay-derived stats for a report period (from /api/admin/game-progress).
+interface PeriodStats {
+  count: number
+  avgScore: number
+  avgAccuracy: number
+  totalMinutes: number
+  hasPrev: boolean
+  prevCount: number
+  prevAvgScore: number | null
+  prevAvgAccuracy: number | null
+  scoreDelta: number | null
+  accuracyDelta: number | null
+}
+
 const METRICS = [
   { key: 'attention',            label: 'الانتباه والتركيز',   icon: '🎯', color: 'blue' },
   { key: 'impulse_control',      label: 'كبح الاندفاعية',      icon: '🛑', color: 'red' },
@@ -62,6 +76,10 @@ export default function NewReportPage() {
   const [completed, setCompleted] = useState(0)
   const [total, setTotal] = useState(5)
   const [points, setPoints] = useState(0)
+  // Real, data-grounded stats for the selected child + period, pulled from
+  // actual saved gameplay (not typed) — the credibility backbone of the report.
+  const [realStats, setRealStats] = useState<PeriodStats | null>(null)
+  const [loadingStats, setLoadingStats] = useState(false)
   const [professorNotes, setProfessorNotes] = useState('')
   const [ratings, setRatings] = useState<Record<string, number>>(
     Object.fromEntries(METRICS.map(m => [m.key, 3]))
@@ -111,6 +129,32 @@ export default function NewReportPage() {
     toast('تم توليد نموذج محلي — يمكنك تعديله', 'info')
   }
 
+  // Pull the child's REAL performance for the selected period from saved
+  // gameplay — auto-fills the completed-exercise count and captures the
+  // measurable improvement vs the previous equal-length period. One click
+  // replaces hand-typed guesses with documented numbers.
+  async function computeFromData() {
+    if (!selectedStudentId || loadingStats) return
+    setLoadingStats(true)
+    try {
+      const res = await fetch(`/api/admin/game-progress/${selectedStudentId}?from=${periodStart}&to=${periodEnd}`)
+      const data = await res.json()
+      const ps: PeriodStats | null = data.periodStats ?? null
+      if (!ps) { toast('تعذّر جلب البيانات', 'error'); return }
+      setRealStats(ps)
+      setCompleted(ps.count)
+      if (ps.count > total) setTotal(ps.count)
+      toast(ps.count > 0 ? `تم جلب ${ps.count} تمريناً فعلياً من بيانات الطفل ✓` : 'لا يوجد نشاط مسجّل في هذه الفترة', ps.count > 0 ? 'success' : 'info')
+    } catch {
+      toast('تعذّر الاتصال بالخادم', 'error')
+    } finally {
+      setLoadingStats(false)
+    }
+  }
+
+  // Re-fetching for a new child/period would show stale improvement numbers.
+  useEffect(() => { setRealStats(null) }, [selectedStudentId, periodStart, periodEnd])
+
   async function generateAISummary() {
     if (!selectedStudentId || generatingAI) return
     setGeneratingAI(true)
@@ -125,6 +169,9 @@ export default function NewReportPage() {
           completedExercises: completed,
           totalExercises: total,
           pointsEarned: points,
+          // Real gameplay stats so the AI narrative cites measured accuracy and
+          // documented improvement, not just the completed/total ratio.
+          realStats: realStats,
           behaviorRatings: METRICS.map(m => ({ metric: m.key, score: ratings[m.key] || 3 })),
         }),
       })
@@ -311,6 +358,39 @@ export default function NewReportPage() {
       {/* ── SECTION 2: إنجازات الجلسة ── */}
       <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
         <SectionHeader num={2} title="إنجازات الجلسة" icon={<Star className="w-4 h-4 text-amber-500" />} />
+
+        {/* Data-grounded auto-fill — the credibility button */}
+        <button
+          type="button"
+          onClick={computeFromData}
+          disabled={loadingStats || !selectedStudentId}
+          className="w-full mb-4 flex items-center justify-center gap-2 bg-emerald-50 hover:bg-emerald-100 disabled:opacity-50 text-emerald-700 font-black text-sm px-4 py-3 rounded-2xl border border-emerald-200 transition-colors"
+        >
+          {loadingStats ? <Sparkles className="w-4 h-4 animate-pulse" /> : <CheckCircle2 className="w-4 h-4" />}
+          {loadingStats ? 'جارٍ الحساب…' : '📊 احسب من بيانات الطفل الفعلية'}
+        </button>
+
+        {realStats && (
+          <div className="mb-5 rounded-2xl border border-emerald-100 bg-emerald-50/50 p-4">
+            <p className="text-[11px] font-black text-emerald-700 mb-3">📈 أرقام حقيقية من نشاط الطفل خلال الفترة</p>
+            <div className="grid grid-cols-3 gap-3 text-center mb-3">
+              <div><div className="text-xl font-black text-gray-900 ltr-num">{realStats.count}</div><div className="text-[10px] text-gray-500 font-bold">تمرين مُنجز</div></div>
+              <div><div className="text-xl font-black text-gray-900 ltr-num">{realStats.avgAccuracy}%</div><div className="text-[10px] text-gray-500 font-bold">متوسط الدقة</div></div>
+              <div><div className="text-xl font-black text-gray-900 ltr-num">{realStats.avgScore}%</div><div className="text-[10px] text-gray-500 font-bold">متوسط الأداء</div></div>
+            </div>
+            {realStats.count === 0 ? (
+              <p className="text-xs text-gray-500 text-center">لا يوجد نشاط مسجّل في هذه الفترة — تأكّد من التواريخ أو أن الجلسات أُجريت داخل المنصة.</p>
+            ) : realStats.hasPrev && realStats.accuracyDelta !== null ? (
+              <div className={`text-xs font-black text-center rounded-xl py-2 ${realStats.accuracyDelta >= 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
+                {realStats.accuracyDelta >= 0
+                  ? `📈 تحسّنت الدقة بمقدار +${realStats.accuracyDelta}% مقارنةً بالفترة السابقة (من ${realStats.prevAvgAccuracy}% إلى ${realStats.avgAccuracy}%)`
+                  : `الدقة انخفضت ${Math.abs(realStats.accuracyDelta)}% عن الفترة السابقة — قد تحتاج مراجعة الخطة`}
+              </div>
+            ) : (
+              <p className="text-xs text-gray-500 text-center bg-white/60 rounded-xl py-2">هذه أول فترة متابعة — ستظهر مقارنة التحسّن في التقرير القادم.</p>
+            )}
+          </div>
+        )}
 
         <div className="grid grid-cols-3 gap-3 mb-5">
           {[

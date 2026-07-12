@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getAppointment } from '@/lib/db'
-import { ensureDailyRoom } from '@/lib/daily'
+import { getAppointment, updateAppointment } from '@/lib/db'
+import { ensureDailyRoom, dailyRoomNameFor } from '@/lib/daily'
 import { authorizeSession } from '@/lib/session-access'
 import { isRateLimited } from '@/lib/rateLimit'
 
@@ -33,19 +33,25 @@ export async function GET(
     if (rl.limited) return NextResponse.json({ error: 'طلبات كثيرة جداً' }, { status: 429 })
 
     const appt = await getAppointment(params.appointmentId)
-    if (!appt?.meetingUrl) return NextResponse.json({ meetingUrl: null })
+    if (!appt) return NextResponse.json({ meetingUrl: null })
 
-    // Room name = last clean path segment (ignore any query/fragment suffix)
-    const roomName = appt.meetingUrl
-      .split(/[?#]/)[0]
-      .split('/')
-      .filter(Boolean)
-      .pop()
+    // The room name is DETERMINISTIC from the appointment id. Derive it (from a
+    // stored meetingUrl if present, else compute it) and ensure the room —
+    // ensureDailyRoom CREATES it if it doesn't exist yet. This is what makes
+    // video work for appointments that never got a room at booking time:
+    // free-assessment sessions (created with meetingUrl:'') and any appointment
+    // whose room creation failed or ran before DAILY_API_KEY was configured.
+    const roomName =
+      (appt.meetingUrl && appt.meetingUrl.split(/[?#]/)[0].split('/').filter(Boolean).pop()) ||
+      dailyRoomNameFor(params.appointmentId)
 
-    let url = appt.meetingUrl
-    if (roomName) {
-      const fresh = await ensureDailyRoom(roomName)
-      if (fresh) url = fresh
+    const url = await ensureDailyRoom(roomName)
+    if (!url) return NextResponse.json({ meetingUrl: null })
+
+    // Persist so the parent's "join" button (gated on a stored meetingUrl for
+    // upcoming appointments) appears, and future loads skip the ensure round-trip.
+    if (appt.meetingUrl !== url) {
+      await updateAppointment(params.appointmentId, { meetingUrl: url }).catch(() => {})
     }
     return NextResponse.json({ meetingUrl: url })
   } catch {

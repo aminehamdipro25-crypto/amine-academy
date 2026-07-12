@@ -274,27 +274,27 @@ export default function AppointmentsPage() {
                       </div>
                       {appt.notes && <p className="text-gray-500 text-xs mt-2">{appt.notes}</p>}
                     </div>
-                    {appt.meetingUrl && (
-                      <Link
-                        href={`/session/${appt.id}/kid`}
-                        className="flex items-center gap-2 font-black px-4 py-2.5 rounded-xl text-sm transition-all flex-shrink-0"
-                        style={
-                          live
-                            ? { background: '#16A34A', color: '#FFFFFF', boxShadow: '0 4px 12px rgba(22,163,74,0.4)' }
-                            : { background: '#F3EEFF', color: '#5A32D9', border: '1.5px solid #E8DBFF' }
-                        }
-                      >
-                        <Video className="w-4 h-4" />
-                        {live ? t.joinNowButton : t.sessionLinkButton}
-                      </Link>
-                    )}
+                    {/* Every upcoming appointment is joinable — the session page
+                        lazily creates the video room from the appointment id, so
+                        this no longer gates on a pre-stored meetingUrl (which was
+                        empty for free-assessment sessions, hiding their button). */}
+                    <Link
+                      href={`/session/${appt.id}/kid`}
+                      className="flex items-center gap-2 font-black px-4 py-2.5 rounded-xl text-sm transition-all flex-shrink-0"
+                      style={
+                        live
+                          ? { background: '#16A34A', color: '#FFFFFF', boxShadow: '0 4px 12px rgba(22,163,74,0.4)' }
+                          : { background: '#F3EEFF', color: '#5A32D9', border: '1.5px solid #E8DBFF' }
+                      }
+                    >
+                      <Video className="w-4 h-4" />
+                      {live ? t.joinNowButton : t.sessionLinkButton}
+                    </Link>
                   </div>
                   <div className="mt-3 pt-3 flex items-center justify-between gap-3" style={{ borderTop: '1px solid #F0E8FF' }}>
-                    {appt.meetingUrl ? (
-                      <p className="text-xs text-gray-400 flex-1">
-                        <span className="font-bold">{t.sessionToolLabel}</span> {t.sessionToolDesc}
-                      </p>
-                    ) : <div className="flex-1" />}
+                    <p className="text-xs text-gray-400 flex-1">
+                      <span className="font-bold">{t.sessionToolLabel}</span> {t.sessionToolDesc}
+                    </p>
                     {!live && (
                       <button
                         onClick={() => {

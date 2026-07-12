@@ -28,8 +28,9 @@ function buildCSP(frameSrc, mediaSrc) {
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     // Fonts: self + Google Fonts
     "font-src 'self' https://fonts.gstatic.com",
-    // Images: self + data URIs (for SVG charts) + Cloudinary
-    "img-src 'self' data: blob: https://res.cloudinary.com https://lh3.googleusercontent.com",
+    // Images: self + data URIs (for SVG charts) + Cloudinary + Vercel Blob
+    // (uploaded story-library page images)
+    "img-src 'self' data: blob: https://res.cloudinary.com https://lh3.googleusercontent.com https://*.public.blob.vercel-storage.com",
     // Connect: self + Upstash Redis + Daily.co signaling/call-engine fetches
     // + Pusher realtime (WebSocket + SockJS HTTP fallback + stats). Without
     // the Pusher origins here, the realtime WebSocket is CSP-blocked exactly
@@ -121,6 +122,7 @@ const nextConfig = {
     remotePatterns: [
       { protocol: 'https', hostname: 'lh3.googleusercontent.com' },
       { protocol: 'https', hostname: 'res.cloudinary.com' },
+      { protocol: 'https', hostname: '*.public.blob.vercel-storage.com' },
     ],
   },
   // No .eslintrc in the project — skip ESLint during CI/Vercel builds

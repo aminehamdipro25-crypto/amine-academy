@@ -2,7 +2,19 @@
 import { useState, useRef, useEffect } from 'react'
 import type { ExerciseResult } from '@/lib/types'
 import { subscribeSession, realtimeEnabled } from '@/lib/realtime-client'
-import { STORIES, type Story } from '@/lib/stories-data'
+import { type Story, parseStoryText } from '@/lib/stories-data'
+
+// Renders one line of story-page text, applying inline `{{word|#hex}}` color
+// markup (authored in the dashboard's story editor) as colored spans.
+function ColoredText({ text }: { text: string }) {
+  return (
+    <>
+      {parseStoryText(text).map((seg, i) =>
+        seg.color ? <span key={i} style={{ color: seg.color }}>{seg.text}</span> : <span key={i}>{seg.text}</span>
+      )}
+    </>
+  )
+}
 
 type DecorType = 'forest' | 'water' | 'meadow' | 'school' | 'home' | 'stars'
 interface SceneDef { skyTop: string; skyBot: string; ground: string; chars: string[]; decor: DecorType }
@@ -114,7 +126,26 @@ function StarsDecor() {
   )
 }
 
-function StoryIllustration({ scene }: { scene: SceneDef }) {
+// image (dashboard-uploaded) takes priority; falls back to a hand-crafted
+// SVG scene (only exists for the 22 default stories, keyed by story id); and
+// finally to a plain icon-on-gradient card for any custom story/page with
+// neither — so a specialist-authored story is never a blank illustration.
+function StoryIllustration({ scene, image, icon, accent }: { scene: SceneDef | null; image?: string | null; icon: string; accent: string }) {
+  if (image) {
+    // eslint-disable-next-line @next/next/no-img-element -- dashboard-uploaded, arbitrary aspect ratio, fills a fixed frame
+    return <img src={image} alt="" className="w-full h-full object-cover" style={{ display: 'block' }} />
+  }
+  if (!scene) {
+    return (
+      <div
+        className="w-full h-full flex items-center justify-center"
+        style={{ background: `linear-gradient(135deg, ${accent}33, ${accent}11)` }}
+      >
+        <span style={{ fontSize: 88 }}>{icon}</span>
+      </div>
+    )
+  }
+
   const { skyTop, skyBot, ground, chars, decor } = scene
   const n = chars.length
   const positions = n===1 ? [{x:160,y:162}] : n===2 ? [{x:95,y:162},{x:225,y:162}] : [{x:72,y:158},{x:160,y:152},{x:248,y:158}]
@@ -320,9 +351,23 @@ export default function StoryReader({ onComplete, onCancel, studentAge, difficul
   const doneRef  = useRef(false)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  // Story library is dashboard-editable content (lib/db.ts `story:*` records),
+  // fetched here rather than statically imported so specialist edits show up
+  // without a redeploy — on both the specialist's screen and the mirrored
+  // child screen, since both fetch the same /api/stories.
+  const [stories, setStories] = useState<Story[] | null>(null)
+  const storiesRef = useRef<Story[]>([])
+  useEffect(() => {
+    fetch('/api/stories')
+      .then(r => (r.ok ? r.json() : null))
+      .then((d: { stories?: Story[] } | null) => setStories(d?.stories ?? []))
+      .catch(() => setStories([]))
+  }, [])
+  useEffect(() => { storiesRef.current = stories ?? [] }, [stories])
+
   // In the picker, show ALL stories — specialist selects manually.
   // The difficulty filter was only needed for blind random selection.
-  const available = STORIES
+  const available = stories ?? []
 
   const [story, setStory] = useState<Story | null>(null)
   const scenes = story ? (SCENES[story.id] ?? []) : []
@@ -361,7 +406,7 @@ export default function StoryReader({ onComplete, onCancel, studentAge, difficul
         if (!r.ok || stop) return
         const { reader } = await r.json() as { reader: null | { storyId: string | null; phase: 'pick'|'read'|'quiz'|'done'; pageIdx: number; qIdx: number; selected: number | null; showFB: boolean } }
         if (!reader || stop) return
-        setStory(reader.storyId ? (STORIES.find(s => s.id === reader.storyId) ?? null) : null)
+        setStory(reader.storyId ? (storiesRef.current.find(s => s.id === reader.storyId) ?? null) : null)
         setPhase(reader.phase)
         setPageIdx(reader.pageIdx)
         setQIdx(reader.qIdx)
@@ -452,6 +497,17 @@ export default function StoryReader({ onComplete, onCancel, studentAge, difficul
     )
   }
 
+  // ── Loading (specialist): stories still fetching from the dashboard-editable library ──
+  if (!mirror && phase === 'pick' && stories === null) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-3" dir="rtl" style={{ background: '#FAFAFA' }}>
+        <div style={{ width: 40, height: 40, borderRadius: '50%', border: '4px solid #E5E7EB', borderTopColor: '#8B5CF6', animation: 'storySpin 0.8s linear infinite' }} />
+        <p className="text-sm font-bold" style={{ color: '#94A3B8' }}>جارٍ تحميل القصص…</p>
+        <style>{`@keyframes storySpin { to { transform: rotate(360deg) } }`}</style>
+      </div>
+    )
+  }
+
   // ── PICK phase ──
   if (phase === 'pick') {
     return (
@@ -535,8 +591,12 @@ export default function StoryReader({ onComplete, onCancel, studentAge, difficul
   }
 
   // ── READ phase ──
-  if (phase === 'read' && story && currentScene) {
+  // Not gated on `currentScene` — a specialist-authored story with no hand-
+  // crafted SCENES entry (or more pages than one has) must still render;
+  // StoryIllustration falls back gracefully when scene is null.
+  if (phase === 'read' && story) {
     const lines = story.pages[pageIdx].split('\n')
+    const pageImage = story.pageImages?.[pageIdx] ?? null
     return (
       <div className="flex flex-col h-full" dir="rtl" style={{background:'#FAFAFA'}}>
 
@@ -573,7 +633,7 @@ export default function StoryReader({ onComplete, onCancel, studentAge, difficul
         {/* Illustration — compact, fixed height */}
         <div className="px-3 pb-2 flex-shrink-0" style={{height: 190}}>
           <div className="w-full h-full rounded-2xl overflow-hidden shadow-sm">
-            <StoryIllustration scene={currentScene} />
+            <StoryIllustration scene={currentScene ?? null} image={pageImage} icon={story.icon} accent={story.accent} />
           </div>
         </div>
 
@@ -598,7 +658,7 @@ export default function StoryReader({ onComplete, onCancel, studentAge, difficul
                 letterSpacing: '0.01em',
               }}
             >
-              {line}
+              <ColoredText text={line} />
             </p>
           ))}
         </div>

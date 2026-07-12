@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Users, Dumbbell, Calendar,
   BarChart3, FileText, LogOut,
   ClipboardList, BookOpen, Settings, CreditCard, MessageSquare,
-  Zap, UserCog, PersonStanding, Target, ShieldAlert, ScrollText,
+  Zap, UserCog, PersonStanding, Target, ShieldAlert, ScrollText, Library,
 } from 'lucide-react'
 import AcademyLogo from '@/components/shared/AcademyLogo'
 import { useLang, tr } from '@/lib/i18n'
@@ -31,6 +31,7 @@ export default function AdminSidebar({ onClose, unreadMessages = 0 }: { onClose?
     { href: '/dashboard/appointments',           label: navT.appointments, icon: Calendar, ownerOnly: false },
     { href: '/dashboard/programs',               label: navT.programs, icon: ClipboardList, ownerOnly: false },
     { href: '/dashboard/exercises',              label: navT.exercises, icon: Dumbbell, ownerOnly: false },
+    { href: '/dashboard/stories',                label: navT.stories, icon: Library, ownerOnly: false },
     { href: '/dashboard/reports',                label: navT.reports, icon: FileText, ownerOnly: false },
     { href: '/dashboard/messages',               label: navT.messages, icon: MessageSquare, ownerOnly: false },
     { href: '/dashboard/learning-difficulties',  label: navT.learningDifficulties, icon: BookOpen, ownerOnly: false },

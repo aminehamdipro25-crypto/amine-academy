@@ -1,10 +1,30 @@
-// Shared story content — used by the in-session StoryReader exercise AND the
-// parent Story Library. Diacritized Arabic short stories for early readers, each
-// with an emoji cover, accent color, difficulty, pages, and comprehension questions.
-export interface StoryQuestion { q: string; choices: string[]; correct: number }
-export interface Story { id: string; title: string; icon: string; accent: string; diff: 1 | 2 | 3; pages: string[]; questions: StoryQuestion[] }
+// Default/seed story content for the specialist-editable Story Library.
+// The canonical, DB-backed `Story` type lives in lib/types.ts (id, title,
+// icon, accent, diff, pages, pageImages, questions, order, createdAt) — these
+// 22 stories are the one-time seed loaded via /api/admin/stories/seed; after
+// that, all editing happens through the dashboard and is stored in Redis.
+import type { Story, StoryQuestion } from './types'
+export type { Story, StoryQuestion }
 
-export const STORIES: Story[] = [
+// Inline word-coloring markup used in page text: `{{word|#hex}}`. Parsed here
+// so both the session StoryReader and the parent library render it identically.
+export interface StoryTextSegment { text: string; color?: string }
+const COLOR_MARKUP = /\{\{([^|{}]+)\|(#[0-9a-fA-F]{3,8})\}\}/g
+export function parseStoryText(raw: string): StoryTextSegment[] {
+  const segments: StoryTextSegment[] = []
+  let last = 0
+  let m: RegExpExecArray | null
+  COLOR_MARKUP.lastIndex = 0
+  while ((m = COLOR_MARKUP.exec(raw))) {
+    if (m.index > last) segments.push({ text: raw.slice(last, m.index) })
+    segments.push({ text: m[1], color: m[2] })
+    last = m.index + m[0].length
+  }
+  if (last < raw.length) segments.push({ text: raw.slice(last) })
+  return segments.length ? segments : [{ text: raw }]
+}
+
+const RAW_STORIES: Omit<Story, 'order' | 'createdAt'>[] = [
   {
     id:'lion-brave', title:'الأَسَدُ الطَّيِّب', icon:'🦁', accent:'#F59E0B', diff:1,
     pages:[
@@ -304,3 +324,11 @@ export const STORIES: Story[] = [
     ],
   },
 ]
+
+// One-time seed content — order matches the array position; createdAt is a
+// fixed placeholder (real edits get a real timestamp via updateStory).
+export const DEFAULT_STORIES: Story[] = RAW_STORIES.map((s, i) => ({
+  ...s,
+  order: i,
+  createdAt: '2025-01-01T00:00:00.000Z',
+}))

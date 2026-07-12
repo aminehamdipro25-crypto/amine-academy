@@ -22,7 +22,7 @@ function getAuthSecretForSigning(): string {
   return secret
 }
 
-export function generateId(prefix: 'AA' | 'AS' | 'AE' | 'AP' | 'AT'): string {
+export function generateId(prefix: 'AA' | 'AS' | 'AE' | 'AP' | 'AT' | 'SB'): string {
   // 12 random bytes = 96 bits. The appointment id doubles as the capability
   // that protects a child's live session/video, so it must not be guessable.
   return `${prefix}-${Date.now().toString(36)}-${crypto.randomBytes(12).toString('hex')}`

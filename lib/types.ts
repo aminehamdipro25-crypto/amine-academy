@@ -385,6 +385,28 @@ export interface GameResult {
   completed:       boolean
 }
 
+// ── Story Library (specialist-authored, DB-backed) ──────────────
+// Fully editable from the dashboard: title, cover, per-page text/image, and
+// comprehension questions. Page text supports inline word coloring via
+// `{{word|#hex}}` markup (parsed by lib/stories-data.ts's parseStoryText).
+export interface StoryQuestion {
+  q: string
+  choices: string[]
+  correct: number
+}
+export interface Story {
+  id: string
+  title: string
+  icon: string                    // emoji cover
+  accent: string                  // hex color
+  diff: 1 | 2 | 3
+  pages: string[]                 // page text; supports {{word|#hex}} markup
+  pageImages?: (string | null)[]  // optional uploaded image per page (same index as pages)
+  questions: StoryQuestion[]
+  order: number
+  createdAt: string
+}
+
 // ── Weekly Progress snapshot ───────────────────────────────────
 export interface WeeklyProgress {
   studentId:    string

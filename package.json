@@ -22,6 +22,7 @@
     "@daily-co/daily-js": "^0.91.0",
     "@hookform/resolvers": "^5.4.0",
     "@upstash/redis": "^1.31.0",
+    "@vercel/blob": "^2.6.1",
     "autoprefixer": "^10.4.17",
     "framer-motion": "^12.42.0",
     "lucide-react": "^0.344.0",

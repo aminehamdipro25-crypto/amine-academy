@@ -8,6 +8,8 @@
 //   students:parent:{pid}    → [student IDs]
 //   exercise:{id}            → Exercise JSON
 //   exercises:index          → [exercise IDs]
+//   story:{id}               → Story JSON (specialist-editable library)
+//   stories:index            → [story IDs]
 //   program:{id}             → Program JSON
 //   program:student:{sid}    → current program ID
 //   appointment:{id}         → Appointment JSON
@@ -35,7 +37,7 @@
 import crypto from 'crypto'
 import { redis } from './redis'
 import { generateId } from './auth'
-import type { Parent, Student, Exercise, Program, Appointment, ProgressReport, PendingPayment, Message, Achievement, StudentAssessmentProfile, GameResult, WeeklyProgress, Staff } from './types'
+import type { Parent, Student, Exercise, Program, Appointment, ProgressReport, PendingPayment, Message, Achievement, StudentAssessmentProfile, GameResult, WeeklyProgress, Staff, Story } from './types'
 
 // ── Staff (multi-therapist accounts) ────────────────────────────
 
@@ -185,6 +187,66 @@ export async function deleteAllExercises(): Promise<number> {
     }
   }
   await redis.del('exercises:index')
+  return ids.length
+}
+
+// ── Story Library (specialist-editable, see lib/types.ts Story) ─
+
+export async function createStory(data: Omit<Story, 'id' | 'createdAt'>): Promise<Story> {
+  const id = generateId('SB')
+  const story: Story = { ...data, id, createdAt: new Date().toISOString() }
+  await redis.pipeline([
+    ['SET', `story:${id}`, JSON.stringify(story)],
+    ['LPUSH', 'stories:index', id],
+  ])
+  return story
+}
+
+// Seeding writes DEFAULT_STORIES under their own literal ids (e.g. 'lion-brave')
+// rather than generateId('SB'), so re-running the seed is idempotent — it can
+// check "does story:lion-brave already exist" instead of always appending.
+export async function createStoryWithId(story: Story): Promise<Story> {
+  await redis.pipeline([
+    ['SET', `story:${story.id}`, JSON.stringify(story)],
+    ['LPUSH', 'stories:index', story.id],
+  ])
+  return story
+}
+
+export async function getStory(id: string): Promise<Story | null> {
+  return redis.get<Story>(`story:${id}`)
+}
+
+export async function getAllStories(): Promise<Story[]> {
+  const ids = await redis.lrange('stories:index', 0, -1)
+  const stories = await Promise.all(ids.map(id => getStory(id)))
+  return (stories.filter(Boolean) as Story[]).sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+}
+
+export async function updateStory(id: string, updates: Partial<Omit<Story, 'id' | 'createdAt'>>): Promise<Story | null> {
+  const existing = await getStory(id)
+  if (!existing) return null
+  const updated: Story = { ...existing, ...updates }
+  await redis.set(`story:${id}`, JSON.stringify(updated))
+  return updated
+}
+
+export async function deleteStory(id: string): Promise<void> {
+  await redis.pipeline([
+    ['DEL', `story:${id}`],
+    ['LREM', 'stories:index', '0', id],
+  ])
+}
+
+export async function deleteAllStories(): Promise<number> {
+  const ids = await redis.lrange('stories:index', 0, -1)
+  if (ids.length > 0) {
+    for (let i = 0; i < ids.length; i += 20) {
+      const batch = ids.slice(i, i + 20)
+      await Promise.all(batch.map(id => redis.del(`story:${id}`)))
+    }
+  }
+  await redis.del('stories:index')
   return ids.length
 }
 

@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { BookOpen, Lock, Star, X, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react'
-import { STORIES, type Story } from '@/lib/stories-data'
+import { type Story, parseStoryText } from '@/lib/stories-data'
 
 // Unlock rules — stories open as the child earns stars in their sessions.
 // The first FREE_STORIES are always open so there's content from day one;
@@ -38,8 +38,21 @@ const DIFF_LABEL: Record<number, { label: string; color: string }> = {
   3: { label: 'متقدّم', color: 'bg-rose-100 text-rose-700' },
 }
 
+// Renders one line of story-page text, applying inline `{{word|#hex}}` color
+// markup authored in the dashboard's story editor.
+function ColoredText({ text }: { text: string }) {
+  return (
+    <>
+      {parseStoryText(text).map((seg, i) =>
+        seg.color ? <span key={i} style={{ color: seg.color }}>{seg.text}</span> : <span key={i}>{seg.text}</span>
+      )}
+    </>
+  )
+}
+
 export default function StoryLibraryPage() {
   const [stars, setStars] = useState<number | null>(null)
+  const [stories, setStories] = useState<Story[] | null>(null)
   const [openStory, setOpenStory] = useState<Story | null>(null)
   const [flipped, setFlipped] = useState<Set<number>>(new Set())
 
@@ -51,11 +64,16 @@ export default function StoryLibraryPage() {
         setStars(total)
       })
       .catch(() => setStars(0))
+    fetch('/api/stories')
+      .then(r => (r.ok ? r.json() : null))
+      .then((d: { stories?: Story[] } | null) => setStories(d?.stories ?? []))
+      .catch(() => setStories([]))
   }, [])
 
   const s = stars ?? 0
-  const nextLocked = useMemo(() => STORIES.findIndex((_, i) => unlockAt(i) > s), [s])
-  const unlockedCount = nextLocked === -1 ? STORIES.length : nextLocked
+  const list = stories ?? []
+  const nextLocked = useMemo(() => list.findIndex((_, i) => unlockAt(i) > s), [list, s])
+  const unlockedCount = nextLocked === -1 ? list.length : nextLocked
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6" dir="rtl">
@@ -80,17 +98,36 @@ export default function StoryLibraryPage() {
           </div>
         </div>
         <div className="relative mt-4 text-xs text-white/80 bg-white/10 rounded-xl px-3 py-2 inline-block">
-          فُتِح {unlockedCount} من {STORIES.length} قصة
+          فُتِح {unlockedCount} من {list.length} قصة
           {nextLocked !== -1 && ` — القصة التالية تُفتح عند ${unlockAt(nextLocked)} نجمة`}
         </div>
       </div>
 
       {/* Story grid */}
+      {stories === null ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mb-10">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="rounded-3xl overflow-hidden border border-black/5 animate-pulse">
+              <div className="h-28 bg-gray-100" />
+              <div className="bg-white p-3 space-y-2">
+                <div className="h-3 bg-gray-100 rounded-full w-3/4" />
+                <div className="h-2.5 bg-gray-100 rounded-full w-1/2" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : list.length === 0 ? (
+        <div className="text-center py-16 text-gray-400 mb-10">
+          <BookOpen className="w-10 h-10 mx-auto mb-2 opacity-40" />
+          <p className="font-bold text-sm">لا توجد قصص بعد — سيضيفها الأستاذ قريباً</p>
+        </div>
+      ) : (
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mb-10">
-        {STORIES.map((story, i) => {
+        {list.map((story, i) => {
           const need = unlockAt(i)
           const locked = s < need
           const diff = DIFF_LABEL[story.diff]
+          const cover = story.pageImages?.[0] ?? null
           return (
             <motion.button
               key={story.id}
@@ -103,11 +140,17 @@ export default function StoryLibraryPage() {
               className={`relative rounded-3xl overflow-hidden text-right shadow-sm border border-black/5 ${locked ? 'cursor-not-allowed' : 'cursor-pointer hover:shadow-xl'} transition-shadow`}
             >
               {/* Cover */}
-              <div className="h-28 flex items-center justify-center relative"
+              <div className="h-28 flex items-center justify-center relative overflow-hidden"
                 style={{ background: `linear-gradient(135deg, ${story.accent}, ${story.accent}CC)` }}>
-                <span className="text-5xl drop-shadow" style={locked ? { filter: 'grayscale(1)', opacity: 0.5 } : undefined}>
-                  {story.icon}
-                </span>
+                {cover && (
+                  // eslint-disable-next-line @next/next/no-img-element -- dashboard-uploaded, arbitrary source
+                  <img src={cover} alt="" className="absolute inset-0 w-full h-full object-cover" style={locked ? { filter: 'grayscale(1)', opacity: 0.5 } : undefined} />
+                )}
+                {!cover && (
+                  <span className="text-5xl drop-shadow relative" style={locked ? { filter: 'grayscale(1)', opacity: 0.5 } : undefined}>
+                    {story.icon}
+                  </span>
+                )}
                 {locked && (
                   <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px] flex flex-col items-center justify-center gap-1 text-white">
                     <Lock className="w-6 h-6" />
@@ -129,6 +172,7 @@ export default function StoryLibraryPage() {
           )
         })}
       </div>
+      )}
 
       {/* Educational flashcards */}
       <div className="mb-4 flex items-center gap-2">
@@ -191,6 +235,7 @@ function StoryReaderModal({ story, onClose }: { story: Story; onClose: () => voi
   const [page, setPage] = useState(0)
   const total = story.pages.length
   const last = page >= total - 1
+  const image = story.pageImages?.[page] ?? null
 
   return (
     <motion.div
@@ -215,17 +260,22 @@ function StoryReaderModal({ story, onClose }: { story: Story; onClose: () => voi
           </button>
         </div>
 
-        {/* Illustration */}
-        <div className="h-40 flex items-center justify-center"
+        {/* Illustration — uploaded image if present, else icon on gradient */}
+        <div className="h-40 flex items-center justify-center overflow-hidden"
           style={{ background: `linear-gradient(135deg, ${story.accent}22, ${story.accent}0D)` }}>
-          <span className="text-7xl">{story.icon}</span>
+          {image ? (
+            // eslint-disable-next-line @next/next/no-img-element -- dashboard-uploaded, arbitrary source
+            <img src={image} alt="" className="w-full h-full object-cover" />
+          ) : (
+            <span className="text-7xl">{story.icon}</span>
+          )}
         </div>
 
         {/* Page text */}
         <div className="p-6 min-h-[140px] flex items-center justify-center">
           <p className="text-gray-800 text-xl leading-loose text-center font-bold" style={{ lineHeight: 2 }}>
             {story.pages[page].split('\n').map((line, i) => (
-              <span key={i} className="block">{line}</span>
+              <span key={i} className="block"><ColoredText text={line} /></span>
             ))}
           </p>
         </div>

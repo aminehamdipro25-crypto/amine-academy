@@ -59,6 +59,9 @@ export default function StoryLibraryAdminPage() {
   const [uploadingIdx, setUploadingIdx] = useState<number | null>(null)
   const [uploadError, setUploadError] = useState('')
   const [urlDrafts, setUrlDrafts] = useState<Record<number, string>>({})
+  const [checkingIdx, setCheckingIdx] = useState<number | null>(null)
+  const [brokenIdx, setBrokenIdx] = useState<Set<number>>(new Set())
+  const [brokenCovers, setBrokenCovers] = useState<Set<string>>(new Set())
   const textareaRefs = useRef<Record<number, HTMLTextAreaElement | null>>({})
 
   const load = useCallback(async () => {
@@ -82,6 +85,8 @@ export default function StoryLibraryAdminPage() {
     setIsNew(true)
     setSaveError('')
     setUploadError('')
+    setBrokenIdx(new Set())
+    setUrlDrafts({})
     setEditingId('__new__')
   }
   function openEdit(s: Story) {
@@ -95,6 +100,8 @@ export default function StoryLibraryAdminPage() {
       questions: s.questions.length ? s.questions.map(q => ({ ...q, choices: [...q.choices] })) : [{ q: '', choices: ['', ''], correct: 0 }],
     })
     setIsNew(false)
+    setBrokenIdx(new Set())
+    setUrlDrafts({})
     setSaveError('')
     setUploadError('')
     setEditingId(s.id)
@@ -222,16 +229,32 @@ export default function StoryLibraryAdminPage() {
   }
   function removeImage(i: number) {
     setForm(f => { const pageImages = [...f.pageImages]; pageImages[i] = null; return { ...f, pageImages } })
+    setBrokenIdx(s => { const n = new Set(s); n.delete(i); return n })
   }
   // Paste-a-URL path — works with zero setup (no Blob storage needed), for
-  // any image the specialist already has a link to.
+  // any image the specialist already has a link to. Many "copy link" actions
+  // (Google Images, Pinterest, a webpage) give a PAGE url, not a direct image
+  // file — that silently saved a broken link before. Now the URL is actually
+  // loaded in the browser first; only a URL that renders as a real image is
+  // accepted, with a clear, actionable error otherwise.
   function setImageUrl(i: number, rawUrl: string) {
     const url = rawUrl.trim()
     if (!url) return
     if (!/^https:\/\//i.test(url)) { setUploadError('الرابط يجب أن يبدأ بـ https://'); return }
     setUploadError('')
-    setForm(f => { const pageImages = [...f.pageImages]; pageImages[i] = url; return { ...f, pageImages } })
-    setUrlDrafts(d => { const next = { ...d }; delete next[i]; return next })
+    setCheckingIdx(i)
+    const probe = new window.Image()
+    probe.onload = () => {
+      setCheckingIdx(null)
+      setBrokenIdx(s => { const n = new Set(s); n.delete(i); return n })
+      setForm(f => { const pageImages = [...f.pageImages]; pageImages[i] = url; return { ...f, pageImages } })
+      setUrlDrafts(d => { const next = { ...d }; delete next[i]; return next })
+    }
+    probe.onerror = () => {
+      setCheckingIdx(null)
+      setUploadError('تعذّر تحميل هذه الصورة — الرابط ليس رابط صورة مباشراً. جرّب: افتح الصورة في تبويب جديد، ثم انقر بزر الفأرة الأيمن عليها واختر "نسخ عنوان الصورة" (Copy image address)')
+    }
+    probe.src = url
   }
 
   // ── Question helpers ──────────────────────────────────────────────────────
@@ -343,9 +366,9 @@ export default function StoryLibraryAdminPage() {
               <div key={s.id} className="group relative rounded-3xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-lg transition-shadow bg-white">
                 <button onClick={() => openEdit(s)} className="w-full text-right">
                   <div className="h-28 flex items-center justify-center relative overflow-hidden" style={{ background: `linear-gradient(135deg, ${s.accent}, ${s.accent}CC)` }}>
-                    {cover ? (
+                    {cover && !brokenCovers.has(s.id) ? (
                       // eslint-disable-next-line @next/next/no-img-element -- dashboard-uploaded, arbitrary source
-                      <img src={cover} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                      <img src={cover} alt="" className="absolute inset-0 w-full h-full object-cover" onError={() => setBrokenCovers(set => new Set(set).add(s.id))} />
                     ) : (
                       <span className="text-5xl drop-shadow">{s.icon}</span>
                     )}
@@ -509,8 +532,20 @@ export default function StoryLibraryAdminPage() {
                         {/* Image */}
                         {form.pageImages[i] ? (
                           <div className="relative w-24 h-24 rounded-xl overflow-hidden border border-gray-200">
-                            {/* eslint-disable-next-line @next/next/no-img-element -- dashboard-uploaded, arbitrary source */}
-                            <img src={form.pageImages[i] ?? undefined} alt="" className="w-full h-full object-cover" />
+                            {brokenIdx.has(i) ? (
+                              <div className="w-full h-full flex flex-col items-center justify-center gap-1 bg-red-50 text-red-500 text-center px-1">
+                                <span className="text-lg">⚠️</span>
+                                <span className="text-[9px] font-bold leading-tight">تعذّر تحميل الصورة</span>
+                              </div>
+                            ) : (
+                              // eslint-disable-next-line @next/next/no-img-element -- dashboard-uploaded, arbitrary source
+                              <img
+                                src={form.pageImages[i] ?? undefined}
+                                alt=""
+                                className="w-full h-full object-cover"
+                                onError={() => setBrokenIdx(s => new Set(s).add(i))}
+                              />
+                            )}
                             <button type="button" onClick={() => removeImage(i)} className="absolute top-1 left-1 bg-black/60 hover:bg-black/80 text-white rounded-lg p-1">
                               <X className="w-3 h-3" />
                             </button>
@@ -531,11 +566,13 @@ export default function StoryLibraryAdminPage() {
                                 onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); setImageUrl(i, urlDrafts[i] ?? '') } }}
                                 placeholder="الصق رابط صورة https://…"
                                 dir="ltr"
-                                className="flex-1 min-w-0 border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-brand-300"
+                                disabled={checkingIdx === i}
+                                className="flex-1 min-w-0 border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:opacity-60"
                               />
-                              <button type="button" onClick={() => setImageUrl(i, urlDrafts[i] ?? '')}
-                                className="flex-shrink-0 text-xs font-bold text-gray-500 hover:text-brand-600 bg-gray-100 hover:bg-brand-50 px-2.5 py-1.5 rounded-lg transition-colors">
-                                إضافة
+                              <button type="button" onClick={() => setImageUrl(i, urlDrafts[i] ?? '')} disabled={checkingIdx === i}
+                                className="flex-shrink-0 flex items-center gap-1 text-xs font-bold text-gray-500 hover:text-brand-600 bg-gray-100 hover:bg-brand-50 disabled:opacity-60 px-2.5 py-1.5 rounded-lg transition-colors">
+                                {checkingIdx === i && <Loader2 className="w-3 h-3 animate-spin" />}
+                                {checkingIdx === i ? 'جارٍ التحقق…' : 'إضافة'}
                               </button>
                             </div>
                           </div>

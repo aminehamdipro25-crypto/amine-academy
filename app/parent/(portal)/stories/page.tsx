@@ -55,6 +55,7 @@ export default function StoryLibraryPage() {
   const [stories, setStories] = useState<Story[] | null>(null)
   const [openStory, setOpenStory] = useState<Story | null>(null)
   const [flipped, setFlipped] = useState<Set<number>>(new Set())
+  const [brokenCovers, setBrokenCovers] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     fetch('/api/parent/progress-map')
@@ -142,11 +143,13 @@ export default function StoryLibraryPage() {
               {/* Cover */}
               <div className="h-28 flex items-center justify-center relative overflow-hidden"
                 style={{ background: `linear-gradient(135deg, ${story.accent}, ${story.accent}CC)` }}>
-                {cover && (
+                {cover && !brokenCovers.has(story.id) && (
                   // eslint-disable-next-line @next/next/no-img-element -- dashboard-uploaded, arbitrary source
-                  <img src={cover} alt="" className="absolute inset-0 w-full h-full object-cover" style={locked ? { filter: 'grayscale(1)', opacity: 0.5 } : undefined} />
+                  <img src={cover} alt="" className="absolute inset-0 w-full h-full object-cover"
+                    style={locked ? { filter: 'grayscale(1)', opacity: 0.5 } : undefined}
+                    onError={() => setBrokenCovers(s => new Set(s).add(story.id))} />
                 )}
-                {!cover && (
+                {(!cover || brokenCovers.has(story.id)) && (
                   <span className="text-5xl drop-shadow relative" style={locked ? { filter: 'grayscale(1)', opacity: 0.5 } : undefined}>
                     {story.icon}
                   </span>
@@ -233,9 +236,11 @@ export default function StoryLibraryPage() {
 // ── Child-friendly page-by-page reader ───────────────────────────────────────
 function StoryReaderModal({ story, onClose }: { story: Story; onClose: () => void }) {
   const [page, setPage] = useState(0)
+  const [imgBroken, setImgBroken] = useState(false)
   const total = story.pages.length
   const last = page >= total - 1
   const image = story.pageImages?.[page] ?? null
+  useEffect(() => { setImgBroken(false) }, [image])
 
   return (
     <motion.div
@@ -263,9 +268,9 @@ function StoryReaderModal({ story, onClose }: { story: Story; onClose: () => voi
         {/* Illustration — uploaded image if present, else icon on gradient */}
         <div className="h-40 flex items-center justify-center overflow-hidden"
           style={{ background: `linear-gradient(135deg, ${story.accent}22, ${story.accent}0D)` }}>
-          {image ? (
+          {image && !imgBroken ? (
             // eslint-disable-next-line @next/next/no-img-element -- dashboard-uploaded, arbitrary source
-            <img src={image} alt="" className="w-full h-full object-cover" />
+            <img src={image} alt="" className="w-full h-full object-cover" onError={() => setImgBroken(true)} />
           ) : (
             <span className="text-7xl">{story.icon}</span>
           )}

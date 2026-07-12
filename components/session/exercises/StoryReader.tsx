@@ -131,9 +131,15 @@ function StarsDecor() {
 // finally to a plain icon-on-gradient card for any custom story/page with
 // neither — so a specialist-authored story is never a blank illustration.
 function StoryIllustration({ scene, image, icon, accent }: { scene: SceneDef | null; image?: string | null; icon: string; accent: string }) {
-  if (image) {
+  // A dead/broken image link (removed source, expired link) must never show
+  // the browser's broken-image glyph to a child — fall back to the plain
+  // icon card instead. Resets when the page's image actually changes.
+  const [broken, setBroken] = useState(false)
+  useEffect(() => { setBroken(false) }, [image])
+
+  if (image && !broken) {
     // eslint-disable-next-line @next/next/no-img-element -- dashboard-uploaded, arbitrary aspect ratio, fills a fixed frame
-    return <img src={image} alt="" className="w-full h-full object-cover" style={{ display: 'block' }} />
+    return <img src={image} alt="" className="w-full h-full object-cover" style={{ display: 'block' }} onError={() => setBroken(true)} />
   }
   if (!scene) {
     return (

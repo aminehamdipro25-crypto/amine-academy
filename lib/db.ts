@@ -70,7 +70,7 @@ export async function updateStaff(id: string, updates: Partial<Staff>): Promise<
 
 export async function getAllStaff(): Promise<Staff[]> {
   const ids = await redis.lrange('staff:index', 0, -1)
-  const staff = await Promise.all(ids.map(id => getStaff(id)))
+  const staff = await redis.mget<Staff>(ids.map(id => `staff:${id}`))
   return staff.filter(Boolean) as Staff[]
 }
 
@@ -115,7 +115,7 @@ export async function updateParent(id: string, updates: Partial<Parent>): Promis
 
 export async function getAllParents(): Promise<Parent[]> {
   const ids = await redis.lrange('parents:index', 0, -1)
-  const parents = await Promise.all(ids.map(id => getParent(id)))
+  const parents = await redis.mget<Parent>(ids.map(id => `parent:${id}`))
   return parents.filter(Boolean) as Parent[]
 }
 
@@ -137,7 +137,7 @@ export async function getStudent(id: string): Promise<Student | null> {
 
 export async function getStudentsByParent(parentId: string): Promise<Student[]> {
   const ids = await redis.lrange(`students:parent:${parentId}`, 0, -1)
-  const students = await Promise.all(ids.map(id => getStudent(id)))
+  const students = await redis.mget<Student>(ids.map(id => `student:${id}`))
   return students.filter(Boolean) as Student[]
 }
 
@@ -165,7 +165,7 @@ export async function getExercise(id: string): Promise<Exercise | null> {
 
 export async function getAllExercises(): Promise<Exercise[]> {
   const ids = await redis.lrange('exercises:index', 0, -1)
-  const exercises = await Promise.all(ids.map(id => getExercise(id)))
+  const exercises = await redis.mget<Exercise>(ids.map(id => `exercise:${id}`))
   return exercises.filter(Boolean) as Exercise[]
 }
 
@@ -219,7 +219,7 @@ export async function getStory(id: string): Promise<Story | null> {
 
 export async function getAllStories(): Promise<Story[]> {
   const ids = await redis.lrange('stories:index', 0, -1)
-  const stories = await Promise.all(ids.map(id => getStory(id)))
+  const stories = await redis.mget<Story>(ids.map(id => `story:${id}`))
   return (stories.filter(Boolean) as Story[]).sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
 }
 
@@ -277,7 +277,7 @@ export async function getStudentProgram(studentId: string): Promise<Program | nu
 
 export async function getAppointmentsByDate(date: string): Promise<Appointment[]> {
   const ids = await redis.lrange('appointments:index', 0, 200)
-  const appts = await Promise.all(ids.map(id => getAppointment(id)))
+  const appts = await redis.mget<Appointment>(ids.map(id => `appointment:${id}`))
   return (appts.filter(Boolean) as Appointment[]).filter(
     a => a.date === date && a.status !== 'cancelled'
   )
@@ -325,13 +325,13 @@ export async function deleteAppointment(id: string): Promise<void> {
 
 export async function getParentAppointments(parentId: string): Promise<Appointment[]> {
   const ids = await redis.lrange(`appointments:parent:${parentId}`, 0, 20)
-  const appts = await Promise.all(ids.map(id => getAppointment(id)))
+  const appts = await redis.mget<Appointment>(ids.map(id => `appointment:${id}`))
   return appts.filter(Boolean) as Appointment[]
 }
 
 export async function getAllAppointments(): Promise<Appointment[]> {
   const ids = await redis.lrange('appointments:index', 0, 100)
-  const appts = await Promise.all(ids.map(id => getAppointment(id)))
+  const appts = await redis.mget<Appointment>(ids.map(id => `appointment:${id}`))
   return appts.filter(Boolean) as Appointment[]
 }
 
@@ -442,7 +442,7 @@ export async function updatePendingPayment(
 
 export async function getAllPendingPayments(): Promise<PendingPayment[]> {
   const ids = await redis.lrange('payments:index', 0, 100)
-  const payments = await Promise.all(ids.map(id => getPendingPayment(id)))
+  const payments = await redis.mget<PendingPayment>(ids.map(id => `payment:${id}`))
   return payments.filter(Boolean) as PendingPayment[]
 }
 

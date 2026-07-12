@@ -13,7 +13,12 @@ import { parseStoryText } from '@/lib/stories-data'
 // hex/emoji values, without the overhead of a full color/emoji picker library.
 const ACCENT_PRESETS = ['#F59E0B', '#22C55E', '#38BDF8', '#8B5CF6', '#EC4899', '#EF4444', '#14B8A6', '#6366F1']
 const ICON_PRESETS = ['🦁', '🐇', '🐻', '🦆', '🐱', '🐶', '🐸', '🐘', '🦋', '🌟', '📚', '🏠', '⚽', '🎨', '🐦', '🐝']
-const WORD_COLORS = ['#EF4444', '#F59E0B', '#EAB308', '#22C55E', '#0EA5E9', '#8B5CF6', '#EC4899']
+// Deliberately darker, high-contrast shades — the story text is read by
+// dyslexic/low-vision children on a WHITE page, where light colors (yellow,
+// light green) become nearly invisible. Every swatch here clears WCAG AA
+// contrast (>=4.5:1) on white while staying vivid and child-friendly, so a
+// specialist can't accidentally pick an unreadable color.
+const WORD_COLORS = ['#DC2626', '#C2410C', '#B45309', '#15803D', '#1D4ED8', '#6D28D9', '#BE185D']
 const DIFF_OPTIONS: { v: 1 | 2 | 3; label: string }[] = [{ v: 1, label: 'سهل' }, { v: 2, label: 'متوسط' }, { v: 3, label: 'متقدّم' }]
 
 interface EditForm {
@@ -525,7 +530,8 @@ export default function StoryLibraryAdminPage() {
                         </div>
 
                         {/* Live preview */}
-                        <div className="text-sm font-bold text-center bg-gray-50 rounded-xl px-3 py-2.5 mb-2.5" dir="rtl">
+                        {/* Preview on WHITE — the child's actual reading background — so the specialist sees true contrast */}
+                        <div className="text-sm font-bold text-center bg-white border border-gray-100 rounded-xl px-3 py-2.5 mb-2.5" dir="rtl">
                           <ColoredPreview text={page} />
                         </div>
 

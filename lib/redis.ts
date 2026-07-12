@@ -73,6 +73,23 @@ export const redis = {
     }
   },
 
+  // Batch read many keys in ONE HTTP round-trip instead of N separate GETs.
+  // Used by the getAll* list functions (parents, exercises, stories, …) which
+  // otherwise fire one Upstash request per id. Preserves order (result[i]
+  // corresponds to keys[i]) and applies the same parse as get(); a missing or
+  // errored entry becomes null, exactly like get().
+  async mget<T>(keys: string[]): Promise<(T | null)[]> {
+    const cfg = getCfg()
+    if (!cfg || keys.length === 0) return keys.map(() => null)
+    try {
+      const rows = await redisPipeline(cfg, keys.map(k => ['GET', k]))
+      return keys.map((_, i) => parseEntry<T>(rows[i]?.result ?? null))
+    } catch (e) {
+      console.error(`[redis.mget] ${keys.length} keys:`, (e as Error).message)
+      return keys.map(() => null)
+    }
+  },
+
   async set(key: string, value: unknown, opts?: { ex?: number; nx?: boolean }): Promise<void> {
     const cfg = getCfg()
     if (!cfg) throw new Error('Redis not configured')

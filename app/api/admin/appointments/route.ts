@@ -29,8 +29,18 @@ export async function POST(req: NextRequest) {
       notes: body.notes || '',
     })
 
-    const meetingUrl = await createDailyRoom(dailyRoomNameFor(appt.id))
-    await updateAppointment(appt.id, { meetingUrl })
+    // Pre-warm the Daily video room (best-effort). The /meeting route creates
+    // it lazily on session load anyway, so a failure here — DAILY_API_KEY not
+    // configured yet, or a transient Daily API error — must NOT fail the whole
+    // appointment (which is already saved above), or the specialist sees a 500
+    // and can't schedule sessions at all during setup.
+    let meetingUrl = ''
+    try {
+      meetingUrl = await createDailyRoom(dailyRoomNameFor(appt.id))
+      await updateAppointment(appt.id, { meetingUrl })
+    } catch (e) {
+      console.warn('[admin/appointments] daily room pre-warm skipped:', (e as Error).message)
+    }
 
     try {
       const parent = await getParent(body.parentId)

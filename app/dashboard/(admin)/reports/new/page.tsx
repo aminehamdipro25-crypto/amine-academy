@@ -211,6 +211,15 @@ export default function NewReportPage() {
             ratedBy: 'professor', date: new Date().toISOString(),
           })),
           professorNotes,
+          // Persist the measured accuracy improvement so the parent's document
+          // shows a documented badge. Only when a real prior-period comparison exists.
+          improvement: realStats && realStats.hasPrev && realStats.accuracyDelta !== null && realStats.prevAvgAccuracy !== null
+            ? {
+                accuracyDelta: realStats.accuracyDelta,
+                currentAccuracy: realStats.avgAccuracy,
+                previousAccuracy: realStats.prevAvgAccuracy,
+              }
+            : null,
         }),
       })
       if (res.ok) {

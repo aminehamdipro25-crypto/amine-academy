@@ -311,6 +311,28 @@ function ReportDocument({ report, child }: { report: ProgressReport; child: Stud
           ))}
         </div>
 
+        {/* ── 3b. Documented Improvement Badge ── */}
+        {report.improvement && report.improvement.accuracyDelta > 0 && (
+          <div style={{ padding: '18px 28px', background: 'linear-gradient(135deg,#ECFDF5,#D1FAE5)', borderBottom: '1.5px solid #A7F3D0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+                <div style={{ width: 52, height: 52, borderRadius: 14, background: 'linear-gradient(135deg,#059669,#10B981)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, flexShrink: 0, boxShadow: '0 4px 12px rgba(5,150,105,0.3)' }}>📈</div>
+                <div style={{ background: '#059669', color: '#fff', borderRadius: 12, padding: '8px 18px', fontWeight: 900, fontSize: 22, lineHeight: 1 }}>
+                  <span className="ltr-num">{t.improvementBadgeAccuracy(report.improvement.accuracyDelta)}</span>
+                </div>
+              </div>
+              <div style={{ flex: 1, minWidth: 180 }}>
+                <div style={{ fontSize: 10, fontWeight: 800, color: '#065F46', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 4 }}>
+                  {t.improvementBadgeLabel}
+                </div>
+                <div style={{ fontSize: 13, color: '#064E3B', fontWeight: 600, lineHeight: 1.6 }}>
+                  {t.improvementBadgeContext(report.improvement.previousAccuracy, report.improvement.currentAccuracy)}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* ── 4. Exercise Progress ── */}
         <div style={{ padding: '22px 28px', borderBottom: '1.5px solid #F3F4F6' }}>
           <div style={{ fontSize: 10, fontWeight: 800, color: '#6B46F0', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 14 }}>

@@ -157,6 +157,14 @@ export interface ProgressReport {
   behaviorRatings: BehaviorRating[]
   professorNotes: string
   aiSummary: string
+  // Measured accuracy improvement vs the previous equal-length period, derived
+  // from the child's real gameplay at report time. Persisted so the parent's
+  // document can show a documented "+X% accuracy" badge, not a hand-typed claim.
+  improvement?: {
+    accuracyDelta: number
+    currentAccuracy: number
+    previousAccuracy: number
+  } | null
   createdAt: string
 }
 

@@ -17,6 +17,18 @@ export async function POST(req: NextRequest) {
     const student = await getStudent(body.studentId)
     if (!student) return NextResponse.json({ error: 'الطالب غير موجود' }, { status: 404 })
 
+    // Documented improvement badge — only trust it when the client sends three
+    // finite numbers derived from real gameplay; otherwise store null.
+    const imp = body.improvement
+    const improvement =
+      imp && Number.isFinite(imp.accuracyDelta) && Number.isFinite(imp.currentAccuracy) && Number.isFinite(imp.previousAccuracy)
+        ? {
+            accuracyDelta: Math.round(imp.accuracyDelta),
+            currentAccuracy: Math.round(imp.currentAccuracy),
+            previousAccuracy: Math.round(imp.previousAccuracy),
+          }
+        : null
+
     const report = await createReport({
       studentId: body.studentId,
       parentId: body.parentId,
@@ -29,6 +41,7 @@ export async function POST(req: NextRequest) {
       behaviorRatings: Array.isArray(body.behaviorRatings) ? body.behaviorRatings : [],
       professorNotes: typeof body.professorNotes === 'string' ? body.professorNotes.slice(0, 3000) : '',
       aiSummary: '',
+      improvement,
     })
 
     return NextResponse.json({ ok: true, report })

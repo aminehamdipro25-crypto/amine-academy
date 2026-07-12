@@ -28,9 +28,14 @@ function buildCSP(frameSrc, mediaSrc) {
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     // Fonts: self + Google Fonts
     "font-src 'self' https://fonts.gstatic.com",
-    // Images: self + data URIs (for SVG charts) + Cloudinary + Vercel Blob
-    // (uploaded story-library page images)
-    "img-src 'self' data: blob: https://res.cloudinary.com https://lh3.googleusercontent.com https://*.public.blob.vercel-storage.com",
+    // Images: self + data URIs (for SVG charts) + any https source. Broadened
+    // (was a fixed host allowlist) so the story-library editor's "paste an
+    // image URL" field works for any address the specialist provides, not
+    // just Vercel Blob/Cloudinary — same trust model as session content
+    // sharing below: a dashboard-auth-gated action, server-validated to
+    // http(s) only, where the URL is specialist-chosen rather than public
+    // user input.
+    "img-src 'self' data: blob: https:",
     // Connect: self + Upstash Redis + Daily.co signaling/call-engine fetches
     // + Pusher realtime (WebSocket + SockJS HTTP fallback + stats). Without
     // the Pusher origins here, the realtime WebSocket is CSP-blocked exactly

@@ -58,6 +58,7 @@ export default function StoryLibraryAdminPage() {
   const [seedMsg, setSeedMsg] = useState('')
   const [uploadingIdx, setUploadingIdx] = useState<number | null>(null)
   const [uploadError, setUploadError] = useState('')
+  const [urlDrafts, setUrlDrafts] = useState<Record<number, string>>({})
   const textareaRefs = useRef<Record<number, HTMLTextAreaElement | null>>({})
 
   const load = useCallback(async () => {
@@ -221,6 +222,16 @@ export default function StoryLibraryAdminPage() {
   }
   function removeImage(i: number) {
     setForm(f => { const pageImages = [...f.pageImages]; pageImages[i] = null; return { ...f, pageImages } })
+  }
+  // Paste-a-URL path — works with zero setup (no Blob storage needed), for
+  // any image the specialist already has a link to.
+  function setImageUrl(i: number, rawUrl: string) {
+    const url = rawUrl.trim()
+    if (!url) return
+    if (!/^https:\/\//i.test(url)) { setUploadError('الرابط يجب أن يبدأ بـ https://'); return }
+    setUploadError('')
+    setForm(f => { const pageImages = [...f.pageImages]; pageImages[i] = url; return { ...f, pageImages } })
+    setUrlDrafts(d => { const next = { ...d }; delete next[i]; return next })
   }
 
   // ── Question helpers ──────────────────────────────────────────────────────
@@ -505,12 +516,29 @@ export default function StoryLibraryAdminPage() {
                             </button>
                           </div>
                         ) : (
-                          <label className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-600 bg-brand-50 hover:bg-brand-100 px-3 py-2 rounded-xl cursor-pointer transition-colors">
-                            {uploadingIdx === i ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ImagePlus className="w-3.5 h-3.5" />}
-                            {uploadingIdx === i ? 'جارٍ الرفع…' : 'إضافة صورة'}
-                            <input type="file" accept="image/*" className="hidden" disabled={uploadingIdx !== null}
-                              onChange={e => { const f = e.target.files?.[0]; if (f) handleImageUpload(i, f); e.target.value = '' }} />
-                          </label>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <label className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-600 bg-brand-50 hover:bg-brand-100 px-3 py-2 rounded-xl cursor-pointer transition-colors">
+                              {uploadingIdx === i ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ImagePlus className="w-3.5 h-3.5" />}
+                              {uploadingIdx === i ? 'جارٍ الرفع…' : 'رفع صورة'}
+                              <input type="file" accept="image/*" className="hidden" disabled={uploadingIdx !== null}
+                                onChange={e => { const f = e.target.files?.[0]; if (f) handleImageUpload(i, f); e.target.value = '' }} />
+                            </label>
+                            <span className="text-[11px] text-gray-300 font-bold">أو</span>
+                            <div className="flex items-center gap-1 flex-1 min-w-[160px]">
+                              <input
+                                value={urlDrafts[i] ?? ''}
+                                onChange={e => setUrlDrafts(d => ({ ...d, [i]: e.target.value }))}
+                                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); setImageUrl(i, urlDrafts[i] ?? '') } }}
+                                placeholder="الصق رابط صورة https://…"
+                                dir="ltr"
+                                className="flex-1 min-w-0 border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-brand-300"
+                              />
+                              <button type="button" onClick={() => setImageUrl(i, urlDrafts[i] ?? '')}
+                                className="flex-shrink-0 text-xs font-bold text-gray-500 hover:text-brand-600 bg-gray-100 hover:bg-brand-50 px-2.5 py-1.5 rounded-lg transition-colors">
+                                إضافة
+                              </button>
+                            </div>
+                          </div>
                         )}
                       </div>
                     ))}

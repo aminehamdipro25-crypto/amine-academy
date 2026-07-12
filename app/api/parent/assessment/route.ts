@@ -4,6 +4,8 @@ import { verifyToken } from '@/lib/auth'
 import { getStudentsByParent } from '@/lib/db'
 import { redis } from '@/lib/redis'
 import type { AssessmentResult } from '@/lib/types'
+import { buildRecommendedPlan } from '@/lib/assessment-plan'
+import type { DomainKey } from '@/lib/assessment-data'
 
 export async function GET(req: NextRequest) {
   try {
@@ -84,15 +86,24 @@ export async function POST(req: NextRequest) {
       ? recommendations.slice(0, 20).map(r => String(r).slice(0, 300))
       : []
 
+    // Compute the recommended starting plan server-side (from the sanitized
+    // scores, not client-supplied) so it can't be tampered with — only the
+    // attention-domains instrument produces the 4-domain plan.
+    const safeTotal = Number(totalScore) || 0
+    const recommendedPlan = type === 'attention-domains'
+      ? buildRecommendedPlan(safeDomainScores as Record<DomainKey, number>, safeTotal)
+      : undefined
+
     const id = `AR-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`
     const result: AssessmentResult = {
       id,
       studentId: String(studentId).trim(),
       type,
       domainScores: safeDomainScores,
-      totalScore: Number(totalScore) || 0,
+      totalScore: safeTotal,
       severity: severity || 'none',
       recommendations: safeRecommendations,
+      recommendedPlan,
       answers: Array.isArray(answers) ? answers.slice(0, 200) : [],
       completedAt: new Date().toISOString(),
       createdAt: new Date().toISOString(),

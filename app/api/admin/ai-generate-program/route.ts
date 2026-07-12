@@ -49,7 +49,17 @@ function formatAssessmentsForPrompt(assessments: AssessmentResult[]): string {
     }
     if (a.recommendations.length > 0) {
       lines.push('- التوصيات:')
-      a.recommendations.slice(0, 3).forEach(r => lines.push(`  → ${r}`))
+      a.recommendations.slice(0, 12).forEach(r => lines.push(`  → ${r}`))
+    }
+    // The rule-based plan (session cadence + prioritized target domains) gives the
+    // AI a concrete starting frame to align the weekly schedule with.
+    if (a.recommendedPlan) {
+      const p = a.recommendedPlan
+      lines.push(`- الخطة المقترحة: ${p.sessionsPerWeek} حصص/أسبوع لمدة ${p.programWeeks} أسبوعاً (إجمالي ${p.totalSessions} حصة)، إعادة تقييم بعد ${p.reassessWeeks} أسابيع`)
+      if (p.targetDomains.length > 0) {
+        const doms = p.targetDomains.map(d => `${d.label} (${d.priority === 'high' ? 'أولوية عالية' : 'متوسطة'})`).join('، ')
+        lines.push(`- المجالات المستهدفة بالترتيب: ${doms}`)
+      }
     }
   }
   return lines.join('\n')

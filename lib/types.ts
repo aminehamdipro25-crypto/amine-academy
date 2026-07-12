@@ -280,6 +280,17 @@ export interface AssessmentResult {
   totalScore:    number
   severity:      'none' | 'mild' | 'moderate' | 'severe'
   recommendations: string[]
+  // Rule-based starting plan derived from domainScores + severity (see
+  // lib/assessment-plan.ts). Computed server-side at save time for trust.
+  recommendedPlan?: {
+    severity: 'none' | 'mild' | 'moderate' | 'severe'
+    sessionsPerWeek: number
+    programWeeks: number
+    totalSessions: number
+    reassessWeeks: number
+    targetDomains: { key: string; label: string; score: number; priority: 'high' | 'medium' }[]
+    focusExercises: string[]
+  }
   answers:       AssessmentAnswer[]
   completedAt:   string
   createdAt:     string

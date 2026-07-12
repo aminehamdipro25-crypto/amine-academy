@@ -6,6 +6,7 @@ import {
   getScoreLevel, getDomainScores,
   type DomainKey,
 } from '@/lib/assessment-data'
+import { buildRecommendedPlan } from '@/lib/assessment-plan'
 import { useLang, tr } from '@/lib/i18n'
 
 type Phase = 'intro' | 'questions' | 'results'
@@ -282,6 +283,7 @@ export default function AssessmentPage() {
   // ── Results ───────────────────────────────────────────────
   const topDomain  = DOMAINS[worstDomain]
   const totalScore = Object.values(domainScores).reduce((a, b) => a + b, 0)
+  const plan       = buildRecommendedPlan(domainScores, totalScore)
 
   return (
     <div className="space-y-5">
@@ -315,6 +317,53 @@ export default function AssessmentPage() {
           {t.recommendedProtocol(topDomain.protocol)}
         </div>
       </div>
+
+      {/* Recommended plan — session count + path */}
+      {plan.severity !== 'none' && (
+        <div className="rounded-3xl p-5" style={{ background: '#FFFFFF', border: '1.5px solid #E8DBFF' }}>
+          <div className="flex items-center gap-2 mb-1">
+            <span style={{ fontSize: 20 }}>🗺️</span>
+            <h3 className="font-black text-base text-gray-900">الخطة المقترحة</h3>
+          </div>
+          <p className="text-xs text-gray-400 mb-4">نقطة انطلاق يعتمدها الأخصائي ويعدّلها حسب حالة طفلك</p>
+
+          <div className="grid grid-cols-3 gap-2 mb-4">
+            {[
+              { val: plan.sessionsPerWeek, label: 'حصص / أسبوع', emoji: '📅' },
+              { val: plan.programWeeks,    label: 'أسبوعاً',      emoji: '⏳' },
+              { val: plan.totalSessions,   label: 'إجمالي الحصص', emoji: '🎯' },
+            ].map(s => (
+              <div key={s.label} className="rounded-2xl p-3 text-center" style={{ background: '#F3EEFF' }}>
+                <div style={{ fontSize: 18 }}>{s.emoji}</div>
+                <div className="font-black text-xl text-gray-900 ltr-num">{s.val}</div>
+                <div className="text-[10px] text-gray-500 font-bold mt-0.5">{s.label}</div>
+              </div>
+            ))}
+          </div>
+
+          {plan.targetDomains.length > 0 && (
+            <div className="mb-3">
+              <p className="text-xs font-black text-gray-600 mb-2">🧭 المسار — المجالات المستهدفة بالترتيب:</p>
+              <div className="space-y-1.5">
+                {plan.targetDomains.map((d, i) => (
+                  <div key={d.key} className="flex items-center gap-2 rounded-xl px-3 py-2" style={{ background: '#F9FAFB' }}>
+                    <span className="w-5 h-5 rounded-full flex items-center justify-center text-white text-[11px] font-black flex-shrink-0" style={{ background: DOMAINS[d.key as DomainKey].color }}>{i + 1}</span>
+                    <span className="font-bold text-sm text-gray-800">{d.label}</span>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full mr-auto" style={{ background: d.priority === 'high' ? '#FEF2F2' : '#FFFBEB', color: d.priority === 'high' ? '#DC2626' : '#D97706' }}>
+                      {d.priority === 'high' ? 'أولوية عالية' : 'أولوية متوسطة'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="rounded-xl px-3 py-2.5 flex items-center gap-2" style={{ background: '#ECFDF5', border: '1px solid #A7F3D0' }}>
+            <span style={{ fontSize: 15 }}>🔁</span>
+            <span className="text-xs font-bold text-emerald-800">يُنصح بإعادة التقييم بعد {plan.reassessWeeks} أسابيع لقياس التحسّن بالأرقام</span>
+          </div>
+        </div>
+      )}
 
       {/* Domain bars */}
       <div className="rounded-3xl overflow-hidden" style={{ border: '1.5px solid #F0E8FF' }}>

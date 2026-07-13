@@ -37,7 +37,7 @@
 import crypto from 'crypto'
 import { redis } from './redis'
 import { generateId } from './auth'
-import type { Parent, Student, Exercise, Program, Appointment, ProgressReport, PendingPayment, Message, Achievement, StudentAssessmentProfile, GameResult, WeeklyProgress, Staff, Story } from './types'
+import type { Parent, Student, Exercise, Program, Appointment, ProgressReport, PendingPayment, Message, Achievement, StudentAssessmentProfile, GameResult, WeeklyProgress, Staff, Story, AssessmentResult } from './types'
 
 // ── Staff (multi-therapist accounts) ────────────────────────────
 
@@ -732,6 +732,19 @@ const DEFAULT_DIFFICULTIES = {
 
 export async function getAssessmentProfile(studentId: string): Promise<StudentAssessmentProfile | null> {
   return redis.get<StudentAssessmentProfile>(`assessment-profile:${studentId}`)
+}
+
+// Parent-completed assessment results (attention-domains etc.), newest first.
+// Same key scheme the parent portal writes to; used by admin views + AI program.
+export async function getStudentAssessments(studentId: string, limit = 20): Promise<AssessmentResult[]> {
+  try {
+    const ids = await redis.lrange(`assessments:student:${studentId}`, 0, limit - 1)
+    if (!ids.length) return []
+    const results = await redis.mget<AssessmentResult>(ids.map(id => `assessment:${id}`))
+    return results.filter(Boolean) as AssessmentResult[]
+  } catch {
+    return []
+  }
 }
 
 export async function saveAssessmentProfile(

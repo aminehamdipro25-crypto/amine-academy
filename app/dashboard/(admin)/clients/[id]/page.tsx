@@ -65,6 +65,7 @@ export default function ClientDetailPage() {
   const [programs, setPrograms] = useState<Record<string, Program | null>>({})
   const [programsLoading, setProgramsLoading] = useState(false)
   const [walkInAssessments, setWalkInAssessments] = useState<Record<string, AssessmentResult[]>>({})
+  const [parentAssessments, setParentAssessments] = useState<Record<string, AssessmentResult[]>>({})
   const [isOwner, setIsOwner] = useState(false)
 
   useEffect(() => {
@@ -140,6 +141,20 @@ export default function ClientDetailPage() {
       const map: Record<string, AssessmentResult[]> = {}
       results.forEach(r => { map[r.id] = r.results })
       setWalkInAssessments(map)
+    })
+
+    // Fetch parent-completed domain assessments (carry the recommended plan)
+    Promise.all(
+      students.map(s =>
+        fetch(`/api/admin/students/${s.id}/assessments`)
+          .then(r => r.ok ? r.json() : null)
+          .then(d => ({ id: s.id, results: (d?.assessments ?? []) as AssessmentResult[] }))
+          .catch(() => ({ id: s.id, results: [] as AssessmentResult[] }))
+      )
+    ).then(results => {
+      const map: Record<string, AssessmentResult[]> = {}
+      results.forEach(r => { map[r.id] = r.results })
+      setParentAssessments(map)
     })
   }, [data])
 
@@ -672,6 +687,58 @@ export default function ClientDetailPage() {
               </div>
             )}
           </div>
+
+          {/* Recommended plan from the parent's first assessment */}
+          {(data.students || []).some(s => parentAssessments[s.id]?.some(a => a.recommendedPlan)) && (
+            <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-50 flex items-center justify-between">
+                <h2 className="font-black text-gray-900 flex items-center gap-2">
+                  <span>🗺️</span> الخطة المقترحة من التقييم
+                </h2>
+                <span className="text-[10px] font-bold text-gray-400 bg-gray-50 px-2.5 py-1 rounded-lg">أداة فرز — ليست تشخيصاً</span>
+              </div>
+              <div className="divide-y divide-gray-50">
+                {(data.students || []).map(s => {
+                  const latest = parentAssessments[s.id]?.find(a => a.recommendedPlan)
+                  const p = latest?.recommendedPlan
+                  if (!p) return null
+                  return (
+                    <div key={s.id} className="px-6 py-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <p className="font-black text-gray-900 text-sm">{s.firstName} {s.lastName}</p>
+                        <span className="text-[11px] text-gray-400 ltr-num">
+                          {latest?.completedAt ? new Date(latest.completedAt).toLocaleDateString('fr-FR') : ''}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-4 gap-2 mb-3">
+                        {[
+                          { val: p.sessionsPerWeek, label: 'حصص/أسبوع' },
+                          { val: p.programWeeks,    label: 'أسبوع' },
+                          { val: p.totalSessions,   label: 'إجمالي حصص' },
+                          { val: `${p.reassessWeeks}أ`, label: 'إعادة تقييم' },
+                        ].map(x => (
+                          <div key={x.label} className="rounded-xl py-2 text-center" style={{ background: '#F3EEFF' }}>
+                            <div className="font-black text-lg text-brand-700 ltr-num">{x.val}</div>
+                            <div className="text-[9px] text-gray-500 font-bold">{x.label}</div>
+                          </div>
+                        ))}
+                      </div>
+                      {p.targetDomains.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5">
+                          {p.targetDomains.map((d, i) => (
+                            <span key={d.key} className="text-[11px] font-bold px-2.5 py-1 rounded-full"
+                              style={{ background: d.priority === 'high' ? '#FEF2F2' : '#FFFBEB', color: d.priority === 'high' ? '#DC2626' : '#D97706' }}>
+                              {i + 1}. {d.label}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Current Programs */}
           {(data.students || []).some(s => programs[s.id]) && (

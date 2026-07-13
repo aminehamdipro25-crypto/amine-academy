@@ -18,12 +18,10 @@ interface KidStatus {
 }
 
 // GET — specialist polls this. Authorized callers only.
-export async function GET(
-  _req: NextRequest,
-  { params }: { params: { appointmentId: string } }
-) {
+export async function GET(_req: NextRequest, props: { params: Promise<{ appointmentId: string }> }) {
+  const params = await props.params;
   try {
-    if (!await authorizeSession(params.appointmentId)) {
+    if (!(await authorizeSession(params.appointmentId))) {
       return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
     }
     const data = await redis.get<KidStatus>(key(params.appointmentId))
@@ -36,12 +34,10 @@ export async function GET(
 // POST — kid page reports status, plus the score/accuracy/errors on a real
 // completion (undefined on a cancel). Authorized callers only (owning parent
 // / staff) so status can't be spoofed by an anonymous caller.
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { appointmentId: string } }
-) {
+export async function POST(req: NextRequest, props: { params: Promise<{ appointmentId: string }> }) {
+  const params = await props.params;
   try {
-    if (!await authorizeSession(params.appointmentId)) {
+    if (!(await authorizeSession(params.appointmentId))) {
       return NextResponse.json({ ok: false }, { status: 401 })
     }
     const rl = await isRateLimited(`session_kidstatus_post:${params.appointmentId}`, 60, 60)

@@ -6,11 +6,9 @@ import type { SessionLog } from '@/lib/types'
 
 export const runtime = 'nodejs'
 
-export async function GET(
-  _req: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  if (!await isDashboardUser()) {
+export async function GET(_req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
+  if (!(await isDashboardUser())) {
     return NextResponse.json({ sessions: {} }, { status: 401 })
   }
   try {

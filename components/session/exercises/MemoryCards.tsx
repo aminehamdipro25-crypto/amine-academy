@@ -26,9 +26,9 @@ export default function MemoryCards({ onComplete, onCancel, difficulty = 1, seed
   const rng             = useRef(createRng(seed ?? Date.now())).current
   const emojiSet        = useRef(pickWithRng(rng, EMOJI_SETS)).current
   const startRef        = useRef(Date.now())
-  const matchTimerRef   = useRef<ReturnType<typeof setTimeout>>()
-  const completeTimerRef= useRef<ReturnType<typeof setTimeout>>()
-  const mismatchTimerRef= useRef<ReturnType<typeof setTimeout>>()
+  const matchTimerRef   = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const completeTimerRef= useRef<ReturnType<typeof setTimeout> | null>(null)
+  const mismatchTimerRef= useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const [cards, setCards]         = useState<Card[]>([])
   const [flipped, setFlipped]     = useState<number[]>([])
@@ -46,9 +46,9 @@ export default function MemoryCards({ onComplete, onCancel, difficulty = 1, seed
   })
 
   useEffect(() => () => {
-    clearTimeout(matchTimerRef.current)
-    clearTimeout(completeTimerRef.current)
-    clearTimeout(mismatchTimerRef.current)
+    clearTimeout(matchTimerRef.current ?? undefined)
+    clearTimeout(completeTimerRef.current ?? undefined)
+    clearTimeout(mismatchTimerRef.current ?? undefined)
   }, [])
 
   useEffect(() => {

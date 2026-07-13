@@ -1,5 +1,5 @@
 'use client'
-import { X, Youtube } from 'lucide-react'
+import { X, MonitorPlay } from 'lucide-react'
 import { EXERCISES, VIDEO_LIBRARY } from '@/lib/session-constants'
 import { extractYoutubeId } from '@/lib/session-helpers'
 
@@ -98,7 +98,7 @@ export default function VideoLibraryModal({
             className="mx-5 mb-4 rounded-2xl flex flex-col items-center justify-center gap-3 py-8"
             style={{ background: 'rgba(255,255,255,0.03)', border: '1px dashed rgba(255,255,255,0.1)' }}
           >
-            <Youtube className="w-10 h-10 text-white/20" />
+            <MonitorPlay className="w-10 h-10 text-white/20" />
             <p className="text-white/30 text-sm">الصق رابط يوتيوب لتشغيل الفيديو هنا</p>
           </div>
         )}

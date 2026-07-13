@@ -6,9 +6,10 @@ import { sanitizeStoryInput } from '@/lib/story-validation'
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
-    if (!await isOwnerUser()) {
+    if (!(await isOwnerUser())) {
       return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
     }
     const existing = await getStory(params.id)
@@ -34,9 +35,10 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
 }
 
-export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(_req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
-    if (!await isOwnerUser()) {
+    if (!(await isOwnerUser())) {
       return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
     }
     await deleteStory(params.id)

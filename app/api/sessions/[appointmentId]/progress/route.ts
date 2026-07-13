@@ -26,12 +26,10 @@ const clampInt = (n: unknown, max = 9999) =>
   typeof n === 'number' && Number.isFinite(n) ? Math.min(max, Math.max(0, Math.round(n))) : 0
 
 // GET — specialist polls this (and re-fetches on a 'progress' wake-up).
-export async function GET(
-  _req: NextRequest,
-  { params }: { params: { appointmentId: string } }
-) {
+export async function GET(_req: NextRequest, props: { params: Promise<{ appointmentId: string }> }) {
+  const params = await props.params;
   try {
-    if (!await authorizeSession(params.appointmentId)) {
+    if (!(await authorizeSession(params.appointmentId))) {
       return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
     }
     const data = await redis.get<ProgressState>(key(params.appointmentId))
@@ -45,12 +43,10 @@ export async function GET(
 // parent / staff). Rate limit is generous (progress can fire per answer) but
 // still bounded so a runaway loop can't hammer Redis; the client also
 // throttles. Empty/invalid bodies are rejected.
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { appointmentId: string } }
-) {
+export async function POST(req: NextRequest, props: { params: Promise<{ appointmentId: string }> }) {
+  const params = await props.params;
   try {
-    if (!await authorizeSession(params.appointmentId)) {
+    if (!(await authorizeSession(params.appointmentId))) {
       return NextResponse.json({ ok: false }, { status: 401 })
     }
     const rl = await isRateLimited(`session_progress_post:${params.appointmentId}`, 240, 60)
@@ -82,12 +78,10 @@ export async function POST(
 
 // DELETE — clear progress (e.g. when an exercise ends or is cleared) so the
 // specialist's live panel doesn't show a stale bar between exercises.
-export async function DELETE(
-  _req: NextRequest,
-  { params }: { params: { appointmentId: string } }
-) {
+export async function DELETE(_req: NextRequest, props: { params: Promise<{ appointmentId: string }> }) {
+  const params = await props.params;
   try {
-    if (!await authorizeSession(params.appointmentId)) {
+    if (!(await authorizeSession(params.appointmentId))) {
       return NextResponse.json({ ok: false }, { status: 401 })
     }
     await redis.del(key(params.appointmentId))

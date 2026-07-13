@@ -20,12 +20,10 @@ type ReactionType = (typeof ALLOWED)[number]
 interface ReactionState { type: ReactionType; id: number }
 
 // GET — the kid page polls this and re-fetches on a 'reaction' wake-up.
-export async function GET(
-  _req: NextRequest,
-  { params }: { params: { appointmentId: string } }
-) {
+export async function GET(_req: NextRequest, props: { params: Promise<{ appointmentId: string }> }) {
+  const params = await props.params;
   try {
-    if (!await authorizeSession(params.appointmentId)) {
+    if (!(await authorizeSession(params.appointmentId))) {
       return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
     }
     const data = await redis.get<ReactionState>(key(params.appointmentId))
@@ -36,12 +34,10 @@ export async function GET(
 }
 
 // POST — only the specialist/staff fires reactions (never the child).
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { appointmentId: string } }
-) {
+export async function POST(req: NextRequest, props: { params: Promise<{ appointmentId: string }> }) {
+  const params = await props.params;
   try {
-    if (!await isDashboardUser()) {
+    if (!(await isDashboardUser())) {
       return NextResponse.json({ ok: false }, { status: 401 })
     }
     const rl = await isRateLimited(`session_reaction_post:${params.appointmentId}`, 60, 60)

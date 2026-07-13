@@ -5,11 +5,9 @@ import { getAppointment, updateAppointment, getParentAppointments } from '@/lib/
 
 export const runtime = 'nodejs'
 
-export async function GET(
-  _req: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  if (!await isDashboardUser()) {
+export async function GET(_req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
+  if (!(await isDashboardUser())) {
     return NextResponse.json({ appointment: null }, { status: 401 })
   }
   try {
@@ -21,10 +19,8 @@ export async function GET(
 }
 
 // Parent cancels their own upcoming appointment
-export async function PATCH(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PATCH(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const cookieStore = await cookies()
     const token = cookieStore.get('parent_token')?.value

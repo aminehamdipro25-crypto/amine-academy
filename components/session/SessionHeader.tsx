@@ -40,7 +40,7 @@ export default function SessionHeader({
   kidPresent,
   kidEverPresent,
 }: {
-  headerRef: React.RefObject<HTMLElement>
+  headerRef: React.RefObject<HTMLElement | null>
   chromeHidden: boolean
   onClose: () => void
   studentName: string

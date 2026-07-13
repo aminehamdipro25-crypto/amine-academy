@@ -13,11 +13,9 @@ interface HomeworkAssignment {
   therapistName?: string
 }
 
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  if (!await isDashboardUser()) {
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
+  if (!(await isDashboardUser())) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -45,11 +43,9 @@ export async function POST(
   }
 }
 
-export async function GET(
-  _req: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  if (!await isDashboardUser()) {
+export async function GET(_req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
+  if (!(await isDashboardUser())) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

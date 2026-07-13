@@ -74,11 +74,9 @@ async function requireAdmin(): Promise<boolean> {
   return isDashboardUser()
 }
 
-export async function GET(
-  _req: NextRequest,
-  { params }: { params: { appointmentId: string } }
-) {
-  if (!await requireAdmin()) {
+export async function GET(_req: NextRequest, props: { params: Promise<{ appointmentId: string }> }) {
+  const params = await props.params;
+  if (!(await requireAdmin())) {
     return NextResponse.json({ log: null }, { status: 401 })
   }
   try {
@@ -89,11 +87,9 @@ export async function GET(
   }
 }
 
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { appointmentId: string } }
-) {
-  if (!await requireAdmin()) {
+export async function POST(req: NextRequest, props: { params: Promise<{ appointmentId: string }> }) {
+  const params = await props.params;
+  if (!(await requireAdmin())) {
     return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
   }
   try {
@@ -142,11 +138,9 @@ export async function POST(
   }
 }
 
-export async function PATCH(
-  req: NextRequest,
-  { params }: { params: { appointmentId: string } }
-) {
-  if (!await requireAdmin()) {
+export async function PATCH(req: NextRequest, props: { params: Promise<{ appointmentId: string }> }) {
+  const params = await props.params;
+  if (!(await requireAdmin())) {
     return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
   }
   try {

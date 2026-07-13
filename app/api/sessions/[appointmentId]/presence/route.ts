@@ -24,12 +24,10 @@ const TTL = 30
 //     kid page closes/crashes/loses connection.
 //   - parent portal checks the specialist's presence for "الجلسة جارية الآن".
 // Authorized callers only (owning parent / staff).
-export async function GET(
-  _req: NextRequest,
-  { params }: { params: { appointmentId: string } }
-) {
+export async function GET(_req: NextRequest, props: { params: Promise<{ appointmentId: string }> }) {
+  const params = await props.params;
   try {
-    if (!await authorizeSession(params.appointmentId)) {
+    if (!(await authorizeSession(params.appointmentId))) {
       return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
     }
     const [specialist, kid] = await Promise.all([
@@ -46,20 +44,18 @@ export async function GET(
 // `role` picks which presence key to touch; each is authorized separately
 // so a parent/kid can only ever mark THEIR OWN presence, never the
 // specialist's, and vice versa.
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { appointmentId: string } }
-) {
+export async function POST(req: NextRequest, props: { params: Promise<{ appointmentId: string }> }) {
+  const params = await props.params;
   try {
     const body = await req.json().catch(() => null)
     const role = body?.role === 'kid' ? 'kid' : 'specialist'
 
     if (role === 'specialist') {
-      if (!await isDashboardUser()) return NextResponse.json({ ok: false }, { status: 401 })
+      if (!(await isDashboardUser())) return NextResponse.json({ ok: false }, { status: 401 })
     } else {
       // Kid page authenticates as the owning parent (see middleware.ts) —
       // authorizeSession's parent branch covers this correctly.
-      if (!await authorizeSession(params.appointmentId)) {
+      if (!(await authorizeSession(params.appointmentId))) {
         return NextResponse.json({ ok: false }, { status: 401 })
       }
     }

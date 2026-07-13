@@ -5,7 +5,8 @@ import { getExercise, updateExercise } from '@/lib/db'
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
-export async function GET(_: Request, { params }: { params: { id: string } }) {
+export async function GET(_: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const ex = await getExercise(params.id)
     if (!ex) return NextResponse.json({ error: 'not found' }, { status: 404 })
@@ -15,7 +16,8 @@ export async function GET(_: Request, { params }: { params: { id: string } }) {
   }
 }
 
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+export async function PATCH(req: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const isAdmin = await isDashboardUser()
     if (!isAdmin) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })

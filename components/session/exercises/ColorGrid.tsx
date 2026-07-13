@@ -52,9 +52,9 @@ export default function ColorGrid({ onComplete, onCancel, studentAge, difficulty
   const [countdown, setCountdown] = useState(cfg.studySec)
   const [scores, setScores]   = useState<number[]>([])
   const startRef = useRef(Date.now())
-  const timerRef = useRef<ReturnType<typeof setTimeout>>()
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  useEffect(() => () => clearTimeout(timerRef.current), [])
+  useEffect(() => () => clearTimeout(timerRef.current ?? undefined), [])
 
   function startRound(r: number) {
     const grid = makeGrid(rng, cfg.size, cfg.colors)

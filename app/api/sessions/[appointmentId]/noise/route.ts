@@ -23,12 +23,10 @@ const EMPTY: NoiseState = { active: false, mode: 'calm', customUrl: null }
 // GET — kid page polls this; when active, it runs the SAME synthesis
 // locally (there's no audio file to stream — see lib/noise-synth.ts), or
 // plays customUrl directly if one is set.
-export async function GET(
-  _req: NextRequest,
-  { params }: { params: { appointmentId: string } }
-) {
+export async function GET(_req: NextRequest, props: { params: Promise<{ appointmentId: string }> }) {
+  const params = await props.params;
   try {
-    if (!await authorizeSession(params.appointmentId)) {
+    if (!(await authorizeSession(params.appointmentId))) {
       return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
     }
     const state = await redis.get<NoiseState>(key(params.appointmentId))
@@ -40,12 +38,10 @@ export async function GET(
 
 // POST — specialist starts/stops the noise engine or a shared audio link,
 // or changes mode
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { appointmentId: string } }
-) {
+export async function POST(req: NextRequest, props: { params: Promise<{ appointmentId: string }> }) {
+  const params = await props.params;
   try {
-    if (!await isDashboardUser()) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
+    if (!(await isDashboardUser())) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
     const rl = await isRateLimited(`session_noise_post:${params.appointmentId}`, 60, 60)
     if (rl.limited) return NextResponse.json({ error: 'طلبات كثيرة جداً' }, { status: 429 })
 

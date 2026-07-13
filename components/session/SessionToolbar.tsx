@@ -70,20 +70,20 @@ export default function SessionToolbar({
   onStopScreenShare,
   onShareAudioUrl,
 }: {
-  toolbarRef: React.RefObject<HTMLDivElement>
+  toolbarRef: React.RefObject<HTMLDivElement | null>
   chromeHidden: boolean
   jitsiUrl: string | null
   jitsiEmbedded: boolean
   onToggleJitsiEmbedded: () => void
   showWhiteboard: boolean
   onToggleWhiteboard: () => void
-  promptBtnRef: React.RefObject<HTMLDivElement>
+  promptBtnRef: React.RefObject<HTMLDivElement | null>
   promptPickerOpen: boolean
   onTogglePromptPicker: () => void
   onClosePromptPicker: () => void
   promptCards: typeof PROMPT_CARDS
   onSelectPromptCard: (card: typeof PROMPT_CARDS[number]) => void
-  timerBtnRef: React.RefObject<HTMLDivElement>
+  timerBtnRef: React.RefObject<HTMLDivElement | null>
   timerPickerOpen: boolean
   onToggleTimerPicker: () => void
   onCloseTimerPicker: () => void
@@ -93,7 +93,7 @@ export default function SessionToolbar({
   onToggleCountUp: () => void
   onStartStudentTimer: (seconds: number, countUp?: boolean) => void
   onStopStudentTimer: () => void
-  noiseBtnRef: React.RefObject<HTMLDivElement>
+  noiseBtnRef: React.RefObject<HTMLDivElement | null>
   showNoisePanel: boolean
   onToggleNoisePanel: () => void
   onCloseNoisePanel: () => void

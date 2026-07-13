@@ -26,12 +26,10 @@ const EMPTY: TimerState = { active: false, total: 120, countUp: false, running: 
 const MAX_SECONDS = 3600
 
 // GET — kid page polls this to mirror the specialist's visible timer.
-export async function GET(
-  _req: NextRequest,
-  { params }: { params: { appointmentId: string } }
-) {
+export async function GET(_req: NextRequest, props: { params: Promise<{ appointmentId: string }> }) {
+  const params = await props.params;
   try {
-    if (!await authorizeSession(params.appointmentId)) {
+    if (!(await authorizeSession(params.appointmentId))) {
       return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
     }
     const state = await redis.get<TimerState>(key(params.appointmentId))
@@ -43,12 +41,10 @@ export async function GET(
 
 // POST — specialist publishes a timer snapshot on every meaningful change
 // (start, pause/resume, reset, show/hide).
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { appointmentId: string } }
-) {
+export async function POST(req: NextRequest, props: { params: Promise<{ appointmentId: string }> }) {
+  const params = await props.params;
   try {
-    if (!await isDashboardUser()) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
+    if (!(await isDashboardUser())) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
     const rl = await isRateLimited(`session_timer_post:${params.appointmentId}`, 120, 60)
     if (rl.limited) return NextResponse.json({ error: 'طلبات كثيرة جداً' }, { status: 429 })
 

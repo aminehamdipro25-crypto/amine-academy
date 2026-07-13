@@ -48,9 +48,9 @@ export default function BreathingGuide({ onComplete, onCancel, studentAge }: Pro
   const [done, setDone]         = useState(false)
   const startRef = useRef(Date.now())
   const doneRef = useRef(false)
-  const completionTimerRef = useRef<ReturnType<typeof setTimeout>>()
+  const completionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  useEffect(() => () => clearTimeout(completionTimerRef.current), [])
+  useEffect(() => () => clearTimeout(completionTimerRef.current ?? undefined), [])
 
   useEffect(() => {
     if (!running || !mode) return

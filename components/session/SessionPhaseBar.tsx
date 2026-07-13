@@ -18,7 +18,7 @@ export default function SessionPhaseBar({
   onSelectPhase,
   onToggleShowPhaseEdit,
 }: {
-  phaseBarRef: React.RefObject<HTMLDivElement>
+  phaseBarRef: React.RefObject<HTMLDivElement | null>
   running: boolean
   chromeHidden: boolean
   phases: SessionPhase[]

@@ -6,10 +6,8 @@ export const runtime = 'nodejs'
 
 // Returns a live password-reset link for the parent account — owner-only,
 // since this is equivalent to an account takeover if handed to staff.
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { parentId: string } }
-) {
+export async function POST(req: NextRequest, props: { params: Promise<{ parentId: string }> }) {
+  const params = await props.params;
   if (!(await isOwnerUser())) {
     return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
   }

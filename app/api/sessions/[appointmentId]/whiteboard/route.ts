@@ -20,12 +20,10 @@ const MAX_STROKES = 600
 const TTL = 7200
 
 // GET — kid/parent page polls this. Authorized callers only.
-export async function GET(
-  _req: NextRequest,
-  { params }: { params: { appointmentId: string } }
-) {
+export async function GET(_req: NextRequest, props: { params: Promise<{ appointmentId: string }> }) {
+  const params = await props.params;
   try {
-    if (!await authorizeSession(params.appointmentId)) {
+    if (!(await authorizeSession(params.appointmentId))) {
       return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
     }
     const wb = await redis.get<WBState>(key(params.appointmentId))
@@ -36,12 +34,10 @@ export async function GET(
 }
 
 // POST — specialist mutates the board: open / close / stroke / undo / clear
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { appointmentId: string } }
-) {
+export async function POST(req: NextRequest, props: { params: Promise<{ appointmentId: string }> }) {
+  const params = await props.params;
   try {
-    if (!await isDashboardUser()) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
+    if (!(await isDashboardUser())) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
     // Generous cap — a fast-drawing specialist can lift the pen a few times a
     // second; this only guards against runaway/malicious flooding.
     const rl = await isRateLimited(`session_wb_post:${params.appointmentId}`, 300, 60)

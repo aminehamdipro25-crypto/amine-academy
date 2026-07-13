@@ -11,12 +11,10 @@ function key(id: string) { return `session:live:${id}` }
 
 // GET — kid page polls this every 3 seconds. Authorized callers only
 // (specialist/staff or the owning parent).
-export async function GET(
-  _req: NextRequest,
-  { params }: { params: { appointmentId: string } }
-) {
+export async function GET(_req: NextRequest, props: { params: Promise<{ appointmentId: string }> }) {
+  const params = await props.params;
   try {
-    if (!await authorizeSession(params.appointmentId)) {
+    if (!(await authorizeSession(params.appointmentId))) {
       return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
     }
     const data = await redis.get<{ exerciseId: string; difficulty: number; seed?: number; locked?: boolean }>(key(params.appointmentId))
@@ -27,12 +25,10 @@ export async function GET(
 }
 
 // POST — specialist publishes current exercise
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { appointmentId: string } }
-) {
+export async function POST(req: NextRequest, props: { params: Promise<{ appointmentId: string }> }) {
+  const params = await props.params;
   try {
-    if (!await isDashboardUser()) {
+    if (!(await isDashboardUser())) {
       return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
     }
     const rl = await isRateLimited(`session_live_post:${params.appointmentId}`, 60, 60)
@@ -57,12 +53,10 @@ export async function POST(
 }
 
 // DELETE — specialist clears exercise (between exercises)
-export async function DELETE(
-  _req: NextRequest,
-  { params }: { params: { appointmentId: string } }
-) {
+export async function DELETE(_req: NextRequest, props: { params: Promise<{ appointmentId: string }> }) {
+  const params = await props.params;
   try {
-    if (!await isDashboardUser()) {
+    if (!(await isDashboardUser())) {
       return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
     }
     await redis.del(key(params.appointmentId))

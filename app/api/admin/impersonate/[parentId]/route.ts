@@ -8,10 +8,8 @@ export const runtime = 'nodejs'
 
 // Impersonation mints a working session for any parent account — owner-only,
 // even though staff can otherwise manage clients.
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { parentId: string } }
-) {
+export async function POST(req: NextRequest, props: { params: Promise<{ parentId: string }> }) {
+  const params = await props.params;
   if (!(await isOwnerUser())) {
     return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
   }

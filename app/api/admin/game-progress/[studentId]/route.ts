@@ -45,11 +45,9 @@ function computePeriodStats(results: GameResult[], from: string, to: string) {
   }
 }
 
-export async function GET(
-  req: NextRequest,
-  { params }: { params: { studentId: string } }
-) {
-  if (!await isDashboardUser()) {
+export async function GET(req: NextRequest, props: { params: Promise<{ studentId: string }> }) {
+  const params = await props.params;
+  if (!(await isDashboardUser())) {
     return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
   }
   try {

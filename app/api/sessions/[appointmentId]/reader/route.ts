@@ -27,12 +27,10 @@ interface ReaderState {
 const clampInt = (n: unknown) => (typeof n === 'number' && Number.isFinite(n) ? Math.max(0, Math.round(n)) : 0)
 
 // GET — the child polls this and re-fetches on a 'reader' wake-up.
-export async function GET(
-  _req: NextRequest,
-  { params }: { params: { appointmentId: string } }
-) {
+export async function GET(_req: NextRequest, props: { params: Promise<{ appointmentId: string }> }) {
+  const params = await props.params;
   try {
-    if (!await authorizeSession(params.appointmentId)) {
+    if (!(await authorizeSession(params.appointmentId))) {
       return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
     }
     const state = await redis.get<ReaderState>(key(params.appointmentId))
@@ -43,12 +41,10 @@ export async function GET(
 }
 
 // POST — only the specialist drives the reader.
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { appointmentId: string } }
-) {
+export async function POST(req: NextRequest, props: { params: Promise<{ appointmentId: string }> }) {
+  const params = await props.params;
   try {
-    if (!await isDashboardUser()) {
+    if (!(await isDashboardUser())) {
       return NextResponse.json({ ok: false }, { status: 401 })
     }
     const rl = await isRateLimited(`session_reader_post:${params.appointmentId}`, 120, 60)

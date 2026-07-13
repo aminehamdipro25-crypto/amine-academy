@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo, lazy, Suspense } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useParams, useRouter } from 'next/navigation'
-import { X, Star, ClipboardList, Gamepad2, BarChart3, BookOpen, Play, Youtube, ExternalLink, Maximize2, Minimize2, RotateCcw } from 'lucide-react'
+import { X, Star, ClipboardList, Gamepad2, BarChart3, BookOpen, Play, MonitorPlay, ExternalLink, Maximize2, Minimize2, RotateCcw } from 'lucide-react'
 import type { ExerciseResult, AssessmentResult, SessionObservations } from '@/lib/types'
 import { rankGamesForStudent, getTopGames, DIFFICULTY_LABELS_AR } from '@/lib/game-mapping'
 import type { StudentAssessmentProfile } from '@/lib/types'
@@ -2575,7 +2575,7 @@ ${notes ? `
                       </div>
                       {hasUrl
                         ? <Play className="w-4 h-4 text-brand-500 flex-shrink-0" />
-                        : <Youtube className="w-4 h-4 text-gray-300 flex-shrink-0" />
+                        : <MonitorPlay className="w-4 h-4 text-gray-300 flex-shrink-0" />
                       }
                     </button>
                   )

@@ -30,12 +30,10 @@ function clampScale(n: unknown, fallback: number): number {
 
 // GET — either side polls this: the specialist to see the child's live
 // answers, the kid page to see whether the specialist has this phase open.
-export async function GET(
-  _req: NextRequest,
-  { params }: { params: { appointmentId: string } }
-) {
+export async function GET(_req: NextRequest, props: { params: Promise<{ appointmentId: string }> }) {
+  const params = await props.params;
   try {
-    if (!await authorizeSession(params.appointmentId)) {
+    if (!(await authorizeSession(params.appointmentId))) {
       return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
     }
     const state = await redis.get<ReadinessState>(key(params.appointmentId))
@@ -49,12 +47,10 @@ export async function GET(
 // or the specialist fills it in themselves (kept as a fallback — e.g. a
 // non-verbal child, or no second device). Partial body — only the field(s)
 // present are updated, so one tap doesn't clobber the other two answers.
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { appointmentId: string } }
-) {
+export async function POST(req: NextRequest, props: { params: Promise<{ appointmentId: string }> }) {
+  const params = await props.params;
   try {
-    if (!await authorizeSession(params.appointmentId)) {
+    if (!(await authorizeSession(params.appointmentId))) {
       return NextResponse.json({ ok: false }, { status: 401 })
     }
     const rl = await isRateLimited(`session_readiness_post:${params.appointmentId}`, 60, 60)

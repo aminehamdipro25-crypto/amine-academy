@@ -29,19 +29,15 @@ const ProfileUpdateSchema = z.object({
   lastAssessmentId:     z.string().nullable().optional(),
 })
 
-export async function GET(
-  _req: NextRequest,
-  { params }: { params: { studentId: string } }
-) {
+export async function GET(_req: NextRequest, props: { params: Promise<{ studentId: string }> }) {
+  const params = await props.params;
   if (!(await checkAdmin())) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
   const profile = await getAssessmentProfile(params.studentId)
   return NextResponse.json({ profile })
 }
 
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { studentId: string } }
-) {
+export async function POST(req: NextRequest, props: { params: Promise<{ studentId: string }> }) {
+  const params = await props.params;
   if (!(await checkAdmin())) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
   try {
     const body = await req.json()

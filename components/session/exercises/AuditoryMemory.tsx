@@ -58,7 +58,7 @@ export default function AuditoryMemory({
   const ROUNDS = 3
 
   const startRef = useRef(Date.now())
-  const completeTimerRef = useRef<ReturnType<typeof setTimeout>>()
+  const completeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [phase, setPhase] = useState<Phase>('intro')
   const [round, setRound] = useState(0) // 0-indexed
   const [ttsSupported, setTtsSupported] = useState(true)
@@ -90,7 +90,7 @@ export default function AuditoryMemory({
     choices: [],
   })
 
-  useEffect(() => () => clearTimeout(completeTimerRef.current), [])
+  useEffect(() => () => clearTimeout(completeTimerRef.current ?? undefined), [])
 
   useEffect(() => {
     if (phase === 'intro') {

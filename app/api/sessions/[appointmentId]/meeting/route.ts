@@ -18,12 +18,10 @@ export const runtime = 'nodejs'
 // call fails) for a security benefit that's already covered by the auth
 // gate above, which is the real, load-bearing control. Revisit only paired
 // with switching rooms to privacy:'private' and testing the join live.
-export async function GET(
-  _req: NextRequest,
-  { params }: { params: { appointmentId: string } }
-) {
+export async function GET(_req: NextRequest, props: { params: Promise<{ appointmentId: string }> }) {
+  const params = await props.params;
   try {
-    if (!await authorizeSession(params.appointmentId)) {
+    if (!(await authorizeSession(params.appointmentId))) {
       return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
     }
 

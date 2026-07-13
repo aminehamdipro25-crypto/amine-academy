@@ -1,11 +1,12 @@
 import Link from 'next/link'
 import { CheckCircle, MessageCircle, Mail, Gift, Calendar } from 'lucide-react'
 
-export default function RegisterSuccessPage({
-  searchParams,
-}: {
-  searchParams: { free?: string }
-}) {
+export default async function RegisterSuccessPage(
+  props: {
+    searchParams: Promise<{ free?: string }>
+  }
+) {
+  const searchParams = await props.searchParams;
   const free = searchParams?.free === '1'
 
   // ── Free assessment booked — no payment, confirmation of the intake session ──

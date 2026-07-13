@@ -43,7 +43,7 @@
 UPSTASH_REDIS_REST_URL=        # URL قاعدة البيانات
 UPSTASH_REDIS_REST_TOKEN=      # رمز Upstash (بدون مسافات أو تنصيص)
 AUTH_SECRET=                   # مفتاح توقيع JWT (عشوائي 32+ حرف)
-ADMIN_PASSWORD=310325Dawama1993** # كلمة مرور الأستاذ أمين
+ADMIN_PASSWORD=                # كلمة مرور الأستاذ أمين (لا تُكتب هنا أبداً — عُدِّلت بعد تسريب سابق، راجع Vercel)
 GMAIL_USER=                    # البريد الإلكتروني Gmail
 GMAIL_APP_PASSWORD=            # كلمة مرور التطبيق (ليست كلمة Gmail)
 CRON_SECRET=                   # سر التحقق من مهام Cron

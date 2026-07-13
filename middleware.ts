@@ -6,6 +6,19 @@ import { verifyToken, verifyAdminSession, verifyStaffSession } from './lib/auth'
 // even though they share the /dashboard prefix with staff-accessible pages.
 const OWNER_ONLY_PAGES = ['/dashboard/payments', '/dashboard/analytics', '/dashboard/staff', '/dashboard/settings']
 
+// Interim mitigation for GHSA-3g8h-86w9-wvmq (Next.js middleware redirects can
+// be cache-poisoned via a spoofed x-nextjs-data header) — the full fix requires
+// Next.js 15.5.16+/16.2.5+, a major-version jump not attempted this close to
+// launch. Marking every middleware redirect non-cacheable closes the practical
+// attack: a shared/CDN cache can never store a poisoned Location for these auth
+// redirects if the response itself forbids caching. Remove once Next.js is
+// upgraded past the patched versions.
+function authRedirect(url: string | URL): NextResponse {
+  const res = NextResponse.redirect(url)
+  res.headers.set('Cache-Control', 'no-store, must-revalidate')
+  return res
+}
+
 async function isOwnerAuthorized(request: NextRequest): Promise<boolean> {
   const adminToken = request.cookies.get('admin_token')?.value
   return verifyAdminSession(adminToken)
@@ -25,7 +38,7 @@ export async function middleware(request: NextRequest) {
     const ownerOnly = OWNER_ONLY_PAGES.some(p => pathname === p || pathname.startsWith(p + '/'))
     const authorized = ownerOnly ? await isOwnerAuthorized(request) : await isDashboardAuthorized(request)
     if (!authorized) {
-      return NextResponse.redirect(new URL('/dashboard/login', request.url))
+      return authRedirect(new URL('/dashboard/login', request.url))
     }
   }
 
@@ -35,7 +48,7 @@ export async function middleware(request: NextRequest) {
     const token   = request.cookies.get('parent_token')?.value
     const payload = await verifyToken(token)
     if (!payload || payload.role !== 'parent') {
-      const res = NextResponse.redirect(new URL('/parent/login', request.url))
+      const res = authRedirect(new URL('/parent/login', request.url))
       res.cookies.set('parent_token', '', { maxAge: 0, path: '/' })
       return res
     }
@@ -47,7 +60,7 @@ export async function middleware(request: NextRequest) {
     const token   = request.cookies.get('student_token')?.value
     const payload = await verifyToken(token)
     if (!payload || payload.role !== 'student') {
-      const res = NextResponse.redirect(new URL('/student/login', request.url))
+      const res = authRedirect(new URL('/student/login', request.url))
       res.cookies.set('student_token', '', { maxAge: 0, path: '/' })
       return res
     }
@@ -61,11 +74,11 @@ export async function middleware(request: NextRequest) {
     const payload = await verifyToken(token)
     if (!payload || payload.role !== 'parent') {
       const redirect = encodeURIComponent(pathname)
-      return NextResponse.redirect(new URL(`/parent/login?redirect=${redirect}`, request.url))
+      return authRedirect(new URL(`/parent/login?redirect=${redirect}`, request.url))
     }
   } else if (pathname.startsWith('/session')) {
     if (!(await isDashboardAuthorized(request))) {
-      return NextResponse.redirect(new URL('/dashboard/login', request.url))
+      return authRedirect(new URL('/dashboard/login', request.url))
     }
   }
 

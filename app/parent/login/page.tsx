@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Loader2, Eye, EyeOff } from 'lucide-react'
 import { useLang, tr } from '@/lib/i18n'
+import { safeRedirectPath } from '@/lib/safe-redirect'
 
 function LoginForm() {
   const router = useRouter()
@@ -30,7 +31,7 @@ function LoginForm() {
       })
       const data = await res.json()
       if (res.ok) {
-        const redirect = searchParams.get('redirect') || '/parent/dashboard'
+        const redirect = safeRedirectPath(searchParams.get('redirect'), '/parent/dashboard')
         router.push(redirect)
       } else {
         setError(data.error || t.errors.invalid)

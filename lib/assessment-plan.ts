@@ -11,7 +11,7 @@ import { DOMAINS, DOMAIN_ORDER, type DomainKey } from './assessment-data'
 export type PlanSeverity = 'none' | 'mild' | 'moderate' | 'severe'
 
 export interface TargetDomain {
-  key: DomainKey
+  key: string
   label: string
   score: number
   priority: 'high' | 'medium'
@@ -56,20 +56,71 @@ export function buildRecommendedPlan(
   const severity = severityFromScore(totalScore)
   const tier = TIER[severity]
 
-  const targetDomains: TargetDomain[] = DOMAIN_ORDER
+  const selected = DOMAIN_ORDER
     .map(key => ({ key, score: Number((scores as Record<string, number>)[key] ?? 0) }))
     .filter(d => d.score >= MEDIUM_PRIORITY)
     .sort((a, b) => b.score - a.score)
-    .map(d => ({
-      key: d.key,
-      label: DOMAINS[d.key].label,
-      score: d.score,
-      priority: d.score >= HIGH_PRIORITY ? 'high' : 'medium',
-    }))
+
+  const targetDomains: TargetDomain[] = selected.map(d => ({
+    key: d.key,
+    label: DOMAINS[d.key].label,
+    score: d.score,
+    priority: d.score >= HIGH_PRIORITY ? 'high' : 'medium',
+  }))
 
   // Dedupe the exercise tips of the targeted domains, high-priority first.
   const focusExercises = Array.from(
-    new Set(targetDomains.flatMap(d => DOMAINS[d.key].exerciseTips)),
+    new Set(selected.flatMap(d => DOMAINS[d.key].exerciseTips)),
+  )
+
+  return {
+    severity,
+    sessionsPerWeek: tier.sessionsPerWeek,
+    programWeeks: tier.programWeeks,
+    totalSessions: tier.sessionsPerWeek * tier.programWeeks,
+    reassessWeeks: tier.reassessWeeks,
+    targetDomains,
+    focusExercises,
+  }
+}
+
+// ── Vanderbilt-based plan ─────────────────────────────────────
+// Same RecommendedPlan output shape (so every downstream view keeps working),
+// but derived from the validated Vanderbilt screen: severity comes straight
+// from scoreVanderbilt, and the target path is the symptom domains ordered by
+// how many symptoms are present.
+import type { VanderbiltScore, VanderbiltDomain } from './vanderbilt-data'
+import { DOMAIN_META } from './vanderbilt-data'
+
+const VB_HIGH_PRIORITY = 6   // ≥6 present symptoms in a domain (the DSM count)
+const VB_MEDIUM_PRIORITY = 3
+
+export function buildPlanFromVanderbilt(score: VanderbiltScore): RecommendedPlan {
+  const severity = score.severity
+  const tier = TIER[severity]
+
+  const domainCounts: { key: VanderbiltDomain; score: number }[] = [
+    { key: 'inattention', score: score.inattentionCount },
+    { key: 'hyperactivity', score: score.hyperactivityCount },
+  ]
+  // Only surface the oppositional path when it clears the concern threshold.
+  if (score.oppositionalConcern || score.oppositionalCount >= VB_MEDIUM_PRIORITY) {
+    domainCounts.push({ key: 'oppositional', score: score.oppositionalCount })
+  }
+
+  const selected = domainCounts
+    .filter(d => d.score >= VB_MEDIUM_PRIORITY)
+    .sort((a, b) => b.score - a.score)
+
+  const targetDomains: TargetDomain[] = selected.map(d => ({
+    key: d.key,
+    label: DOMAIN_META[d.key].label,
+    score: d.score,
+    priority: d.score >= VB_HIGH_PRIORITY ? 'high' : 'medium',
+  }))
+
+  const focusExercises = Array.from(
+    new Set(selected.flatMap(d => DOMAIN_META[d.key].exerciseTips)),
   )
 
   return {

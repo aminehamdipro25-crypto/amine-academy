@@ -263,7 +263,7 @@ export interface SessionLog {
   createdAt:       string
 }
 
-export type AssessmentType = 'adhd' | 'autism' | 'learning-difficulties' | 'motor' | 'cognitive' | 'attention-domains'
+export type AssessmentType = 'adhd' | 'autism' | 'learning-difficulties' | 'motor' | 'cognitive' | 'attention-domains' | 'vanderbilt-adhd'
 
 export interface AssessmentAnswer {
   itemId:  string
@@ -280,6 +280,16 @@ export interface AssessmentResult {
   totalScore:    number
   severity:      'none' | 'mild' | 'moderate' | 'severe'
   recommendations: string[]
+  // NICHQ Vanderbilt screen summary (when type === 'vanderbilt-adhd'). The
+  // validated result, kept alongside the derived plan for the specialist and
+  // for period-over-period improvement tracking.
+  vanderbilt?: {
+    inattentionCount: number
+    hyperactivityCount: number
+    oppositionalCount: number
+    hasImpairment: boolean
+    subtype: 'inattentive' | 'hyperactive' | 'combined' | 'subthreshold' | 'none'
+  }
   // Rule-based starting plan derived from domainScores + severity (see
   // lib/assessment-plan.ts). Computed server-side at save time for trust.
   recommendedPlan?: {

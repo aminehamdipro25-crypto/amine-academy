@@ -4,8 +4,9 @@ import { verifyToken } from '@/lib/auth'
 import { getStudentsByParent } from '@/lib/db'
 import { redis } from '@/lib/redis'
 import type { AssessmentResult } from '@/lib/types'
-import { buildRecommendedPlan } from '@/lib/assessment-plan'
+import { buildRecommendedPlan, buildPlanFromVanderbilt } from '@/lib/assessment-plan'
 import type { DomainKey } from '@/lib/assessment-data'
+import { scoreVanderbilt, VANDERBILT_ITEMS, PERFORMANCE_ITEMS } from '@/lib/vanderbilt-data'
 
 export async function GET(req: NextRequest) {
   try {
@@ -41,7 +42,7 @@ export async function GET(req: NextRequest) {
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-const VALID_TYPES = ['adhd', 'autism', 'learning-difficulties', 'motor', 'cognitive', 'attention-domains']
+const VALID_TYPES = ['adhd', 'autism', 'learning-difficulties', 'motor', 'cognitive', 'attention-domains', 'vanderbilt-adhd']
 const VALID_SEVERITIES = ['none', 'mild', 'moderate', 'severe']
 
 export async function POST(req: NextRequest) {
@@ -70,6 +71,62 @@ export async function POST(req: NextRequest) {
     const children = await getStudentsByParent(payload.id)
     if (!children.some(c => c.id === studentId)) {
       return NextResponse.json({ error: 'غير مصرح' }, { status: 403 })
+    }
+
+    // ── Vanderbilt (validated) path — score entirely server-side from the raw
+    // answers so the screen result and plan can't be forged by the client. ──
+    if (type === 'vanderbilt-adhd') {
+      const rawAnswers = (body.answers && typeof body.answers === 'object' && !Array.isArray(body.answers)) ? body.answers : {}
+      const rawPerf = (body.performance && typeof body.performance === 'object' && !Array.isArray(body.performance)) ? body.performance : {}
+
+      const validIds = new Set(VANDERBILT_ITEMS.map(i => i.id))
+      const answers: Record<number, number> = {}
+      for (const item of VANDERBILT_ITEMS) {
+        const v = Number(rawAnswers[item.id])
+        answers[item.id] = validIds.has(item.id) && v >= 0 && v <= 3 ? Math.round(v) : 0
+      }
+      const validPerf = new Set(PERFORMANCE_ITEMS.map(p => p.id))
+      const performance: Record<string, number> = {}
+      for (const p of PERFORMANCE_ITEMS) {
+        const v = Number(rawPerf[p.id])
+        performance[p.id] = validPerf.has(p.id) && v >= 1 && v <= 5 ? Math.round(v) : 3
+      }
+
+      const vb = scoreVanderbilt(answers, performance)
+      const plan = buildPlanFromVanderbilt(vb)
+
+      const id = `AR-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`
+      const result: AssessmentResult = {
+        id,
+        studentId: String(studentId).trim(),
+        type: 'vanderbilt-adhd',
+        domainScores: {
+          inattention: vb.inattentionCount,
+          hyperactivity: vb.hyperactivityCount,
+          oppositional: vb.oppositionalCount,
+        },
+        totalScore: vb.totalAdhdSymptoms,
+        severity: vb.severity,
+        recommendations: plan.focusExercises,
+        vanderbilt: {
+          inattentionCount: vb.inattentionCount,
+          hyperactivityCount: vb.hyperactivityCount,
+          oppositionalCount: vb.oppositionalCount,
+          hasImpairment: vb.hasImpairment,
+          subtype: vb.subtype,
+        },
+        recommendedPlan: plan,
+        answers: VANDERBILT_ITEMS.map(i => ({ itemId: String(i.id), rating: answers[i.id] as 0 | 1 | 2 | 3 })),
+        completedAt: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+      }
+
+      await redis.pipeline([
+        ['SET', `assessment:${id}`, JSON.stringify(result), 'EX', String(365 * 24 * 3600)],
+        ['LPUSH', `assessments:student:${result.studentId}`, id],
+      ])
+
+      return NextResponse.json({ ok: true, id, result })
     }
 
     // domainScores/recommendations are parent-authored free text that later

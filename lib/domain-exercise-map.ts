@@ -30,6 +30,11 @@ const DOMAIN_CATEGORY_MAP: Record<AssessmentType, Record<string, ExerciseCategor
     executive: ['focus', 'motor'],
     inhibition: ['balance', 'motor'],
   },
+  'vanderbilt-adhd': {
+    inattention: ['focus'],
+    hyperactivity: ['motor', 'energy'],
+    oppositional: ['social', 'balance'],
+  },
   'learning-difficulties': {
     dyslexia: ['focus'],
     dyscalculia: ['focus'],
@@ -49,6 +54,7 @@ function isElevated(type: AssessmentType, score: number): boolean {
     case 'adhd': return score > 50
     case 'autism': return score >= 45
     case 'attention-domains': return score >= 50
+    case 'vanderbilt-adhd': return score >= 6 // ≥6 present symptoms in a domain (DSM count)
     case 'learning-difficulties': return score >= 20
     default: return false
   }

@@ -16,6 +16,12 @@ export async function POST(req: NextRequest) {
 
     const student = await getStudent(body.studentId)
     if (!student) return NextResponse.json({ error: 'الطالب غير موجود' }, { status: 404 })
+    // Data-integrity: the report must be filed under the child's actual parent,
+    // not a client-supplied parentId — otherwise it could surface in the wrong
+    // parent's portal.
+    if (student.parentId !== body.parentId) {
+      return NextResponse.json({ error: 'الطفل لا ينتمي لولي الأمر المحدد' }, { status: 400 })
+    }
 
     // Documented improvement badge — only trust it when the client sends three
     // finite numbers derived from real gameplay; otherwise store null.

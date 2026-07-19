@@ -157,11 +157,15 @@ export function scoreVanderbilt(
   else if (inattentionCount >= 6 || hyperactivityCount >= 6) subtype = 'subthreshold' // symptoms without reported impairment
   else subtype = 'none'
 
+  // Severity drives plan intensity, so it must stay consistent with the screen
+  // result: a negative/subthreshold screen (no reported functional impairment)
+  // must never yield a "severe" plan. Only a POSITIVE screen (impairment present,
+  // i.e. inattentive/hyperactive/combined) can reach moderate/severe.
   let severity: VanderbiltScore['severity']
-  if (subtype === 'combined' || totalAdhdSymptoms >= 15) severity = 'severe'
-  else if (inattentivePositive || hyperactivePositive) severity = totalAdhdSymptoms >= 12 ? 'severe' : 'moderate'
-  else if (totalAdhdSymptoms >= 6) severity = 'mild'
-  else severity = 'none'
+  if (subtype === 'none') severity = 'none'
+  else if (subtype === 'subthreshold') severity = 'mild' // symptoms but no impairment → monitor, light plan
+  else if (subtype === 'combined' || totalAdhdSymptoms >= 15) severity = 'severe'
+  else severity = totalAdhdSymptoms >= 12 ? 'severe' : 'moderate'
 
   return {
     inattentionCount, hyperactivityCount, oppositionalCount,
@@ -171,10 +175,10 @@ export function scoreVanderbilt(
   }
 }
 
-export const SUBTYPE_LABEL: Record<VanderbiltScore['subtype'], { label: string; desc: string; color: string; bg: string }> = {
-  combined:     { label: 'مؤشرات النمط المشترك', desc: 'مؤشرات على العجز في الانتباه وفرط الحركة معاً مع تأثير وظيفي', color: '#B91C1C', bg: '#FEF2F2' },
-  inattentive:  { label: 'مؤشرات نمط قلة الانتباه', desc: 'مؤشرات على العجز في الانتباه مع تأثير وظيفي', color: '#6D28D9', bg: '#F3EEFF' },
-  hyperactive:  { label: 'مؤشرات نمط فرط الحركة', desc: 'مؤشرات على فرط الحركة والاندفاعية مع تأثير وظيفي', color: '#C2410C', bg: '#FFF7ED' },
-  subthreshold: { label: 'أعراض دون عتبة الفرز', desc: 'توجد أعراض ملحوظة لكن دون تأثير وظيفي واضح مُبلَّغ عنه — يُنصح بالمتابعة', color: '#B45309', bg: '#FFFBEB' },
-  none:         { label: 'ضمن المعدل الطبيعي', desc: 'لا تظهر مؤشرات كافية للفرز في هذه الاستمارة', color: '#16A34A', bg: '#F0FFF4' },
+export const SUBTYPE_LABEL: Record<VanderbiltScore['subtype'], { label: string; labelEn: string; desc: string; descEn: string; color: string; bg: string }> = {
+  combined:     { label: 'مؤشرات النمط المشترك', labelEn: 'Combined-type indicators', desc: 'مؤشرات على العجز في الانتباه وفرط الحركة معاً مع تأثير وظيفي', descEn: 'Indicators of both inattention and hyperactivity/impulsivity with functional impact', color: '#B91C1C', bg: '#FEF2F2' },
+  inattentive:  { label: 'مؤشرات نمط قلة الانتباه', labelEn: 'Inattentive-type indicators', desc: 'مؤشرات على العجز في الانتباه مع تأثير وظيفي', descEn: 'Indicators of inattention with functional impact', color: '#6D28D9', bg: '#F3EEFF' },
+  hyperactive:  { label: 'مؤشرات نمط فرط الحركة', labelEn: 'Hyperactive-type indicators', desc: 'مؤشرات على فرط الحركة والاندفاعية مع تأثير وظيفي', descEn: 'Indicators of hyperactivity/impulsivity with functional impact', color: '#C2410C', bg: '#FFF7ED' },
+  subthreshold: { label: 'أعراض دون عتبة الفرز', labelEn: 'Below screening threshold', desc: 'توجد أعراض ملحوظة لكن دون تأثير وظيفي واضح مُبلَّغ عنه — يُنصح بالمتابعة', descEn: 'Notable symptoms but no clear reported functional impairment — monitoring advised', color: '#B45309', bg: '#FFFBEB' },
+  none:         { label: 'ضمن المعدل الطبيعي', labelEn: 'Within typical range', desc: 'لا تظهر مؤشرات كافية للفرز في هذه الاستمارة', descEn: 'No sufficient screening indicators on this form', color: '#16A34A', bg: '#F0FFF4' },
 }

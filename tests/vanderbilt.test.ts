@@ -28,6 +28,15 @@ describe('scoreVanderbilt — official screen rule', () => {
     expect(withImp.hasImpairment).toBe(true)
   })
 
+  it('never returns a severe plan for a subthreshold (no-impairment) screen', () => {
+    // Many symptoms but zero reported functional impairment → subthreshold.
+    const answers = { ...present(INATTENTION_IDS, 9), ...present(HYPERACTIVITY_IDS, 8) } // 17 symptoms
+    const s = scoreVanderbilt(answers, noImpair)
+    expect(s.subtype).toBe('subthreshold')
+    expect(s.hasImpairment).toBe(false)
+    expect(s.severity).toBe('mild') // must NOT be 'severe' despite 17 symptoms
+  })
+
   it('is negative below the 6-symptom threshold', () => {
     const s = scoreVanderbilt(present(INATTENTION_IDS, 5), impaired)
     expect(s.inattentivePositive).toBe(false)

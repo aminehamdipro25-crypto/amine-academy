@@ -56,7 +56,9 @@ export function buildRecommendedPlan(
   const severity = severityFromScore(totalScore)
   const tier = TIER[severity]
 
-  const selected = DOMAIN_ORDER
+  // No active plan → no path either, so the UI never shows a target domain next
+  // to a zero-session plan.
+  const selected = severity === 'none' ? [] : DOMAIN_ORDER
     .map(key => ({ key, score: Number((scores as Record<string, number>)[key] ?? 0) }))
     .filter(d => d.score >= MEDIUM_PRIORITY)
     .sort((a, b) => b.score - a.score)
@@ -108,7 +110,8 @@ export function buildPlanFromVanderbilt(score: VanderbiltScore): RecommendedPlan
     domainCounts.push({ key: 'oppositional', score: score.oppositionalCount })
   }
 
-  const selected = domainCounts
+  // No active plan → no path (keeps the UI from showing a target next to 0 sessions).
+  const selected = severity === 'none' ? [] : domainCounts
     .filter(d => d.score >= VB_MEDIUM_PRIORITY)
     .sort((a, b) => b.score - a.score)
 

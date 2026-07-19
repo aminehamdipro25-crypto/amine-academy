@@ -63,7 +63,7 @@ export default function ClientsView({ parents, error }: {
           <p className="text-gray-400 text-sm mt-1">{t.pageSubtitle(parents.length)}</p>
         </div>
         <Link
-          href="/dashboard/clients/new"
+          href="/register"
           className="flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm shadow-brand-500/20 hover:shadow-md hover:shadow-brand-500/30"
         >
           <UserPlus className="w-4 h-4" />
@@ -102,7 +102,7 @@ export default function ClientsView({ parents, error }: {
           <div className="text-6xl mb-4">👥</div>
           <p className="text-gray-900 font-black text-lg">{t.emptyTitle}</p>
           <p className="text-gray-400 text-sm mt-1 mb-6">{t.emptySubtitle}</p>
-          <Link href="/dashboard/clients/new"
+          <Link href="/register"
             className="inline-flex items-center gap-2 bg-brand-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-brand-700 transition-colors">
             <UserPlus className="w-4 h-4" />
             {t.addClientNowButton}

@@ -412,8 +412,8 @@ export default function AssessmentPage() {
       {/* Screen result */}
       <div className="rounded-3xl p-5" style={{ background: sub.bg, border: `1.5px solid ${sub.color}30` }}>
         <p className="text-xs font-bold mb-1" style={{ color: sub.color }}>{t.screenResult}</p>
-        <h2 className="font-black text-xl mb-1" style={{ color: sub.color }}>{sub.label}</h2>
-        <p className="text-sm text-gray-600">{sub.desc}</p>
+        <h2 className="font-black text-xl mb-1" style={{ color: sub.color }}>{(lang as Lang) === 'en' ? sub.labelEn : sub.label}</h2>
+        <p className="text-sm text-gray-600">{(lang as Lang) === 'en' ? sub.descEn : sub.desc}</p>
       </div>
 
       {/* Domain bars */}
@@ -496,7 +496,7 @@ export default function AssessmentPage() {
                 {plan.targetDomains.map((d, i) => (
                   <div key={d.key} className="flex items-center gap-2 rounded-xl px-3 py-2" style={{ background: '#F9FAFB' }}>
                     <span className="w-5 h-5 rounded-full flex items-center justify-center text-white text-[11px] font-black flex-shrink-0" style={{ background: DOMAIN_META[d.key as VanderbiltDomain]?.color ?? '#7C5CFC' }}>{i + 1}</span>
-                    <span className="font-bold text-sm text-gray-800">{d.label}</span>
+                    <span className="font-bold text-sm text-gray-800">{(lang as Lang) === 'en' ? (DOMAIN_META[d.key as VanderbiltDomain]?.labelEn ?? d.label) : d.label}</span>
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-full mr-auto" style={{ background: d.priority === 'high' ? '#FEF2F2' : '#FFFBEB', color: d.priority === 'high' ? '#DC2626' : '#D97706' }}>
                       {d.priority === 'high' ? t.priorityHigh : t.priorityMedium}
                     </span>

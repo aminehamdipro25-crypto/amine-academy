@@ -1,9 +1,10 @@
 import nodemailer from 'nodemailer'
+import type { Transporter } from 'nodemailer'
 import { GAME_LABELS_AR } from './constants'
 
-let _transport: nodemailer.Transporter | null = null
+let _transport: Transporter | null = null
 
-function getGmailTransport(): nodemailer.Transporter {
+function getGmailTransport(): Transporter {
   if (!_transport) {
     _transport = nodemailer.createTransport({
       service: 'gmail',

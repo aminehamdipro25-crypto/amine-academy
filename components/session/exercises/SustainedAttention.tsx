@@ -26,6 +26,17 @@ interface Props {
   difficulty?: 1 | 2 | 3
   seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
   onProgress?: (p: ExerciseProgressUpdate) => void // live per-answer feedback to the specialist
+  /**
+   * Assessment mode. Off by default so training runs stay short and motivating.
+   *
+   * The training lengths are far too short to MEASURE sustained attention: at
+   * difficulty 1 the run is 15 stimuli (~27 seconds, about 5 targets). A
+   * vigilance measure needs enough targets for the hit and false-alarm rates to
+   * be stable, and enough time on task for performance to decline if it is
+   * going to — which is the entire point of the construct. This mode runs a
+   * proper-length block instead.
+   */
+  assessmentMode?: boolean
 }
 
 function buildSequence(totalStimuli: number, rng: Rng): StimRecord[] {
@@ -54,10 +65,12 @@ function buildSequence(totalStimuli: number, rng: Rng): StimRecord[] {
   return seq
 }
 
-export default function SustainedAttention({ onComplete, onCancel, difficulty = 1, seed, onProgress }: Props) {
+export default function SustainedAttention({ onComplete, onCancel, difficulty = 1, seed, onProgress, assessmentMode = false }: Props) {
   const rng = useRef(createRng(seed ?? Date.now())).current
-  const totalStimuli = difficulty === 1 ? 15 : difficulty === 2 ? 20 : 25
-  const displayMs = difficulty === 1 ? 1800 : difficulty === 2 ? 1500 : 1200
+  // 60 stimuli x 30% => ~18 targets, ~90s on task — stable rates, and long
+  // enough for a vigilance decrement to show.
+  const totalStimuli = assessmentMode ? 60 : difficulty === 1 ? 15 : difficulty === 2 ? 20 : 25
+  const displayMs = assessmentMode ? 1500 : difficulty === 1 ? 1800 : difficulty === 2 ? 1500 : 1200
 
   const [phase, setPhase] = useState<Phase>('intro')
   const [stimIdx, setStimIdx] = useState(0)

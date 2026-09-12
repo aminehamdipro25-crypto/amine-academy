@@ -2,11 +2,21 @@
 import { useState } from 'react'
 import type { AssessmentResult } from '@/lib/types'
 
+// NOTE ON NAMING (scientific accuracy):
+// These are ORIGINAL observation items written for this platform. They are NOT
+// SNAP-IV, and the four domains are NOT the CPT / Go-No-Go / Cogmed paradigms.
+// Those are performance-based computer tasks (and Cogmed is a commercial
+// training product) — a caregiver/clinician rating scale cannot be any of them.
+// The scale previously carried those names, which was an unsupported clinical
+// claim; it is now labelled for what it actually is: a structured observation
+// checklist used to organise the specialist's impressions.
+// For a DSM-aligned ADHD instrument use ADHDScale.tsx; for a validated,
+// published screen use the parent-facing NICHQ Vanderbilt (lib/vanderbilt-data.ts).
 const DOMAINS = [
-  { key: 'sustained',  label: '⏱️ الانتباه المستمر',    protocol: 'CPT Protocol' },
-  { key: 'selective',  label: '🎯 الانتباه الانتقائي',  protocol: 'Go/No-Go' },
-  { key: 'executive',  label: '🧩 الانتباه التنفيذي',   protocol: 'DIT Protocol' },
-  { key: 'inhibition', label: '🛑 كبح المشتتات',         protocol: 'Cogmed-style' },
+  { key: 'sustained',  label: '⏱️ الانتباه المستمر',   hint: 'الاستمرار في مهمة واحدة' },
+  { key: 'selective',  label: '🎯 الانتباه الانتقائي', hint: 'تجاهل المشتتات' },
+  { key: 'executive',  label: '🧩 الانتباه التنفيذي',  hint: 'التخطيط والتنظيم' },
+  { key: 'inhibition', label: '🛑 كبح المشتتات',        hint: 'ضبط الاندفاع الحركي' },
 ]
 
 const ITEMS = [
@@ -39,7 +49,7 @@ const ITEMS = [
 const RATINGS = ['أبداً', 'أحياناً', 'كثيراً', 'دائماً']
 
 const RECS: Record<string, string[]> = {
-  sustained:  ['تمارين CPT بالحركة يومياً 10 دقائق', 'بروتوكول Pomodoro المعدّل للطفل'],
+  sustained:  ['تمارين الانتباه المستمر بالحركة يومياً 10 دقائق', 'بروتوكول Pomodoro المعدّل للطفل'],
   selective:  ['لعبة قف واسمع', 'تمرين تتبع البصر'],
   executive:  ['مزامنة الإيقاع الحركي', 'تحدي التسلسل المعكوس'],
   inhibition: ['يوغا الأطفال', 'الحركة اليقظة: التأمل المشي'],
@@ -122,7 +132,7 @@ export default function AttentionDomainsScale({ studentId, onComplete, onCancel,
   return (
     <div className="flex flex-col gap-4 p-4 max-h-[70vh] overflow-y-auto">
       <div className="flex items-center justify-between sticky top-0 bg-gray-900 py-2 z-10">
-        <h2 className="text-lg font-black text-white">تقييم أنماط الانتباه — SNAP-IV</h2>
+        <h2 className="text-lg font-black text-white">ملاحظة أنماط الانتباه (قائمة استرشادية)</h2>
         <span className="text-brand-400 font-bold text-sm">{answered}/{total}</span>
       </div>
 
@@ -130,7 +140,7 @@ export default function AttentionDomainsScale({ studentId, onComplete, onCancel,
         <div key={d.key} className="space-y-3">
           <h3 className="font-black text-brand-400 text-sm border-b border-white/10 pb-2 flex justify-between">
             <span>{d.label}</span>
-            <span className="text-white/30 text-xs font-normal">{d.protocol}</span>
+            <span className="text-white/30 text-xs font-normal">{d.hint}</span>
           </h3>
           {ITEMS.filter(i => i.domain === d.key).map(item => (
             <div key={item.id} className="bg-white/5 rounded-xl p-4">

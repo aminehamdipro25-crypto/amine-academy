@@ -28,15 +28,36 @@ const ITEMS = [
 
 const RATINGS = ['أبداً','أحياناً','كثيراً','دائماً']
 
-// Internal screening heuristic, not a validated clinical cutoff. Uses an even quartile
-// split (25/50/75); AutismScale.tsx and LearningDifficultiesScale.tsx use a stricter
-// 20/45/70 split instead — kept separate per-scale rather than unified since changing
-// either is a clinical-content decision, not a code cleanup.
-function severity(score: number): AssessmentResult['severity'] {
-  if (score < 25) return 'none'
-  if (score < 50) return 'mild'
-  if (score < 75) return 'moderate'
-  return 'severe'
+// SCORING (scientific accuracy):
+// These 18 items are the DSM-5 ADHD symptom criteria (9 inattention, plus the
+// 6 hyperactivity + 3 impulsivity items that together form the 9-symptom
+// hyperactive/impulsive list), on the standard 0–3 frequency scale.
+// So we score them the DSM way — a symptom COUNTS when rated "كثيراً/دائماً"
+// (>= 2), and a presentation needs >= 6 of its 9 symptoms — instead of the
+// arbitrary 25/50/75 percentage quartiles this previously used, which had no
+// clinical basis and could call 5 severe symptoms "mild".
+//
+// IMPORTANT: DSM-5 also requires symptoms to appear in TWO OR MORE settings
+// and to impair functioning. This scale captures neither, so it remains a
+// structured screen to guide the specialist — never a diagnosis.
+const SYMPTOM_PRESENT_MIN = 2
+const DSM_THRESHOLD = 6
+
+const INATTENTION_IDS   = ITEMS.filter(i => i.domain === 'attention').map(i => i.id)
+const HYPER_IMPULSE_IDS = ITEMS.filter(i => i.domain !== 'attention').map(i => i.id)
+
+function countPresent(answers: Record<string, 0|1|2|3>, ids: string[]): number {
+  return ids.reduce((n, id) => n + ((answers[id] ?? 0) >= SYMPTOM_PRESENT_MIN ? 1 : 0), 0)
+}
+
+function severityFromCounts(inattention: number, hyperImpulsive: number): AssessmentResult['severity'] {
+  const totalSx = inattention + hyperImpulsive
+  const meetsInattentive = inattention >= DSM_THRESHOLD
+  const meetsHyperactive = hyperImpulsive >= DSM_THRESHOLD
+  if (meetsInattentive && meetsHyperactive) return 'severe'      // combined presentation
+  if (meetsInattentive || meetsHyperactive) return totalSx >= 12 ? 'severe' : 'moderate'
+  if (totalSx >= DSM_THRESHOLD) return 'mild'                    // subthreshold but notable
+  return 'none'
 }
 
 interface Props {
@@ -72,8 +93,14 @@ export default function ADHDScale({ studentId, onComplete, onCancel, initialAnsw
     const totalScore = Math.round(
       Object.values(domainScores).reduce((a, b) => a + b, 0) / domains.length
     )
-    const sev = severity(totalScore)
-    const recommendations: string[] = []
+    // DSM-5 symptom counts drive severity (see note above); the percentages
+    // above stay as-is because the exercise mapper keys off them.
+    const inattentionCount   = countPresent(answers, INATTENTION_IDS)
+    const hyperImpulseCount  = countPresent(answers, HYPER_IMPULSE_IDS)
+    const sev = severityFromCounts(inattentionCount, hyperImpulseCount)
+    const recommendations: string[] = [
+      `عدد أعراض قلة الانتباه: ${inattentionCount}/9 — فرط الحركة/الاندفاعية: ${hyperImpulseCount}/9 (الحد المرجعي DSM-5: ٦)`,
+    ]
     if (domainScores.attention > 50)
       recommendations.push('تمارين التركيز والانتباه الانتقائي يومياً 15 دقيقة')
     if (domainScores.hyperactivity > 50)
@@ -81,7 +108,7 @@ export default function ADHDScale({ studentId, onComplete, onCancel, initialAnsw
     if (domainScores.impulsivity > 50)
       recommendations.push('بروتوكول التوقف والتفكير (Stop-Think-Act)')
     if (sev === 'moderate' || sev === 'severe')
-      recommendations.push('التنسيق مع طبيب متخصص للتقييم الشامل')
+      recommendations.push('التنسيق مع طبيب متخصص للتقييم الشامل — تَحقَّق من ظهور الأعراض في بيئتين على الأقل (المنزل والمدرسة) ومن تأثيرها الوظيفي، فهما شرطان في DSM-5 لا يقيسهما هذا النموذج')
 
     const result: AssessmentResult = {
       id: `AR-${Date.now().toString(36)}`,
@@ -111,7 +138,7 @@ export default function ADHDScale({ studentId, onComplete, onCancel, initialAnsw
   return (
     <div className="flex flex-col gap-4 p-4 max-h-[70vh] overflow-y-auto">
       <div className="flex items-center justify-between sticky top-0 bg-gray-900 py-2 z-10">
-        <h2 className="text-lg font-black text-white">مقياس ADHD</h2>
+        <h2 className="text-lg font-black text-white">مقياس ADHD — بنود DSM-5</h2>
         <span className="text-brand-400 font-bold text-sm">{answered}/{total}</span>
       </div>
 

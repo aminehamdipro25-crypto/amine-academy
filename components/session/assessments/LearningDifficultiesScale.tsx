@@ -9,7 +9,12 @@ const SECTIONS: Record<LDDomain, { labelAr: string; emoji: string; items: { id: 
     labelAr: 'عسر القراءة (Dyslexia)', emoji: '📖',
     items: [
       { id:'d1', text:'يواجه صعوبة في التعرف على الحروف أو مطابقتها بأصواتها' },
-      { id:'d2', text:'يقلب الحروف أو الأرقام عند الكتابة (ب↔ت، 6↔9)' },
+      // Replaced a letter/number-reversal item ("ب↔ت، 6↔9"). Reversals are
+      // developmentally normal until roughly age 7–8 and are NOT a valid marker
+      // of dyslexia — the core deficit is phonological processing, so we ask
+      // about that instead. (The old item was also a careless port of an English
+      // checklist: ب/ت differ by dots, not by mirroring.)
+      { id:'d2', text:'يجد صعوبة في تجزئة الكلمة إلى أصواتها أو دمج الأصوات لتكوين كلمة' },
       { id:'d3', text:'يقرأ ببطء شديد أو يتخطى كلمات' },
       { id:'d4', text:'صعوبة في تذكر القواعد الإملائية' },
       { id:'d5', text:'يخلط بين الكلمات المتشابهة في الشكل (كان/كأن)' },
@@ -31,7 +36,11 @@ const SECTIONS: Record<LDDomain, { labelAr: string; emoji: string; items: { id: 
       { id:'g1', text:'خطه صعب القراءة أو غير منتظم' },
       { id:'g2', text:'يمسك القلم بطريقة شاذة أو يضغط بشدة' },
       { id:'g3', text:'يكتب ببطء شديد يؤثر على إنجاز المهام' },
-      { id:'g4', text:'يخلط بين الكتابة بالأحرف الكبيرة والصغيرة' },
+      // Replaced "يخلط بين الأحرف الكبيرة والصغيرة" — Arabic script has no
+      // upper/lower case, so that item (ported from an English dysgraphia
+      // checklist) was unanswerable for an Arabic-writing child. The Arabic
+      // equivalent difficulty is positional letter forms and joining.
+      { id:'g4', text:'يخطئ في شكل الحرف حسب موضعه في الكلمة (أول/وسط/آخر) أو في وصل الحروف' },
       { id:'g5', text:'يتعب بسرعة أثناء الكتابة' },
     ],
   },

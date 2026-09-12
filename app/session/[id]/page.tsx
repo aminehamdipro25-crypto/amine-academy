@@ -3894,6 +3894,7 @@ ${notes ? `
                 {activeView.id === 'adhd' && (
                   <ADHDScale
                     studentId={currentStudentId || id || ''}
+                    studentAge={studentAge}
                     onComplete={handleAssessmentComplete}
                     onCancel={handleCancel}
                   />

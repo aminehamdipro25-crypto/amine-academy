@@ -48,6 +48,7 @@ const SCALE_COMPONENT: Record<ScaleKey, React.ComponentType<{
   onCancel: () => void
   initialAnswers?: Record<string, 0|1|2|3>
   onProgress?: (answers: Record<string, 0|1|2|3>) => void
+  studentAge?: number
 }>> = {
   autism: AutismScale,
   adhd: ADHDScale,
@@ -1002,6 +1003,7 @@ export default function SpecialistToolkitPage() {
             <div className="bg-gray-900 rounded-3xl overflow-hidden">
               <CurrentScale
                 studentId={studentId}
+                studentAge={parseInt(age, 10) || undefined}
                 onComplete={handleScaleComplete}
                 onCancel={handleScaleSkip}
                 initialAnswers={partialAnswers[currentScaleKey]}

@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import type { AssessmentResult } from '@/lib/types'
+import { countPresent, dsmThreshold, severityFromCounts } from '@/lib/adhd-scoring'
 
 const ITEMS = [
   // Attention (9 items)
@@ -33,32 +34,16 @@ const RATINGS = ['أبداً','أحياناً','كثيراً','دائماً']
 // 6 hyperactivity + 3 impulsivity items that together form the 9-symptom
 // hyperactive/impulsive list), on the standard 0–3 frequency scale.
 // So we score them the DSM way — a symptom COUNTS when rated "كثيراً/دائماً"
-// (>= 2), and a presentation needs >= 6 of its 9 symptoms — instead of the
+// (>= 2), and a presentation needs >= 6 of its 9 symptoms (>= 5 from age 17,
+// per DSM-5) — instead of the
 // arbitrary 25/50/75 percentage quartiles this previously used, which had no
 // clinical basis and could call 5 severe symptoms "mild".
 //
 // IMPORTANT: DSM-5 also requires symptoms to appear in TWO OR MORE settings
 // and to impair functioning. This scale captures neither, so it remains a
 // structured screen to guide the specialist — never a diagnosis.
-const SYMPTOM_PRESENT_MIN = 2
-const DSM_THRESHOLD = 6
-
 const INATTENTION_IDS   = ITEMS.filter(i => i.domain === 'attention').map(i => i.id)
 const HYPER_IMPULSE_IDS = ITEMS.filter(i => i.domain !== 'attention').map(i => i.id)
-
-function countPresent(answers: Record<string, 0|1|2|3>, ids: string[]): number {
-  return ids.reduce((n, id) => n + ((answers[id] ?? 0) >= SYMPTOM_PRESENT_MIN ? 1 : 0), 0)
-}
-
-function severityFromCounts(inattention: number, hyperImpulsive: number): AssessmentResult['severity'] {
-  const totalSx = inattention + hyperImpulsive
-  const meetsInattentive = inattention >= DSM_THRESHOLD
-  const meetsHyperactive = hyperImpulsive >= DSM_THRESHOLD
-  if (meetsInattentive && meetsHyperactive) return 'severe'      // combined presentation
-  if (meetsInattentive || meetsHyperactive) return totalSx >= 12 ? 'severe' : 'moderate'
-  if (totalSx >= DSM_THRESHOLD) return 'mild'                    // subthreshold but notable
-  return 'none'
-}
 
 interface Props {
   studentId: string
@@ -66,9 +51,12 @@ interface Props {
   onCancel: () => void
   initialAnswers?: Record<string, 0|1|2|3>
   onProgress?: (answers: Record<string, 0|1|2|3>) => void
+  /** Age in years. DSM-5 drops the symptom threshold from 6 to 5 at age 17. */
+  studentAge?: number
 }
 
-export default function ADHDScale({ studentId, onComplete, onCancel, initialAnswers, onProgress }: Props) {
+export default function ADHDScale({ studentId, onComplete, onCancel, initialAnswers, onProgress, studentAge }: Props) {
+  const THRESHOLD = dsmThreshold(studentAge)
   const [answers, setAnswers] = useState<Record<string, 0|1|2|3>>(initialAnswers ?? {})
   const [submitted, setSubmitted] = useState(false)
 
@@ -97,11 +85,11 @@ export default function ADHDScale({ studentId, onComplete, onCancel, initialAnsw
     // above stay as-is because the exercise mapper keys off them.
     const inattentionCount   = countPresent(answers, INATTENTION_IDS)
     const hyperImpulseCount  = countPresent(answers, HYPER_IMPULSE_IDS)
-    const sev = severityFromCounts(inattentionCount, hyperImpulseCount)
+    const sev = severityFromCounts(inattentionCount, hyperImpulseCount, THRESHOLD)
     const recommendations: string[] = [
       // 'ℹ️' marks this as a readout, not a plan action — the toolkit's action
       // plan filters these out so a symptom count never reads as a task to do.
-      `ℹ️ عدد أعراض قلة الانتباه: ${inattentionCount}/9 — فرط الحركة/الاندفاعية: ${hyperImpulseCount}/9 (الحد المرجعي DSM-5: ٦)`,
+      `ℹ️ عدد أعراض قلة الانتباه: ${inattentionCount}/9 — فرط الحركة/الاندفاعية: ${hyperImpulseCount}/9 (الحد المرجعي DSM-5: ${THRESHOLD})`,
     ]
     if (domainScores.attention > 50)
       recommendations.push('تمارين التركيز والانتباه الانتقائي يومياً 15 دقيقة')

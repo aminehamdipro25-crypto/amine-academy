@@ -1089,7 +1089,7 @@ export const tr = {
     adminSpecialistToolkit: {
       pageTitle: 'حقيبة المختص',
       pageSubtitle: 'تقييم سريع لحالات غير مسجلة في النظام — يُنشئ تقريراً منظّماً فورياً بعد الجلسة',
-      steps: { info: 'بيانات الطفل', battery: 'اختيار المقاييس', running: 'التقييم', report: 'التقرير' },
+      steps: { info: 'بيانات الطفل', battery: 'اختيار المقاييس', running: 'التقييم', tasks: 'قياس الأداء', report: 'التقرير' },
       childInfoTitle: 'بيانات الطفل الأساسية',
       nameLabel: 'اسم الطفل *',
       namePlaceholder: 'مثال: محمد',
@@ -2298,7 +2298,7 @@ export const tr = {
     adminSpecialistToolkit: {
       pageTitle: 'Specialist Toolkit',
       pageSubtitle: 'Quick assessment for walk-in cases not yet in the system — generates an instant scientific report after the session',
-      steps: { info: 'Child info', battery: 'Select scales', running: 'Assessment', report: 'Report' },
+      steps: { info: 'Child info', battery: 'Select scales', running: 'Assessment', tasks: 'Performance', report: 'Report' },
       childInfoTitle: 'Basic child information',
       nameLabel: "Child's name *",
       namePlaceholder: 'e.g. Mohamed',
@@ -3507,7 +3507,7 @@ export const tr = {
     adminSpecialistToolkit: {
       pageTitle: 'Trousse du spécialiste',
       pageSubtitle: "Évaluation rapide pour les cas non enregistrés — génère un rapport scientifique instantané après la séance",
-      steps: { info: 'Infos enfant', battery: 'Choix des échelles', running: 'Évaluation', report: 'Rapport' },
+      steps: { info: 'Infos enfant', battery: 'Choix des échelles', running: 'Évaluation', tasks: 'Performance', report: 'Rapport' },
       childInfoTitle: "Informations de base de l'enfant",
       nameLabel: "Nom de l'enfant *",
       namePlaceholder: 'ex: Mohamed',

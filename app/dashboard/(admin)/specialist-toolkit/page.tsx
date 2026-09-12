@@ -2,7 +2,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useLang, tr, type Lang } from '@/lib/i18n'
-import type { AssessmentResult, Exercise, Program, WeeklySchedule, AgeGroup, Diagnosis } from '@/lib/types'
+import type { AssessmentResult, Exercise, Program, WeeklySchedule, AgeGroup, Diagnosis, ExerciseResult } from '@/lib/types'
 import { getRecommendedCategories, findMatchingExercises } from '@/lib/domain-exercise-map'
 import {
   PersonStanding, ArrowRight, ArrowLeft, Printer, RotateCcw,
@@ -13,13 +13,19 @@ import ADHDScale from '@/components/session/assessments/ADHDScale'
 import AttentionDomainsScale from '@/components/session/assessments/AttentionDomainsScale'
 import LearningDifficultiesScale from '@/components/session/assessments/LearningDifficultiesScale'
 import AutismScale from '@/components/session/assessments/AutismScale'
+import SpanExtension from '@/components/session/exercises/SpanExtension'
+import AuditoryMemory from '@/components/session/exercises/AuditoryMemory'
+import NBackTask from '@/components/session/exercises/NBackTask'
+import SustainedAttention from '@/components/session/exercises/SustainedAttention'
+import VisualSearch from '@/components/session/exercises/VisualSearch'
+import { COGNITIVE_TASKS, readTask, batterySummary } from '@/lib/cognitive-tasks'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { ACountUp } from '@/components/ui'
 import { staggerContainer, fadeUp, popIn, liftHover, tapOnly } from '@/lib/motion'
 
 type ConcernKey = 'autism' | 'adhd' | 'learning'
 type ScaleKey = 'autism' | 'adhd' | 'attention-domains' | 'learning-difficulties'
-type Step = 'info' | 'battery' | 'running' | 'report'
+type Step = 'info' | 'battery' | 'running' | 'tasks' | 'report'
 type ScaleSource = 'observation' | 'parentReport' | 'both'
 
 // 'attention-domains' is intentionally NOT offered any more: it measured the
@@ -47,6 +53,19 @@ const SCALE_COMPONENT: Record<ScaleKey, React.ComponentType<{
   adhd: ADHDScale,
   'attention-domains': AttentionDomainsScale,
   'learning-difficulties': LearningDifficultiesScale,
+}
+
+const TASK_COMPONENT: Record<string, React.ComponentType<{
+  onComplete: (r: ExerciseResult) => void
+  onCancel: () => void
+  studentAge: number
+  difficulty?: 1|2|3
+}>> = {
+  'span-extension': SpanExtension,
+  'auditory-memory': AuditoryMemory,
+  'n-back': NBackTask,
+  'sustained-attention': SustainedAttention,
+  'visual-search': VisualSearch,
 }
 
 const SEVERITY_BADGE: Record<AssessmentResult['severity'], string> = {
@@ -139,6 +158,7 @@ interface Draft {
   name: string; age: string; gender: 'male' | 'female' | 'unspecified'; parentName: string
   concerns: ConcernKey[]; selectedScales: ScaleKey[]
   runOrder: ScaleKey[]; currentIndex: number; results: AssessmentResult[]
+  perfResults: ExerciseResult[]
   clinicalNotes: Partial<Record<ScaleKey, string>>
   scaleSource: Partial<Record<ScaleKey, ScaleSource>>
   partialAnswers: Partial<Record<ScaleKey, Record<string, 0|1|2|3>>>
@@ -202,6 +222,9 @@ export default function SpecialistToolkitPage() {
   const [runOrder, setRunOrder] = useState<ScaleKey[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [results, setResults] = useState<AssessmentResult[]>([])
+  // Step 4 — measured cognitive performance (memory / attention tasks)
+  const [perfResults, setPerfResults] = useState<ExerciseResult[]>([])
+  const [activeTask, setActiveTask] = useState<string | null>(null)
   const [clinicalNotes, setClinicalNotes] = useState<Partial<Record<ScaleKey, string>>>({})
   const [scaleSource, setScaleSource] = useState<Partial<Record<ScaleKey, ScaleSource>>>({})
   const [partialAnswers, setPartialAnswers] = useState<Partial<Record<ScaleKey, Record<string, 0|1|2|3>>>>({})
@@ -263,7 +286,7 @@ export default function SpecialistToolkitPage() {
     const draft: Draft = {
       step, name, age, gender, parentName,
       concerns: [...concerns], selectedScales: [...selectedScales],
-      runOrder, currentIndex, results, clinicalNotes, scaleSource, partialAnswers, therapistName, studentId,
+      runOrder, currentIndex, results, perfResults, clinicalNotes, scaleSource, partialAnswers, therapistName, studentId,
       savedResultIds: [...savedResultIds],
       savedAt: Date.now(),
     }
@@ -271,7 +294,7 @@ export default function SpecialistToolkitPage() {
       localStorage.setItem(DRAFT_KEY, JSON.stringify(draft))
       setLastSavedAt(draft.savedAt)
     } catch { /* storage unavailable — printing/report still works without autosave */ }
-  }, [pendingDraft, step, name, age, gender, parentName, concerns, selectedScales, runOrder, currentIndex, results, clinicalNotes, scaleSource, partialAnswers, therapistName, studentId, savedResultIds])
+  }, [pendingDraft, step, name, age, gender, parentName, concerns, selectedScales, runOrder, currentIndex, results, perfResults, clinicalNotes, scaleSource, partialAnswers, therapistName, studentId, savedResultIds])
 
   function restoreDraft() {
     if (!pendingDraft) return
@@ -279,6 +302,7 @@ export default function SpecialistToolkitPage() {
     setName(pendingDraft.name); setAge(pendingDraft.age); setGender(pendingDraft.gender); setParentName(pendingDraft.parentName)
     setConcerns(new Set(pendingDraft.concerns)); setSelectedScales(new Set(pendingDraft.selectedScales))
     setRunOrder(pendingDraft.runOrder); setCurrentIndex(pendingDraft.currentIndex); setResults(pendingDraft.results)
+    setPerfResults(pendingDraft.perfResults ?? [])
     setClinicalNotes(pendingDraft.clinicalNotes ?? {})
     setScaleSource(pendingDraft.scaleSource ?? {})
     setPartialAnswers(pendingDraft.partialAnswers ?? {})
@@ -511,7 +535,7 @@ export default function SpecialistToolkitPage() {
 
   function advance() {
     if (currentIndex + 1 < runOrder.length) setCurrentIndex(i => i + 1)
-    else setStep('report')
+    else setStep('tasks')
   }
 
   function clearPartialAnswers(scaleKey: ScaleKey) {
@@ -641,14 +665,14 @@ export default function SpecialistToolkitPage() {
 
         {/* Step indicator */}
         <div className="flex items-center gap-2 mt-5 text-xs font-bold">
-          {(['info', 'battery', 'running', 'report'] as Step[]).map((s, i) => (
+          {(['info', 'battery', 'running', 'tasks', 'report'] as Step[]).map((s, i) => (
             <div key={s} className="flex items-center gap-2">
               <motion.span layout transition={{ type: 'spring', stiffness: 400, damping: 32 }}
                 className={`w-6 h-6 rounded-full flex items-center justify-center ltr-num ${
                 step === s ? 'bg-teal-600 text-white' : 'bg-gray-100 text-white'
               }`}>{i + 1}</motion.span>
               <span className={step === s ? 'text-teal-700' : 'text-gray-400'}>{t.steps[s]}</span>
-              {i < 3 && <span className="w-4 h-px bg-gray-200 mx-1" />}
+              {i < 4 && <span className="w-4 h-px bg-gray-200 mx-1" />}
             </div>
           ))}
         </div>
@@ -994,7 +1018,99 @@ export default function SpecialistToolkitPage() {
         )
       })()}
 
-      {/* ── Step 4: report ── */}
+      {/* ── Step 4: measured cognitive performance ── */}
+      {step === 'tasks' && (() => {
+        const childAge = parseInt(age, 10) || 0
+        const done = new Map(perfResults.map(r => [r.exerciseType, r] as const))
+        const Active = activeTask ? TASK_COMPONENT[activeTask] : null
+
+        if (Active && activeTask) {
+          return (
+            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+              className="bg-gray-900 rounded-2xl overflow-hidden">
+              <Active
+                studentAge={childAge || 7}
+                difficulty={1}
+                onCancel={() => setActiveTask(null)}
+                onComplete={(r) => {
+                  setPerfResults(prev => [...prev.filter(x => x.exerciseType !== r.exerciseType), r])
+                  setActiveTask(null)
+                }}
+              />
+            </motion.div>
+          )
+        }
+
+        return (
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+            <div className="bg-white rounded-2xl border border-gray-100 p-5">
+              <h2 className="font-black text-gray-900 text-lg">قياس الذاكرة والانتباه (اختياري)</h2>
+              <p className="text-sm text-gray-500 mt-1 leading-relaxed">
+                مهام أداء يؤديها الطفل الآن — تُعطيك أرقاماً مُلاحَظة (مدى الذاكرة، أخطاء الإغفال والاندفاع)
+                بدل الاعتماد على الانطباع وحده. تظهر في التقرير كخط أساس تُقارَن به الجلسات القادمة.
+              </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+                {COGNITIVE_TASKS.filter(task => TASK_COMPONENT[task.id]).map(task => {
+                  const result = done.get(task.id)
+                  const tooYoung = childAge > 0 && childAge < task.minAge
+                  const readout = result ? readTask(task.id, result.metadata, result.accuracy, childAge) : null
+                  return (
+                    <div key={task.id}
+                      className={`rounded-xl border-2 p-3.5 ${result ? 'border-teal-300 bg-teal-50/50' : 'border-gray-200 bg-gray-50'}`}>
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <p className="font-bold text-sm text-gray-900">{task.labelAr}</p>
+                          <p className="text-[11px] text-gray-500 mt-0.5">{task.domainAr}</p>
+                        </div>
+                        {result
+                          ? <CheckCircle2 className="w-5 h-5 text-teal-600 flex-shrink-0" />
+                          : null}
+                      </div>
+
+                      {tooYoung && (
+                        <p className="text-[11px] text-amber-700 bg-amber-50 rounded-lg px-2 py-1 mt-2">
+                          ⚠️ يُفسَّر من سن {task.minAge}
+                        </p>
+                      )}
+                      {!tooYoung && task.ageNote && childAge > 0 && childAge < task.minAge + 2 && (
+                        <p className="text-[11px] text-amber-700 bg-amber-50 rounded-lg px-2 py-1 mt-2">
+                          ⚠️ {task.ageNote}
+                        </p>
+                      )}
+
+                      {readout && (
+                        <p className="text-xs font-black text-teal-800 mt-2">{readout.headline}</p>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => setActiveTask(task.id)}
+                        className="mt-2.5 w-full text-xs font-bold py-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:border-teal-300 hover:text-teal-700 transition-colors"
+                      >
+                        {result ? 'إعادة المهمة' : 'تشغيل المهمة'}
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <button onClick={() => setStep('running')}
+                className="px-4 py-2.5 rounded-xl text-sm font-bold text-gray-500 hover:text-gray-700">
+                رجوع
+              </button>
+              <button onClick={() => setStep('report')}
+                className="flex-1 bg-teal-600 hover:bg-teal-700 text-white font-black py-3 rounded-xl transition-colors">
+                {perfResults.length > 0 ? `التالي: التقرير (${perfResults.length} مهمة مُقاسة)` : 'تخطّي والانتقال للتقرير'}
+              </button>
+            </div>
+          </motion.div>
+        )
+      })()}
+
+      {/* ── Step 5: report ── */}
       {step === 'report' && (
         <motion.div key="report" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
           className="space-y-4">
@@ -1286,6 +1402,53 @@ export default function SpecialistToolkitPage() {
                   </motion.div>
                   )
                 })}
+
+                {/* ── Measured cognitive performance (memory / attention) ── */}
+                {perfResults.length > 0 && (() => {
+                  const childAge = parseInt(age, 10) || 0
+                  const readouts = perfResults.map(r => readTask(r.exerciseType, r.metadata, r.accuracy, childAge))
+                  return (
+                    <div className="space-y-3 break-inside-avoid">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-xl bg-indigo-50 flex items-center justify-center flex-shrink-0">
+                          <Brain className="w-4 h-4 text-indigo-600" />
+                        </div>
+                        <div>
+                          <h3 className="font-black text-gray-900">الأداء المقيس — الذاكرة والانتباه</h3>
+                          <p className="text-[10px] text-gray-400 mt-0.5 leading-snug max-w-[420px]">
+                            مهام أداء أدّاها الطفل أثناء الجلسة · أرقام مُلاحَظة لا تقديرات — وليست مقارنة معيارية بأقرانه
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {readouts.map((ro, i) => (
+                          <div key={i} className="rounded-xl border border-indigo-100 bg-indigo-50/40 p-3 print:rounded-none break-inside-avoid">
+                            <p className="font-bold text-sm text-gray-900">{ro.labelAr}</p>
+                            <p className="text-[11px] text-gray-500">{ro.domainAr}</p>
+                            <p className="text-base font-black text-indigo-800 mt-1.5 ltr-num">{ro.headline}</p>
+                            {ro.details.length > 0 && (
+                              <ul className="text-[11px] text-gray-600 mt-1.5 space-y-0.5">
+                                {ro.details.map((d, j) => (
+                                  <li key={j} className="flex items-start gap-1.5">
+                                    <span className="text-indigo-400 mt-0.5">•</span><span>{d}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                            {ro.caution && (
+                              <p className="text-[11px] text-amber-700 bg-amber-50 rounded-lg px-2 py-1 mt-2">⚠️ {ro.caution}</p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+
+                      <p className="text-xs text-gray-500 leading-relaxed bg-gray-50 rounded-xl p-3 print:rounded-none">
+                        {batterySummary(readouts)}
+                      </p>
+                    </div>
+                  )
+                })()}
 
                 {/* Cross-domain red flags */}
                 {redFlags.length > 0 && (

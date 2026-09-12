@@ -10,11 +10,11 @@ export async function POST(req: Request) {
   try {
     const ip = getClientIp(req)
 
-    const rl = await isRateLimited(`admin_auth:${ip}`, 5, 3600)
+    const rl = await isRateLimited(`admin_auth:${ip}`, 10, 3600)
     if (rl.limited) {
       return rl.unavailable
-        ? NextResponse.json({ error: 'الخدمة غير متوفرة مؤقتًا، يرجى المحاولة بعد قليل' }, { status: 503 })
-        : NextResponse.json({ error: 'حاول مجدداً بعد ساعة' }, { status: 429 })
+        ? NextResponse.json({ error: 'الخدمة غير متوفرة مؤقتًا (تعذّر الاتصال بقاعدة البيانات) — راجع مفاتيح Upstash' }, { status: 503 })
+        : NextResponse.json({ error: 'تم حظر المحاولات مؤقتاً (10 محاولات/ساعة). انتظر ساعة أو امسح المفتاح rl:admin_auth من Upstash' }, { status: 429 })
     }
 
     const body = await req.json().catch(() => ({}))
@@ -22,11 +22,15 @@ export async function POST(req: Request) {
     const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD?.trim()
 
     if (!ADMIN_PASSWORD) {
-      return NextResponse.json({ error: 'not configured' }, { status: 503 })
+      return NextResponse.json({ error: 'ADMIN_PASSWORD غير مضبوط في هذا النشر — أضفه على Production ثم أعد النشر (Redeploy)' }, { status: 503 })
     }
 
-    if (!password || !safeCompare(password, ADMIN_PASSWORD)) {
-      return NextResponse.json({ error: 'كلمة مرور خاطئة' }, { status: 401 })
+    // Trim the submitted value too: ADMIN_PASSWORD is already trimmed, so a
+    // stray leading/trailing space (very easy to paste in) could never match
+    // and produced a confusing "wrong password" for a correct secret.
+    const submitted = password?.trim()
+    if (!submitted || !safeCompare(submitted, ADMIN_PASSWORD)) {
+      return NextResponse.json({ error: 'كلمة مرور خاطئة — إن كنت غيّرتها للتو في Vercel فأعد النشر (Redeploy) ليُطبَّق التغيير' }, { status: 401 })
     }
 
     const token = await createAdminSession()

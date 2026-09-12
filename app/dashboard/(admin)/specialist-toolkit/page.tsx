@@ -15,7 +15,6 @@ import LearningDifficultiesScale from '@/components/session/assessments/Learning
 import AutismScale from '@/components/session/assessments/AutismScale'
 import SpanExtension from '@/components/session/exercises/SpanExtension'
 import AuditoryMemory from '@/components/session/exercises/AuditoryMemory'
-import NBackTask from '@/components/session/exercises/NBackTask'
 import SustainedAttention from '@/components/session/exercises/SustainedAttention'
 import VisualSearch from '@/components/session/exercises/VisualSearch'
 import { COGNITIVE_TASKS, readTask, batterySummary } from '@/lib/cognitive-tasks'
@@ -64,8 +63,10 @@ const TASK_COMPONENT: Record<string, React.ComponentType<{
   assessmentMode?: boolean
 }>> = {
   'span-extension': SpanExtension,
+  // Backward span: same component, forced into reverse mode. It emits
+  // exerciseType 'span-backward', so the two runs stay distinct in the results.
+  'span-backward': (props) => <SpanExtension {...props} reverse />,
   'auditory-memory': AuditoryMemory,
-  'n-back': NBackTask,
   'sustained-attention': SustainedAttention,
   'visual-search': VisualSearch,
 }
@@ -92,6 +93,17 @@ const SCALE_ICON: Record<ScaleKey, React.ComponentType<{ className?: string }>> 
 // report is handed to — can see exactly what the number is and is not.
 // Only the ADHD scale is tied to a published standard; the others are original
 // screening checklists whose severity cut-offs are internal, not normed.
+// A learning-difficulties result on a child under 8 is not decision-grade:
+// several of its items ask about skills not yet taught (multiplication tables,
+// spelling rules), so scores rise for ordinary developmental reasons. The
+// result still appears in the report with its caution, but it must not drive
+// specialist referrals or session frequency — otherwise the document tells the
+// reader "do not base a referral on this" and then lists three referrals.
+const LD_MIN_DECISION_AGE = 8
+function isAgeDiscounted(type: string, childAge: number): boolean {
+  return type === 'learning-difficulties' && childAge > 0 && childAge < LD_MIN_DECISION_AGE
+}
+
 const SCALE_PROVENANCE: Record<ScaleKey, string> = {
   adhd: 'بنوده معايير أعراض DSM-5 · التصنيف بقاعدة عدّ الأعراض (٦ من ٩ فأكثر)',
   autism: 'قائمة فرز مبنية على مجالات DSM-5 · غير معيارية — الشدة مؤشر داخلي لا تصنيف سريري',
@@ -605,9 +617,17 @@ export default function SpecialistToolkitPage() {
   )
 
   const actionPlan = useMemo(() => {
-    const all = results.flatMap(r => r.recommendations)
-    return [...new Set(all)]
-  }, [results])
+    const childAge = parseInt(age, 10) || 0
+    const all = results.flatMap(r =>
+      isAgeDiscounted(r.type, childAge)
+        // Replace its referrals with the one action that is actually warranted.
+        ? ['إعادة تقييم صعوبات التعلم بعد سن 8 قبل أي إحالة تشخيصية']
+        : r.recommendations,
+    )
+    // Lines prefixed 'ℹ️' are informational readouts shown under their own
+    // scale (e.g. the DSM symptom counts) — they are not plan actions.
+    return [...new Set(all)].filter(line => !line.startsWith('ℹ️'))
+  }, [results, age])
 
   // Conservative, deterministic cross-domain pattern detection — phrased as "needs attention", not a diagnosis
   const redFlags = useMemo(() => {
@@ -645,12 +665,15 @@ export default function SpecialistToolkitPage() {
   }, [results, t])
 
   const recommendedFrequency = useMemo((): 'low' | 'medium' | 'high' | null => {
-    if (results.length === 0) return null
-    if (results.some(r => r.severity === 'severe') || redFlags.length > 0) return 'high'
-    if (results.some(r => r.severity === 'moderate')) return 'medium'
-    if (results.some(r => r.severity === 'mild')) return 'low'
+    const childAge = parseInt(age, 10) || 0
+    // Only results we are willing to act on may set the intensity of care.
+    const deciding = results.filter(r => !isAgeDiscounted(r.type, childAge))
+    if (deciding.length === 0) return null
+    if (deciding.some(r => r.severity === 'severe') || redFlags.length > 0) return 'high'
+    if (deciding.some(r => r.severity === 'moderate')) return 'medium'
+    if (deciding.some(r => r.severity === 'mild')) return 'low'
     return null
-  }, [results, redFlags])
+  }, [results, redFlags, age])
 
   const today = new Date().toLocaleDateString(localeFor(lang), { year: 'numeric', month: 'long', day: 'numeric' })
 

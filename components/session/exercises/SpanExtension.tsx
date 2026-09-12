@@ -8,16 +8,27 @@ interface Props {
   onCancel:   () => void
   studentAge: number
   difficulty?: 1|2|3
+  /**
+   * Force backward span (child repeats the sequence in reverse).
+   *
+   * Forward span measures simple storage; reversing it forces the child to hold
+   * AND manipulate the sequence, which is the working-memory component. It is
+   * the standard child-appropriate measure of that construct — far more
+   * suitable below ~9 than n-back. Previously backward mode was welded to
+   * difficulty 3, which also starts at length 4 and is too hard a start for a
+   * 6-year-old; this prop decouples the two.
+   */
+  reverse?: boolean
   seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
   onProgress?: (p: ExerciseProgressUpdate) => void // live per-answer feedback to the specialist
 }
 
-export default function SpanExtension({ onComplete, onCancel, difficulty = 1, seed, onProgress }: Props) {
+export default function SpanExtension({ onComplete, onCancel, difficulty = 1, seed, onProgress, reverse }: Props) {
   const rng = useRef(createRng(seed ?? Date.now())).current
   const START_LEN  = difficulty === 1 ? 2 : difficulty === 2 ? 3 : 4
   const ROUNDS     = 5
   const SHOW_MS    = 800  // ms per digit
-  const REVERSE    = difficulty === 3
+  const REVERSE    = reverse ?? (difficulty === 3)
 
   const [seq,      setSeq]      = useState<number[]>([])
   const [showing,  setShowing]  = useState<number | null>(null)
@@ -74,8 +85,8 @@ export default function SpanExtension({ onComplete, onCancel, difficulty = 1, se
         const nextRound = round + 1
         if (nextRound >= ROUNDS) {
           onComplete({
-            exerciseType:    'span-extension',
-            exerciseLabelAr: 'امتداد الذاكرة',
+            exerciseType:    REVERSE ? 'span-backward' : 'span-extension',
+            exerciseLabelAr: REVERSE ? 'المدى العكسي' : 'امتداد الذاكرة',
             score:    Math.round((nc / ROUNDS) * 100),
             accuracy: Math.round((nc / ROUNDS) * 100),
             duration: Math.round((Date.now() - startMs) / 1000),

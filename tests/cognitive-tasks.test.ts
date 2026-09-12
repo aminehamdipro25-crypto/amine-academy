@@ -71,9 +71,16 @@ describe('readTask — age guards', () => {
     expect(r.caution).toContain('غير حاسمة')
   })
 
-  it('still surfaces the age note just above the threshold', () => {
-    const r = readTask('n-back', { n: 1, correct: 8, wrong: 2, totalTrials: 12 }, 67, 7)
-    expect(r.caution).toBeDefined() // n-back minAge 7, note applies below 9
+  it('replaced n-back with backward span, which a 6-year-old can attempt', () => {
+    expect(COGNITIVE_TASKS.find(t => t.id === 'n-back')).toBeUndefined()
+    const backward = COGNITIVE_TASKS.find(t => t.id === 'span-backward')
+    expect(backward).toBeDefined()
+    expect(backward!.minAge).toBeLessThanOrEqual(6)
+
+    const r = readTask('span-backward', { seqLen: 3, rounds: 5 }, 80, 6)
+    expect(r.caution).toBeUndefined()
+    expect(r.headline).toContain('3')
+    expect(r.details.join(' ')).toContain('عكسي')
   })
 
   it('gives no caution for an age-appropriate task', () => {

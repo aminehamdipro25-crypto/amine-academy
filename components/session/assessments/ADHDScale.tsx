@@ -99,7 +99,9 @@ export default function ADHDScale({ studentId, onComplete, onCancel, initialAnsw
     const hyperImpulseCount  = countPresent(answers, HYPER_IMPULSE_IDS)
     const sev = severityFromCounts(inattentionCount, hyperImpulseCount)
     const recommendations: string[] = [
-      `عدد أعراض قلة الانتباه: ${inattentionCount}/9 — فرط الحركة/الاندفاعية: ${hyperImpulseCount}/9 (الحد المرجعي DSM-5: ٦)`,
+      // 'ℹ️' marks this as a readout, not a plan action — the toolkit's action
+      // plan filters these out so a symptom count never reads as a task to do.
+      `ℹ️ عدد أعراض قلة الانتباه: ${inattentionCount}/9 — فرط الحركة/الاندفاعية: ${hyperImpulseCount}/9 (الحد المرجعي DSM-5: ٦)`,
     ]
     if (domainScores.attention > 50)
       recommendations.push('تمارين التركيز والانتباه الانتقائي يومياً 15 دقيقة')

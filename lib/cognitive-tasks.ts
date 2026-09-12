@@ -7,7 +7,7 @@
 // measurement, so a report handed to a parent carries observed performance
 // (span reached, omission/commission errors) and not only opinion.
 //
-// These are established experimental paradigms (digit/sequence span, n-back,
+// These are established experimental paradigms (forward and backward span,
 // CPT-style sustained attention, visual search, Stroop). They are NOT normed
 // against an Arabic population, so we report the child's OBSERVED numbers and
 // never convert them into percentiles or an IQ-like score.
@@ -26,8 +26,13 @@ export interface CognitiveTaskDef {
 export const COGNITIVE_TASKS: CognitiveTaskDef[] = [
   { id: 'span-extension',      labelAr: 'امتداد الذاكرة',   domainAr: 'مدى الذاكرة العاملة',        minAge: 5 },
   { id: 'auditory-memory',     labelAr: 'الذاكرة السمعية',  domainAr: 'الذاكرة السمعية قصيرة المدى', minAge: 5 },
-  { id: 'n-back',              labelAr: 'ذاكرة N-Back',     domainAr: 'تحديث الذاكرة العاملة',      minAge: 7,
-    ageNote: 'ابدأ بمستوى 1؛ مستوى 2 يفوق قدرة أغلب الأطفال دون سن 9' },
+  // Backward span replaces n-back in the battery. N-back is genuinely hard for
+  // young children — it demands continuous updating under time pressure, and a
+  // 6–7 year old failing it tells you little about their memory. Backward span
+  // measures the same construct (holding AND manipulating) in a form children
+  // this age can actually attempt. NBackTask still exists as a training
+  // exercise for older children.
+  { id: 'span-backward',       labelAr: 'المدى العكسي',     domainAr: 'ذاكرة العمل (حفظ ومعالجة)',  minAge: 6 },
   { id: 'sustained-attention', labelAr: 'الانتباه المستمر', domainAr: 'الانتباه المستمر (نمط CPT)',  minAge: 5 },
   { id: 'visual-search',       labelAr: 'البحث البصري',     domainAr: 'الانتباه الانتقائي',          minAge: 5 },
   { id: 'stroop-test',         labelAr: 'اختبار ستروب',     domainAr: 'الكبح التنفيذي',              minAge: 8,
@@ -81,13 +86,15 @@ export function readTask(
 
   switch (exerciseType) {
     case 'span-extension':
+    case 'span-backward':
     case 'auditory-memory': {
       const span = num(meta, 'seqLen')
       if (span !== undefined) headline = `أطول تسلسل صحيح: ${span} عناصر`
       const rounds = num(meta, 'rounds')
       if (rounds !== undefined) details.push(`عدد الجولات: ${rounds}`)
       details.push(`الدقة: ${accuracy}%`)
-      if (meta.reverse === true) details.push('بترتيب عكسي (أصعب — يقيس المعالجة لا الاستظهار فقط)')
+      if (meta.reverse === true || exerciseType === 'span-backward')
+        details.push('بترتيب عكسي — يقيس الحفظ والمعالجة معاً لا الاستظهار فقط')
       break
     }
     case 'n-back': {

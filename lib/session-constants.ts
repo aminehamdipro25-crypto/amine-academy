@@ -244,7 +244,6 @@ export const VIDEO_LIBRARY: Record<string, { desc: string; tips: string[]; video
 export const ASSESSMENTS = [
   { id:'adhd',               labelAr:'مقياس ADHD (DSM-5)',              icon:'⚡', color:'bg-blue-50 border-blue-200'    },
   { id:'autism',             labelAr:'مقياس التوحد',            icon:'🧩', color:'bg-teal-50 border-teal-200'    },
-  { id:'attention-domains',  labelAr:'أنماط الانتباه (استرشادي)', icon:'🧠', color:'bg-purple-50 border-purple-200' },
   { id:'learning-difficulties', labelAr:'صعوبات التعلم',        icon:'📚', color:'bg-amber-50 border-amber-200'  },
 ]
 

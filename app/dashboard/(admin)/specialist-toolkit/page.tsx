@@ -22,10 +22,14 @@ type ScaleKey = 'autism' | 'adhd' | 'attention-domains' | 'learning-difficulties
 type Step = 'info' | 'battery' | 'running' | 'report'
 type ScaleSource = 'observation' | 'parentReport' | 'both'
 
-const SCALE_ORDER: ScaleKey[] = ['autism', 'adhd', 'attention-domains', 'learning-difficulties']
+// 'attention-domains' is intentionally NOT offered any more: it measured the
+// same construct as the ADHD scale but with unvalidated items, while ADHDScale
+// carries the actual DSM-5 criteria. It stays in the maps below (and in the
+// report reader) so assessments already saved under that type still render.
+const SCALE_ORDER: ScaleKey[] = ['autism', 'adhd', 'learning-difficulties']
 
 const CONCERN_TO_SCALE: Record<ConcernKey, ScaleKey> = {
-  autism: 'autism', adhd: 'adhd', attention: 'attention-domains', learning: 'learning-difficulties',
+  autism: 'autism', adhd: 'adhd', attention: 'adhd', learning: 'learning-difficulties',
 }
 
 const SCALE_DURATION: Record<ScaleKey, number> = {

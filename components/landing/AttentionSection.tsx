@@ -14,13 +14,13 @@ const ATTENTION_TYPES = [
     protocol: 'بروتوكول التشتيت المُتحكَّم به: نُدرّب الطفل على الانتباه لهدف واحد بينما توجد مشتتات مُتحكَّم بها تدريجياً.',
     protocolEn: 'Controlled Distraction Protocol: We train the child to focus on a single target while gradually introducing managed distractions.',
     protocolFr: "Protocole de distraction contrôlée : nous entraînons l'enfant à se concentrer sur une seule cible tandis que des distractions maîtrisées sont introduites progressivement.",
-    steps: ['تمرين النجمة الواحدة (تتبع هدف في حقل بصري مزدحم)', 'لعبة "أين الصوت؟" مع ضوضاء خلفية متدرجة', 'برنامج تحصين التشتت (DIT) — 8 أسابيع'],
-    stepsEn: ['Single Star Exercise (tracking a target in a busy visual field)', '"Where\'s the Sound?" game with progressive background noise', 'Distraction Immunization Training (DIT) — 8 weeks'],
-    stepsFr: ['Exercice de l\'étoile unique (suivre une cible dans un champ visuel chargé)', 'Jeu « Où est le son ? » avec bruit de fond progressif', 'Programme d\'entraînement à la distraction (DIT) — 8 semaines'],
-    improvement: '+65%',
-    improvementLabel: 'في الأداء الأكاديمي',
-    improvementLabelEn: 'in Academic Performance',
-    improvementLabelFr: 'de performance scolaire',
+    steps: ['تمرين النجمة الواحدة (تتبع هدف في حقل بصري مزدحم)', 'لعبة "أين الصوت؟" مع ضوضاء خلفية متدرجة', 'تدريب متدرّج على مقاومة المشتتات'],
+    stepsEn: ['Single Star Exercise (tracking a target in a busy visual field)', '"Where\'s the Sound?" game with progressive background noise', 'Graded distraction-tolerance training'],
+    stepsFr: ['Exercice de l\'étoile unique (suivre une cible dans un champ visuel chargé)', 'Jeu « Où est le son ? » avec bruit de fond progressif', 'Entraînement progressif à la tolérance aux distractions'],
+    improvement: '٣',
+    improvementLabel: 'تمارين في البروتوكول',
+    improvementLabelEn: 'exercises in this protocol',
+    improvementLabelFr: 'exercices dans ce protocole',
     gradient: 'linear-gradient(135deg, #3B82F6, #60A5FA)',
     statGradient: 'linear-gradient(135deg, #60A5FA, #38BDF8)',
     glowColor: 'rgba(59,130,246,0.07)',
@@ -34,15 +34,15 @@ const ATTENTION_TYPES = [
     problem: 'الطفل يبدأ المهمة بحماس ثم ينقطع انتباهه بعد 3-5 دقائق — المعروف بـ "تأثير الحافة الزمنية" في ADHD.',
     problemEn: 'The child starts tasks enthusiastically but loses focus after 3–5 minutes — known as the "temporal edge effect" in ADHD.',
     problemFr: "L'enfant démarre une tâche avec enthousiasme puis perd sa concentration après 3 à 5 minutes — un phénomène connu comme « l'effet de bord temporel » dans le TDAH.",
-    protocol: 'تدريب CPT (Continuous Performance Test) بالحركة: مهام انتباه مستمر مقرونة بحركة جسدية تُبقي على إثارة الدوبامين.',
-    protocolEn: 'Movement-based CPT (Continuous Performance Test) Training: sustained attention tasks paired with physical movement to maintain dopamine activation.',
-    protocolFr: "Entraînement CPT (Continuous Performance Test) par le mouvement : des tâches d'attention soutenue associées à un mouvement physique pour maintenir l'activation de la dopamine.",
+    protocol: 'تدريب الانتباه المستمر بالحركة: مهام تتطلب تركيزاً متواصلاً مقرونة بحركة جسدية تساعد الطفل على الاستمرار.',
+    protocolEn: 'Movement-based sustained-attention training: tasks requiring continuous focus, paired with physical movement to help the child keep going.',
+    protocolFr: "Entraînement de l'attention soutenue par le mouvement : des tâches exigeant une concentration continue, associées à un mouvement physique pour aider l'enfant à persévérer.",
     steps: ['تمرين الساعة الحركية: أداء حركة معينة عند ظهور هدف معين', 'تقنية Pomodoro المعدّلة للأطفال (5 د تركيز + 2 د حركة)', 'تمارين الاسترخاء اليقظ بين المهام'],
     stepsEn: ['Motor Clock Exercise: performing a specific movement when a target appears', 'Modified Pomodoro for children (5 min focus + 2 min movement)', 'Mindful relaxation exercises between tasks'],
     stepsFr: ['Exercice de l\'horloge motrice : effectuer un mouvement précis à l\'apparition d\'une cible', 'Technique Pomodoro adaptée aux enfants (5 min de concentration + 2 min de mouvement)', 'Exercices de relaxation en pleine conscience entre les tâches'],
-    improvement: '+78%',
-    improvementLabel: 'في مدة التركيز',
-    improvementLabelEn: 'in Focus Duration',
+    improvement: '٣',
+    improvementLabel: 'تمارين في البروتوكول',
+    improvementLabelEn: 'exercises in this protocol',
     improvementLabelFr: 'de durée de concentration',
     gradient: 'linear-gradient(135deg, #8B5CF6, #C084FC)',
     statGradient: 'linear-gradient(135deg, #A78BFA, #C084FC)',
@@ -60,13 +60,13 @@ const ATTENTION_TYPES = [
     protocol: 'تدريب الكبح التنفيذي: تمارين مصممة لتقوية قشرة الفص الجبهي الأمامي عبر حركات تتطلب التوقف والتفكير.',
     protocolEn: 'Executive Inhibition Training: exercises designed to strengthen the prefrontal cortex through movements that require stopping and thinking.',
     protocolFr: "Entraînement à l'inhibition exécutive : des exercices conçus pour renforcer le cortex préfrontal grâce à des mouvements qui exigent de s'arrêter et de réfléchir.",
-    steps: ['لعبة "أوقف الحركة": يجب على الطفل إيقاف نفسه عند إشارة مفاجئة', 'تمرين Go/No-Go مع حركة جسدية', 'بروتوكول مزامنة الإيقاع العصبي (Interactive Metronome)'],
-    stepsEn: ['"Freeze!" game: the child must stop themselves upon a sudden signal', 'Go/No-Go exercise with physical movement', 'Neural Rhythm Synchronization Protocol (Interactive Metronome)'],
-    stepsFr: ['Jeu « Stop ! » : l\'enfant doit s\'arrêter net à un signal soudain', 'Exercice Go/No-Go associé à un mouvement physique', 'Protocole de synchronisation du rythme neuronal (Interactive Metronome)'],
-    improvement: '52%',
-    improvementLabel: 'انخفاض الاندفاعية',
-    improvementLabelEn: 'Reduction in Impulsivity',
-    improvementLabelFr: "de réduction de l'impulsivité",
+    steps: ['لعبة "أوقف الحركة": يجب على الطفل إيقاف نفسه عند إشارة مفاجئة', 'تمرين Go/No-Go مع حركة جسدية', 'تمارين مزامنة الإيقاع الحركي'],
+    stepsEn: ['"Freeze!" game: the child must stop themselves upon a sudden signal', 'Go/No-Go exercise with physical movement', 'Motor rhythm synchronization exercises'],
+    stepsFr: ['Jeu « Stop ! » : l\'enfant doit s\'arrêter net à un signal soudain', 'Exercice Go/No-Go associé à un mouvement physique', 'Exercices de synchronisation du rythme moteur'],
+    improvement: '٣',
+    improvementLabel: 'تمارين في البروتوكول',
+    improvementLabelEn: 'exercises in this protocol',
+    improvementLabelFr: 'exercices dans ce protocole',
     gradient: 'linear-gradient(135deg, #10B981, #34D399)',
     statGradient: 'linear-gradient(135deg, #34D399, #6EE7B7)',
     glowColor: 'rgba(16,185,129,0.07)',
@@ -83,13 +83,13 @@ const ATTENTION_TYPES = [
     protocol: 'برنامج التدريب على الوظيفة التنفيذية: سلسلة من التمارين المتدرجة تُنمّي الذاكرة العاملة والتخطيط والمرونة المعرفية.',
     protocolEn: 'Executive Function Training Program: a series of progressive exercises that develop working memory, planning, and cognitive flexibility.',
     protocolFr: "Programme d'entraînement des fonctions exécutives : une série d'exercices progressifs qui développent la mémoire de travail, la planification et la flexibilité cognitive.",
-    steps: ['تحدي التسلسل المعكوس (Cogmed-style)', 'برج المهام التنفيذية: تحليل المهمة الكبيرة', 'لعبة التبديل بين القواعد (Task-Switching)'],
-    stepsEn: ['Reverse Sequence Challenge (Cogmed-style)', 'Executive Task Tower: breaking down complex tasks', 'Rule-Switching Game (Task-Switching)'],
-    stepsFr: ['Défi de séquence inversée (style Cogmed)', 'Tour des tâches exécutives : décomposer une tâche complexe', 'Jeu de changement de règles (Task-Switching)'],
-    improvement: '35%',
-    improvementLabel: 'تقليل أعراض ADHD (دراسة 2014)',
-    improvementLabelEn: 'Reduction in ADHD Symptoms (2014 Study)',
-    improvementLabelFr: 'de réduction des symptômes du TDAH (étude 2014)',
+    steps: ['تحدي التسلسل المعكوس (تدريب الذاكرة العاملة)', 'برج المهام التنفيذية: تحليل المهمة الكبيرة', 'لعبة التبديل بين القواعد (Task-Switching)'],
+    stepsEn: ['Reverse Sequence Challenge (working-memory training)', 'Executive Task Tower: breaking down complex tasks', 'Rule-Switching Game (Task-Switching)'],
+    stepsFr: ['Défi de séquence inversée (entraînement de la mémoire de travail)', 'Tour des tâches exécutives : décomposer une tâche complexe', 'Jeu de changement de règles (Task-Switching)'],
+    improvement: '٣',
+    improvementLabel: 'تمارين في البروتوكول',
+    improvementLabelEn: 'exercises in this protocol',
+    improvementLabelFr: 'exercices dans ce protocole',
     gradient: 'linear-gradient(135deg, #F59E0B, #FBBF24)',
     statGradient: 'linear-gradient(135deg, #FBBF24, #FDE68A)',
     glowColor: 'rgba(245,158,11,0.07)',
@@ -178,7 +178,7 @@ export default function AttentionSection() {
             </p>
           </div>
           <div className="grid grid-cols-2 gap-3 flex-shrink-0">
-            {['CPT مُعدَّل', 'Go/No-Go', 'DIT بروتوكول', 'Cogmed-style'].map(b => (
+            {['الانتباه المستمر', 'الانتباه الانتقائي', 'الكبح التنفيذي', 'الذاكرة العاملة'].map(b => (
               <span
                 key={b}
                 className="text-center text-xs font-bold px-3 py-2 rounded-xl"
@@ -280,12 +280,12 @@ export default function AttentionSection() {
               lang,
               <>
                 <strong style={{ color: '#374151' }}>ملاحظة علمية:</strong> جميع بروتوكولات الانتباه مُصممة لتُطبَّق عبر الحركة الجسدية،
-                لأن الأبحاث تُثبت أن النشاط البدني يرفع مستوى الدوبامين والنورإبينفرين في الفص الجبهي بنسبة تصل إلى 200%.
+                لأن الأبحاث تشير إلى أن النشاط البدني يرفع مستوى النواقل العصبية المرتبطة بالانتباه (الدوبامين والنورإبينفرين).
                 <span style={{ color: '#6366F1' }}> (Ratey, 2008 — Spark)</span>
               </>,
               <>
                 <strong style={{ color: '#374151' }}>Scientific Note:</strong> All attention protocols are designed to be implemented through physical movement,
-                because research proves that physical activity raises dopamine and norepinephrine levels in the prefrontal cortex by up to 200%.
+                because research indicates that physical activity raises the attention-related neurotransmitters dopamine and norepinephrine.
                 <span style={{ color: '#6366F1' }}> (Ratey, 2008 — Spark)</span>
               </>,
               <>

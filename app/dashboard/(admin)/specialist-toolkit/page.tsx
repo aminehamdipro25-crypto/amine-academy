@@ -1382,7 +1382,14 @@ export default function SpecialistToolkitPage() {
                       const matched = findMatchingExercises(categories, allExercises)
                       return (
                         <div className="bg-teal-50/60 border border-teal-100 rounded-xl p-3 print:rounded-none">
-                          <p className="text-xs font-bold text-teal-700 mb-1.5">{t.matchedExercisesTitle}</p>
+                          {result.type === 'learning-difficulties' ? (
+                            <>
+                              <p className="text-xs font-bold text-teal-700 mb-1">{t.supportiveExercisesTitle}</p>
+                              <p className="text-[10px] text-gray-500 mb-1.5 leading-snug">{t.supportiveExercisesNote}</p>
+                            </>
+                          ) : (
+                            <p className="text-xs font-bold text-teal-700 mb-1.5">{t.matchedExercisesTitle}</p>
+                          )}
                           {matched.length > 0 ? (
                             <ul className="text-xs text-gray-600 space-y-1">
                               {matched.map(ex => {

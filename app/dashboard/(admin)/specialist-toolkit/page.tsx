@@ -19,6 +19,7 @@ import NBackTask from '@/components/session/exercises/NBackTask'
 import SustainedAttention from '@/components/session/exercises/SustainedAttention'
 import VisualSearch from '@/components/session/exercises/VisualSearch'
 import { COGNITIVE_TASKS, readTask, batterySummary } from '@/lib/cognitive-tasks'
+import { hasArabicVoice } from '@/lib/speech'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { ACountUp } from '@/components/ui'
 import { staggerContainer, fadeUp, popIn, liftHover, tapOnly } from '@/lib/motion'
@@ -60,6 +61,7 @@ const TASK_COMPONENT: Record<string, React.ComponentType<{
   onCancel: () => void
   studentAge: number
   difficulty?: 1|2|3
+  assessmentMode?: boolean
 }>> = {
   'span-extension': SpanExtension,
   'auditory-memory': AuditoryMemory,
@@ -225,6 +227,10 @@ export default function SpecialistToolkitPage() {
   // Step 4 — measured cognitive performance (memory / attention tasks)
   const [perfResults, setPerfResults] = useState<ExerciseResult[]>([])
   const [activeTask, setActiveTask] = useState<string | null>(null)
+  // An auditory-memory score is only meaningful if the machine can actually
+  // pronounce Arabic; otherwise the child is memorising garbled audio.
+  const [arabicVoiceOk, setArabicVoiceOk] = useState(true)
+  useEffect(() => { setArabicVoiceOk(hasArabicVoice()) }, [])
   const [clinicalNotes, setClinicalNotes] = useState<Partial<Record<ScaleKey, string>>>({})
   const [scaleSource, setScaleSource] = useState<Partial<Record<ScaleKey, ScaleSource>>>({})
   const [partialAnswers, setPartialAnswers] = useState<Partial<Record<ScaleKey, Record<string, 0|1|2|3>>>>({})
@@ -1031,6 +1037,7 @@ export default function SpecialistToolkitPage() {
               <Active
                 studentAge={childAge || 7}
                 difficulty={1}
+                assessmentMode
                 onCancel={() => setActiveTask(null)}
                 onComplete={(r) => {
                   setPerfResults(prev => [...prev.filter(x => x.exerciseType !== r.exerciseType), r])
@@ -1071,6 +1078,11 @@ export default function SpecialistToolkitPage() {
                       {tooYoung && (
                         <p className="text-[11px] text-amber-700 bg-amber-50 rounded-lg px-2 py-1 mt-2">
                           ⚠️ يُفسَّر من سن {task.minAge}
+                        </p>
+                      )}
+                      {task.id === 'auditory-memory' && !arabicVoiceOk && (
+                        <p className="text-[11px] text-red-700 bg-red-50 rounded-lg px-2 py-1 mt-2 leading-snug">
+                          🔇 لا يوجد صوت عربي مثبّت على هذا الجهاز — النطق سيكون خاطئاً والنتيجة غير صالحة. ثبّت حزمة صوت عربية أو تخطَّ هذه المهمة.
                         </p>
                       )}
                       {!tooYoung && task.ageNote && childAge > 0 && childAge < task.minAge + 2 && (

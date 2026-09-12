@@ -10,9 +10,17 @@ interface Props {
   difficulty?: 1|2|3
   seed?: number // shared seed for identical content on both screens — see lib/seeded-random.ts
   onProgress?: (p: ExerciseProgressUpdate) => void // live per-answer feedback to the specialist
+  /**
+   * Assessment mode. Off by default so the exercise keeps its training
+   * scaffolding. When ON, the on-screen aids that reveal the answer are hidden:
+   * the sequence-history strip and the highlighted n-back cell. Without this the
+   * child can simply compare two visible numbers, so the task stops measuring
+   * working memory and the score is meaningless in a report.
+   */
+  assessmentMode?: boolean
 }
 
-export default function NBackTask({ onComplete, onCancel, difficulty = 1, seed, onProgress }: Props) {
+export default function NBackTask({ onComplete, onCancel, difficulty = 1, seed, onProgress, assessmentMode = false }: Props) {
   const rng         = useRef(createRng(seed ?? Date.now())).current
   const n           = difficulty === 1 ? 1 : difficulty === 2 ? 2 : 3
   const totalTrials = difficulty === 1 ? 15 : difficulty === 2 ? 20 : 25
@@ -174,7 +182,7 @@ export default function NBackTask({ onComplete, onCancel, difficulty = 1, seed, 
 
       {/* History trail */}
       <div className="flex gap-1.5 items-center h-8">
-        {history.slice(-Math.min(n + 2, history.length)).map((pos, i, arr) => {
+        {!assessmentMode && history.slice(-Math.min(n + 2, history.length)).map((pos, i, arr) => {
           const isNBack = i === arr.length - 1 - n
           return (
             <div key={i}
@@ -185,7 +193,7 @@ export default function NBackTask({ onComplete, onCancel, difficulty = 1, seed, 
             </div>
           )
         })}
-        {history.length > 0 && (
+        {!assessmentMode && history.length > 0 && (
           <>
             <div className="w-px h-5 bg-white/20 mx-0.5" />
             <div className="w-8 h-8 rounded-lg bg-brand-600 text-white text-xs font-black flex items-center justify-center shadow-[0_0_12px_rgba(124,92,252,0.5)]">
@@ -199,7 +207,7 @@ export default function NBackTask({ onComplete, onCancel, difficulty = 1, seed, 
       <div className="grid grid-cols-3 gap-2.5 my-1">
         {Array.from({ length: 9 }, (_, i) => {
           const isActive    = current === i && phase === 'show'
-          const isNBackHint = nBackPos === i && phase === 'show'
+          const isNBackHint = !assessmentMode && nBackPos === i && phase === 'show'
           return (
             <div key={i}
               className={`w-20 h-20 rounded-2xl border-2 transition-all duration-150 ${

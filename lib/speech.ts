@@ -82,6 +82,21 @@ export function hasTTSSupport(): boolean {
   return typeof window !== 'undefined' && 'speechSynthesis' in window
 }
 
+/**
+ * True only when a real Arabic voice is installed on this machine.
+ *
+ * This matters for assessment: setting utt.lang = 'ar-SA' does NOT guarantee
+ * Arabic output. With no Arabic voice installed the browser falls back to its
+ * default (often English or French) voice, which reads Arabic text as garbled
+ * phonetics. An auditory-memory score collected that way measures the broken
+ * audio, not the child's memory — so the caller must be able to warn or skip.
+ */
+export function hasArabicVoice(): boolean {
+  if (typeof window === 'undefined' || !('speechSynthesis' in window)) return false
+  if (!voicesLoaded) refreshVoices()
+  return cachedVoice !== null
+}
+
 /** Arabic digit words for numbers 0–10 (avoids browser speaking digits in English). */
 const AR_DIGITS = ['صفر','واحد','اثنان','ثلاثة','أربعة','خمسة','ستة','سبعة','ثمانية','تسعة','عشرة']
 export function arabicDigitWord(n: number): string {

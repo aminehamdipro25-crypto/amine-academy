@@ -17,7 +17,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { ACountUp } from '@/components/ui'
 import { staggerContainer, fadeUp, popIn, liftHover, tapOnly } from '@/lib/motion'
 
-type ConcernKey = 'autism' | 'adhd' | 'attention' | 'learning'
+type ConcernKey = 'autism' | 'adhd' | 'learning'
 type ScaleKey = 'autism' | 'adhd' | 'attention-domains' | 'learning-difficulties'
 type Step = 'info' | 'battery' | 'running' | 'report'
 type ScaleSource = 'observation' | 'parentReport' | 'both'
@@ -29,7 +29,7 @@ type ScaleSource = 'observation' | 'parentReport' | 'both'
 const SCALE_ORDER: ScaleKey[] = ['autism', 'adhd', 'learning-difficulties']
 
 const CONCERN_TO_SCALE: Record<ConcernKey, ScaleKey> = {
-  autism: 'autism', adhd: 'adhd', attention: 'adhd', learning: 'learning-difficulties',
+  autism: 'autism', adhd: 'adhd', learning: 'learning-difficulties',
 }
 
 const SCALE_DURATION: Record<ScaleKey, number> = {
@@ -65,6 +65,17 @@ const SCALE_ICON: Record<ScaleKey, React.ComponentType<{ className?: string }>> 
   adhd: Activity,
   'attention-domains': Eye,
   'learning-difficulties': BookOpen,
+}
+
+// Printed on the report next to each scale, so the specialist — and anyone the
+// report is handed to — can see exactly what the number is and is not.
+// Only the ADHD scale is tied to a published standard; the others are original
+// screening checklists whose severity cut-offs are internal, not normed.
+const SCALE_PROVENANCE: Record<ScaleKey, string> = {
+  adhd: 'بنوده معايير أعراض DSM-5 · التصنيف بقاعدة عدّ الأعراض (٦ من ٩ فأكثر)',
+  autism: 'قائمة فرز مبنية على مجالات DSM-5 · غير معيارية — الشدة مؤشر داخلي لا تصنيف سريري',
+  'learning-difficulties': 'قائمة فرز استرشادية · التشخيص الرسمي يتطلب اختبارات تحصيل معيارية',
+  'attention-domains': 'قائمة ملاحظة استرشادية (لم تعد تُستخدم — محفوظة للسجلات السابقة)',
 }
 
 function localeFor(lang: Lang) {
@@ -801,7 +812,7 @@ export default function SpecialistToolkitPage() {
           <div>
             <label className="block text-xs font-bold text-gray-500 mb-2">{t.concernsLabel}</label>
             <motion.div className="grid grid-cols-1 sm:grid-cols-2 gap-3" variants={staggerContainer} initial="hidden" animate="show">
-              {(['autism', 'adhd', 'attention', 'learning'] as ConcernKey[]).map(c => (
+              {(['autism', 'adhd', 'learning'] as ConcernKey[]).map(c => (
                 <motion.button key={c} variants={popIn} {...liftHover} type="button" onClick={() => toggleConcern(c)}
                   className={`text-right p-3.5 rounded-xl border-2 transition-all ${
                     concerns.has(c) ? 'border-teal-400 bg-teal-50' : 'border-gray-200 bg-gray-50 hover:border-gray-300'
@@ -1185,6 +1196,9 @@ export default function SpecialistToolkitPage() {
                         </div>
                         <div>
                           <h3 className="font-black text-gray-900">{t.scaleNames[result.type as ScaleKey]}</h3>
+                          <p className="text-[10px] text-gray-400 mt-0.5 leading-snug max-w-[420px]">
+                            {SCALE_PROVENANCE[result.type as ScaleKey]}
+                          </p>
                           {scaleSource[result.type as ScaleKey] && (
                             <p className="text-[11px] text-gray-400 mt-0.5">
                               {t.sourceReportLabel}: {t.sourceOptions[scaleSource[result.type as ScaleKey] as ScaleSource]}

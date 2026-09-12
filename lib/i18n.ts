@@ -1088,7 +1088,7 @@ export const tr = {
     },
     adminSpecialistToolkit: {
       pageTitle: 'حقيبة المختص',
-      pageSubtitle: 'تقييم سريع لحالات غير مسجلة في النظام — يُنشئ تقريراً علمياً فورياً بعد الجلسة',
+      pageSubtitle: 'تقييم سريع لحالات غير مسجلة في النظام — يُنشئ تقريراً منظّماً فورياً بعد الجلسة',
       steps: { info: 'بيانات الطفل', battery: 'اختيار المقاييس', running: 'التقييم', report: 'التقرير' },
       childInfoTitle: 'بيانات الطفل الأساسية',
       nameLabel: 'اسم الطفل *',
@@ -1118,7 +1118,6 @@ export const tr = {
       concernsOptions: {
         autism:    { label: 'طيف التوحد', desc: 'تشخيص مؤكد أو مشتبه به من طبيب أو ولي الأمر' },
         adhd:      { label: 'فرط الحركة والتشتت', desc: 'صعوبة في الانتباه، فرط حركة، أو اندفاعية' },
-        attention: { label: 'صعوبات تركيز معقّدة', desc: 'تحليل أعمق لأنماط الانتباه المختلفة (مستمر، انتقائي، تنفيذي)' },
         learning:  { label: 'صعوبات تعلّم', desc: 'قراءة، كتابة، حساب، ذاكرة عمل أو سرعة معالجة' },
       },
       missingFieldsError: 'يرجى إدخال اسم الطفل وعمره واختيار مخاوف واحدة على الأقل',
@@ -2328,7 +2327,6 @@ export const tr = {
       concernsOptions: {
         autism:    { label: 'Autism spectrum', desc: 'Confirmed or suspected diagnosis from a doctor or parent' },
         adhd:      { label: 'Hyperactivity & distraction', desc: 'Attention difficulty, hyperactivity, or impulsivity' },
-        attention: { label: 'Complex attention difficulties', desc: 'Deeper analysis of attention patterns (sustained, selective, executive)' },
         learning:  { label: 'Learning difficulties', desc: 'Reading, writing, math, working memory, or processing speed' },
       },
       missingFieldsError: "Please enter the child's name, age, and select at least one concern",
@@ -3538,7 +3536,6 @@ export const tr = {
       concernsOptions: {
         autism:    { label: 'Trouble du spectre autistique', desc: 'Diagnostic confirmé ou suspecté par un médecin ou le parent' },
         adhd:      { label: 'Hyperactivité et distraction', desc: "Difficulté d'attention, hyperactivité ou impulsivité" },
-        attention: { label: "Difficultés d'attention complexes", desc: "Analyse plus approfondie des types d'attention (soutenue, sélective, exécutive)" },
         learning:  { label: "Difficultés d'apprentissage", desc: 'Lecture, écriture, calcul, mémoire de travail ou vitesse de traitement' },
       },
       missingFieldsError: "Veuillez saisir le nom et l'âge de l'enfant, et sélectionner au moins une préoccupation",

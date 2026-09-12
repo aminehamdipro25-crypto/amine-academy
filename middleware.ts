@@ -34,7 +34,11 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // ── Admin Dashboard (owner or staff) ──────────────────────
-  if (pathname.startsWith('/dashboard') && pathname !== '/dashboard/login') {
+  // The recovery page must stay public: it is the page the emailed one-time
+  // login link lands on, and by definition the owner is NOT signed in yet.
+  // (The token itself is what authenticates there, verified server-side.)
+  const dashboardPublic = ['/dashboard/login', '/dashboard/login/recover']
+  if (pathname.startsWith('/dashboard') && !dashboardPublic.includes(pathname)) {
     const ownerOnly = OWNER_ONLY_PAGES.some(p => pathname === p || pathname.startsWith(p + '/'))
     const authorized = ownerOnly ? await isOwnerAuthorized(request) : await isDashboardAuthorized(request)
     if (!authorized) {

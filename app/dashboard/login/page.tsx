@@ -10,6 +10,30 @@ export default function AdminLoginPage() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [recovering, setRecovering] = useState(false)
+  const [notice, setNotice] = useState('')
+
+  // Owner recovery: the owner password is an env var, not a stored account, so
+  // it can't be "reset" here — we email a single-use login link instead.
+  async function requestRecovery() {
+    if (recovering) return
+    setRecovering(true)
+    setError('')
+    setNotice('')
+    try {
+      const res = await fetch('/api/auth/admin/recover', { method: 'POST' })
+      if (res.ok) {
+        setNotice('تم إرسال رابط دخول لمرة واحدة إلى بريد الإدارة المسجَّل. الرابط صالح 15 دقيقة.')
+      } else {
+        const { error } = await res.json().catch(() => ({ error: '' }))
+        setError(error || 'تعذّر إرسال رابط الاستعادة')
+      }
+    } catch {
+      setError('حدث خطأ في الاتصال')
+    } finally {
+      setRecovering(false)
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -99,12 +123,29 @@ export default function AdminLoginPage() {
             </div>
           )}
 
+          {notice && (
+            <div className="bg-emerald-50 text-emerald-700 text-sm font-medium px-4 py-3 rounded-xl">
+              ✉️ {notice}
+            </div>
+          )}
+
           <button
             type="submit"
             disabled={loading}
             className={`w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-3 rounded-xl transition-colors ${loading ? 'opacity-60 cursor-not-allowed' : ''}`}>
             {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'دخول'}
           </button>
+
+          {mode === 'owner' && (
+            <button
+              type="button"
+              onClick={requestRecovery}
+              disabled={recovering}
+              className="w-full text-center text-xs font-bold text-gray-400 hover:text-brand-600 disabled:opacity-50 transition-colors pt-1"
+            >
+              {recovering ? 'جارٍ الإرسال…' : 'نسيت كلمة المرور؟ أرسل رابط دخول للبريد'}
+            </button>
+          )}
         </form>
       </div>
     </div>

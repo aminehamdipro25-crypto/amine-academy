@@ -102,14 +102,32 @@ export function readTask(
     }
     case 'sustained-attention': {
       // CPT signal-detection profile — the two error types mean different things.
+      //
+      // NOTE: we deliberately do NOT print the task's raw `accuracy` here. That
+      // field is hits/targets only, so a child who caught every target while
+      // also pressing on five non-targets reads as "100% accuracy" right next to
+      // "5 false alarms" — a contradiction that discredits the whole report.
+      // A CPT is summarised by TWO rates, so we report both.
       const misses = num(meta, 'misses')
       const fa = num(meta, 'falseAlarms')
       const hits = num(meta, 'hits')
       const targets = num(meta, 'totalTargets')
-      if (hits !== undefined && targets !== undefined) headline = `أهداف مُلتقطة: ${hits} من ${targets}`
+      const stimuli = num(meta, 'totalStimuli')
+
+      if (hits !== undefined && targets !== undefined) {
+        const hitRate = targets > 0 ? Math.round((hits / targets) * 100) : 0
+        headline = `التقاط الأهداف: ${hits} من ${targets} (${hitRate}%)`
+      }
       if (misses !== undefined) details.push(`أخطاء إغفال (لم يستجب لهدف): ${misses} — مؤشر تشتت الانتباه`)
-      if (fa !== undefined) details.push(`إنذارات كاذبة (استجاب لغير هدف): ${fa} — مؤشر اندفاعية`)
-      details.push(`الدقة: ${accuracy}%`)
+      if (fa !== undefined) {
+        const nonTargets = stimuli !== undefined && targets !== undefined ? stimuli - targets : undefined
+        const faRate = nonTargets && nonTargets > 0 ? ` (${Math.round((fa / nonTargets) * 100)}% من غير الأهداف)` : ''
+        details.push(`إنذارات كاذبة (استجاب لغير هدف): ${fa}${faRate} — مؤشر اندفاعية`)
+      }
+      // Too few targets and neither rate is stable enough to report on.
+      if (targets !== undefined && targets < 10) {
+        caution = caution ?? `عدد الأهداف في هذه الجولة قليل (${targets}) — النِّسَب غير مستقرة، أعِد المهمة بمدة أطول قبل الاعتماد عليها`
+      }
       break
     }
     case 'visual-search': {

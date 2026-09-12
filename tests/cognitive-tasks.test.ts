@@ -35,6 +35,32 @@ describe('readTask — sustained attention (CPT profile)', () => {
     expect(all).toContain('إغفال')      // omissions -> inattention
     expect(all).toContain('اندفاعية')   // false alarms -> impulsivity
   })
+
+  it('never prints a bare "100% accuracy" alongside false alarms', () => {
+    // Real case from a session report: every target caught, but five presses on
+    // non-targets. The task's raw accuracy field is hits/targets = 100%, which
+    // would contradict the false-alarm line.
+    const r = readTask('sustained-attention',
+      { hits: 5, misses: 0, falseAlarms: 5, totalTargets: 5, totalStimuli: 30 }, 100, 7)
+    const printed = [r.headline, ...r.details].join(' | ')
+    expect(printed).not.toContain('الدقة: 100%')
+    expect(printed).toContain('إنذارات كاذبة')
+    // the false-alarm rate is expressed against non-targets (5/25 = 20%)
+    expect(printed).toContain('20%')
+  })
+
+  it('flags a run with too few targets as unstable', () => {
+    const r = readTask('sustained-attention',
+      { hits: 5, misses: 0, falseAlarms: 5, totalTargets: 5, totalStimuli: 30 }, 100, 9)
+    expect(r.caution).toBeDefined()
+    expect(r.caution).toContain('قليل')
+  })
+
+  it('does not flag a run with enough targets', () => {
+    const r = readTask('sustained-attention',
+      { hits: 20, misses: 4, falseAlarms: 1, totalTargets: 24, totalStimuli: 90 }, 83, 9)
+    expect(r.caution).toBeUndefined()
+  })
 })
 
 describe('readTask — age guards', () => {

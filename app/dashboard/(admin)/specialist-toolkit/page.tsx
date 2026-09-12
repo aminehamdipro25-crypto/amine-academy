@@ -1327,6 +1327,13 @@ export default function SpecialistToolkitPage() {
                           <p className="text-[10px] text-gray-400 mt-0.5 leading-snug max-w-[420px]">
                             {SCALE_PROVENANCE[result.type as ScaleKey]}
                           </p>
+                          {result.type === 'learning-difficulties' && (parseInt(age, 10) || 0) > 0 && (parseInt(age, 10) || 0) < 8 && (
+                            <p className="text-[10px] text-amber-700 bg-amber-50 rounded-md px-2 py-1 mt-1 leading-snug max-w-[420px]">
+                              ⚠️ عمر الطفل {parseInt(age, 10)} سنوات: عدة بنود تسأل عن مهارات لم تُدرَّس بعد في هذا العمر
+                              (جداول الضرب، القواعد الإملائية)، فترتفع الدرجات لأسباب نمائية طبيعية.
+                              لا تُبنَ على هذه النتيجة إحالة تشخيصية — تُعاد بعد سن 8.
+                            </p>
+                          )}
                           {scaleSource[result.type as ScaleKey] && (
                             <p className="text-[11px] text-gray-400 mt-0.5">
                               {t.sourceReportLabel}: {t.sourceOptions[scaleSource[result.type as ScaleKey] as ScaleSource]}

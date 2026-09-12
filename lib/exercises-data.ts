@@ -1454,13 +1454,13 @@ export const DEFAULT_EXERCISES: Omit<Exercise, 'id' | 'createdAt'>[] = [
   },
 
   // ══════════════════════════════════════════════════════════════
-  // ㉝ بروتوكول CPT بالحركة — الانتباه المستمر (Movement-Based CPT)
+  // ㉝ تدريب الانتباه المستمر بالحركة (استجب / امتنع)
   // ══════════════════════════════════════════════════════════════
   {
-    title: 'Movement-Based CPT (Continuous Performance Task)',
-    titleAr: 'بروتوكول CPT بالحركة (اختبار الأداء المستمر)',
-    description: 'Movement-paired Continuous Performance Task — child responds physically to a target cue and withholds the response to a non-target cue over a sustained period, mirroring the classic CPT structure used in attention assessment',
-    descriptionAr: 'اختبار أداء مستمر مقرون بالحركة — يستجيب الطفل جسدياً لمؤشر مستهدف ويكبح الاستجابة عند مؤشر غير مستهدف على مدى فترة مستمرة، بما يحاكي بنية اختبار CPT الكلاسيكي المستخدم في تقييم الانتباه',
+    title: 'Movement-Based Sustained Attention Training (Respond / Withhold)',
+    titleAr: 'تدريب الانتباه المستمر بالحركة (استجب / امتنع)',
+    description: 'Movement-paired attention training — the child responds physically to a target cue and withholds the response to a non-target cue over a sustained period. Modelled on the respond/withhold structure used in continuous-performance testing, but this is a training exercise, not the test itself',
+    descriptionAr: 'تدريب انتباه مقرون بالحركة — يستجيب الطفل جسدياً لمؤشر مستهدف ويكبح الاستجابة عند مؤشر غير مستهدف على مدى فترة مستمرة. مبني على بنية «استجب/امتنع» المستخدمة في اختبارات الأداء المستمر، لكنه تمرين تدريبي لا الاختبار نفسه',
     category: 'focus',
     ageGroups: ['5-11', '12-17'],
     diagnoses: ['ADHD', 'ADHD+AUTISM', 'OTHER'],

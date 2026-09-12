@@ -1271,7 +1271,7 @@ export default function SpecialistToolkitPage() {
               })()}
 
               {/* Printable report */}
-              <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden print:border-0 print:rounded-none">
+              <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden print:overflow-visible print:border-0 print:rounded-none">
 
                 {/* Hero letterhead */}
                 <div
@@ -1576,8 +1576,15 @@ export default function SpecialistToolkitPage() {
                   </motion.div>
                 )}
 
-                {/* Footer signature + disclaimer (kept together so print pagination can't split or drop them) */}
-                <div className="break-inside-avoid space-y-4">
+                {/* Footer signature + disclaimer.
+                    Reported missing from printed PDFs: the document ended mid-way through
+                    the action plan and this block never appeared. The cause could not be
+                    reproduced in isolation (overflow, transform, contain and nested
+                    break-inside-avoid all paginate correctly in Chromium), so rather than
+                    guess we stop depending on the last fragment being measured correctly:
+                    the footer takes a page of its own, which also reads better as the
+                    signature page of a document handed to a parent. */}
+                <div className="break-inside-avoid print:break-before-page space-y-4">
                   <div className="flex items-center justify-between border-t border-gray-100 pt-5 flex-wrap gap-3">
                     <div>
                       <p className="text-xs font-black text-gray-700">{t.reportBrand}</p>
@@ -1594,8 +1601,6 @@ export default function SpecialistToolkitPage() {
                   {/* Disclaimer */}
                   <p className="text-[11px] text-gray-400 border-t border-gray-100 pt-4">{t.disclaimerText}</p>
                 </div>
-                {/* Trailing print buffer: avoids the browser clipping the disclaimer when it misjudges the last page's content height */}
-                <div className="hidden print:block print:h-48" aria-hidden="true" />
                 </div>
               </div>
             </>

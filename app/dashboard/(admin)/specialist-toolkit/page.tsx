@@ -694,6 +694,7 @@ export default function SpecialistToolkitPage() {
         scales: results.map(r => ({
           name: t.scaleNames[r.type as ScaleKey],
           provenance: SCALE_PROVENANCE[r.type as ScaleKey],
+          severity: r.severity,
           severityLabel: t.severityLabels[r.severity],
           ageCaution: isAgeDiscounted(r.type, childAge)
             ? `عمر الطفل ${childAge} سنوات: عدة بنود تسأل عن مهارات لم تُدرَّس بعد في هذا العمر (جداول الضرب، القواعد الإملائية)، فترتفع الدرجات لأسباب نمائية طبيعية. لا تُبنَ على هذه النتيجة إحالة تشخيصية — تُعاد بعد سن 8.`

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import React from 'react'
 import { Font, renderToBuffer, type DocumentProps } from '@react-pdf/renderer'
 import { isDashboardUser } from '@/lib/auth'
-import { ReportPdf, type PdfReportData } from '@/lib/report-pdf'
+import { ReportPdf, type PdfReportData, type PdfSeverity } from '@/lib/report-pdf'
 import { TAJAWAL_REGULAR, TAJAWAL_BOLD } from '@/lib/fonts-tajawal'
 
 export const runtime = 'nodejs'
@@ -67,6 +67,8 @@ export async function POST(req: NextRequest) {
       scales: Array.isArray(body.scales) ? body.scales.slice(0, 10).map((sc: Record<string, unknown>) => ({
         name: str(sc?.name, 160),
         provenance: str(sc?.provenance, 400),
+        severity: (['none','mild','moderate','severe'].includes(String(sc?.severity))
+          ? String(sc?.severity) : 'none') as PdfSeverity,
         severityLabel: str(sc?.severityLabel, 40),
         ageCaution: str(sc?.ageCaution, 600) || undefined,
         domains: Array.isArray(sc?.domains) ? (sc.domains as Record<string, unknown>[]).slice(0, 20).map(d => ({

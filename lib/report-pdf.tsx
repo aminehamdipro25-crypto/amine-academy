@@ -15,9 +15,12 @@
 import React from 'react'
 import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer'
 
+export type PdfSeverity = 'none' | 'mild' | 'moderate' | 'severe'
+
 export interface PdfScale {
   name: string
   provenance: string
+  severity: PdfSeverity
   severityLabel: string
   ageCaution?: string
   domains: { label: string; score: number }[]
@@ -55,6 +58,17 @@ const C = {
   ink: '#111827', mute: '#6B7280', faint: '#9CA3AF',
   line: '#E5E7EB', teal: '#0F766E', tealBg: '#F0FDFA',
   amber: '#B45309', amberBg: '#FFFBEB', indigo: '#4338CA', indigoBg: '#EEF2FF',
+  brand: '#4C1D95', brandSoft: '#F5F3FF', track: '#F1F5F9',
+}
+
+// Severity must READ as severity. A single badge colour made "طبيعي" and
+// "شديد" look identical on the page — a parent cannot tell the reassuring
+// result from the serious one, which is a clinical problem, not a styling one.
+const SEV: Record<PdfSeverity, { fg: string; bg: string }> = {
+  none:     { fg: '#047857', bg: '#ECFDF5' },
+  mild:     { fg: '#B45309', bg: '#FFFBEB' },
+  moderate: { fg: '#C2410C', bg: '#FFF7ED' },
+  severe:   { fg: '#B91C1C', bg: '#FEF2F2' },
 }
 
 const s = StyleSheet.create({
@@ -62,9 +76,11 @@ const s = StyleSheet.create({
   // Every text block is right-aligned: react-pdf has no bidi engine, so RTL is
   // expressed through alignment while the font handles the shaping.
   rtl: { textAlign: 'right' },
-  brand: { fontSize: 15, fontWeight: 700, textAlign: 'right', color: C.ink },
-  tagline: { fontSize: 8, color: C.faint, textAlign: 'right', marginTop: 2 },
-  rule: { borderBottomWidth: 1.5, borderBottomColor: C.ink, marginTop: 8, marginBottom: 10 },
+  band: { backgroundColor: C.brand, marginHorizontal: -40, marginTop: -40, paddingHorizontal: 40, paddingTop: 22, paddingBottom: 16, marginBottom: 14 },
+  brand: { fontSize: 16, fontWeight: 700, textAlign: 'right', color: '#FFFFFF' },
+  tagline: { fontSize: 8, color: '#DDD6FE', textAlign: 'right', marginTop: 3 },
+  bandTitle: { fontSize: 11, fontWeight: 700, textAlign: 'right', color: '#FFFFFF', marginTop: 10 },
+  bandMeta: { fontSize: 8.5, color: '#E9D5FF', textAlign: 'right', marginTop: 2 },
   h1: { fontSize: 13, fontWeight: 700, textAlign: 'right', marginBottom: 2 },
   meta: { fontSize: 8.5, color: C.mute, textAlign: 'right' },
   notice: { borderWidth: 1, borderColor: C.line, borderRadius: 4, padding: 7, marginTop: 10, marginBottom: 12 },
@@ -74,11 +90,15 @@ const s = StyleSheet.create({
   cardHead: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 },
   scaleName: { fontSize: 10.5, fontWeight: 700, textAlign: 'right' },
   prov: { fontSize: 7.5, color: C.faint, textAlign: 'right', marginTop: 2, lineHeight: 1.5 },
-  badge: { fontSize: 8, fontWeight: 700, color: C.teal, backgroundColor: C.tealBg, paddingVertical: 2, paddingHorizontal: 6, borderRadius: 3 },
+  badge: { fontSize: 8, fontWeight: 700, paddingVertical: 2.5, paddingHorizontal: 7, borderRadius: 8 },
   caution: { fontSize: 7.5, color: C.amber, backgroundColor: C.amberBg, padding: 5, borderRadius: 3, marginTop: 5, textAlign: 'right', lineHeight: 1.6 },
-  domainRow: { flexDirection: 'row-reverse', justifyContent: 'space-between', marginTop: 4 },
+  domainRow: { marginTop: 5 },
+  domainTop: { flexDirection: 'row-reverse', justifyContent: 'space-between' },
   domainLbl: { fontSize: 8.5, color: C.mute, textAlign: 'right' },
   domainVal: { fontSize: 8.5, fontWeight: 700 },
+  // Bars grow from the right, matching the reading direction.
+  barTrack: { height: 3.5, backgroundColor: C.track, borderRadius: 2, marginTop: 2.5, flexDirection: 'row-reverse' },
+  barFill: { height: 3.5, borderRadius: 2 },
   bullet: { flexDirection: 'row-reverse', marginTop: 3 },
   bulletDot: { fontSize: 8.5, color: C.teal, marginLeft: 4 },
   bulletTxt: { fontSize: 8.5, color: C.mute, textAlign: 'right', flex: 1, lineHeight: 1.6 },
@@ -110,16 +130,16 @@ export function ReportPdf({ d }: { d: PdfReportData }) {
   return (
     <Document title={`تقرير تقييم — ${d.childName}`} author="أكاديمية أمين">
       <Page size="A4" style={s.page}>
-        <Text style={s.brand}>أكاديمية أمين</Text>
-        <Text style={s.tagline}>خدمات متخصصة في التقييم النمائي والتأهيل السلوكي</Text>
-        <View style={s.rule} />
-
-        <Text style={s.h1}>تقرير تقييم أولي</Text>
-        <Text style={s.meta}>
-          {d.childName} · {d.age} سنة{d.gender ? ` · ${d.gender}` : ''}
-          {d.parentName ? ` · ولي الأمر: ${d.parentName}` : ''}
-        </Text>
-        <Text style={s.meta}>تاريخ التقييم: {d.dateLabel}{d.therapistName ? ` · الأخصائي: ${d.therapistName}` : ''}</Text>
+        <View style={s.band} fixed={false}>
+          <Text style={s.brand}>أكاديمية أمين</Text>
+          <Text style={s.tagline}>خدمات متخصصة في التقييم النمائي والتأهيل السلوكي</Text>
+          <Text style={s.bandTitle}>تقرير تقييم أولي</Text>
+          <Text style={s.bandMeta}>
+            {d.childName} · {d.age} سنة{d.gender ? ` · ${d.gender}` : ''}
+            {d.parentName ? ` · ولي الأمر: ${d.parentName}` : ''}
+          </Text>
+          <Text style={s.bandMeta}>تاريخ التقييم: {d.dateLabel}{d.therapistName ? ` · الأخصائي: ${d.therapistName}` : ''}</Text>
+        </View>
 
         <View style={s.notice}>
           <Text style={s.noticeTxt}>{d.confidentialLabel} — {d.disclaimer}</Text>
@@ -128,19 +148,29 @@ export function ReportPdf({ d }: { d: PdfReportData }) {
         <Text style={s.intro}>{d.intro}</Text>
 
         {d.scales.map((sc, i) => (
-          <View key={i} style={s.card} wrap={false}>
+          <View key={i} style={s.card}>
             <View style={s.cardHead}>
               <View style={{ flex: 1 }}>
                 <Text style={s.scaleName}>{sc.name}</Text>
                 <Text style={s.prov}>{sc.provenance}</Text>
               </View>
-              <Text style={s.badge}>{sc.severityLabel}</Text>
+              <Text style={[s.badge, { color: SEV[sc.severity].fg, backgroundColor: SEV[sc.severity].bg }]}>
+                {sc.severityLabel}
+              </Text>
             </View>
             {sc.ageCaution ? <Text style={s.caution}>⚠ {sc.ageCaution}</Text> : null}
             {sc.domains.map((dm, j) => (
-              <View key={j} style={s.domainRow}>
-                <Text style={s.domainLbl}>{dm.label}</Text>
-                <Text style={s.domainVal}>{dm.score}%</Text>
+              <View key={j} style={s.domainRow} wrap={false}>
+                <View style={s.domainTop}>
+                  <Text style={s.domainLbl}>{dm.label}</Text>
+                  <Text style={s.domainVal}>{dm.score}%</Text>
+                </View>
+                <View style={s.barTrack}>
+                  <View style={[s.barFill, {
+                    width: `${Math.max(0, Math.min(100, dm.score))}%`,
+                    backgroundColor: SEV[sc.severity].fg,
+                  }]} />
+                </View>
               </View>
             ))}
             {sc.recommendations.length > 0 ? (

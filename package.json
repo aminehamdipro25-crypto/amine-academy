@@ -21,6 +21,7 @@
     "@anthropic-ai/sdk": "^0.20.7",
     "@daily-co/daily-js": "^0.91.0",
     "@hookform/resolvers": "^5.4.0",
+    "@react-pdf/renderer": "^4.9.0",
     "@upstash/redis": "^1.31.0",
     "@vercel/blob": "^2.8.0",
     "autoprefixer": "^10.4.17",

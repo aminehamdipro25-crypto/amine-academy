@@ -665,6 +665,81 @@ export default function SpecialistToolkitPage() {
     return flags
   }, [results, t])
 
+  const [pdfBusy, setPdfBusy] = useState(false)
+
+  /**
+   * Download the report as a server-rendered PDF.
+   *
+   * Browser printing proved unreliable for this document (Chrome dropped the
+   * signature/disclaimer on long reports) and varied with each user's paper
+   * size and print settings. We send the already-computed, already-translated
+   * content so the server stays a pure renderer and the two views cannot
+   * disagree about a clinical figure.
+   */
+  async function downloadPdf() {
+    if (pdfBusy) return
+    setPdfBusy(true)
+    try {
+      const childAge = parseInt(age, 10) || 0
+      const payload = {
+        childName: name.trim(),
+        age,
+        gender: t.genderOptions?.[gender as keyof typeof t.genderOptions] ?? '',
+        parentName,
+        therapistName,
+        dateLabel: today,
+        intro: t.narrativeIntro(name.trim() || 'الطفل'),
+        confidentialLabel: t.footerConfidentialLabel,
+        disclaimer: t.disclaimerText,
+        scales: results.map(r => ({
+          name: t.scaleNames[r.type as ScaleKey],
+          provenance: SCALE_PROVENANCE[r.type as ScaleKey],
+          severityLabel: t.severityLabels[r.severity],
+          ageCaution: isAgeDiscounted(r.type, childAge)
+            ? `عمر الطفل ${childAge} سنوات: عدة بنود تسأل عن مهارات لم تُدرَّس بعد في هذا العمر (جداول الضرب، القواعد الإملائية)، فترتفع الدرجات لأسباب نمائية طبيعية. لا تُبنَ على هذه النتيجة إحالة تشخيصية — تُعاد بعد سن 8.`
+            : undefined,
+          domains: Object.entries(r.domainScores).map(([k, v]) => ({
+            label: (t.domainLabels as Record<string, string>)[k] ?? k,
+            score: v,
+          })),
+          recommendations: r.recommendations,
+          supportiveNote: r.type === 'learning-difficulties' ? t.supportiveExercisesNote : undefined,
+        })),
+        tasks: perfResults.map(pr => {
+          const ro = readTask(pr.exerciseType, pr.metadata, pr.accuracy, childAge)
+          return { labelAr: ro.labelAr, domainAr: ro.domainAr, headline: ro.headline, details: ro.details, caution: ro.caution }
+        }),
+        batterySummary: perfResults.length
+          ? batterySummary(perfResults.map(pr => readTask(pr.exerciseType, pr.metadata, pr.accuracy, childAge)))
+          : undefined,
+        frequency: recommendedFrequency ? t.frequencyPlanOptions[recommendedFrequency] : undefined,
+        actionPlan,
+        redFlags,
+      }
+      const res = await fetch('/api/admin/toolkit-report/pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      if (!res.ok) {
+        const { error } = await res.json().catch(() => ({ error: '' }))
+        setError(error || 'تعذّر توليد ملف PDF')
+        return
+      }
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `تقرير-${name.trim() || 'تقييم'}.pdf`
+      document.body.appendChild(a); a.click(); a.remove()
+      URL.revokeObjectURL(url)
+    } catch {
+      setError('تعذّر الاتصال بالخادم')
+    } finally {
+      setPdfBusy(false)
+    }
+  }
+
   const recommendedFrequency = useMemo((): 'low' | 'medium' | 'high' | null => {
     const childAge = parseInt(age, 10) || 0
     // Only results we are willing to act on may set the intensity of care.
@@ -1169,6 +1244,11 @@ export default function SpecialistToolkitPage() {
                   className="flex items-center gap-2 bg-gray-900 text-white font-bold px-5 py-2.5 rounded-xl hover:bg-gray-800 transition-colors text-sm flex-shrink-0">
                   <Printer className="w-4 h-4" />
                   {t.printButton}
+                </motion.button>
+                <motion.button {...tapOnly} onClick={downloadPdf} disabled={pdfBusy}
+                  className="flex items-center gap-2 bg-teal-600 text-white font-bold px-5 py-2.5 rounded-xl hover:bg-teal-700 disabled:opacity-60 transition-colors text-sm flex-shrink-0">
+                  <Save className="w-4 h-4" />
+                  {pdfBusy ? 'جارٍ التوليد…' : 'تحميل PDF'}
                 </motion.button>
                 <motion.button {...tapOnly} onClick={() => setConfirmReset(true)}
                   className="flex items-center gap-2 border border-gray-200 text-gray-600 font-bold px-5 py-2.5 rounded-xl hover:bg-gray-50 transition-colors text-sm flex-shrink-0">

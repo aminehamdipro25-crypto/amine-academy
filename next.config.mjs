@@ -132,6 +132,14 @@ const nextConfig = {
   },
   // No .eslintrc in the project — skip ESLint during CI/Vercel builds
   eslint: { ignoreDuringBuilds: true },
+  // pdfkit (under @react-pdf/renderer) pulls its standard fonts with a dynamic
+  // require, which the tracer cannot follow — the built trace listed pdfkit but
+  // none of its standard-fonts files, so the report route threw
+  // "Cannot find module .../standard-fonts/Helvetica.cjs" on Vercel while
+  // working locally. Pin them into that function explicitly.
+  outputFileTracingIncludes: {
+    '/api/admin/toolkit-report/pdf': ['./node_modules/pdfkit/js/standard-fonts/**'],
+  },
 }
 
 export default nextConfig

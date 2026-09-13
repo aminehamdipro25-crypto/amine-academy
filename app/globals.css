@@ -148,6 +148,14 @@ body {
 
 /* ── Print ───────────────────────────────────────────────────── */
 @media print {
+  /* Nothing may clip the printed flow.
+     html/body carry overflow-x:hidden for the RTL layout, the dashboard <main>
+     scrolls, and cards use overflow-hidden for rounded corners. Any clipping
+     ancestor makes Chrome silently stop painting partway through a long
+     document — which is why the specialist report's signature and disclaimer
+     never reached the PDF while being present in the DOM. Verified by driving
+     the real report and diffing the generated PDF. */
+  html, body, main { overflow: visible !important; }
   .no-print { display: none !important; }
   @page { margin: 0; size: A4 portrait; }
   body { background: #fff; }

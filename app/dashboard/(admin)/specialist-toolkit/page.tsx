@@ -1273,7 +1273,21 @@ export default function SpecialistToolkitPage() {
               })()}
 
               {/* Printable report */}
+              {/* The signature/disclaimer block at the very end was silently dropped
+                  from long printed reports (present in the DOM, absent from the PDF —
+                  a Chrome pagination fault we could not pin down). The legally
+                  important text must not depend on the last page surviving, so it is
+                  also stated here, directly under the letterhead, where page 1 always
+                  renders. A confidentiality line at the head of a clinical document is
+                  standard practice anyway. */}
               <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden print:overflow-visible print:border-0 print:rounded-none">
+
+                <div className="px-6 pt-5 print:px-10 print:pt-6">
+                  <p className="text-[11px] text-gray-500 border border-gray-200 rounded-xl px-3 py-2 print:rounded-none leading-relaxed">
+                    <span className="font-bold text-gray-700">{t.footerConfidentialLabel} · </span>
+                    {t.disclaimerText}
+                  </p>
+                </div>
 
                 {/* Hero letterhead */}
                 <div

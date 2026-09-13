@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import path from 'path'
 import React from 'react'
 import { Font, renderToBuffer, type DocumentProps } from '@react-pdf/renderer'
 import { isDashboardUser } from '@/lib/auth'
 import { ReportPdf, type PdfReportData } from '@/lib/report-pdf'
+import { TAJAWAL_REGULAR, TAJAWAL_BOLD } from '@/lib/fonts-tajawal'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -14,12 +14,14 @@ export const maxDuration = 30
 let fontsReady = false
 function registerFonts() {
   if (fontsReady) return
-  const dir = path.join(process.cwd(), 'public', 'fonts')
+  // Data URIs, never file paths: a non-URL src sends @react-pdf/font down
+  // fontkit.open(), a filesystem read that succeeds locally and fails on
+  // Vercel because the font never lands in the function bundle.
   Font.register({
     family: 'Tajawal',
     fonts: [
-      { src: path.join(dir, 'Tajawal-Regular.ttf'), fontWeight: 400 },
-      { src: path.join(dir, 'Tajawal-Bold.ttf'), fontWeight: 700 },
+      { src: TAJAWAL_REGULAR, fontWeight: 400 },
+      { src: TAJAWAL_BOLD, fontWeight: 700 },
     ],
   })
   // react-pdf hyphenates Latin words by default, which mangles Arabic.
@@ -104,6 +106,9 @@ export async function POST(req: NextRequest) {
     })
   } catch (err) {
     console.error('[toolkit-report-pdf]', err)
-    return NextResponse.json({ error: 'تعذّر توليد ملف PDF' }, { status: 500 })
+    // The caller is an authenticated dashboard user, so include the cause —
+    // a bare "تعذّر توليد ملف PDF" gave nothing to act on in production.
+    const detail = err instanceof Error ? err.message : String(err)
+    return NextResponse.json({ error: `تعذّر توليد ملف PDF: ${detail}`.slice(0, 300) }, { status: 500 })
   }
 }

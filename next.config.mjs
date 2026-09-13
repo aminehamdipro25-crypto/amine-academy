@@ -132,13 +132,6 @@ const nextConfig = {
   },
   // No .eslintrc in the project — skip ESLint during CI/Vercel builds
   eslint: { ignoreDuringBuilds: true },
-  // The server-rendered report PDF reads its Arabic font from disk at request
-  // time. Next's tracing can't see a runtime fs.readFileSync path, so the font
-  // files must be pinned into that function's bundle explicitly or the route
-  // works locally and 500s on Vercel.
-  outputFileTracingIncludes: {
-    '/api/admin/toolkit-report/pdf': ['./public/fonts/**'],
-  },
 }
 
 export default nextConfig

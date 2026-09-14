@@ -665,6 +665,21 @@ export default function SpecialistToolkitPage() {
     return flags
   }, [results, t])
 
+  /**
+   * Hand-off to the APA session guide. The condition and age band come from the
+   * child data already entered here, so the specialist lands on the right plan
+   * instead of re-picking it — which is the whole point of reaching it from the
+   * assessment rather than from a cold menu.
+   */
+  const apaPlannerHref = useMemo(() => {
+    const cond = concerns.has('autism') ? 'asd' : 'adhd'
+    const p = new URLSearchParams({ cond })
+    const n = parseInt(age, 10)
+    if (Number.isFinite(n) && n > 0) p.set('age', String(n))
+    if (name.trim()) p.set('name', name.trim())
+    return `/dashboard/apa-planner?${p.toString()}`
+  }, [concerns, age, name])
+
   const [pdfBusy, setPdfBusy] = useState(false)
 
   /**
@@ -1035,6 +1050,18 @@ export default function SpecialistToolkitPage() {
           </motion.div>
 
           <p className="text-sm font-bold text-gray-600 ltr-num">{t.estimatedDuration(totalMinutes)}</p>
+
+          <a href={apaPlannerHref}
+            className="print:hidden flex items-center justify-between gap-3 rounded-2xl border border-indigo-100 bg-indigo-50/60 px-4 py-3.5 hover:bg-indigo-50 transition-colors">
+            <div>
+              <p className="font-black text-sm text-indigo-900">⚡ دليل حصص النشاط البدني المعدّل</p>
+              <p className="text-[11px] text-indigo-700/80 mt-0.5">
+                خطة حصة 60 دقيقة مضبوطة على {concerns.has('autism') ? 'طيف التوحد' : 'فرط الحركة'}
+                {parseInt(age, 10) > 0 ? ` وعمر ${parseInt(age, 10)} سنة` : ''} — تفتح في صفحة مستقلة
+              </p>
+            </div>
+            <ArrowLeft className="w-4 h-4 text-indigo-600 flex-shrink-0" />
+          </a>
 
           <div className="flex gap-3">
             <button onClick={() => setStep('info')}

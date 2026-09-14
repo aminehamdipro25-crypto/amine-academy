@@ -2,6 +2,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { Printer, TrendingUp, Award } from 'lucide-react'
 import type { Student, ProgressReport } from '@/lib/types'
+import { indicatorTrend } from '@/lib/apa-trend'
 import { useLang, tr } from '@/lib/i18n'
 
 interface ChildReports { child: Student; reports: ProgressReport[] }
@@ -329,6 +330,72 @@ function ReportDocument({ report, child }: { report: ProgressReport; child: Stud
                   {t.improvementBadgeContext(report.improvement.previousAccuracy, report.improvement.currentAccuracy)}
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── 3c. Adapted Physical Activity ── */}
+        {/* Present only when sessions were actually filed for the period — a child
+            with no APA work gets no section rather than a row of zeros. */}
+        {report.apa && report.apa.sessions > 0 && (
+          <div style={{ padding: '22px 28px', borderBottom: '1.5px solid #F3F4F6' }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
+              <span style={{ fontSize: 10, fontWeight: 800, color: '#4338CA', letterSpacing: 2, textTransform: 'uppercase' }}>
+                {t.apaSectionLabel}
+              </span>
+              <span style={{ fontSize: 11, color: '#9CA3AF', fontWeight: 600 }}>
+                {t.apaBandLabel(
+                  report.apa.condition === 'asd' ? 'ASD' : 'ADHD',
+                  report.apa.band,
+                )}
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: report.apa.indicators.length > 0 ? 16 : 0 }}>
+              {[
+                { v: t.apaSessions(report.apa.sessions), i: '🏃' },
+                { v: t.apaMinutes(report.apa.minutes), i: '⏱️' },
+                { v: t.apaAdherence(report.apa.adherencePct), i: '📋' },
+              ].map(({ v, i }) => (
+                <div key={v} style={{ background: '#EEF2FF', borderRadius: 12, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 15 }}>{i}</span>
+                  <span className="ltr-num" style={{ fontSize: 13, fontWeight: 800, color: '#3730A3' }}>{v}</span>
+                </div>
+              ))}
+            </div>
+
+            {report.apa.indicators.length > 0 && (
+              <>
+                <div style={{ fontSize: 11, fontWeight: 800, color: '#6B7280', marginBottom: 8 }}>
+                  {t.apaIndicatorsTitle}
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {report.apa.indicators.map(ind => {
+                    const trend = indicatorTrend(ind)
+                    const trendLabel = trend === 'up' ? t.apaTrendUp
+                      : trend === 'down' ? t.apaTrendDown
+                      : trend === 'stable' ? t.apaTrendStable
+                      : t.apaTrendInsufficient
+                    const trendColor = trend === 'up' ? '#047857' : trend === 'down' ? '#B91C1C' : '#9CA3AF'
+                    const scoreCfg = SCORE_STYLE[Math.round(ind.avg)] ?? SCORE_STYLE[3]
+                    return (
+                      <div key={ind.label} style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#F9FAFB', borderRadius: 10, padding: '9px 14px' }}>
+                        <span style={{ flex: 1, fontSize: 12, color: '#374151', lineHeight: 1.6 }}>{ind.label}</span>
+                        <span className="ltr-num" style={{ fontSize: 13, fontWeight: 900, color: scoreCfg.color, flexShrink: 0 }}>
+                          {ind.avg}/5
+                        </span>
+                        <span style={{ fontSize: 10, fontWeight: 800, color: trendColor, flexShrink: 0, minWidth: 62, textAlign: 'start' }}>
+                          {trendLabel}
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </>
+            )}
+
+            <div style={{ fontSize: 10, color: '#9CA3AF', marginTop: 12, lineHeight: 1.7 }}>
+              {t.apaDisclaimer}
             </div>
           </div>
         )}

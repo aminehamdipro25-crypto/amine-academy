@@ -165,7 +165,64 @@ export interface ProgressReport {
     currentAccuracy: number
     previousAccuracy: number
   } | null
+  /**
+   * Roll-up of the child's Adapted Physical Activity sessions for the same
+   * period, derived from filed ApaSessionRecords. Null when none were filed —
+   * the report then simply omits the section rather than showing zeros.
+   */
+  apa?: ApaReportSummary | null
   createdAt: string
+}
+
+// ── Adapted Physical Activity (APA) session records ───────────
+// The APA planner (/dashboard/apa-planner) prescribes indicators to track per
+// age band. These types are how a specialist actually files them after a session
+// so they reach the parent's report instead of staying on a printed page.
+
+export interface ApaIndicatorRating {
+  /**
+   * The indicator text exactly as authored in the plan at record time. Stored
+   * verbatim rather than by index so later edits to the plan can never
+   * silently re-label a rating that was already filed.
+   */
+  label: string
+  /** The specialist's own judgement, 1-5 — not an instrumented measurement. */
+  score: 1 | 2 | 3 | 4 | 5
+}
+
+export interface ApaSessionRecord {
+  id: string
+  studentId: string
+  condition: 'adhd' | 'asd'
+  /** Age band as authored, e.g. "6 - 9 سنوات". */
+  band: string
+  /** YYYY-MM-DD the session was run. */
+  date: string
+  /** Phase names actually completed, verbatim from the plan. */
+  phasesCompleted: string[]
+  /** How many phases the plan held for that band when the record was filed. */
+  phasesTotal: number
+  indicators: ApaIndicatorRating[]
+  /** Minutes actually run. */
+  minutes: number
+  notes: string
+  createdAt: string
+}
+
+/**
+ * Period roll-up of a child's APA records, persisted onto the progress report so
+ * the parent's document shows the physical-activity work alongside the digital
+ * exercises. Every number here is derived from filed records — nothing typed.
+ */
+export interface ApaReportSummary {
+  sessions: number
+  minutes: number
+  /** Completed phases ÷ planned phases across the period, 0-100. */
+  adherencePct: number
+  /** Per-indicator trend across the period; `first`/`last` are 0 when only one session exists. */
+  indicators: Array<{ label: string; avg: number; first: number; last: number; count: number }>
+  condition: 'adhd' | 'asd'
+  band: string
 }
 
 export interface BehaviorRating {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isDashboardUser } from '@/lib/auth'
-import { createReport, getStudentReports, getStudent } from '@/lib/db'
+import { createReport, getStudentReports, getStudent, getStudentApaRecords } from '@/lib/db'
+import { filterApaRecordsByPeriod, summarizeApaRecords } from '@/lib/apa-record'
 
 export const runtime = 'nodejs'
 
@@ -35,12 +36,28 @@ export async function POST(req: NextRequest) {
           }
         : null
 
+    const periodStart = body.periodStart || new Date().toISOString().slice(0, 10)
+    const periodEnd = body.periodEnd || new Date().toISOString().slice(0, 10)
+
+    // Adapted Physical Activity roll-up. Recomputed here from the child's filed
+    // records rather than trusting a client-supplied summary — the parent's
+    // document must never be able to carry physical-activity numbers that no
+    // filed session backs. Never fails the report: a child with no APA sessions
+    // simply gets no APA section.
+    let apa = null
+    try {
+      const records = await getStudentApaRecords(body.studentId)
+      apa = summarizeApaRecords(filterApaRecordsByPeriod(records, periodStart, periodEnd))
+    } catch (e) {
+      console.error('[admin/reports] APA roll-up failed', e)
+    }
+
     const report = await createReport({
       studentId: body.studentId,
       parentId: body.parentId,
       type: ['weekly', 'monthly', 'session'].includes(body.type) ? body.type : 'session',
-      periodStart: body.periodStart || new Date().toISOString().slice(0, 10),
-      periodEnd: body.periodEnd || new Date().toISOString().slice(0, 10),
+      periodStart,
+      periodEnd,
       completedExercises: Number(body.completedExercises) || 0,
       totalExercises: Number(body.totalExercises) || 0,
       pointsEarned: Number(body.pointsEarned) || 0,
@@ -48,6 +65,7 @@ export async function POST(req: NextRequest) {
       professorNotes: typeof body.professorNotes === 'string' ? body.professorNotes.slice(0, 3000) : '',
       aiSummary: '',
       improvement,
+      apa,
     })
 
     return NextResponse.json({ ok: true, report })

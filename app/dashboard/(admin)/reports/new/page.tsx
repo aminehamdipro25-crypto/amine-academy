@@ -3,9 +3,10 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   ArrowRight, Save, Sparkles, User, Calendar, ClipboardList,
-  Brain, Star, CheckCircle2, AlertCircle, ChevronDown,
+  Brain, Star, CheckCircle2, AlertCircle, ChevronDown, Activity,
 } from 'lucide-react'
-import type { Parent, Student } from '@/lib/types'
+import type { ApaReportSummary, Parent, Student } from '@/lib/types'
+import { indicatorTrend } from '@/lib/apa-trend'
 import { useToast } from '@/components/ui/Toast'
 
 // Real gameplay-derived stats for a report period (from /api/admin/game-progress).
@@ -80,6 +81,11 @@ export default function NewReportPage() {
   // actual saved gameplay (not typed) — the credibility backbone of the report.
   const [realStats, setRealStats] = useState<PeriodStats | null>(null)
   const [loadingStats, setLoadingStats] = useState(false)
+  // Adapted Physical Activity roll-up for the same child+period, from sessions
+  // already filed in the planner. Shown read-only — the server recomputes it at
+  // save time, so this is a preview of what the parent will see, not an input.
+  const [apaSummary, setApaSummary] = useState<ApaReportSummary | null>(null)
+  const [loadingApa, setLoadingApa] = useState(false)
   const [professorNotes, setProfessorNotes] = useState('')
   const [ratings, setRatings] = useState<Record<string, number>>(
     Object.fromEntries(METRICS.map(m => [m.key, 3]))
@@ -154,6 +160,23 @@ export default function NewReportPage() {
 
   // Re-fetching for a new child/period would show stale improvement numbers.
   useEffect(() => { setRealStats(null) }, [selectedStudentId, periodStart, periodEnd])
+
+  // APA sessions load on their own — unlike gameplay stats there is nothing for
+  // the specialist to confirm, so making them click a button would only risk the
+  // section being missed. A late response for a child they have since switched
+  // away from is discarded rather than shown against the wrong child.
+  useEffect(() => {
+    if (!selectedStudentId) { setApaSummary(null); return }
+    let cancelled = false
+    setLoadingApa(true)
+    setApaSummary(null)
+    fetch(`/api/admin/apa-sessions?studentId=${encodeURIComponent(selectedStudentId)}&from=${periodStart}&to=${periodEnd}`)
+      .then(r => r.json())
+      .then((d: { summary?: ApaReportSummary | null }) => { if (!cancelled) setApaSummary(d.summary ?? null) })
+      .catch(() => { if (!cancelled) setApaSummary(null) })
+      .finally(() => { if (!cancelled) setLoadingApa(false) })
+    return () => { cancelled = true }
+  }, [selectedStudentId, periodStart, periodEnd])
 
   async function generateAISummary() {
     if (!selectedStudentId || generatingAI) return
@@ -453,9 +476,74 @@ export default function NewReportPage() {
         </div>
       </div>
 
+      {/* ── SECTION 2b: حصص النشاط البدني المعدّل ── */}
+      {/* Read-only: these come from APA sessions already filed in the planner, and
+          the server recomputes them at save time — nothing here is editable, so the
+          document can only ever show sessions that were actually run. */}
+      <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
+        <SectionHeader num={3} title="حصص النشاط البدني المعدّل" icon={<Activity className="w-4 h-4 text-indigo-500" />} />
+
+        {loadingApa ? (
+          <p className="text-sm text-gray-400">جارٍ جلب الحصص…</p>
+        ) : !apaSummary ? (
+          <div className="bg-gray-50 rounded-2xl px-4 py-4 text-sm text-gray-500 leading-relaxed">
+            لا توجد حصص نشاط بدني مسجّلة لهذا الطفل في هذه الفترة، ولن يظهر هذا القسم في تقرير الولي.
+            <br />
+            <span className="text-xs text-gray-400">
+              تُسجَّل الحصص من صفحة «دليل حصص النشاط البدني المعدّل» بعد كل حصة.
+            </span>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { v: apaSummary.sessions, l: 'حصة مسجّلة' },
+                { v: `${apaSummary.minutes}`, l: 'دقيقة نشاط' },
+                { v: `${apaSummary.adherencePct}%`, l: 'من المراحل المخططة' },
+              ].map(s => (
+                <div key={s.l} className="bg-indigo-50 rounded-2xl px-3 py-3 text-center">
+                  <div className="text-xl font-black text-indigo-700 ltr-num">{s.v}</div>
+                  <div className="text-[11px] text-indigo-500 font-bold mt-0.5">{s.l}</div>
+                </div>
+              ))}
+            </div>
+
+            {apaSummary.indicators.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest">
+                  مؤشرات الخطة — تقدير الأخصائي
+                </p>
+                {apaSummary.indicators.map(ind => {
+                  const trend = indicatorTrend(ind)
+                  return (
+                    <div key={ind.label} className="flex items-center gap-3 bg-gray-50 rounded-xl px-3 py-2">
+                      <span className="flex-1 text-xs text-gray-700 leading-relaxed">{ind.label}</span>
+                      <span className="text-sm font-black text-gray-900 ltr-num">{ind.avg}/5</span>
+                      <span className="text-[11px] font-bold min-w-[70px] text-left ltr-num"
+                        style={{ color: trend === 'up' ? '#047857' : trend === 'down' ? '#B91C1C' : '#9CA3AF' }}>
+                        {trend === 'insufficient'
+                          ? 'حصة واحدة'
+                          : trend === 'stable'
+                            ? 'ثابت'
+                            : `${ind.first} ← ${ind.last}`}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+
+            <p className="text-[11px] text-gray-400 leading-relaxed">
+              هذه الأرقام تُحتسب في الخادم من الحصص المسجّلة فعلاً، وتُرفق تلقائياً بالتقرير عند الحفظ.
+              التقييمات تقدير الأخصائي وليست قياساً آلياً.
+            </p>
+          </div>
+        )}
+      </div>
+
       {/* ── SECTION 3: التقييم السلوكي ── */}
       <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
-        <SectionHeader num={3} title="التقييم السلوكي المعياري" icon={<Brain className="w-4 h-4 text-violet-500" />} />
+        <SectionHeader num={4} title="التقييم السلوكي المعياري" icon={<Brain className="w-4 h-4 text-violet-500" />} />
 
         <p className="text-xs text-gray-400 mb-5 bg-gray-50 rounded-xl px-4 py-2.5 font-medium">
           قيّم كل مجال من 1 (ضعيف جداً) إلى 5 (ممتاز) بناءً على ملاحظاتك خلال الجلسة
@@ -528,7 +616,7 @@ export default function NewReportPage() {
 
       {/* ── SECTION 4: الملاحظات والملخص ── */}
       <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
-        <SectionHeader num={4} title="ملاحظات الأستاذ والخلاصة" icon={<ClipboardList className="w-4 h-4 text-teal-500" />} />
+        <SectionHeader num={5} title="ملاحظات الأستاذ والخلاصة" icon={<ClipboardList className="w-4 h-4 text-teal-500" />} />
 
         {/* AI button */}
         <button

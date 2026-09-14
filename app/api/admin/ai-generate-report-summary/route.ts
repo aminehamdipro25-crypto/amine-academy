@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isDashboardUser, getDashboardActorId } from '@/lib/auth'
-import { getStudent } from '@/lib/db'
+import { getStudent, getStudentApaRecords } from '@/lib/db'
+import { filterApaRecordsByPeriod, indicatorTrend, summarizeApaRecords } from '@/lib/apa-record'
+import type { ApaReportSummary } from '@/lib/types'
 import { isRateLimited } from '@/lib/rateLimit'
 import Anthropic from '@anthropic-ai/sdk'
 
@@ -73,6 +75,34 @@ export async function POST(req: NextRequest) {
 
     const student = await getStudent(studentId)
     const studentName = student ? `${student.firstName} ${student.lastName}` : 'الطفل'
+
+    // Adapted Physical Activity sessions for the same period, read here rather
+    // than accepted from the client so the narrative can only cite sessions that
+    // were actually filed. A failure must not block the summary.
+    let apa: ApaReportSummary | null = null
+    try {
+      const records = await getStudentApaRecords(studentId)
+      apa = summarizeApaRecords(filterApaRecordsByPeriod(records, periodStart, periodEnd))
+    } catch (e) {
+      console.error('[ai-generate-report-summary] APA roll-up failed', e)
+    }
+    const apaText = apa
+      ? `═══ حصص النشاط البدني المعدّل (APA) ═══
+• عدد الحصص المسجّلة: ${apa.sessions} | إجمالي الدقائق: ${apa.minutes}
+• نسبة إنجاز مراحل الخطة: ${apa.adherencePct}%
+${apa.indicators.length > 0
+  ? apa.indicators.map(i => {
+      const trend = indicatorTrend(i)
+      const tail = trend === 'insufficient'
+        ? ' (حصة واحدة — لا يمكن استنتاج اتجاه بعد)'
+        : trend === 'stable' ? ' (ثابت)' : ` (من ${i.first} إلى ${i.last})`
+      return `• ${i.label}: ${i.avg}/5${tail}`
+    }).join('\n')
+  : '• لم تُقيَّم مؤشرات في هذه الحصص'}
+تنبيه: هذه التقييمات تقدير الأخصائي وليست قياساً آلياً — لا تصفها بأنها "مقيسة" أو "موضوعية".
+
+`
+      : ''
     const diagnosis = student?.diagnosis || 'ADHD'
     const ageGroup = student?.ageGroup || ''
 
@@ -101,7 +131,7 @@ ${realStats.hasPrev && realStats.accuracyDelta !== null
   : '• هذه أول فترة متابعة موثّقة (لا مقارنة سابقة بعد)'}
 اذكر هذه الأرقام الحقيقية صراحةً في الملخص لأنها دليل موضوعي على التقدّم.
 
-` : ''}═══ التقييم السلوكي المعياري ═══
+` : ''}${apaText}═══ التقييم السلوكي المعياري ═══
 ${ratingsText || '• لم تُحدَّد تقييمات سلوكية لهذه الجلسة'}
 
 ═══ تعليمات الكتابة ═══

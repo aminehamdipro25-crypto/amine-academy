@@ -11,6 +11,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { apaPlanData, type ApaCondition } from '@/lib/apa-plan-data'
 import { exerciseKeysForPhase, type ApaLinkedExercise } from '@/lib/apa-exercise-link'
+import ApaSessionRecordForm from './ApaSessionRecordForm'
 
 const CATEGORY_LABELS: Record<string, string> = {
   motor: 'حركي',
@@ -45,6 +46,8 @@ interface Props {
   initialGroupIndex?: number
   /** Shown as context when arriving from a specific child's assessment. */
   childLabel?: string
+  /** Bare child name from the hand-off, used to preselect them in the record form. */
+  childName?: string
   /**
    * Trimmed exercise-library entries keyed by titleAr, built on the server
    * (see lib/apa-exercise-link.ts). Each phase renders the catalogue's own
@@ -57,6 +60,7 @@ export default function ApaSessionPlanner({
   initialCondition = 'adhd',
   initialGroupIndex = 0,
   childLabel,
+  childName,
   linkedExercises = {},
 }: Props) {
   const [cond, setCond] = useState<ApaCondition>(initialCondition)
@@ -386,6 +390,15 @@ export default function ApaSessionPlanner({
           ))}
         </dl>
       </div>
+
+      <ApaSessionRecordForm
+        cond={cond}
+        group={group}
+        accent={accent.accent}
+        navy={NAVY}
+        elapsedMinutes={Math.round(elapsed / 60)}
+        childNameHint={childName}
+      />
     </div>
   )
 }

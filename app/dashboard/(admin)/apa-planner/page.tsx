@@ -40,6 +40,7 @@ export default async function ApaPlannerPage({
         initialCondition={cond}
         initialGroupIndex={groupIndex}
         childLabel={childLabel}
+        childName={name || undefined}
         linkedExercises={buildLinkedExerciseMap()}
       />
     </div>

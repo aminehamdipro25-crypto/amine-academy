@@ -37,7 +37,7 @@
 import crypto from 'crypto'
 import { redis } from './redis'
 import { generateId } from './auth'
-import type { Parent, Student, Exercise, Program, Appointment, ProgressReport, PendingPayment, Message, Achievement, StudentAssessmentProfile, GameResult, WeeklyProgress, Staff, Story, AssessmentResult } from './types'
+import type { Parent, Student, Exercise, Program, Appointment, ProgressReport, PendingPayment, Message, Achievement, StudentAssessmentProfile, GameResult, WeeklyProgress, Staff, Story, AssessmentResult, ApaSessionRecord } from './types'
 
 // ── Staff (multi-therapist accounts) ────────────────────────────
 
@@ -351,6 +351,33 @@ export async function getStudentReports(studentId: string): Promise<ProgressRepo
   const ids = await redis.lrange(`reports:student:${studentId}`, 0, 20)
   const reports = await Promise.all(ids.map(id => redis.get<ProgressReport>(`report:${id}`)))
   return reports.filter(Boolean) as ProgressReport[]
+}
+
+// ── APA session records ───────────────────────────────────────
+// Filed from the APA planner after a physical-activity session, then rolled up
+// into the child's progress report. Kept for a year like session logs.
+
+export async function createApaRecord(
+  data: Omit<ApaSessionRecord, 'id' | 'createdAt'>,
+): Promise<ApaSessionRecord> {
+  const record: ApaSessionRecord = {
+    ...data,
+    id: `APA-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`,
+    createdAt: new Date().toISOString(),
+  }
+  await redis.pipeline([
+    ['SET', `apa-record:${record.id}`, JSON.stringify(record), 'EX', String(365 * 24 * 3600)],
+    ['LPUSH', `apa-records:student:${data.studentId}`, record.id],
+  ])
+  return record
+}
+
+export async function getStudentApaRecords(studentId: string, limit = 200): Promise<ApaSessionRecord[]> {
+  const ids = await redis.lrange(`apa-records:student:${studentId}`, 0, limit - 1)
+  const records = await Promise.all(ids.map(id => redis.get<ApaSessionRecord>(`apa-record:${id}`)))
+  // Entries can be null once the per-record TTL expires while the id list, which
+  // has no TTL, still points at them — drop those rather than propagating holes.
+  return records.filter(Boolean) as ApaSessionRecord[]
 }
 
 // ── Activation Codes ──────────────────────────────────────────

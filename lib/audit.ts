@@ -13,6 +13,7 @@ export type AuditAction =
   | 'password_reset'
   | 'impersonate'
   | 'treatment_plan_save'
+  | 'apa_session_record'
 
 export interface AuditEntry {
   id:       string

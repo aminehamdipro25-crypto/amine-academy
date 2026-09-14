@@ -10,6 +10,16 @@
 // making them pick it again.
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { apaPlanData, type ApaCondition } from '@/lib/apa-plan-data'
+import { exerciseKeysForPhase, type ApaLinkedExercise } from '@/lib/apa-exercise-link'
+
+const CATEGORY_LABELS: Record<string, string> = {
+  motor: 'حركي',
+  balance: 'توازن',
+  focus: 'تركيز',
+  sensory: 'حسّي',
+  social: 'اجتماعي',
+  energy: 'طاقة',
+}
 
 const ACCENTS: Record<ApaCondition, { accent: string; tint: string; tint2: string }> = {
   adhd: { accent: '#C0521B', tint: '#FBE9DC', tint2: '#F3D3B8' },
@@ -35,17 +45,31 @@ interface Props {
   initialGroupIndex?: number
   /** Shown as context when arriving from a specific child's assessment. */
   childLabel?: string
+  /**
+   * Trimmed exercise-library entries keyed by titleAr, built on the server
+   * (see lib/apa-exercise-link.ts). Each phase renders the catalogue's own
+   * protocol rather than a second copy of it.
+   */
+  linkedExercises?: Record<string, ApaLinkedExercise>
 }
 
 export default function ApaSessionPlanner({
   initialCondition = 'adhd',
   initialGroupIndex = 0,
   childLabel,
+  linkedExercises = {},
 }: Props) {
   const [cond, setCond] = useState<ApaCondition>(initialCondition)
   const [ageIndex, setAgeIndex] = useState(initialGroupIndex)
   const [elapsed, setElapsed] = useState(0)
   const [running, setRunning] = useState(false)
+  // Phase indices whose linked protocols are expanded. Open by default when
+  // printing would otherwise drop them — see the print rule below.
+  const [openPhases, setOpenPhases] = useState<Set<number>>(new Set())
+  // Materials the specialist has already packed, per condition+band, kept on this
+  // device so the kit check survives a reload between sessions. Storage can throw
+  // (private window, blocked site data) — the checklist must still work then.
+  const [packed, setPacked] = useState<Set<string>>(new Set())
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const group = apaPlanData[cond].groups[ageIndex]
@@ -75,13 +99,52 @@ export default function ApaSessionPlanner({
     return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
   }, [running])
 
+  const packedKey = `apa-packed:${cond}:${ageIndex}`
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(packedKey)
+      setPacked(new Set(raw ? (JSON.parse(raw) as string[]) : []))
+    } catch { setPacked(new Set()) }
+  }, [packedKey])
+
+  function togglePacked(item: string) {
+    setPacked(prev => {
+      const next = new Set(prev)
+      if (next.has(item)) next.delete(item); else next.add(item)
+      try { localStorage.setItem(packedKey, JSON.stringify([...next])) } catch { /* storage unavailable */ }
+      return next
+    })
+  }
+
   function resetTimer() {
     if (intervalRef.current) clearInterval(intervalRef.current)
     setRunning(false)
     setElapsed(0)
   }
-  function switchCond(next: ApaCondition) { resetTimer(); setCond(next); setAgeIndex(0) }
-  function switchAge(i: number) { resetTimer(); setAgeIndex(i) }
+  function switchCond(next: ApaCondition) { resetTimer(); setCond(next); setAgeIndex(0); setOpenPhases(new Set()) }
+  function switchAge(i: number) { resetTimer(); setAgeIndex(i); setOpenPhases(new Set()) }
+  function togglePhase(i: number) {
+    setOpenPhases(prev => {
+      const next = new Set(prev)
+      if (next.has(i)) next.delete(i); else next.add(i)
+      return next
+    })
+  }
+
+  // Distinct catalogue exercises attached to this band's phases.
+  const linkedCount = useMemo(() => {
+    const keys = new Set<string>()
+    for (const s of group.session) {
+      for (const k of exerciseKeysForPhase(cond, group.range, s.phase)) {
+        if (linkedExercises[k]) keys.add(k)
+      }
+    }
+    return keys.size
+  }, [cond, group, linkedExercises])
+  const phasesWithExercises = group.session.filter(
+    s => exerciseKeysForPhase(cond, group.range, s.phase).some(k => linkedExercises[k]),
+  ).length
+  const allOpen = openPhases.size >= phasesWithExercises && phasesWithExercises > 0
 
   const elapsedMin = elapsed / 60
   const activeIdx = cumulative.findIndex(c => elapsedMin >= c.start && elapsedMin < c.end)
@@ -160,6 +223,14 @@ export default function ApaSessionPlanner({
             <button onClick={resetTimer} className="px-4 py-2 rounded-lg text-sm font-bold border border-[#E4E0D7] text-gray-500">
               إعادة ضبط
             </button>
+            {linkedCount > 0 && (
+              <button
+                onClick={() => setOpenPhases(allOpen ? new Set() : new Set(group.session.map((_, i) => i)))}
+                className="px-4 py-2 rounded-lg text-sm font-bold border"
+                style={{ borderColor: 'var(--tint2)', color: 'var(--accent)', background: 'var(--tint)' }}>
+                {allOpen ? 'طيّ كل التمارين' : `عرض كل التمارين (${linkedCount})`}
+              </button>
+            )}
             <span className="text-sm text-gray-500 mr-auto">
               {elapsed > 0 || running
                 ? <>المرحلة الحالية: <b className="text-[#232A31]">{activePhase}</b> — المتبقي: <b className="text-[#232A31] ltr-num">{fmt(remaining)}</b></>
@@ -171,23 +242,74 @@ export default function ApaSessionPlanner({
             {group.session.map((s, i) => {
               const isActive = i === activeIdx
               const isDone = cumulative[i] && elapsedMin >= cumulative[i].end
+              // Catalogue exercises that actually deliver this phase. Missing keys
+              // are skipped rather than rendered blank — the drift test keeps the
+              // mapping honest, this keeps a stale deploy from showing an empty row.
+              const linked = exerciseKeysForPhase(cond, group.range, s.phase)
+                .map(k => linkedExercises[k])
+                .filter((e): e is ApaLinkedExercise => Boolean(e))
+              const isOpen = openPhases.has(i)
               return (
                 <div key={i}
-                  className="flex gap-3 border rounded-lg p-3 transition-colors break-inside-avoid"
+                  className="border rounded-lg transition-colors break-inside-avoid"
                   style={{
                     borderColor: '#E4E0D7',
                     borderInlineStart: `6px solid ${isActive ? 'var(--accent)' : 'var(--tint2)'}`,
                     background: isActive ? 'var(--tint)' : '#fff',
                     opacity: isDone ? 0.55 : 1,
                   }}>
-                  <div className="min-w-[62px] flex items-center justify-center font-black text-xs" style={{ color: 'var(--accent)' }}>
-                    {s.duration}
-                  </div>
-                  <div className="flex-1">
-                    <div className="font-bold text-sm mb-1">{s.phase}</div>
-                    <ul className="text-xs text-gray-600 list-disc pr-4 space-y-0.5">
-                      {s.details.map((d, j) => <li key={j}>{d}</li>)}
-                    </ul>
+                  <div className="flex gap-3 p-3">
+                    <div className="min-w-[62px] flex items-center justify-center font-black text-xs" style={{ color: 'var(--accent)' }}>
+                      {s.duration}
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-bold text-sm mb-1">{s.phase}</div>
+                      <ul className="text-xs text-gray-600 list-disc pr-4 space-y-0.5">
+                        {s.details.map((d, j) => <li key={j}>{d}</li>)}
+                      </ul>
+
+                      {linked.length > 0 && (
+                        <>
+                          <button
+                            onClick={() => togglePhase(i)}
+                            aria-expanded={isOpen}
+                            className="mt-2 text-xs font-bold rounded-full px-3 py-1 border transition-colors print:hidden"
+                            style={{ borderColor: 'var(--tint2)', color: 'var(--accent)', background: 'var(--tint)' }}>
+                            {isOpen ? '▲ إخفاء التمارين' : `▼ ${linked.length} تمرين من مكتبة المنصة`}
+                          </button>
+
+                          {/* Printing must not silently drop protocols the specialist
+                              is about to run, so the list is always in print output. */}
+                          <div className={`${isOpen ? 'block' : 'hidden'} print:block mt-2 space-y-2`}>
+                            {linked.map(ex => (
+                              <div key={ex.titleAr}
+                                className="rounded-lg border p-3 break-inside-avoid"
+                                style={{ borderColor: '#E4E0D7', background: '#FAF8F4' }}>
+                                <div className="flex items-center gap-2 flex-wrap mb-1.5">
+                                  <span className="font-bold text-xs" style={{ color: NAVY }}>{ex.titleAr}</span>
+                                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                                    style={{ background: 'var(--tint)', color: 'var(--accent)' }}>
+                                    {CATEGORY_LABELS[ex.category] ?? ex.category}
+                                  </span>
+                                  <span className="text-[10px] text-gray-500 font-bold">{ex.durationMinutes} دقيقة</span>
+                                </div>
+                                <ol className="text-[11px] text-gray-700 list-decimal pr-4 space-y-0.5 leading-relaxed">
+                                  {ex.instructionsAr.map((step, k) => <li key={k}>{step}</li>)}
+                                </ol>
+                                <p className="text-[11px] text-gray-500 mt-1.5 leading-relaxed">
+                                  <span className="font-bold">الهدف النفسي: </span>{ex.psychologyObjectiveAr}
+                                </p>
+                                {ex.contraindications.length > 0 && (
+                                  <p className="text-[11px] mt-1.5 leading-relaxed" style={{ color: '#B4341B' }} dir="auto">
+                                    <span className="font-bold">⚠ موانع الاستعمال: </span>{ex.contraindications.join(' · ')}
+                                  </p>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
               )
@@ -226,13 +348,23 @@ export default function ApaSessionPlanner({
         <div className="bg-white border border-[#E4E0D7] rounded-xl p-5">
           <h2 className="text-base font-black mb-3" style={{ color: NAVY }}>الأدوات والمواد اللازمة</h2>
           <ul className="text-sm divide-y divide-dashed divide-[#E4E0D7]">
-            {group.materials.map((m, i) => (
-              <li key={i} className="flex items-center gap-2 py-1.5">
-                <input type="checkbox" className="w-4 h-4" style={{ accentColor: accent.accent }} aria-label={m} />
-                <span>{m}</span>
+            {group.materials.map(m => (
+              <li key={m} className="flex items-center gap-2 py-1.5">
+                <input
+                  type="checkbox"
+                  className="w-4 h-4"
+                  style={{ accentColor: accent.accent }}
+                  aria-label={m}
+                  checked={packed.has(m)}
+                  onChange={() => togglePacked(m)}
+                />
+                <span className={packed.has(m) ? 'line-through text-gray-400' : undefined}>{m}</span>
               </li>
             ))}
           </ul>
+          <p className="text-xs text-gray-400 mt-2 print:hidden">
+            {packed.size} من {group.materials.length} جاهزة — محفوظة على هذا الجهاز حتى الحصة القادمة.
+          </p>
         </div>
         <div className="bg-white border border-[#E4E0D7] rounded-xl p-5">
           <h2 className="text-base font-black mb-3" style={{ color: NAVY }}>مؤشرات المتابعة والتقدم</h2>

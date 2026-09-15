@@ -23,7 +23,22 @@ const HOME_EXERCISES: Array<{
   { id: 'emotion-volume',     labelAr: 'مقياس المشاعر',        icon: '📊', description: 'تعلّم التعبير عن شدة المشاعر',                                  ageMin: 5,  category: 'عاطفي' },
   { id: 'body-scan',          labelAr: 'مسح الجسم',            icon: '🧘', description: 'تمرين وعي الجسم والاسترخاء التدريجي',                          ageMin: 6,  category: 'استرخاء' },
   { id: 'word-recall',        labelAr: 'تذكّر الكلمات',        icon: '🧠', description: 'احفظ قائمة كلمات وأعد ترديدها',                                ageMin: 6,  category: 'ذاكرة' },
+  { id: 'sequence-memory',    labelAr: 'تسلسل الذاكرة',        icon: '🔢', description: 'تذكّر تسلسل الألوان والأرقام وأعده بنفس الترتيب',              ageMin: 5,  category: 'ذاكرة' },
+  { id: 'letter-match',       labelAr: 'مطابقة الحروف',        icon: '🔤', description: 'طابق الحرف مع شكله وصوته',                                      ageMin: 5,  category: 'قراءة' },
+  { id: 'math-flash',         labelAr: 'ومضات الحساب',         icon: '➕', description: 'عمليات حسابية سريعة تناسب عمر الطفل',                           ageMin: 6,  category: 'حساب' },
+  { id: 'pattern-match',      labelAr: 'مطابقة الأنماط',       icon: '🧩', description: 'اكتشف النمط وأكمله',                                            ageMin: 5,  category: 'تفكير' },
+  { id: 'category-sort',      labelAr: 'تصنيف الفئات',         icon: '🗂️', description: 'رتّب الصور في فئاتها الصحيحة',                                  ageMin: 5,  category: 'تفكير' },
+  { id: 'first-then',         labelAr: 'أولاً ثم',             icon: '➡️', description: 'لوحة «أولاً–ثم» لتسهيل الانتقال بين الأنشطة',                   ageMin: 4,  category: 'تنظيم' },
+  { id: 'visual-schedule',    labelAr: 'الجدول المرئي',        icon: '📅', description: 'جدول مصوّر لخطوات اليوم',                                       ageMin: 4,  category: 'تنظيم' },
+  { id: 'mood-meter',         labelAr: 'مقياس المزاج',         icon: '🌡️', description: 'حدّد مزاجك اليوم وتعرّف على درجته',                             ageMin: 5,  category: 'عاطفي' },
+  { id: 'jumping-jacks',      labelAr: 'قفز النجمة',           icon: '⭐', description: 'تمرين هوائي ينشّط الجسم ويرفع التركيز',                          ageMin: 5,  category: 'حركي' },
 ]
+
+// Deliberately NOT here: the assessment battery (span-extension, backward span,
+// sustained-attention, visual-search, auditory-memory). Those are measurement
+// instruments — practising them at home inflates the score and destroys the
+// baseline the specialist compares against. They stay in the specialist's
+// toolkit only.
 
 const CATEGORY_COLORS: Record<string, string> = {
   'ذاكرة':    '#3B82F6',
@@ -31,6 +46,10 @@ const CATEGORY_COLORS: Record<string, string> = {
   'عاطفي':    '#EC4899',
   'انتباه':   '#7C5CFC',
   'قراءة':    '#F59E0B',
+  'حساب':     '#0EA5E9',
+  'تفكير':    '#8B5CF6',
+  'تنظيم':    '#14B8A6',
+  'حركي':     '#F97316',
 }
 
 // Lazy-loaded exercise components (same as session page)
@@ -44,6 +63,15 @@ const ReadingCards   = lazy(() => import('@/components/session/exercises/Reading
 const EmotionVolume  = lazy(() => import('@/components/session/exercises/EmotionVolume'))
 const BodyScan       = lazy(() => import('@/components/session/exercises/BodyScan'))
 const WordRecall     = lazy(() => import('@/components/session/exercises/WordRecall'))
+const SequenceMemory   = lazy(() => import('@/components/session/exercises/SequenceMemory'))
+const LetterMatch      = lazy(() => import('@/components/session/exercises/LetterMatch'))
+const MathFlash        = lazy(() => import('@/components/session/exercises/MathFlash'))
+const PatternMatch     = lazy(() => import('@/components/session/exercises/PatternMatch'))
+const CategorySort     = lazy(() => import('@/components/session/exercises/CategorySort'))
+const FirstThenBoard   = lazy(() => import('@/components/session/exercises/FirstThenBoard'))
+const VisualSchedule   = lazy(() => import('@/components/session/exercises/VisualSchedule'))
+const MoodMeter        = lazy(() => import('@/components/session/exercises/MoodMeter'))
+const PhysicalExercise = lazy(() => import('@/components/session/exercises/PhysicalExercise'))
 
 interface SessionResult {
   exerciseLabelAr: string
@@ -56,10 +84,15 @@ export default function PracticePage() {
   const [results, setResults]       = useState<SessionResult[]>([])
   const [finished, setFinished]     = useState<string | null>(null)
   const [childAge, setChildAge]     = useState(7)
+  // Needed to file results: without a child to attach them to, a finished
+  // exercise has nowhere to go and the session is lost on refresh.
+  const [studentId, setStudentId]   = useState('')
+  const [saveState, setSaveState]   = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
 
   // Fetch child's age from profile
   useEffect(() => {
     fetch('/api/parent/me').then(r => r.json()).then(d => {
+      if (d?.children?.[0]?.id) setStudentId(d.children[0].id)
       const student = d.children?.[0]
       if (student?.birthDate) {
         const age = Math.floor((Date.now() - new Date(student.birthDate).getTime()) / 31536000000)
@@ -68,10 +101,36 @@ export default function PracticePage() {
     }).catch(() => {})
   }, [])
 
-  function handleComplete(r: ExerciseResult) {
+  async function handleComplete(r: ExerciseResult) {
+    const playedId = activeId
     setResults(prev => [...prev, { exerciseLabelAr: r.exerciseLabelAr, score: r.score, duration: r.duration }])
-    setFinished(activeId)
+    setFinished(playedId)
     setActiveId(null)
+
+    // Persist it. Before this the score only lived in React state, so a child
+    // could practise all week and the specialist's report would show nothing.
+    if (!playedId || !studentId) { setSaveState('error'); return }
+    setSaveState('saving')
+    try {
+      const res = await fetch('/api/parent/practice-result', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          studentId,
+          gameId: playedId,
+          gameLabelAr: r.exerciseLabelAr || HOME_EXERCISES.find(e => e.id === playedId)?.labelAr || playedId,
+          score: r.score,
+          // Not every exercise reports accuracy separately; fall back to the
+          // score rather than sending 0, which would read as a failed attempt.
+          accuracy: Number.isFinite(r.accuracy) ? r.accuracy : r.score,
+          durationSeconds: r.duration,
+          level: 1,
+        }),
+      })
+      setSaveState(res.ok ? 'saved' : 'error')
+    } catch {
+      setSaveState('error')
+    }
   }
 
   function handleCancel() {
@@ -102,6 +161,15 @@ export default function PracticePage() {
           {activeId === 'emotion-volume'  && <EmotionVolume  onComplete={handleComplete} onCancel={handleCancel} studentAge={childAge} difficulty={1} />}
           {activeId === 'body-scan'       && <BodyScan       onComplete={handleComplete} onCancel={handleCancel} studentAge={childAge} difficulty={1} />}
           {activeId === 'word-recall'     && <WordRecall     onComplete={handleComplete} onCancel={handleCancel} studentAge={childAge} difficulty={1} />}
+          {activeId === 'sequence-memory'   && <SequenceMemory   onComplete={handleComplete} onCancel={handleCancel} studentAge={childAge} difficulty={1} />}
+          {activeId === 'letter-match'      && <LetterMatch      onComplete={handleComplete} onCancel={handleCancel} studentAge={childAge} difficulty={1} />}
+          {activeId === 'math-flash'        && <MathFlash        onComplete={handleComplete} onCancel={handleCancel} studentAge={childAge} difficulty={1} />}
+          {activeId === 'pattern-match'     && <PatternMatch     onComplete={handleComplete} onCancel={handleCancel} studentAge={childAge} difficulty={1} />}
+          {activeId === 'category-sort'     && <CategorySort     onComplete={handleComplete} onCancel={handleCancel} studentAge={childAge} difficulty={1} />}
+          {activeId === 'first-then'        && <FirstThenBoard   onComplete={handleComplete} onCancel={handleCancel} studentAge={childAge} difficulty={1} />}
+          {activeId === 'visual-schedule'   && <VisualSchedule   onComplete={handleComplete} onCancel={handleCancel} studentAge={childAge} difficulty={1} />}
+          {activeId === 'mood-meter'        && <MoodMeter        onComplete={handleComplete} onCancel={handleCancel} studentAge={childAge} difficulty={1} />}
+          {activeId === 'jumping-jacks'     && <PhysicalExercise id="jumping-jacks" onComplete={handleComplete} onCancel={handleCancel} studentAge={childAge} difficulty={1} />}
         </Suspense>
       </div>
     )
@@ -117,8 +185,21 @@ export default function PracticePage() {
           <div className="text-4xl mb-3">🏠</div>
           <h1 className="text-2xl font-black text-gray-900">التمارين المنزلية</h1>
           <p className="text-gray-500 text-sm mt-1">
-            تمارين مختارة يمكنك ممارستها مع طفلك في المنزل
+            تمارين مختارة يمكنك ممارستها مع طفلك في المنزل — تُسجَّل النتائج تلقائياً وتصل للأخصائي.
           </p>
+
+          {/* Say plainly whether the last result was filed. A parent practising
+              for the specialist's benefit deserves to know it actually counted. */}
+          {saveState !== 'idle' && (
+            <p className={`text-xs font-bold mt-2 ${
+              saveState === 'saved' ? 'text-emerald-600'
+              : saveState === 'saving' ? 'text-gray-400' : 'text-red-600'
+            }`}>
+              {saveState === 'saved' ? '✓ حُفظت النتيجة في ملف طفلك'
+                : saveState === 'saving' ? 'جارٍ الحفظ…'
+                : '⚠️ تعذّر حفظ النتيجة — تحقّق من الاتصال وأعد المحاولة'}
+            </p>
+          )}
 
           {/* Session summary */}
           {results.length > 0 && (

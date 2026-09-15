@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isDashboardUser } from '@/lib/auth'
-import { createApaRecord, getStudent, getStudentApaRecords } from '@/lib/db'
+import { createApaRecord, getStudent, getStudentApaRecords, getStudentReports } from '@/lib/db'
 import { filterApaRecordsByPeriod, sanitizeApaRecord, summarizeApaRecords } from '@/lib/apa-record'
 import { audit } from '@/lib/audit'
 
@@ -77,10 +77,32 @@ export async function GET(req: NextRequest) {
     const to = url.searchParams.get('to')
     const scoped = from && to ? filterApaRecordsByPeriod(all, from, to) : all
 
+    // How many sessions have piled up since the family last received a report.
+    // Reporting cadence is per child (every 2-3 sessions), so the dashboard needs
+    // the count rather than the specialist keeping it in their head.
+    let sinceLastReport = all.length
+    let lastReportAt: string | null = null
+    try {
+      const reports = await getStudentReports(studentId)
+      const latest = reports
+        .map(r => r.createdAt)
+        .sort()
+        .pop()
+      if (latest) {
+        lastReportAt = latest
+        const cutoff = latest.slice(0, 10)
+        sinceLastReport = all.filter(r => r.date > cutoff).length
+      }
+    } catch (e) {
+      console.error('[admin/apa-sessions] report lookup failed', e)
+    }
+
     return NextResponse.json({
       records: scoped,
       summary: summarizeApaRecords(scoped),
       totalFiled: all.length,
+      sinceLastReport,
+      lastReportAt,
     })
   } catch (e) {
     console.error('[admin/apa-sessions GET]', e)

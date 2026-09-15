@@ -85,6 +85,9 @@ export default function NewReportPage() {
   // already filed in the planner. Shown read-only — the server recomputes it at
   // save time, so this is a preview of what the parent will see, not an input.
   const [apaSummary, setApaSummary] = useState<ApaReportSummary | null>(null)
+  // Sessions filed since this child's last report — the cadence cue, so the
+  // specialist is not counting in their head which child is due.
+  const [sinceLastReport, setSinceLastReport] = useState(0)
   const [loadingApa, setLoadingApa] = useState(false)
   const [professorNotes, setProfessorNotes] = useState('')
   const [ratings, setRatings] = useState<Record<string, number>>(
@@ -172,8 +175,12 @@ export default function NewReportPage() {
     setApaSummary(null)
     fetch(`/api/admin/apa-sessions?studentId=${encodeURIComponent(selectedStudentId)}&from=${periodStart}&to=${periodEnd}`)
       .then(r => r.json())
-      .then((d: { summary?: ApaReportSummary | null }) => { if (!cancelled) setApaSummary(d.summary ?? null) })
-      .catch(() => { if (!cancelled) setApaSummary(null) })
+      .then((d: { summary?: ApaReportSummary | null; sinceLastReport?: number }) => {
+        if (cancelled) return
+        setApaSummary(d.summary ?? null)
+        setSinceLastReport(d.sinceLastReport ?? 0)
+      })
+      .catch(() => { if (!cancelled) { setApaSummary(null); setSinceLastReport(0) } })
       .finally(() => { if (!cancelled) setLoadingApa(false) })
     return () => { cancelled = true }
   }, [selectedStudentId, periodStart, periodEnd])
@@ -482,6 +489,17 @@ export default function NewReportPage() {
           document can only ever show sessions that were actually run. */}
       <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
         <SectionHeader num={3} title="حصص النشاط البدني المعدّل" icon={<Activity className="w-4 h-4 text-indigo-500" />} />
+
+        {sinceLastReport > 0 && (
+          <div className={`rounded-2xl px-4 py-3 mb-4 text-sm font-bold ${
+            sinceLastReport >= 2 ? 'bg-amber-50 text-amber-800 border border-amber-200'
+                                 : 'bg-gray-50 text-gray-500'
+          }`}>
+            {sinceLastReport >= 2
+              ? `⏰ ${sinceLastReport} حصص مسجّلة منذ آخر تقرير لهذا الطفل — حان وقت التقرير.`
+              : `حصة واحدة مسجّلة منذ آخر تقرير.`}
+          </div>
+        )}
 
         {loadingApa ? (
           <p className="text-sm text-gray-400">جارٍ جلب الحصص…</p>

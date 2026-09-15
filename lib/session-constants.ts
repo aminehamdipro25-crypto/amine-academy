@@ -159,6 +159,7 @@ export const EXERCISES = [
   // ── تنظيم ────────────────────────────────────────
   { id:'body-scan',             labelAr:'فحص الجسم',               icon:'🫁', category:'تنظيم',            color:'bg-cyan-50 border-cyan-200',       ageMin:6,  ageMax:22 },
   { id:'mood-meter',            labelAr:'مقياس المزاج',            icon:'🌡️', category:'تنظيم',            color:'bg-amber-50 border-amber-200',     ageMin:5,  ageMax:22 },
+  { id:'mood-activation',       labelAr:'تنشيط سلوكي — نشاط ومزاج', icon:'🌤️', category:'تنظيم',            color:'bg-indigo-50 border-indigo-200',   ageMin:5,  ageMax:22 },
   { id:'calm-corner',           labelAr:'ركن الهدوء',              icon:'🧘', category:'تنظيم',            color:'bg-teal-50 border-teal-200',       ageMin:5,  ageMax:22 },
   { id:'emotion-volume',        labelAr:'حجم الانفعال',            icon:'📊', category:'تنظيم',            color:'bg-orange-50 border-orange-200',   ageMin:6,  ageMax:22 },
   // ── تعديل السلوك ──────────────────────────────────

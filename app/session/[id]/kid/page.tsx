@@ -61,6 +61,7 @@ const MathFlash            = lazy(() => import('@/components/session/exercises/M
 const AnalogiesGame        = lazy(() => import('@/components/session/exercises/AnalogiesGame'))
 const BodyScan             = lazy(() => import('@/components/session/exercises/BodyScan'))
 const MoodMeter            = lazy(() => import('@/components/session/exercises/MoodMeter'))
+const MoodActivation       = lazy(() => import('@/components/session/exercises/MoodActivation'))
 const CalmCorner           = lazy(() => import('@/components/session/exercises/CalmCorner'))
 const EmotionVolume        = lazy(() => import('@/components/session/exercises/EmotionVolume'))
 const DailyGoals           = lazy(() => import('@/components/session/exercises/DailyGoals'))
@@ -1048,6 +1049,7 @@ export default function KidSessionPage() {
           {id_ === 'analogies'            && <AnalogiesGame        {...props} />}
           {id_ === 'body-scan'            && <BodyScan             {...props} />}
           {id_ === 'mood-meter'           && <MoodMeter            {...props} />}
+          {id_ === 'mood-activation'      && <MoodActivation       {...props} />}
           {id_ === 'calm-corner'          && <CalmCorner           {...props} />}
           {id_ === 'emotion-volume'       && <EmotionVolume        {...props} />}
           {id_ === 'daily-goals'          && <DailyGoals           {...props} />}

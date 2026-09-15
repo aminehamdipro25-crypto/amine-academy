@@ -58,6 +58,7 @@ const MathFlash            = lazy(() => import('@/components/session/exercises/M
 const AnalogiesGame        = lazy(() => import('@/components/session/exercises/AnalogiesGame'))
 const BodyScan             = lazy(() => import('@/components/session/exercises/BodyScan'))
 const MoodMeter            = lazy(() => import('@/components/session/exercises/MoodMeter'))
+const MoodActivation       = lazy(() => import('@/components/session/exercises/MoodActivation'))
 const CalmCorner           = lazy(() => import('@/components/session/exercises/CalmCorner'))
 const EmotionVolume        = lazy(() => import('@/components/session/exercises/EmotionVolume'))
 const DailyGoals           = lazy(() => import('@/components/session/exercises/DailyGoals'))
@@ -869,6 +870,7 @@ export default function SessionPage() {
       'breathing':         'تنظيم الجهاز العصبي اللاإرادي عبر التنفس الواعي',
       'body-scan':         'الوعي الجسدي والتنظيم الذاتي الحسي',
       'mood-meter':        'تصنيف شدة المشاعر والوعي الانفعالي — Zones of Regulation',
+      'mood-activation':   'تنشيط سلوكي: نشاط ممتع بين قياسين للمزاج — يقيس أثر النشاط على مزاج هذا الطفل تحديداً. مساند لا علاجي؛ المزاج المنخفض يحتاج مختصاً نفسياً.',
       'calm-corner':       'استراتيجيات التهدئة الذاتية — Self-Calming Toolkit',
       'verbal-fluency':    'الطلاقة المعجمية وسرعة استرجاع الكلمات',
       'word-builder':      'الوعي الصرفي وبنية الكلمة',
@@ -975,7 +977,7 @@ export default function SessionPage() {
       'shadow-match':'attention',
       'tap-target':'motor','reaction-game':'motor','sequence-tap':'motor','target-tracking':'motor','finger-gym':'motor',
       'breathing':'behavior','token-board':'behavior','self-rating':'behavior','behavior-contract':'behavior',
-      'body-scan':'behavior','mood-meter':'behavior','calm-corner':'behavior','emotion-volume':'behavior',
+      'body-scan':'behavior','mood-meter':'behavior','mood-activation':'behavior','calm-corner':'behavior','emotion-volume':'behavior',
       'emotion-cards':'social','social-scenarios':'social','emotion-mirror':'social','conversation-starter':'social',
       'social-problem-solving':'social','waiting-game':'social','go-no-go':'social','balloon-control':'social','traffic-light':'social',
       'verbal-fluency':'language','word-builder':'language','letter-match':'language','picture-word-cards':'language',
@@ -3824,6 +3826,7 @@ ${notes ? `
               {activeView.id === 'analogies'             && <AnalogiesGame         onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} seed={activeSeed} />}
               {activeView.id === 'body-scan'             && <BodyScan              onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
               {activeView.id === 'mood-meter'            && <MoodMeter             onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
+              {activeView.id === 'mood-activation'       && <MoodActivation        onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} seed={activeSeed} />}
               {activeView.id === 'calm-corner'           && <CalmCorner            onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
               {activeView.id === 'emotion-volume'        && <EmotionVolume         onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}
               {activeView.id === 'daily-goals'           && <DailyGoals            onComplete={handleExerciseComplete} onCancel={handleCancel} studentAge={studentAge} difficulty={activeDifficulty} />}

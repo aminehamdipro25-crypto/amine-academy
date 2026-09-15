@@ -32,6 +32,7 @@ const HOME_EXERCISES: Array<{
   { id: 'visual-schedule',    labelAr: 'الجدول المرئي',        icon: '📅', description: 'جدول مصوّر لخطوات اليوم',                                       ageMin: 4,  category: 'تنظيم' },
   { id: 'mood-meter',         labelAr: 'مقياس المزاج',         icon: '🌡️', description: 'حدّد مزاجك اليوم وتعرّف على درجته',                             ageMin: 5,  category: 'عاطفي' },
   { id: 'jumping-jacks',      labelAr: 'قفز النجمة',           icon: '⭐', description: 'تمرين هوائي ينشّط الجسم ويرفع التركيز',                          ageMin: 5,  category: 'حركي' },
+  { id: 'mood-activation',    labelAr: 'نشاط ومزاج',           icon: '🌤️', description: 'قِس مزاجك، جرّب نشاطاً ممتعاً، ثم قِسه مجدداً — واكتشف ما يرفع مزاجك', ageMin: 5, category: 'عاطفي' },
 ]
 
 // Deliberately NOT here: the assessment battery (span-extension, backward span,
@@ -72,6 +73,7 @@ const FirstThenBoard   = lazy(() => import('@/components/session/exercises/First
 const VisualSchedule   = lazy(() => import('@/components/session/exercises/VisualSchedule'))
 const MoodMeter        = lazy(() => import('@/components/session/exercises/MoodMeter'))
 const PhysicalExercise = lazy(() => import('@/components/session/exercises/PhysicalExercise'))
+const MoodActivation   = lazy(() => import('@/components/session/exercises/MoodActivation'))
 
 interface SessionResult {
   exerciseLabelAr: string
@@ -170,6 +172,7 @@ export default function PracticePage() {
           {activeId === 'visual-schedule'   && <VisualSchedule   onComplete={handleComplete} onCancel={handleCancel} studentAge={childAge} difficulty={1} />}
           {activeId === 'mood-meter'        && <MoodMeter        onComplete={handleComplete} onCancel={handleCancel} studentAge={childAge} difficulty={1} />}
           {activeId === 'jumping-jacks'     && <PhysicalExercise id="jumping-jacks" onComplete={handleComplete} onCancel={handleCancel} studentAge={childAge} difficulty={1} />}
+          {activeId === 'mood-activation'   && <MoodActivation   onComplete={handleComplete} onCancel={handleCancel} studentAge={childAge} difficulty={1} />}
         </Suspense>
       </div>
     )

@@ -82,6 +82,10 @@ export default function Psc17Scale({ studentId, onComplete, onCancel, initialAns
     ]
     if (score.subscales.find(s => s.subscale === 'internalising')?.positive) {
       recommendations.push('إحالة للتقييم النفسي: بنود الحزن واليأس وتدنّي تقدير الذات والقلق بلغت عتبة الفرز — هذا خارج نطاق التدخل الحركي وحده')
+      // Something to do alongside the referral, not instead of it. Behavioural
+      // activation is the one mechanism with real evidence that is also inside
+      // this specialist's scope; the wording keeps that boundary explicit.
+      recommendations.push('بالتوازي مع الإحالة (لا بديلاً عنها): تمرين «تنشيط سلوكي — نشاط ومزاج» في الحصة وفي المنزل، لقياس أي الأنشطة ترفع مزاج هذا الطفل تحديداً')
     }
     if (score.subscales.find(s => s.subscale === 'attention')?.positive) {
       recommendations.push('تمارين الانتباه المستمر وكبح التشتّت ضمن الحصص')

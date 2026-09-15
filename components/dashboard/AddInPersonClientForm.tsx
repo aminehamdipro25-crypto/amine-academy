@@ -12,6 +12,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Loader2, UserPlus, X, CheckCircle2, ShieldAlert } from 'lucide-react'
 import { useLang, tr } from '@/lib/i18n'
+import { ageYearsFromBirthDate } from '@/lib/age'
 import type { Diagnosis } from '@/lib/types'
 
 const DIAGNOSES: Diagnosis[] = ['ADHD', 'AUTISM', 'ADHD+AUTISM', 'OTHER']
@@ -24,6 +25,8 @@ export interface InPersonPrefill {
   parentLastName?: string
   /** Age in years as already entered elsewhere — cross-checked against the birth date. */
   childAgeYears?: number
+  /** Already entered during the assessment — carried over so it is typed once. */
+  childBirthDate?: string
   diagnosis?: Diagnosis
 }
 
@@ -53,7 +56,7 @@ export default function AddInPersonClientForm({ onClose, onCreated, prefill, onL
   const [phone, setPhone] = useState('')
   const [childFirstName, setChildFirstName] = useState(prefill?.childFirstName ?? '')
   const [childLastName, setChildLastName] = useState('')
-  const [birthDate, setBirthDate] = useState('')
+  const [birthDate, setBirthDate] = useState(prefill?.childBirthDate ?? '')
   const [diagnosis, setDiagnosis] = useState<Diagnosis>(prefill?.diagnosis ?? 'ADHD')
   const [severity, setSeverity] = useState<1 | 2 | 3>(1)
   const [notes, setNotes] = useState('')
@@ -67,9 +70,7 @@ export default function AddInPersonClientForm({ onClose, onCreated, prefill, onL
   // The birth date is deliberately not prefilled from the age entered during the
   // assessment — a guessed 1 January would silently put the child in the wrong
   // age band later. Instead the two are cross-checked and a mismatch is flagged.
-  const ageFromBirth = birthDate && !Number.isNaN(Date.parse(birthDate))
-    ? Math.floor((Date.now() - new Date(birthDate).getTime()) / (1000 * 60 * 60 * 24 * 365.25))
-    : null
+  const ageFromBirth = ageYearsFromBirthDate(birthDate)
   const ageMismatch =
     prefill?.childAgeYears != null && ageFromBirth != null &&
     Math.abs(ageFromBirth - prefill.childAgeYears) > 1

@@ -4,18 +4,12 @@ import { isDashboardUser } from '@/lib/auth'
 import { createParent, createStudent, getParentByEmail, updateParent } from '@/lib/db'
 import { hashPassword } from '@/lib/password'
 import { audit } from '@/lib/audit'
-import type { AgeGroup, Diagnosis } from '@/lib/types'
+import { ageGroupFromBirthDate } from '@/lib/age'
+import type { Diagnosis } from '@/lib/types'
 
 export const runtime = 'nodejs'
 
 const VALID_DIAGNOSES: Diagnosis[] = ['ADHD', 'AUTISM', 'ADHD+AUTISM', 'OTHER']
-
-function calcAgeGroup(birthDate: string): AgeGroup {
-  const age = Math.floor((Date.now() - new Date(birthDate).getTime()) / (1000 * 60 * 60 * 24 * 365.25))
-  if (age <= 11) return '5-11'
-  if (age <= 17) return '12-17'
-  return '18-22'
-}
 
 function str(v: unknown, max: number): string {
   return String(v ?? '').trim().slice(0, max)
@@ -114,7 +108,7 @@ export async function POST(req: NextRequest) {
       firstName: childFirstName,
       lastName: str(childIn.lastName, 50) || lastName,
       birthDate,
-      ageGroup: calcAgeGroup(birthDate),
+      ageGroup: ageGroupFromBirthDate(birthDate),
       diagnosis: (VALID_DIAGNOSES.includes(childIn.diagnosis) ? childIn.diagnosis : 'OTHER') as Diagnosis,
       severityLevel: ([1, 2, 3].includes(Number(childIn.severityLevel)) ? Number(childIn.severityLevel) : 1) as 1 | 2 | 3,
       sensoryProfile: {

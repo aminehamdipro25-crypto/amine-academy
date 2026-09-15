@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useLang, tr, type Lang } from '@/lib/i18n'
 import type { AssessmentResult, Exercise, Program, WeeklySchedule, AgeGroup, Diagnosis, ExerciseResult } from '@/lib/types'
 import { getRecommendedCategories, findMatchingExercises } from '@/lib/domain-exercise-map'
+import { ageYearsFromBirthDate } from '@/lib/age'
 import {
   PersonStanding, ArrowRight, ArrowLeft, Printer, RotateCcw,
   CheckCircle2, Sparkles, ClipboardList, Save, Clock, TimerReset, AlertTriangle, CalendarClock,
@@ -158,10 +159,8 @@ function normalizeArabic(text: string) {
 }
 
 function ageFromBirthDate(birthDate: string): string {
-  const d = new Date(birthDate)
-  if (isNaN(d.getTime())) return ''
-  const years = Math.floor((Date.now() - d.getTime()) / (365.25 * 24 * 3600 * 1000))
-  return years >= 0 ? String(years) : ''
+  const years = ageYearsFromBirthDate(birthDate)
+  return years === null ? '' : String(years)
 }
 
 interface ClientListStudent { id: string; firstName: string; lastName: string; birthDate: string }
@@ -179,6 +178,7 @@ interface Draft {
   scaleSource: Partial<Record<ScaleKey, ScaleSource>>
   partialAnswers: Partial<Record<ScaleKey, Record<string, 0|1|2|3>>>
   therapistName: string; studentId: string
+  birthDate?: string
   savedResultIds: string[]
   savedAt: number
 }
@@ -253,6 +253,10 @@ export default function SpecialistToolkitPage() {
   // child gets a record the assessment can actually be filed against — until a
   // child is linked, everything measured here stays in memory and is lost.
   const [showCreateChild, setShowCreateChild] = useState(false)
+  // Optional: families do not always know the exact date. When it is given the
+  // age is derived from it and the age box becomes read-only, so the number the
+  // scales are gated on cannot drift from the date on the record.
+  const [birthDate, setBirthDate] = useState('')
   const [secondsLeft, setSecondsLeft] = useState(0)
   const [timerResetNonce, setTimerResetNonce] = useState(0)
 
@@ -310,7 +314,7 @@ export default function SpecialistToolkitPage() {
     const draft: Draft = {
       step, name, age, gender, parentName,
       concerns: [...concerns], selectedScales: [...selectedScales],
-      runOrder, currentIndex, results, perfResults, clinicalNotes, scaleSource, partialAnswers, therapistName, studentId,
+      runOrder, currentIndex, results, perfResults, clinicalNotes, scaleSource, partialAnswers, therapistName, studentId, birthDate,
       savedResultIds: [...savedResultIds],
       savedAt: Date.now(),
     }
@@ -318,7 +322,7 @@ export default function SpecialistToolkitPage() {
       localStorage.setItem(DRAFT_KEY, JSON.stringify(draft))
       setLastSavedAt(draft.savedAt)
     } catch { /* storage unavailable — printing/report still works without autosave */ }
-  }, [pendingDraft, step, name, age, gender, parentName, concerns, selectedScales, runOrder, currentIndex, results, perfResults, clinicalNotes, scaleSource, partialAnswers, therapistName, studentId, savedResultIds])
+  }, [pendingDraft, step, name, age, gender, parentName, concerns, selectedScales, runOrder, currentIndex, results, perfResults, clinicalNotes, scaleSource, partialAnswers, therapistName, studentId, birthDate, savedResultIds])
 
   function restoreDraft() {
     if (!pendingDraft) return
@@ -331,6 +335,7 @@ export default function SpecialistToolkitPage() {
     setScaleSource(pendingDraft.scaleSource ?? {})
     setPartialAnswers(pendingDraft.partialAnswers ?? {})
     setTherapistName(pendingDraft.therapistName); setStudentId(pendingDraft.studentId)
+    setBirthDate(pendingDraft.birthDate ?? '')
     setSavedResultIds(new Set(pendingDraft.savedResultIds ?? []))
     setLastSavedAt(pendingDraft.savedAt)
     setPendingDraft(null)
@@ -436,6 +441,8 @@ export default function SpecialistToolkitPage() {
   function linkChild(student: ClientListStudent, parent: ClientListItem) {
     setStudentId(student.id)
     setName(`${student.firstName} ${student.lastName}`.trim())
+    // The record's own date is authoritative — it replaces anything typed here.
+    setBirthDate(student.birthDate ?? '')
     setAge(ageFromBirthDate(student.birthDate))
     setParentName(`${parent.firstName} ${parent.lastName}`.trim())
     setChildQuery('')
@@ -444,6 +451,7 @@ export default function SpecialistToolkitPage() {
 
   function unlinkChild() {
     setStudentId(`temp-${Date.now().toString(36)}`)
+    setBirthDate('')
     setPastAssessments([])
     setCurrentProgram(null)
   }
@@ -949,9 +957,28 @@ export default function SpecialistToolkitPage() {
                 className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-brand-300 focus:outline-none" />
             </div>
             <div>
+              <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.birthDateLabel}</label>
+              <input type="date" value={birthDate} max={new Date().toISOString().slice(0, 10)}
+                onChange={e => {
+                  const v = e.target.value
+                  setBirthDate(v)
+                  // Derive the age the scales are gated on, so the two can never
+                  // disagree. Clearing the date hands the box back to the user
+                  // rather than wiping an age they may have typed deliberately.
+                  const years = ageYearsFromBirthDate(v)
+                  if (years !== null) setAge(String(years))
+                }}
+                disabled={isLinkedStudentId(studentId)}
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-brand-300 focus:outline-none disabled:bg-gray-50 disabled:text-gray-400 ltr-num" />
+            </div>
+            <div>
               <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.ageLabel}</label>
               <input value={age} onChange={e => setAge(e.target.value.replace(/[^\d]/g, ''))} placeholder={t.agePlaceholder} inputMode="numeric"
-                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-brand-300 focus:outline-none ltr-num" />
+                readOnly={ageYearsFromBirthDate(birthDate) !== null}
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-brand-300 focus:outline-none read-only:bg-gray-50 read-only:text-gray-600 ltr-num" />
+              <p className="text-[11px] text-gray-400 mt-1">
+                {ageYearsFromBirthDate(birthDate) !== null ? t.ageComputedHint : t.ageManualHint}
+              </p>
             </div>
           </div>
 
@@ -1773,6 +1800,7 @@ export default function SpecialistToolkitPage() {
           prefill={{
             childFirstName: name.trim() || undefined,
             childAgeYears: Number.isFinite(parseInt(age, 10)) ? parseInt(age, 10) : undefined,
+            childBirthDate: birthDate || undefined,
             diagnosis: inferDiagnosis(concerns),
           }}
           // Link immediately: from here on the assessment auto-saves against the

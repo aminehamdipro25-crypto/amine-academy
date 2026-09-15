@@ -8,6 +8,7 @@ import {
   UserCircle, Zap, Home, MoreHorizontal, X, BookOpen,
 } from 'lucide-react'
 import { useLang, tr } from '@/lib/i18n'
+import { isInPersonAccount } from '@/lib/account-type'
 import LangToggle from '@/components/shared/LangToggle'
 import InstallAppButton from '@/components/InstallAppButton'
 import AcademyLogo from '@/components/shared/AcademyLogo'
@@ -24,6 +25,10 @@ export default function ParentPortalLayout({ children }: { children: React.React
   const [bellOpen, setBellOpen]         = useState(false)
   const [upcomingAppt, setUpcomingAppt] = useState<UpcomingAppt | null>(null)
   const [unreadReports, setUnreadReports] = useState(0)
+  // Families seen in person pay nothing; the upgrade entry must never reach them.
+  // Starts true so the item is not flashed before /api/parent/me answers —
+  // showing a payment prompt for a moment is still showing it.
+  const [inPerson, setInPerson] = useState(true)
   const moreRef = useRef<HTMLDivElement>(null)
   const bellRef = useRef<HTMLDivElement>(null)
   const { lang } = useLang()
@@ -46,7 +51,9 @@ export default function ParentPortalLayout({ children }: { children: React.React
     { href: '/parent/stories',            label: t.parentNav.stories,         icon: BookOpen,       color: '#7C3AED', bg: '#EDE9FE' },
     { href: '/parent/practice',           label: t.parentNav.practice,        icon: Sparkles,       color: '#EC4899', bg: '#FCE7F3' },
     { href: '/parent/family-challenge',   label: t.parentNav.familyChallenge, icon: Sparkles,       color: '#10B981', bg: '#D1FAE5' },
+    ...(inPerson ? [] : [
     { href: '/parent/upgrade-plan',       label: t.parentNav.upgradePlan,     icon: Zap,            color: '#F97316', bg: '#FFEDD5' },
+    ]),
     { href: '/parent/home-environment',   label: t.parentNav.homeEnv,         icon: Home,           color: '#06B6D4', bg: '#CFFAFE' },
     { href: '/parent/account',            label: t.parentNav.account,         icon: UserCircle,     color: '#8B5CF6', bg: '#EDE9FE' },
   ]
@@ -90,7 +97,10 @@ export default function ParentPortalLayout({ children }: { children: React.React
       .then(d => {
         if (d?.upcomingAppointment) setUpcomingAppt(d.upcomingAppointment)
         if (d?.unreadReports) setUnreadReports(d.unreadReports)
+        setInPerson(isInPersonAccount(d?.parent))
       })
+      // A failed lookup leaves inPerson true: hiding the upgrade link from a
+      // paying family is a small loss, showing it to a free one is not.
       .catch(() => {})
   }, [])
 

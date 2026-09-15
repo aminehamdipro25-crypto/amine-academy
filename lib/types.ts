@@ -6,6 +6,20 @@ export type UserRole = 'admin' | 'parent' | 'student'
 export type AgeGroup = '5-11' | '12-17' | '18-22'
 export type Diagnosis = 'ADHD' | 'AUTISM' | 'ADHD+AUTISM' | 'OTHER'
 export type SubscriptionStatus = 'pending' | 'active' | 'suspended' | 'cancelled' | 'expired'
+
+/**
+ * How a family came to the platform.
+ *
+ * 'online'    — self-registered through /register and on a paid plan.
+ * 'in-person' — a child the specialist already treats face to face, given a
+ *               portal account by the specialist so the family can follow the
+ *               documented results. No plan, no payment, no expiry.
+ *
+ * The distinction is deliberately separate from subscriptionStatus: an
+ * in-person account is 'active' like any other, it simply must never be shown
+ * a plan badge, an upgrade call to action, or counted as a paying client.
+ */
+export type AccountType = 'online' | 'in-person'
 export type ExerciseCategory = 'motor' | 'focus' | 'balance' | 'energy' | 'sensory' | 'social'
 export type ExerciseDifficulty = 'beginner' | 'intermediate' | 'advanced'
 export type AppointmentStatus = 'scheduled' | 'completed' | 'cancelled' | 'no-show'
@@ -28,6 +42,12 @@ export interface Parent {
   // subscription/payment state. Optional for backward compatibility with
   // accounts created before this field existed.
   emailVerified?: boolean
+  /**
+   * Optional so every account created before this field existed keeps working —
+   * a missing value means 'online'. Read it through isInPersonAccount() rather
+   * than comparing directly, so that default lives in one place.
+   */
+  accountType?: AccountType
   childrenIds: string[]
   createdAt: string
   lastLoginAt: string | null

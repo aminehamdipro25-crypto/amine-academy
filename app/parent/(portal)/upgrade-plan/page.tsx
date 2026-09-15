@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { ExternalLink } from 'lucide-react'
 import { useLang } from '@/lib/i18n'
+import { isInPersonAccount } from '@/lib/account-type'
 
 type PlanId = 'session' | 'weekly' | 'monthly'
 type Currency = 'QAR' | 'TND'
@@ -44,6 +45,10 @@ export default function UpgradePlanPage() {
   const [currency, setCurrency] = useState<Currency>('QAR')
   const [apiPrices, setApiPrices] = useState<Record<string, Record<string, number>> | null>(null)
   const [currentPlan, setCurrentPlan] = useState<PlanId | null>(null)
+  // Hiding the nav entry is not enough: the URL is still reachable by hand, by a
+  // bookmark, or by a stale link. Start null (undecided) so no prices are ever
+  // painted before we know who is looking.
+  const [inPerson, setInPerson] = useState<boolean | null>(null)
 
   useEffect(() => {
     fetch('/api/geo')
@@ -56,11 +61,14 @@ export default function UpgradePlanPage() {
       .catch(() => {})
     fetch('/api/parent/me')
       .then(r => r.ok ? r.json() : null)
-      .then((d: { parent?: { subscriptionPlan?: string } } | null) => {
+      .then((d: { parent?: { subscriptionPlan?: string; accountType?: string } } | null) => {
         const plan = d?.parent?.subscriptionPlan as PlanId | undefined
         if (plan && ['session', 'weekly', 'monthly'].includes(plan)) setCurrentPlan(plan)
+        setInPerson(isInPersonAccount(d?.parent as { accountType?: 'online' | 'in-person' }))
       })
-      .catch(() => {})
+      // Unknown stays unknown: a lookup failure shows the in-person notice rather
+      // than falling through to a price list for a family that pays nothing.
+      .catch(() => setInPerson(true))
   }, [])
 
   const sym = currency === 'QAR' ? 'ر.ق' : 'د.ت'
@@ -80,6 +88,33 @@ export default function UpgradePlanPage() {
   }
 
   const whatsapp = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '97430653759'
+
+  // Nothing at all until we know who is looking — briefly flashing a price list
+  // at a family that was told their follow-up is free is the whole thing we are
+  // trying to avoid.
+  if (inPerson === null) {
+    return <div className="py-24 text-center text-gray-300 text-sm">…</div>
+  }
+
+  if (inPerson) {
+    return (
+      <div dir={isAr ? 'rtl' : 'ltr'} className="py-16 px-4 text-center max-w-md mx-auto">
+        <div className="text-4xl mb-3">🤝</div>
+        <h1 className="font-black text-xl text-gray-900 mb-2">
+          {isAr ? 'متابعة حضورية' : 'In-person follow-up'}
+        </h1>
+        <p className="text-gray-500 text-sm leading-relaxed">
+          {isAr
+            ? 'حساب طفلك مرتبط بمتابعة حضورية مع الأخصائي — لا توجد باقة ولا اشتراك على المنصة. كل ما تحتاجه من تقارير ومتابعة متاح لك مجاناً.'
+            : "Your child's account is tied to in-person follow-up with the specialist — there is no plan or subscription on the platform. Every report and follow-up feature is available to you at no cost."}
+        </p>
+        <a href={`/parent/dashboard`}
+          className="inline-block mt-6 bg-brand-600 hover:bg-brand-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-colors">
+          {isAr ? 'العودة للوحة' : 'Back to dashboard'}
+        </a>
+      </div>
+    )
+  }
 
   return (
     <div dir={isAr ? 'rtl' : 'ltr'} className="space-y-5">

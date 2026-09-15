@@ -1,11 +1,14 @@
 'use client'
-import { Users, CheckCircle, Clock, XCircle, AlertCircle, Phone, Mail, MapPin, UserPlus, ChevronLeft, AlertTriangle } from 'lucide-react'
+import { useState } from 'react'
+import { Users, CheckCircle, Clock, XCircle, AlertCircle, Phone, Mail, MapPin, UserPlus, ChevronLeft, AlertTriangle, HeartHandshake } from 'lucide-react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useLang, tr, type Lang } from '@/lib/i18n'
 import type { getAllParents } from '@/lib/db'
 import type { Parent } from '@/lib/types'
 import { ACountUp } from '@/components/ui'
+import { isInPersonAccount } from '@/lib/account-type'
+import AddInPersonClientForm from '@/components/dashboard/AddInPersonClientForm'
 import { staggerContainer, fadeUp, popIn, liftHover } from '@/lib/motion'
 
 const MotionLink = motion(Link)
@@ -28,6 +31,7 @@ export default function ClientsView({ parents, error }: {
   error: boolean
 }) {
   const { lang } = useLang()
+  const [showAddInPerson, setShowAddInPerson] = useState(false)
   const t = tr[lang].adminClients
   const navT = tr[lang].adminNav
   const adminT = tr[lang].adminChrome
@@ -45,9 +49,12 @@ export default function ClientsView({ parents, error }: {
     session: t.plan.session, weekly: t.plan.weekly, monthly: t.plan.monthly,
   }
 
-  const activeCount    = parents.filter(p => p.subscriptionStatus === 'active').length
-  const pendingCount   = parents.filter(p => p.subscriptionStatus === 'pending').length
-  const inactiveCount  = parents.filter(p => ['suspended','cancelled','expired'].includes(p.subscriptionStatus)).length
+  // In-person families are active accounts but not paying clients. Counting them
+  // in "active" would quietly inflate the number the specialist reads as revenue.
+  const inPersonCount  = parents.filter(isInPersonAccount).length
+  const activeCount    = parents.filter(p => !isInPersonAccount(p) && p.subscriptionStatus === 'active').length
+  const pendingCount   = parents.filter(p => !isInPersonAccount(p) && p.subscriptionStatus === 'pending').length
+  const inactiveCount  = parents.filter(p => !isInPersonAccount(p) && ['suspended','cancelled','expired'].includes(p.subscriptionStatus)).length
   const sortedParents  = [...parents].reverse()
 
   return (
@@ -62,13 +69,22 @@ export default function ClientsView({ parents, error }: {
           </h1>
           <p className="text-gray-400 text-sm mt-1">{t.pageSubtitle(parents.length)}</p>
         </div>
-        <Link
-          href="/register"
-          className="flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm shadow-brand-500/20 hover:shadow-md hover:shadow-brand-500/30"
-        >
-          <UserPlus className="w-4 h-4" />
-          {t.addClientButton}
-        </Link>
+        <div className="flex items-center gap-2 flex-wrap justify-end">
+          <button
+            onClick={() => setShowAddInPerson(true)}
+            className="flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm shadow-brand-500/20 hover:shadow-md hover:shadow-brand-500/30"
+          >
+            <HeartHandshake className="w-4 h-4" />
+            {t.addInPersonButton}
+          </button>
+          <Link
+            href="/register"
+            className="flex items-center gap-2 border border-gray-200 text-gray-600 hover:bg-gray-50 px-4 py-2.5 rounded-xl text-sm font-bold transition-colors"
+          >
+            <UserPlus className="w-4 h-4" />
+            {t.addClientButton}
+          </Link>
+        </div>
       </motion.div>
 
       {error && (
@@ -79,12 +95,13 @@ export default function ClientsView({ parents, error }: {
       )}
 
       {/* ── Stats Strip ── */}
-      <motion.div className="grid grid-cols-2 md:grid-cols-4 gap-3" variants={staggerContainer}>
+      <motion.div className="grid grid-cols-2 md:grid-cols-5 gap-3" variants={staggerContainer}>
         {[
-          { label: t.statsTotal,    value: parents.length, icon: Users,        bg: 'bg-brand-600',  glow: 'shadow-brand-500/20' },
-          { label: t.statsActive,   value: activeCount,    icon: CheckCircle,  bg: 'bg-emerald-600',glow: 'shadow-emerald-500/20' },
-          { label: t.statsPending,  value: pendingCount,   icon: Clock,        bg: 'bg-amber-500',  glow: 'shadow-amber-500/20' },
-          { label: t.statsInactive, value: inactiveCount,  icon: XCircle,      bg: 'bg-gray-500',   glow: 'shadow-gray-500/20' },
+          { label: t.statsTotal,    value: parents.length, icon: Users,          bg: 'bg-brand-600',  glow: 'shadow-brand-500/20' },
+          { label: t.statsActive,   value: activeCount,    icon: CheckCircle,    bg: 'bg-emerald-600',glow: 'shadow-emerald-500/20' },
+          { label: t.statsInPerson, value: inPersonCount,  icon: HeartHandshake, bg: 'bg-indigo-600', glow: 'shadow-indigo-500/20' },
+          { label: t.statsPending,  value: pendingCount,   icon: Clock,          bg: 'bg-amber-500',  glow: 'shadow-amber-500/20' },
+          { label: t.statsInactive, value: inactiveCount,  icon: XCircle,        bg: 'bg-gray-500',   glow: 'shadow-gray-500/20' },
         ].map(({ label, value, icon: Icon, bg, glow }) => (
           <motion.div key={label} className={`bg-white rounded-2xl p-4 border border-gray-100 shadow-sm hover:shadow-md transition-shadow`} variants={popIn}>
             <div className={`w-10 h-10 ${bg} rounded-xl flex items-center justify-center shadow-lg ${glow} mb-3`}>
@@ -102,11 +119,11 @@ export default function ClientsView({ parents, error }: {
           <div className="text-6xl mb-4">👥</div>
           <p className="text-gray-900 font-black text-lg">{t.emptyTitle}</p>
           <p className="text-gray-400 text-sm mt-1 mb-6">{t.emptySubtitle}</p>
-          <Link href="/register"
+          <button onClick={() => setShowAddInPerson(true)}
             className="inline-flex items-center gap-2 bg-brand-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-brand-700 transition-colors">
-            <UserPlus className="w-4 h-4" />
-            {t.addClientNowButton}
-          </Link>
+            <HeartHandshake className="w-4 h-4" />
+            {t.addInPersonButton}
+          </button>
         </motion.div>
       ) : (
         <motion.div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" variants={staggerContainer}>
@@ -114,10 +131,13 @@ export default function ClientsView({ parents, error }: {
           {sortedParents.map((parent, idx) => {
             const status = STATUS[parent.subscriptionStatus] ?? { label: parent.subscriptionStatus, dot: 'bg-gray-400', badge: 'bg-gray-100 text-gray-600 ring-1 ring-gray-200' }
             const gradient = AVATAR_COLORS[idx % AVATAR_COLORS.length]
-            const plan = PLAN_LABELS[parent.subscriptionPlan] || parent.subscriptionPlan
+            const inPerson = isInPersonAccount(parent)
+            // An in-person family has no plan; showing the stored placeholder
+            // would read as a subscription they never took out.
+            const plan = inPerson ? t.inPersonBadge : (PLAN_LABELS[parent.subscriptionPlan] || parent.subscriptionPlan)
             const joinDate = new Date(parent.createdAt).toLocaleDateString(localeFor(lang), { year: 'numeric', month: 'short', day: 'numeric' })
             const childCount = parent.childrenIds?.length ?? 0
-            const expiringIn7 = parent.subscriptionExpiry
+            const expiringIn7 = !inPerson && parent.subscriptionExpiry
               ? (new Date(parent.subscriptionExpiry).getTime() - Date.now()) / (1000 * 60 * 60 * 24) <= 7
                 && parent.subscriptionStatus === 'active'
               : false
@@ -209,6 +229,10 @@ export default function ClientsView({ parents, error }: {
           })}
           </AnimatePresence>
         </motion.div>
+      )}
+
+      {showAddInPerson && (
+        <AddInPersonClientForm onClose={() => setShowAddInPerson(false)} />
       )}
 
     </motion.div>

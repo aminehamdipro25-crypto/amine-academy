@@ -97,6 +97,9 @@ export default function AccountPage() {
           lastName: data.parent?.lastName,
           email: data.parent?.email,
           phone: data.parent?.phone,
+          // Exported alongside the plan so the file is self-describing: for an
+          // in-person family the plan field is a placeholder, not a subscription.
+          accountType: data.parent?.accountType ?? 'online',
           subscriptionPlan: data.parent?.subscriptionPlan,
           subscriptionStatus: data.parent?.subscriptionStatus,
           createdAt: data.parent?.createdAt,

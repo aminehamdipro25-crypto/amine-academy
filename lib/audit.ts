@@ -14,6 +14,7 @@ export type AuditAction =
   | 'impersonate'
   | 'treatment_plan_save'
   | 'apa_session_record'
+  | 'client_create'
 
 export interface AuditEntry {
   id:       string

@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useLang, tr, type Lang } from '@/lib/i18n'
 import type { getAllParents, getAllPendingPayments, getAllExercises } from '@/lib/db'
 import type { Parent } from '@/lib/types'
+import { isInPersonAccount } from '@/lib/account-type'
 import { ACountUp } from '@/components/ui'
 import { staggerContainer, fadeUp, popIn, liftHover } from '@/lib/motion'
 
@@ -51,8 +52,11 @@ export default function AdminDashboardView({ parents, payments, exercises, redis
   const navT = tr[lang].adminNav
   const coachName = tr[lang].portal.common.coachName
 
-  const activeCount   = parents.filter(p => p.subscriptionStatus === 'active').length
-  const pendingCount  = parents.filter(p => p.subscriptionStatus === 'pending').length
+  // In-person families hold active accounts but pay nothing — keeping them out
+  // of activeCount stops the headline figure from reading as paying clients.
+  const inPersonCount = parents.filter(isInPersonAccount).length
+  const activeCount   = parents.filter(p => !isInPersonAccount(p) && p.subscriptionStatus === 'active').length
+  const pendingCount  = parents.filter(p => !isInPersonAccount(p) && p.subscriptionStatus === 'pending').length
   const pendingPayments = payments.filter(p => p.status === 'pending')
   const recentParents = [...parents].reverse().slice(0, 5)
   const activePct = parents.length > 0 ? Math.round((activeCount / parents.length) * 100) : 0
@@ -251,6 +255,10 @@ export default function AdminDashboardView({ parents, payments, exercises, redis
                   animate={{ width: `${activePct}%` }}
                   transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
                 />
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-gray-500 text-xs">{t.inPersonClientsLabel}</span>
+                <span className="font-black text-indigo-600 text-sm"><ACountUp value={inPersonCount} /></span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-gray-500 text-xs">{t.pendingActivationLabel}</span>

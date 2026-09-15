@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Calendar, Bell, MessageSquare, FileText, ChevronLeft, Zap, TrendingUp, Clock, Star, X } from 'lucide-react'
 import type { Parent, Student, Program } from '@/lib/types'
+import { isInPersonAccount } from '@/lib/account-type'
 import { useLang, tr } from '@/lib/i18n'
 import { EXERCISES } from '@/lib/session-constants'
 import { ACountUp } from '@/components/ui'
@@ -237,8 +238,13 @@ export default function ParentDashboardPage() {
   )
 
   const { parent, children, upcomingAppointment, unreadReports } = data
+  // A family seen in person holds no plan. The stored plan value is a required-
+  // field placeholder, so showing it would invent a subscription they never took.
+  const inPerson = isInPersonAccount(parent)
   const planColorCfg = PLAN_COLOR[parent.subscriptionPlan] || PLAN_COLOR.basic
-  const planCfg = { ...planColorCfg, label: t.planLabels[parent.subscriptionPlan as keyof typeof t.planLabels] || t.planLabels.basic }
+  const planCfg = inPerson
+    ? { bg: '#EEF2FF', color: '#4338CA', label: t.inPersonFollowUp }
+    : { ...planColorCfg, label: t.planLabels[parent.subscriptionPlan as keyof typeof t.planLabels] || t.planLabels.basic }
   const totalPoints = children.reduce((s, c) => s + (c.totalPoints || 0), 0)
   const totalStreak = children.reduce((s, c) => s + (c.streak || 0), 0)
 
@@ -297,6 +303,7 @@ export default function ParentDashboardPage() {
                   {parent.subscriptionStatus === 'active' ? t.statusActive :
                    parent.subscriptionStatus === 'pending' ? t.statusPending : parent.subscriptionStatus}
                 </span>
+                {!inPerson && (
                 <Link
                   href="/parent/upgrade-plan"
                   className="text-xs font-black px-2.5 py-1 rounded-full flex items-center gap-1 transition-all"
@@ -307,6 +314,7 @@ export default function ParentDashboardPage() {
                   <Zap className="w-3 h-3" />
                   {lang === 'ar' ? 'تغيير الباقة' : 'Change Plan'}
                 </Link>
+                )}
               </div>
             </div>
 

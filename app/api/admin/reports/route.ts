@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isDashboardUser } from '@/lib/auth'
-import { createReport, getStudentReports, getStudent, getStudentApaRecords } from '@/lib/db'
+import { createReport, getStudentReports, getStudent, getStudentApaRecords, getParent } from '@/lib/db'
 import { filterApaRecordsByPeriod, summarizeApaRecords } from '@/lib/apa-record'
+import { sendEmail, reportReadyEmail } from '@/lib/mailer'
 
 export const runtime = 'nodejs'
 
@@ -68,7 +69,30 @@ export async function POST(req: NextRequest) {
       apa,
     })
 
-    return NextResponse.json({ ok: true, report })
+    // Tell the family a report is waiting. Without this the report only existed
+    // for a parent who happened to log in and look — an in-person family, who
+    // has no other reason to open the portal, would never know.
+    // Never fails the report: the record is saved either way.
+    let notified = false
+    if (body.notify !== false) {
+      try {
+        const parent = await getParent(body.parentId)
+        if (parent?.email) {
+          const typeLabel = report.type === 'monthly' ? 'تقريراً شهرياً'
+            : report.type === 'weekly' ? 'تقريراً أسبوعياً' : 'تقرير جلسة'
+          await sendEmail({
+            to: parent.email,
+            subject: `📄 تقرير جديد عن ${student.firstName} — أكاديمية أمين`,
+            html: reportReadyEmail(parent.firstName, student.firstName, typeLabel, periodStart, periodEnd),
+          })
+          notified = true
+        }
+      } catch (e) {
+        console.error('[admin/reports] report-ready email failed', e)
+      }
+    }
+
+    return NextResponse.json({ ok: true, report, notified })
   } catch (e) {
     console.error('[admin/reports]', e)
     return NextResponse.json({ error: 'حدث خطأ في الخادم' }, { status: 500 })

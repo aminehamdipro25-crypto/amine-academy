@@ -524,6 +524,33 @@ function ReportDocument({ report, child }: { report: ProgressReport; child: Stud
           </p>
         </div>
 
+        {/* ── 8b. What this document is, and is not ── */}
+        {/* Inside the printable block on purpose: this is the page that leaves the
+            building — printed, forwarded, shown at a school. The claim it makes
+            about itself has to travel with it. */}
+        <div style={{ padding: '20px 28px', borderTop: '1.5px solid #F3F4F6', background: '#FCFCFD' }}>
+          <div style={{ fontSize: 10, fontWeight: 800, color: '#6B7280', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 12 }}>
+            {t.rolesTitle}
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {[
+              { l: t.rolePlatformLabel, v: t.rolePlatformText },
+              { l: t.roleSpecialistLabel, v: t.roleSpecialistText },
+              { l: t.roleScreeningLabel, v: t.roleScreeningText },
+            ].map(({ l, v }) => (
+              <div key={l}>
+                <div style={{ fontSize: 11, fontWeight: 800, color: '#374151', marginBottom: 2 }}>{l}</div>
+                <div style={{ fontSize: 11, color: '#6B7280', lineHeight: 1.8 }}>{v}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{ marginTop: 14, background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 10, padding: '12px 14px' }}>
+            <div style={{ fontSize: 11, fontWeight: 900, color: '#92400E', marginBottom: 3 }}>⚠️ {t.roleDisclaimerLabel}</div>
+            <div style={{ fontSize: 11, color: '#78350F', lineHeight: 1.8 }}>{t.roleDisclaimerText}</div>
+          </div>
+          <div style={{ fontSize: 10, color: '#9CA3AF', marginTop: 10 }}>🔒 {t.confidentialNote}</div>
+        </div>
+
         {/* ── 9. Footer / Signature ── */}
         <div style={{ padding: '18px 28px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', background: '#F9FAFB' }}>
           <div>

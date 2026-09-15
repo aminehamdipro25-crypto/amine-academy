@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
-import { getAllParents, getStudentsByParent, getStudentGameHistory } from '@/lib/db'
+import { getAllParents, getStudentsByParent, getStudentGameHistory, getStudentApaRecords } from '@/lib/db'
+import { filterApaRecordsByPeriod } from '@/lib/apa-record'
 import { sendEmail, weeklyProgressEmail } from '@/lib/mailer'
 import { safeCompare } from '@/lib/password'
 
@@ -38,10 +39,26 @@ export async function GET(req: Request) {
         })
       )
 
-      const hasActivity = studentProgress.some(sp => sp.history.totalPlays > 0)
+      // Gameplay alone was the test for "is there anything to report", which
+      // silently excluded every child treated in person: they run no on-screen
+      // exercises, so totalPlays is always 0 and the one automated touchpoint
+      // never reached their family. Filed APA sessions count as activity too.
+      const weekAgo = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString().slice(0, 10)
+      const today = new Date().toISOString().slice(0, 10)
+      let apaSessionsThisWeek = 0
+      for (const { student } of studentProgress) {
+        try {
+          const records = await getStudentApaRecords(student.id)
+          apaSessionsThisWeek += filterApaRecordsByPeriod(records, weekAgo, today).length
+        } catch (e) {
+          console.error(`[weekly-report] APA lookup failed for ${student.id}:`, e)
+        }
+      }
+
+      const hasActivity = studentProgress.some(sp => sp.history.totalPlays > 0) || apaSessionsThisWeek > 0
       if (!hasActivity) continue
 
-      const html = weeklyProgressEmail(parent.firstName, studentProgress)
+      const html = weeklyProgressEmail(parent.firstName, studentProgress, apaSessionsThisWeek)
       await sendEmail({
         to: parent.email,
         subject: `📊 تقرير أسبوعي — أكاديمية أمين`,

@@ -194,12 +194,47 @@ export function newMessageParentEmail(specialistName: string, preview: string): 
   `)
 }
 
+/**
+ * Tells a family a new report is waiting, without putting any of it in the email.
+ *
+ * Clinical findings stay behind the portal login: email is not a confidential
+ * channel, it sits in inboxes and on forwarded phones. This carries only the
+ * child's first name, the period, and a link.
+ */
+export function reportReadyEmail(
+  parentName: string,
+  childName: string,
+  typeLabel: string,
+  periodStart: string,
+  periodEnd: string,
+): string {
+  const base = process.env.NEXT_PUBLIC_BASE_URL || 'https://amine-academy.com'
+  return wrap('#6B46F0', `
+    <h2 style="color:#1e293b;font-size:20px;margin:0 0 16px">📄 تقرير جديد عن ${escHtml(childName)}</h2>
+    <p style="color:#374151;line-height:1.9;margin:0 0 16px">
+      مرحباً ${escHtml(parentName)}، أعدّ الأخصائي ${escHtml(typeLabel)} جديداً عن ${escHtml(childName)}
+      للفترة من ${escHtml(periodStart)} إلى ${escHtml(periodEnd)}.
+    </p>
+    <p style="color:#6b7280;line-height:1.8;margin:0 0 20px;font-size:14px">
+      تفاصيل التقرير متاحة داخل بوابتك فقط، حفاظاً على خصوصية بيانات طفلك.
+    </p>
+    <div style="text-align:center;margin:24px 0">
+      <a href="${base}/parent/reports"
+        style="display:inline-block;background:#6B46F0;color:white;text-decoration:none;font-size:15px;font-weight:700;padding:12px 32px;border-radius:12px">
+        عرض التقرير
+      </a>
+    </div>
+  `)
+}
+
 export function weeklyProgressEmail(
   parentName: string,
   studentProgress: Array<{
     student: { firstName: string; lastName: string; diagnosis: string }
     history: { totalPlays: number; totalMinutes: number; byWeek: { week: string; gamesPlayed: number; avgScore: number }[]; byGame: Record<string, { plays: number; avgScore: number }> }
-  }>
+  }>,
+  /** In-person APA sessions filed this week — the only activity a face-to-face child generates. */
+  apaSessionsThisWeek = 0,
 ): string {
   const studentsHtml = studentProgress.map(({ student, history }) => {
     const thisWeek = history.byWeek[history.byWeek.length - 1]
@@ -264,6 +299,12 @@ export function weeklyProgressEmail(
   return wrap('#5b6ef2', `
     <h2 style="color:#1e293b;font-size:20px;margin:0 0 8px">تقرير الأسبوع: ${escHtml(parentName)} 📊</h2>
     <p style="color:#475569;font-size:14px;margin:0 0 20px">إليك ملخص نشاط طفلك خلال الأسبوع الماضي في أكاديمية أمين:</p>
+    ${apaSessionsThisWeek > 0 ? `
+    <div style="background:#eef2ff;border-left:3px solid #6366f1;border-radius:4px;padding:12px 16px;margin-bottom:16px">
+      <p style="margin:0;color:#3730a3;font-size:13px">
+        🏃 <strong>${apaSessionsThisWeek} حصة نشاط بدني حضورية</strong> سُجّلت هذا الأسبوع — تفاصيل المؤشرات في تقرير الطفل داخل بوابتك.
+      </p>
+    </div>` : ''}
     ${studentsHtml}
     <div style="background:#f0fdf4;border-left:3px solid #4ade80;border-radius:4px;padding:12px 16px;margin-top:20px">
       <p style="margin:0;color:#166534;font-size:13px">💡 <strong>نصيحة الأسبوع:</strong> الاستمرارية هي مفتاح التطور، حاول ممارسة تمرين واحد يومياً مع طفلك.</p>

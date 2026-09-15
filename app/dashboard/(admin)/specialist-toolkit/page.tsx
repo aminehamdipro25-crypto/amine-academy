@@ -7,8 +7,9 @@ import { getRecommendedCategories, findMatchingExercises } from '@/lib/domain-ex
 import {
   PersonStanding, ArrowRight, ArrowLeft, Printer, RotateCcw,
   CheckCircle2, Sparkles, ClipboardList, Save, Clock, TimerReset, AlertTriangle, CalendarClock,
-  Brain, Activity, Eye, BookOpen, Wand2,
+  Brain, Activity, Eye, BookOpen, Wand2, HeartHandshake,
 } from 'lucide-react'
+import AddInPersonClientForm from '@/components/dashboard/AddInPersonClientForm'
 import ADHDScale from '@/components/session/assessments/ADHDScale'
 import AttentionDomainsScale from '@/components/session/assessments/AttentionDomainsScale'
 import LearningDifficultiesScale from '@/components/session/assessments/LearningDifficultiesScale'
@@ -248,6 +249,10 @@ export default function SpecialistToolkitPage() {
   const [scaleSource, setScaleSource] = useState<Partial<Record<ScaleKey, ScaleSource>>>({})
   const [partialAnswers, setPartialAnswers] = useState<Partial<Record<ScaleKey, Record<string, 0|1|2|3>>>>({})
   const [studentId, setStudentId] = useState(() => `temp-${Date.now().toString(36)}`)
+  // Opens the in-person account form from inside the assessment, so a walk-in
+  // child gets a record the assessment can actually be filed against — until a
+  // child is linked, everything measured here stays in memory and is lost.
+  const [showCreateChild, setShowCreateChild] = useState(false)
   const [secondsLeft, setSecondsLeft] = useState(0)
   const [timerResetNonce, setTimerResetNonce] = useState(0)
 
@@ -889,6 +894,23 @@ export default function SpecialistToolkitPage() {
                 </span>
                 <button type="button" onClick={loadClients} className="text-teal-600 font-bold hover:text-teal-700 transition-colors">
                   {t.retryLabel}
+                </button>
+              </div>
+            )}
+
+            {/* A walk-in child has no record, so nothing measured here can be filed
+                against them. Say so plainly and offer the one action that fixes it. */}
+            {!isLinkedStudentId(studentId) && (
+              <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
+                <p className="text-xs font-black text-amber-900 mb-1 flex items-center gap-1.5">
+                  <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+                  {t.unlinkedWarnTitle}
+                </p>
+                <p className="text-xs text-amber-800 leading-relaxed mb-3">{t.unlinkedWarnBody}</p>
+                <button type="button" onClick={() => setShowCreateChild(true)}
+                  className="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-xl text-xs font-black transition-colors">
+                  <HeartHandshake className="w-4 h-4" />
+                  {t.createInPersonChildButton}
                 </button>
               </div>
             )}
@@ -1744,6 +1766,26 @@ export default function SpecialistToolkitPage() {
         onConfirm={() => { setConfirmReset(false); resetAll() }}
         onCancel={() => setConfirmReset(false)}
       />
+
+      {showCreateChild && (
+        <AddInPersonClientForm
+          onClose={() => setShowCreateChild(false)}
+          prefill={{
+            childFirstName: name.trim() || undefined,
+            childAgeYears: Number.isFinite(parseInt(age, 10)) ? parseInt(age, 10) : undefined,
+            diagnosis: inferDiagnosis(concerns),
+          }}
+          // Link immediately: from here on the assessment auto-saves against the
+          // new child, past assessments load, and a generated program can be kept.
+          onLinked={(parent, student) => {
+            linkChild(
+              { id: student.id, firstName: student.firstName, lastName: student.lastName, birthDate: student.birthDate },
+              { id: parent.id, firstName: parent.firstName, lastName: parent.lastName, students: [] },
+            )
+            loadClients()
+          }}
+        />
+      )}
     </motion.div>
   )
 }

@@ -18,24 +18,43 @@ const DIAGNOSES: Diagnosis[] = ['ADHD', 'AUTISM', 'ADHD+AUTISM', 'OTHER']
 
 interface Created { parentId: string; childName: string }
 
-export default function AddInPersonClientForm({ onClose, onCreated }: {
+/** What the caller already knows about the child, so it is not typed twice. */
+export interface InPersonPrefill {
+  childFirstName?: string
+  parentLastName?: string
+  /** Age in years as already entered elsewhere — cross-checked against the birth date. */
+  childAgeYears?: number
+  diagnosis?: Diagnosis
+}
+
+export default function AddInPersonClientForm({ onClose, onCreated, prefill, onLinked }: {
   onClose: () => void
   /** Lets the clients page refresh its list without a full reload. */
   onCreated?: () => void
+  prefill?: InPersonPrefill
+  /**
+   * When present the form is being used to attach a child to work already in
+   * progress (an assessment), so it hands the new records back and closes
+   * instead of offering to navigate away from that work.
+   */
+  onLinked?: (
+    parent: { id: string; firstName: string; lastName: string },
+    student: { id: string; firstName: string; lastName: string; birthDate: string },
+  ) => void
 }) {
   const router = useRouter()
   const { lang } = useLang()
   const t = tr[lang].adminClients.inPerson
 
   const [firstName, setFirstName] = useState('')
-  const [lastName, setLastName] = useState('')
+  const [lastName, setLastName] = useState(prefill?.parentLastName ?? '')
   const [email, setEmail] = useState('')
   const [emailConfirm, setEmailConfirm] = useState('')
   const [phone, setPhone] = useState('')
-  const [childFirstName, setChildFirstName] = useState('')
+  const [childFirstName, setChildFirstName] = useState(prefill?.childFirstName ?? '')
   const [childLastName, setChildLastName] = useState('')
   const [birthDate, setBirthDate] = useState('')
-  const [diagnosis, setDiagnosis] = useState<Diagnosis>('ADHD')
+  const [diagnosis, setDiagnosis] = useState<Diagnosis>(prefill?.diagnosis ?? 'ADHD')
   const [severity, setSeverity] = useState<1 | 2 | 3>(1)
   const [notes, setNotes] = useState('')
 
@@ -44,6 +63,16 @@ export default function AddInPersonClientForm({ onClose, onCreated }: {
   const [created, setCreated] = useState<Created | null>(null)
 
   const emailsMatch = email.trim().toLowerCase() === emailConfirm.trim().toLowerCase()
+
+  // The birth date is deliberately not prefilled from the age entered during the
+  // assessment — a guessed 1 January would silently put the child in the wrong
+  // age band later. Instead the two are cross-checked and a mismatch is flagged.
+  const ageFromBirth = birthDate && !Number.isNaN(Date.parse(birthDate))
+    ? Math.floor((Date.now() - new Date(birthDate).getTime()) / (1000 * 60 * 60 * 24 * 365.25))
+    : null
+  const ageMismatch =
+    prefill?.childAgeYears != null && ageFromBirth != null &&
+    Math.abs(ageFromBirth - prefill.childAgeYears) > 1
   const canSubmit =
     firstName.trim() && lastName.trim() && email.trim() && emailsMatch &&
     childFirstName.trim() && birthDate && !saving
@@ -74,8 +103,15 @@ export default function AddInPersonClientForm({ onClose, onCreated }: {
         setError(data.error || 'تعذّر إنشاء الحساب')
         return
       }
-      setCreated({ parentId: data.parent.id, childName: data.student.firstName })
       onCreated?.()
+      if (onLinked) {
+        // Attaching to work already open — hand the records back and get out of
+        // the way rather than inviting the specialist to navigate elsewhere.
+        onLinked(data.parent, data.student)
+        onClose()
+        return
+      }
+      setCreated({ parentId: data.parent.id, childName: data.student.firstName })
       router.refresh()
     } catch {
       setError('تعذّر الاتصال بالخادم')
@@ -177,9 +213,18 @@ export default function AddInPersonClientForm({ onClose, onCreated }: {
                 </div>
                 <div>
                   <label className={label} htmlFor="ip-birth">{t.birthDate}</label>
-                  <input id="ip-birth" type="date" className={field} value={birthDate}
+                  <input id="ip-birth" type="date"
+                    className={`${field} ${ageMismatch ? 'border-amber-300 ring-1 ring-amber-200' : ''}`}
+                    value={birthDate}
                     max={new Date().toISOString().slice(0, 10)}
                     onChange={e => setBirthDate(e.target.value)} />
+                  {prefill?.childAgeYears != null && (
+                    <p className={`text-[11px] mt-1 ${ageMismatch ? 'text-amber-700 font-bold' : 'text-gray-400'}`}>
+                      {ageMismatch
+                        ? t.ageMismatch(prefill.childAgeYears, ageFromBirth ?? 0)
+                        : t.ageFromAssessment(prefill.childAgeYears)}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className={label} htmlFor="ip-diag">{t.diagnosis}</label>

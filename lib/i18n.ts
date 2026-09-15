@@ -1191,6 +1191,7 @@ export const tr = {
         autism:    { label: 'طيف التوحد', desc: 'تشخيص مؤكد أو مشتبه به من طبيب أو ولي الأمر' },
         adhd:      { label: 'فرط الحركة والتشتت', desc: 'صعوبة في الانتباه، فرط حركة، أو اندفاعية' },
         learning:  { label: 'صعوبات تعلّم', desc: 'قراءة، كتابة، حساب، ذاكرة عمل أو سرعة معالجة' },
+        emotional: { label: 'مؤشرات انفعالية أو سلوكية', desc: 'حزن، قلق، انسحاب، تدنّي تقدير الذات، أو سلوك معارض' },
       },
       missingFieldsError: 'يرجى إدخال اسم الطفل وعمره واختيار مخاوف واحدة على الأقل',
       continueButton: 'التالي: اختيار المقاييس',
@@ -1309,6 +1310,10 @@ export const tr = {
         ],
         learning: [
           'ابدأ بمهمة يستطيع الطفل النجاح فيها لبناء الثقة قبل عرض مهمة قد تثير إحباطه.',
+        ],
+        emotional: [
+          'بنود الحالة الانفعالية تصف ما يحدث في البيت — دع ولي الأمر يجيب عنها بنفسه، فلن ترى معظمها في حصة واحدة.',
+          'لا تقرأ البنود بنبرة قلقة؛ اسأل بحياد حتى لا تدفع الإجابة في اتجاه معيّن.',
         ],
       },
       redFlagsTitle: 'نقاط تستدعي انتباهاً خاصاً',
@@ -2475,6 +2480,7 @@ export const tr = {
         autism:    { label: 'Autism spectrum', desc: 'Confirmed or suspected diagnosis from a doctor or parent' },
         adhd:      { label: 'Hyperactivity & distraction', desc: 'Attention difficulty, hyperactivity, or impulsivity' },
         learning:  { label: 'Learning difficulties', desc: 'Reading, writing, math, working memory, or processing speed' },
+        emotional: { label: 'Emotional or behavioural signs', desc: 'Sadness, worry, withdrawal, low self-worth, or oppositional behaviour' },
       },
       missingFieldsError: "Please enter the child's name, age, and select at least one concern",
       continueButton: 'Next: select scales',
@@ -2593,6 +2599,10 @@ export const tr = {
         ],
         learning: [
           'Start with a task the child can succeed at to build confidence before one that may frustrate them.',
+        ],
+        emotional: [
+          'The emotional items describe what happens at home — have the parent answer them; you will not see most of it in a single session.',
+          'Read them neutrally, not anxiously, so the answer is not nudged in either direction.',
         ],
       },
       redFlagsTitle: 'Points needing special attention',
@@ -3759,6 +3769,7 @@ export const tr = {
         autism:    { label: 'Trouble du spectre autistique', desc: 'Diagnostic confirmé ou suspecté par un médecin ou le parent' },
         adhd:      { label: 'Hyperactivité et distraction', desc: "Difficulté d'attention, hyperactivité ou impulsivité" },
         learning:  { label: "Difficultés d'apprentissage", desc: 'Lecture, écriture, calcul, mémoire de travail ou vitesse de traitement' },
+        emotional: { label: 'Signes émotionnels ou comportementaux', desc: "Tristesse, inquiétude, retrait, faible estime de soi ou comportement oppositionnel" },
       },
       missingFieldsError: "Veuillez saisir le nom et l'âge de l'enfant, et sélectionner au moins une préoccupation",
       continueButton: 'Suivant : choix des échelles',
@@ -3877,6 +3888,10 @@ export const tr = {
         ],
         learning: [
           "Commencez par une tâche que l'enfant peut réussir pour renforcer sa confiance avant une tâche pouvant le frustrer.",
+        ],
+        emotional: [
+          "Les items émotionnels décrivent ce qui se passe à la maison — laissez le parent y répondre ; vous n'en verrez pas la plupart en une seule séance.",
+          "Lisez-les de façon neutre, sans inquiétude, pour ne pas orienter la réponse.",
         ],
       },
       redFlagsTitle: 'Points nécessitant une attention particulière',

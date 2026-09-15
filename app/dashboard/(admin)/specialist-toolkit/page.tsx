@@ -26,7 +26,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { ACountUp } from '@/components/ui'
 import { staggerContainer, fadeUp, popIn, liftHover, tapOnly } from '@/lib/motion'
 
-type ConcernKey = 'autism' | 'adhd' | 'learning'
+type ConcernKey = 'autism' | 'adhd' | 'learning' | 'emotional'
 type ScaleKey = 'autism' | 'adhd' | 'attention-domains' | 'learning-difficulties' | 'psc17'
 type Step = 'info' | 'battery' | 'running' | 'tasks' | 'report'
 type ScaleSource = 'observation' | 'parentReport' | 'both'
@@ -39,6 +39,10 @@ const SCALE_ORDER: ScaleKey[] = ['autism', 'adhd', 'psc17', 'learning-difficulti
 
 const CONCERN_TO_SCALE: Record<ConcernKey, ScaleKey> = {
   autism: 'autism', adhd: 'adhd', learning: 'learning-difficulties',
+  // The only route to PSC-17. Without a concern pointing at it the scale sat in
+  // the battery list unreachable from the first screen, so nothing told the
+  // specialist the emotional dimension could be screened at all.
+  emotional: 'psc17',
 }
 
 const SCALE_DURATION: Record<ScaleKey, number> = {
@@ -1010,7 +1014,7 @@ export default function SpecialistToolkitPage() {
           <div>
             <label className="block text-xs font-bold text-gray-500 mb-2">{t.concernsLabel}</label>
             <motion.div className="grid grid-cols-1 sm:grid-cols-2 gap-3" variants={staggerContainer} initial="hidden" animate="show">
-              {(['autism', 'adhd', 'learning'] as ConcernKey[]).map(c => (
+              {(['autism', 'adhd', 'learning', 'emotional'] as ConcernKey[]).map(c => (
                 <motion.button key={c} variants={popIn} {...liftHover} type="button" onClick={() => toggleConcern(c)}
                   className={`text-right p-3.5 rounded-xl border-2 transition-all ${
                     concerns.has(c) ? 'border-teal-400 bg-teal-50' : 'border-gray-200 bg-gray-50 hover:border-gray-300'

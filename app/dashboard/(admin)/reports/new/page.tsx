@@ -253,8 +253,16 @@ export default function NewReportPage() {
         }),
       })
       if (res.ok) {
-        toast('تم حفظ التقرير بنجاح ✓', 'success')
-        setTimeout(() => router.push('/dashboard/reports'), 800)
+        // Say whether the family was actually emailed. A silent failure here
+        // leaves the specialist believing the family was told when they were
+        // not — the exact confusion that sent them hunting for a missing email.
+        const d = await res.json().catch(() => ({}))
+        if (d.notified) {
+          toast('تم حفظ التقرير وإرسال إشعار للعائلة ✓', 'success')
+        } else {
+          toast('حُفظ التقرير ✓ — لكن لم يُرسَل إشعار بالبريد. تحقّق من إعداد البريد في الإعدادات.', 'info')
+        }
+        setTimeout(() => router.push('/dashboard/reports'), 1600)
       } else {
         const d = await res.json()
         toast(d.error || 'حدث خطأ أثناء الحفظ', 'error')

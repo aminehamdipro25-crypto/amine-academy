@@ -8,10 +8,11 @@ import { ageYearsFromBirthDate } from '@/lib/age'
 import {
   PersonStanding, ArrowRight, ArrowLeft, Printer, RotateCcw,
   CheckCircle2, Sparkles, ClipboardList, Save, Clock, TimerReset, AlertTriangle, CalendarClock,
-  Brain, Activity, Eye, BookOpen, Wand2, HeartHandshake,
+  Brain, Activity, Eye, BookOpen, Wand2, HeartHandshake, HeartPulse,
 } from 'lucide-react'
 import AddInPersonClientForm from '@/components/dashboard/AddInPersonClientForm'
 import ADHDScale from '@/components/session/assessments/ADHDScale'
+import Psc17Scale from '@/components/session/assessments/Psc17Scale'
 import AttentionDomainsScale from '@/components/session/assessments/AttentionDomainsScale'
 import LearningDifficultiesScale from '@/components/session/assessments/LearningDifficultiesScale'
 import AutismScale from '@/components/session/assessments/AutismScale'
@@ -26,7 +27,7 @@ import { ACountUp } from '@/components/ui'
 import { staggerContainer, fadeUp, popIn, liftHover, tapOnly } from '@/lib/motion'
 
 type ConcernKey = 'autism' | 'adhd' | 'learning'
-type ScaleKey = 'autism' | 'adhd' | 'attention-domains' | 'learning-difficulties'
+type ScaleKey = 'autism' | 'adhd' | 'attention-domains' | 'learning-difficulties' | 'psc17'
 type Step = 'info' | 'battery' | 'running' | 'tasks' | 'report'
 type ScaleSource = 'observation' | 'parentReport' | 'both'
 
@@ -34,14 +35,14 @@ type ScaleSource = 'observation' | 'parentReport' | 'both'
 // same construct as the ADHD scale but with unvalidated items, while ADHDScale
 // carries the actual DSM-5 criteria. It stays in the maps below (and in the
 // report reader) so assessments already saved under that type still render.
-const SCALE_ORDER: ScaleKey[] = ['autism', 'adhd', 'learning-difficulties']
+const SCALE_ORDER: ScaleKey[] = ['autism', 'adhd', 'psc17', 'learning-difficulties']
 
 const CONCERN_TO_SCALE: Record<ConcernKey, ScaleKey> = {
   autism: 'autism', adhd: 'adhd', learning: 'learning-difficulties',
 }
 
 const SCALE_DURATION: Record<ScaleKey, number> = {
-  autism: 12, adhd: 10, 'attention-domains': 12, 'learning-difficulties': 12,
+  autism: 12, adhd: 10, 'attention-domains': 12, 'learning-difficulties': 12, psc17: 6,
 }
 
 const SCALE_COMPONENT: Record<ScaleKey, React.ComponentType<{
@@ -56,6 +57,7 @@ const SCALE_COMPONENT: Record<ScaleKey, React.ComponentType<{
   adhd: ADHDScale,
   'attention-domains': AttentionDomainsScale,
   'learning-difficulties': LearningDifficultiesScale,
+  psc17: Psc17Scale,
 }
 
 const TASK_COMPONENT: Record<string, React.ComponentType<{
@@ -90,6 +92,7 @@ const SCALE_ICON: Record<ScaleKey, React.ComponentType<{ className?: string }>> 
   adhd: Activity,
   'attention-domains': Eye,
   'learning-difficulties': BookOpen,
+  psc17: HeartPulse,
 }
 
 // Printed on the report next to each scale, so the specialist — and anyone the
@@ -112,6 +115,7 @@ const SCALE_PROVENANCE: Record<ScaleKey, string> = {
   autism: 'قائمة فرز مبنية على مجالات DSM-5 · غير معيارية — الشدة مؤشر داخلي لا تصنيف سريري',
   'learning-difficulties': 'قائمة فرز استرشادية · التشخيص الرسمي يتطلب اختبارات تحصيل معيارية',
   'attention-domains': 'قائمة ملاحظة استرشادية (لم تعد تُستخدم — محفوظة للسجلات السابقة)',
+  psc17: 'PSC-17 — مقياس فرز منشور ومجاني · عتبات Gardner وزملائه (1999) · الصياغة الإنجليزية هي الأصل والعربية ترجمة عمل',
 }
 
 function localeFor(lang: Lang) {

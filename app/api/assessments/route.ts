@@ -5,7 +5,7 @@ import type { AssessmentResult } from '@/lib/types'
 
 export const runtime = 'nodejs'
 
-const VALID_TYPES = ['adhd', 'autism', 'learning-difficulties', 'anxiety', 'behavior', 'attention-domains', 'motor', 'cognitive']
+const VALID_TYPES = ['adhd', 'autism', 'learning-difficulties', 'anxiety', 'behavior', 'attention-domains', 'motor', 'cognitive', 'psc17']
 const VALID_SEVERITIES = ['none', 'mild', 'moderate', 'severe']
 
 async function requireAdmin(): Promise<boolean> {

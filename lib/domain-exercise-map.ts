@@ -24,6 +24,14 @@ const DOMAIN_CATEGORY_MAP: Record<AssessmentType, Record<string, ExerciseCategor
     flexibility: ['balance'],
     selfRegulation: ['sensory', 'balance'],
   },
+  psc17: {
+    // The internalising subscale is deliberately mapped to calming/regulation
+    // work only. No exercise in this catalogue treats low mood or hopelessness,
+    // and suggesting one would imply the platform can — it cannot.
+    internalising: ['sensory', 'balance'],
+    attention: ['focus'],
+    externalising: ['focus', 'social'],
+  },
   'attention-domains': {
     sustained: ['focus'],
     selective: ['focus'],

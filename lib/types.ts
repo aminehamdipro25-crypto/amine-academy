@@ -340,7 +340,7 @@ export interface SessionLog {
   createdAt:       string
 }
 
-export type AssessmentType = 'adhd' | 'autism' | 'learning-difficulties' | 'motor' | 'cognitive' | 'attention-domains' | 'vanderbilt-adhd'
+export type AssessmentType = 'adhd' | 'autism' | 'learning-difficulties' | 'motor' | 'cognitive' | 'attention-domains' | 'vanderbilt-adhd' | 'psc17'
 
 export interface AssessmentAnswer {
   itemId:  string

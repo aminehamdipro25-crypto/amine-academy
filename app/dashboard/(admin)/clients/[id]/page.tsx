@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
+import StudentProfileEditor from '@/components/dashboard/StudentProfileEditor'
 import { useParams, useRouter } from 'next/navigation'
 import {
   ArrowRight, Mail, Phone, MapPin, Calendar, CheckCircle, Clock, XCircle,
@@ -7,7 +8,7 @@ import {
   PauseCircle, Trash2, LogIn, RotateCcw, ExternalLink, Eye, EyeOff, Lock,
   ChevronDown, ChevronUp, ClipboardList,
 } from 'lucide-react'
-import type { Parent, Student, Appointment, SessionLog, StudentAssessmentProfile, DifficultyLevel, Program, AssessmentResult } from '@/lib/types'
+import type { Parent, Student, Appointment, SessionLog, StudentAssessmentProfile, DifficultyLevel, Program, AssessmentResult, Diagnosis } from '@/lib/types'
 import { DIFFICULTY_LABELS_AR } from '@/lib/game-mapping'
 import AIPatternAnalysis from '@/components/dashboard/AIPatternAnalysis'
 import { useLang, tr, type Lang } from '@/lib/i18n'
@@ -640,6 +641,20 @@ export default function ClientDetailPage() {
                             <span>{t.diagnosisLabels[s.diagnosis as keyof typeof t.diagnosisLabels] || s.diagnosis}</span>
                             <span>•</span>
                             <span>{t.severityLabels[s.severityLevel as keyof typeof t.severityLabels] || s.severityLevel}</span>
+                          </div>
+                          {/* Both were recorded at intake, before any scale was run —
+                              this is how they get corrected once the assessment says
+                              something. */}
+                          <div className="mt-1">
+                            <StudentProfileEditor
+                              studentId={s.id}
+                              diagnosis={s.diagnosis}
+                              severityLevel={s.severityLevel}
+                              onSaved={(next: { diagnosis: Diagnosis; severityLevel: 1 | 2 | 3 }) => setData(prev => prev && ({
+                                ...prev,
+                                students: prev.students.map(x => x.id === s.id ? { ...x, ...next } : x),
+                              }))}
+                            />
                           </div>
                         </div>
                       </div>

@@ -15,7 +15,9 @@ import { useLang, tr } from '@/lib/i18n'
 import { ageYearsFromBirthDate } from '@/lib/age'
 import type { Diagnosis } from '@/lib/types'
 
-const DIAGNOSES: Diagnosis[] = ['ADHD', 'AUTISM', 'ADHD+AUTISM', 'OTHER']
+// 'OTHER' leads deliberately: this is filled in before any scale has been run,
+// so "not determined yet" must be the path of least resistance, not a diagnosis.
+const DIAGNOSES: Diagnosis[] = ['OTHER', 'ADHD', 'AUTISM', 'ADHD+AUTISM']
 
 interface Created { parentId: string; childName: string }
 
@@ -57,7 +59,9 @@ export default function AddInPersonClientForm({ onClose, onCreated, prefill, onL
   const [childFirstName, setChildFirstName] = useState(prefill?.childFirstName ?? '')
   const [childLastName, setChildLastName] = useState('')
   const [birthDate, setBirthDate] = useState(prefill?.childBirthDate ?? '')
-  const [diagnosis, setDiagnosis] = useState<Diagnosis>(prefill?.diagnosis ?? 'ADHD')
+  // Defaults to OTHER — "not determined yet". Anything else would be a claim the
+  // specialist has not made, recorded before a single scale has been run.
+  const [diagnosis, setDiagnosis] = useState<Diagnosis>(prefill?.diagnosis ?? 'OTHER')
   const [severity, setSeverity] = useState<1 | 2 | 3>(1)
   const [notes, setNotes] = useState('')
 
@@ -81,7 +85,7 @@ export default function AddInPersonClientForm({ onClose, onCreated, prefill, onL
   function reset() {
     setFirstName(''); setLastName(''); setEmail(''); setEmailConfirm(''); setPhone('')
     setChildFirstName(''); setChildLastName(''); setBirthDate('')
-    setDiagnosis('ADHD'); setSeverity(1); setNotes('')
+    setDiagnosis('OTHER'); setSeverity(1); setNotes('')
     setError(''); setCreated(null)
   }
 
@@ -230,11 +234,15 @@ export default function AddInPersonClientForm({ onClose, onCreated, prefill, onL
                 <div>
                   <label className={label} htmlFor="ip-diag">{t.diagnosis}</label>
                   <select id="ip-diag" className={field} value={diagnosis} onChange={e => setDiagnosis(e.target.value as Diagnosis)}>
-                    {DIAGNOSES.map(d => <option key={d} value={d}>{d}</option>)}
+                    {DIAGNOSES.map(d => (
+                      <option key={d} value={d}>{t.diagnosisOptions[d as keyof typeof t.diagnosisOptions] ?? d}</option>
+                    ))}
                   </select>
+                  <p className="text-[11px] text-gray-400 mt-1 leading-relaxed">{t.diagnosisHint}</p>
                 </div>
                 <div className="md:col-span-2">
                   <label className={label}>{t.severity}</label>
+                  <p className="text-[11px] text-gray-400 mb-2 leading-relaxed">{t.severityHint}</p>
                   <div className="flex gap-2">
                     {([1, 2, 3] as const).map(n => (
                       <button key={n} type="button" onClick={() => setSeverity(n)}

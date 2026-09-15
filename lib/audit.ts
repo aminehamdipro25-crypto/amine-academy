@@ -15,6 +15,7 @@ export type AuditAction =
   | 'treatment_plan_save'
   | 'apa_session_record'
   | 'client_create'
+  | 'student_profile_update'
 
 export interface AuditEntry {
   id:       string

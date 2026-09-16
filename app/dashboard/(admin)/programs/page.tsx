@@ -248,7 +248,7 @@ export default function ProgramsPage() {
             <Calendar className="w-4 h-4 text-brand-500" />
             الجدول الأسبوعي
           </h2>
-          <span className="text-xs text-gray-500 bg-brand-50 text-brand-600 font-bold px-2 py-1 rounded-full ltr-num">
+          <span className="text-xs text-gray-500 bg-brand-50 text-brand-600 font-bold px-2 py-1 rounded-full">
             <ACountUp value={totalAssigned} /> تمرين محدد
           </span>
         </div>
@@ -276,7 +276,7 @@ export default function ProgramsPage() {
                   <div className="flex items-center gap-3">
                     <span className="font-bold text-gray-900 text-sm">{DAYS_AR[day]}</span>
                     {dayExs.length > 0 && (
-                      <span className="text-xs bg-brand-100 text-brand-700 font-black px-2 py-0.5 rounded-full ltr-num">
+                      <span className="text-xs bg-brand-100 text-brand-700 font-black px-2 py-0.5 rounded-full">
                         <ACountUp value={dayExs.length} /> تمارين
                       </span>
                     )}
@@ -333,7 +333,7 @@ export default function ProgramsPage() {
                                 <div className="flex-1 min-w-0">
                                   <div className="text-xs font-bold text-gray-900 truncate">{ex.titleAr || ex.title}</div>
                                   <div className="flex items-center gap-2 mt-0.5">
-                                    <span className="text-[10px] text-gray-400 ltr-num">{ex.durationMinutes}د</span>
+                                    <span className="text-[10px] text-gray-400">{ex.durationMinutes}د</span>
                                     <span className="text-[10px] text-amber-500">⭐ {ex.points}</span>
                                   </div>
                                 </div>

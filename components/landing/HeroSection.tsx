@@ -127,7 +127,7 @@ function DashboardVisual() {
         <span className="text-xl">⭐</span>
         <div>
           <p className="text-[11px] font-black text-slate-800 leading-none">نجوم اليوم</p>
-          <p className="text-[10px] text-amber-600 font-bold mt-0.5 ltr-num">+6 نجوم</p>
+          <p className="text-[10px] text-amber-600 font-bold mt-0.5">+6 نجوم</p>
         </div>
       </div>
     </div>

@@ -604,10 +604,10 @@ export default function AdminSettingsPage() {
               />
               <p className="text-xs text-gray-400">
                 سعر الحصة الواحدة:{' '}
-                <span className="font-black text-brand-600 ltr-num">
+                <span className="font-black text-brand-600">
                   {Math.round((settings.prices as Record<PlanKey, { QAR: number; TND: number }>).weekly?.QAR / (settings.sessionsPerWeek ?? 4))} ر.ق
                 </span>{' / '}
-                <span className="font-black text-brand-600 ltr-num">
+                <span className="font-black text-brand-600">
                   {Math.round((settings.prices as Record<PlanKey, { QAR: number; TND: number }>).weekly?.TND / (settings.sessionsPerWeek ?? 4))} د.ت
                 </span>
               </p>
@@ -625,10 +625,10 @@ export default function AdminSettingsPage() {
               />
               <p className="text-xs text-gray-400">
                 سعر الحصة الواحدة:{' '}
-                <span className="font-black text-brand-600 ltr-num">
+                <span className="font-black text-brand-600">
                   {Math.round((settings.prices as Record<PlanKey, { QAR: number; TND: number }>).monthly?.QAR / (settings.sessionsPerMonth ?? 16))} ر.ق
                 </span>{' / '}
-                <span className="font-black text-brand-600 ltr-num">
+                <span className="font-black text-brand-600">
                   {Math.round((settings.prices as Record<PlanKey, { QAR: number; TND: number }>).monthly?.TND / (settings.sessionsPerMonth ?? 16))} د.ت
                 </span>
               </p>

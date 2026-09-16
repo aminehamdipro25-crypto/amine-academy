@@ -132,7 +132,7 @@ export default function ExerciseConfigModal({
             {(gameUsageCounts[exerciseConfigId] ?? 0) > 0 && sessionResults.length === 0 && (
               <div className="col-span-2 bg-surface-page rounded-xl p-3 flex items-center justify-between">
                 <span className="text-gray-400 text-xs">الجلسات السابقة</span>
-                <span className="text-brand-600 font-black text-sm ltr-num">{gameUsageCounts[exerciseConfigId]} مرة</span>
+                <span className="text-brand-600 font-black text-sm">{gameUsageCounts[exerciseConfigId]} مرة</span>
               </div>
             )}
           </div>

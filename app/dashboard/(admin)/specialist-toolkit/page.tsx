@@ -304,6 +304,7 @@ export default function SpecialistToolkitPage() {
   const [pendingDraft, setPendingDraft] = useState<Draft | null>(null)
   const [lastSavedAt, setLastSavedAt] = useState<number | null>(null)
   const [confirmReset, setConfirmReset] = useState(false)
+  const [confirmRerun, setConfirmRerun] = useState(false)
 
   useEffect(() => {
     try {
@@ -593,6 +594,18 @@ export default function SpecialistToolkitPage() {
       setError(t.noScalesSelectedError)
       return
     }
+    // This wipes every completed scale. It used to be unreachable once the run
+    // had finished; now that the steps are navigable, a specialist coming back
+    // to add one more scale would land on this button and lose the lot without
+    // being told. Ask first.
+    if (results.length > 0) {
+      setConfirmRerun(true)
+      return
+    }
+    doStartRun()
+  }
+
+  function doStartRun() {
     setError('')
     const order = SCALE_ORDER.filter(s => selectedScales.has(s))
     setRunOrder(order)
@@ -833,18 +846,46 @@ export default function SpecialistToolkitPage() {
           </div>
         </div>
 
-        {/* Step indicator */}
+        {/* Step indicator.
+            This used to be inert decoration: plain spans with no onClick. Once
+            the report was reached there was no route back to the child's data
+            or the scale list — the only control on that screen that changes
+            anything is "تقييم جديد", which erases the whole assessment. A
+            specialist who noticed a wrong name had to destroy the work and
+            redo it. The steps are buttons now, for the ones that are safe to
+            re-enter: 'running' is excluded because currentIndex has already
+            walked past the end of runOrder by the time the report exists. */}
         <div className="flex items-center gap-2 mt-5 text-xs font-bold">
-          {(['info', 'battery', 'running', 'tasks', 'report'] as Step[]).map((s, i) => (
-            <div key={s} className="flex items-center gap-2">
-              <motion.span layout transition={{ type: 'spring', stiffness: 400, damping: 32 }}
-                className={`w-6 h-6 rounded-full flex items-center justify-center ltr-num ${
-                step === s ? 'bg-teal-600 text-white' : 'bg-gray-100 text-white'
-              }`}>{i + 1}</motion.span>
-              <span className={step === s ? 'text-teal-700' : 'text-gray-400'}>{t.steps[s]}</span>
-              {i < 4 && <span className="w-4 h-px bg-gray-200 mx-1" />}
-            </div>
-          ))}
+          {(['info', 'battery', 'running', 'tasks', 'report'] as Step[]).map((s, i) => {
+            const reachable =
+              s === step ||
+              (s === 'info') ||
+              (s === 'battery') ||
+              (s === 'tasks'   && runOrder.length > 0) ||
+              (s === 'report'  && results.length > 0)
+            return (
+              <div key={s} className="flex items-center gap-2">
+                <button
+                  type="button"
+                  disabled={!reachable}
+                  onClick={() => reachable && setStep(s)}
+                  aria-current={step === s ? 'step' : undefined}
+                  className={`flex items-center gap-2 rounded-full transition-opacity ${
+                    reachable && s !== step ? 'hover:opacity-70 cursor-pointer' : ''
+                  } ${!reachable ? 'cursor-default' : ''}`}
+                >
+                  <motion.span layout transition={{ type: 'spring', stiffness: 400, damping: 32 }}
+                    className={`w-6 h-6 rounded-full flex items-center justify-center ltr-num ${
+                    step === s ? 'bg-teal-600 text-white' : 'bg-gray-100 text-white'
+                  }`}>{i + 1}</motion.span>
+                  <span className={step === s ? 'text-teal-700' : reachable ? 'text-gray-500' : 'text-gray-400'}>
+                    {t.steps[s]}
+                  </span>
+                </button>
+                {i < 4 && <span className="w-4 h-px bg-gray-200 mx-1" />}
+              </div>
+            )
+          })}
         </div>
 
         {lastSavedAt && step !== 'info' && (
@@ -1846,6 +1887,18 @@ export default function SpecialistToolkitPage() {
         dir={lang === 'ar' ? 'rtl' : 'ltr'}
         onConfirm={() => { setConfirmReset(false); resetAll() }}
         onCancel={() => setConfirmReset(false)}
+      />
+
+      <ConfirmDialog
+        open={confirmRerun}
+        title={t.rerunConfirmTitle}
+        message={t.rerunConfirmMessage}
+        confirmLabel={t.rerunConfirmButton}
+        cancelLabel={t.cancelButton}
+        confirmClass="bg-teal-600 hover:bg-teal-700"
+        dir={lang === 'ar' ? 'rtl' : 'ltr'}
+        onConfirm={() => { setConfirmRerun(false); doStartRun() }}
+        onCancel={() => setConfirmRerun(false)}
       />
 
       {showCreateChild && (

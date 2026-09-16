@@ -63,7 +63,7 @@ export default function SessionPhaseBar({
                   {ph.label}
                 </span>
                 {isActive && (
-                  <span className="text-[9px] mr-auto ltr-num" style={{ color: `${ph.color}99` }}>
+                  <span className="text-[9px] mr-auto" style={{ color: `${ph.color}99` }}>
                     {formatTime(phaseElapsed)}/{phaseDurations[i]}د
                   </span>
                 )}

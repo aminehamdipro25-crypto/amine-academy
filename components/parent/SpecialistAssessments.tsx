@@ -200,7 +200,12 @@ export default function SpecialistAssessments({ assessments }: { assessments: Pa
 
               <div className="flex-1 min-w-0">
                 <p className="font-black text-sm text-gray-900 truncate">{scaleNames[a.type] ?? a.type}</p>
-                <p className="text-xs text-gray-400 mt-0.5 ltr-num">
+                {/* No ltr-num here. It sets direction:ltr, which moves a leading
+                    number to the END of an Arabic line: "16 سبتمبر 2026 · الأستاذ
+                    أمين" rendered as "سبتمبر 2026 · الأستاذ أمين 16". The digits
+                    are already Latin via the ar-u-nu-latn locale, so the RTL
+                    paragraph lays this out correctly on its own. */}
+                <p className="text-xs text-gray-400 mt-0.5">
                   {formatDateOnly(a.completedAt, locale, { year: 'numeric', month: 'long', day: 'numeric' })}
                   {a.assessedByName ? ` · ${a.assessedByName}` : ''}
                 </p>
@@ -268,10 +273,10 @@ export default function SpecialistAssessments({ assessments }: { assessments: Pa
                 {a.recommendedPlan && (
                   <div className="rounded-2xl p-4" style={{ background: '#F0FDFA', border: '1px solid #CCFBF1' }}>
                     <p className="text-xs font-black mb-2" style={{ color: '#0F766E' }}>{c.planTitle}</p>
-                    <p className="text-sm text-gray-700 ltr-num">
+                    <p className="text-sm text-gray-700">
                       {c.planSessions(a.recommendedPlan.sessionsPerWeek, a.recommendedPlan.programWeeks)}
                     </p>
-                    <p className="text-xs text-gray-500 mt-1 ltr-num">{c.planReassess(a.recommendedPlan.reassessWeeks)}</p>
+                    <p className="text-xs text-gray-500 mt-1">{c.planReassess(a.recommendedPlan.reassessWeeks)}</p>
 
                     {a.recommendedPlan.targetDomains?.length > 0 && (
                       <div className="mt-3">

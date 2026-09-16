@@ -2303,9 +2303,9 @@ ${notes ? `
                               </div>
                               <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                                 <span className="text-gray-400 text-[10px]">{ex.category}</span>
-                                <span className="text-gray-300 text-[9px] ltr-num">{ex.ageMin}-{ex.ageMax}س</span>
+                                <span className="text-gray-300 text-[9px]">{ex.ageMin}-{ex.ageMax}س</span>
                                 {(gameUsageCounts[ex.id] ?? 0) > 0 && (
-                                  <span className="text-[9px] bg-surface-page text-gray-400 px-1 py-0.5 rounded-full font-bold ltr-num">
+                                  <span className="text-[9px] bg-surface-page text-gray-400 px-1 py-0.5 rounded-full font-bold">
                                     ×{gameUsageCounts[ex.id]} مرة
                                   </span>
                                 )}
@@ -4127,7 +4127,7 @@ ${notes ? `
             <span className="text-2xl">{phaseToast.icon}</span>
             <div>
               <div className="text-white font-black text-sm">مرحلة جديدة: {phaseToast.label}</div>
-              <div className="text-white/50 text-xs ltr-num">{phaseDurations[phaseIdx]} دقيقة</div>
+              <div className="text-white/50 text-xs">{phaseDurations[phaseIdx]} دقيقة</div>
             </div>
           </div>
         </div>

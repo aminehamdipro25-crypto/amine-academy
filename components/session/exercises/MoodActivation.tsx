@@ -157,7 +157,7 @@ export default function MoodActivation({ onComplete, onCancel, studentAge, seed,
                 className="flex flex-col items-center gap-2 p-4 rounded-2xl border border-white/15 bg-white/5 hover:bg-white/10 transition-colors">
                 <span className="text-3xl">{a.emoji}</span>
                 <span className="text-white text-sm font-bold text-center leading-snug">{a.label}</span>
-                <span className="text-gray-400 text-xs ltr-num">{a.minutes} دقيقة</span>
+                <span className="text-gray-400 text-xs">{a.minutes} دقيقة</span>
               </button>
             ))}
           </div>

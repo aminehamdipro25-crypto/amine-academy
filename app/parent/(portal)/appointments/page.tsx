@@ -367,8 +367,8 @@ export default function AppointmentsPage() {
               {/* Child selector */}
               {children.length > 1 && (
                 <div>
-                  <label className="text-xs font-bold text-gray-500 block mb-1">{t.childLabel}</label>
-                  <select
+                  <label className="text-xs font-bold text-gray-500 block mb-1" htmlFor="f-6a1253">{t.childLabel}</label>
+                  <select id="f-6a1253"
                     value={booking.studentId}
                     onChange={e => setBooking(b => ({ ...b, studentId: e.target.value }))}
                     className="w-full rounded-xl px-4 py-3 text-sm focus:outline-none"
@@ -385,7 +385,7 @@ export default function AppointmentsPage() {
 
               {/* Session type */}
               <div>
-                <label className="text-xs font-bold text-gray-500 block mb-1.5">{t.sessionTypeLabel}</label>
+                <label className="text-xs font-bold text-gray-500 block mb-1.5" htmlFor="f-82ede0">{t.sessionTypeLabel}</label>
                 <div className="grid grid-cols-2 gap-2">
                   {Object.entries(t.typeLabels).map(([val, label]) => (
                     <button
@@ -411,7 +411,7 @@ export default function AppointmentsPage() {
               {/* Date picker */}
               <div>
                 <label className="text-xs font-bold text-gray-500 block mb-1">{t.dateLabel}</label>
-                <input
+                <input id="f-82ede0"
                   type="date"
                   required
                   min={new Date().toISOString().split('T')[0]}
@@ -428,7 +428,7 @@ export default function AppointmentsPage() {
 
               {/* Visual slot picker */}
               <div>
-                <label className="text-xs font-bold text-gray-500 block mb-2">{t.preferredTimeLabel}</label>
+                <label className="text-xs font-bold text-gray-500 block mb-2" htmlFor="f-089426">{t.preferredTimeLabel}</label>
                 {loadingSlots ? (
                   <div className="flex items-center justify-center py-6 rounded-2xl" style={{ background: '#F9FAFB' }}>
                     <div className="w-5 h-5 rounded-full border-2 border-violet-400 border-t-transparent animate-spin" />
@@ -473,7 +473,7 @@ export default function AppointmentsPage() {
               {/* Notes */}
               <div>
                 <label className="text-xs font-bold text-gray-500 block mb-1">{t.notesLabel}</label>
-                <textarea
+                <textarea id="f-089426"
                   rows={2}
                   value={booking.notes}
                   onChange={e => setBooking(b => ({ ...b, notes: e.target.value }))}

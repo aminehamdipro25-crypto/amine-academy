@@ -238,8 +238,8 @@ export default function AccountPage() {
             /* ── Edit form ── */
             <div className="space-y-3 mt-3">
               <div>
-                <label className="block text-xs font-bold text-gray-500 mb-1">الاسم الأول</label>
-                <input
+                <label className="block text-xs font-bold text-gray-500 mb-1" htmlFor="f-ae3d82">الاسم الأول</label>
+                <input id="f-ae3d82"
                   type="text"
                   value={editFirstName}
                   onChange={e => setEditFirstName(e.target.value)}
@@ -251,8 +251,8 @@ export default function AccountPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-gray-500 mb-1">اسم العائلة</label>
-                <input
+                <label className="block text-xs font-bold text-gray-500 mb-1" htmlFor="f-d46b2a">اسم العائلة</label>
+                <input id="f-d46b2a"
                   type="text"
                   value={editLastName}
                   onChange={e => setEditLastName(e.target.value)}
@@ -264,7 +264,7 @@ export default function AccountPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-gray-500 mb-1">رقم الهاتف</label>
+                <label className="block text-xs font-bold text-gray-500 mb-1" htmlFor="f-4a2d2a">رقم الهاتف</label>
                 <div
                   className="flex items-center gap-2 px-3 py-2.5 rounded-xl"
                   style={{ border: '1.5px solid #E0D0FF', background: '#FAFAFE' }}
@@ -397,7 +397,7 @@ export default function AccountPage() {
           <label className="block text-gray-700 text-xs font-black mb-2">
             لتأكيد الحذف، اكتب <span className="font-mono font-black text-red-600 bg-red-50 px-1.5 py-0.5 rounded">DELETE</span> في الحقل أدناه:
           </label>
-          <input
+          <input id="f-4a2d2a"
             type="text"
             value={confirmInput}
             onChange={e => { setConfirmInput(e.target.value); setDeleteError('') }}

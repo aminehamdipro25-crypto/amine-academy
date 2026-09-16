@@ -45,7 +45,7 @@ function Field({
 }) {
   return (
     <div>
-      <label className="block text-sm font-bold text-gray-700 mb-1.5">
+      <label className="block text-sm font-bold text-gray-700 mb-1.5" htmlFor="f-0de5f4">
         {label}{required && <span className="text-red-500 mr-1">*</span>}
       </label>
       {children}
@@ -497,7 +497,7 @@ function RegisterForm() {
               </div>
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">اليوم المفضّل</label>
-                <input
+                <input id="f-0de5f4"
                   type="date"
                   value={preferredDate}
                   min={new Date(Date.now() + 86400000).toISOString().slice(0, 10)}

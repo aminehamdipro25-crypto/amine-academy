@@ -456,11 +456,11 @@ function CheckoutForm() {
                   <form onSubmit={(e) => { e.preventDefault(); if (name && email && phone) setStep(3) }}>
                     <div className="space-y-4">
                       <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1.5">
+                        <label className="block text-sm font-bold text-gray-700 mb-1.5" htmlFor="f-db2e51">
                           <User className="w-4 h-4 inline ml-1" />
                           الاسم الكامل
                         </label>
-                        <input
+                        <input id="f-db2e51"
                           type="text"
                           value={name}
                           onChange={e => setName(e.target.value)}
@@ -470,11 +470,11 @@ function CheckoutForm() {
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1.5">
+                        <label className="block text-sm font-bold text-gray-700 mb-1.5" htmlFor="f-61ef09">
                           <Mail className="w-4 h-4 inline ml-1" />
                           البريد الإلكتروني
                         </label>
-                        <input
+                        <input id="f-61ef09"
                           type="email"
                           value={email}
                           onChange={e => setEmail(e.target.value)}
@@ -485,11 +485,11 @@ function CheckoutForm() {
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1.5">
+                        <label className="block text-sm font-bold text-gray-700 mb-1.5" htmlFor="f-a4f83a">
                           <Phone className="w-4 h-4 inline ml-1" />
                           رقم الهاتف / واتساب
                         </label>
-                        <input
+                        <input id="f-a4f83a"
                           type="tel"
                           value={phone}
                           onChange={e => setPhone(e.target.value)}

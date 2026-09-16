@@ -1,6 +1,7 @@
 'use client'
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import React from 'react'
+import { writeStorageJson } from './safe-storage'
 
 const STORAGE_KEY = 'aa_a11y'
 
@@ -42,7 +43,7 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
   function setPref(key: keyof A11yPrefs, value: boolean) {
     setPrefs(prev => {
       const next = { ...prev, [key]: value }
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+      writeStorageJson(STORAGE_KEY, next)
       applyToDom(next)
       return next
     })

@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import type { ExerciseResult, ExerciseProgressUpdate } from '@/lib/types'
 import { createRng, shuffleWithRng, pickWithRng } from '@/lib/seeded-random'
+import { readStorage, writeStorage } from '@/lib/safe-storage'
 
 const EMOJI_SETS = [
   ['🦋','🌟','🐬','🌈','🎯','🍓','🦄','🎪','🌺','🏆','🎨','🎭'],
@@ -41,7 +42,7 @@ export default function MemoryCards({ onComplete, onCancel, difficulty = 1, seed
   const [previewing, setPreviewing]   = useState(true)
   const [speedMult, setSpeedMult]     = useState<number>(() => {
     if (typeof window === 'undefined') return 1
-    const saved = Number(localStorage.getItem('mc-preview-speed'))
+    const saved = Number(readStorage('mc-preview-speed'))
     return saved === 0.6 || saved === 1 || saved === 1.6 ? saved : 1
   })
 
@@ -72,7 +73,7 @@ export default function MemoryCards({ onComplete, onCancel, difficulty = 1, seed
 
   function setPreviewSpeed(m: number) {
     setSpeedMult(m)
-    localStorage.setItem('mc-preview-speed', String(m))
+    writeStorage('mc-preview-speed', String(m))
   }
 
   useEffect(() => {

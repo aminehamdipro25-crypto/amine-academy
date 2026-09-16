@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { isRateLimited, getClientIp } from '@/lib/rateLimit'
+import { sanitizeChatMessages, type ChatMessage } from '@/lib/chat-input'
 
 const SYSTEM_AR = `أنت مساعد ذكي لأكاديمية أمين الدولية للرياضة المعدلة وعلم النفس.
 
@@ -43,8 +44,6 @@ function fallback(lang?: string) {
   return 'للتواصل الفوري، راسلنا على واتساب.'
 }
 
-interface Message { role: 'user' | 'assistant'; content: string }
-
 export const runtime = 'nodejs'
 
 export async function POST(req: Request) {
@@ -59,7 +58,7 @@ export async function POST(req: Request) {
     })
   }
 
-  let messages: Message[] = []
+  let messages: ChatMessage[] = []
   let lang: string | undefined
   try {
     const body = await req.json()
@@ -69,9 +68,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ reply: 'حدث خطأ، حاول مجدداً.' })
   }
 
-  if (messages.length === 0 || messages.length > 10) {
+  const clean = sanitizeChatMessages(messages)
+  if (!clean) {
     return NextResponse.json({ reply: 'حدث خطأ، حاول مجدداً.' })
   }
+  messages = clean
 
   if (!process.env.ANTHROPIC_API_KEY) {
     return NextResponse.json({ reply: fallback(lang) })

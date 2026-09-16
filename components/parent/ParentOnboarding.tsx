@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import { useLang, tr } from '@/lib/i18n'
+import { readStorage, writeStorage } from '@/lib/safe-storage'
 
 const STORAGE_KEY = 'amine-academy:onboarding-done'
 
@@ -43,14 +44,14 @@ export default function ParentOnboarding() {
   const [step, setStep] = useState(0)
 
   useEffect(() => {
-    if (!localStorage.getItem(STORAGE_KEY)) {
+    if (!readStorage(STORAGE_KEY)) {
       const t = setTimeout(() => setShow(true), 1200)
       return () => clearTimeout(t)
     }
   }, [])
 
   function dismiss() {
-    localStorage.setItem(STORAGE_KEY, '1')
+    writeStorage(STORAGE_KEY, '1')
     setShow(false)
   }
 

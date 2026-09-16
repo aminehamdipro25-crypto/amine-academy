@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
+import { readStorage, writeStorage } from '@/lib/safe-storage'
 
 export default function TabletNotice() {
   const [visible, setVisible] = useState(false)
@@ -7,7 +8,7 @@ export default function TabletNotice() {
 
   useEffect(() => {
     // Only show on mobile screens (< 768px)
-    if (window.innerWidth < 768 && !sessionStorage.getItem('tablet-notice-dismissed')) {
+    if (window.innerWidth < 768 && !readStorage('tablet-notice-dismissed', 'session')) {
       const t = setTimeout(() => setVisible(true), 3000)
       return () => clearTimeout(t)
     }
@@ -15,7 +16,7 @@ export default function TabletNotice() {
 
   function dismiss() {
     setDismissed(true)
-    sessionStorage.setItem('tablet-notice-dismissed', '1')
+    writeStorage('tablet-notice-dismissed', '1', 'session')
     setTimeout(() => setVisible(false), 300)
   }
 

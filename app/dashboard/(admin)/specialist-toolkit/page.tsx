@@ -26,6 +26,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { ACountUp } from '@/components/ui'
 import { staggerContainer, fadeUp, popIn, liftHover, tapOnly } from '@/lib/motion'
 import { localeFor } from '@/lib/format'
+import { removeStorage } from '@/lib/safe-storage'
 
 type ConcernKey = 'autism' | 'adhd' | 'learning' | 'emotional'
 type ScaleKey = 'autism' | 'adhd' | 'attention-domains' | 'learning-difficulties' | 'psc17'
@@ -306,10 +307,10 @@ export default function SpecialistToolkitPage() {
       if (draft.name?.trim() || (draft.results?.length ?? 0) > 0) {
         setPendingDraft(draft)
       } else {
-        localStorage.removeItem(DRAFT_KEY)
+        removeStorage(DRAFT_KEY)
       }
     } catch {
-      localStorage.removeItem(DRAFT_KEY)
+      removeStorage(DRAFT_KEY)
     }
   }, [])
 
@@ -347,7 +348,7 @@ export default function SpecialistToolkitPage() {
   }
 
   function discardDraft() {
-    localStorage.removeItem(DRAFT_KEY)
+    removeStorage(DRAFT_KEY)
     setPendingDraft(null)
   }
 
@@ -595,7 +596,7 @@ export default function SpecialistToolkitPage() {
   }
 
   function resetAll() {
-    localStorage.removeItem(DRAFT_KEY)
+    removeStorage(DRAFT_KEY)
     setLastSavedAt(null)
     setStep('info')
     setName(''); setAge(''); setGender('unspecified'); setParentName('')

@@ -1,6 +1,7 @@
 'use client'
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import React from 'react'
+import { readStorage, writeStorage } from './safe-storage'
 
 export type Lang = 'ar' | 'en' | 'fr'
 
@@ -13,13 +14,13 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>('ar')
 
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY) as Lang | null
+    const saved = readStorage(STORAGE_KEY) as Lang | null
     if (saved === 'ar' || saved === 'en' || saved === 'fr') setLangState(saved)
   }, [])
 
   function setLang(l: Lang) {
     setLangState(l)
-    localStorage.setItem(STORAGE_KEY, l)
+    writeStorage(STORAGE_KEY, l)
     document.documentElement.lang = l
     document.documentElement.dir  = l === 'ar' ? 'rtl' : 'ltr'
   }

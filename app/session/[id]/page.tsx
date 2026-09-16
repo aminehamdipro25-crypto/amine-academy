@@ -8,6 +8,7 @@ import { rankGamesForStudent, getTopGames, DIFFICULTY_LABELS_AR } from '@/lib/ga
 import type { StudentAssessmentProfile } from '@/lib/types'
 import ProgressMap from '@/components/progress/ProgressMap'
 import type { SessionNode } from '@/components/progress/ProgressMap'
+import { readStorage, writeStorage, removeStorage } from '@/lib/safe-storage'
 
 const MemoryCards          = lazy(() => import('@/components/session/exercises/MemoryCards'))
 const SequenceMemory       = lazy(() => import('@/components/session/exercises/SequenceMemory'))
@@ -284,7 +285,7 @@ export default function SessionPage() {
   // that's what they last chose, instead of asking them to re-toggle it every time.
   const [idleChromePreferHidden, setIdleChromePreferHidden] = useState(false)
   useEffect(() => {
-    setIdleChromePreferHidden(window.localStorage.getItem(CHROME_PREF_KEY) === '1')
+    setIdleChromePreferHidden(readStorage(CHROME_PREF_KEY) === '1')
   }, [])
   // Forces a full remount of the active exercise component to restart it mid-game.
   const [exerciseRestartNonce, setExerciseRestartNonce] = useState(0)
@@ -1506,7 +1507,7 @@ ${notes ? `
       if (!res.ok) throw new Error(String(res.status))
       dirtySinceSaveRef.current = false
       setSaved(true)
-      sessionStorage.removeItem(`session_draft_${id}`)
+      removeStorage(`session_draft_${id}`, 'session')
       playSound('complete')
     } catch (err) {
       console.error('[saveSession] failed to save session log', err)
@@ -1920,7 +1921,7 @@ ${notes ? `
             setManualChromeOverride(next)
             if (!focusMode && !exerciseActive && !showWhiteboard) {
               setIdleChromePreferHidden(next)
-              window.localStorage.setItem(CHROME_PREF_KEY, next ? '1' : '0')
+              writeStorage(CHROME_PREF_KEY, next ? '1' : '0')
             }
           }}
           className="fixed left-3 z-[490] flex items-center justify-center w-11 h-11 rounded-full shadow-lg transition-all duration-200 active:scale-90 hover:scale-105 select-none"

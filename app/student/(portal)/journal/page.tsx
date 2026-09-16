@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useLang, tr } from '@/lib/i18n'
+import { localeFor } from '@/lib/format'
 
 const MOOD_CFG = [
   { ringColor: '#22C55E', bg: '#F0FFF4', textColor: '#15803D' },
@@ -21,7 +22,7 @@ export default function JournalPage() {
     emoji: MOOD_EMOJI[i],
     label: [t.moods.great, t.moods.good, t.moods.okay, t.moods.bad, t.moods.sad][i],
   }))
-  const locale = lang === 'ar' ? 'ar-TN' : lang === 'fr' ? 'fr-FR' : 'en-US'
+  const locale = localeFor(lang)
   const [entries, setEntries] = useState<Entry[]>([])
   const [mood, setMood] = useState<number | null>(null)
   const [text, setText] = useState('')

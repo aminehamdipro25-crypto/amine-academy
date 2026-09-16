@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { ExternalLink } from 'lucide-react'
 import { useLang } from '@/lib/i18n'
 import { isInPersonAccount } from '@/lib/account-type'
+import { whatsappNumber } from '@/lib/format'
 
 type PlanId = 'session' | 'weekly' | 'monthly'
 type Currency = 'QAR' | 'TND'
@@ -87,7 +88,7 @@ export default function UpgradePlanPage() {
     return pp < single ? Math.round((1 - pp / single) * 100) : 0
   }
 
-  const whatsapp = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '97430653759'
+  const whatsapp = whatsappNumber()
 
   // Nothing at all until we know who is looking — briefly flashing a price list
   // at a family that was told their follow-up is free is the whole thing we are

@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
       const INTENSITY_LABELS: Record<number, string> = { 1: 'خفيفة', 2: 'متوسطة', 3: 'شديدة' }
       abcText = abcLog
         .map((e, i) =>
-          `${i + 1}. [${new Date(e.ts).toLocaleDateString('fr-FR')}] مثير: ${e.antecedent} | سلوك: ${e.behavior} (${INTENSITY_LABELS[e.intensity] ?? e.intensity}) | نتيجة: ${e.consequence}`
+          `${i + 1}. [${new Date(e.ts).toLocaleDateString('ar-u-nu-latn')}] مثير: ${e.antecedent} | سلوك: ${e.behavior} (${INTENSITY_LABELS[e.intensity] ?? e.intensity}) | نتيجة: ${e.consequence}`
         )
         .join('\n')
     }

@@ -775,7 +775,7 @@ export default function SessionPage() {
 
   function logObs(text: string, category: string, color: string) {
     const now = new Date()
-    const ts = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+    const ts = now.toLocaleTimeString('ar-u-nu-latn', { hour: '2-digit', minute: '2-digit' })
     const entry: ObsEntry = { text, category, color, elapsed, ts }
     setObsLog(prev => [...prev, entry])
     setObsOpen(false)
@@ -1269,7 +1269,7 @@ ${notes ? `
   function logABC() {
     if (!abcForm.antecedent && !abcForm.behavior) return
     const now = new Date()
-    const ts = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+    const ts = now.toLocaleTimeString('ar-u-nu-latn', { hour: '2-digit', minute: '2-digit' })
     setAbcLog(prev => [...prev, { ...abcForm, ts, elapsed }])
     setAbcForm({ antecedent: '', behavior: '', consequence: '', intensity: 2 })
     setAbcOpen(false)

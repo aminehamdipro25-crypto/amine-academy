@@ -187,7 +187,7 @@ export default function AdminPaymentsPage() {
           <AnimatePresence mode="popLayout">
           {filtered.map(payment => {
             const isProcessing = processingId === payment.id
-            const date = new Date(payment.createdAt).toLocaleDateString('fr-FR', {
+            const date = new Date(payment.createdAt).toLocaleDateString('ar-u-nu-latn', {
               year: 'numeric', month: 'short', day: 'numeric',
             })
 

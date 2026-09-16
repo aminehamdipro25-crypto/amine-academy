@@ -4,6 +4,7 @@ import { Printer, TrendingUp, Award } from 'lucide-react'
 import type { Student, ProgressReport } from '@/lib/types'
 import { indicatorTrend } from '@/lib/apa-trend'
 import { useLang, tr } from '@/lib/i18n'
+import { formatDateOnly, localeFor } from '@/lib/format'
 
 interface ChildReports { child: Student; reports: ProgressReport[] }
 
@@ -23,7 +24,7 @@ interface ChildSessions { child: Student; sessions: ParentSessionSummary[] }
 function RecentSessions({ sessions }: { sessions: ParentSessionSummary[] }) {
   const { lang } = useLang()
   const t = tr[lang].parentReports
-  const locale = lang === 'ar' ? 'fr-FR' : lang === 'fr' ? 'fr-FR' : 'en-US'
+  const locale = localeFor(lang)
 
   if (sessions.length === 0) return null
 
@@ -38,7 +39,7 @@ function RecentSessions({ sessions }: { sessions: ParentSessionSummary[] }) {
           <div key={s.appointmentId} className="bg-white rounded-2xl p-4" style={{ border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
             <div className="flex items-center justify-between gap-2 flex-wrap mb-3">
               <span className="text-sm font-bold text-gray-800 ltr-num">
-                {new Date(s.date).toLocaleDateString(locale, { year: 'numeric', month: 'long', day: 'numeric' })}
+                {formatDateOnly(s.date, locale, { year: 'numeric', month: 'long', day: 'numeric' })}
                 {s.timeSlot ? ` · ${s.timeSlot}` : ''}
               </span>
               {s.durationSeconds > 0 && (
@@ -159,11 +160,11 @@ function ReportDocument({ report, child }: { report: ProgressReport; child: Stud
 
   const typeLabel = t.typeLabels[report.type as keyof typeof t.typeLabels] ?? report.type
   const typeIcon = TYPE_ICONS[report.type] ?? '📄'
-  const locale = lang === 'ar' ? 'fr-FR' : lang === 'fr' ? 'fr-FR' : 'en-US'
+  const locale = localeFor(lang)
   const dateOpts: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'long', day: 'numeric' }
   const issueDate  = new Date(report.createdAt).toLocaleDateString(locale, dateOpts)
-  const periodFrom = new Date(report.periodStart).toLocaleDateString(locale, dateOpts)
-  const periodTo   = new Date(report.periodEnd).toLocaleDateString(locale, dateOpts)
+  const periodFrom = formatDateOnly(report.periodStart, locale, dateOpts)
+  const periodTo   = formatDateOnly(report.periodEnd, locale, dateOpts)
   const diagnosisFull = t.diagnosisFullLabels[child.diagnosis as keyof typeof t.diagnosisFullLabels] ?? child.diagnosis
 
   function handlePrint() {

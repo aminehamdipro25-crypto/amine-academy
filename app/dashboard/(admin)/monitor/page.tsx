@@ -9,7 +9,7 @@ import type { ErrorEvent } from '@/lib/error-monitor'
 function formatTs(iso: string): string {
   try {
     const d = new Date(iso)
-    return d.toLocaleString('fr-FR', {
+    return d.toLocaleString('ar-u-nu-latn', {
       day: '2-digit', month: 'short', year: 'numeric',
       hour: '2-digit', minute: '2-digit', second: '2-digit',
     })
@@ -165,7 +165,7 @@ export default function MonitorPage() {
             آخر {errors.length} حدث · يتجدد تلقائياً كل 60 ثانية
             {lastRefresh && (
               <span className="mr-2 ltr-num">
-                · آخر تحديث: {lastRefresh.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                · آخر تحديث: {lastRefresh.toLocaleTimeString('ar-u-nu-latn', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
               </span>
             )}
           </p>

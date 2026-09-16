@@ -260,7 +260,7 @@ export default function AssessmentPage() {
               return (
                 <div key={a.id} className="flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl" style={{ background: '#F9FAFB' }}>
                   <div className="text-xs font-bold text-gray-700">
-                    {new Date(a.completedAt).toLocaleDateString('fr-FR', { year: 'numeric', month: 'short', day: 'numeric' })}
+                    {new Date(a.completedAt).toLocaleDateString('ar-u-nu-latn', { year: 'numeric', month: 'short', day: 'numeric' })}
                     {childName ? ` · ${childName}` : ''}
                   </div>
                   <span className="text-xs font-bold px-2.5 py-1 rounded-full" style={{ background: sev.bg, color: sev.color }}>{sev.label}</span>

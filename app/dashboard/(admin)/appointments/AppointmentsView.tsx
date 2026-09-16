@@ -9,12 +9,7 @@ import { ACountUp } from '@/components/ui'
 import { useLang, tr, type Lang } from '@/lib/i18n'
 import type { getAllAppointments, getAllParents } from '@/lib/db'
 import type { Parent } from '@/lib/types'
-
-function localeFor(lang: Lang) {
-  // 'ar-u-nu-latn' not 'ar': the bare tag lets the browser choose the digit
-  // shape and some render Arabic-Indic numerals, which this platform never wants.
-  return lang === 'en' ? 'en-US' : lang === 'fr' ? 'fr-FR' : 'ar-u-nu-latn'
-}
+import { localeFor } from '@/lib/format'
 
 // Absolute start time (ms) of an appointment from its date + timeSlot. Built
 // from the parts in LOCAL time (not `new Date(date)`, which parses a bare

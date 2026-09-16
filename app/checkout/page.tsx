@@ -7,6 +7,7 @@ import {
   Check, ChevronRight, CreditCard, Building2, Smartphone, MessageCircle,
   User, Mail, Phone, CheckCircle2, Copy, ExternalLink, Clock, Calendar, Zap,
 } from 'lucide-react'
+import { whatsappNumber } from '@/lib/format'
 
 type Plan = 'session' | 'weekly' | 'monthly'
 type Currency = 'QAR' | 'TND'
@@ -141,7 +142,7 @@ function CheckoutForm() {
     return `${disc} ${sym} / حصة`
   }
 
-  const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? '+97430653759'
+  const whatsappNum = whatsappNumber()
 
   function copyRef(text: string) {
     navigator.clipboard.writeText(text).then(() => {
@@ -178,7 +179,7 @@ function CheckoutForm() {
     const waText = encodeURIComponent(
       `مرحباً، أود تأكيد اشتراكي في أكاديمية أمين.\nالخطة: ${planInfo.name}\nرمز المرجع: ${success.referenceCode}\nالمبلغ: ${finalPrice} ${symbol}`
     )
-    const waLink = `https://wa.me/${whatsappNumber.replace(/\D/g, '')}?text=${waText}`
+    const waLink = `https://wa.me/${whatsappNum.replace(/\D/g, '')}?text=${waText}`
 
     return (
       <div className="min-h-[100dvh] bg-gradient-to-br from-brand-50 to-white flex items-center justify-center p-4" dir="rtl">
@@ -274,7 +275,7 @@ function CheckoutForm() {
     if (m === 'whatsapp') return (
       <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-sm text-emerald-800 leading-relaxed">
         <p className="font-bold mb-1">الدفع عبر واتساب</p>
-        <p>أرسل رسالة واتساب مع إثبات الدفع إلى: <strong dir="ltr">{whatsappNumber}</strong></p>
+        <p>أرسل رسالة واتساب مع إثبات الدفع إلى: <strong dir="ltr">{whatsappNum}</strong></p>
         <p className="mt-1">اذكر رمز المرجع <strong>{refCode ?? '...'}</strong> في رسالتك</p>
       </div>
     )

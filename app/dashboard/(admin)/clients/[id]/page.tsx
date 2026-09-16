@@ -12,12 +12,7 @@ import type { Parent, Student, Appointment, SessionLog, StudentAssessmentProfile
 import { DIFFICULTY_LABELS_AR } from '@/lib/game-mapping'
 import AIPatternAnalysis from '@/components/dashboard/AIPatternAnalysis'
 import { useLang, tr, type Lang } from '@/lib/i18n'
-
-function localeFor(lang: Lang) {
-  // 'ar-u-nu-latn' not 'ar': the bare tag lets the browser choose the digit
-  // shape and some render Arabic-Indic numerals, which this platform never wants.
-  return lang === 'en' ? 'en-US' : lang === 'fr' ? 'fr-FR' : 'ar-u-nu-latn'
-}
+import { formatDateOnly, localeFor } from '@/lib/format'
 
 const STATUS_COLORS = {
   active:    'bg-green-100 text-green-700 border-green-200',
@@ -724,7 +719,7 @@ export default function ClientDetailPage() {
                       <div className="flex items-center justify-between mb-3">
                         <p className="font-black text-gray-900 text-sm">{s.firstName} {s.lastName}</p>
                         <span className="text-[11px] text-gray-400 ltr-num">
-                          {latest?.completedAt ? new Date(latest.completedAt).toLocaleDateString('fr-FR') : ''}
+                          {latest?.completedAt ? new Date(latest.completedAt).toLocaleDateString(localeFor(lang)) : ''}
                         </span>
                       </div>
                       <div className="grid grid-cols-4 gap-2 mb-3">
@@ -1004,7 +999,7 @@ export default function ClientDetailPage() {
                   <div key={a.id} className="px-6 py-3 flex items-center justify-between">
                     <div>
                       <div className="text-sm font-bold text-gray-800 ltr-num">
-                        {new Date(a.date).toLocaleDateString(localeFor(lang), { weekday: 'long', day: 'numeric', month: 'long' })}
+                        {formatDateOnly(a.date, localeFor(lang), { weekday: 'long', day: 'numeric', month: 'long' })}
                         {' '}{a.timeSlot}
                       </div>
                       <div className="text-xs text-gray-500 mt-0.5">{a.notes || '—'}</div>
@@ -1051,7 +1046,7 @@ export default function ClientDetailPage() {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
                               <span className="text-sm font-bold text-gray-800 ltr-num">
-                                {new Date(a.date).toLocaleDateString(localeFor(lang), { weekday: 'short', day: 'numeric', month: 'short' })}
+                                {formatDateOnly(a.date, localeFor(lang), { weekday: 'short', day: 'numeric', month: 'short' })}
                                 {' '}{a.timeSlot}
                               </span>
                               {log?.durationSeconds > 0 && (

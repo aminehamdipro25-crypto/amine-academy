@@ -10,6 +10,7 @@ import type { Student, ProgressReport } from '@/lib/types'
 import { useLang, tr } from '@/lib/i18n'
 import { motion } from 'framer-motion'
 import { staggerContainer, fadeUp } from '@/lib/motion'
+import { formatDateOnly } from '@/lib/format'
 
 interface GameHistory {
   totalPlays: number
@@ -100,7 +101,7 @@ export default function ProgressPage() {
   const behaviorTrend = reports.length >= 2
     ? [...reports].reverse().map(r => {
         const row: Record<string, number | string> = {
-          date: `⁦${new Date(r.periodEnd || r.createdAt).toLocaleDateString('fr-FR', { month: 'short', day: 'numeric' })}⁩`,
+          date: `⁦${formatDateOnly(r.periodEnd || r.createdAt, 'ar-u-nu-latn', { month: 'short', day: 'numeric' })}⁩`,
         }
         r.behaviorRatings?.forEach(({ metric, score }) => {
           row[t.metricLabels[metric as keyof typeof t.metricLabels] || metric] = score
@@ -414,7 +415,7 @@ export default function ProgressPage() {
                                 <div className="w-full rounded-t-lg" style={{ height: `${pct}%`, background: '#7C5CFC' }} />
                               </div>
                               <span className="text-xs text-gray-400 ltr-num">
-                                {new Date(r.periodEnd).toLocaleDateString('fr-FR', { month: 'short' })}
+                                {formatDateOnly(r.periodEnd, 'ar-u-nu-latn', { month: 'short' })}
                               </span>
                             </div>
                           )
@@ -436,7 +437,7 @@ export default function ProgressPage() {
                       <div className="flex items-center justify-between mb-3">
                         <h2 className="font-black text-lg text-gray-900">{t.lastReportTitle}</h2>
                         <span className="text-gray-400 text-xs ltr-num">
-                          {new Date(latest.periodEnd).toLocaleDateString('fr-FR')}
+                          {formatDateOnly(latest.periodEnd, 'ar-u-nu-latn')}
                         </span>
                       </div>
                       {latest.aiSummary && (

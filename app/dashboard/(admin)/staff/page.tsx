@@ -253,7 +253,7 @@ export default function StaffManagementPage() {
                         <span className="flex items-center gap-1"><Mail className="w-3 h-3" />{member.email}</span>
                         <span className="flex items-center gap-1">
                           <Calendar className="w-3 h-3" />
-                          {member.lastLoginAt ? `آخر دخول: ${new Date(member.lastLoginAt).toLocaleDateString('fr-FR')}` : 'لم يسجل الدخول بعد'}
+                          {member.lastLoginAt ? `آخر دخول: ${new Date(member.lastLoginAt).toLocaleDateString('ar-u-nu-latn')}` : 'لم يسجل الدخول بعد'}
                         </span>
                       </div>
                     </div>

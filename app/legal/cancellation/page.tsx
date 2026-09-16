@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { whatsappLink } from '@/lib/format'
 
 export const metadata: Metadata = {
   title: 'سياسة الإلغاء والاسترداد | أكاديمية أمين',
@@ -90,7 +91,7 @@ export default function CancellationPage() {
             ))}
           </div>
           <div className="mt-4 pt-4 border-t border-gray-100 flex flex-col sm:flex-row gap-3">
-            <a href="https://wa.me/97430653759" target="_blank" rel="noopener noreferrer"
+            <a href={whatsappLink()} target="_blank" rel="noopener noreferrer"
               className="flex items-center justify-center gap-2 bg-green-600 text-white font-bold px-5 py-2.5 rounded-xl text-sm hover:bg-green-700 transition-colors">
               واتساب
             </a>

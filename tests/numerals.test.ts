@@ -98,3 +98,36 @@ describe('the locale tag actually produces Latin digits', () => {
     expect(out).not.toMatch(ARABIC_INDIC)
   })
 })
+
+describe('locale leakage', () => {
+  it('never formats with a French locale outside the French UI path', () => {
+    // An Arabic-speaking parent read "16 sept." in their own report because the
+    // locale was hardcoded, or assigned to a variable the pattern sweep missed.
+    // Both shapes are blocked here.
+    const offenders: string[] = []
+    for (const file of FILES) {
+      const lines = fs.readFileSync(file, 'utf8').split('\n')
+      lines.forEach((line, i) => {
+        const st = line.trim()
+        if (st.startsWith('//') || st.startsWith('*')) return
+        if (!line.includes("'fr-FR'")) return
+        // The only legitimate use: choosing fr-FR because the UI IS French.
+        if (/lang === 'fr'\s*\?\s*'fr-FR'/.test(line) && !/'ar'\s*\?\s*'fr-FR'/.test(line)) return
+        offenders.push(`${path.relative(ROOT, file)}:${i + 1}: ${st.slice(0, 90)}`)
+      })
+    }
+    expect(offenders).toEqual([])
+  })
+
+  it('has no second definition of the locale mapping outside lib/format', () => {
+    // Eight copies of localeFor drifted independently; one of them is how
+    // 'ar-TN' and 'fr-FR' ended up mapped to Arabic in different files.
+    const offenders: string[] = []
+    for (const file of FILES) {
+      if (file.endsWith(path.join('lib', 'format.ts'))) continue
+      const src = fs.readFileSync(file, 'utf8')
+      if (/function\s+localeFor\s*\(/.test(src)) offenders.push(path.relative(ROOT, file))
+    }
+    expect(offenders).toEqual([])
+  })
+})

@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { CheckCircle, MessageCircle, Mail, Gift, Calendar } from 'lucide-react'
+import { whatsappLink } from '@/lib/format'
 
 export default async function RegisterSuccessPage(
   props: {
@@ -47,7 +48,7 @@ export default async function RegisterSuccessPage(
               تفعيل الحساب
             </Link>
             <a
-              href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '97430653759'}?text=${encodeURIComponent('مرحباً الأستاذ أمين، حجزت للتو جلسة تقييمية مجانية وأودّ تأكيد الموعد.')}`}
+              href={whatsappLink('مرحباً الأستاذ أمين، حجزت للتو جلسة تقييمية مجانية وأودّ تأكيد الموعد.')}
               target="_blank"
               rel="noopener noreferrer"
               className="flex-1 bg-green-500 text-white font-bold py-3 px-4 rounded-xl hover:bg-green-600 transition-colors flex items-center justify-center gap-2 text-sm"
@@ -108,7 +109,7 @@ export default async function RegisterSuccessPage(
         </div>
         <div className="flex flex-col sm:flex-row gap-3">
           <a
-            href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '97430653759'}?text=${encodeURIComponent('مرحباً الأستاذ أمين، أنا سجّلت للتو في أكاديمية أمين وأنتظر تفعيل اشتراكي.')}`}
+            href={whatsappLink('مرحباً الأستاذ أمين، أنا سجّلت للتو في أكاديمية أمين وأنتظر تفعيل اشتراكي.')}
             target="_blank"
             rel="noopener noreferrer"
             className="flex-1 bg-green-500 text-white font-bold py-3 px-4 rounded-xl hover:bg-green-600 transition-colors flex items-center justify-center gap-2 text-sm"

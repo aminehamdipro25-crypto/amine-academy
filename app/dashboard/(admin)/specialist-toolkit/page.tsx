@@ -25,6 +25,7 @@ import { hasArabicVoice } from '@/lib/speech'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { ACountUp } from '@/components/ui'
 import { staggerContainer, fadeUp, popIn, liftHover, tapOnly } from '@/lib/motion'
+import { localeFor } from '@/lib/format'
 
 type ConcernKey = 'autism' | 'adhd' | 'learning' | 'emotional'
 type ScaleKey = 'autism' | 'adhd' | 'attention-domains' | 'learning-difficulties' | 'psc17'
@@ -120,12 +121,6 @@ const SCALE_PROVENANCE: Record<ScaleKey, string> = {
   'learning-difficulties': 'قائمة فرز استرشادية · التشخيص الرسمي يتطلب اختبارات تحصيل معيارية',
   'attention-domains': 'قائمة ملاحظة استرشادية (لم تعد تُستخدم — محفوظة للسجلات السابقة)',
   psc17: 'PSC-17 — مقياس فرز منشور ومجاني · عتبات Gardner وزملائه (1999) · الصياغة الإنجليزية هي الأصل والعربية ترجمة عمل',
-}
-
-function localeFor(lang: Lang) {
-  // 'ar-u-nu-latn' not 'ar': the bare tag lets the browser choose the digit
-  // shape and some render Arabic-Indic numerals, which this platform never wants.
-  return lang === 'en' ? 'en-US' : lang === 'fr' ? 'fr-FR' : 'ar-u-nu-latn'
 }
 
 function isLinkedStudentId(id: string) {

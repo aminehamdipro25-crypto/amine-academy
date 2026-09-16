@@ -10,14 +10,9 @@ import { ACountUp } from '@/components/ui'
 import { isInPersonAccount } from '@/lib/account-type'
 import AddInPersonClientForm from '@/components/dashboard/AddInPersonClientForm'
 import { staggerContainer, fadeUp, popIn, liftHover } from '@/lib/motion'
+import { localeFor } from '@/lib/format'
 
 const MotionLink = motion(Link)
-
-function localeFor(lang: Lang) {
-  // 'ar-u-nu-latn' not 'ar': the bare tag lets the browser choose the digit
-  // shape and some render Arabic-Indic numerals, which this platform never wants.
-  return lang === 'en' ? 'en-US' : lang === 'fr' ? 'fr-FR' : 'ar-u-nu-latn'
-}
 
 const AVATAR_COLORS = [
   'from-brand-600 to-purple-600',

@@ -6,12 +6,7 @@ import { useLang, tr, type Lang } from '@/lib/i18n'
 import type { ProgressReport, Student } from '@/lib/types'
 import { staggerContainer, fadeUp, popIn, liftHover } from '@/lib/motion'
 import { ACountUp } from '@/components/ui'
-
-function localeFor(lang: Lang) {
-  // 'ar-u-nu-latn' not 'ar': the bare tag lets the browser choose the digit
-  // shape and some render Arabic-Indic numerals, which this platform never wants.
-  return lang === 'en' ? 'en-US' : lang === 'fr' ? 'fr-FR' : 'ar-u-nu-latn'
-}
+import { localeFor } from '@/lib/format'
 
 const TYPE_BADGE: Record<string, string> = {
   weekly:  'bg-violet-100 text-violet-700 ring-1 ring-violet-200',

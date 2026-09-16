@@ -4,6 +4,7 @@ import { Calendar, Clock, Video, Plus, CheckCircle, XCircle, AlertCircle } from 
 import Link from 'next/link'
 import type { Appointment, Student } from '@/lib/types'
 import { useLang, tr } from '@/lib/i18n'
+import { formatDateOnly } from '@/lib/format'
 
 const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
   scheduled: { bg: '#EFF6FF', color: '#1D4ED8' },
@@ -265,7 +266,7 @@ export default function AppointmentsPage() {
                       <div className="flex items-center gap-4 text-sm text-gray-500">
                         <span className="flex items-center gap-1">
                           <Calendar className="w-3.5 h-3.5" />
-                          <span className="ltr-num">{new Date(appt.date).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                          <span className="ltr-num">{formatDateOnly(appt.date, 'ar-u-nu-latn', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
                         </span>
                         <span className="flex items-center gap-1">
                           <Clock className="w-3.5 h-3.5" />

@@ -9,6 +9,7 @@ import type { Parent } from '@/lib/types'
 import { isInPersonAccount } from '@/lib/account-type'
 import { ACountUp } from '@/components/ui'
 import { staggerContainer, fadeUp, popIn, liftHover } from '@/lib/motion'
+import { localeFor } from '@/lib/format'
 
 const MotionLink = motion(Link)
 
@@ -35,12 +36,6 @@ function AnimatedNumber({ value }: { value: number }) {
   }, [value])
 
   return <span className="ltr-num">{display}</span>
-}
-
-function localeFor(lang: Lang) {
-  // 'ar-u-nu-latn' not 'ar': the bare tag lets the browser choose the digit
-  // shape and some render Arabic-Indic numerals, which this platform never wants.
-  return lang === 'en' ? 'en-US' : lang === 'fr' ? 'fr-FR' : 'ar-u-nu-latn'
 }
 
 export default function AdminDashboardView({ parents, payments, exercises, redisError }: {

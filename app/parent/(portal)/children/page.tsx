@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { TrendingUp, Dumbbell, Play } from 'lucide-react'
 import type { Student } from '@/lib/types'
 import { useLang, tr } from '@/lib/i18n'
+import { whatsappLink } from '@/lib/format'
 
 const DIAG_EMOJI: Record<string, string> = {
   ADHD: '⚡', AUTISM: '🌈', 'ADHD+AUTISM': '🌟', OTHER: '💙',
@@ -67,7 +68,7 @@ export default function ChildrenPage() {
           <h3 className="font-black text-gray-700 text-lg mb-2">{t.noChildrenTitle}</h3>
           <p className="text-gray-400 text-sm max-w-xs mx-auto mb-6 leading-relaxed">{t.noChildrenSubtitle(coachName)}</p>
           <a
-            href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '97430653759'}?text=${encodeURIComponent(t.whatsappMessage)}`}
+            href={whatsappLink(t.whatsappMessage)}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 text-white font-bold px-5 py-2.5 rounded-2xl text-sm transition-all"

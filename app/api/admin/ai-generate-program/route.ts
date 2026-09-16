@@ -39,7 +39,7 @@ function formatAssessmentsForPrompt(assessments: AssessmentResult[]): string {
   const lines: string[] = []
   for (const a of assessments) {
     const typeLabel = a.type === 'adhd' ? 'تقييم ADHD' : a.type === 'autism' ? 'تقييم طيف التوحد' : a.type === 'vanderbilt-adhd' ? 'مقياس فاندربيلت (فرز ADHD)' : `تقييم ${a.type}`
-    lines.push(`\n### ${typeLabel} (${new Date(a.createdAt).toLocaleDateString('fr-FR')})`)
+    lines.push(`\n### ${typeLabel} (${new Date(a.createdAt).toLocaleDateString('ar-u-nu-latn')})`)
     lines.push(`- الدرجة الإجمالية: ${a.totalScore} | الشدة: ${SEV_LABEL[a.severity] || a.severity}`)
     if (Object.keys(a.domainScores).length > 0) {
       lines.push('- النتائج حسب المجال:')

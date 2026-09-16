@@ -196,7 +196,7 @@ export async function POST(req: NextRequest) {
       `💰 المبلغ: ${amount} ${tgEsc(currencyLabel)}\n` +
       `🏦 طريقة الدفع: ${tgEsc(methodLabel)}\n` +
       `🔑 المرجع: <code>${tgEsc(payment.referenceCode)}</code>\n` +
-      `🕐 ${new Date().toLocaleString('fr-FR', { timeZone: 'Asia/Qatar' })}`
+      `🕐 ${new Date().toLocaleString('ar-u-nu-latn', { timeZone: 'Asia/Qatar' })}`
     ).catch(() => {})
 
     return NextResponse.json({

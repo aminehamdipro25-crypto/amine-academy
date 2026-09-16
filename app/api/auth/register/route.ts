@@ -171,7 +171,7 @@ export async function POST(req: NextRequest) {
       (assessment
         ? `🎁 تقييم مجاني${assessmentBooked ? `: ${tgEsc(String(assessment.date))} ${tgEsc(String(assessment.timeSlot))}` : ' — يحتاج جدولة يدوية (الوقت المطلوب محجوز)'}\n`
         : `📦 الخطة: ${tgEsc(newParent.subscriptionPlan)}\n`) +
-      `🕐 ${new Date().toLocaleString('fr-FR', { timeZone: 'Asia/Qatar' })}`
+      `🕐 ${new Date().toLocaleString('ar-u-nu-latn', { timeZone: 'Asia/Qatar' })}`
     ).catch(() => {})
 
     return NextResponse.json({ ok: true, parentId: newParent.id, assessment: !!assessment, booked: assessmentBooked })

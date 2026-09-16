@@ -4,9 +4,10 @@ import { ArrowLeft, ArrowRight, MessageCircle, Play } from 'lucide-react'
 import { motion, useInView } from 'framer-motion'
 import { useRef } from 'react'
 import { useLang, pickLang } from '@/lib/i18n'
+import { whatsappNumber } from '@/lib/format'
 
 export default function CTASection() {
-  const wa = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '21600000000'
+  const wa = whatsappNumber()
   const { lang } = useLang()
   const isRtl = lang === 'ar'
   const ref = useRef(null)

@@ -3,14 +3,9 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { Send, MessageCircle, Phone, Mail, Bot, User } from 'lucide-react'
 import type { Message } from '@/lib/types'
 import { useLang, tr, type Lang } from '@/lib/i18n'
+import { whatsappLink, localeFor } from '@/lib/format'
 
 interface AIMsg { role: 'user' | 'assistant'; text: string; time: string }
-
-function localeFor(lang: Lang) {
-  // 'ar-u-nu-latn' not 'ar': the bare tag lets the browser choose the digit
-  // shape and some render Arabic-Indic numerals, which this platform never wants.
-  return lang === 'en' ? 'en-US' : lang === 'fr' ? 'fr-FR' : 'ar-u-nu-latn'
-}
 
 function nowTime(lang: Lang) {
   return new Date().toLocaleTimeString(localeFor(lang), { hour: '2-digit', minute: '2-digit' })
@@ -69,7 +64,7 @@ function AIChatTab() {
         </div>
         <div className="flex items-center gap-2">
           <a
-            href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '97430653759'}`}
+            href={whatsappLink()}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1.5 font-bold text-xs px-3 py-1.5 rounded-2xl transition-all"
@@ -170,7 +165,7 @@ function AIChatTab() {
         </form>
         <p className="text-xs text-gray-400 text-center mt-2">
           {t.instantContactPrefix(tr[lang].portal.common.coachName)}{' '}
-          <a href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '21600000000'}`} className="font-bold" style={{ color: '#16A34A' }}>{t.whatsappLabel}</a>
+          <a href={whatsappLink()} className="font-bold" style={{ color: '#16A34A' }}>{t.whatsappLabel}</a>
         </p>
       </div>
     </div>

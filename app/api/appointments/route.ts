@@ -96,7 +96,7 @@ export async function POST(req: Request) {
           `📆 التاريخ: ${tgEsc(date)}\n` +
           `⏰ الوقت: ${tgEsc(timeSlot)}\n` +
           (notes?.trim() ? `📝 ملاحظات: ${tgEsc(notes)}\n` : '') +
-          `🕐 ${new Date().toLocaleString('fr-FR', { timeZone: 'Asia/Qatar' })}`
+          `🕐 ${new Date().toLocaleString('ar-u-nu-latn', { timeZone: 'Asia/Qatar' })}`
         ).catch(() => {})
         // Push in-app notification for admin bell
         redis.lpush('admin:new_appointment_notifications', JSON.stringify({

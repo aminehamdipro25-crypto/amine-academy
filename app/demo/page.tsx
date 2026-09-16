@@ -103,7 +103,7 @@ function SessionMockup() {
           </div>
           <div>
             <div style={{ color: 'white', fontSize: 10, fontWeight: 900 }}>جلسة أمير — الذاكرة والتركيز</div>
-            <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 8 }}>المرحلة ٢ من ٤ · التمرين ٣</div>
+            <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 8 }}>المرحلة 2 من 4 · التمرين 3</div>
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -368,7 +368,7 @@ function ReportMockup() {
           <AcademyLogo size={24} />
           <div>
             <div style={{ color: 'white', fontWeight: 900, fontSize: 10 }}>تقرير الجلسة — أمير</div>
-            <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 8 }}>الجلسة ٨ · الشهر الثالث</div>
+            <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 8 }}>الجلسة 8 · الشهر الثالث</div>
           </div>
         </div>
         <div style={{ background: '#16A34A20', border: '1px solid #16A34A50', borderRadius: 10, padding: '4px 10px', display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -384,7 +384,7 @@ function ReportMockup() {
         <div>
           <div style={{ fontWeight: 900, fontSize: 9, color: '#6B46F0', marginBottom: 3 }}>تحليل الأخصائي</div>
           <p style={{ margin: 0, fontSize: 8.5, color: '#374151', lineHeight: 1.6 }}>
-            أمير أتمّ ٦ من ٨ تمارين بدقة ٧٦٪. <strong style={{ color: '#6B46F0' }}>الانتباه تضاعف من ٣ إلى ٨ دقائق</strong> مقارنةً بالجلسة الأولى. أنصح بتركيز الجلسة القادمة على Zone of Regulation.
+            أمير أتمّ 6 من 8 تمارين بدقة 76٪. <strong style={{ color: '#6B46F0' }}>الانتباه تضاعف من 3 إلى 8 دقائق</strong> مقارنةً بالجلسة الأولى. أنصح بتركيز الجلسة القادمة على Zone of Regulation.
           </p>
         </div>
       </div>

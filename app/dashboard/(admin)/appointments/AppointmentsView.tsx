@@ -11,7 +11,9 @@ import type { getAllAppointments, getAllParents } from '@/lib/db'
 import type { Parent } from '@/lib/types'
 
 function localeFor(lang: Lang) {
-  return lang === 'en' ? 'en-US' : lang === 'fr' ? 'fr-FR' : 'ar'
+  // 'ar-u-nu-latn' not 'ar': the bare tag lets the browser choose the digit
+  // shape and some render Arabic-Indic numerals, which this platform never wants.
+  return lang === 'en' ? 'en-US' : lang === 'fr' ? 'fr-FR' : 'ar-u-nu-latn'
 }
 
 // Absolute start time (ms) of an appointment from its date + timeSlot. Built

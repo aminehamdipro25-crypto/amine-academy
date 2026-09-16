@@ -7,7 +7,9 @@ import { staggerContainer, fadeUp, popIn, liftHover } from '@/lib/motion'
 import { ACountUp } from '@/components/ui'
 
 function localeFor(lang: Lang) {
-  return lang === 'en' ? 'en-US' : lang === 'fr' ? 'fr-FR' : 'ar'
+  // 'ar-u-nu-latn' not 'ar': the bare tag lets the browser choose the digit
+  // shape and some render Arabic-Indic numerals, which this platform never wants.
+  return lang === 'en' ? 'en-US' : lang === 'fr' ? 'fr-FR' : 'ar-u-nu-latn'
 }
 
 function Bar({ label, value, max, color }: { label: string; value: number; max: number; color: string }) {

@@ -329,7 +329,7 @@ export default function StoryLibraryAdminPage() {
       {!loading && stories.length === 0 && (
         <div className="rounded-2xl border border-brand-100 bg-brand-50/50 p-5 mb-6 text-center">
           <BookOpen className="w-8 h-8 mx-auto text-brand-400 mb-2" />
-          <p className="font-bold text-gray-700 text-sm mb-3">لا توجد قصص بعد — ابدأ بتحميل ٢٢ قصة افتراضية جاهزة، ثم عدّل عليها كما تشاء.</p>
+          <p className="font-bold text-gray-700 text-sm mb-3">لا توجد قصص بعد — ابدأ بتحميل 22 قصة افتراضية جاهزة، ثم عدّل عليها كما تشاء.</p>
           <button
             onClick={() => handleSeed(false)}
             disabled={seeding}

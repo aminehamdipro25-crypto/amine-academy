@@ -94,7 +94,7 @@ export default function AuditPage() {
                   )}
                 </div>
                 <div className="text-[10px] text-gray-400 flex-shrink-0 ltr-num">
-                  {new Date(entry.ts).toLocaleString('ar-SA')}
+                  {new Date(entry.ts).toLocaleString('ar-u-nu-latn')}
                 </div>
               </div>
             )

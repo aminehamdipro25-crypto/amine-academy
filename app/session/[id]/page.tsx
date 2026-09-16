@@ -842,8 +842,8 @@ export default function SessionPage() {
   }, [])
 
   function printSessionReport() {
-    const date = new Date().toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' })
-    const time = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
+    const date = new Date().toLocaleDateString('ar-u-nu-latn', { year: 'numeric', month: 'long', day: 'numeric' })
+    const time = new Date().toLocaleTimeString('ar-u-nu-latn', { hour: '2-digit', minute: '2-digit' })
     const avgScoreVal = results.length
       ? Math.round(results.reduce((s, r) => s + r.score, 0) / results.length) : 0
 
@@ -1278,7 +1278,7 @@ ${notes ? `
 
   function logIncident(entry: Omit<IncidentEntry, 'id' | 'ts' | 'elapsed'>) {
     const now = new Date()
-    const ts = now.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })
+    const ts = now.toLocaleTimeString('ar-u-nu-latn', { hour: '2-digit', minute: '2-digit' })
     const elapsedStr = `${Math.floor(elapsed / 60)}:${String(elapsed % 60).padStart(2, '0')}`
     const newEntry: IncidentEntry = { ...entry, id: crypto.randomUUID(), ts, elapsed: elapsedStr }
     setIncidentLog(prev => [...prev, newEntry])
@@ -1854,7 +1854,7 @@ ${notes ? `
               style={{ background: 'rgba(234,179,8,0.8)' }}
               onClick={() => {
                 if (quickNoteText.trim()) {
-                  const ts = new Date().toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })
+                  const ts = new Date().toLocaleTimeString('ar-u-nu-latn', { hour: '2-digit', minute: '2-digit' })
                   setNotes((prev: string) => prev ? `${prev}\n[${ts}] ${quickNoteText.trim()}` : `[${ts}] ${quickNoteText.trim()}`)
                   setQuickNoteText('')
                 }

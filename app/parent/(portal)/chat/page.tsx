@@ -7,7 +7,9 @@ import { useLang, tr, type Lang } from '@/lib/i18n'
 interface AIMsg { role: 'user' | 'assistant'; text: string; time: string }
 
 function localeFor(lang: Lang) {
-  return lang === 'en' ? 'en-US' : lang === 'fr' ? 'fr-FR' : 'ar'
+  // 'ar-u-nu-latn' not 'ar': the bare tag lets the browser choose the digit
+  // shape and some render Arabic-Indic numerals, which this platform never wants.
+  return lang === 'en' ? 'en-US' : lang === 'fr' ? 'fr-FR' : 'ar-u-nu-latn'
 }
 
 function nowTime(lang: Lang) {

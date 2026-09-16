@@ -326,7 +326,7 @@ function CheckoutForm() {
             <div className={`bg-white rounded-2xl border-2 p-6 transition-all ${step === 1 ? 'border-brand-300 shadow-md' : 'border-gray-100'}`}>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="font-black text-gray-900 text-lg flex items-center gap-2">
-                  <span className="w-7 h-7 bg-brand-600 text-white rounded-lg flex items-center justify-center text-sm font-bold">١</span>
+                  <span className="w-7 h-7 bg-brand-600 text-white rounded-lg flex items-center justify-center text-sm font-bold">1</span>
                   اختر خيارك
                 </h2>
                 {step > 1 && (
@@ -443,7 +443,7 @@ function CheckoutForm() {
               <div className={`bg-white rounded-2xl border-2 p-6 transition-all ${step === 2 ? 'border-brand-300 shadow-md' : 'border-gray-100'}`}>
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="font-black text-gray-900 text-lg flex items-center gap-2">
-                    <span className="w-7 h-7 bg-brand-600 text-white rounded-lg flex items-center justify-center text-sm font-bold">٢</span>
+                    <span className="w-7 h-7 bg-brand-600 text-white rounded-lg flex items-center justify-center text-sm font-bold">2</span>
                     بياناتك الشخصية
                   </h2>
                   {step > 2 && (
@@ -522,7 +522,7 @@ function CheckoutForm() {
             {step >= 3 && (
               <div className="bg-white rounded-2xl border-2 border-brand-300 shadow-md p-6">
                 <h2 className="font-black text-gray-900 text-lg flex items-center gap-2 mb-4">
-                  <span className="w-7 h-7 bg-brand-600 text-white rounded-lg flex items-center justify-center text-sm font-bold">٣</span>
+                  <span className="w-7 h-7 bg-brand-600 text-white rounded-lg flex items-center justify-center text-sm font-bold">3</span>
                   طريقة الدفع
                 </h2>
 

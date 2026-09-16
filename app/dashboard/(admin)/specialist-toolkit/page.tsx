@@ -115,7 +115,7 @@ function isAgeDiscounted(type: string, childAge: number): boolean {
 }
 
 const SCALE_PROVENANCE: Record<ScaleKey, string> = {
-  adhd: 'بنوده معايير أعراض DSM-5 · التصنيف بقاعدة عدّ الأعراض (٦ من ٩ فأكثر)',
+  adhd: 'بنوده معايير أعراض DSM-5 · التصنيف بقاعدة عدّ الأعراض (6 من 9 فأكثر)',
   autism: 'قائمة فرز مبنية على مجالات DSM-5 · غير معيارية — الشدة مؤشر داخلي لا تصنيف سريري',
   'learning-difficulties': 'قائمة فرز استرشادية · التشخيص الرسمي يتطلب اختبارات تحصيل معيارية',
   'attention-domains': 'قائمة ملاحظة استرشادية (لم تعد تُستخدم — محفوظة للسجلات السابقة)',
@@ -123,7 +123,9 @@ const SCALE_PROVENANCE: Record<ScaleKey, string> = {
 }
 
 function localeFor(lang: Lang) {
-  return lang === 'en' ? 'en-US' : lang === 'fr' ? 'fr-FR' : 'ar'
+  // 'ar-u-nu-latn' not 'ar': the bare tag lets the browser choose the digit
+  // shape and some render Arabic-Indic numerals, which this platform never wants.
+  return lang === 'en' ? 'en-US' : lang === 'fr' ? 'fr-FR' : 'ar-u-nu-latn'
 }
 
 function isLinkedStudentId(id: string) {

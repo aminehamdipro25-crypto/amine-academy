@@ -38,7 +38,9 @@ function AnimatedNumber({ value }: { value: number }) {
 }
 
 function localeFor(lang: Lang) {
-  return lang === 'en' ? 'en-US' : lang === 'fr' ? 'fr-FR' : 'ar'
+  // 'ar-u-nu-latn' not 'ar': the bare tag lets the browser choose the digit
+  // shape and some render Arabic-Indic numerals, which this platform never wants.
+  return lang === 'en' ? 'en-US' : lang === 'fr' ? 'fr-FR' : 'ar-u-nu-latn'
 }
 
 export default function AdminDashboardView({ parents, payments, exercises, redisError }: {

@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react'
 import { useParams } from 'next/navigation'
 import type { ExerciseResult, ExerciseProgressUpdate } from '@/lib/types'
 import { PROMPT_CARDS } from '@/lib/session-constants'
-import { startNoiseEngine, type NoiseHandle } from '@/lib/noise-synth'
+import { startNoiseEngine, playAudioUnlocked, type NoiseHandle } from '@/lib/noise-synth'
 import { formatTime } from '@/lib/session-helpers'
 import { subscribeSession, realtimeEnabled, subscribeConnectionState } from '@/lib/realtime-client'
 import { playCorrect, playWrong } from '@/lib/feedback-sound'
@@ -704,7 +704,9 @@ export default function KidSessionPage() {
         if (wantActive && noise.customUrl) {
           const audio = new Audio(noise.customUrl)
           audio.loop = true
-          audio.play().catch(() => {})
+          // Retries on the child's next touch: a swallowed rejection here left
+          // the specialist believing a track was playing to a silent room.
+          playAudioUnlocked(audio)
           customAudioElRef.current = audio
         } else if (wantActive) {
           noiseHandleRef.current = startNoiseEngine(noise.mode as Parameters<typeof startNoiseEngine>[0])

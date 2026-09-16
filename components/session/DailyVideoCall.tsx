@@ -28,12 +28,19 @@ export default function DailyVideoCall({ url, userName, compact = false, role = 
   const containerRef = useRef<HTMLDivElement>(null)
   const callRef      = useRef<DailyCall | null>(null)
   const [error, setError]           = useState('')
+  // A blocked camera or microphone is NOT a failed call — the session still
+  // connects and audio may still work. But silently swallowing it, as this did,
+  // leaves a specialist staring at a black box with no idea why. Kept separate
+  // from `error` so it shows as a hint rather than a red failure with a
+  // reconnect button that would not help.
+  const [deviceNotice, setDeviceNotice] = useState('')
   const [retryNonce, setRetryNonce] = useState(0)
   const [kidMuted, setKidMuted]     = useState(false)
   const kidMutedRef                 = useRef(false)
 
   const reconnect = useCallback(() => {
     setError('')
+    setDeviceNotice('')
     setRetryNonce(n => n + 1)
   }, [])
 
@@ -104,9 +111,19 @@ export default function DailyVideoCall({ url, userName, compact = false, role = 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const onError = (e: any) => {
         if (cancelled) return
-        const msg = e?.errorMsg || e?.error?.msg || e?.error?.type || ''
-        // Ignore benign device/permission notices — the call still connects.
-        if (/permission|not-allowed|cam-in-use|mic-in-use|devices/i.test(String(msg))) return
+        const msg = String(e?.errorMsg || e?.error?.msg || e?.error?.type || '')
+        if (/permission|not-allowed/i.test(msg)) {
+          setDeviceNotice('الكاميرا أو الميكروفون محجوب — اسمح بالوصول من أيقونة القفل في شريط العنوان ثم أعد التحميل.')
+          return
+        }
+        if (/cam-in-use|mic-in-use/i.test(msg)) {
+          setDeviceNotice('الكاميرا مستخدمة من تطبيق آخر — أغلقه ثم أعد التحميل.')
+          return
+        }
+        if (/devices/i.test(msg)) {
+          setDeviceNotice('لم يُعثر على كاميرا أو ميكروفون على هذا الجهاز.')
+          return
+        }
         setError(`تعذر الاتصال: ${msg || 'خطأ غير معروف'}`)
       }
 
@@ -176,6 +193,20 @@ export default function DailyVideoCall({ url, userName, compact = false, role = 
             <RefreshCw className={compact ? 'w-3 h-3' : 'w-3.5 h-3.5'} />
             إعادة الاتصال
           </button>
+        </div>
+      )}
+
+      {/* Device hint — the call is up, but this side has no camera or mic.
+          Deliberately not full-screen: the remote video behind it is still
+          worth seeing. */}
+      {!error && deviceNotice && (
+        <div style={{
+          position: 'absolute', left: 0, right: 0, bottom: 0, zIndex: 4,
+          background: 'rgba(120,53,15,0.94)', color: '#FDE68A',
+          padding: compact ? '6px 8px' : '8px 12px', textAlign: 'center',
+          fontSize: compact ? 10 : 12, fontWeight: 700, lineHeight: 1.5,
+        }}>
+          ⚠️ {deviceNotice}
         </div>
       )}
 

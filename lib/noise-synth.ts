@@ -9,6 +9,43 @@ export type NoiseMode = 'white' | 'rain' | 'focus' | 'calm' | 'theta'
 
 export interface NoiseHandle {
   stop: () => void
+  /**
+   * False when the browser is holding the audio silent because the child has
+   * not interacted with the page yet. The engine retries on their next touch,
+   * but the caller can use this to tell the specialist that the child is not
+   * hearing anything — rather than showing the music as playing.
+   */
+  audible: () => boolean
+}
+
+/**
+ * Resume a context the autoplay policy has suspended, and if the browser still
+ * refuses, arm a one-shot listener so it starts the moment the child touches
+ * the screen.
+ *
+ * This is the whole bug: on the specialist's page the engine starts from their
+ * click, so it works. On the CHILD's page it starts from a realtime event with
+ * no gesture behind it, so the context is created suspended and stays silent —
+ * while the specialist's own screen shows the music as on. A child sat through
+ * "calming music" that never played.
+ */
+function unlock(ctx: AudioContext): void {
+  if (ctx.state !== 'suspended') return
+  ctx.resume().catch(() => {})
+  if (typeof window === 'undefined') return
+
+  const onGesture = () => {
+    ctx.resume().catch(() => {})
+    remove()
+  }
+  const remove = () => {
+    window.removeEventListener('pointerdown', onGesture)
+    window.removeEventListener('touchstart', onGesture)
+    window.removeEventListener('keydown', onGesture)
+  }
+  window.addEventListener('pointerdown', onGesture, { once: true })
+  window.addEventListener('touchstart', onGesture, { once: true })
+  window.addEventListener('keydown', onGesture, { once: true })
 }
 
 export function startNoiseEngine(mode: NoiseMode): NoiseHandle | null {
@@ -16,6 +53,10 @@ export function startNoiseEngine(mode: NoiseMode): NoiseHandle | null {
   try {
     const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
     const ctx = new AudioCtx()
+    // Must happen before anything is scheduled: a context created outside a
+    // user gesture starts suspended, and every node below would play into
+    // silence without this.
+    unlock(ctx)
 
     const masterGain = ctx.createGain()
     // Fade the whole output in from silence instead of jumping straight to
@@ -105,6 +146,7 @@ export function startNoiseEngine(mode: NoiseMode): NoiseHandle | null {
 
     const stoppedSrc = src
     return {
+      audible: () => ctx.state === 'running',
       stop: () => {
         const now = ctx.currentTime
         envGain.gain.cancelScheduledValues(now)
@@ -118,5 +160,49 @@ export function startNoiseEngine(mode: NoiseMode): NoiseHandle | null {
     }
   } catch {
     return null // Web Audio unavailable
+  }
+}
+
+/**
+ * Play an audio element, surviving the autoplay policy the same way the
+ * synthesised engine does.
+ *
+ * `audio.play()` returns a promise that REJECTS when the browser blocks
+ * playback for want of a user gesture. Swallowing that rejection — which is
+ * what every call site did — turns a blocked track into silence nobody reports.
+ * Here the play is retried on the child's next touch instead.
+ *
+ * Returns a handle whose `audible()` says whether sound is actually coming out.
+ */
+export function playAudioUnlocked(audio: HTMLAudioElement): NoiseHandle {
+  let started = false
+  let cancelled = false
+
+  const attempt = () => {
+    if (cancelled) return
+    audio.play().then(() => { started = true; remove() }).catch(() => { /* still blocked */ })
+  }
+  const remove = () => {
+    if (typeof window === 'undefined') return
+    window.removeEventListener('pointerdown', attempt)
+    window.removeEventListener('touchstart', attempt)
+    window.removeEventListener('keydown', attempt)
+  }
+
+  attempt()
+  if (typeof window !== 'undefined') {
+    window.addEventListener('pointerdown', attempt)
+    window.addEventListener('touchstart', attempt)
+    window.addEventListener('keydown', attempt)
+  }
+
+  return {
+    audible: () => started && !audio.paused,
+    stop: () => {
+      cancelled = true
+      remove()
+      try { audio.pause() } catch { /* already gone */ }
+      audio.currentTime = 0
+    },
   }
 }

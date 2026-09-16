@@ -32,7 +32,19 @@ export async function GET(req: NextRequest) {
     )).filter(Boolean) as AssessmentResult[]
 
     records.sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime())
-    return NextResponse.json({ assessments: records })
+
+    // Two things ship out of here that a parent screen has no use for: the raw
+    // per-item ratings, and assessedByActorId, which is an internal audit value
+    // ('owner' / 'staff:<id>'). Drop both, and expose the one bit the portal
+    // actually needs — whether the specialist ran this scale or the parent did.
+    // assessedByActorId is set server-side in /api/assessments and never by the
+    // parent POST below, so it is a trustworthy discriminator.
+    const view = records.map(({ answers: _answers, assessedByActorId, ...rest }) => ({
+      ...rest,
+      bySpecialist: Boolean(assessedByActorId),
+    }))
+
+    return NextResponse.json({ assessments: view })
   } catch (err) {
     console.error('[parent/assessment GET]', err)
     return NextResponse.json({ error: 'خطأ في الخادم' }, { status: 500 })

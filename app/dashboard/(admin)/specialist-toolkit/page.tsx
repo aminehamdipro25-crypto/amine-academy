@@ -1486,7 +1486,13 @@ export default function SpecialistToolkitPage() {
                   </div>
                   <div className="flex-1 min-w-[140px]">
                     <p className="font-black text-gray-900">{name}</p>
-                    <p className="text-xs text-gray-500 ltr-num">{t.ageValueLabel(age)}</p>
+                    {/* A child record with no usable birth date used to print
+                        "0 سنة" on a document a family — and sometimes a school
+                        — reads. State the absence instead of asserting a wrong
+                        age. The rest of this page already treats 0 as "unknown". */}
+                    <p className="text-xs text-gray-500 ltr-num">
+                      {(parseInt(age, 10) || 0) > 0 ? t.ageValueLabel(age) : t.ageUnknownLabel}
+                    </p>
                   </div>
                   {parentName && (
                     <div>

@@ -5,6 +5,7 @@ import type { Student, ProgressReport } from '@/lib/types'
 import { indicatorTrend } from '@/lib/apa-trend'
 import { useLang, tr } from '@/lib/i18n'
 import { formatDateOnly, localeFor } from '@/lib/format'
+import SpecialistAssessments, { type ParentAssessmentView } from '@/components/parent/SpecialistAssessments'
 
 interface ChildReports { child: Student; reports: ProgressReport[] }
 
@@ -578,6 +579,7 @@ export default function ReportsPage() {
   const coachName = tr[lang].portal.common.coachName
   const [data, setData] = useState<ChildReports[]>([])
   const [sessionData, setSessionData] = useState<ChildSessions[]>([])
+  const [assessments, setAssessments] = useState<ParentAssessmentView[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedChild, setSelectedChild] = useState('')
 
@@ -593,6 +595,12 @@ export default function ReportsPage() {
       .then(r => r.json())
       .then(d => setSessionData(d.sessionsPerChild || []))
       .catch(() => {})
+    // The specialist's toolkit assessments live here too. A failure must leave
+    // the rest of the page intact rather than blanking the reports.
+    fetch('/api/parent/assessment')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => setAssessments(d?.assessments ?? []))
+      .catch(() => {})
   }, [])
 
   if (loading) return (
@@ -607,6 +615,7 @@ export default function ReportsPage() {
   const current = data.find(d => d.child.id === selectedChild)
   const reports  = current?.reports ?? []
   const currentSessions = sessionData.find(d => d.child.id === selectedChild)?.sessions ?? []
+  const currentAssessments = assessments.filter(a => a.studentId === selectedChild)
 
   return (
     <div className="space-y-6">
@@ -637,6 +646,12 @@ export default function ReportsPage() {
           ))}
         </div>
       )}
+
+      {/* ── Specialist's saved assessments ──
+          Rendered even when empty: a parent who has been told an assessment
+          was done needs to see either the result or a plain statement that
+          none is filed, rather than a page with no mention of it at all. */}
+      <SpecialistAssessments assessments={currentAssessments} />
 
       {/* ── Recent session summaries ── */}
       <RecentSessions sessions={currentSessions} />

@@ -15,6 +15,12 @@
 // the same material the printed version carries, and it marks clearly which
 // assessments the specialist ran and which the parent filled in themselves,
 // because both are stored in the same place.
+//
+// The specialist's clinical notes are deliberately NOT here. They are withheld
+// server-side in /api/parent/assessment, not merely hidden in this component,
+// so they never reach the browser: printing the toolkit document and handing it
+// to a family is a decision the specialist makes each time, and publishing the
+// same text to a portal the family can open whenever they like is not that.
 
 import { useState } from 'react'
 import { ChevronDown, ClipboardCheck, Stethoscope, User } from 'lucide-react'
@@ -31,7 +37,6 @@ export interface ParentAssessmentView {
   recommendations: string[]
   completedAt: string
   assessedByName?: string
-  clinicalNotes?: string
   bySpecialist?: boolean
   recommendedPlan?: {
     sessionsPerWeek: number
@@ -82,7 +87,6 @@ const COPY = {
     domainsTitle: 'المجالات المقاسة',
     recommendationsTitle: 'التوصيات',
     noRecommendations: 'لا توصيات مسجّلة لهذا المقياس',
-    notesTitle: 'ملاحظات الأخصائي',
     planTitle: 'الخطة المقترحة',
     planSessions: (n: number, w: number) => `${n} حصة أسبوعياً لمدة ${w} أسبوعاً`,
     planReassess: (w: number) => `إعادة تقييم بعد ${w} أسبوعاً`,
@@ -103,7 +107,6 @@ const COPY = {
     domainsTitle: 'Domains measured',
     recommendationsTitle: 'Recommendations',
     noRecommendations: 'No recommendations recorded for this scale',
-    notesTitle: "Specialist's notes",
     planTitle: 'Suggested plan',
     planSessions: (n: number, w: number) => `${n} sessions per week for ${w} weeks`,
     planReassess: (w: number) => `Reassess after ${w} weeks`,
@@ -124,7 +127,6 @@ const COPY = {
     domainsTitle: 'Domaines mesurés',
     recommendationsTitle: 'Recommandations',
     noRecommendations: 'Aucune recommandation enregistrée pour cette échelle',
-    notesTitle: 'Notes du spécialiste',
     planTitle: 'Plan proposé',
     planSessions: (n: number, w: number) => `${n} séances par semaine pendant ${w} semaines`,
     planReassess: (w: number) => `Réévaluation après ${w} semaines`,
@@ -289,15 +291,6 @@ export default function SpecialistAssessments({ assessments }: { assessments: Pa
                         </div>
                       </div>
                     )}
-                  </div>
-                )}
-
-                {a.clinicalNotes?.trim() && (
-                  <div>
-                    <p className="text-xs font-bold text-gray-500 mb-1.5">{c.notesTitle}</p>
-                    <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line bg-gray-50 rounded-xl p-3">
-                      {a.clinicalNotes}
-                    </p>
                   </div>
                 )}
 

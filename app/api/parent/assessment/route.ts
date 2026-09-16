@@ -33,13 +33,21 @@ export async function GET(req: NextRequest) {
 
     records.sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime())
 
-    // Two things ship out of here that a parent screen has no use for: the raw
-    // per-item ratings, and assessedByActorId, which is an internal audit value
-    // ('owner' / 'staff:<id>'). Drop both, and expose the one bit the portal
-    // actually needs — whether the specialist ran this scale or the parent did.
-    // assessedByActorId is set server-side in /api/assessments and never by the
-    // parent POST below, so it is a trustworthy discriminator.
-    const view = records.map(({ answers: _answers, assessedByActorId, ...rest }) => ({
+    // Three things are withheld from the parent's copy.
+    //
+    // answers — the raw per-item ratings, of no use on a parent screen.
+    // assessedByActorId — an internal audit value ('owner' / 'staff:<id>').
+    // clinicalNotes — the specialist's own observations during the run. The
+    //   printed toolkit document carries them, but printing and handing that
+    //   document over is the specialist's decision each time; publishing them
+    //   to a portal the family can open at any moment is not the same act.
+    //   Withheld here rather than hidden in the UI, so they do not leave the
+    //   server at all.
+    //
+    // bySpecialist replaces the actor id: it is set server-side in
+    // /api/assessments and never by the parent POST below, so it is a
+    // trustworthy way to say who ran the scale.
+    const view = records.map(({ answers: _a, assessedByActorId, clinicalNotes: _n, ...rest }) => ({
       ...rest,
       bySpecialist: Boolean(assessedByActorId),
     }))

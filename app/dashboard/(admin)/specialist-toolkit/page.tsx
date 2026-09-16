@@ -263,6 +263,12 @@ export default function SpecialistToolkitPage() {
   // age is derived from it and the age box becomes read-only, so the number the
   // scales are gated on cannot drift from the date on the record.
   const [birthDate, setBirthDate] = useState('')
+  // True when the linked record already carries a birth date: that one is
+  // identity and stays locked. A linked record WITHOUT one used to lock the
+  // field too, which left the specialist with an empty greyed-out box, an empty
+  // age, and no other screen in the platform that would accept the value.
+  const [birthDateOnRecord, setBirthDateOnRecord] = useState(false)
+  const [birthDateSaveState, setBirthDateSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [secondsLeft, setSecondsLeft] = useState(0)
   const [timerResetNonce, setTimerResetNonce] = useState(0)
 
@@ -450,6 +456,8 @@ export default function SpecialistToolkitPage() {
     // The record's own date is authoritative — it replaces anything typed here.
     setBirthDate(student.birthDate ?? '')
     setAge(ageFromBirthDate(student.birthDate))
+    setBirthDateOnRecord(Boolean(student.birthDate))
+    setBirthDateSaveState('idle')
     setParentName(`${parent.firstName} ${parent.lastName}`.trim())
     setChildQuery('')
     setChildPickerOpen(false)
@@ -458,8 +466,30 @@ export default function SpecialistToolkitPage() {
   function unlinkChild() {
     setStudentId(`temp-${Date.now().toString(36)}`)
     setBirthDate('')
+    setBirthDateOnRecord(false)
+    setBirthDateSaveState('idle')
     setPastAssessments([])
     setCurrentProgram(null)
+  }
+
+  /** Complete a linked record that has no birth date. Never overwrites one. */
+  async function persistBirthDate(value: string) {
+    if (!isLinkedStudentId(studentId) || birthDateOnRecord) return
+    setBirthDateSaveState('saving')
+    try {
+      const res = await fetch(`/api/admin/students/${studentId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ birthDate: value }),
+      })
+      if (!res.ok) throw new Error('patch failed')
+      setBirthDateOnRecord(true)
+      setBirthDateSaveState('saved')
+      loadClients()
+    } catch {
+      // Say so rather than leave a value that looks saved and is not.
+      setBirthDateSaveState('error')
+    }
   }
 
   // Same-type assessments already on this linked child's record within the last 24h —
@@ -972,10 +1002,22 @@ export default function SpecialistToolkitPage() {
                   // disagree. Clearing the date hands the box back to the user
                   // rather than wiping an age they may have typed deliberately.
                   const years = ageYearsFromBirthDate(v)
-                  if (years !== null) setAge(String(years))
+                  if (years !== null) {
+                    setAge(String(years))
+                    // A linked record missing this value gets it written back,
+                    // so the gap is closed everywhere rather than only inside
+                    // this one report.
+                    void persistBirthDate(v)
+                  }
                 }}
-                disabled={isLinkedStudentId(studentId)}
+                disabled={isLinkedStudentId(studentId) && birthDateOnRecord}
                 className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-brand-300 focus:outline-none disabled:bg-gray-50 disabled:text-gray-400 ltr-num" />
+              {isLinkedStudentId(studentId) && !birthDateOnRecord && birthDateSaveState === 'idle' && (
+                <p className="text-[11px] text-amber-700 mt-1">{t.birthDateMissingHint}</p>
+              )}
+              {birthDateSaveState === 'saving' && <p className="text-[11px] text-gray-400 mt-1">{t.birthDateSaving}</p>}
+              {birthDateSaveState === 'saved'  && <p className="text-[11px] text-emerald-600 mt-1">{t.birthDateSaved}</p>}
+              {birthDateSaveState === 'error'  && <p className="text-[11px] text-red-600 mt-1">{t.birthDateSaveError}</p>}
             </div>
             <div>
               <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.ageLabel}</label>

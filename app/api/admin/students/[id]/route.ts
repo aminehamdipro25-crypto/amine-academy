@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { isDashboardUser } from '@/lib/auth'
 import { getStudent, updateStudent } from '@/lib/db'
 import { audit } from '@/lib/audit'
-import type { Diagnosis } from '@/lib/types'
+import type { AgeGroup, Diagnosis } from '@/lib/types'
+import { ageGroupFromBirthDate, ageYearsFromBirthDate } from '@/lib/age'
 
 export const runtime = 'nodejs'
 
@@ -17,8 +18,17 @@ const VALID_DIAGNOSES: Diagnosis[] = ['ADHD', 'AUTISM', 'ADHD+AUTISM', 'OTHER']
  * answer was permanent: nothing in the dashboard could change it once the
  * assessment actually said something.
  *
- * Deliberately narrow: only the two fields the assessment informs. Names and
- * birth dates are identity, not findings, and are not editable here.
+ * Deliberately narrow: only the fields the assessment informs. Names are
+ * identity and are not editable here.
+ *
+ * Birth date is a special case. Changing one is identity editing and stays
+ * refused. But a record that has NO birth date could not be completed from
+ * anywhere in the platform: the toolkit disables its date field for any linked
+ * child, so the specialist faced an empty, greyed-out box, an empty age, and no
+ * other screen that would take the value. The age matters clinically — the
+ * learning-difficulties scale is withheld below 8 and the DSM-5 symptom
+ * threshold drops at 17 — so an unfillable gap is not a safe default.
+ * Filling an absent date is therefore allowed; overwriting a present one is not.
  */
 export async function PATCH(req: NextRequest, props: { params: Promise<{ id: string }> }) {
   if (!(await isDashboardUser())) {
@@ -35,7 +45,27 @@ export async function PATCH(req: NextRequest, props: { params: Promise<{ id: str
     const body = await req.json().catch(() => null)
     if (!body) return NextResponse.json({ error: 'بيانات غير صالحة' }, { status: 400 })
 
-    const updates: { diagnosis?: Diagnosis; severityLevel?: 1 | 2 | 3 } = {}
+    const updates: { diagnosis?: Diagnosis; severityLevel?: 1 | 2 | 3; birthDate?: string; ageGroup?: AgeGroup } = {}
+
+    if (body.birthDate !== undefined) {
+      if (student.birthDate) {
+        return NextResponse.json(
+          { error: 'تاريخ الميلاد مسجّل بالفعل ولا يُعدَّل من هنا' },
+          { status: 400 },
+        )
+      }
+      const birthDate = String(body.birthDate ?? '').slice(0, 10)
+      // ageYearsFromBirthDate rejects the shapes Date would silently accept and
+      // roll forward (2025-02-30, 2025-13-01) as well as dates in the future.
+      const years = ageYearsFromBirthDate(birthDate)
+      if (years === null) {
+        return NextResponse.json({ error: 'تاريخ ميلاد غير صالح' }, { status: 400 })
+      }
+      updates.birthDate = birthDate
+      // Kept consistent with the date rather than left at whatever was guessed
+      // at intake — the catalogue gates exercises on this band.
+      updates.ageGroup = ageGroupFromBirthDate(birthDate)
+    }
 
     if (body.diagnosis !== undefined) {
       if (!VALID_DIAGNOSES.includes(body.diagnosis)) {
@@ -68,6 +98,7 @@ export async function PATCH(req: NextRequest, props: { params: Promise<{ id: str
         fromSeverity: student.severityLevel,
         ...(updates.diagnosis ? { toDiagnosis: updates.diagnosis } : {}),
         ...(updates.severityLevel ? { toSeverity: updates.severityLevel } : {}),
+        ...(updates.birthDate ? { setBirthDate: updates.birthDate, toAgeGroup: updates.ageGroup } : {}),
       },
     })
 

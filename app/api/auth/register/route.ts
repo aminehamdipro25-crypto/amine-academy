@@ -5,6 +5,7 @@ import { sendEmail, welcomeParentEmail } from '@/lib/mailer'
 import { tg, tgEsc } from '@/lib/telegram'
 import { isRateLimited, getClientIp } from '@/lib/rateLimit'
 import { verifyRecaptcha } from '@/lib/recaptcha'
+import { isUsableName, sanitizePersonName } from '@/lib/person-name'
 import type { AgeGroup, Diagnosis } from '@/lib/types'
 
 export const runtime = 'nodejs'
@@ -54,11 +55,11 @@ export async function POST(req: NextRequest) {
     const { parent, child, plan, assessment } = body
 
     step = 'validate'
-    if (!parent?.email?.trim() || !parent?.password || !parent?.firstName?.trim() || !parent?.lastName?.trim())
+    if (!parent?.email?.trim() || !parent?.password || !isUsableName(parent?.firstName) || !isUsableName(parent?.lastName))
       return NextResponse.json({ error: 'بيانات ولي الأمر غير مكتملة' }, { status: 400 })
     if (parent.password.length < 6)
       return NextResponse.json({ error: 'كلمة المرور يجب أن تكون 6 أحرف على الأقل' }, { status: 400 })
-    if (!child?.firstName?.trim() || !child?.birthDate)
+    if (!isUsableName(child?.firstName) || !child?.birthDate)
       return NextResponse.json({ error: 'بيانات الطفل غير مكتملة' }, { status: 400 })
 
     step = 'check-email'
@@ -73,8 +74,11 @@ export async function POST(req: NextRequest) {
     const newParent = await createParent({
       email: parent.email.toLowerCase().trim(),
       passwordHash,
-      firstName: parent.firstName.trim(),
-      lastName: parent.lastName.trim(),
+      // Sanitised, not merely trimmed: these flow into AI prompts, email
+      // templates and the parent's printed report — the same reason the
+      // diagnosis below is validated against its union.
+      firstName: sanitizePersonName(parent.firstName),
+      lastName: sanitizePersonName(parent.lastName),
       phone: parent.phone?.trim() || '',
       country: parent.country || '',
       subscriptionStatus: 'pending',
@@ -95,8 +99,8 @@ export async function POST(req: NextRequest) {
     step = 'create-student'
     const student = await createStudent({
       parentId: newParent.id,
-      firstName: child.firstName.trim(),
-      lastName: child.lastName?.trim() || newParent.lastName,
+      firstName: sanitizePersonName(child.firstName),
+      lastName: sanitizePersonName(child.lastName) || newParent.lastName,
       birthDate: child.birthDate,
       ageGroup: calcAgeGroup(child.birthDate),
       // Runtime-validated against the actual Diagnosis union — this is public,

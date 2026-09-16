@@ -5,6 +5,7 @@ import { createParent, createStudent, getParentByEmail, updateParent } from '@/l
 import { hashPassword } from '@/lib/password'
 import { audit } from '@/lib/audit'
 import { ageGroupFromBirthDate } from '@/lib/age'
+import { sanitizePersonName } from '@/lib/person-name'
 import type { Diagnosis } from '@/lib/types'
 
 export const runtime = 'nodejs'
@@ -40,10 +41,10 @@ export async function POST(req: NextRequest) {
     const parentIn = body.parent ?? {}
     const childIn = body.child ?? {}
 
-    const firstName = str(parentIn.firstName, 50)
-    const lastName = str(parentIn.lastName, 50)
+    const firstName = sanitizePersonName(parentIn.firstName)
+    const lastName = sanitizePersonName(parentIn.lastName)
     const email = str(parentIn.email, 120).toLowerCase()
-    const childFirstName = str(childIn.firstName, 50)
+    const childFirstName = sanitizePersonName(childIn.firstName)
     const birthDate = str(childIn.birthDate, 10)
 
     if (!firstName || !lastName) {
@@ -106,7 +107,7 @@ export async function POST(req: NextRequest) {
     const student = await createStudent({
       parentId: parent.id,
       firstName: childFirstName,
-      lastName: str(childIn.lastName, 50) || lastName,
+      lastName: sanitizePersonName(childIn.lastName) || lastName,
       birthDate,
       ageGroup: ageGroupFromBirthDate(birthDate),
       diagnosis: (VALID_DIAGNOSES.includes(childIn.diagnosis) ? childIn.diagnosis : 'OTHER') as Diagnosis,

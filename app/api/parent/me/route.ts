@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyToken } from '@/lib/auth'
+import { isUsableName, sanitizePersonName } from '@/lib/person-name'
 import { getParent, getStudentsByParent, getParentAppointments, getStudentReports, updateParent } from '@/lib/db'
 import { NextRequest } from 'next/server'
 
@@ -18,8 +19,10 @@ export async function PATCH(req: NextRequest) {
     const body = await req.json()
     const allowed: Record<string, string> = {}
     if (typeof body.phone === 'string') allowed.phone = body.phone.trim().slice(0, 30)
-    if (typeof body.firstName === 'string' && body.firstName.trim()) allowed.firstName = body.firstName.trim().slice(0, 50)
-    if (typeof body.lastName === 'string' && body.lastName.trim()) allowed.lastName = body.lastName.trim().slice(0, 50)
+    // Same sanitising as registration: a rename is the same channel, and a
+    // payload smuggled in here would reach the very next generated report.
+    if (isUsableName(body.firstName)) allowed.firstName = sanitizePersonName(body.firstName)
+    if (isUsableName(body.lastName)) allowed.lastName = sanitizePersonName(body.lastName)
     if (Object.keys(allowed).length === 0) {
       return NextResponse.json({ error: 'لا توجد حقول قابلة للتعديل' }, { status: 400 })
     }

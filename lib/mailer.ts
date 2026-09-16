@@ -1,6 +1,8 @@
 import nodemailer from 'nodemailer'
 import type { Transporter } from 'nodemailer'
 import { GAME_LABELS_AR } from './constants'
+import { baseUrl } from './base-url'
+import { currentWeekKey, shiftWeekKey } from './week'
 
 let _transport: Transporter | null = null
 
@@ -236,12 +238,19 @@ export function weeklyProgressEmail(
   /** In-person APA sessions filed this week — the only activity a face-to-face child generates. */
   apaSessionsThisWeek = 0,
 ): string {
+  // byWeek only contains weeks the child actually played, so its last entry is
+  // "the most recent week with activity" — which is not "this week" for anyone
+  // who has paused. Look the weeks up by key instead: a missing week is zero.
+  const weekKey = currentWeekKey()
+  const prevKey = shiftWeekKey(weekKey, -1)
+
   const studentsHtml = studentProgress.map(({ student, history }) => {
-    const thisWeek = history.byWeek[history.byWeek.length - 1]
-    const lastWeek = history.byWeek[history.byWeek.length - 2]
-    const improvement = thisWeek && lastWeek
-      ? thisWeek.avgScore - lastWeek.avgScore
-      : 0
+    const thisWeek = history.byWeek.find(w => w.week === weekKey)
+    const lastWeek = history.byWeek.find(w => w.week === prevKey)
+    // A comparison needs both weeks. Without them there is no percentage to
+    // report — not a 0%, which would read as "no progress".
+    const comparable = Boolean(thisWeek && lastWeek)
+    const improvement = thisWeek && lastWeek ? thisWeek.avgScore - lastWeek.avgScore : 0
     const topGames = Object.entries(history.byGame)
       .sort((a, b) => b[1].plays - a[1].plays)
       .slice(0, 3)
@@ -251,9 +260,9 @@ export function weeklyProgressEmail(
 
     let highlight: string | null = null
     if (bestGame && bestGame[1].avgScore >= 70 && bestGame[1].plays >= 2) {
-      highlight = `🌟 نقطة قوة ${escHtml(student.firstName)}: <strong>${escHtml(GAME_LABELS_AR[bestGame[0]] ?? bestGame[0])}</strong> بمتوسط ${bestGame[1].avgScore}% على مدى ${bestGame[1].plays} محاولة!`
-    } else if (improvement > 0) {
-      highlight = `📈 تحسّن أداء ${escHtml(student.firstName)} بنسبة ${improvement}% هذا الأسبوع، استمروا بهذا الزخم!`
+      highlight = `🌟 نقطة قوة ${escHtml(student.firstName)}: <strong>${escHtml(GAME_LABELS_AR[bestGame[0]] ?? bestGame[0])}</strong> بمتوسط ${bestGame[1].avgScore}% على مدى ${bestGame[1].plays} محاولة (منذ البداية)!`
+    } else if (comparable && improvement > 0) {
+      highlight = `📈 تحسّن أداء ${escHtml(student.firstName)} بنسبة ${improvement}% عن الأسبوع الماضي، استمروا بهذا الزخم!`
     } else if (thisWeek?.gamesPlayed) {
       highlight = `💪 لعب ${escHtml(student.firstName)} ${thisWeek.gamesPlayed} تمرين هذا الأسبوع، الاستمرارية هي الأهم!`
     }
@@ -274,24 +283,29 @@ export function weeklyProgressEmail(
             <div style="font-size:11px;color:#64748b;margin-top:2px">لعبة هذا الأسبوع</div>
           </div>
           <div style="flex:1;background:white;border-radius:8px;padding:12px;text-align:center;border:1px solid #e2e8f0">
-            <div style="font-size:24px;font-weight:900;color:${improvement >= 0 ? '#16a34a' : '#dc2626'}">${improvement >= 0 ? '+' : ''}${improvement}%</div>
-            <div style="font-size:11px;color:#64748b;margin-top:2px">تحسن الأداء</div>
+            ${comparable
+              ? `<div style="font-size:24px;font-weight:900;color:${improvement >= 0 ? '#16a34a' : '#dc2626'}">${improvement >= 0 ? '+' : ''}${improvement}%</div>
+            <div style="font-size:11px;color:#64748b;margin-top:2px">مقارنة بالأسبوع الماضي</div>`
+              : `<div style="font-size:24px;font-weight:900;color:#94a3b8">—</div>
+            <div style="font-size:11px;color:#64748b;margin-top:2px">لا مقارنة متاحة</div>`}
           </div>
           <div style="flex:1;background:white;border-radius:8px;padding:12px;text-align:center;border:1px solid #e2e8f0">
             <div style="font-size:24px;font-weight:900;color:#d97706">${history.totalMinutes}</div>
             <div style="font-size:11px;color:#64748b;margin-top:2px">دقيقة إجمالي</div>
           </div>
         </div>
+        ${!thisWeek ? `
+        <p style="color:#94a3b8;font-size:13px;margin:0 0 12px">لا نشاط على المنصة هذا الأسبوع.</p>` : ''}
         ${topGames.length > 0 ? `
         <div>
-          <p style="color:#64748b;font-size:12px;font-weight:700;margin:0 0 8px">الألعاب الأكثر ممارسة:</p>
+          <p style="color:#64748b;font-size:12px;font-weight:700;margin:0 0 8px">الألعاب الأكثر ممارسة (منذ البداية):</p>
           ${topGames.map(([gameId, data]) => `
             <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:white;border-radius:6px;margin-bottom:4px;border:1px solid #e2e8f0">
-              <span style="color:#334155;font-size:13px">${GAME_LABELS_AR[gameId] ?? gameId}</span>
+              <span style="color:#334155;font-size:13px">${escHtml(GAME_LABELS_AR[gameId] ?? gameId)}</span>
               <span style="color:#5b6ef2;font-size:12px;font-weight:700">${data.avgScore}% متوسط • ${data.plays} مرة</span>
             </div>
           `).join('')}
-        </div>` : '<p style="color:#94a3b8;font-size:13px">لا يوجد نشاط هذا الأسبوع</p>'}
+        </div>` : ''}
       </div>
     `
   }).join('')
@@ -311,7 +325,7 @@ export function weeklyProgressEmail(
     </div>
     <p style="color:#64748b;font-size:13px;margin-top:16px">
       لمشاهدة التفاصيل الكاملة،
-      <a href="${process.env.NEXTAUTH_URL || 'https://amine-academy.com'}/parent/progress" style="color:#5b6ef2;font-weight:700">افتح لوحة التطور</a>
+      <a href="${baseUrl()}/parent/progress" style="color:#5b6ef2;font-weight:700">افتح لوحة التطور</a>
     </p>
   `)
 }

@@ -3,6 +3,7 @@ import { getAllParents, getStudentsByParent, getStudentGameHistory, getStudentAp
 import { filterApaRecordsByPeriod } from '@/lib/apa-record'
 import { sendEmail, weeklyProgressEmail } from '@/lib/mailer'
 import { safeCompare } from '@/lib/password'
+import { currentWeekKey } from '@/lib/week'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -55,7 +56,15 @@ export async function GET(req: Request) {
         }
       }
 
-      const hasActivity = studentProgress.some(sp => sp.history.totalPlays > 0) || apaSessionsThisWeek > 0
+      // totalPlays is lifetime, so this gate used to pass forever once a child
+      // had played even once — a family that stopped months ago kept receiving
+      // a "weekly" email describing a week in which nothing happened. Ask for
+      // plays filed in the week we are actually reporting on.
+      const thisWeekKey = currentWeekKey()
+      const playsThisWeek = studentProgress.some(sp =>
+        sp.history.byWeek.some(w => w.week === thisWeekKey && w.gamesPlayed > 0))
+
+      const hasActivity = playsThisWeek || apaSessionsThisWeek > 0
       if (!hasActivity) continue
 
       const html = weeklyProgressEmail(parent.firstName, studentProgress, apaSessionsThisWeek)

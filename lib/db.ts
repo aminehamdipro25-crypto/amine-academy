@@ -37,6 +37,7 @@
 import crypto from 'crypto'
 import { redis } from './redis'
 import { generateId } from './auth'
+import { weekKeyOf } from './week'
 import type { Parent, Student, Exercise, Program, Appointment, ProgressReport, PendingPayment, Message, Achievement, StudentAssessmentProfile, GameResult, WeeklyProgress, Staff, Story, AssessmentResult, ApaSessionRecord } from './types'
 
 // ── Staff (multi-therapist accounts) ────────────────────────────
@@ -873,14 +874,11 @@ export async function getStudentGameHistory(studentId: string): Promise<{
   // Aggregate by week (Monday-based)
   const weekMap: Record<string, { scores: number[]; minutes: number }> = {}
   for (const r of results) {
-    const d = new Date(r.playedAt)
-    const day = d.getDay()
-    const monday = new Date(d)
-    monday.setDate(d.getDate() - ((day + 6) % 7))
-    const weekKey = monday.toISOString().slice(0, 10)
-    if (!weekMap[weekKey]) weekMap[weekKey] = { scores: [], minutes: 0 }
-    weekMap[weekKey].scores.push(r.score)
-    weekMap[weekKey].minutes += Math.round(r.durationSeconds / 60)
+    const key = weekKeyOf(r.playedAt)
+    if (!key) continue
+    if (!weekMap[key]) weekMap[key] = { scores: [], minutes: 0 }
+    weekMap[key].scores.push(r.score)
+    weekMap[key].minutes += Math.round(r.durationSeconds / 60)
   }
 
   const byWeek = Object.entries(weekMap)

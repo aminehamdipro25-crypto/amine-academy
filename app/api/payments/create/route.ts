@@ -5,6 +5,7 @@ import { cookies } from 'next/headers'
 import { createPendingPayment } from '@/lib/db'
 import { getSiteSettings } from '@/lib/site-settings'
 import { sendEmail } from '@/lib/mailer'
+import { baseUrl } from '@/lib/base-url'
 import { tg, tgEsc } from '@/lib/telegram'
 import { verifyToken } from '@/lib/auth'
 import { isRateLimited, getClientIp } from '@/lib/rateLimit'
@@ -175,7 +176,7 @@ export async function POST(req: NextRequest) {
       <tr><td style="padding:8px 0;color:#64748b;font-size:14px">رمز المرجع</td><td style="padding:8px 0;color:#4650e3;font-weight:900;font-size:16px">${payment.referenceCode}</td></tr>
     </table>
     <div style="margin-top:20px;text-align:center">
-      <a href="${process.env.NEXT_PUBLIC_APP_URL ?? ''}/dashboard/payments" style="display:inline-block;background:#4650e3;color:white;text-decoration:none;font-size:14px;font-weight:700;padding:12px 28px;border-radius:10px">إدارة المدفوعات</a>
+      <a href="${baseUrl()}/dashboard/payments" style="display:inline-block;background:#4650e3;color:white;text-decoration:none;font-size:14px;font-weight:700;padding:12px 28px;border-radius:10px">إدارة المدفوعات</a>
     </div>
   </div>
 </div>

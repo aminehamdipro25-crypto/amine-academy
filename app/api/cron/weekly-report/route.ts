@@ -3,6 +3,7 @@ import { getAllParents, getStudentsByParent, getStudentGameHistory, getStudentAp
 import { filterApaRecordsByPeriod } from '@/lib/apa-record'
 import { sendEmail, weeklyProgressEmail } from '@/lib/mailer'
 import { safeCompare } from '@/lib/password'
+import { redis } from '@/lib/redis'
 import { currentWeekKey } from '@/lib/week'
 
 export const dynamic = 'force-dynamic'
@@ -26,6 +27,7 @@ export async function GET(req: Request) {
   const activeParents = parents.filter(p => p.subscriptionStatus === 'active')
 
   let sent = 0
+  let skipped = 0
   let errors = 0
 
   for (const parent of activeParents) {
@@ -67,12 +69,23 @@ export async function GET(req: Request) {
       const hasActivity = playsThisWeek || apaSessionsThisWeek > 0
       if (!hasActivity) continue
 
+      // Send once per family per week. send-reminder has always done this; this
+      // one did not, so a retry — or a manual re-run after the mail provider
+      // failed partway down the list — sent every family that had already been
+      // reached a second copy. It also makes a partial run resumable: whoever
+      // was reached is skipped, whoever was not is picked up.
+      const dedupKey = `weekly-report:${thisWeekKey}:${parent.id}`
+      if (await redis.get(dedupKey)) { skipped++; continue }
+
       const html = weeklyProgressEmail(parent.firstName, studentProgress, apaSessionsThisWeek)
       await sendEmail({
         to: parent.email,
         subject: `📊 تقرير أسبوعي — أكاديمية أمين`,
         html,
       })
+      // Only after the send succeeded — marking first would lose a family whose
+      // email threw. Ten days, so the key is gone well before the next run.
+      await redis.set(dedupKey, '1', { ex: 10 * 24 * 3600 })
       sent++
     } catch (err) {
       console.error(`[weekly-report] failed for ${parent.id}:`, err)
@@ -80,5 +93,5 @@ export async function GET(req: Request) {
     }
   }
 
-  return NextResponse.json({ ok: true, sent, errors })
+  return NextResponse.json({ ok: true, sent, skipped, errors })
 }

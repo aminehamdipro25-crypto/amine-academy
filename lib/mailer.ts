@@ -4,6 +4,11 @@ import { GAME_LABELS_AR } from './constants'
 import { baseUrl } from './base-url'
 import { currentWeekKey, shiftWeekKey } from './week'
 
+// The sender address must belong to a domain verified in the Resend account.
+// Overridable because the verified domain is deployment configuration, not a
+// constant — a wrong value here fails every send with a 403.
+const RESEND_FROM = process.env.RESEND_FROM || 'Amine Academy <noreply@amine-academy.com>'
+
 let _transport: Transporter | null = null
 
 function getGmailTransport(): Transporter {
@@ -35,14 +40,24 @@ export async function sendEmail({ to, subject, html, text }: SendEmailOpts) {
     return { provider: 'gmail' }
   }
   if (process.env.RESEND_API_KEY) {
-    await fetch('https://api.resend.com/emails', {
+    const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ from: 'Amine Academy <noreply@amine-academy.com>', to: [to], subject, html }),
+      body: JSON.stringify({ from: RESEND_FROM, to: [to], subject, html }),
     })
+    // The response used to be discarded: a rejected key, an unverified sender
+    // domain or a rate limit all returned "sent" to the caller. That is the
+    // worst possible failure for this path — the activation link a parent is
+    // waiting for, the report-ready notice, and the weekly cron (which would
+    // then write its per-family dedup key and never retry that week) all
+    // believed the message had gone out.
+    if (!res.ok) {
+      const detail = await res.text().catch(() => '')
+      throw new Error(`Resend rejected the message (HTTP ${res.status}): ${detail.slice(0, 300)}`)
+    }
     return { provider: 'resend' }
   }
   throw new Error('No email provider configured')

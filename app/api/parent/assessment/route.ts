@@ -3,7 +3,7 @@ import { cookies } from 'next/headers'
 import { verifyToken } from '@/lib/auth'
 import { getStudentsByParent } from '@/lib/db'
 import { redis } from '@/lib/redis'
-import type { AssessmentResult } from '@/lib/types'
+import type { AssessmentResult, AssessmentType } from '@/lib/types'
 import { buildRecommendedPlan, buildPlanFromVanderbilt } from '@/lib/assessment-plan'
 import type { DomainKey } from '@/lib/assessment-data'
 import { scoreVanderbilt, VANDERBILT_ITEMS, PERFORMANCE_ITEMS } from '@/lib/vanderbilt-data'
@@ -62,7 +62,12 @@ export async function GET(req: NextRequest) {
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-const VALID_TYPES = ['adhd', 'autism', 'learning-difficulties', 'motor', 'cognitive', 'attention-domains', 'vanderbilt-adhd']
+// Typed against the union so this list cannot drift from the app's own idea of
+// an assessment type, the way the admin route's hand-written copy had.
+const VALID_TYPES: AssessmentType[] = [
+  'adhd', 'autism', 'learning-difficulties', 'motor',
+  'cognitive', 'attention-domains', 'vanderbilt-adhd', 'psc17',
+]
 const VALID_SEVERITIES = ['none', 'mild', 'moderate', 'severe']
 
 export async function POST(req: NextRequest) {
@@ -142,7 +147,9 @@ export async function POST(req: NextRequest) {
       }
 
       await redis.pipeline([
-        ['SET', `assessment:${id}`, JSON.stringify(result), 'EX', String(365 * 24 * 3600)],
+        // No TTL — a screening a parent completed is part of the child's record,
+        // and the specialist compares later results against it.
+        ['SET', `assessment:${id}`, JSON.stringify(result)],
         ['LPUSH', `assessments:student:${result.studentId}`, id],
       ])
 
@@ -187,7 +194,9 @@ export async function POST(req: NextRequest) {
     }
 
     await redis.pipeline([
-      ['SET', `assessment:${id}`, JSON.stringify(result), 'EX', String(365 * 24 * 3600)],
+      // No TTL — a screening a parent completed is part of the child's record,
+      // and the specialist compares later results against it.
+      ['SET', `assessment:${id}`, JSON.stringify(result)],
       ['LPUSH', `assessments:student:${result.studentId}`, id],
     ])
 

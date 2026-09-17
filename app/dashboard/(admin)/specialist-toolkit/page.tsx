@@ -1,5 +1,5 @@
 'use client'
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useLang, tr, type Lang } from '@/lib/i18n'
 import type { AssessmentResult, Exercise, Program, WeeklySchedule, AgeGroup, Diagnosis, ExerciseResult } from '@/lib/types'
@@ -25,8 +25,9 @@ import { hasArabicVoice } from '@/lib/speech'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { ACountUp } from '@/components/ui'
 import { staggerContainer, fadeUp, popIn, liftHover, tapOnly } from '@/lib/motion'
-import { localeFor } from '@/lib/format'
-import { removeStorage } from '@/lib/safe-storage'
+import { formatDateTime, localeFor } from '@/lib/format'
+import { readStorage, removeStorage, writeStorage } from '@/lib/safe-storage'
+import { compareAssessments, findPreviousOfSameScale } from '@/lib/assessment-compare'
 
 type ConcernKey = 'autism' | 'adhd' | 'learning' | 'emotional'
 type ScaleKey = 'autism' | 'adhd' | 'attention-domains' | 'learning-difficulties' | 'psc17'
@@ -173,6 +174,7 @@ interface ClientListStudent { id: string; firstName: string; lastName: string; b
 interface ClientListItem { id: string; firstName: string; lastName: string; students: ClientListStudent[] }
 
 const DRAFT_KEY = 'specialist-toolkit-draft-v1'
+const THERAPIST_NAME_KEY = 'specialist-toolkit-therapist-name'
 
 interface Draft {
   step: Step
@@ -186,6 +188,8 @@ interface Draft {
   therapistName: string; studentId: string
   birthDate?: string
   savedResultIds: string[]
+  /** local result id → the id the server filed it under (needed to correct it later) */
+  savedServerIds?: Record<string, string>
   savedAt: number
 }
 
@@ -273,8 +277,13 @@ export default function SpecialistToolkitPage() {
   const [timerResetNonce, setTimerResetNonce] = useState(0)
 
   // Step 4 — report
-  const [therapistName, setTherapistName] = useState('')
+  // Remembered across assessments: it is the same specialist every time, and
+  // an empty byline is what used to get filed on the record.
+  const [therapistName, setTherapistName] = useState(() => readStorage(THERAPIST_NAME_KEY) ?? '')
   const [savedResultIds, setSavedResultIds] = useState<Set<string>>(new Set())
+  // The POST response carries the id the record was filed under. It used to be
+  // discarded, which left no way to go back and correct the record.
+  const [savedServerIds, setSavedServerIds] = useState<Record<string, string>>({})
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [retryNonce, setRetryNonce] = useState(0)
 
@@ -329,13 +338,14 @@ export default function SpecialistToolkitPage() {
       concerns: [...concerns], selectedScales: [...selectedScales],
       runOrder, currentIndex, results, perfResults, clinicalNotes, scaleSource, partialAnswers, therapistName, studentId, birthDate,
       savedResultIds: [...savedResultIds],
+      savedServerIds,
       savedAt: Date.now(),
     }
     try {
       localStorage.setItem(DRAFT_KEY, JSON.stringify(draft))
       setLastSavedAt(draft.savedAt)
     } catch { /* storage unavailable — printing/report still works without autosave */ }
-  }, [pendingDraft, step, name, age, gender, parentName, concerns, selectedScales, runOrder, currentIndex, results, perfResults, clinicalNotes, scaleSource, partialAnswers, therapistName, studentId, birthDate, savedResultIds])
+  }, [pendingDraft, step, name, age, gender, parentName, concerns, selectedScales, runOrder, currentIndex, results, perfResults, clinicalNotes, scaleSource, partialAnswers, therapistName, studentId, birthDate, savedResultIds, savedServerIds])
 
   function restoreDraft() {
     if (!pendingDraft) return
@@ -350,6 +360,7 @@ export default function SpecialistToolkitPage() {
     setTherapistName(pendingDraft.therapistName); setStudentId(pendingDraft.studentId)
     setBirthDate(pendingDraft.birthDate ?? '')
     setSavedResultIds(new Set(pendingDraft.savedResultIds ?? []))
+    setSavedServerIds(pendingDraft.savedServerIds ?? {})
     setLastSavedAt(pendingDraft.savedAt)
     setPendingDraft(null)
   }
@@ -524,6 +535,9 @@ export default function SpecialistToolkitPage() {
       .catch(() => setCurrentProgram(null))
   }, [studentId])
 
+  /** The attribution last written to the server, so we only PATCH real edits. */
+  const syncedAttributionRef = useRef('')
+
   // Persist newly completed results to the linked child's permanent record
   useEffect(() => {
     if (step !== 'report' || !isLinkedStudentId(studentId)) return
@@ -551,15 +565,67 @@ export default function SpecialistToolkitPage() {
           clinicalNotes: clinicalNotes[r.type as ScaleKey],
         }),
       })
-      return { id: r.id, ok: res.ok }
+      const data = await res.json().catch(() => ({}))
+      return { id: r.id, ok: res.ok, serverId: typeof data?.id === 'string' ? data.id : '' }
     })).then(outcomes => {
       if (cancelled) return
-      const newlySaved = outcomes.filter(o => o.ok).map(o => o.id)
-      if (newlySaved.length > 0) setSavedResultIds(prev => new Set([...prev, ...newlySaved]))
+      const ok = outcomes.filter(o => o.ok)
+      const newlySaved = ok.map(o => o.id)
+      if (newlySaved.length > 0) {
+        setSavedResultIds(prev => new Set([...prev, ...newlySaved]))
+        setSavedServerIds(prev => {
+          const next = { ...prev }
+          for (const o of ok) if (o.serverId) next[o.id] = o.serverId
+          return next
+        })
+        // The POST just wrote these exact values; record that so the correction
+        // effect below only fires on an actual later edit.
+        syncedAttributionRef.current = JSON.stringify([therapistName, clinicalNotes])
+      }
       setSaveStatus(outcomes.every(o => o.ok) ? 'saved' : 'error')
     }).catch(() => { if (!cancelled) setSaveStatus('error') })
     return () => { cancelled = true }
   }, [step, results, studentId, savedResultIds, therapistName, clinicalNotes, retryNonce])
+
+  // The therapist name is typed on the report screen, a moment AFTER the effect
+  // above has already filed every result — so the record was stored with an
+  // empty byline and the effect, finding nothing unsaved, never corrected it.
+  // The name reached the printed PDF only. Push it (and any note edited after
+  // filing) to the records that are already saved.
+  useEffect(() => {
+    if (therapistName.trim()) writeStorage(THERAPIST_NAME_KEY, therapistName.trim())
+  }, [therapistName])
+
+  useEffect(() => {
+    if (step !== 'report' || !isLinkedStudentId(studentId)) return
+    if (savedResultIds.size === 0) return
+
+    const saved = results
+      .filter(r => savedResultIds.has(r.id) && savedServerIds[r.id])
+      .map(r => ({ serverId: savedServerIds[r.id], type: r.type as ScaleKey }))
+    if (saved.length === 0) return
+
+    // One signature for "what attribution belongs on the record right now", so
+    // a name typed character by character does not fire a request per keystroke.
+    const signature = JSON.stringify([therapistName, clinicalNotes])
+    if (syncedAttributionRef.current === signature) return
+
+    const timer = setTimeout(() => {
+      syncedAttributionRef.current = signature
+      for (const s of saved) {
+        fetch('/api/assessments', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: s.serverId,
+            assessedByName: therapistName,
+            clinicalNotes: clinicalNotes[s.type] ?? '',
+          }),
+        }).catch(() => { syncedAttributionRef.current = '' })
+      }
+    }, 800)
+    return () => clearTimeout(timer)
+  }, [step, studentId, savedResultIds, savedServerIds, results, therapistName, clinicalNotes])
 
   function toggleConcern(c: ConcernKey) {
     setConcerns(prev => {
@@ -644,9 +710,10 @@ export default function SpecialistToolkitPage() {
     setStep('info')
     setName(''); setAge(''); setGender('unspecified'); setParentName('')
     setConcerns(new Set()); setSelectedScales(new Set()); setWarmupOpen(true)
-    setRunOrder([]); setCurrentIndex(0); setResults([]); setClinicalNotes({}); setScaleSource({}); setPartialAnswers({}); setTherapistName('')
+    setRunOrder([]); setCurrentIndex(0); setResults([]); setClinicalNotes({}); setScaleSource({}); setPartialAnswers({})
+    // The specialist's own name survives a reset — it is not the child's data.
     setStudentId(`temp-${Date.now().toString(36)}`)
-    setSavedResultIds(new Set()); setSaveStatus('idle')
+    setSavedResultIds(new Set()); setSavedServerIds({}); setSaveStatus('idle')
     setChildQuery(''); setChildPickerOpen(false); setPastAssessments([])
     setProgramError(''); setGeneratedProgram(null); setProgramSaved(false)
     setError('')
@@ -1653,6 +1720,65 @@ export default function SpecialistToolkitPage() {
                         </div>
                       ))}
                     </div>
+
+                    {(() => {
+                      // Against the last time THIS scale was run on this child.
+                      // The toolkit already stored every earlier run; nothing
+                      // read them back, so the specialist had to hold the
+                      // previous numbers in their head.
+                      // Exclude the copies this very run filed a moment ago:
+                      // on a reload the child's record contains them, and a run
+                      // must never be compared against itself.
+                      const filedNow = new Set(Object.values(savedServerIds))
+                      const earlier = pastAssessments.filter(a => !filedNow.has(a.id))
+                      const previous = findPreviousOfSameScale(result, earlier)
+                      if (!previous) return null
+                      const cmp = compareAssessments(result, previous)
+                      if (!cmp) return null
+                      return (
+                        <div className="rounded-xl border border-gray-200 p-3 print:rounded-none break-inside-avoid">
+                          <div className="flex items-baseline justify-between gap-2 flex-wrap">
+                            <p className="text-xs font-bold text-gray-700">{t.compareTitle}</p>
+                            <p className="text-[10px] text-gray-400">
+                              {t.compareInterval(cmp.daysApart, formatDateTime(cmp.previousDate, localeFor(lang), { year: 'numeric', month: 'short', day: 'numeric' }))}
+                            </p>
+                          </div>
+
+                          {cmp.tooSoon && (
+                            <p className="text-[10px] text-amber-700 bg-amber-50 rounded-md px-2 py-1 mt-1.5 leading-snug">
+                              ⚠️ {t.compareTooSoon}
+                            </p>
+                          )}
+
+                          {cmp.severityDirection !== 'unchanged' && (
+                            <p className="text-[11px] text-gray-600 mt-1.5">
+                              {t.compareSeverity(t.severityLabels[cmp.severityBefore as AssessmentResult['severity']], t.severityLabels[cmp.severityAfter as AssessmentResult['severity']])}
+                            </p>
+                          )}
+
+                          {cmp.movedDomains.length === 0 ? (
+                            <p className="text-[11px] text-gray-400 mt-1.5">{t.compareNoMove}</p>
+                          ) : (
+                            <ul className="mt-1.5 space-y-1">
+                              {cmp.movedDomains.map(d => (
+                                <li key={d.key} className="flex items-center justify-between gap-2 text-[11px]">
+                                  <span className="text-gray-600">{(t.domainLabels as Record<string, string>)[d.key] ?? d.key}</span>
+                                  <span className={d.direction === 'improved' ? 'text-emerald-600 font-bold' : 'text-red-600 font-bold'}>
+                                    <span className="ltr-num">{d.previous}%</span>
+                                    {' → '}
+                                    <span className="ltr-num">{d.current}%</span>
+                                    {' '}
+                                    {d.direction === 'improved' ? t.compareImproved : t.compareWorsened}
+                                  </span>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+
+                          <p className="text-[10px] text-gray-400 mt-2 leading-snug">{t.compareDisclaimer}</p>
+                        </div>
+                      )
+                    })()}
 
                     {result.recommendations.length > 0 ? (
                       <ul className="text-sm text-gray-600 space-y-1 mr-1">

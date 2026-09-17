@@ -56,7 +56,9 @@ export async function POST(req: NextRequest) {
       updatedAt: new Date().toISOString(),
       createdAt: existing?.createdAt || new Date().toISOString(),
     }
-    await redis.set(`ld-profile:${sanitizedId}`, profile, { ex: 365 * 24 * 3600 })
+    // No TTL — a learning-difficulty profile is a standing clinical finding,
+    // not a cache entry.
+    await redis.set(`ld-profile:${sanitizedId}`, profile)
     return NextResponse.json({ ok: true })
   } catch (err) {
     console.error('[learning-difficulties POST]', err)

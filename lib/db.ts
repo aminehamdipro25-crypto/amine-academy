@@ -174,7 +174,9 @@ export async function updateExercise(id: string, updates: Partial<Omit<Exercise,
   const existing = await getExercise(id)
   if (!existing) return null
   const updated: Exercise = { ...existing, ...updates }
-  await redis.set(`exercise:${id}`, JSON.stringify(updated))
+  // redis.set serialises internally — passing a string here would store a
+  // JSON-encoded JSON string. parseEntry unpicks that, but only by guessing.
+  await redis.set(`exercise:${id}`, updated)
   return updated
 }
 
@@ -228,7 +230,7 @@ export async function updateStory(id: string, updates: Partial<Omit<Story, 'id' 
   const existing = await getStory(id)
   if (!existing) return null
   const updated: Story = { ...existing, ...updates }
-  await redis.set(`story:${id}`, JSON.stringify(updated))
+  await redis.set(`story:${id}`, updated)
   return updated
 }
 
@@ -367,7 +369,10 @@ export async function createApaRecord(
     createdAt: new Date().toISOString(),
   }
   await redis.pipeline([
-    ['SET', `apa-record:${record.id}`, JSON.stringify(record), 'EX', String(365 * 24 * 3600)],
+    // No TTL — see the note in /api/assessments. The parent's report cites
+    // these sessions and their indicator trends; expiring them erases the
+    // evidence the document is built on.
+    ['SET', `apa-record:${record.id}`, JSON.stringify(record)],
     ['LPUSH', `apa-records:student:${data.studentId}`, record.id],
   ])
   return record

@@ -3,10 +3,7 @@ import { cookies } from 'next/headers'
 import { verifyAdminSession } from '@/lib/auth'
 import { audit } from '@/lib/audit'
 import { getClientIp } from '@/lib/rateLimit'
-import {
-  getAllParents, getStudentsByParent, getAllExercises, getAllAppointments,
-  getAllPendingPayments, getStudentReports, getAssessmentProfile, getStudentGameResults,
-} from '@/lib/db'
+import { buildFullBackup } from '@/lib/backup'
 
 export const runtime = 'nodejs'
 
@@ -16,37 +13,20 @@ async function isAdmin(): Promise<boolean> {
   return verifyAdminSession(token)
 }
 
-// Full data dump for manual backup — everything lives only in Upstash Redis
-// with no automated snapshotting, so this is the owner's one way to get a
-// point-in-time copy of clients/payments/clinical records off-platform.
+// Full data dump, downloaded straight to the owner's machine over an
+// authenticated HTTPS request — so this copy is not encrypted. The nightly
+// archive that goes to Blob is, because Blob serves from a public URL.
 export async function GET(req: Request) {
   if (!(await isAdmin())) {
     return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
   }
   await audit({ action: 'data_export', actorId: 'owner', actorRole: 'owner', ip: getClientIp(req) })
   try {
-    const parents = await getAllParents()
-    const [exercises, appointments, payments, students] = await Promise.all([
-      getAllExercises(),
-      getAllAppointments(),
-      getAllPendingPayments(),
-      Promise.all(parents.map(p => getStudentsByParent(p.id))).then(r => r.flat()),
-    ])
-
-    const [reports, assessmentProfiles, gameResults] = await Promise.all([
-      Promise.all(students.map(s => getStudentReports(s.id))).then(r => r.flat()),
-      Promise.all(students.map(s => getAssessmentProfile(s.id))).then(r => r.filter(Boolean)),
-      Promise.all(students.map(s => getStudentGameResults(s.id))).then(r => r.flat()),
-    ])
-
-    // Strip passwordHash — never include hashed credentials in a backup file
-    const sanitizedParents = parents.map(({ passwordHash: _ph, ...p }) => p)
-
-    const dump = {
-      exportedAt: new Date().toISOString(),
-      parents: sanitizedParents, students, exercises, appointments, payments,
-      reports, assessmentProfiles, gameResults,
-    }
+    // The same builder the nightly job uses, so the manual download can never
+    // drift from it again. The old version of this route omitted every
+    // assessment, every APA session and every message while calling its file
+    // "amine-academy-backup".
+    const dump = await buildFullBackup()
 
     return new NextResponse(JSON.stringify(dump, null, 2), {
       headers: {

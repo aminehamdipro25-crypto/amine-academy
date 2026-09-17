@@ -22,6 +22,16 @@ export function realtimeEnabled(): boolean {
 let shared: PusherClient | null = null
 let refs = 0
 
+// Per-CHANNEL reference counts, which the connection count alone cannot stand
+// in for. A session page holds several subscriptions to the SAME channel at
+// once — the readiness effect, the main session effect, and StoryReader while
+// an exercise is open. pusher-js keeps no per-binding count: `unsubscribe(name)`
+// drops the whole channel. So whichever of them unmounted first (StoryReader
+// closing at the end of an exercise, or an effect re-running) silently killed
+// realtime for the others, and the connection indicator kept showing "مباشر"
+// because the SOCKET was still connected — only the channel was gone.
+const channelRefs = new Map<string, number>()
+
 function acquire(): PusherClient | null {
   if (!realtimeEnabled()) return null
   if (!shared) {
@@ -58,10 +68,17 @@ export function subscribeSession(
   sessionId: string,
   onEvent: (event: SessionEvent) => void,
 ): () => void {
+  // Checked before acquire(): the old order incremented the connection count
+  // and then returned a no-op cleanup, so an empty id leaked a reference and
+  // the shared socket could never be torn down.
+  if (!sessionId) return () => {}
   const client = acquire()
-  if (!client || !sessionId) return () => {}
+  if (!client) return () => {}
 
-  const channel = client.subscribe(channelFor(sessionId))
+  const name = channelFor(sessionId)
+  const channel = client.subscribe(name)
+  channelRefs.set(name, (channelRefs.get(name) ?? 0) + 1)
+
   const EVENTS: SessionEvent[] = ['live', 'content', 'whiteboard', 'timer', 'noise', 'card', 'kid-status', 'presence', 'readiness', 'progress', 'reaction', 'reader']
   const handlers = EVENTS.map(ev => {
     const h = () => onEvent(ev)
@@ -69,9 +86,22 @@ export function subscribeSession(
     return [ev, h] as const
   })
 
+  let done = false
   return () => {
+    // Idempotent: a cleanup run twice would otherwise double-decrement and drop
+    // a channel still in use, or push the connection count below what is live.
+    if (done) return
+    done = true
+
     handlers.forEach(([ev, h]) => channel.unbind(ev, h))
-    client.unsubscribe(channelFor(sessionId))
+
+    const left = (channelRefs.get(name) ?? 1) - 1
+    if (left <= 0) {
+      channelRefs.delete(name)
+      client.unsubscribe(name)
+    } else {
+      channelRefs.set(name, left)
+    }
     release()
   }
 }
@@ -99,7 +129,10 @@ export function subscribeConnectionState(onChange: (status: RealtimeStatus) => v
   }
   client.connection.bind('state_change', handler)
   handler()
+  let done = false
   return () => {
+    if (done) return
+    done = true
     client.connection.unbind('state_change', handler)
     release()
   }

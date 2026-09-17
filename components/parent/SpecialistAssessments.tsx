@@ -62,18 +62,18 @@ const SEVERITY_STYLE: Record<string, { bg: string; color: string; bar: string }>
 const EXTRA_SCALE_NAMES: Record<'ar' | 'en' | 'fr', Record<string, string>> = {
   ar: {
     'vanderbilt-adhd': 'مقياس فاندربيلت — فرز فرط الحركة وتشتت الانتباه',
+    cognitive: 'بطارية الأداء المعرفي — قياس ملاحَظ لا اختبار ذكاء',
     motor: 'تقييم المهارات الحركية',
-    cognitive: 'تقييم المهارات المعرفية',
   },
   en: {
     'vanderbilt-adhd': 'NICHQ Vanderbilt — ADHD screen',
+    cognitive: 'Cognitive performance battery — observed, not an IQ test',
     motor: 'Motor skills assessment',
-    cognitive: 'Cognitive skills assessment',
   },
   fr: {
     'vanderbilt-adhd': 'Échelle de Vanderbilt — dépistage du TDAH',
+    cognitive: 'Batterie de performance cognitive — observée, pas un test de QI',
     motor: 'Évaluation des habiletés motrices',
-    cognitive: 'Évaluation des habiletés cognitives',
   },
 }
 

@@ -28,6 +28,7 @@ import { staggerContainer, fadeUp, popIn, liftHover, tapOnly } from '@/lib/motio
 import { formatDateTime, localeFor } from '@/lib/format'
 import { readStorage, removeStorage, writeStorage } from '@/lib/safe-storage'
 import { compareAssessments, findPreviousOfSameScale } from '@/lib/assessment-compare'
+import { buildCognitiveProfile, profileToAssessment } from '@/lib/cognitive-profile'
 
 type ConcernKey = 'autism' | 'adhd' | 'learning' | 'emotional'
 type ScaleKey = 'autism' | 'adhd' | 'attention-domains' | 'learning-difficulties' | 'psc17'
@@ -537,6 +538,44 @@ export default function SpecialistToolkitPage() {
 
   /** The attribution last written to the server, so we only PATCH real edits. */
   const syncedAttributionRef = useRef('')
+
+  // File the PERFORMANCE battery as a record of its own.
+  //
+  // The battery measures rather than rates — span reached, CPT hits and false
+  // alarms, search times — and it printed all of that. But `perfResults` lived
+  // only in the draft in localStorage, and the effect below filed the rating
+  // scales and nothing else. So the one measured part of the toolkit evaporated
+  // at the end of every session: no baseline, nothing in the child's record,
+  // nothing in the backup, nothing the family could see, and nothing for the
+  // next run to be compared against.
+  const savedBatteryRef = useRef('')
+  useEffect(() => {
+    if (step !== 'report' || !isLinkedStudentId(studentId)) return
+    if (perfResults.length === 0) return
+
+    // The same expression the printed report uses, so the filed record and the
+    // document agree. With no age entered every task is flagged uninterpretable
+    // and nothing is filed — conservative, and the right outcome: an age is
+    // required to read any of these tasks.
+    const profile = buildCognitiveProfile(perfResults, parseInt(age, 10) || 0)
+    // Nothing interpretable to file. A record of zero readable domains would
+    // only add an empty row to the child's history.
+    if (profile.usable.length === 0) return
+
+    // One filing per battery: keyed on the child and what was actually measured.
+    const signature = `${studentId}|${profile.usable.map(d => `${d.key}:${d.score}`).join(',')}`
+    if (savedBatteryRef.current === signature) return
+    savedBatteryRef.current = signature
+
+    const record = profileToAssessment(profile, studentId)
+    fetch('/api/assessments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...record, answers: [], assessedByName: therapistName }),
+    })
+      .then(res => { if (!res.ok) savedBatteryRef.current = '' })
+      .catch(() => { savedBatteryRef.current = '' })
+  }, [step, studentId, perfResults, age, therapistName])
 
   // Persist newly completed results to the linked child's permanent record
   useEffect(() => {
@@ -1459,7 +1498,11 @@ export default function SpecialistToolkitPage() {
       {step === 'report' && (
         <motion.div key="report" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
           className="space-y-4">
-          {results.length === 0 ? (
+          {/* The battery is a record in its own right now, so a session that
+              measured performance has a report even if no rating scale was
+              run — the gate used to hide the measured numbers along with the
+              missing ratings. */}
+          {results.length === 0 && perfResults.length === 0 ? (
             <div className="bg-white rounded-2xl border border-gray-100 p-8 text-center space-y-4">
               <ClipboardList className="w-10 h-10 text-gray-300 mx-auto" />
               <p className="text-gray-500 text-sm">{t.noScalesSelectedError}</p>
@@ -1863,6 +1906,60 @@ export default function SpecialistToolkitPage() {
                           </p>
                         </div>
                       </div>
+
+                      {(() => {
+                        // Against the last battery on this child. Higher is
+                        // better here, unlike every rating scale above — the
+                        // comparison layer is told so by the 'cognitive' type.
+                        const profile = buildCognitiveProfile(perfResults, childAge)
+                        if (profile.usable.length === 0) return null
+                        const current = {
+                          type: 'cognitive',
+                          severity: 'none',
+                          completedAt: new Date().toISOString(),
+                          domainScores: Object.fromEntries(profile.usable.map(d => [d.key, d.score])),
+                        }
+                        const filedNow = new Set(Object.values(savedServerIds))
+                        const previous = findPreviousOfSameScale(
+                          current,
+                          pastAssessments.filter(a => !filedNow.has(a.id) && a.type === 'cognitive'),
+                        )
+                        if (!previous) return null
+                        const cmp = compareAssessments(current, previous)
+                        if (!cmp) return null
+                        return (
+                          <div className="rounded-xl border border-indigo-200 p-3 print:rounded-none break-inside-avoid">
+                            <div className="flex items-baseline justify-between gap-2 flex-wrap">
+                              <p className="text-xs font-bold text-gray-700">{t.compareTitle}</p>
+                              <p className="text-[10px] text-gray-400">
+                                {t.compareInterval(cmp.daysApart, formatDateTime(cmp.previousDate, localeFor(lang), { year: 'numeric', month: 'short', day: 'numeric' }))}
+                              </p>
+                            </div>
+                            {cmp.tooSoon && (
+                              <p className="text-[10px] text-amber-700 bg-amber-50 rounded-md px-2 py-1 mt-1.5 leading-snug">⚠️ {t.compareTooSoon}</p>
+                            )}
+                            {cmp.movedDomains.length === 0 ? (
+                              <p className="text-[11px] text-gray-400 mt-1.5">{t.compareNoMove}</p>
+                            ) : (
+                              <ul className="mt-1.5 space-y-1">
+                                {cmp.movedDomains.map(d => (
+                                  <li key={d.key} className="flex items-center justify-between gap-2 text-[11px]">
+                                    <span className="text-gray-600">{(t.domainLabels as Record<string, string>)[d.key] ?? d.key}</span>
+                                    <span className={d.direction === 'improved' ? 'text-emerald-600 font-bold' : 'text-red-600 font-bold'}>
+                                      <span className="ltr-num">{d.previous}</span>
+                                      {' → '}
+                                      <span className="ltr-num">{d.current}</span>
+                                      {' '}
+                                      {d.direction === 'improved' ? t.compareImproved : t.compareWorsened}
+                                    </span>
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                            <p className="text-[10px] text-gray-400 mt-2 leading-snug">{t.compareDisclaimer}</p>
+                          </div>
+                        )
+                      })()}
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {readouts.map((ro, i) => (

@@ -27,6 +27,18 @@
 export const NOISE_THRESHOLD = 5
 export const MIN_INTERVAL_DAYS = 14
 
+// Scales whose domain scores are ABILITY rather than symptoms — higher is
+// better, so a RISE is improvement. Everything else in this toolkit is scored
+// symptom-high (see the test that reads the scale components), and reading an
+// ability scale that way would report a child who improved as one who
+// deteriorated. The cognitive battery is the only member today; a new ability
+// scale that forgets to join it inverts every reading it produces silently.
+const ABILITY_SCALES = new Set<string>(['cognitive'])
+
+export function higherIsBetter(type: string): boolean {
+  return ABILITY_SCALES.has(type)
+}
+
 export type ChangeDirection = 'improved' | 'worsened' | 'unchanged'
 
 export interface DomainChange {
@@ -55,9 +67,10 @@ export interface AssessmentComparison {
 
 const SEVERITY_RANK: Record<string, number> = { none: 0, mild: 1, moderate: 2, severe: 3 }
 
-function directionOf(delta: number, threshold: number): ChangeDirection {
+function directionOf(delta: number, threshold: number, abilityScale: boolean): ChangeDirection {
   if (Math.abs(delta) < threshold) return 'unchanged'
-  return delta < 0 ? 'improved' : 'worsened'
+  const rose = delta > 0
+  return rose === abilityScale ? 'improved' : 'worsened'
 }
 
 interface ComparableAssessment {
@@ -115,11 +128,13 @@ export function compareAssessments(
     .filter(k => typeof previous.domainScores?.[k] === 'number')
   if (keys.length === 0) return null
 
+  const ability = higherIsBetter(current.type)
+
   const domains: DomainChange[] = keys.map(key => {
     const prev = Math.round(previous.domainScores[key])
     const cur = Math.round(current.domainScores[key])
     const delta = cur - prev
-    return { key, previous: prev, current: cur, delta, direction: directionOf(delta, threshold) }
+    return { key, previous: prev, current: cur, delta, direction: directionOf(delta, threshold, ability) }
   })
 
   const before = SEVERITY_RANK[previous.severity] ?? 0
@@ -138,10 +153,11 @@ export function compareAssessments(
     severityDirection: after === before ? 'unchanged' : after < before ? 'improved' : 'worsened',
     domains,
     // Worsening first: the thing a specialist must not miss is the domain that
-    // went the wrong way, not the one that went right.
+    // went the wrong way, not the one that went right. Which end of the sort
+    // that is depends on the scale's direction.
     movedDomains: domains
       .filter(d => d.direction !== 'unchanged')
-      .sort((a, b) => b.delta - a.delta),
+      .sort((a, b) => (ability ? a.delta - b.delta : b.delta - a.delta)),
   }
 }
 
@@ -156,21 +172,23 @@ export function summariseComparison(c: AssessmentComparison, lang: 'ar' | 'en' |
   if (lang === 'en') {
     if (c.movedDomains.length === 0) return `No domain moved beyond rating noise over ${c.daysApart} days.`
     const parts: string[] = []
-    if (improved) parts.push(`${improved} domain(s) lower`)
-    if (worsened) parts.push(`${worsened} domain(s) higher`)
+    // Direction words, not "lower"/"higher": on an ability scale a rise IS the
+    // improvement, so describing the movement by its sign would read backwards.
+    if (improved) parts.push(`${improved} domain(s) improved`)
+    if (worsened) parts.push(`${worsened} domain(s) declined`)
     return `Over ${c.daysApart} days: ${parts.join(', ')}. A recorded difference between two ratings, not a measured treatment effect.`
   }
   if (lang === 'fr') {
     if (c.movedDomains.length === 0) return `Aucun domaine n'a bougé au-delà du bruit de cotation sur ${c.daysApart} jours.`
     const parts: string[] = []
-    if (improved) parts.push(`${improved} domaine(s) en baisse`)
-    if (worsened) parts.push(`${worsened} domaine(s) en hausse`)
+    if (improved) parts.push(`${improved} domaine(s) en progrès`)
+    if (worsened) parts.push(`${worsened} domaine(s) en recul`)
     return `Sur ${c.daysApart} jours : ${parts.join(', ')}. Une différence entre deux cotations, pas un effet mesuré.`
   }
 
   if (c.movedDomains.length === 0) return `لم يتحرّك أي مجال بما يتجاوز تذبذب التقدير خلال ${c.daysApart} يوماً.`
   const parts: string[] = []
-  if (improved) parts.push(`${improved} مجال انخفض`)
-  if (worsened) parts.push(`${worsened} مجال ارتفع`)
+  if (improved) parts.push(`${improved} مجال تحسّن`)
+  if (worsened) parts.push(`${worsened} مجال تراجع`)
   return `خلال ${c.daysApart} يوماً: ${parts.join('، ')}. فارق مُسجَّل بين تقديرين، وليس أثراً علاجياً مقيساً.`
 }

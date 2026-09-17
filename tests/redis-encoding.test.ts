@@ -61,7 +61,7 @@ describe('clinical records are never written with an expiry', () => {
   // none. A child followed for longer than a year lost their earliest records
   // silently: the ids stayed in the list and the records behind them returned
   // null, so the history simply looked shorter than it was.
-  const CLINICAL = ['assessment:', 'apa-record:', 'ld-profile:', 'report:']
+  const CLINICAL = ['assessment:', 'apa-record:', 'ld-profile:', 'report:', 'message:']
 
   it('no write of a clinical key sets EX or ex', () => {
     const offenders: string[] = []
@@ -93,7 +93,10 @@ describe('a child\'s clinical history is never read through a small window', () 
   // The appointment list had a sharper edge: an ownership check read it to
   // decide whether an appointment belonged to the caller, so a parent with a
   // longer history was refused access to their OWN older appointment.
-  const RECORD_LISTS = ['reports:student:', 'assessments:student:', 'appointments:parent:']
+  const RECORD_LISTS = [
+    'reports:student:', 'assessments:student:', 'appointments:parent:',
+    'messages:thread:', 'messages:threads:index',
+  ]
 
   it('reads the whole list wherever one of these is opened', () => {
     const offenders: string[] = []
@@ -105,8 +108,11 @@ describe('a child\'s clinical history is never read through a small window', () 
         // A read that feeds a model's context rather than a screen may be
         // bounded on purpose, but it has to say so in the four lines above it.
         if (lines.slice(Math.max(0, i - 4), i).some(l => l.includes('prompt-window'))) return
-        // Either an explicit -1, or a `limit` variable the caller controls.
-        const readsAll = /,\s*-1\s*\)/.test(line) || /limit/.test(line)
+        // Fine: an explicit -1, a `limit` the caller controls, or `0, 0` —
+        // which asks "is there anything here at all", not for a history.
+        const readsAll = /,\s*-1\s*\)/.test(line)
+          || /limit/.test(line)
+          || /,\s*0\s*,\s*0\s*\)/.test(line)
         if (!readsAll) {
           offenders.push(`${file.replace(ROOT + '/', '')}:${i + 1} → ${line.trim().slice(0, 90)}`)
         }

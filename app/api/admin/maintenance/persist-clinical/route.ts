@@ -11,7 +11,9 @@ export const dynamic = 'force-dynamic'
  *
  * Assessments, APA session records and learning-difficulty profiles were each
  * written with `EX 31536000` — a one-year expiry — while the index lists that
- * point at them have none. A child followed for longer than a year would lose
+ * point at them have none. Messages expired after 90 days, and so did the
+ * thread list itself, so a whole conversation disappeared 90 days after it went
+ * quiet. A child followed for longer than a year would lose
  * their earliest records silently: the ids stay in the list, the records behind
  * them return null, and the history simply appears shorter than it was. The
  * toolkit meanwhile tells the specialist the assessment is saved «بشكل دائم».
@@ -33,7 +35,9 @@ export async function POST() {
     assessments: { cleared: 0, alreadyPermanent: 0 },
     apaRecords:  { cleared: 0, alreadyPermanent: 0 },
     ldProfiles:  { cleared: 0, alreadyPermanent: 0 },
+    messages:    { cleared: 0, alreadyPermanent: 0 },
     studentsScanned: 0,
+    parentsScanned: 0,
     errors: [] as string[],
   }
 
@@ -56,6 +60,22 @@ export async function POST() {
   try {
     const parents = await getAllParents()
     for (const parent of parents) {
+      report.parentsScanned++
+
+      // The conversation: every message, the thread list, and the two unread
+      // counters, all of which carried the same 90-day expiry.
+      try {
+        const messageIds = await redis.lrange(`messages:thread:${parent.id}`, 0, -1)
+        await persistAll(messageIds.map(id => `message:${id}`), report.messages)
+        await persistAll([
+          `messages:thread:${parent.id}`,
+          `messages:unread:parent:${parent.id}`,
+          `messages:unread:admin:${parent.id}`,
+        ], report.messages)
+      } catch (e) {
+        report.errors.push(`messages of ${parent.id}: ${(e as Error).message}`)
+      }
+
       let students: Awaited<ReturnType<typeof getStudentsByParent>>
       try {
         students = await getStudentsByParent(parent.id)

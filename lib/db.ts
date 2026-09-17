@@ -667,13 +667,17 @@ export async function deleteParentFull(parentId: string): Promise<void> {
 
 // ── Messages ──────────────────────────────────────────────────
 // Key scheme:
-//   message:{id}                        → Message JSON (TTL 90 days)
+//   message:{id}                        → Message JSON (no TTL)
 //   messages:thread:{parentId}          → LPUSH list of message IDs (latest first)
 //   messages:unread:parent:{parentId}   → counter (parent hasn't read admin messages)
 //   messages:unread:admin:{parentId}    → counter (admin hasn't read parent messages)
 //   messages:threads:index              → LPUSH parentId (when first message is sent)
 
-const MSG_TTL = 90 * 24 * 3600 // 90 days in seconds
+// Correspondence between a parent and the specialist is part of the child's
+// record, not a cache. It used to expire after 90 days — and not per message:
+// the thread list carried its own EXPIRE, refreshed on every send, so an entire
+// conversation vanished 90 days after it went quiet. A parent writing in March
+// that their child had regressed left nothing to find in July.
 
 export async function sendMessage(
   data: Omit<Message, 'id' | 'createdAt'>
@@ -686,20 +690,17 @@ export async function sendMessage(
   const isFirstMessage = existingThread.length === 0
 
   const cmds: unknown[][] = [
-    ['SET', `message:${id}`, JSON.stringify(message), 'EX', String(MSG_TTL)],
+    ['SET', `message:${id}`, JSON.stringify(message)],
     ['LPUSH', `messages:thread:${data.threadId}`, id],
-    ['EXPIRE', `messages:thread:${data.threadId}`, String(MSG_TTL)],
   ]
 
   // Increment unread counter for the recipient
   if (data.from === 'admin') {
     // Parent hasn't read this admin message
     cmds.push(['INCR', `messages:unread:parent:${data.threadId}`])
-    cmds.push(['EXPIRE', `messages:unread:parent:${data.threadId}`, String(MSG_TTL)])
   } else {
     // Admin hasn't read this parent message
     cmds.push(['INCR', `messages:unread:admin:${data.threadId}`])
-    cmds.push(['EXPIRE', `messages:unread:admin:${data.threadId}`, String(MSG_TTL)])
   }
 
   if (isFirstMessage) {
@@ -710,8 +711,10 @@ export async function sendMessage(
   return message
 }
 
-export async function getThreadMessages(parentId: string, limit = 50): Promise<Message[]> {
-  const ids = await redis.lrange(`messages:thread:${parentId}`, 0, limit - 1)
+// limit 0 = the whole conversation. Making the messages permanent while still
+// reading the newest 50 would have kept the older ones just as unreachable.
+export async function getThreadMessages(parentId: string, limit = 0): Promise<Message[]> {
+  const ids = await redis.lrange(`messages:thread:${parentId}`, 0, limit > 0 ? limit - 1 : -1)
   if (ids.length === 0) return []
   const messages = await Promise.all(
     ids.map(id => redis.get<Message>(`message:${id}`))
@@ -736,8 +739,13 @@ export async function getAllMessageThreads(): Promise<{
   lastMessage: Message
   unreadForAdmin: number
 }[]> {
-  // Get all parentIds that have threads
-  const parentIds = await redis.lrange('messages:threads:index', 0, 99)
+  // The whole index. Capped at 100 this was the specialist's INBOX: the list is
+  // ordered by when a thread was first created, not by recent activity, so once
+  // 100 newer threads existed a long-standing family could write today and
+  // simply not appear — unread count and all. The old 90-day thread expiry made
+  // it worse by pushing duplicate ids for the same parent, which the dedupe
+  // below hides but which still consumed slots in that window.
+  const parentIds = await redis.lrange('messages:threads:index', 0, -1)
   // Deduplicate (same parentId could be pushed multiple times in edge cases)
   const unique = Array.from(new Set(parentIds))
 

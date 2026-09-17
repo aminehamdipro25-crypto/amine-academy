@@ -327,7 +327,7 @@ export async function deleteAppointment(id: string): Promise<void> {
 }
 
 export async function getParentAppointments(parentId: string): Promise<Appointment[]> {
-  const ids = await redis.lrange(`appointments:parent:${parentId}`, 0, 20)
+  const ids = await redis.lrange(`appointments:parent:${parentId}`, 0, -1)
   const appts = await redis.mget<Appointment>(ids.map(id => `appointment:${id}`))
   return appts.filter(Boolean) as Appointment[]
 }
@@ -350,8 +350,11 @@ export async function createReport(data: Omit<ProgressReport, 'id' | 'createdAt'
   return report
 }
 
+// The whole list. Capped at 21 this silently hid a child's earlier reports
+// from their own family's portal and from the admin data export, while the
+// records themselves sat there permanently.
 export async function getStudentReports(studentId: string): Promise<ProgressReport[]> {
-  const ids = await redis.lrange(`reports:student:${studentId}`, 0, 20)
+  const ids = await redis.lrange(`reports:student:${studentId}`, 0, -1)
   const reports = await Promise.all(ids.map(id => redis.get<ProgressReport>(`report:${id}`)))
   return reports.filter(Boolean) as ProgressReport[]
 }
@@ -769,9 +772,11 @@ export async function getAssessmentProfile(studentId: string): Promise<StudentAs
 
 // Parent-completed assessment results (attention-domains etc.), newest first.
 // Same key scheme the parent portal writes to; used by admin views + AI program.
-export async function getStudentAssessments(studentId: string, limit = 20): Promise<AssessmentResult[]> {
+export async function getStudentAssessments(studentId: string, limit = 0): Promise<AssessmentResult[]> {
   try {
-    const ids = await redis.lrange(`assessments:student:${studentId}`, 0, limit - 1)
+    // limit 0 = the whole history; a default of 20 silently truncated a child's
+    // record after four sessions of five scales.
+    const ids = await redis.lrange(`assessments:student:${studentId}`, 0, limit > 0 ? limit - 1 : -1)
     if (!ids.length) return []
     const results = await redis.mget<AssessmentResult>(ids.map(id => `assessment:${id}`))
     return results.filter(Boolean) as AssessmentResult[]

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { isDashboardUser, verifyToken } from '@/lib/auth'
-import { getAppointment, updateAppointment, getParentAppointments } from '@/lib/db'
+import { getAppointment, updateAppointment } from '@/lib/db'
 
 export const runtime = 'nodejs'
 
@@ -34,9 +34,11 @@ export async function PATCH(req: NextRequest, props: { params: Promise<{ id: str
       return NextResponse.json({ error: 'الموعد غير موجود' }, { status: 404 })
     }
 
-    // Verify appointment belongs to this parent
-    const parentAppts = await getParentAppointments(payload.id)
-    if (!parentAppts.some(a => a.id === params.id)) {
+    // Ownership is a property of the record, not of a listing. This used to
+    // ask getParentAppointments, which reads only the newest 21 ids — so a
+    // parent with a longer history was refused access to their OWN older
+    // appointment with a 403.
+    if (appointment.parentId !== payload.id) {
       return NextResponse.json({ error: 'غير مصرح' }, { status: 403 })
     }
 

@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
     if (targetChildren.length === 0) return NextResponse.json({ assessments: [] })
 
     const allIds = (await Promise.all(
-      targetChildren.map(c => redis.lrange(`assessments:student:${c.id}`, 0, 19))
+      targetChildren.map(c => redis.lrange(`assessments:student:${c.id}`, 0, -1))
     )).flat()
     const records = (await Promise.all(
       allIds.map(id => redis.get<AssessmentResult>(`assessment:${id}`))

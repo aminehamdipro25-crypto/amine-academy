@@ -133,7 +133,10 @@ export async function GET(req: NextRequest) {
     if (!studentId) return NextResponse.json({ results: [] })
     const sanitized = String(studentId).replace(/[^a-zA-Z0-9-_]/g, '')
     if (!sanitized) return NextResponse.json({ results: [] })
-    const ids = await redis.lrange(`assessments:student:${sanitized}`, 0, 20)
+    // The whole history. Five scales per session means a cap of 21 hid the
+    // first session after only four, which is also what the report's
+    // scale-to-scale comparison reads back.
+    const ids = await redis.lrange(`assessments:student:${sanitized}`, 0, -1)
     const results = await Promise.all(
       ids.map(id => redis.get<AssessmentResult>(`assessment:${id}`))
     )

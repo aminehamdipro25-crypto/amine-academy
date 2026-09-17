@@ -26,6 +26,10 @@ const CAT_AR: Record<string, string> = {
 
 async function getStudentAssessments(studentId: string): Promise<AssessmentResult[]> {
   try {
+    // prompt-window: the six most recent, deliberately. This is not a history
+    // read — it is what goes into the model's context to shape a CURRENT
+    // programme, and it matches the cap applied to inline assessments below.
+    // Reading the child's full record here would only pad the prompt.
     const ids = await redis.lrange(`assessments:student:${studentId}`, 0, 5)
     const results = await Promise.all(ids.map(id => redis.get<AssessmentResult>(`assessment:${id}`)))
     return results.filter(Boolean) as AssessmentResult[]

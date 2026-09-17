@@ -82,3 +82,42 @@ describe('clinical records are never written with an expiry', () => {
     expect(CLINICAL.some(k => bad.includes(`\`${k}$`)) && /'EX'/.test(bad)).toBe(true)
   })
 })
+
+describe('a child\'s clinical history is never read through a small window', () => {
+  // These lists are a record, not a recent-activity feed. Capped at 21 they hid
+  // a child's earlier reports from their own family's portal and from the admin
+  // data export, and hid earlier assessments from the report's scale-to-scale
+  // comparison — after only four sessions of five scales. The records themselves
+  // were sitting there permanently.
+  //
+  // The appointment list had a sharper edge: an ownership check read it to
+  // decide whether an appointment belonged to the caller, so a parent with a
+  // longer history was refused access to their OWN older appointment.
+  const RECORD_LISTS = ['reports:student:', 'assessments:student:', 'appointments:parent:']
+
+  it('reads the whole list wherever one of these is opened', () => {
+    const offenders: string[] = []
+    for (const file of sourceFiles()) {
+      const lines = fs.readFileSync(file, 'utf8').split('\n')
+      lines.forEach((line, i) => {
+        if (!RECORD_LISTS.some(k => line.includes(k))) return
+        if (!line.includes('lrange(')) return
+        // A read that feeds a model's context rather than a screen may be
+        // bounded on purpose, but it has to say so in the four lines above it.
+        if (lines.slice(Math.max(0, i - 4), i).some(l => l.includes('prompt-window'))) return
+        // Either an explicit -1, or a `limit` variable the caller controls.
+        const readsAll = /,\s*-1\s*\)/.test(line) || /limit/.test(line)
+        if (!readsAll) {
+          offenders.push(`${file.replace(ROOT + '/', '')}:${i + 1} → ${line.trim().slice(0, 90)}`)
+        }
+      })
+    }
+    expect(offenders, `clinical history read through a window:\n${offenders.join('\n')}`).toEqual([])
+  })
+
+  it('flags the shape that was actually wrong', () => {
+    const bad = 'const ids = await redis.lrange(`reports:student:${studentId}`, 0, 20)'
+    const readsAll = /,\s*-1\s*\)/.test(bad) || /limit/.test(bad)
+    expect(readsAll).toBe(false)
+  })
+})

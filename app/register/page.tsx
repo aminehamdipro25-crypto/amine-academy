@@ -1,6 +1,7 @@
 'use client'
 import { useState, useRef, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { sanitizePersonName } from '@/lib/person-name'
 import Link from 'next/link'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -178,7 +179,14 @@ function RegisterForm() {
     resolver: zodResolver(step1Schema),
     mode: 'onTouched',
     defaultValues: {
-      firstName: '', lastName: '', email: '',
+      // Arriving from «المتابعة بحساب Google» for an address with no account
+      // yet: Google proved who they are, so the name and email are filled in
+      // and the family only completes what Google cannot know — the child.
+      // Still sanitised here, because a query string is user-controlled
+      // whatever put it there.
+      firstName: sanitizePersonName(searchParams.get('firstName')),
+      lastName: sanitizePersonName(searchParams.get('lastName')),
+      email: (searchParams.get('email') ?? '').trim().toLowerCase().slice(0, 160),
       phone: '', country: '', password: '', confirmPassword: '',
     },
   })

@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Loader2, Eye, EyeOff } from 'lucide-react'
 import { useLang, tr } from '@/lib/i18n'
 import { safeRedirectPath } from '@/lib/safe-redirect'
+import GoogleSignInButton from '@/components/auth/GoogleSignInButton'
 
 function LoginForm() {
   const router = useRouter()
@@ -109,6 +110,15 @@ function LoginForm() {
             {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : t.submit}
           </button>
         </form>
+
+        <GoogleSignInButton
+          // The client id is public and inlined at build time, so the page can
+          // decide this without a round trip. Absent → no button at all rather
+          // than one that leads to a 503.
+          enabled={Boolean(process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID)}
+          redirect={searchParams.get('redirect') ?? undefined}
+          errorCode={searchParams.get('googleError')}
+        />
 
         <p className="text-center text-sm text-gray-500 mt-6">
           {t.noAccount}{' '}

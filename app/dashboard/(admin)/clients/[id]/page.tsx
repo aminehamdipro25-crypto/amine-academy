@@ -647,7 +647,9 @@ export default function ClientDetailPage() {
                               studentId={s.id}
                               diagnosis={s.diagnosis}
                               severityLevel={s.severityLevel}
-                              onSaved={(next: { diagnosis: Diagnosis; severityLevel: 1 | 2 | 3 }) => setData(prev => prev && ({
+                              firstName={s.firstName}
+                              lastName={s.lastName}
+                              onSaved={next => setData(prev => prev && ({
                                 ...prev,
                                 students: prev.students.map(x => x.id === s.id ? { ...x, ...next } : x),
                               }))}

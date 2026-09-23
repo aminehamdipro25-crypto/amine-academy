@@ -3,6 +3,7 @@ import { isDashboardUser } from '@/lib/auth'
 import { getStudent, updateStudent } from '@/lib/db'
 import { audit } from '@/lib/audit'
 import type { AgeGroup, Diagnosis } from '@/lib/types'
+import { isUsableName, sanitizePersonName } from '@/lib/person-name'
 import { ageGroupFromBirthDate, ageYearsFromBirthDate } from '@/lib/age'
 
 export const runtime = 'nodejs'
@@ -18,8 +19,13 @@ const VALID_DIAGNOSES: Diagnosis[] = ['ADHD', 'AUTISM', 'ADHD+AUTISM', 'OTHER']
  * answer was permanent: nothing in the dashboard could change it once the
  * assessment actually said something.
  *
- * Deliberately narrow: only the fields the assessment informs. Names are
- * identity and are not editable here.
+ * Names ARE editable. They were refused here on the principle that a name is
+ * identity rather than a finding — which sounded right and was wrong in
+ * practice: a typo made while creating the record was permanent, and that name
+ * is printed on the report handed to the family and shown at the child's
+ * school. Refusing the correction protected nobody; the only person who can
+ * reach this route is the specialist who typed the name in the first place,
+ * and the audit trail records what it was before.
  *
  * Birth date is a special case. Changing one is identity editing and stays
  * refused. But a record that has NO birth date could not be completed from
@@ -45,7 +51,23 @@ export async function PATCH(req: NextRequest, props: { params: Promise<{ id: str
     const body = await req.json().catch(() => null)
     if (!body) return NextResponse.json({ error: 'بيانات غير صالحة' }, { status: 400 })
 
-    const updates: { diagnosis?: Diagnosis; severityLevel?: 1 | 2 | 3; birthDate?: string; ageGroup?: AgeGroup } = {}
+    const updates: {
+      diagnosis?: Diagnosis; severityLevel?: 1 | 2 | 3
+      birthDate?: string; ageGroup?: AgeGroup
+      firstName?: string; lastName?: string
+    } = {}
+
+    // Sanitised exactly as at registration: names flow into AI prompts, email
+    // templates and the printed document, so a correction must not be a way
+    // round lib/person-name.ts.
+    for (const field of ['firstName', 'lastName'] as const) {
+      if (body[field] === undefined) continue
+      const cleaned = sanitizePersonName(body[field])
+      if (!isUsableName(cleaned)) {
+        return NextResponse.json({ error: 'الاسم غير صالح' }, { status: 400 })
+      }
+      updates[field] = cleaned
+    }
 
     if (body.birthDate !== undefined) {
       if (student.birthDate) {
@@ -99,6 +121,10 @@ export async function PATCH(req: NextRequest, props: { params: Promise<{ id: str
         ...(updates.diagnosis ? { toDiagnosis: updates.diagnosis } : {}),
         ...(updates.severityLevel ? { toSeverity: updates.severityLevel } : {}),
         ...(updates.birthDate ? { setBirthDate: updates.birthDate, toAgeGroup: updates.ageGroup } : {}),
+        // The previous spelling is kept: a clinical record whose name changed
+        // should say so, and say what it was.
+        ...(updates.firstName ? { fromFirstName: student.firstName, toFirstName: updates.firstName } : {}),
+        ...(updates.lastName ? { fromLastName: student.lastName, toLastName: updates.lastName } : {}),
       },
     })
 

@@ -16,7 +16,7 @@ export async function GET() {
   if (staffSession) {
     const staff = await getStaff(staffSession.staffId)
     if (staff?.isActive) {
-      return NextResponse.json({ role: 'staff', name: staff.name, staffId: staff.id })
+      return NextResponse.json({ role: 'staff', name: staff.name, staffId: staff.id, staffRole: staff.role || 'therapist' })
     }
   }
 

@@ -16,19 +16,21 @@ export default function AdminSidebar({ onClose, unreadMessages = 0 }: { onClose?
   const { lang } = useLang()
   const t = tr[lang].adminChrome
   const navT = tr[lang].adminNav
-  const [actor, setActor] = useState<{ role: 'owner' | 'staff'; name: string } | null>(null)
+  const [actor, setActor] = useState<{ role: 'owner' | 'staff'; name: string; staffRole?: string } | null>(null)
 
   useEffect(() => {
     fetch('/api/auth/me').then(r => r.ok ? r.json() : null).then(data => { if (data) setActor(data) }).catch(() => {})
   }, [])
 
   const isOwner = actor?.role === 'owner'
+  // A language teacher gets a clean, language-only menu (no therapy tools).
+  const isLangTeacher = actor?.role === 'staff' && actor?.staffRole === 'language_teacher'
 
   const NAV = [
-    { href: '/dashboard',                        label: navT.home, icon: LayoutDashboard, ownerOnly: false },
+    { href: '/dashboard',                        label: navT.home, icon: LayoutDashboard, ownerOnly: false, lang: true },
     { href: '/dashboard/clients',                label: navT.clients, icon: Users, ownerOnly: false },
-    { href: '/dashboard/my-sessions',            label: lang === 'ar' ? 'حصصي' : lang === 'fr' ? 'Mes cours' : 'My sessions', icon: CalendarClock, ownerOnly: false, staffOnly: true },
-    { href: '/dashboard/conversations',          label: lang === 'ar' ? 'محادثات المتعلّمين' : lang === 'fr' ? 'Discussions' : 'Learner chats', icon: MessageSquare, ownerOnly: false },
+    { href: '/dashboard/my-sessions',            label: lang === 'ar' ? 'حصصي' : lang === 'fr' ? 'Mes cours' : 'My sessions', icon: CalendarClock, ownerOnly: false, staffOnly: true, lang: true },
+    { href: '/dashboard/conversations',          label: lang === 'ar' ? 'محادثات المتعلّمين' : lang === 'fr' ? 'Discussions' : 'Learner chats', icon: MessageSquare, ownerOnly: false, lang: true },
     { href: '/dashboard/payments',               label: navT.payments, icon: CreditCard, ownerOnly: true },
     { href: '/dashboard/appointments',           label: navT.appointments, icon: Calendar, ownerOnly: false },
     { href: '/dashboard/programs',               label: navT.programs, icon: ClipboardList, ownerOnly: false },
@@ -40,7 +42,7 @@ export default function AdminSidebar({ onClose, unreadMessages = 0 }: { onClose?
     { href: '/dashboard/treatment-plan',          label: navT.treatmentPlan, icon: Target, ownerOnly: false },
     { href: '/dashboard/specialist-toolkit',     label: navT.specialistToolkit, icon: PersonStanding, ownerOnly: false },
     { href: '/dashboard/apa-planner',            label: navT.apaPlanner, icon: Zap, ownerOnly: false },
-    { href: '/dashboard/curriculum',             label: lang === 'ar' ? 'المنهج الفرنسي' : lang === 'fr' ? 'Programme FR' : 'Curriculum', icon: BookOpen, ownerOnly: false },
+    { href: '/dashboard/curriculum',             label: lang === 'ar' ? 'المنهج الفرنسي' : lang === 'fr' ? 'Programme FR' : 'Curriculum', icon: BookOpen, ownerOnly: false, lang: true },
     { href: '/dashboard/learners',               label: lang === 'ar' ? 'متعلّمو اللغات' : lang === 'fr' ? 'Apprenants' : 'Learners', icon: GraduationCap, ownerOnly: true },
     { href: '/dashboard/analytics',              label: navT.analytics, icon: BarChart3, ownerOnly: true },
     { href: '/dashboard/staff',                  label: navT.staff, icon: UserCog, ownerOnly: true },
@@ -51,8 +53,10 @@ export default function AdminSidebar({ onClose, unreadMessages = 0 }: { onClose?
   ]
   const visibleNav = NAV.filter(item => {
     const staffOnly = (item as { staffOnly?: boolean }).staffOnly
-    if (item.ownerOnly && !isOwner) return false  // owner-only pages hidden from staff
-    if (staffOnly && isOwner) return false          // teacher-only pages hidden from the owner
+    const isLangItem = (item as { lang?: boolean }).lang
+    if (item.ownerOnly && !isOwner) return false          // owner-only pages hidden from staff
+    if (staffOnly && isOwner) return false                 // teacher-only pages hidden from the owner
+    if (isLangTeacher && !isLangItem) return false         // language teachers see only language tools
     return true
   })
 

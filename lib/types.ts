@@ -466,6 +466,8 @@ export interface LanguageLearner {
   level: string               // CEFR level or 'unknown'
   teacherId: string | null    // assigned teacher (Staff id)
   teacherName: string | null
+  // The upcoming live lesson the teacher scheduled (external Meet/Zoom link).
+  nextLesson?: { at: string; link: string; note?: string } | null
   createdAt: string
   lastLoginAt: string | null
 }

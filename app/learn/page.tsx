@@ -6,7 +6,7 @@ import { useLang, pickLang } from '@/lib/i18n'
 import LangToggle from '@/components/shared/LangToggle'
 import { CEFR_DESCRIPTORS, type CEFRLevel } from '@/lib/languages/placement-fr'
 import ChatPanel from './ChatPanel'
-import { Languages as LangIcon, GraduationCap, User, BookOpen, CalendarClock, LogOut, Loader2, Trophy, Clock } from 'lucide-react'
+import { Languages as LangIcon, GraduationCap, User, BookOpen, CalendarClock, LogOut, Loader2, Trophy, Clock, Video } from 'lucide-react'
 
 const PURPLE = '#6B46F0'
 const PURPLE2 = '#9A7BFD'
@@ -19,7 +19,7 @@ const LANG_LABEL: Record<string, { ar: string; en: string; fr: string }> = {
   italian: { ar: 'الإيطاليّة', en: 'Italian', fr: 'Italien' },
 }
 
-interface Learner { id: string; name: string; language: string; level: string; teacherName: string | null }
+interface Learner { id: string; name: string; language: string; level: string; teacherName: string | null; nextLesson?: { at: string; link: string; note?: string } | null }
 interface LSession { id: string; dateISO: string; language: string; durationHours: number; status: string }
 
 export default function LearnerPortal() {
@@ -73,6 +73,24 @@ export default function LearnerPortal() {
           <p className="text-slate-400 text-sm">{pickLang(lang, 'مرحباً', 'Welcome', 'Bonjour')}</p>
           <h1 className="text-2xl font-black text-slate-800">{learner.name} 👋</h1>
         </div>
+
+        {/* Next lesson */}
+        {learner.nextLesson?.link && (
+          <a href={learner.nextLesson.link} target="_blank" rel="noreferrer"
+            className="block rounded-3xl p-5 text-white shadow-lg transition hover:scale-[1.01]"
+            style={{ background: `linear-gradient(135deg, ${PURPLE}, #8B6BF0)` }}>
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-white/70 text-xs font-bold">{pickLang(lang, 'حصّتك القادمة', 'Your next lesson', 'Votre prochain cours')}</p>
+                <p className="font-black text-lg">{learner.nextLesson.at || pickLang(lang, 'قريباً', 'Soon', 'Bientôt')}</p>
+                {learner.nextLesson.note && <p className="text-white/70 text-xs mt-0.5">{learner.nextLesson.note}</p>}
+              </div>
+              <span className="inline-flex items-center gap-1.5 bg-white text-sm font-extrabold px-4 py-2.5 rounded-2xl flex-shrink-0" style={{ color: PURPLE }}>
+                <Video className="w-4 h-4" /> {pickLang(lang, 'انضم للحصّة', 'Join lesson', 'Rejoindre')}
+              </span>
+            </div>
+          </a>
+        )}
 
         {/* Level card */}
         <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">

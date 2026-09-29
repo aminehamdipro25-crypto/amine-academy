@@ -12,6 +12,7 @@ import CTASection from '@/components/landing/CTASection'
 import FooterSection from '@/components/landing/FooterSection'
 import FloatingChat from '@/components/shared/FloatingChat'
 import TabletNotice from '@/components/landing/TabletNotice'
+import LanguagesPromoSection from '@/components/landing/LanguagesPromoSection'
 
 export default function HomePage() {
   return (
@@ -23,6 +24,7 @@ export default function HomePage() {
       <AttentionSection />
       <HowItWorks />
       <ProgramsSection />
+      <LanguagesPromoSection />
       <InteractiveSessionSection />
       <PlansSection />
       <TestimonialsSection />

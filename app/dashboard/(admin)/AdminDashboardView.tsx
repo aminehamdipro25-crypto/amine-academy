@@ -114,6 +114,36 @@ export default function AdminDashboardView({ parents, payments, exercises, redis
         ))}
       </motion.div>
 
+      {/* ── أمين للّغات — one hub for the whole languages track ── */}
+      <motion.div variants={fadeUp} className="rounded-3xl p-5 md:p-6"
+        style={{ background: 'linear-gradient(135deg, rgba(107,70,240,0.06), rgba(154,123,253,0.06))', border: '1px solid rgba(107,70,240,0.18)' }}>
+        <div className="flex items-center gap-2 mb-1">
+          <span className="text-lg">🗣️</span>
+          <h2 className="font-black text-gray-900">
+            {lang === 'ar' ? 'أمين للّغات — مركز التحكّم' : lang === 'fr' ? 'Amine Langues — centre de contrôle' : 'Amine Languages — control center'}
+          </h2>
+        </div>
+        <p className="text-gray-400 text-sm mb-4">
+          {lang === 'ar' ? 'كل ما يخصّ مسار اللغات في مكان واحد — بنقرة واحدة.' : lang === 'fr' ? 'Tout le pôle langues au même endroit.' : 'Everything for the languages track in one place.'}
+        </p>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {[
+            { href: '/dashboard/staff',      icon: '👩‍🏫', ar: 'إدارة الأساتذة', en: 'Teachers',   fr: 'Professeurs', ext: false },
+            { href: '/dashboard/earnings',   icon: '💰',   ar: 'دفتر الأرباح',   en: 'Earnings',   fr: 'Revenus',     ext: false },
+            { href: '/dashboard/curriculum', icon: '📘',   ar: 'دليل التدريس',   en: 'Curriculum', fr: 'Programme',   ext: false },
+            { href: '/languages',            icon: '🌐',   ar: 'الصفحة العلنيّة', en: 'Public page', fr: 'Page publique', ext: true },
+          ].map(c => {
+            const label = lang === 'ar' ? c.ar : lang === 'fr' ? c.fr : c.en
+            const inner = (<><div className="text-2xl mb-1">{c.icon}</div><p className="font-bold text-gray-800 text-sm">{label}</p></>)
+            return c.ext ? (
+              <a key={c.href} href={c.href} target="_blank" rel="noreferrer" className="bg-white rounded-2xl border border-gray-100 p-4 text-center hover:shadow-md transition">{inner}</a>
+            ) : (
+              <Link key={c.href} href={c.href} className="bg-white rounded-2xl border border-gray-100 p-4 text-center hover:shadow-md transition">{inner}</Link>
+            )
+          })}
+        </div>
+      </motion.div>
+
       {/* ── Redis error ── */}
       {redisError && (
         <motion.div variants={fadeUp} className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-2xl p-4">

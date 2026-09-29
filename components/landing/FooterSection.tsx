@@ -37,6 +37,23 @@ export default function FooterSection() {
                 "Une plateforme interactive mondiale pour la rééducation motrice et l'activité physique adaptée des enfants et jeunes TDAH et autistes, de 5 à 22 ans."
               )}
             </p>
+            {/* Sister platform — Amine-Fit (adults) */}
+            <a
+              href="https://amine-fit.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 mt-5 px-4 py-2 rounded-xl text-sm font-bold transition-colors hover:opacity-90"
+              style={{ background: 'rgba(124,92,252,0.08)', border: '1px solid rgba(124,92,252,0.22)', color: '#6B46F0' }}
+            >
+              <span aria-hidden>🏋️</span>
+              {pickLang(
+                lang,
+                'Amine-Fit — تدريب ولياقة البالغين',
+                'Amine-Fit — Adult Training & Fitness',
+                'Amine-Fit — Entraînement & fitness adultes'
+              )}
+              <span aria-hidden>↗</span>
+            </a>
           </div>
           {/* Links */}
           <div>

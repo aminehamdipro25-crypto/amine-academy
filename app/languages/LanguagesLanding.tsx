@@ -78,8 +78,11 @@ export default function LanguagesLanding() {
               style={{ background: `linear-gradient(135deg, ${PURPLE}, #8B6BF0)`, boxShadow: '0 10px 30px rgba(107,70,240,0.25)' }}>
               <GraduationCap className="w-4 h-4" /> {pickLang(lang, 'قيّم مستواك مجاناً', 'Test your level — free', 'Testez votre niveau — gratuit')}
             </Link>
-            <a href="#enroll" className="px-6 py-4 rounded-2xl font-bold text-sm border-2 transition hover:bg-white"
+            <Link href="/languages/curriculum" className="px-6 py-4 rounded-2xl font-bold text-sm border-2 transition hover:bg-white"
               style={{ borderColor: 'rgba(107,70,240,0.25)', color: PURPLE }}>
+              {pickLang(lang, 'المنهج A1–C2', 'Curriculum A1–C2', 'Programme A1–C2')}
+            </Link>
+            <a href="#enroll" className="px-6 py-4 rounded-2xl font-bold text-sm text-slate-500 hover:text-slate-700 transition">
               {pickLang(lang, 'سجّل اهتمامك', 'Register interest', 'S’inscrire')}
             </a>
           </div>

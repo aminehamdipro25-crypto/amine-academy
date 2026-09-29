@@ -6,7 +6,7 @@ import {
   PLACEMENT_FR, scorePlacement, CEFR_DESCRIPTORS, CEFR_ORDER,
   type PlacementResult, type CEFRLevel,
 } from '@/lib/languages/placement-fr'
-import { ArrowLeft, ArrowRight, CheckCircle2, Loader2, GraduationCap, Trophy, RefreshCw } from 'lucide-react'
+import { ArrowLeft, ArrowRight, CheckCircle2, Loader2, GraduationCap, Trophy, RefreshCw, BookOpen } from 'lucide-react'
 
 const PURPLE = '#6B46F0'
 
@@ -235,6 +235,14 @@ function ResultView({ result, onRestart, lang, rtl }:
             </button>
           </form>
         )}
+
+        <div className="text-center mt-6">
+          <Link href={`/languages/curriculum?level=${result.level}`}
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl font-extrabold text-sm border-2 transition hover:bg-white"
+            style={{ borderColor: 'rgba(107,70,240,0.25)', color: PURPLE }}>
+            <BookOpen className="w-4 h-4" /> {pickLang(lang, 'شاهد مسار تعلّمك من هنا', 'See your learning path', 'Voir votre parcours d’apprentissage')}
+          </Link>
+        </div>
 
         <div className="flex items-center justify-center gap-4 mt-6">
           <button onClick={onRestart} className="inline-flex items-center gap-1.5 text-sm font-bold text-slate-400 hover:text-slate-600 transition">

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { isOwnerUser } from '@/lib/auth'
 import { getAllStaff, getStaffByEmail, createStaff } from '@/lib/db'
 import { hashPassword } from '@/lib/password'
+import { sanitizeTeacherFields } from '@/lib/staff-fields'
 
 export const runtime = 'nodejs'
 
@@ -37,11 +38,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'البريد الإلكتروني مستخدم بالفعل' }, { status: 409 })
     }
 
+    const teacherFields = sanitizeTeacherFields(body)
     const staff = await createStaff({
       name,
       email: email.toLowerCase(),
       passwordHash: hashPassword(password),
       isActive: true,
+      role: teacherFields.role || 'therapist',
+      ...teacherFields,
     })
     const { passwordHash, ...safe } = staff
     return NextResponse.json(safe, { status: 201 })

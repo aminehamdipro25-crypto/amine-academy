@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { isOwnerUser, revokeStaffSession } from '@/lib/auth'
 import { getStaff, updateStaff, deleteStaff } from '@/lib/db'
 import { hashPassword } from '@/lib/password'
+import { sanitizeTeacherFields } from '@/lib/staff-fields'
 
 export const runtime = 'nodejs'
 
@@ -18,7 +19,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const body = await req.json().catch(() => ({}))
     const { name, password, isActive } = body as { name?: string; password?: string; isActive?: boolean }
 
-    const updates: Partial<typeof staff> = {}
+    const updates: Partial<typeof staff> = { ...sanitizeTeacherFields(body) }
     if (typeof name === 'string' && name.trim()) updates.name = name.trim()
     if (typeof isActive === 'boolean') updates.isActive = isActive
     if (typeof password === 'string' && password) {

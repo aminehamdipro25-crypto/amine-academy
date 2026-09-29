@@ -407,8 +407,10 @@ export interface SessionPayload {
   exp: number
 }
 
-// ── Staff (multi-therapist accounts, distinct from the owner's
-// master ADMIN_PASSWORD) ────────────────────────────────────────
+// ── Staff (multi-provider accounts: therapists AND language teachers,
+// distinct from the owner's master ADMIN_PASSWORD) ──────────────────
+export type StaffRole = 'therapist' | 'language_teacher'
+
 export interface Staff {
   id: string
   email: string
@@ -417,6 +419,14 @@ export interface Staff {
   isActive: boolean
   createdAt: string
   lastLoginAt: string | null
+  // ── Phase 2 (teacher management) — all optional so therapist accounts
+  //    created before these fields existed keep working unchanged. ──
+  role?: StaffRole            // absent ⇒ treated as 'therapist'
+  languages?: string[]        // language_teacher: ['french', 'english', …]
+  bio?: string                // short public profile / specialties
+  hourlyRate?: number         // pay per teaching hour (optional accounting input)
+  currency?: 'QAR' | 'TND'    // currency of the rate
+  teacherSharePct?: number    // 0–100: teacher's share of session revenue; the academy keeps the remainder
 }
 
 // ── Messages ──────────────────────────────────────────────────

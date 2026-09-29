@@ -429,6 +429,29 @@ export interface Staff {
   teacherSharePct?: number    // 0–100: teacher's share of session revenue; the academy keeps the remainder
 }
 
+// ── Teaching sessions (Phase 3 — hours & profit-share ledger) ──
+// One record per delivered/scheduled language lesson. Earnings are snapshotted
+// at write time (teacherSharePct/earn/academyEarn) so later changes to a
+// teacher's share never rewrite past accounting.
+export interface TeachingSession {
+  id: string
+  teacherId: string
+  teacherName: string
+  learnerName: string
+  language: string
+  dateISO: string             // session date (YYYY-MM-DD)
+  durationHours: number       // billable hours (for hour totals)
+  price: number               // amount the learner paid for this session
+  currency: 'QAR' | 'TND'
+  teacherSharePct: number     // snapshot of the teacher's share at log time
+  teacherEarn: number         // = round(price × share%) — snapshot
+  academyEarn: number         // = price − teacherEarn — snapshot (Amine's cut)
+  status: 'scheduled' | 'completed' | 'paid'
+  note?: string
+  createdBy: string           // 'owner' | staff:<id>
+  createdAt: string
+}
+
 // ── Messages ──────────────────────────────────────────────────
 export interface Message {
   id: string

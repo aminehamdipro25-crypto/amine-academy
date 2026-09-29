@@ -195,6 +195,13 @@ export default function HeroSection() {
           >
             {t.nav.trial}
           </Link>
+          <Link
+            href="/languages"
+            className="text-sm font-bold transition-colors hidden sm:flex items-center gap-1"
+            style={{ color: '#6B46F0' }}
+          >
+            🗣️ {pickLang(lang, 'اللغات', 'Languages', 'Langues')}
+          </Link>
           {!portal && (
             <Link
               href="/parent/login"

@@ -64,6 +64,7 @@ export default function FooterSection() {
               <li><Link href="/#programs" className="transition-colors hover:text-indigo-600" style={{ color: '#64748B' }}>{pickLang(lang, 'البرامج', 'Programs', 'Programmes')}</Link></li>
               <li><Link href="/#plans" className="transition-colors hover:text-indigo-600" style={{ color: '#64748B' }}>{pickLang(lang, 'الأسعار', 'Pricing', 'Tarifs')}</Link></li>
               <li><Link href="/register" className="transition-colors hover:text-indigo-600" style={{ color: '#64748B' }}>{pickLang(lang, 'التسجيل', 'Register', 'Inscription')}</Link></li>
+              <li><Link href="/languages" className="transition-colors hover:text-indigo-600 font-bold" style={{ color: '#6B46F0' }}>{pickLang(lang, '🗣️ أمين للّغات', '🗣️ Amine Languages', '🗣️ Amine Langues')}</Link></li>
               <li><Link href="/blog" className="transition-colors hover:text-indigo-600" style={{ color: '#64748B' }}>{pickLang(lang, 'المدونة', 'Blog', 'Blog')}</Link></li>
             </ul>
           </div>

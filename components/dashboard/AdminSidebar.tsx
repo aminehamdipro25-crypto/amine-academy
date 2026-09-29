@@ -28,6 +28,7 @@ export default function AdminSidebar({ onClose, unreadMessages = 0 }: { onClose?
     { href: '/dashboard',                        label: navT.home, icon: LayoutDashboard, ownerOnly: false },
     { href: '/dashboard/clients',                label: navT.clients, icon: Users, ownerOnly: false },
     { href: '/dashboard/my-sessions',            label: lang === 'ar' ? 'حصصي' : lang === 'fr' ? 'Mes cours' : 'My sessions', icon: CalendarClock, ownerOnly: false, staffOnly: true },
+    { href: '/dashboard/conversations',          label: lang === 'ar' ? 'محادثات المتعلّمين' : lang === 'fr' ? 'Discussions' : 'Learner chats', icon: MessageSquare, ownerOnly: false },
     { href: '/dashboard/payments',               label: navT.payments, icon: CreditCard, ownerOnly: true },
     { href: '/dashboard/appointments',           label: navT.appointments, icon: Calendar, ownerOnly: false },
     { href: '/dashboard/programs',               label: navT.programs, icon: ClipboardList, ownerOnly: false },

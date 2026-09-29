@@ -448,8 +448,26 @@ export interface TeachingSession {
   academyEarn: number         // = price − teacherEarn — snapshot (Amine's cut)
   status: 'scheduled' | 'completed' | 'paid'
   note?: string
+  learnerId?: string          // links the session to a LanguageLearner (portal view)
   createdBy: string           // 'owner' | staff:<id>
   createdAt: string
+}
+
+// ── Language learner (Phase 5 — learner portal) ──────────────────────────────
+// A student of the languages track, with their own login. Distinct from the
+// therapy "student"/"parent" entities so the two populations never mix.
+export interface LanguageLearner {
+  id: string
+  name: string
+  email: string
+  phone: string
+  passwordHash: string
+  language: string            // 'french' | …
+  level: string               // CEFR level or 'unknown'
+  teacherId: string | null    // assigned teacher (Staff id)
+  teacherName: string | null
+  createdAt: string
+  lastLoginAt: string | null
 }
 
 // ── Messages ──────────────────────────────────────────────────

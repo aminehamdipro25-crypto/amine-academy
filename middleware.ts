@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { verifyToken, verifyAdminSession, verifyStaffSession } from './lib/auth'
+import { verifyLearnerToken, LEARNER_COOKIE } from './lib/learner-auth'
 
 // Pages reserved for the owner — staff accounts must not reach these
 // even though they share the /dashboard prefix with staff-accessible pages.
-const OWNER_ONLY_PAGES = ['/dashboard/payments', '/dashboard/analytics', '/dashboard/staff', '/dashboard/settings', '/dashboard/earnings']
+const OWNER_ONLY_PAGES = ['/dashboard/payments', '/dashboard/analytics', '/dashboard/staff', '/dashboard/settings', '/dashboard/earnings', '/dashboard/learners']
 
 // Interim mitigation for GHSA-3g8h-86w9-wvmq (Next.js middleware redirects can
 // be cache-poisoned via a spoofed x-nextjs-data header) — the full fix requires
@@ -70,6 +71,17 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  // ── Language Learner Portal ───────────────────────────────
+  const learnPublic = ['/learn/login']
+  if (pathname.startsWith('/learn') && !learnPublic.includes(pathname)) {
+    const payload = await verifyLearnerToken(request.cookies.get(LEARNER_COOKIE)?.value)
+    if (!payload) {
+      const res = authRedirect(new URL('/learn/login', request.url))
+      res.cookies.set(LEARNER_COOKIE, '', { maxAge: 0, path: '/' })
+      return res
+    }
+  }
+
   // ── Session Platform ──────────────────────────────────────
   // /session/[id]/kid  → parent must be logged in (parent_token)
   // /session/[id]      → specialist/staff must be logged in (admin/staff token)
@@ -90,5 +102,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/parent/:path*', '/student/:path*', '/session/:path*'],
+  matcher: ['/dashboard/:path*', '/parent/:path*', '/student/:path*', '/session/:path*', '/learn/:path*'],
 }

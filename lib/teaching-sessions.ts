@@ -14,6 +14,7 @@ export interface NewTeachingSession {
   teacherId: string
   teacherName: string
   learnerName: string
+  learnerId?: string
   language: string
   dateISO: string
   durationHours: number

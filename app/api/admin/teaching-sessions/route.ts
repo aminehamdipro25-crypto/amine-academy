@@ -71,6 +71,7 @@ export async function POST(req: NextRequest) {
       teacherId,
       teacherName: teacher.name,
       learnerName,
+      learnerId: body.learnerId ? String(body.learnerId).trim() : undefined,
       language,
       dateISO,
       durationHours,

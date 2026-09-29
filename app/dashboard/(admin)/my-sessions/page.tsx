@@ -19,10 +19,11 @@ const LANG: Record<string, string> = { french: 'الفرنسيّة', english: '�
 // with your share applied — you run your lessons, the accounting is automatic.
 export default function MySessionsPage() {
   const [sessions, setSessions] = useState<Session[]>([])
+  const [learners, setLearners] = useState<{ id: string; name: string }[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState({ learnerName: '', language: 'french', dateISO: new Date().toISOString().slice(0, 10), durationHours: '1', price: '', currency: 'QAR' as 'QAR' | 'TND', status: 'completed' })
+  const [form, setForm] = useState({ learnerId: '', learnerName: '', language: 'french', dateISO: new Date().toISOString().slice(0, 10), durationHours: '1', price: '', currency: 'QAR' as 'QAR' | 'TND', status: 'completed' })
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState('')
   const [busyId, setBusyId] = useState<string | null>(null)
@@ -30,9 +31,11 @@ export default function MySessionsPage() {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await fetch('/api/admin/teaching-sessions')
-      if (!res.ok) throw new Error('تعذّر التحميل')
-      setSessions(await res.json()); setError('')
+      const [sRes, lRes] = await Promise.all([fetch('/api/admin/teaching-sessions'), fetch('/api/admin/learners')])
+      if (!sRes.ok) throw new Error('تعذّر التحميل')
+      setSessions(await sRes.json())
+      if (lRes.ok) setLearners((await lRes.json()).map((l: { id: string; name: string }) => ({ id: l.id, name: l.name })))
+      setError('')
     } catch (e) { setError((e as Error).message) } finally { setLoading(false) }
   }, [])
   useEffect(() => { load() }, [load])
@@ -48,7 +51,7 @@ export default function MySessionsPage() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'فشل الحفظ')
-      setForm(f => ({ ...f, learnerName: '', price: '' }))
+      setForm(f => ({ ...f, learnerId: '', learnerName: '', price: '' }))
       setShowForm(false); await load()
     } catch (e) { setFormError((e as Error).message) } finally { setSaving(false) }
   }
@@ -104,6 +107,17 @@ export default function MySessionsPage() {
           <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.97 }} className="bg-white rounded-2xl border border-gray-100 p-6">
             <div className="flex items-center justify-between mb-4"><h2 className="font-black text-gray-900 text-lg">تسجيل حصّة</h2><button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button></div>
             <form onSubmit={submit} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {learners.length > 0 && (
+                <div><label className="block text-sm font-bold text-gray-700 mb-1.5">التلميذ المسجّل (اختياري)</label>
+                  <select value={form.learnerId}
+                    onChange={e => { const l = learners.find(x => x.id === e.target.value); setForm(f => ({ ...f, learnerId: e.target.value, learnerName: l ? l.name : f.learnerName })) }}
+                    className={inputCls}>
+                    <option value="">— تلميذ خارج القائمة —</option>
+                    {learners.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                  </select>
+                  <p className="text-[11px] text-gray-400 mt-1">اختره ليظهر السجل في بوّابته.</p>
+                </div>
+              )}
               <div><label className="block text-sm font-bold text-gray-700 mb-1.5">اسم التلميذ</label><input value={form.learnerName} onChange={e => setForm(f => ({ ...f, learnerName: e.target.value }))} required className={inputCls} placeholder="مثال: محمد" /></div>
               <div><label className="block text-sm font-bold text-gray-700 mb-1.5">اللغة</label><select value={form.language} onChange={e => setForm(f => ({ ...f, language: e.target.value }))} className={inputCls}>{Object.entries(LANG).map(([c, l]) => <option key={c} value={c}>{l}</option>)}</select></div>
               <div><label className="block text-sm font-bold text-gray-700 mb-1.5">التاريخ</label><input type="date" value={form.dateISO} onChange={e => setForm(f => ({ ...f, dateISO: e.target.value }))} required className={inputCls} /></div>

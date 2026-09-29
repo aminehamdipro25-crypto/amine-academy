@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { isOwnerUser, getDashboardActorId } from '@/lib/auth'
+import { getDashboardActorId } from '@/lib/auth'
 import { getStaff } from '@/lib/db'
 import { createTeachingSession, getAllTeachingSessions } from '@/lib/teaching-sessions'
 import type { TeachingSession } from '@/lib/types'
@@ -7,10 +7,19 @@ import type { TeachingSession } from '@/lib/types'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
+// Owner sees the whole ledger; a teacher (staff) sees only their own sessions.
+function staffIdOf(actor: string | null): string | null {
+  return actor && actor.startsWith('staff:') ? actor.slice(6) : null
+}
+
 export async function GET() {
-  if (!(await isOwnerUser())) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
+  const actor = await getDashboardActorId()
+  if (!actor) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
   try {
-    return NextResponse.json(await getAllTeachingSessions())
+    const all = await getAllTeachingSessions()
+    if (actor === 'owner') return NextResponse.json(all)
+    const sid = staffIdOf(actor)
+    return NextResponse.json(all.filter(s => s.teacherId === sid))
   } catch (e) {
     console.error('[teaching-sessions GET]', e)
     return NextResponse.json({ error: 'حدث خطأ في الخادم' }, { status: 500 })
@@ -18,10 +27,14 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  if (!(await isOwnerUser())) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
+  const actor = await getDashboardActorId()
+  if (!actor) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
+  const isOwner = actor === 'owner'
+  const ownStaffId = staffIdOf(actor)
   try {
     const body = await req.json().catch(() => ({}))
-    const teacherId    = String(body.teacherId || '').trim()
+    // A teacher can only log a session for themselves; the owner may pick any teacher.
+    const teacherId    = (isOwner ? String(body.teacherId || '').trim() : ownStaffId) || ''
     const learnerName  = String(body.learnerName || '').trim().slice(0, 120)
     const language     = String(body.language || 'french').trim()
     const dateISO      = String(body.dateISO || '').slice(0, 10)
@@ -66,7 +79,7 @@ export async function POST(req: NextRequest) {
       teacherSharePct: sharePct,
       status,
       note,
-      createdBy: (await getDashboardActorId()) || 'owner',
+      createdBy: actor,
     })
     return NextResponse.json(session, { status: 201 })
   } catch (e) {

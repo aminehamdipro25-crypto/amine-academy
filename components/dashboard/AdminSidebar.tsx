@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Users, Dumbbell, Calendar,
   BarChart3, FileText, LogOut,
   ClipboardList, BookOpen, Settings, CreditCard, MessageSquare,
-  Zap, UserCog, PersonStanding, Target, ShieldAlert, ScrollText, Library, Wallet, GraduationCap,
+  Zap, UserCog, PersonStanding, Target, ShieldAlert, ScrollText, Library, Wallet, GraduationCap, CalendarClock,
 } from 'lucide-react'
 import AcademyLogo from '@/components/shared/AcademyLogo'
 import { useLang, tr } from '@/lib/i18n'
@@ -27,6 +27,7 @@ export default function AdminSidebar({ onClose, unreadMessages = 0 }: { onClose?
   const NAV = [
     { href: '/dashboard',                        label: navT.home, icon: LayoutDashboard, ownerOnly: false },
     { href: '/dashboard/clients',                label: navT.clients, icon: Users, ownerOnly: false },
+    { href: '/dashboard/my-sessions',            label: lang === 'ar' ? 'حصصي' : lang === 'fr' ? 'Mes cours' : 'My sessions', icon: CalendarClock, ownerOnly: false, staffOnly: true },
     { href: '/dashboard/payments',               label: navT.payments, icon: CreditCard, ownerOnly: true },
     { href: '/dashboard/appointments',           label: navT.appointments, icon: Calendar, ownerOnly: false },
     { href: '/dashboard/programs',               label: navT.programs, icon: ClipboardList, ownerOnly: false },
@@ -46,7 +47,12 @@ export default function AdminSidebar({ onClose, unreadMessages = 0 }: { onClose?
     { href: '/dashboard/monitor',                label: navT.monitor, icon: ShieldAlert, ownerOnly: true },
     { href: '/dashboard/audit',                  label: navT.audit, icon: ScrollText, ownerOnly: true },
   ]
-  const visibleNav = NAV.filter(item => !item.ownerOnly || isOwner)
+  const visibleNav = NAV.filter(item => {
+    const staffOnly = (item as { staffOnly?: boolean }).staffOnly
+    if (item.ownerOnly && !isOwner) return false  // owner-only pages hidden from staff
+    if (staffOnly && isOwner) return false          // teacher-only pages hidden from the owner
+    return true
+  })
 
   return (
     <aside className="w-64 h-full flex flex-col bg-white border-l border-gray-100 select-none overflow-hidden">

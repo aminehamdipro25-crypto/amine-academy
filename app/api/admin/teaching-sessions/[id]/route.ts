@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { isOwnerUser } from '@/lib/auth'
+import { isOwnerUser, getDashboardActorId } from '@/lib/auth'
 import { getTeachingSession, updateTeachingSession, deleteTeachingSession } from '@/lib/teaching-sessions'
 import type { TeachingSession } from '@/lib/types'
 
@@ -33,9 +33,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  if (!(await isOwnerUser())) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
+  const actor = await getDashboardActorId()
+  if (!actor) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
   try {
     const { id } = await params
+    // The owner can delete any session; a teacher may delete only their own.
+    if (actor !== 'owner') {
+      const sid = actor.startsWith('staff:') ? actor.slice(6) : null
+      const s = await getTeachingSession(id)
+      if (!s || s.teacherId !== sid) return NextResponse.json({ error: 'غير مصرح' }, { status: 403 })
+    }
     await deleteTeachingSession(id)
     return NextResponse.json({ ok: true })
   } catch (e) {

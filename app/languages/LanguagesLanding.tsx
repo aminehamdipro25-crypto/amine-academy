@@ -219,9 +219,12 @@ function EnrollForm({ lang }: { lang: 'ar' | 'en' | 'fr' }) {
           className="w-full px-4 py-3 rounded-2xl border border-slate-200 text-sm outline-none focus:border-violet-400 transition text-right" />
         <select value={form.language} onChange={e => set('language', e.target.value)}
           className="w-full px-4 py-3 rounded-2xl border border-slate-200 text-sm outline-none focus:border-violet-400 transition bg-white">
-          <option value="french">{pickLang(lang, 'الفرنسيّة', 'French', 'Français')}</option>
-          <option value="english">{pickLang(lang, 'الإنجليزيّة (قريباً)', 'English (soon)', 'Anglais (bientôt)')}</option>
-          <option value="spanish">{pickLang(lang, 'الإسبانيّة (قريباً)', 'Spanish (soon)', 'Espagnol (bientôt)')}</option>
+          <option value="french">{pickLang(lang, 'الفرنسيّة 🇫🇷', 'French 🇫🇷', 'Français 🇫🇷')}</option>
+          <option value="english">{pickLang(lang, 'الإنجليزيّة 🇬🇧 (قريباً)', 'English 🇬🇧 (soon)', 'Anglais 🇬🇧 (bientôt)')}</option>
+          <option value="arabic">{pickLang(lang, 'العربيّة (قريباً)', 'Arabic (soon)', 'Arabe (bientôt)')}</option>
+          <option value="spanish">{pickLang(lang, 'الإسبانيّة 🇪🇸 (قريباً)', 'Spanish 🇪🇸 (soon)', 'Espagnol 🇪🇸 (bientôt)')}</option>
+          <option value="german">{pickLang(lang, 'الألمانيّة 🇩🇪 (قريباً)', 'German 🇩🇪 (soon)', 'Allemand 🇩🇪 (bientôt)')}</option>
+          <option value="italian">{pickLang(lang, 'الإيطاليّة 🇮🇹 (قريباً)', 'Italian 🇮🇹 (soon)', 'Italien 🇮🇹 (bientôt)')}</option>
         </select>
         <textarea value={form.goal} onChange={e => set('goal', e.target.value)} rows={2} maxLength={400}
           placeholder={pickLang(lang, 'هدفك من تعلّم اللغة (اختياري)', 'Your goal (optional)', 'Votre objectif (optionnel)')}

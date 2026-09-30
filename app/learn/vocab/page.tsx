@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { useLang, pickLang } from '@/lib/i18n'
 import { ArrowLeft, ArrowRight, Loader2, Check, X, Layers, Trophy, Sparkles } from 'lucide-react'
+import SpeakButton from '../SpeakButton'
 
 const PURPLE = '#6B46F0'
 interface Card { id: string; fr: string; ar: string; en: string; isNew: boolean }
@@ -69,15 +70,19 @@ export default function VocabPage() {
             </div>
 
             {/* Flashcard */}
-            <button onClick={() => setFlipped(f => !f)} className="w-full bg-white rounded-3xl border border-slate-100 shadow-sm p-10 text-center min-h-[180px] flex flex-col items-center justify-center">
+            <div role="button" tabIndex={0} onClick={() => setFlipped(f => !f)} onKeyDown={e => { if (e.key === 'Enter') setFlipped(f => !f) }}
+              className="w-full bg-white rounded-3xl border border-slate-100 shadow-sm p-10 text-center min-h-[180px] flex flex-col items-center justify-center cursor-pointer select-none">
               {card.isNew && <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full text-white mb-2" style={{ background: PURPLE }}>{pickLang(lang, 'جديدة', 'New', 'Nouveau')}</span>}
-              <p className="text-2xl font-black text-slate-800" dir="ltr" lang="fr">{card.fr}</p>
+              <div className="flex items-center gap-2" dir="ltr">
+                <p className="text-2xl font-black text-slate-800" lang="fr">{card.fr}</p>
+                <SpeakButton text={card.fr} size={20} />
+              </div>
               {flipped ? (
                 <p className="text-lg font-bold mt-3" style={{ color: PURPLE }}>{pickLang(lang, card.ar, card.en, `${card.en} / ${card.ar}`)}</p>
               ) : (
                 <p className="text-slate-300 text-xs mt-3">{pickLang(lang, 'اضغط لإظهار المعنى', 'Tap to reveal', 'Toucher pour révéler')}</p>
               )}
-            </button>
+            </div>
 
             {flipped && (
               <div className="grid grid-cols-2 gap-3 mt-4">

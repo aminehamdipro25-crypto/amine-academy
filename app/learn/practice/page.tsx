@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { useLang, pickLang } from '@/lib/i18n'
 import { ArrowLeft, ArrowRight, CheckCircle2, XCircle, Loader2, Flame, Star, Trophy, Dumbbell } from 'lucide-react'
+import SpeakButton from '../SpeakButton'
 
 const PURPLE = '#6B46F0'
 interface Ex { id: string; skill: string; prompt: string; options: string[]; done: boolean }
@@ -80,7 +81,10 @@ export default function PracticePage() {
               <span className="text-xs font-bold text-slate-400">{idx + 1}/{exercises.length}</span>
             </div>
             <p className="text-[11px] font-extrabold uppercase tracking-widest mb-2" style={{ color: PURPLE }}>{q.skill}</p>
-            <p className="text-lg font-bold text-slate-800 mb-5" dir="ltr" lang="fr">{q.prompt}</p>
+            <div className="flex items-center gap-2 mb-5" dir="ltr">
+              <p className="text-lg font-bold text-slate-800" lang="fr">{q.prompt}</p>
+              <SpeakButton text={q.prompt} size={18} />
+            </div>
             <div className="space-y-2.5">
               {q.options.map((opt, i) => {
                 const isChosen = chosen === i

@@ -25,6 +25,16 @@ export async function getProgress(id: string): Promise<LearnerProgress> {
   return (await redis.get<LearnerProgress>(KEY(id))) || empty()
 }
 
+// Rolling 7-day bucket for the weekly leaderboard (no ISO-week complexity).
+export const weekBucket = () => Math.floor(Date.now() / 6.048e8)
+const WXP = (id: string) => `lang_wxp:${weekBucket()}:${id}`
+export const wxpKeyFor = (id: string, bucket: number) => `lang_wxp:${bucket}:${id}`
+
+export async function getWeeklyXp(id: string): Promise<number> {
+  const v = await redis.get<number | string>(WXP(id))
+  return Number(v) || 0
+}
+
 // Update the streak for "activity today": +1 if yesterday was active, reset to 1
 // if a day was missed, unchanged if already counted today.
 function touchStreak(p: LearnerProgress) {
@@ -44,5 +54,7 @@ export async function awardXp(
   if (opts.review) p.reviewsDone++
   if (opts.exerciseId && !p.doneIds.includes(opts.exerciseId)) p.doneIds.push(opts.exerciseId)
   await redis.set(KEY(id), p)
+  // Bump the weekly leaderboard counter (expires after two weeks).
+  if (amount > 0) { try { await redis.incr(WXP(id)); await redis.expire(WXP(id), 60 * 60 * 24 * 14) } catch { /* non-critical */ } }
   return p
 }

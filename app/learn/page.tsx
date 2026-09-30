@@ -103,6 +103,9 @@ export default function LearnerPortal() {
               <Sparkles className="w-4 h-4" /> {pickLang(lang, 'مفردات', 'Vocabulary', 'Vocabulaire')}
             </Link>
           </div>
+          <Link href="/learn/leaderboard" className="flex items-center justify-center gap-1.5 mt-3 text-xs font-bold text-slate-400 hover:text-violet-600 transition">
+            <Trophy className="w-3.5 h-3.5" /> {pickLang(lang, 'لوحة المتصدّرين', 'Leaderboard', 'Classement')}
+          </Link>
         </div>
 
         {/* Next lesson */}

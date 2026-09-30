@@ -19,7 +19,7 @@ const EXPRESSIONS = [
   { fr: 'Bravo, continue comme ça !', ar: 'أحسنت، واصل هكذا!', en: 'Well done, keep it up!', frr: '' },
   { fr: 'Mieux vaut tard que jamais.', ar: 'أن تصل متأخّراً خير من ألّا تصل.', en: 'Better late than never.', frr: '' },
 ]
-import { Languages as LangIcon, GraduationCap, User, BookOpen, CalendarClock, LogOut, Loader2, Trophy, Clock, Video, Flame, Star, Dumbbell, Sparkles, Award } from 'lucide-react'
+import { Languages as LangIcon, GraduationCap, User, BookOpen, CalendarClock, LogOut, Loader2, Trophy, Clock, Video, Flame, Star, Dumbbell, Sparkles, Award, Headphones } from 'lucide-react'
 
 const PURPLE = '#6B46F0'
 const PURPLE2 = '#9A7BFD'
@@ -143,6 +143,9 @@ export default function LearnerPortal() {
               <Sparkles className="w-4 h-4" /> {pickLang(lang, 'مفردات', 'Vocabulary', 'Vocabulaire')}
             </Link>
           </div>
+          <Link href="/learn/comprehension" className="flex items-center justify-center gap-2 py-3 mt-3 rounded-2xl font-extrabold text-sm border-2" style={{ borderColor: 'rgba(107,70,240,0.25)', color: PURPLE }}>
+            <Headphones className="w-4 h-4" /> {pickLang(lang, 'استماع وقراءة', 'Listening & reading', 'Écoute & lecture')}
+          </Link>
           <Link href="/learn/leaderboard" className="flex items-center justify-center gap-1.5 mt-3 text-xs font-bold text-slate-400 hover:text-violet-600 transition">
             <Trophy className="w-3.5 h-3.5" /> {pickLang(lang, 'لوحة المتصدّرين', 'Leaderboard', 'Classement')}
           </Link>

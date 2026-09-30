@@ -7,7 +7,7 @@ import { Languages as LangIcon, GraduationCap, Award, ArrowLeft, ArrowRight, Loa
 
 const PURPLE = '#6B46F0'
 const PURPLE2 = '#9A7BFD'
-interface T { id: string; name: string; headline: string; experienceYears: number | null; languages: string[]; bio: string }
+interface T { id: string; name: string; headline: string; experienceYears: number | null; languages: string[]; bio: string; rating?: number; ratingCount?: number }
 const LANG: Record<string, { ar: string; en: string; fr: string; flag: string }> = {
   french: { ar: 'الفرنسيّة', en: 'French', fr: 'Français', flag: '🇫🇷' }, english: { ar: 'الإنجليزيّة', en: 'English', fr: 'Anglais', flag: '🇬🇧' },
   spanish: { ar: 'الإسبانيّة', en: 'Spanish', fr: 'Espagnol', flag: '🇪🇸' }, arabic: { ar: 'العربيّة', en: 'Arabic', fr: 'Arabe', flag: '🇸🇦' },
@@ -58,7 +58,11 @@ export default function TeachersPage() {
                   <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-white font-black text-xl" style={{ background: `linear-gradient(135deg, ${PURPLE}, ${PURPLE2})` }}>{t.name.charAt(0)}</div>
                   <div>
                     <p className="font-black text-slate-800">{t.name}</p>
-                    {t.experienceYears != null && <p className="text-xs text-slate-400 flex items-center gap-1"><Award className="w-3 h-3" /> {t.experienceYears}+ {pickLang(lang, 'سنوات خبرة', 'yrs experience', 'ans')}</p>}
+                    {t.ratingCount ? (
+                      <p className="text-xs font-bold flex items-center gap-1" style={{ color: '#F59E0B' }}>★ {t.rating} <span className="text-slate-400 font-normal">({t.ratingCount})</span></p>
+                    ) : t.experienceYears != null ? (
+                      <p className="text-xs text-slate-400 flex items-center gap-1"><Award className="w-3 h-3" /> {t.experienceYears}+ {pickLang(lang, 'سنوات خبرة', 'yrs experience', 'ans')}</p>
+                    ) : null}
                   </div>
                 </div>
                 {t.headline && <p className="text-sm font-bold text-slate-700 mb-2">{t.headline}</p>}

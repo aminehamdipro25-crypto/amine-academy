@@ -5,7 +5,7 @@ import { verifyLearnerToken, LEARNER_COOKIE } from './lib/learner-auth'
 
 // Pages reserved for the owner — staff accounts must not reach these
 // even though they share the /dashboard prefix with staff-accessible pages.
-const OWNER_ONLY_PAGES = ['/dashboard/payments', '/dashboard/analytics', '/dashboard/staff', '/dashboard/settings', '/dashboard/earnings', '/dashboard/learners']
+const OWNER_ONLY_PAGES = ['/dashboard/payments', '/dashboard/analytics', '/dashboard/staff', '/dashboard/settings', '/dashboard/earnings', '/dashboard/learners', '/dashboard/lang-analytics']
 
 // Interim mitigation for GHSA-3g8h-86w9-wvmq (Next.js middleware redirects can
 // be cache-poisoned via a spoofed x-nextjs-data header) — the full fix requires

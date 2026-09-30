@@ -8,7 +8,7 @@ import { Languages as LangIcon, Award, GraduationCap, BookOpen, Sparkles, Loader
 
 const PURPLE = '#6B46F0'
 const PURPLE2 = '#9A7BFD'
-interface T { id: string; name: string; headline: string; bio: string; experienceYears: number | null; certifications: string; approach: string; languages: string[] }
+interface T { id: string; name: string; headline: string; bio: string; experienceYears: number | null; certifications: string; approach: string; languages: string[]; rating?: number; ratingCount?: number; reviews?: { stars: number; comment: string; name: string }[] }
 const LANG: Record<string, { ar: string; en: string; fr: string; flag: string }> = {
   french: { ar: 'الفرنسيّة', en: 'French', fr: 'Français', flag: '🇫🇷' }, english: { ar: 'الإنجليزيّة', en: 'English', fr: 'Anglais', flag: '🇬🇧' },
   spanish: { ar: 'الإسبانيّة', en: 'Spanish', fr: 'Espagnol', flag: '🇪🇸' }, arabic: { ar: 'العربيّة', en: 'Arabic', fr: 'Arabe', flag: '🇸🇦' },
@@ -62,10 +62,29 @@ export default function TeacherProfile() {
           <h1 className="text-2xl font-black text-slate-800">{t.name}</h1>
           {t.headline && <p className="text-slate-500 text-sm mt-1">{t.headline}</p>}
           <div className="flex items-center justify-center gap-3 mt-4 flex-wrap">
+            {t.ratingCount ? <span className="inline-flex items-center gap-1 text-xs font-black px-3 py-1.5 rounded-full" style={{ background: 'rgba(245,158,11,0.1)', color: '#B45309' }}>★ {t.rating} ({t.ratingCount})</span> : null}
             {t.experienceYears != null && <span className="inline-flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full" style={{ background: 'rgba(107,70,240,0.08)', color: PURPLE }}><Award className="w-3.5 h-3.5" /> {t.experienceYears}+ {pickLang(lang, 'سنوات', 'yrs', 'ans')}</span>}
             {t.languages.map(l => <span key={l} className="inline-flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full bg-slate-50 text-slate-600">{LANG[l]?.flag} {pickLang(lang, LANG[l]?.ar || l, LANG[l]?.en || l, LANG[l]?.fr || l)}</span>)}
           </div>
         </div>
+
+        {/* Reviews */}
+        {t.reviews && t.reviews.length > 0 && (
+          <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
+            <h2 className="font-black text-slate-800 flex items-center gap-2 mb-3">⭐ {pickLang(lang, 'آراء المتعلّمين', 'Learner reviews', 'Avis des apprenants')}</h2>
+            <div className="space-y-3">
+              {t.reviews.map((r, i) => (
+                <div key={i} className="border border-slate-100 rounded-2xl p-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xs font-black" style={{ color: '#F59E0B' }}>{'★'.repeat(r.stars)}<span className="text-slate-200">{'★'.repeat(5 - r.stars)}</span></span>
+                    <span className="text-xs font-bold text-slate-500">{r.name}</span>
+                  </div>
+                  <p className="text-sm text-slate-600">{r.comment}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {t.bio && <Section icon={GraduationCap} title={pickLang(lang, 'نبذة', 'About', 'À propos')}>{t.bio}</Section>}
         {t.approach && <Section icon={BookOpen} title={pickLang(lang, 'أسلوب التدريس', 'Teaching approach', 'Approche pédagogique')}>{t.approach}</Section>}

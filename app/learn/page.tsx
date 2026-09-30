@@ -63,6 +63,12 @@ export default function LearnerPortal() {
     setLearner(l => l ? { ...l, fit: decision === 'accept' ? 'accepted' : 'declined_learner' } : l)
   }
 
+  const [rated, setRated] = useState(0)
+  async function rate(stars: number) {
+    setRated(stars)
+    await fetch('/api/learner/rate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ stars }) }).catch(() => {})
+  }
+
   if (loading) return <div className="min-h-[100dvh] bg-[#FFF8F0] flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin" style={{ color: PURPLE }} /></div>
   if (!learner) return null
 
@@ -229,6 +235,19 @@ export default function LearnerPortal() {
               <p className="text-[11px] text-slate-400 flex-1">{pickLang(lang, 'بعد حصّة التعارف، هل الأستاذ مناسب؟', 'After the trial, is this teacher a good fit?', 'Après l’essai, ce professeur vous convient-il ?')}</p>
               <button onClick={() => decideFit('accept')} className="text-[11px] font-bold px-2.5 py-1.5 rounded-lg text-white" style={{ background: '#16a34a' }}>{pickLang(lang, 'مناسب ✓', 'Good ✓', 'Oui ✓')}</button>
               <button onClick={() => decideFit('decline')} className="text-[11px] font-bold px-2.5 py-1.5 rounded-lg text-amber-700 bg-amber-50">{pickLang(lang, 'أستاذ آخر', 'Change', 'Changer')}</button>
+            </div>
+          )}
+          {/* Rate your teacher */}
+          {learner.teacherName && (
+            <div className="mt-3 pt-3 border-t border-slate-50 flex items-center gap-2">
+              <p className="text-[11px] text-slate-400 flex-1">{rated ? pickLang(lang, 'شكراً لتقييمك ⭐', 'Thanks for rating ⭐', 'Merci ⭐') : pickLang(lang, 'قيّم أستاذك', 'Rate your teacher', 'Notez votre professeur')}</p>
+              <div className="flex items-center gap-0.5">
+                {[1, 2, 3, 4, 5].map(n => (
+                  <button key={n} onClick={() => rate(n)} aria-label={`${n}`}>
+                    <Star className="w-4 h-4" style={{ color: n <= rated ? '#F59E0B' : '#e2e8f0' }} fill={n <= rated ? '#F59E0B' : 'none'} />
+                  </button>
+                ))}
+              </div>
             </div>
           )}
         </div>

@@ -44,6 +44,7 @@ export default function AdminSidebar({ onClose, unreadMessages = 0 }: { onClose?
     { href: '/dashboard/specialist-toolkit',     label: navT.specialistToolkit, icon: PersonStanding, ownerOnly: false },
     { href: '/dashboard/apa-planner',            label: navT.apaPlanner, icon: Zap, ownerOnly: false },
     { href: '/dashboard/curriculum',             label: lang === 'ar' ? 'المنهج الفرنسي' : lang === 'fr' ? 'Programme FR' : 'Curriculum', icon: BookOpen, ownerOnly: false, lang: true },
+    { href: '/dashboard/my-account',             label: lang === 'ar' ? 'حسابي' : lang === 'fr' ? 'Mon compte' : 'My account', icon: UserCog, ownerOnly: false, lang: true, staffOnly: true },
     { href: '/dashboard/learners',               label: lang === 'ar' ? 'متعلّمو اللغات' : lang === 'fr' ? 'Apprenants' : 'Learners', icon: GraduationCap, ownerOnly: true },
     { href: '/dashboard/analytics',              label: navT.analytics, icon: BarChart3, ownerOnly: true },
     { href: '/dashboard/staff',                  label: navT.staff, icon: UserCog, ownerOnly: true },

@@ -427,6 +427,12 @@ export interface Staff {
   hourlyRate?: number         // pay per teaching hour (optional accounting input)
   currency?: 'QAR' | 'TND'    // currency of the rate
   teacherSharePct?: number    // 0–100: teacher's share of session revenue; the academy keeps the remainder
+  // ── Public portfolio (teacher self-editable) ──
+  headline?: string           // short tagline shown on the public profile
+  experienceYears?: number
+  certifications?: string     // free text: diplomas / certifications
+  approach?: string           // teaching philosophy / how they teach
+  publicVisible?: boolean     // whether the profile is listed publicly
 }
 
 // ── Teaching sessions (Phase 3 — hours & profit-share ledger) ──

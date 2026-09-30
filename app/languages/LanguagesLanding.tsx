@@ -42,6 +42,9 @@ export default function LanguagesLanding() {
             </div>
           </Link>
           <div className="flex items-center gap-2">
+            <Link href="/languages/teachers" className="hidden sm:inline text-xs font-bold px-3 py-2 transition" style={{ color: PURPLE }}>
+              {pickLang(lang, '👩‍🏫 أساتذتنا', '👩‍🏫 Teachers', '👩‍🏫 Professeurs')}
+            </Link>
             <LangToggle />
             <Link href="/" className="hidden sm:inline text-xs font-bold text-slate-400 hover:text-slate-600 transition px-3 py-2">
               {pickLang(lang, '← الأكاديمية', '← Academy', '← Académie')}

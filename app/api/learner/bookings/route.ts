@@ -1,0 +1,48 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
+import { verifyLearnerToken, LEARNER_COOKIE } from '@/lib/learner-auth'
+import { getLearner } from '@/lib/language-learners'
+import { createBooking, getAllBookings } from '@/lib/language-bookings'
+import { isRateLimited, getClientIp } from '@/lib/rateLimit'
+
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+
+async function learnerId(): Promise<string | null> {
+  const store = await cookies()
+  return (await verifyLearnerToken(store.get(LEARNER_COOKIE)?.value))?.id ?? null
+}
+
+// GET: the learner's own bookings.
+export async function GET() {
+  const id = await learnerId()
+  if (!id) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
+  const all = await getAllBookings()
+  return NextResponse.json({ bookings: all.filter(b => b.learnerId === id) })
+}
+
+// POST {at, note}: request a lesson slot with the assigned teacher.
+export async function POST(req: NextRequest) {
+  const id = await learnerId()
+  if (!id) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
+
+  const rl = await isRateLimited(`lang_book:${getClientIp(req)}`, 20, 3600)
+  if (rl.limited) return NextResponse.json({ error: 'طلبات كثيرة — حاول لاحقاً' }, { status: 429 })
+
+  const learner = await getLearner(id)
+  if (!learner) return NextResponse.json({ error: 'غير موجود' }, { status: 404 })
+  if (!learner.teacherId) return NextResponse.json({ error: 'لم يُعيّن لك أستاذ بعد' }, { status: 400 })
+
+  const { at, note } = (await req.json().catch(() => ({}))) as { at?: string; note?: string }
+  const when = String(at || '').trim()
+  if (!when) return NextResponse.json({ error: 'اختر موعداً' }, { status: 400 })
+
+  const booking = await createBooking({
+    learnerId: id, learnerName: learner.name,
+    teacherId: learner.teacherId, teacherName: learner.teacherName || '',
+    language: learner.language,
+    at: when.slice(0, 60), durationHours: 1, price: 0, currency: 'QAR',
+    note: String(note || '').trim().slice(0, 200),
+  })
+  return NextResponse.json({ ok: true, booking })
+}

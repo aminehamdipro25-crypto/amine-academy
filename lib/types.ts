@@ -472,6 +472,28 @@ export interface LanguageLearner {
   lastLoginAt: string | null
 }
 
+// ── Language lesson booking (Phase 6 — calendar + auto-ledger) ───────────────
+// A learner requests a lesson slot with their teacher; the teacher confirms
+// (price/duration/link); marking it completed auto-creates a TeachingSession
+// (earnings + learner portal). status flows requested → confirmed → completed.
+export interface LessonBooking {
+  id: string
+  learnerId: string
+  learnerName: string
+  teacherId: string
+  teacherName: string
+  language: string
+  at: string                  // requested date/time (free text or ISO)
+  durationHours: number
+  price: number
+  currency: 'QAR' | 'TND'
+  link?: string               // Meet/Zoom link (set on confirm)
+  note?: string
+  status: 'requested' | 'confirmed' | 'completed' | 'cancelled'
+  sessionId?: string          // the TeachingSession created on completion
+  createdAt: string
+}
+
 // ── Messages ──────────────────────────────────────────────────
 export interface Message {
   id: string

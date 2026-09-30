@@ -6,6 +6,7 @@ import { useLang, pickLang } from '@/lib/i18n'
 import LangToggle from '@/components/shared/LangToggle'
 import { CEFR_DESCRIPTORS, type CEFRLevel } from '@/lib/languages/placement-fr'
 import ChatPanel from './ChatPanel'
+import BookingCard from './BookingCard'
 import { Languages as LangIcon, GraduationCap, User, BookOpen, CalendarClock, LogOut, Loader2, Trophy, Clock, Video, Flame, Star, Dumbbell, Sparkles } from 'lucide-react'
 
 const PURPLE = '#6B46F0'
@@ -154,6 +155,9 @@ export default function LearnerPortal() {
             <p className="font-black text-slate-800">{learner.teacherName || pickLang(lang, 'سيتم تعيين أستاذ قريباً', 'A teacher will be assigned soon', 'Un professeur vous sera bientôt attribué')}</p>
           </div>
         </div>
+
+        {/* Booking */}
+        <BookingCard hasTeacher={!!learner.teacherName} />
 
         {/* Chat with teacher */}
         <ChatPanel />

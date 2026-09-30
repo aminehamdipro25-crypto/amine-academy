@@ -2,11 +2,12 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { GraduationCap, Plus, X, Trash2, RefreshCw, AlertCircle, Mail, Phone, Settings2, Save, KeyRound } from 'lucide-react'
+import { GraduationCap, Plus, X, Trash2, RefreshCw, AlertCircle, Mail, Phone, Settings2, Save, KeyRound, Inbox, UserPlus } from 'lucide-react'
 import { staggerContainer, fadeUp } from '@/lib/motion'
 
 interface Teacher { id: string; name: string; role?: string }
 interface Learner { id: string; name: string; email: string; phone: string; language: string; level: string; teacherId: string | null; teacherName: string | null; lastLoginAt: string | null }
+interface Lead { id: string; name: string; email: string; phone: string; language: string; level: string; goal?: string; status: string; createdAt: string }
 
 const CEFR = ['unknown', 'A1', 'A2', 'B1', 'B2', 'C1', 'C2']
 const LANG: Record<string, string> = { french: 'الفرنسيّة', english: 'الإنجليزيّة', spanish: 'الإسبانيّة', arabic: 'العربيّة', german: 'الألمانيّة', italian: 'الإيطاليّة' }
@@ -24,18 +25,35 @@ export default function LearnersPage() {
   const [editId, setEditId] = useState<string | null>(null)
   const [edit, setEdit] = useState({ level: 'unknown', teacherId: '', password: '' })
   const [busyId, setBusyId] = useState<string | null>(null)
+  const [leads, setLeads] = useState<Lead[]>([])
+  const [leadTeacher, setLeadTeacher] = useState<Record<string, string>>({})
+  const [convertResult, setConvertResult] = useState<{ name: string; email: string; pw: string } | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const [lRes, tRes] = await Promise.all([fetch('/api/admin/learners'), fetch('/api/admin/staff')])
+      const [lRes, tRes, leadRes] = await Promise.all([fetch('/api/admin/learners'), fetch('/api/admin/staff'), fetch('/api/admin/language-leads')])
       if (!lRes.ok || !tRes.ok) throw new Error('تعذّر التحميل')
       setLearners(await lRes.json())
       setTeachers((await tRes.json()).filter((s: Teacher) => s.role === 'language_teacher'))
+      if (leadRes.ok) setLeads(((await leadRes.json()).leads || []).filter((l: Lead) => l.status !== 'converted'))
       setError('')
     } catch (e) { setError((e as Error).message) } finally { setLoading(false) }
   }, [])
   useEffect(() => { load() }, [load])
+
+  async function convertLead(lead: Lead) {
+    setBusyId(lead.id)
+    try {
+      const res = await fetch(`/api/admin/language-leads/${lead.id}/convert`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ teacherId: leadTeacher[lead.id] || null }),
+      })
+      const data = await res.json()
+      if (res.ok) { setConvertResult({ name: lead.name, email: lead.email, pw: data.tempPassword }); await load() }
+      else setError(data.error || 'تعذّر التحويل')
+    } finally { setBusyId(null) }
+  }
 
   async function create(e: React.FormEvent) {
     e.preventDefault()
@@ -80,6 +98,49 @@ export default function LearnersPage() {
       </motion.div>
 
       {error && <div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-2xl p-4"><AlertCircle className="w-5 h-5 text-red-500" /><p className="text-red-800 text-sm font-medium">{error}</p></div>}
+
+      {/* Converted result — show the temp password once */}
+      {convertResult && (
+        <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex items-start gap-3">
+          <div className="flex-1 text-sm">
+            <p className="font-black text-emerald-800">✅ تم إنشاء حساب {convertResult.name}</p>
+            <p className="text-emerald-700 mt-1">البريد: <span dir="ltr">{convertResult.email}</span> · كلمة المرور المؤقتة: <code className="bg-white px-1.5 py-0.5 rounded font-bold" dir="ltr">{convertResult.pw}</code></p>
+            <p className="text-emerald-600/80 text-xs mt-1">أُرسلت بالبريد — يمكنك أيضاً مشاركتها عبر واتساب. تظهر مرّة واحدة.</p>
+          </div>
+          <button onClick={() => setConvertResult(null)} className="text-emerald-500 hover:text-emerald-700"><X className="w-4 h-4" /></button>
+        </div>
+      )}
+
+      {/* Interest requests to convert */}
+      {leads.length > 0 && (
+        <motion.div variants={fadeUp} className="bg-white rounded-2xl border border-amber-200 overflow-hidden">
+          <div className="px-5 py-3 bg-amber-50/60 border-b border-amber-100 flex items-center gap-2">
+            <Inbox className="w-4 h-4 text-amber-600" />
+            <h2 className="font-black text-gray-900 text-sm">طلبات اهتمام جديدة ({leads.length})</h2>
+          </div>
+          <div className="divide-y divide-gray-100">
+            {leads.map(l => (
+              <div key={l.id} className="px-5 py-3 flex items-center justify-between flex-wrap gap-3">
+                <div className="min-w-0">
+                  <p className="font-bold text-gray-900 text-sm">{l.name} <span className="text-gray-400 font-normal">· {LANG[l.language] || l.language}{l.level !== 'unknown' ? ` · ${l.level}` : ''}</span></p>
+                  <p className="text-xs text-gray-400 truncate"><span dir="ltr">{l.phone}</span>{l.email ? ` · ${l.email}` : ' · لا بريد'}{l.goal ? ` — ${l.goal}` : ''}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <select value={leadTeacher[l.id] || ''} onChange={e => setLeadTeacher(m => ({ ...m, [l.id]: e.target.value }))} className={inputCls + ' text-xs py-1.5'}>
+                    <option value="">أستاذ (اختياري)</option>
+                    {teachers.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                  </select>
+                  <button onClick={() => convertLead(l)} disabled={busyId === l.id || !l.email}
+                    title={!l.email ? 'لا بريد — أنشئ الحساب يدوياً' : ''}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-black text-white bg-brand-600 hover:bg-brand-700 disabled:opacity-40">
+                    {busyId === l.id ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <UserPlus className="w-3.5 h-3.5" />} تحويل لمتعلّم
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      )}
 
       <AnimatePresence>
         {showForm && (

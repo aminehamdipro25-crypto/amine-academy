@@ -474,6 +474,7 @@ export interface LanguageLearner {
   teacherName: string | null
   // Mutual-fit status after a trial: either side may decline (respect both).
   fit?: 'pending' | 'accepted' | 'declined_teacher' | 'declined_learner'
+  sessionCredits?: number     // prepaid lessons remaining (added when a package is confirmed)
   // The upcoming live lesson the teacher scheduled (external Meet/Zoom link).
   nextLesson?: { at: string; link: string; note?: string } | null
   createdAt: string

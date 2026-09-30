@@ -7,6 +7,7 @@ import LangToggle from '@/components/shared/LangToggle'
 import { CEFR_DESCRIPTORS, CEFR_ORDER, type CEFRLevel } from '@/lib/languages/placement-fr'
 import ChatPanel from './ChatPanel'
 import BookingCard from './BookingCard'
+import PackagesCard from './PackagesCard'
 import SpeakButton from './SpeakButton'
 
 // A rotating French "expression of the day" — a small, fun, immersive touch.
@@ -251,6 +252,9 @@ export default function LearnerPortal() {
             </div>
           )}
         </div>
+
+        {/* Packages & credits */}
+        <PackagesCard />
 
         {/* Booking */}
         <BookingCard hasTeacher={!!learner.teacherName} />

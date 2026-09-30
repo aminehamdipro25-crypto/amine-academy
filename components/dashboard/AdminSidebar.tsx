@@ -48,6 +48,7 @@ export default function AdminSidebar({ onClose, unreadMessages = 0 }: { onClose?
     { href: '/dashboard/my-account',             label: lang === 'ar' ? 'حسابي' : lang === 'fr' ? 'Mon compte' : 'My account', icon: UserCog, ownerOnly: false, lang: true, staffOnly: true },
     { href: '/dashboard/learners',               label: lang === 'ar' ? 'متعلّمو اللغات' : lang === 'fr' ? 'Apprenants' : 'Learners', icon: GraduationCap, ownerOnly: true },
     { href: '/dashboard/lang-analytics',         label: lang === 'ar' ? 'تحليلات اللغات' : lang === 'fr' ? 'Analytics langues' : 'Language analytics', icon: BarChart3, ownerOnly: true },
+    { href: '/dashboard/lang-payments',          label: lang === 'ar' ? 'مدفوعات اللغات' : lang === 'fr' ? 'Paiements langues' : 'Language payments', icon: CreditCard, ownerOnly: true },
     { href: '/dashboard/analytics',              label: navT.analytics, icon: BarChart3, ownerOnly: true },
     { href: '/dashboard/staff',                  label: navT.staff, icon: UserCog, ownerOnly: true },
     { href: '/dashboard/earnings',               label: lang === 'ar' ? 'دفتر الأرباح' : lang === 'fr' ? 'Revenus' : 'Earnings', icon: Wallet, ownerOnly: true },

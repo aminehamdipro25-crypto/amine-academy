@@ -7,7 +7,7 @@ import { LANGUAGE_PACKAGES, type LangPackage } from '@/lib/language-packages-dat
 import {
   Globe, GraduationCap, Users, Video, TrendingUp, Award, CheckCircle2,
   Loader2, ArrowLeft, ArrowRight, Sparkles, Languages as LangIcon,
-  Headphones, MessageCircle, BookOpen, Clock, ClipboardCheck,
+  Headphones, MessageCircle, BookOpen, Clock, ClipboardCheck, Quote, ChevronDown, HelpCircle,
 } from 'lucide-react'
 
 const PURPLE = '#6B46F0'
@@ -31,9 +31,21 @@ export default function LanguagesLanding() {
   const sym = (c: 'QAR' | 'TND') => (c === 'TND' ? 'د.ت' : 'ر.ق')
   // Live (owner-set) prices; falls back to defaults for the first paint.
   const [packages, setPackages] = useState<LangPackage[]>(LANGUAGE_PACKAGES)
+  const [testimonials, setTestimonials] = useState<{ name: string; stars: number; comment: string; teacher: string }[]>([])
+  const [openFaq, setOpenFaq] = useState<number | null>(0)
   useEffect(() => {
     fetch('/api/public/lang-packages').then(r => r.ok ? r.json() : null).then(d => { if (d?.packages?.length) setPackages(d.packages) }).catch(() => {})
+    fetch('/api/public/testimonials').then(r => r.ok ? r.json() : null).then(d => { if (d?.testimonials) setTestimonials(d.testimonials) }).catch(() => {})
   }, [])
+
+  const FAQ = [
+    { q: pickLang(lang, 'كيف أعرف مستواي؟', 'How do I know my level?', 'Comment connaître mon niveau ?'), a: pickLang(lang, 'اختبار تحديد المستوى مجاني ويستغرق دقائق، ويضعك على سلّم CEFR من A1 إلى C2.', 'A free placement test takes minutes and places you on the CEFR scale (A1–C2).', 'Le test de niveau gratuit vous situe sur l’échelle CEFR.') },
+    { q: pickLang(lang, 'هل توجد حصّة تجريبيّة؟', 'Is there a trial lesson?', 'Y a-t-il un cours d’essai ?'), a: pickLang(lang, 'نعم، تبدأ بحصّة تقييم للتعارف مع الأستاذ قبل الالتزام بأي باقة.', 'Yes — you start with a trial to meet the teacher before committing.', 'Oui, un cours d’essai avant de vous engager.') },
+    { q: pickLang(lang, 'كيف تتمّ الحصص؟', 'How do lessons happen?', 'Comment se déroulent les cours ?'), a: pickLang(lang, 'حصص فرديّة مباشرة عبر Meet/Zoom مع أستاذ مختصّ، ثم تمارين ومتابعة داخل المنصّة.', 'Private live lessons via Meet/Zoom, plus in-platform practice and tracking.', 'Cours privés en direct via Meet/Zoom + exercices sur la plateforme.') },
+    { q: pickLang(lang, 'كيف أدفع؟', 'How do I pay?', 'Comment payer ?'), a: pickLang(lang, 'تختار باقة من بوّابتك (فورّان/تحويل/واتساب)، ويؤكّدها المدير فيُضاف الرصيد.', 'Choose a package in your portal (Fawran/transfer/WhatsApp); the director confirms and credit is added.', 'Choisissez un forfait ; le directeur confirme et le crédit est ajouté.') },
+    { q: pickLang(lang, 'هل يمكنني تغيير الأستاذ؟', 'Can I change teacher?', 'Puis-je changer de professeur ?'), a: pickLang(lang, 'بالتأكيد — بعد حصّة التقييم يمكنك طلب أستاذ آخر بكل احترام، ويعيد المدير التعيين.', 'Absolutely — after the trial you can request another teacher, and the director reassigns.', 'Bien sûr — après l’essai, vous pouvez demander un autre professeur.') },
+    { q: pickLang(lang, 'ما اللغات المتاحة؟', 'Which languages?', 'Quelles langues ?'), a: pickLang(lang, 'نبدأ بالفرنسيّة الآن، ولغات أخرى (إنجليزيّة، إسبانيّة…) قيد الإنشاء قريباً.', 'French now; English, Spanish and more are coming soon.', 'Le français maintenant ; anglais, espagnol et plus bientôt.') },
+  ]
 
   return (
     <main className="min-h-[100dvh] bg-[#FFF8F0] overflow-x-hidden" dir={rtl ? 'rtl' : 'ltr'}>
@@ -220,6 +232,48 @@ export default function LanguagesLanding() {
           <Link href="/languages/teachers" className="inline-flex items-center gap-2 mt-5 px-6 py-3 rounded-2xl bg-white font-extrabold text-sm" style={{ color: PURPLE }}>
             {pickLang(lang, 'أساتذتنا', 'Our teachers', 'Nos professeurs')} <Fwd className="w-4 h-4" />
           </Link>
+        </div>
+      </section>
+
+      {/* Testimonials (real reviews) */}
+      {testimonials.length > 0 && (
+        <section className="bg-white/60 border-y border-black/5 py-14">
+          <div className="max-w-5xl mx-auto px-4">
+            <h2 className="text-center text-2xl sm:text-3xl font-black text-slate-800 mb-2">{pickLang(lang, 'ماذا يقول متعلّمونا', 'What our learners say', 'Ce que disent nos apprenants')}</h2>
+            <p className="text-center text-slate-400 text-sm mb-10">{pickLang(lang, 'آراء حقيقيّة من تقييمات المتعلّمين لأساتذتهم.', 'Real reviews from learners rating their teachers.', 'De vrais avis d’apprenants.')}</p>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {testimonials.map((t, i) => (
+                <div key={i} className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
+                  <Quote className="w-6 h-6 mb-2" style={{ color: PURPLE, opacity: 0.4 }} />
+                  <p className="text-slate-700 text-sm leading-relaxed">{t.comment}</p>
+                  <div className="flex items-center justify-between mt-4">
+                    <div>
+                      <p className="font-black text-slate-800 text-sm">{t.name}</p>
+                      <p className="text-[11px] text-slate-400">{pickLang(lang, 'مع', 'with', 'avec')} {t.teacher}</p>
+                    </div>
+                    <span className="text-xs font-black" style={{ color: '#F59E0B' }}>{'★'.repeat(t.stars)}<span className="text-slate-200">{'★'.repeat(5 - t.stars)}</span></span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* FAQ */}
+      <section className="max-w-3xl mx-auto px-4 py-14">
+        <h2 className="text-center text-2xl sm:text-3xl font-black text-slate-800 mb-2 flex items-center justify-center gap-2"><HelpCircle className="w-6 h-6" style={{ color: PURPLE }} /> {pickLang(lang, 'أسئلة شائعة', 'FAQ', 'Questions fréquentes')}</h2>
+        <p className="text-center text-slate-400 text-sm mb-8">{pickLang(lang, 'كل ما تحتاج معرفته قبل أن تبدأ.', 'Everything you need to know before starting.', 'Tout ce qu’il faut savoir.')}</p>
+        <div className="space-y-3">
+          {FAQ.map((f, i) => (
+            <div key={i} className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
+              <button onClick={() => setOpenFaq(openFaq === i ? null : i)} className="w-full flex items-center gap-3 p-4 text-start">
+                <span className="flex-1 font-black text-slate-800 text-sm">{f.q}</span>
+                <ChevronDown className={`w-4 h-4 text-slate-400 flex-shrink-0 transition-transform ${openFaq === i ? 'rotate-180' : ''}`} />
+              </button>
+              {openFaq === i && <p className="px-4 pb-4 text-slate-600 text-sm leading-relaxed border-t border-slate-50 pt-3">{f.a}</p>}
+            </div>
+          ))}
         </div>
       </section>
 

@@ -19,6 +19,7 @@ export default function BookingCard({ hasTeacher }: { hasTeacher: boolean }) {
   const [open, setOpen] = useState(false)
   const [at, setAt] = useState('')
   const [note, setNote] = useState('')
+  const [isTrial, setIsTrial] = useState(false)
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState('')
 
@@ -32,9 +33,9 @@ export default function BookingCard({ hasTeacher }: { hasTeacher: boolean }) {
     if (!at.trim()) return
     setSaving(true); setErr('')
     try {
-      const r = await fetch('/api/learner/bookings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ at, note }) })
+      const r = await fetch('/api/learner/bookings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ at, note, isTrial }) })
       const d = await r.json()
-      if (r.ok) { setAt(''); setNote(''); setOpen(false); load() } else setErr(d.error || 'تعذّر الطلب')
+      if (r.ok) { setAt(''); setNote(''); setIsTrial(false); setOpen(false); load() } else setErr(d.error || 'تعذّر الطلب')
     } catch { setErr(pickLang(lang, 'تعذّر الاتصال', 'Connection failed', 'Échec')) } finally { setSaving(false) }
   }
 
@@ -59,6 +60,10 @@ export default function BookingCard({ hasTeacher }: { hasTeacher: boolean }) {
             <form onSubmit={request} className="mb-3 bg-slate-50/70 rounded-2xl p-3 space-y-2">
               <input value={at} onChange={e => setAt(e.target.value)} placeholder={pickLang(lang, 'الموعد المفضّل (مثال: الأحد 18:00)', 'Preferred time (e.g. Sun 18:00)', 'Créneau souhaité')} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm outline-none focus:border-violet-400" />
               <input value={note} onChange={e => setNote(e.target.value)} placeholder={pickLang(lang, 'ملاحظة (اختياري)', 'Note (optional)', 'Note (optionnel)')} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm outline-none focus:border-violet-400" />
+              <label className="flex items-center gap-2 text-xs font-bold text-slate-600 cursor-pointer">
+                <input type="checkbox" checked={isTrial} onChange={e => setIsTrial(e.target.checked)} className="w-4 h-4 accent-violet-600" />
+                {pickLang(lang, '🎓 هذه حصّة تقييم (تعارف قبل الالتزام)', '🎓 This is a trial lesson', '🎓 Cours d’essai (avant de s’engager)')}
+              </label>
               {err && <p className="text-red-500 text-xs font-bold">⚠️ {err}</p>}
               <button type="submit" disabled={saving} className="w-full py-2.5 rounded-xl font-extrabold text-white text-sm disabled:opacity-50" style={{ background: PURPLE }}>{saving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : pickLang(lang, 'أرسل الطلب', 'Send request', 'Envoyer')}</button>
             </form>

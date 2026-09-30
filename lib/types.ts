@@ -472,6 +472,8 @@ export interface LanguageLearner {
   level: string               // CEFR level or 'unknown'
   teacherId: string | null    // assigned teacher (Staff id)
   teacherName: string | null
+  // Mutual-fit status after a trial: either side may decline (respect both).
+  fit?: 'pending' | 'accepted' | 'declined_teacher' | 'declined_learner'
   // The upcoming live lesson the teacher scheduled (external Meet/Zoom link).
   nextLesson?: { at: string; link: string; note?: string } | null
   createdAt: string
@@ -489,6 +491,7 @@ export interface LessonBooking {
   teacherId: string
   teacherName: string
   language: string
+  isTrial?: boolean           // a free evaluation lesson
   at: string                  // requested date/time (free text or ISO)
   durationHours: number
   price: number

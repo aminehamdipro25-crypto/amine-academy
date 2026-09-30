@@ -20,7 +20,7 @@ const LANG_LABEL: Record<string, { ar: string; en: string; fr: string }> = {
   italian: { ar: 'الإيطاليّة', en: 'Italian', fr: 'Italien' },
 }
 
-interface Learner { id: string; name: string; language: string; level: string; teacherName: string | null; nextLesson?: { at: string; link: string; note?: string } | null }
+interface Learner { id: string; name: string; language: string; level: string; teacherName: string | null; fit?: string; nextLesson?: { at: string; link: string; note?: string } | null }
 interface LSession { id: string; dateISO: string; language: string; durationHours: number; status: string }
 interface Progress { xp: number; streak: number; exercisesDone: number; reviewsDone: number }
 
@@ -44,6 +44,11 @@ export default function LearnerPortal() {
   async function logout() {
     await fetch('/api/learner/auth', { method: 'DELETE' }).catch(() => {})
     router.push('/learn/login')
+  }
+
+  async function decideFit(decision: 'accept' | 'decline') {
+    await fetch('/api/learner/fit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ decision }) }).catch(() => {})
+    setLearner(l => l ? { ...l, fit: decision === 'accept' ? 'accepted' : 'declined_learner' } : l)
   }
 
   if (loading) return <div className="min-h-[100dvh] bg-[#FFF8F0] flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin" style={{ color: PURPLE }} /></div>
@@ -165,12 +170,29 @@ export default function LearnerPortal() {
         )}
 
         {/* Teacher card */}
-        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-5 flex items-center gap-4">
-          <div className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(107,70,240,0.08)', color: PURPLE }}><User className="w-5 h-5" /></div>
-          <div>
-            <p className="text-xs font-bold text-slate-400">{pickLang(lang, 'أستاذك', 'Your teacher', 'Votre professeur')}</p>
-            <p className="font-black text-slate-800">{learner.teacherName || pickLang(lang, 'سيتم تعيين أستاذ قريباً', 'A teacher will be assigned soon', 'Un professeur vous sera bientôt attribué')}</p>
+        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-5">
+          <div className="flex items-center gap-4">
+            <div className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(107,70,240,0.08)', color: PURPLE }}><User className="w-5 h-5" /></div>
+            <div className="flex-1">
+              <p className="text-xs font-bold text-slate-400">{pickLang(lang, 'أستاذك', 'Your teacher', 'Votre professeur')}</p>
+              <p className="font-black text-slate-800">{learner.teacherName || pickLang(lang, 'سيتم تعيين أستاذ قريباً', 'A teacher will be assigned soon', 'Un professeur vous sera bientôt attribué')}</p>
+            </div>
+            {learner.fit === 'accepted' && <span className="text-[10px] font-black px-2 py-1 rounded-full bg-emerald-50 text-emerald-700">✓ {pickLang(lang, 'متابعة مؤكّدة', 'Confirmed', 'Confirmé')}</span>}
           </div>
+          {/* Mutual fit after a trial */}
+          {learner.teacherName && learner.fit === 'declined_teacher' && (
+            <p className="mt-3 text-xs text-amber-700 bg-amber-50 rounded-xl px-3 py-2">{pickLang(lang, 'يبحث لك المدير عن أستاذ أنسب.', 'The director is finding a better-matched teacher for you.', 'Le directeur vous cherche un meilleur professeur.')}</p>
+          )}
+          {learner.teacherName && learner.fit === 'declined_learner' && (
+            <p className="mt-3 text-xs text-slate-500 bg-slate-50 rounded-xl px-3 py-2">{pickLang(lang, 'طلبت تغيير الأستاذ — سيتواصل معك المدير.', 'You asked to change teacher — the director will reach out.', 'Vous avez demandé un changement.')}</p>
+          )}
+          {learner.teacherName && (learner.fit === undefined || learner.fit === 'pending') && (
+            <div className="mt-3 flex items-center gap-2">
+              <p className="text-[11px] text-slate-400 flex-1">{pickLang(lang, 'بعد حصّة التعارف، هل الأستاذ مناسب؟', 'After the trial, is this teacher a good fit?', 'Après l’essai, ce professeur vous convient-il ?')}</p>
+              <button onClick={() => decideFit('accept')} className="text-[11px] font-bold px-2.5 py-1.5 rounded-lg text-white" style={{ background: '#16a34a' }}>{pickLang(lang, 'مناسب ✓', 'Good ✓', 'Oui ✓')}</button>
+              <button onClick={() => decideFit('decline')} className="text-[11px] font-bold px-2.5 py-1.5 rounded-lg text-amber-700 bg-amber-50">{pickLang(lang, 'أستاذ آخر', 'Change', 'Changer')}</button>
+            </div>
+          )}
         </div>
 
         {/* Booking */}

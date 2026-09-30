@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
     if (!canAccess(actor, learner.teacherId)) return NextResponse.json({ error: 'غير مصرح' }, { status: 403 })
     const messages = await getThread(learnerId)
     await markThreadRead(learnerId, 'teacher')
-    return NextResponse.json({ learner: { id: learner.id, name: learner.name, level: learner.level, language: learner.language, nextLesson: learner.nextLesson || null }, messages })
+    return NextResponse.json({ learner: { id: learner.id, name: learner.name, level: learner.level, language: learner.language, nextLesson: learner.nextLesson || null, fit: learner.fit || 'pending' }, messages })
   }
 
   // Conversation list: the learners this actor may chat with, newest activity first.

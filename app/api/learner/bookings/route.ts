@@ -36,14 +36,14 @@ export async function POST(req: NextRequest) {
   if (!learner) return NextResponse.json({ error: 'غير موجود' }, { status: 404 })
   if (!learner.teacherId) return NextResponse.json({ error: 'لم يُعيّن لك أستاذ بعد' }, { status: 400 })
 
-  const { at, note } = (await req.json().catch(() => ({}))) as { at?: string; note?: string }
+  const { at, note, isTrial } = (await req.json().catch(() => ({}))) as { at?: string; note?: string; isTrial?: boolean }
   const when = String(at || '').trim()
   if (!when) return NextResponse.json({ error: 'اختر موعداً' }, { status: 400 })
 
   const booking = await createBooking({
     learnerId: id, learnerName: learner.name,
     teacherId: learner.teacherId, teacherName: learner.teacherName || '',
-    language: learner.language,
+    language: learner.language, isTrial: !!isTrial,
     at: when.slice(0, 60), durationHours: 1, price: 0, currency: 'QAR',
     note: String(note || '').trim().slice(0, 200),
   })

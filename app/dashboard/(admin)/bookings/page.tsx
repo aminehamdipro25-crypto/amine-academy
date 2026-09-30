@@ -6,7 +6,7 @@ import { CalendarClock, Check, X, RefreshCw, Video, CheckCircle2 } from 'lucide-
 import { staggerContainer, fadeUp } from '@/lib/motion'
 
 interface Booking {
-  id: string; learnerName: string; language: string; at: string; note?: string
+  id: string; learnerName: string; language: string; at: string; note?: string; isTrial?: boolean
   durationHours: number; price: number; currency: 'QAR' | 'TND'; link?: string; status: string
 }
 const LANG: Record<string, string> = { french: 'الفرنسيّة', english: 'الإنجليزيّة', spanish: 'الإسبانيّة', arabic: 'العربيّة', german: 'الألمانيّة', italian: 'الإيطاليّة' }
@@ -61,7 +61,7 @@ export default function BookingsPage() {
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-400 to-violet-700 text-white font-black flex items-center justify-center">{b.learnerName.charAt(0)}</div>
                 <div>
-                  <p className="font-black text-gray-900 text-sm">{b.learnerName} <span className="text-gray-400 font-normal">· {LANG[b.language] || b.language}</span></p>
+                  <p className="font-black text-gray-900 text-sm">{b.learnerName} <span className="text-gray-400 font-normal">· {LANG[b.language] || b.language}</span> {b.isTrial && <span className="text-[10px] font-black bg-violet-100 text-violet-700 px-1.5 py-0.5 rounded">🎓 تقييم</span>}</p>
                   <p className="text-xs text-gray-400">{b.at}{b.note ? ` — ${b.note}` : ''}</p>
                 </div>
               </div>

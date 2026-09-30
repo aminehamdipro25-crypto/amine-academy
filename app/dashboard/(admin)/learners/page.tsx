@@ -6,7 +6,7 @@ import { GraduationCap, Plus, X, Trash2, RefreshCw, AlertCircle, Mail, Phone, Se
 import { staggerContainer, fadeUp } from '@/lib/motion'
 
 interface Teacher { id: string; name: string; role?: string }
-interface Learner { id: string; name: string; email: string; phone: string; language: string; level: string; teacherId: string | null; teacherName: string | null; lastLoginAt: string | null }
+interface Learner { id: string; name: string; email: string; phone: string; language: string; level: string; teacherId: string | null; teacherName: string | null; fit?: string; lastLoginAt: string | null }
 interface Lead { id: string; name: string; email: string; phone: string; language: string; level: string; goal?: string; status: string; createdAt: string }
 
 const CEFR = ['unknown', 'A1', 'A2', 'B1', 'B2', 'C1', 'C2']
@@ -183,6 +183,9 @@ export default function LearnersPage() {
                         <p className="font-black text-gray-900 truncate">{l.name}</p>
                         <span className="text-[10px] font-black bg-brand-50 text-brand-600 px-1.5 py-0.5 rounded">{l.level === 'unknown' ? 'غير محدّد' : l.level}</span>
                         <span className="text-[10px] font-bold bg-violet-50 text-violet-700 px-1.5 py-0.5 rounded">{LANG[l.language] || l.language}</span>
+                        {l.fit === 'accepted' && <span className="text-[10px] font-bold bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded">✓ متابعة</span>}
+                        {l.fit === 'declined_teacher' && <span className="text-[10px] font-bold bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded">⚠ الأستاذ اعتذر — أعِد التعيين</span>}
+                        {l.fit === 'declined_learner' && <span className="text-[10px] font-bold bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded">⚠ التلميذ يطلب تغيير الأستاذ</span>}
                       </div>
                       <div className="flex items-center gap-3 text-xs text-gray-400 mt-0.5 flex-wrap">
                         <span className="flex items-center gap-1"><Mail className="w-3 h-3" />{l.email}</span>

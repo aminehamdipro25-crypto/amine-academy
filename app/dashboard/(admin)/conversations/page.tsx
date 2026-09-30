@@ -20,6 +20,7 @@ export default function ConversationsPage() {
   const [showSched, setShowSched] = useState(false)
   const [schedSaving, setSchedSaving] = useState(false)
   const [schedSaved, setSchedSaved] = useState(false)
+  const [threadFit, setThreadFit] = useState('pending')
   const scrollRef = useRef<HTMLDivElement>(null)
 
   const loadList = useCallback(async () => {
@@ -33,6 +34,7 @@ export default function ConversationsPage() {
       if (r.ok) {
         const d = await r.json()
         setMsgs(d.messages || [])
+        setThreadFit(d.learner?.fit || 'pending')
         if (withSchedule) {
           const nl = d.learner?.nextLesson
           setSched({ at: nl?.at || '', link: nl?.link || '', note: nl?.note || '' })
@@ -40,6 +42,12 @@ export default function ConversationsPage() {
       }
     } catch { /* ignore */ }
   }, [])
+
+  async function decideFit(decision: 'accept' | 'decline') {
+    if (!sel) return
+    await fetch('/api/teacher/learner-fit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ learnerId: sel.id, decision }) }).catch(() => {})
+    setThreadFit(decision === 'accept' ? 'accepted' : 'declined_teacher')
+  }
 
   async function saveSchedule() {
     if (!sel) return
@@ -113,6 +121,17 @@ export default function ConversationsPage() {
                 <button onClick={() => setShowSched(s => !s)} className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg transition ${showSched ? 'bg-brand-100 text-brand-700' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}`}>
                   <Video className="w-3.5 h-3.5" /> الحصّة القادمة
                 </button>
+              </div>
+              {/* Mutual fit decision (after a trial) */}
+              <div className="px-4 py-2 border-b border-gray-100 flex items-center gap-2 text-xs flex-wrap">
+                <span className="text-gray-400 font-bold">قرار المتابعة:</span>
+                {threadFit === 'accepted' ? <span className="text-emerald-600 font-black">✓ مقبول</span>
+                  : threadFit === 'declined_teacher' ? <span className="text-amber-600 font-black">اعتذرتَ عنه</span>
+                  : threadFit === 'declined_learner' ? <span className="text-slate-500 font-black">التلميذ طلب التغيير</span>
+                  : (<>
+                      <button onClick={() => decideFit('accept')} className="px-2.5 py-1 rounded-lg text-white font-bold" style={{ background: '#16a34a' }}>قبول المتابعة</button>
+                      <button onClick={() => decideFit('decline')} className="px-2.5 py-1 rounded-lg text-amber-700 bg-amber-50 font-bold">اعتذار (ليس مناسباً)</button>
+                    </>)}
               </div>
               {showSched && (
                 <div className="px-4 py-3 border-b border-gray-100 bg-brand-50/40 grid grid-cols-1 sm:grid-cols-3 gap-2">

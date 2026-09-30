@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyLearnerToken, LEARNER_COOKIE } from '@/lib/learner-auth'
 import { getLearner } from '@/lib/language-learners'
-import { LANGUAGE_PACKAGES, getPackage, createLangPayment, getAllLangPayments } from '@/lib/lang-payments'
+import { createLangPayment, getAllLangPayments } from '@/lib/lang-payments'
+import { getLangPackages, getLangPackage } from '@/lib/lang-packages-store'
 import { isRateLimited, getClientIp } from '@/lib/rateLimit'
 import { tg, tgEsc } from '@/lib/telegram'
 import { sendEmail } from '@/lib/mailer'
@@ -22,7 +23,7 @@ export async function GET() {
   const learner = await getLearner(id)
   if (!learner) return NextResponse.json({ error: 'غير موجود' }, { status: 404 })
   const requests = (await getAllLangPayments()).filter(p => p.learnerId === id)
-  return NextResponse.json({ packages: LANGUAGE_PACKAGES, credits: learner.sessionCredits || 0, requests })
+  return NextResponse.json({ packages: await getLangPackages(), credits: learner.sessionCredits || 0, requests })
 }
 
 // POST {packageId, method, currency}: record a package purchase request (manual pay).
@@ -35,7 +36,7 @@ export async function POST(req: NextRequest) {
   const learner = await getLearner(id)
   if (!learner) return NextResponse.json({ error: 'غير موجود' }, { status: 404 })
   const { packageId, method, currency } = (await req.json().catch(() => ({}))) as { packageId?: string; method?: string; currency?: string }
-  const pkg = getPackage(String(packageId || ''))
+  const pkg = await getLangPackage(String(packageId || ''))
   if (!pkg) return NextResponse.json({ error: 'باقة غير صالحة' }, { status: 400 })
   const cur = currency === 'TND' ? 'TND' : 'QAR'
   const m = ['fawran', 'bank', 'whatsapp'].includes(method || '') ? method as 'fawran' | 'bank' | 'whatsapp' : 'whatsapp'

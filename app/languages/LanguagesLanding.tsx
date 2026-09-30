@@ -1,9 +1,9 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useLang, pickLang } from '@/lib/i18n'
 import LangToggle from '@/components/shared/LangToggle'
-import { LANGUAGE_PACKAGES } from '@/lib/language-packages-data'
+import { LANGUAGE_PACKAGES, type LangPackage } from '@/lib/language-packages-data'
 import {
   Globe, GraduationCap, Users, Video, TrendingUp, Award, CheckCircle2,
   Loader2, ArrowLeft, ArrowRight, Sparkles, Languages as LangIcon,
@@ -29,6 +29,11 @@ export default function LanguagesLanding() {
   const Fwd = rtl ? ArrowLeft : ArrowRight
   const [curr, setCurr] = useState<'QAR' | 'TND'>('QAR')
   const sym = (c: 'QAR' | 'TND') => (c === 'TND' ? 'د.ت' : 'ر.ق')
+  // Live (owner-set) prices; falls back to defaults for the first paint.
+  const [packages, setPackages] = useState<LangPackage[]>(LANGUAGE_PACKAGES)
+  useEffect(() => {
+    fetch('/api/public/lang-packages').then(r => r.ok ? r.json() : null).then(d => { if (d?.packages?.length) setPackages(d.packages) }).catch(() => {})
+  }, [])
 
   return (
     <main className="min-h-[100dvh] bg-[#FFF8F0] overflow-x-hidden" dir={rtl ? 'rtl' : 'ltr'}>
@@ -177,7 +182,7 @@ export default function LanguagesLanding() {
             </div>
           </div>
           <div className="grid sm:grid-cols-3 gap-5 items-stretch">
-            {LANGUAGE_PACKAGES.map(p => {
+            {packages.map(p => {
               const price = curr === 'TND' ? p.tnd : p.qar
               const perLesson = Math.round(price / p.sessions)
               return (

@@ -4,10 +4,10 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useLang, pickLang } from '@/lib/i18n'
 import LangToggle from '@/components/shared/LangToggle'
-import { CEFR_DESCRIPTORS, type CEFRLevel } from '@/lib/languages/placement-fr'
+import { CEFR_DESCRIPTORS, CEFR_ORDER, type CEFRLevel } from '@/lib/languages/placement-fr'
 import ChatPanel from './ChatPanel'
 import BookingCard from './BookingCard'
-import { Languages as LangIcon, GraduationCap, User, BookOpen, CalendarClock, LogOut, Loader2, Trophy, Clock, Video, Flame, Star, Dumbbell, Sparkles } from 'lucide-react'
+import { Languages as LangIcon, GraduationCap, User, BookOpen, CalendarClock, LogOut, Loader2, Trophy, Clock, Video, Flame, Star, Dumbbell, Sparkles, Award } from 'lucide-react'
 
 const PURPLE = '#6B46F0'
 const PURPLE2 = '#9A7BFD'
@@ -146,6 +146,20 @@ export default function LearnerPortal() {
             </Link>
           </div>
         </div>
+
+        {/* Certificates for achieved levels */}
+        {CEFR_ORDER.indexOf(lvl) >= 0 && (
+          <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-5">
+            <h2 className="font-black text-slate-800 text-sm flex items-center gap-2 mb-3"><Award className="w-4 h-4" style={{ color: PURPLE }} /> {pickLang(lang, 'شهاداتي', 'My certificates', 'Mes certificats')}</h2>
+            <div className="flex flex-wrap gap-2">
+              {CEFR_ORDER.slice(0, CEFR_ORDER.indexOf(lvl) + 1).map(cl => (
+                <Link key={cl} href={`/learn/certificate?level=${cl}`} className="inline-flex items-center gap-1.5 text-xs font-extrabold px-3 py-2 rounded-xl border transition hover:bg-violet-50" style={{ borderColor: 'rgba(107,70,240,0.25)', color: PURPLE }}>
+                  <Award className="w-3.5 h-3.5" /> {pickLang(lang, `شهادة ${cl}`, `${cl} certificate`, `Certificat ${cl}`)}
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Teacher card */}
         <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-5 flex items-center gap-4">

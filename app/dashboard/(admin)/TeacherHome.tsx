@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { CalendarClock, MessageSquare, BookOpen, TrendingUp, CheckCircle2, GraduationCap } from 'lucide-react'
+import { CalendarClock, MessageSquare, BookOpen, TrendingUp, CheckCircle2, GraduationCap, BookMarked } from 'lucide-react'
 import { staggerContainer, fadeUp, popIn } from '@/lib/motion'
 import { useLang, pickLang } from '@/lib/i18n'
 
@@ -15,6 +15,8 @@ export default function TeacherHome({ name }: { name: string }) {
     { href: '/dashboard/my-sessions',   icon: CalendarClock, ar: 'حصصي', en: 'My sessions', fr: 'Mes cours', dAr: 'سجّل حصصك واطّلع على مستحقّاتك', dEn: 'Log lessons and see your earnings', dFr: 'Enregistrez vos cours et vos revenus', accent: 'from-brand-400 to-brand-700' },
     { href: '/dashboard/conversations', icon: MessageSquare, ar: 'محادثات المتعلّمين', en: 'Learner chats', fr: 'Discussions', dAr: 'تواصل مباشر مع تلاميذك', dEn: 'Chat directly with your learners', dFr: 'Discutez avec vos apprenants', accent: 'from-violet-400 to-violet-700' },
     { href: '/dashboard/curriculum',    icon: BookOpen, ar: 'دليل التدريس', en: 'Curriculum', fr: 'Programme', dAr: 'منهج CEFR وأهداف كل مستوى', dEn: 'CEFR syllabus and level goals', dFr: 'Programme CEFR et objectifs', accent: 'from-emerald-400 to-emerald-600' },
+    { href: '/dashboard/my-lessons',     icon: BookMarked, ar: 'دروسي الخاصّة', en: 'My lessons', fr: 'Mes leçons', dAr: 'درّس بمنهجك ومادّتك بحرّيّة', dEn: 'Teach with your own material', dFr: 'Enseignez avec votre matériel', accent: 'from-amber-400 to-orange-500' },
+    { href: '/dashboard/my-account',     icon: GraduationCap, ar: 'حسابي وملفّي', en: 'My account', fr: 'Mon compte', dAr: 'كلمة المرور والبورتفوليو العام', dEn: 'Password & public portfolio', dFr: 'Mot de passe & portfolio', accent: 'from-slate-400 to-slate-600' },
   ]
 
   const steps = [

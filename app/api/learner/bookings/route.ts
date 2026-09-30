@@ -4,6 +4,9 @@ import { verifyLearnerToken, LEARNER_COOKIE } from '@/lib/learner-auth'
 import { getLearner } from '@/lib/language-learners'
 import { createBooking, getAllBookings } from '@/lib/language-bookings'
 import { isRateLimited, getClientIp } from '@/lib/rateLimit'
+import { getStaff } from '@/lib/db'
+import { sendEmail } from '@/lib/mailer'
+import { tg, tgEsc } from '@/lib/telegram'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -44,5 +47,18 @@ export async function POST(req: NextRequest) {
     at: when.slice(0, 60), durationHours: 1, price: 0, currency: 'QAR',
     note: String(note || '').trim().slice(0, 200),
   })
+
+  // Notify the teacher (email) + owner (Telegram) — best-effort.
+  const summary = `📅 حجز حصّة جديد\nالتلميذ: ${learner.name}\nالموعد المقترح: ${when}\n${note ? `ملاحظة: ${note}` : ''}`
+  tg(`<b>📅 حجز حصّة جديد</b>\nالتلميذ: ${tgEsc(learner.name)}\nالموعد: ${tgEsc(when)}`).catch(() => {})
+  const teacher = await getStaff(learner.teacherId)
+  if (teacher?.email) {
+    sendEmail({
+      to: teacher.email, subject: '📅 حجز حصّة جديد من تلميذك',
+      text: summary,
+      html: `<div style="font-family:system-ui,Arial;direction:rtl;text-align:right"><h2 style="color:#6B46F0">📅 حجز حصّة جديد</h2><p><b>التلميذ:</b> ${learner.name}</p><p><b>الموعد المقترح:</b> ${when}</p>${note ? `<p><b>ملاحظة:</b> ${note}</p>` : ''}<p style="color:#888">أكّد الحجز من لوحتك: حجوزات الحصص.</p></div>`,
+    }).catch(() => {})
+  }
+
   return NextResponse.json({ ok: true, booking })
 }

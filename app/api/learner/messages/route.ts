@@ -4,6 +4,10 @@ import { verifyLearnerToken, LEARNER_COOKIE } from '@/lib/learner-auth'
 import { getLearner } from '@/lib/language-learners'
 import { appendMessage, getThread, markThreadRead, getUnread } from '@/lib/lang-messages'
 import { isRateLimited, getClientIp } from '@/lib/rateLimit'
+import { redis } from '@/lib/redis'
+import { getStaff } from '@/lib/db'
+import { sendEmail } from '@/lib/mailer'
+import { tg, tgEsc } from '@/lib/telegram'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -43,6 +47,24 @@ export async function POST(req: NextRequest) {
   if (!clean) return NextResponse.json({ error: 'الرسالة فارغة' }, { status: 400 })
 
   const msg = await appendMessage(id, 'learner', clean)
+
+  // Notify the teacher, debounced to at most once per 30 min per learner.
+  try {
+    const notifKey = `lang_msg_notif:${id}`
+    if (!(await redis.get(notifKey))) {
+      await redis.set(notifKey, '1', { ex: 1800 })
+      tg(`<b>💬 رسالة جديدة</b>\nمن التلميذ: ${tgEsc(learner.name)}`).catch(() => {})
+      const teacher = await getStaff(learner.teacherId)
+      if (teacher?.email) {
+        sendEmail({
+          to: teacher.email, subject: '💬 رسالة جديدة من تلميذك — أمين للّغات',
+          text: `${learner.name} أرسل لك رسالة. افتح محادثات المتعلّمين للردّ.`,
+          html: `<div style="font-family:system-ui,Arial;direction:rtl;text-align:right"><h2 style="color:#6B46F0">💬 رسالة جديدة</h2><p><b>${learner.name}</b> أرسل لك رسالة.</p><p style="color:#888">افتح «محادثات المتعلّمين» في لوحتك للردّ.</p></div>`,
+        }).catch(() => {})
+      }
+    }
+  } catch { /* non-critical */ }
+
   return NextResponse.json({ ok: true, message: msg })
 }
 

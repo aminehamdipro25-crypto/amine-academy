@@ -6,7 +6,7 @@ import { useLang, pickLang } from '@/lib/i18n'
 import LangToggle from '@/components/shared/LangToggle'
 import { CEFR_DESCRIPTORS, type CEFRLevel } from '@/lib/languages/placement-fr'
 import ChatPanel from './ChatPanel'
-import { Languages as LangIcon, GraduationCap, User, BookOpen, CalendarClock, LogOut, Loader2, Trophy, Clock, Video } from 'lucide-react'
+import { Languages as LangIcon, GraduationCap, User, BookOpen, CalendarClock, LogOut, Loader2, Trophy, Clock, Video, Flame, Star, Dumbbell, Sparkles } from 'lucide-react'
 
 const PURPLE = '#6B46F0'
 const PURPLE2 = '#9A7BFD'
@@ -21,6 +21,7 @@ const LANG_LABEL: Record<string, { ar: string; en: string; fr: string }> = {
 
 interface Learner { id: string; name: string; language: string; level: string; teacherName: string | null; nextLesson?: { at: string; link: string; note?: string } | null }
 interface LSession { id: string; dateISO: string; language: string; durationHours: number; status: string }
+interface Progress { xp: number; streak: number; exercisesDone: number; reviewsDone: number }
 
 export default function LearnerPortal() {
   const { lang } = useLang()
@@ -28,12 +29,13 @@ export default function LearnerPortal() {
   const router = useRouter()
   const [learner, setLearner] = useState<Learner | null>(null)
   const [sessions, setSessions] = useState<LSession[]>([])
+  const [progress, setProgress] = useState<Progress>({ xp: 0, streak: 0, exercisesDone: 0, reviewsDone: 0 })
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     fetch('/api/learner/me')
       .then(r => r.ok ? r.json() : Promise.reject())
-      .then(d => { setLearner(d.learner); setSessions(d.sessions || []) })
+      .then(d => { setLearner(d.learner); setSessions(d.sessions || []); if (d.progress) setProgress(d.progress) })
       .catch(() => router.push('/learn/login'))
       .finally(() => setLoading(false))
   }, [router])
@@ -72,6 +74,34 @@ export default function LearnerPortal() {
         <div>
           <p className="text-slate-400 text-sm">{pickLang(lang, 'مرحباً', 'Welcome', 'Bonjour')}</p>
           <h1 className="text-2xl font-black text-slate-800">{learner.name} 👋</h1>
+        </div>
+
+        {/* Progress + practice */}
+        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-5">
+          <div className="flex items-center justify-around text-center mb-4">
+            <div>
+              <div className="flex items-center justify-center gap-1 text-2xl font-black" style={{ color: '#F97316' }}><Flame className="w-5 h-5" />{progress.streak}</div>
+              <p className="text-[11px] text-slate-400 font-bold mt-0.5">{pickLang(lang, 'سلسلة يوميّة', 'Day streak', 'Série')}</p>
+            </div>
+            <div className="w-px h-10 bg-slate-100" />
+            <div>
+              <div className="flex items-center justify-center gap-1 text-2xl font-black" style={{ color: PURPLE }}><Star className="w-5 h-5" />{progress.xp}</div>
+              <p className="text-[11px] text-slate-400 font-bold mt-0.5">XP</p>
+            </div>
+            <div className="w-px h-10 bg-slate-100" />
+            <div>
+              <div className="text-2xl font-black text-slate-800">{progress.exercisesDone}</div>
+              <p className="text-[11px] text-slate-400 font-bold mt-0.5">{pickLang(lang, 'تمارين', 'Exercises', 'Exercices')}</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <Link href="/learn/practice" className="flex items-center justify-center gap-2 py-3 rounded-2xl font-extrabold text-white text-sm" style={{ background: `linear-gradient(135deg, ${PURPLE}, #8B6BF0)` }}>
+              <Dumbbell className="w-4 h-4" /> {pickLang(lang, 'تمارين اليوم', 'Practice', 'Exercices')}
+            </Link>
+            <Link href="/learn/vocab" className="flex items-center justify-center gap-2 py-3 rounded-2xl font-extrabold text-sm border-2" style={{ borderColor: 'rgba(107,70,240,0.25)', color: PURPLE }}>
+              <Sparkles className="w-4 h-4" /> {pickLang(lang, 'مفردات', 'Vocabulary', 'Vocabulaire')}
+            </Link>
+          </div>
         </div>
 
         {/* Next lesson */}

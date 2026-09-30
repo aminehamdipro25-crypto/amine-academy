@@ -7,6 +7,18 @@ import LangToggle from '@/components/shared/LangToggle'
 import { CEFR_DESCRIPTORS, CEFR_ORDER, type CEFRLevel } from '@/lib/languages/placement-fr'
 import ChatPanel from './ChatPanel'
 import BookingCard from './BookingCard'
+import SpeakButton from './SpeakButton'
+
+// A rotating French "expression of the day" — a small, fun, immersive touch.
+const EXPRESSIONS = [
+  { fr: 'Petit à petit, l’oiseau fait son nid.', ar: 'شيئاً فشيئاً يبني الطائر عشّه.', en: 'Little by little, the bird builds its nest.', frr: '' },
+  { fr: 'Vouloir, c’est pouvoir.', ar: 'من أراد استطاع.', en: 'Where there’s a will, there’s a way.', frr: '' },
+  { fr: 'C’est en forgeant qu’on devient forgeron.', ar: 'بالممارسة يُتقن المرء.', en: 'Practice makes the master.', frr: '' },
+  { fr: 'La pratique rend parfait.', ar: 'الممارسة تُتقن.', en: 'Practice makes perfect.', frr: '' },
+  { fr: 'Chaque jour compte.', ar: 'كل يوم مهمّ.', en: 'Every day counts.', frr: '' },
+  { fr: 'Bravo, continue comme ça !', ar: 'أحسنت، واصل هكذا!', en: 'Well done, keep it up!', frr: '' },
+  { fr: 'Mieux vaut tard que jamais.', ar: 'أن تصل متأخّراً خير من ألّا تصل.', en: 'Better late than never.', frr: '' },
+]
 import { Languages as LangIcon, GraduationCap, User, BookOpen, CalendarClock, LogOut, Loader2, Trophy, Clock, Video, Flame, Star, Dumbbell, Sparkles, Award } from 'lucide-react'
 
 const PURPLE = '#6B46F0'
@@ -57,6 +69,8 @@ export default function LearnerPortal() {
   const lvl = learner.level as CEFRLevel
   const d = CEFR_DESCRIPTORS[lvl]
   const langLabel = LANG_LABEL[learner.language] || LANG_LABEL.french
+  const expr = EXPRESSIONS[new Date().getDate() % EXPRESSIONS.length]
+  const isFrench = learner.language === 'french'
 
   return (
     <main className="min-h-[100dvh] bg-[#FFF8F0]" dir={rtl ? 'rtl' : 'ltr'}>
@@ -74,13 +88,34 @@ export default function LearnerPortal() {
           </div>
         </div>
       </header>
+      {/* French tricolore accent */}
+      {isFrench && (
+        <div className="h-1 flex">
+          <div className="flex-1" style={{ background: '#0055A4' }} /><div className="flex-1 bg-white" /><div className="flex-1" style={{ background: '#EF4135' }} />
+        </div>
+      )}
 
       <div className="max-w-2xl mx-auto px-4 py-8 space-y-5">
         {/* Greeting */}
         <div>
-          <p className="text-slate-400 text-sm">{pickLang(lang, 'مرحباً', 'Welcome', 'Bonjour')}</p>
+          <p className="text-slate-400 text-sm">{isFrench ? '🇫🇷 Bonjour' : pickLang(lang, 'مرحباً', 'Welcome', 'Bonjour')}</p>
           <h1 className="text-2xl font-black text-slate-800">{learner.name} 👋</h1>
         </div>
+
+        {/* Expression du jour — a fun immersive touch */}
+        {isFrench && (
+          <div className="rounded-3xl bg-white border border-slate-100 shadow-sm p-4 flex items-center gap-3 overflow-hidden relative">
+            <span className="absolute inset-y-0 start-0 w-1.5 flex flex-col">
+              <span className="flex-1" style={{ background: '#0055A4' }} /><span className="flex-1 bg-white" /><span className="flex-1" style={{ background: '#EF4135' }} />
+            </span>
+            <div className="ps-2 flex-1">
+              <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">{pickLang(lang, '🇫🇷 عبارة اليوم', '🇫🇷 Expression of the day', '🇫🇷 Expression du jour')}</p>
+              <p className="font-black text-slate-800 mt-0.5" dir="ltr" lang="fr">{expr.fr}</p>
+              <p className="text-slate-500 text-xs mt-0.5">{pickLang(lang, expr.ar, expr.en, expr.ar)}</p>
+            </div>
+            <SpeakButton text={expr.fr} size={20} />
+          </div>
+        )}
 
         {/* Progress + practice */}
         <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-5">

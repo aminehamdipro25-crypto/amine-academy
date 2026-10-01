@@ -131,6 +131,7 @@ export default function AdminDashboardView({ parents, payments, exercises, redis
             { href: '/dashboard/staff',      icon: '👩‍🏫', ar: 'إدارة الأساتذة', en: 'Teachers',   fr: 'Professeurs', ext: false },
             { href: '/dashboard/earnings',   icon: '💰',   ar: 'دفتر الأرباح',   en: 'Earnings',   fr: 'Revenus',     ext: false },
             { href: '/dashboard/curriculum', icon: '📘',   ar: 'دليل التدريس',   en: 'Curriculum', fr: 'Programme',   ext: false },
+            { href: '/dashboard/links',      icon: '🔗',   ar: 'روابط ومشاركة',  en: 'Links',      fr: 'Liens',       ext: false },
             { href: '/languages',            icon: '🌐',   ar: 'الصفحة العلنيّة', en: 'Public page', fr: 'Page publique', ext: true },
           ].map(c => {
             const label = lang === 'ar' ? c.ar : lang === 'fr' ? c.fr : c.en

@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Users, Dumbbell, Calendar,
   BarChart3, FileText, LogOut,
   ClipboardList, BookOpen, Settings, CreditCard, MessageSquare,
-  Zap, UserCog, PersonStanding, Target, ShieldAlert, ScrollText, Library, Wallet, GraduationCap, CalendarClock, BookMarked,
+  Zap, UserCog, PersonStanding, Target, ShieldAlert, ScrollText, Library, Wallet, GraduationCap, CalendarClock, BookMarked, Link2,
 } from 'lucide-react'
 import AcademyLogo from '@/components/shared/AcademyLogo'
 import { useLang, tr } from '@/lib/i18n'
@@ -49,6 +49,7 @@ export default function AdminSidebar({ onClose, unreadMessages = 0 }: { onClose?
     { href: '/dashboard/learners',               label: lang === 'ar' ? 'متعلّمو اللغات' : lang === 'fr' ? 'Apprenants' : 'Learners', icon: GraduationCap, ownerOnly: true },
     { href: '/dashboard/lang-analytics',         label: lang === 'ar' ? 'تحليلات اللغات' : lang === 'fr' ? 'Analytics langues' : 'Language analytics', icon: BarChart3, ownerOnly: true },
     { href: '/dashboard/lang-payments',          label: lang === 'ar' ? 'مدفوعات اللغات' : lang === 'fr' ? 'Paiements langues' : 'Language payments', icon: CreditCard, ownerOnly: true },
+    { href: '/dashboard/links',                  label: lang === 'ar' ? 'روابط ومشاركة' : lang === 'fr' ? 'Liens & partage' : 'Links & sharing', icon: Link2, ownerOnly: true },
     { href: '/dashboard/analytics',              label: navT.analytics, icon: BarChart3, ownerOnly: true },
     { href: '/dashboard/staff',                  label: navT.staff, icon: UserCog, ownerOnly: true },
     { href: '/dashboard/earnings',               label: lang === 'ar' ? 'دفتر الأرباح' : lang === 'fr' ? 'Revenus' : 'Earnings', icon: Wallet, ownerOnly: true },

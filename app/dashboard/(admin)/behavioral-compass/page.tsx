@@ -1,6 +1,6 @@
-import BehavioralCompass from '@/components/dashboard/BehavioralCompass'
+import BehavioralHub from '@/components/dashboard/BehavioralHub'
 
-// البوصلة السلوكية–التعلّمية — أداة حقيبة المختص، تُدار على الشاشة بتصحيح أوتوماتيكي.
+// حقيبة المختص — البوصلة الجاهزة + مولّد الأدوات (تصحيح أوتوماتيكي، دون طباعة).
 export default function BehavioralCompassPage() {
-  return <BehavioralCompass />
+  return <BehavioralHub />
 }

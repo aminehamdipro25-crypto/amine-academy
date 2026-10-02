@@ -513,3 +513,61 @@ export function compareCompass(prev: CompassRecord, curr: CompassRecord): Compas
   const daysBetween = Math.max(0, Math.round((new Date(curr.createdAt).getTime() - new Date(prev.createdAt).getTime()) / 86400000))
   return { axes, indicators, daysBetween }
 }
+
+// ── مولّد الأدوات: أداة مُولَّدة لمحور جديد ────────────────────────────────────
+export interface GeneratedConcept { name: string; explanation: string }
+export interface GeneratedItem { id: string; text: string; reverse: boolean }
+export interface GeneratedTask { level: 1 | 2 | 3; prompt: string; note?: string }
+export interface GeneratedPattern { pattern: string; hypothesis: string; priority: string }
+export interface GeneratedStep { title: string; detail: string }
+
+export interface GeneratedTool {
+  id?: string
+  createdAt?: string
+  title: string
+  axisLabel: string
+  ageGroup: string
+  duration: string
+  context: string
+  concepts: GeneratedConcept[]
+  selfReport: { instruction: string; items: GeneratedItem[] }
+  tasks: GeneratedTask[]
+  recordingIndicators: string[]
+  parentInterview: string[]
+  openQuestions: string[]
+  correctionNote: string
+  resultsTable: GeneratedPattern[]
+  protocol: GeneratedStep[]
+  remeasure: string[]
+  limits: string
+  referral: string
+}
+
+// الفئات العمومية من مجموع محور واحد (كل عبارة 1..4) — ثلاث بنود متساوية.
+export function genericCategory(sum: number, itemCount: number): AxisCategory {
+  const min = itemCount, max = itemCount * 4, range = max - min || 1
+  if (sum <= min + range / 3) return 'intervention'
+  if (sum <= min + (2 * range) / 3) return 'support'
+  return 'strength'
+}
+
+export function scoreGeneric(items: GeneratedItem[], answers: Record<string, AnswerValue>): {
+  sum: number; answered: number; count: number; min: number; max: number; category: AxisCategory
+} {
+  let sum = 0, answered = 0
+  for (const it of items) {
+    const a = answers[it.id]
+    if (a === 1 || a === 2 || a === 3 || a === 4) { sum += it.reverse ? 5 - a : a; answered++ }
+  }
+  const count = items.length
+  return { sum, answered, count, min: count, max: count * 4, category: genericCategory(sum, count) }
+}
+
+// المحاور المقترحة في المولّد (من البرومبت)
+export const GENERATOR_AXES = [
+  'تنظيم الانفعال',
+  'الدافعيّة',
+  'القلق من الأداء',
+  'المهارات الاجتماعية',
+  'صورة الذات',
+] as const

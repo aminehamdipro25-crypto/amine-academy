@@ -1033,6 +1033,17 @@ export default function SpecialistToolkitPage() {
           className="bg-white rounded-2xl border border-gray-100 p-6 space-y-5">
           <h2 className="font-black text-gray-900">{t.childInfoTitle}</h2>
 
+          {/* أداة إضافية في الحقيبة: البوصلة السلوكية–التعلّمية (تصحيح أوتوماتيكي، دون طباعة) */}
+          <a href="/dashboard/behavioral-compass"
+            className="flex items-center gap-3 bg-brand-50 border border-brand-100 rounded-xl px-4 py-3 hover:border-brand-300 transition group no-underline">
+            <span className="text-xl">🧭</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-black text-brand-700">البوصلة السلوكية–التعلّمية</p>
+              <p className="text-[11px] text-brand-600/70">استمارة «كيف أرى نفسي» + كرّاسة المهام — على الشاشة بتصحيح أوتوماتيكي، دون طباعة.</p>
+            </div>
+            <span className="text-brand-500 text-sm font-black group-hover:-translate-x-0.5 transition">←</span>
+          </a>
+
           <div>
             <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.linkChildLabel}</label>
             {isLinkedStudentId(studentId) ? (

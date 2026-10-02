@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Users, Dumbbell, Calendar,
   BarChart3, FileText, LogOut,
   ClipboardList, BookOpen, Settings, CreditCard, MessageSquare,
-  Zap, UserCog, PersonStanding, Target, ShieldAlert, ScrollText, Library, Wallet, GraduationCap, CalendarClock, BookMarked, Link2,
+  Zap, UserCog, PersonStanding, Target, ShieldAlert, ScrollText, Library, Wallet, GraduationCap, CalendarClock, BookMarked, Link2, Compass,
 } from 'lucide-react'
 import AcademyLogo from '@/components/shared/AcademyLogo'
 import { useLang, tr } from '@/lib/i18n'
@@ -42,6 +42,7 @@ export default function AdminSidebar({ onClose, unreadMessages = 0 }: { onClose?
     { href: '/dashboard/learning-difficulties',  label: navT.learningDifficulties, icon: BookOpen, ownerOnly: false },
     { href: '/dashboard/treatment-plan',          label: navT.treatmentPlan, icon: Target, ownerOnly: false },
     { href: '/dashboard/specialist-toolkit',     label: navT.specialistToolkit, icon: PersonStanding, ownerOnly: false },
+    { href: '/dashboard/behavioral-compass',     label: lang === 'ar' ? 'البوصلة السلوكية' : lang === 'fr' ? 'Boussole comport.' : 'Behavioral compass', icon: Compass, ownerOnly: false },
     { href: '/dashboard/apa-planner',            label: navT.apaPlanner, icon: Zap, ownerOnly: false },
     { href: '/dashboard/curriculum',             label: lang === 'ar' ? 'المنهج الفرنسي' : lang === 'fr' ? 'Programme FR' : 'Curriculum', icon: BookOpen, ownerOnly: false, lang: true },
     { href: '/dashboard/my-lessons',             label: lang === 'ar' ? 'دروسي الخاصّة' : lang === 'fr' ? 'Mes leçons' : 'My lessons', icon: BookMarked, ownerOnly: false, lang: true, staffOnly: true },

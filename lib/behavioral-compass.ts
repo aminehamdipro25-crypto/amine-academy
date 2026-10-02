@@ -433,3 +433,84 @@ export function interpret(axes: Record<AxisKey, AxisScore>): Interpretation {
 
   return { priorities, hypotheses, protocol, remeasure, limits, referral }
 }
+
+// ── السجلّ المحفوظ لكل طفل + المقارنة ──────────────────────────────────────────
+export interface CompassRecord {
+  id: string
+  childId: string
+  childName: string
+  age: string
+  appNo: string
+  specialist?: string
+  createdAt: string
+  axes: Record<AxisKey, number>        // مجاميع المحاور (6..24)
+  tasksCorrect: number
+  tasksTotal: number
+  // مؤشّرات الملاحظة التي تتحرّك أولاً
+  persistenceSec?: string
+  timeToClosureSec?: string
+  helpRequests?: string
+  helpSpecific?: 'yes' | 'no' | ''
+  firstClosureSign?: string
+  finished?: '' | 'yes' | 'no' | 'partly'
+}
+
+export interface AxisDelta {
+  axis: AxisKey
+  prev: number
+  curr: number
+  delta: number
+  prevCat: AxisCategory
+  currCat: AxisCategory
+}
+
+export interface IndicatorDelta {
+  label: string
+  prev: string
+  curr: string
+  trend: 'up' | 'down' | 'flat' | 'na'   // اتجاه التغيّر الفعلي
+  betterWhenUp: boolean                   // هل الارتفاع هو التحسّن؟
+}
+
+export interface CompassComparison {
+  axes: AxisDelta[]
+  indicators: IndicatorDelta[]
+  daysBetween: number
+}
+
+function numTrend(prev?: string, curr?: string): { trend: IndicatorDelta['trend'] } {
+  const p = prev !== undefined && prev !== '' ? Number(prev) : NaN
+  const c = curr !== undefined && curr !== '' ? Number(curr) : NaN
+  if (!Number.isFinite(p) || !Number.isFinite(c)) return { trend: 'na' }
+  if (c > p) return { trend: 'up' }
+  if (c < p) return { trend: 'down' }
+  return { trend: 'flat' }
+}
+
+export function compareCompass(prev: CompassRecord, curr: CompassRecord): CompassComparison {
+  const axes: AxisDelta[] = (['A', 'B', 'C', 'D'] as AxisKey[]).map(k => ({
+    axis: k,
+    prev: prev.axes[k],
+    curr: curr.axes[k],
+    delta: curr.axes[k] - prev.axes[k],
+    prevCat: categoryForSum(prev.axes[k]),
+    currCat: categoryForSum(curr.axes[k]),
+  }))
+
+  const indicators: IndicatorDelta[] = [
+    { label: 'زمن الاستمرار قبل التوقّف (ث)', prev: prev.persistenceSec || '', curr: curr.persistenceSec || '', ...numTrend(prev.persistenceSec, curr.persistenceSec), betterWhenUp: true },
+    { label: 'الزمن من الصعوبة إلى الانغلاق (ث)', prev: prev.timeToClosureSec || '', curr: curr.timeToClosureSec || '', ...numTrend(prev.timeToClosureSec, curr.timeToClosureSec), betterWhenUp: true },
+    {
+      label: 'طلب المساعدة بصيغة محدّدة',
+      prev: prev.helpSpecific === 'yes' ? 'نعم' : prev.helpSpecific === 'no' ? 'لا' : '—',
+      curr: curr.helpSpecific === 'yes' ? 'نعم' : curr.helpSpecific === 'no' ? 'لا' : '—',
+      trend: (!prev.helpSpecific || !curr.helpSpecific) ? 'na'
+        : prev.helpSpecific === curr.helpSpecific ? 'flat'
+        : (curr.helpSpecific === 'yes' ? 'up' : 'down'),
+      betterWhenUp: true,
+    },
+  ]
+
+  const daysBetween = Math.max(0, Math.round((new Date(curr.createdAt).getTime() - new Date(prev.createdAt).getTime()) / 86400000))
+  return { axes, indicators, daysBetween }
+}

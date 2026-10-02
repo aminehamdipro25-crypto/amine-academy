@@ -5,12 +5,15 @@ import { useMemo, useState, useEffect } from 'react'
 import {
   Compass, ArrowRight, ArrowLeft, Printer, RotateCcw, CheckCircle2,
   ClipboardList, Brain, HeartPulse, HandHelping, Sparkles, AlertTriangle, CalendarClock,
+  Search, Save, Loader2, Link2, X, TrendingUp, TrendingDown, Minus, History as HistoryIcon,
 } from 'lucide-react'
 import {
   AXES, SELF_REPORT, ANSWER_SCALE, TASKS, CATEGORY_META, PARENT_INTERVIEW, OPEN_QUESTIONS,
-  CLOSURE_SIGNS, HINTS, scoreSelfReport, gradeTasks, interpret, emptyObservation,
-  type AnswerValue, type AxisKey, type Glyph, type ObservationRecord, type Task,
+  CLOSURE_SIGNS, HINTS, scoreSelfReport, gradeTasks, interpret, emptyObservation, compareCompass,
+  type AnswerValue, type AxisKey, type Glyph, type ObservationRecord, type Task, type CompassRecord,
 } from '@/lib/behavioral-compass'
+
+interface ChildOption { id: string; name: string; age: string }
 
 type Step = 'intro' | 'self' | 'tasks' | 'observe' | 'interview' | 'report'
 const STEPS: { key: Step; label: string }[] = [
@@ -111,6 +114,7 @@ function StemView({ task }: { task: Extract<Task, { kind: 'visual' }> }) {
 
 interface DraftShape {
   name: string; age: string; specialist: string; appNo: 'الأول' | 'الثاني'
+  childId: string
   self: Record<string, AnswerValue>
   tasks: Record<string, string | number>
   obs: ObservationRecord
@@ -131,6 +135,46 @@ export default function BehavioralCompass() {
   const [open, setOpen] = useState<Record<number, string>>({})
   const today = useMemo(() => new Date().toLocaleDateString('ar', { year: 'numeric', month: 'long', day: 'numeric' }), [])
 
+  // ربط الطفل + السجلّ + الحفظ
+  const [childId, setChildId] = useState('')
+  const [children, setChildren] = useState<ChildOption[]>([])
+  const [childQuery, setChildQuery] = useState('')
+  const [pickerOpen, setPickerOpen] = useState(false)
+  const [history, setHistory] = useState<CompassRecord[]>([])
+  const [saving, setSaving] = useState(false)
+  const [toast, setToast] = useState('')
+
+  // تحميل قائمة الأطفال المرتبطين
+  useEffect(() => {
+    fetch('/api/admin/clients-list')
+      .then(r => r.ok ? r.json() : null)
+      .then((data: { clients?: { students?: { id: string; firstName?: string; lastName?: string; birthDate?: string }[] }[] } | null) => {
+        if (!data?.clients) return
+        const opts: ChildOption[] = []
+        for (const c of data.clients) {
+          for (const s of c.students ?? []) {
+            let age = ''
+            if (s.birthDate) {
+              const y = (Date.now() - new Date(s.birthDate).getTime()) / (365.25 * 86400000)
+              if (Number.isFinite(y) && y > 0) age = String(Math.floor(y))
+            }
+            opts.push({ id: s.id, name: `${s.firstName ?? ''} ${s.lastName ?? ''}`.trim() || 'طفل', age })
+          }
+        }
+        setChildren(opts)
+      })
+      .catch(() => {})
+  }, [])
+
+  // جلب سجلّ الطفل المختار
+  useEffect(() => {
+    if (!childId) { setHistory([]); return }
+    fetch(`/api/admin/behavioral-compass?childId=${encodeURIComponent(childId)}`)
+      .then(r => r.ok ? r.json() : null)
+      .then((d: { records?: CompassRecord[] } | null) => setHistory(Array.isArray(d?.records) ? d!.records : []))
+      .catch(() => setHistory([]))
+  }, [childId])
+
   // استرجاع المسودّة
   useEffect(() => {
     try {
@@ -141,6 +185,7 @@ export default function BehavioralCompass() {
       if (d.age) setAge(d.age)
       if (d.specialist) setSpecialist(d.specialist)
       if (d.appNo) setAppNo(d.appNo)
+      if (d.childId) setChildId(d.childId)
       if (d.self) setSelf(d.self)
       if (d.tasks) setTasks(d.tasks)
       if (d.obs) setObs({ ...emptyObservation(), ...d.obs })
@@ -152,18 +197,51 @@ export default function BehavioralCompass() {
   // حفظ المسودّة
   useEffect(() => {
     try {
-      const d: DraftShape = { name, age, specialist, appNo, self, tasks, obs, interview, open }
+      const d: DraftShape = { name, age, specialist, appNo, childId, self, tasks, obs, interview, open }
       localStorage.setItem(DRAFT_KEY, JSON.stringify(d))
     } catch { /* ignore */ }
-  }, [name, age, specialist, appNo, self, tasks, obs, interview, open])
+  }, [name, age, specialist, appNo, childId, self, tasks, obs, interview, open])
 
   const score = useMemo(() => scoreSelfReport(self), [self])
   const grade = useMemo(() => gradeTasks(tasks), [tasks])
   const reading = useMemo(() => interpret(score.axes), [score.axes])
 
+  // سجلّ حيّ من الحالة الحالية (للحفظ والمقارنة)
+  const liveRecord = useMemo<CompassRecord>(() => ({
+    id: 'live', childId, childName: name, age, appNo, specialist: specialist || undefined,
+    createdAt: new Date().toISOString(),
+    axes: { A: score.axes.A.sum, B: score.axes.B.sum, C: score.axes.C.sum, D: score.axes.D.sum },
+    tasksCorrect: grade.correct, tasksTotal: grade.total,
+    persistenceSec: obs.persistenceSec, timeToClosureSec: obs.timeToClosureSec,
+    helpRequests: obs.helpRequests, helpSpecific: obs.helpSpecific,
+    firstClosureSign: obs.firstClosureSign, finished: obs.finished,
+  }), [childId, name, age, appNo, specialist, score, grade, obs])
+
+  async function saveResult() {
+    if (!childId) { setToast('اربط الطفل أولاً لحفظ النتيجة'); return }
+    if (!score.complete) { setToast('أكمل الاستمارة قبل الحفظ'); return }
+    setSaving(true)
+    try {
+      const res = await fetch('/api/admin/behavioral-compass', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...liveRecord, childName: name || children.find(c => c.id === childId)?.name || '' }),
+      })
+      if (res.ok) {
+        setToast('✓ حُفظت النتيجة في سجلّ الطفل')
+        const r = await fetch(`/api/admin/behavioral-compass?childId=${encodeURIComponent(childId)}`).then(x => x.json()).catch(() => null)
+        if (Array.isArray(r?.records)) setHistory(r.records)
+      } else {
+        const d = await res.json().catch(() => ({}))
+        setToast(d.error || '❌ تعذّر الحفظ')
+      }
+    } catch {
+      setToast('❌ تعذّر الحفظ — تحقّق من الاتصال')
+    } finally { setSaving(false) }
+  }
+
   function reset() {
     if (!confirm('مسح كل البيانات والبدء من جديد؟')) return
-    setName(''); setAge(''); setAppNo('الأول')
+    setName(''); setAge(''); setAppNo('الأول'); setChildId('')
     setSelf({}); setTasks({}); setObs(emptyObservation()); setInterview({}); setOpen({})
     try { localStorage.removeItem(DRAFT_KEY) } catch { /* ignore */ }
     setStep('intro')
@@ -205,6 +283,38 @@ export default function BehavioralCompass() {
       {/* ── التعريف ── */}
       {step === 'intro' && (
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-4">
+          {/* ربط الطفل من السجلّ — لازم للحفظ والمقارنة */}
+          <div>
+            <span className="block text-xs font-bold text-slate-500 mb-1">الطفل (اربطه لحفظ النتيجة ومقارنتها)</span>
+            {childId ? (
+              <div className="flex items-center justify-between gap-3 bg-brand-50 border border-brand-100 rounded-xl px-3.5 py-2.5">
+                <p className="text-sm font-bold text-brand-700 flex items-center gap-1.5"><Link2 className="w-4 h-4" /> {children.find(c => c.id === childId)?.name || name || 'طفل مرتبط'}{history.length > 0 ? ` · ${history.length} قياس سابق` : ''}</p>
+                <button onClick={() => { setChildId(''); }} className="text-brand-400 hover:text-red-500 transition"><X className="w-4 h-4" /></button>
+              </div>
+            ) : (
+              <div className="relative">
+                <div className="flex items-center gap-2 border border-slate-200 rounded-xl px-3 py-2.5 focus-within:border-brand-400">
+                  <Search className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                  <input value={childQuery} onChange={e => { setChildQuery(e.target.value); setPickerOpen(true) }} onFocus={() => setPickerOpen(true)}
+                    className="flex-1 outline-none text-sm bg-transparent" placeholder="ابحث باسم الطفل…" />
+                </div>
+                {pickerOpen && childQuery.trim() && (
+                  <div className="absolute z-20 mt-1 w-full max-h-56 overflow-y-auto bg-white border border-slate-200 rounded-xl shadow-lg">
+                    {children.filter(c => c.name.includes(childQuery.trim())).slice(0, 20).map(c => (
+                      <button key={c.id} onClick={() => { setChildId(c.id); if (!name) setName(c.name); if (!age && c.age) setAge(c.age); setPickerOpen(false); setChildQuery('') }}
+                        className="w-full text-right px-3.5 py-2.5 text-sm hover:bg-brand-50 transition border-b border-slate-50 last:border-0">
+                        {c.name}{c.age ? <span className="text-slate-400"> · {c.age} سنة</span> : null}
+                      </button>
+                    ))}
+                    {children.filter(c => c.name.includes(childQuery.trim())).length === 0 && (
+                      <p className="px-3.5 py-3 text-xs text-slate-400">لا نتائج — يمكنك المتابعة دون ربط (لن تُحفظ النتيجة).</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
           <div className="grid sm:grid-cols-2 gap-3">
             <Field label="اسم الطفل"><input value={name} onChange={e => setName(e.target.value)} className="af-in" placeholder="الاسم" /></Field>
             <Field label="العمر"><input value={age} onChange={e => setAge(e.target.value)} className="af-in" placeholder="بالسنوات" /></Field>
@@ -415,7 +525,14 @@ export default function BehavioralCompass() {
           name={name} age={age} specialist={specialist} appNo={appNo} today={today}
           score={score} grade={grade} reading={reading} obs={obs}
           onBack={goBack}
+          childId={childId} history={history} live={liveRecord} saving={saving} onSave={saveResult}
         />
+      )}
+
+      {toast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-2xl text-sm font-bold print:hidden" onClick={() => setToast('')}>
+          {toast}
+        </div>
       )}
 
       <style jsx global>{`
@@ -440,20 +557,42 @@ function NavRow({ onBack, onNext, nextLabel = 'التالي' }: { onBack?: () =>
 }
 
 // ── التقرير (قراءة أوتوماتيكية) ─────────────────────────────────────────────────
-function Report({ name, age, specialist, appNo, today, score, grade, reading, obs, onBack }: {
+function Report({ name, age, specialist, appNo, today, score, grade, reading, obs, onBack, childId, history, live, saving, onSave }: {
   name: string; age: string; specialist: string; appNo: string; today: string
   score: ReturnType<typeof scoreSelfReport>
   grade: ReturnType<typeof gradeTasks>
   reading: ReturnType<typeof interpret>
   obs: ObservationRecord
   onBack: () => void
+  childId: string
+  history: CompassRecord[]
+  live: CompassRecord
+  saving: boolean
+  onSave: () => void
 }) {
+  // المقارنة بآخر قياس محفوظ (إن وُجد)
+  const previous = history[0]
+  const comparison = previous ? compareCompass(previous, live) : null
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between print:hidden">
+      <div className="flex items-center justify-between gap-2 flex-wrap print:hidden">
         <button onClick={onBack} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-slate-200 text-slate-500 font-bold text-sm hover:bg-slate-50"><ArrowRight className="w-4 h-4" /> السابق</button>
-        <button onClick={() => window.print()} className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-slate-900 text-white font-bold text-sm hover:bg-black"><Printer className="w-4 h-4" /> طباعة / PDF</button>
+        <div className="flex items-center gap-2">
+          <button onClick={onSave} disabled={saving || !childId || !score.complete}
+            title={!childId ? 'اربط الطفل في خطوة التعريف لحفظ النتيجة' : !score.complete ? 'أكمل الاستمارة' : 'احفظ في سجلّ الطفل'}
+            className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-brand-500 text-white font-bold text-sm hover:bg-brand-600 disabled:opacity-50 shadow-brand-sm">
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} حفظ النتيجة
+          </button>
+          <button onClick={() => window.print()} className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-slate-900 text-white font-bold text-sm hover:bg-black"><Printer className="w-4 h-4" /> طباعة / PDF</button>
+        </div>
       </div>
+
+      {!childId && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-xs text-amber-800 print:hidden">
+          لم تربط هذه النتيجة بطفل — اربطه في خطوة «التعريف» حتى تُحفظ وتُقارَن بالقياسات القادمة.
+        </div>
+      )}
 
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-6 print:shadow-none print:border-0">
         {/* ترويسة */}
@@ -492,6 +631,60 @@ function Report({ name, age, specialist, appNo, today, score, grade, reading, ob
           </div>
           {!score.complete && <p className="text-[11px] text-amber-600 mt-2">⚠ الاستمارة غير مكتملة ({score.answeredCount}/{SELF_REPORT.length}) — الدرجات أعلاه جزئيّة.</p>}
         </div>
+
+        {/* المقارنة بآخر قياس محفوظ */}
+        {comparison && previous && (
+          <div className="bg-brand-50/60 border border-brand-100 rounded-xl p-4">
+            <p className="font-black text-slate-800 text-sm mb-3 flex items-center gap-1.5">
+              <TrendingUp className="w-4 h-4 text-brand-500" /> المقارنة بالقياس السابق
+              <span className="text-[11px] font-normal text-slate-400">({previous.appNo} · {new Date(previous.createdAt).toLocaleDateString('ar', { month: 'short', day: 'numeric' })} · منذ {comparison.daysBetween} يوماً)</span>
+            </p>
+            <div className="grid sm:grid-cols-2 gap-2 mb-3">
+              {comparison.axes.map(d => {
+                const meta = AXES.find(a => a.key === d.axis)!
+                const up = d.delta > 0, down = d.delta < 0
+                return (
+                  <div key={d.axis} className="flex items-center justify-between bg-white rounded-lg px-3 py-2 border border-slate-100">
+                    <span className="text-xs font-bold text-slate-600">{meta.code} — {meta.title}</span>
+                    <span className={`text-xs font-black flex items-center gap-1 ${up ? 'text-emerald-600' : down ? 'text-red-600' : 'text-slate-400'}`}>
+                      {d.prev} ← {d.curr}
+                      {up ? <TrendingUp className="w-3.5 h-3.5" /> : down ? <TrendingDown className="w-3.5 h-3.5" /> : <Minus className="w-3.5 h-3.5" />}
+                      {d.delta !== 0 && <span>({d.delta > 0 ? '+' : ''}{d.delta})</span>}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+            <p className="text-[11px] font-bold text-slate-500 mb-1.5">المؤشّرات السلوكيّة (تتحرّك قبل الدرجات):</p>
+            <div className="flex flex-wrap gap-2">
+              {comparison.indicators.map((ind, i) => {
+                const improved = ind.trend !== 'na' && ind.trend !== 'flat' && ((ind.trend === 'up') === ind.betterWhenUp)
+                const worse = ind.trend !== 'na' && ind.trend !== 'flat' && !improved
+                return (
+                  <span key={i} className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border ${improved ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : worse ? 'bg-red-50 border-red-200 text-red-700' : 'bg-slate-50 border-slate-200 text-slate-500'}`}>
+                    {ind.label}: {ind.prev || '—'} ← {ind.curr || '—'}
+                    {improved ? ' ↑' : worse ? ' ↓' : ''}
+                  </span>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* سجلّ القياسات */}
+        {history.length > 0 && (
+          <div>
+            <p className="font-black text-slate-800 text-sm mb-2 flex items-center gap-1.5"><HistoryIcon className="w-4 h-4 text-brand-500" /> سجلّ القياسات ({history.length})</p>
+            <div className="space-y-1.5">
+              {history.slice(0, 6).map(rec => (
+                <div key={rec.id} className="flex items-center justify-between bg-slate-50 rounded-lg px-3 py-2 text-xs border border-slate-100">
+                  <span className="font-bold text-slate-600">{rec.appNo} · {new Date(rec.createdAt).toLocaleDateString('ar', { year: 'numeric', month: 'short', day: 'numeric' })}</span>
+                  <span className="text-slate-500" dir="ltr">أ{rec.axes.A} · ب{rec.axes.B} · ج{rec.axes.C} · د{rec.axes.D}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* المهام */}
         <div>

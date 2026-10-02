@@ -100,14 +100,10 @@ function StemView({ task }: { task: Extract<Task, { kind: 'visual' }> }) {
       </div>
     )
   }
+  // صفّ بسيط بترتيب RTL طبيعي (أول عنصر على اليمين) — دون أسهم تربك القارئ
   return (
-    <div className="flex items-center gap-2 flex-wrap justify-center">
-      {stem.cells.map((g, i) => (
-        <div key={i} className="flex items-center gap-2">
-          <Cell g={g} />
-          {i < stem.cells.length - 1 && <span className="text-slate-300 font-black">←</span>}
-        </div>
-      ))}
+    <div className="flex items-center gap-2.5 flex-wrap justify-center">
+      {stem.cells.map((g, i) => <Cell key={i} g={g} />)}
     </div>
   )
 }
@@ -143,6 +139,7 @@ export default function BehavioralCompass() {
   const [history, setHistory] = useState<CompassRecord[]>([])
   const [saving, setSaving] = useState(false)
   const [toast, setToast] = useState('')
+  const [showRules, setShowRules] = useState(false)  // عرض القواعد للمختص (مخفيّة افتراضياً)
 
   // تحميل قائمة الأطفال المرتبطين
   useEffect(() => {
@@ -377,40 +374,60 @@ export default function BehavioralCompass() {
       {/* ── المهام ── */}
       {step === 'tasks' && (
         <div className="space-y-4">
+          {/* مفتاح عرض القواعد — للمختص فقط */}
+          <label className="flex items-center justify-between gap-3 bg-white rounded-xl border border-slate-200 px-4 py-2.5 cursor-pointer">
+            <span className="text-xs font-bold text-slate-600">عرض القاعدة والحلّ لكل بند <span className="text-slate-400">(للمختص فقط — أخفِها أمام الطفل)</span></span>
+            <button type="button" onClick={() => setShowRules(v => !v)}
+              className={`relative w-11 h-6 rounded-full transition flex-shrink-0 ${showRules ? 'bg-brand-500' : 'bg-slate-300'}`}>
+              <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all ${showRules ? 'left-0.5' : 'right-0.5'}`} />
+            </button>
+          </label>
+
           {([1, 2, 3] as const).map(level => (
             <div key={level} className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
               <div className="px-5 py-3 bg-slate-50 border-b border-slate-100 font-black text-slate-800 text-sm">
                 المستوى {level === 1 ? 'الأول (سهل)' : level === 2 ? 'الثاني (متوسّط)' : 'الثالث (صعب)'}
               </div>
               <div className="divide-y divide-slate-50">
-                {TASKS.filter(t => t.level === level).map(t => (
+                {TASKS.filter(t => t.level === level).map(t => {
+                  const num = TASKS.findIndex(x => x.id === t.id) + 1
+                  return (
                   <div key={t.id} className="px-5 py-4">
                     {t.kind === 'numeric' ? (
                       <div>
-                        <p className="text-sm text-slate-600 font-bold mb-2">أكمل السلسلة:</p>
-                        <div className="flex items-center gap-2 flex-wrap mb-3" dir="ltr">
+                        <p className="text-sm text-slate-600 font-bold mb-2">{num}. أكمل السلسلة:</p>
+                        {/* ترتيب من اليمين إلى اليسار: أول عدد على اليمين، «؟» على اليسار */}
+                        <div className="flex items-center gap-2 flex-wrap mb-3">
                           {t.sequence.map((n, i) => <span key={i} className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center font-black text-slate-700">{n}</span>)}
                           <span className="text-xl font-black text-brand-500">؟</span>
                         </div>
                         <input inputMode="numeric" value={String(tasks[t.id] ?? '')} onChange={e => setTasks(s => ({ ...s, [t.id]: e.target.value }))}
-                          className="af-in w-32" placeholder="الإجابة" dir="ltr" />
+                          className="af-in w-32" placeholder="الإجابة" />
                       </div>
                     ) : (
                       <div>
-                        <p className="text-sm text-slate-600 font-bold mb-3">{t.prompt}</p>
+                        <p className="text-sm text-slate-600 font-bold mb-3">{num}. {t.prompt}</p>
                         <div className="mb-4 overflow-x-auto"><StemView task={t} /></div>
                         <div className="grid grid-cols-4 gap-2 max-w-sm">
                           {t.options.map((opt, i) => (
                             <button key={i} onClick={() => setTasks(s => ({ ...s, [t.id]: i }))}
-                              className={`aspect-square rounded-xl border-2 flex items-center justify-center transition ${tasks[t.id] === i ? 'border-brand-500 bg-brand-50' : 'border-slate-200 bg-white hover:border-brand-300'}`}>
+                              className={`relative aspect-square rounded-xl border-2 flex items-center justify-center transition ${tasks[t.id] === i ? 'border-brand-500 bg-brand-50' : 'border-slate-200 bg-white hover:border-brand-300'}`}>
                               <GlyphView g={opt} size={44} />
+                              {showRules && i === t.correctIndex && <span className="absolute top-1 left-1 text-emerald-500"><CheckCircle2 className="w-4 h-4" /></span>}
                             </button>
                           ))}
                         </div>
                       </div>
                     )}
+                    {showRules && (
+                      <p className="mt-3 text-[11px] text-slate-500 bg-slate-50 border border-slate-100 rounded-lg px-3 py-2">
+                        <b className="text-slate-600">القاعدة:</b> {t.rule}
+                        {t.kind === 'numeric' && <> — <b className="text-slate-600">الإجابة:</b> <span dir="ltr">{t.answer}</span></>}
+                      </p>
+                    )}
                   </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
           ))}
@@ -646,8 +663,8 @@ function Report({ name, age, specialist, appNo, today, score, grade, reading, ob
                 return (
                   <div key={d.axis} className="flex items-center justify-between bg-white rounded-lg px-3 py-2 border border-slate-100">
                     <span className="text-xs font-bold text-slate-600">{meta.code} — {meta.title}</span>
-                    <span className={`text-xs font-black flex items-center gap-1 ${up ? 'text-emerald-600' : down ? 'text-red-600' : 'text-slate-400'}`}>
-                      {d.prev} ← {d.curr}
+                    <span className={`text-xs font-black flex items-center gap-1.5 ${up ? 'text-emerald-600' : down ? 'text-red-600' : 'text-slate-400'}`}>
+                      <span className="text-slate-400 font-normal">السابق {d.prev} · الحالي</span> {d.curr}
                       {up ? <TrendingUp className="w-3.5 h-3.5" /> : down ? <TrendingDown className="w-3.5 h-3.5" /> : <Minus className="w-3.5 h-3.5" />}
                       {d.delta !== 0 && <span>({d.delta > 0 ? '+' : ''}{d.delta})</span>}
                     </span>
@@ -662,7 +679,7 @@ function Report({ name, age, specialist, appNo, today, score, grade, reading, ob
                 const worse = ind.trend !== 'na' && ind.trend !== 'flat' && !improved
                 return (
                   <span key={i} className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border ${improved ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : worse ? 'bg-red-50 border-red-200 text-red-700' : 'bg-slate-50 border-slate-200 text-slate-500'}`}>
-                    {ind.label}: {ind.prev || '—'} ← {ind.curr || '—'}
+                    {ind.label}: <span className="font-normal">السابق</span> {ind.prev || '—'} · <span className="font-normal">الحالي</span> {ind.curr || '—'}
                     {improved ? ' ↑' : worse ? ' ↓' : ''}
                   </span>
                 )

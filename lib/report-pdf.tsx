@@ -73,25 +73,28 @@ const SEV: Record<PdfSeverity, { fg: string; bg: string }> = {
 
 const s = StyleSheet.create({
   page: { paddingTop: 40, paddingBottom: 56, paddingHorizontal: 40, fontFamily: 'Tajawal', fontSize: 9.5, color: C.ink },
-  // Every text block is right-aligned: react-pdf has no bidi engine, so RTL is
-  // expressed through alignment while the font handles the shaping.
-  rtl: { textAlign: 'right' },
+  // Each TEXT block carries direction:'rtl' — react-pdf's layout only orders a
+  // paragraph's mixed runs (Arabic + digits + % + Latin like DSM-5) correctly
+  // when direction is set ON THE TEXT itself (it does NOT cascade from the
+  // Page). Verified by rendering: without it, a trailing "%" or "(6 من 9)"
+  // jumps to the wrong end. The font still handles letter shaping.
+  rtl: { textAlign: 'right', direction: 'rtl' },
   band: { backgroundColor: C.brand, marginHorizontal: -40, marginTop: -40, paddingHorizontal: 40, paddingTop: 22, paddingBottom: 16, marginBottom: 14 },
-  brand: { fontSize: 16, fontWeight: 700, textAlign: 'right', color: '#FFFFFF' },
-  tagline: { fontSize: 8, color: '#DDD6FE', textAlign: 'right', marginTop: 3 },
-  bandTitle: { fontSize: 11, fontWeight: 700, textAlign: 'right', color: '#FFFFFF', marginTop: 10 },
-  bandMeta: { fontSize: 8.5, color: '#E9D5FF', textAlign: 'right', marginTop: 2 },
-  h1: { fontSize: 13, fontWeight: 700, textAlign: 'right', marginBottom: 2 },
-  meta: { fontSize: 8.5, color: C.mute, textAlign: 'right' },
+  brand: { fontSize: 16, fontWeight: 700, textAlign: 'right', direction: 'rtl', color: '#FFFFFF' },
+  tagline: { fontSize: 8, color: '#DDD6FE', textAlign: 'right', direction: 'rtl', marginTop: 3 },
+  bandTitle: { fontSize: 11, fontWeight: 700, textAlign: 'right', direction: 'rtl', color: '#FFFFFF', marginTop: 10 },
+  bandMeta: { fontSize: 8.5, color: '#E9D5FF', textAlign: 'right', direction: 'rtl', marginTop: 2 },
+  h1: { fontSize: 13, fontWeight: 700, textAlign: 'right', direction: 'rtl', marginBottom: 2 },
+  meta: { fontSize: 8.5, color: C.mute, textAlign: 'right', direction: 'rtl' },
   notice: { borderWidth: 1, borderColor: C.line, borderRadius: 4, padding: 7, marginTop: 10, marginBottom: 12 },
-  noticeTxt: { fontSize: 8, color: C.mute, textAlign: 'right', lineHeight: 1.6 },
-  intro: { fontSize: 9, color: C.mute, textAlign: 'right', lineHeight: 1.7, marginBottom: 12 },
+  noticeTxt: { fontSize: 8, color: C.mute, textAlign: 'right', direction: 'rtl', lineHeight: 1.6 },
+  intro: { fontSize: 9, color: C.mute, textAlign: 'right', direction: 'rtl', lineHeight: 1.7, marginBottom: 12 },
   card: { borderWidth: 1, borderColor: C.line, borderRadius: 5, padding: 10, marginBottom: 10 },
   cardHead: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 },
   scaleName: { fontSize: 10.5, fontWeight: 700, textAlign: 'right' },
-  prov: { fontSize: 7.5, color: C.faint, textAlign: 'right', marginTop: 2, lineHeight: 1.5 },
+  prov: { fontSize: 7.5, color: C.faint, textAlign: 'right', direction: 'rtl', marginTop: 2, lineHeight: 1.5 },
   badge: { fontSize: 8, fontWeight: 700, paddingVertical: 2.5, paddingHorizontal: 7, borderRadius: 8 },
-  caution: { fontSize: 7.5, color: C.amber, backgroundColor: C.amberBg, padding: 5, borderRadius: 3, marginTop: 5, textAlign: 'right', lineHeight: 1.6 },
+  caution: { fontSize: 7.5, color: C.amber, backgroundColor: C.amberBg, padding: 5, borderRadius: 3, marginTop: 5, textAlign: 'right', direction: 'rtl', lineHeight: 1.6 },
   domainRow: { marginTop: 5 },
   domainTop: { flexDirection: 'row-reverse', justifyContent: 'space-between' },
   domainLbl: { fontSize: 8.5, color: C.mute, textAlign: 'right' },
@@ -101,16 +104,16 @@ const s = StyleSheet.create({
   barFill: { height: 3.5, borderRadius: 2 },
   bullet: { flexDirection: 'row-reverse', marginTop: 3 },
   bulletDot: { fontSize: 8.5, color: C.teal, marginLeft: 4 },
-  bulletTxt: { fontSize: 8.5, color: C.mute, textAlign: 'right', flex: 1, lineHeight: 1.6 },
-  sectionTitle: { fontSize: 11, fontWeight: 700, textAlign: 'right', marginTop: 6, marginBottom: 6 },
+  bulletTxt: { fontSize: 8.5, color: C.mute, textAlign: 'right', direction: 'rtl', flex: 1, lineHeight: 1.6 },
+  sectionTitle: { fontSize: 11, fontWeight: 700, textAlign: 'right', direction: 'rtl', marginTop: 6, marginBottom: 6 },
   taskCard: { borderWidth: 1, borderColor: C.line, borderRadius: 5, padding: 8, marginBottom: 7, backgroundColor: C.indigoBg },
-  taskName: { fontSize: 9.5, fontWeight: 700, textAlign: 'right' },
-  taskDomain: { fontSize: 7.5, color: C.faint, textAlign: 'right' },
-  taskHead: { fontSize: 10, fontWeight: 700, color: C.indigo, textAlign: 'right', marginTop: 3 },
+  taskName: { fontSize: 9.5, fontWeight: 700, textAlign: 'right', direction: 'rtl' },
+  taskDomain: { fontSize: 7.5, color: C.faint, textAlign: 'right', direction: 'rtl' },
+  taskHead: { fontSize: 10, fontWeight: 700, color: C.indigo, textAlign: 'right', direction: 'rtl', marginTop: 3 },
   footer: { marginTop: 14, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 8 },
   footRow: { flexDirection: 'row-reverse', justifyContent: 'space-between' },
   sign: { fontSize: 9, fontWeight: 700, textAlign: 'left' },
-  pageNum: { position: 'absolute', bottom: 24, left: 40, right: 40, textAlign: 'center', fontSize: 7.5, color: C.faint },
+  pageNum: { position: 'absolute', bottom: 24, left: 40, right: 40, textAlign: 'center', direction: 'rtl', fontSize: 7.5, color: C.faint },
 })
 
 function Bullets({ items }: { items: string[] }) {

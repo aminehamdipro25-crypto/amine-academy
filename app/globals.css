@@ -182,9 +182,12 @@ html.a11y-motion-reduced *, html.a11y-motion-reduced ::before, html.a11y-motion-
 html.a11y-motion-reduced { scroll-behavior: auto; }
 
 /* ── Accessibility widget: dyslexia-friendly reading mode ─────── */
+/* Tahoma first: it shapes Arabic correctly, unlike Verdana. And NO
+   letter-spacing — Arabic is cursive, so spacing between letters breaks the
+   joins and shatters every word ("حروف مكسورة"), on screen and in print.
+   word-spacing + line-height still aid readability without harming Arabic. */
 html.a11y-dyslexia, html.a11y-dyslexia * {
-  font-family: Verdana, Tahoma, Arial, sans-serif !important;
-  letter-spacing: 0.04em;
+  font-family: Tahoma, Arial, sans-serif !important;
   word-spacing: 0.12em;
   line-height: 1.8 !important;
 }

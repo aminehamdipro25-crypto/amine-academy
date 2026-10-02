@@ -103,7 +103,10 @@ const s = StyleSheet.create({
   barTrack: { height: 3.5, backgroundColor: C.track, borderRadius: 2, marginTop: 2.5, flexDirection: 'row-reverse' },
   barFill: { height: 3.5, borderRadius: 2 },
   bullet: { flexDirection: 'row-reverse', marginTop: 3 },
-  bulletDot: { fontSize: 8.5, color: C.teal, marginLeft: 4 },
+  // Drawn dot, NOT a "•" glyph: the embedded font subset's ToUnicode maps the
+  // bullet glyph wrong, so text extraction / viewers that re-render extracted
+  // text showed it as "9". A shape has no glyph mapping to get wrong.
+  bulletDot: { width: 2.6, height: 2.6, borderRadius: 1.3, backgroundColor: C.teal, marginLeft: 5, marginTop: 4.5 },
   bulletTxt: { fontSize: 8.5, color: C.mute, textAlign: 'right', direction: 'rtl', flex: 1, lineHeight: 1.6 },
   sectionTitle: { fontSize: 11, fontWeight: 700, textAlign: 'right', direction: 'rtl', marginTop: 6, marginBottom: 6 },
   taskCard: { borderWidth: 1, borderColor: C.line, borderRadius: 5, padding: 8, marginBottom: 7, backgroundColor: C.indigoBg },
@@ -121,7 +124,7 @@ function Bullets({ items }: { items: string[] }) {
     <>
       {items.map((t, i) => (
         <View key={i} style={s.bullet} wrap={false}>
-          <Text style={s.bulletDot}>•</Text>
+          <View style={s.bulletDot} />
           <Text style={s.bulletTxt}>{t}</Text>
         </View>
       ))}
@@ -161,7 +164,7 @@ export function ReportPdf({ d }: { d: PdfReportData }) {
                 {sc.severityLabel}
               </Text>
             </View>
-            {sc.ageCaution ? <Text style={s.caution}>⚠ {sc.ageCaution}</Text> : null}
+            {sc.ageCaution ? <Text style={s.caution}>{sc.ageCaution}</Text> : null}
             {sc.domains.map((dm, j) => (
               <View key={j} style={s.domainRow} wrap={false}>
                 <View style={s.domainTop}>
@@ -194,7 +197,7 @@ export function ReportPdf({ d }: { d: PdfReportData }) {
                 <Text style={s.taskDomain}>{t.domainAr}</Text>
                 <Text style={s.taskHead}>{t.headline}</Text>
                 <Bullets items={t.details} />
-                {t.caution ? <Text style={s.caution}>⚠ {t.caution}</Text> : null}
+                {t.caution ? <Text style={s.caution}>{t.caution}</Text> : null}
               </View>
             ))}
             {d.batterySummary ? <Text style={s.noticeTxt}>{d.batterySummary}</Text> : null}

@@ -5,6 +5,8 @@ import Anthropic from '@anthropic-ai/sdk'
 import type { GeneratedTool } from '@/lib/behavioral-compass'
 
 export const runtime = 'nodejs'
+// Claude can take longer than the 10s Vercel default for a full tool.
+export const maxDuration = 60
 
 const str = (v: unknown, max = 200) => (typeof v === 'string' ? v.trim().slice(0, max) : '')
 

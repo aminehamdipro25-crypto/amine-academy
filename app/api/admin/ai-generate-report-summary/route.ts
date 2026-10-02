@@ -7,6 +7,7 @@ import { isRateLimited } from '@/lib/rateLimit'
 import Anthropic from '@anthropic-ai/sdk'
 
 export const runtime = 'nodejs'
+export const maxDuration = 60
 
 const METRIC_LABELS: Record<string, string> = {
   attention:            'الانتباه والتركيز',

@@ -9,6 +9,9 @@ const VALID_AGE_GROUPS: AgeGroup[] = ['5-11', '12-17', '18-22']
 const VALID_DIAGNOSES: Diagnosis[] = ['ADHD', 'AUTISM', 'ADHD+AUTISM', 'OTHER']
 
 export const runtime = 'nodejs'
+// The Claude call can exceed the 10s Vercel default; without this the function
+// times out (504) and the dashboard shows the generic "تعذّر توليد البرنامج".
+export const maxDuration = 60
 
 const DIAG_AR: Record<string, string> = {
   ADHD: 'اضطراب ADHD (فرط الحركة وتشتت الانتباه)',

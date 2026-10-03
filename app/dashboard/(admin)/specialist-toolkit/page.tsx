@@ -6,7 +6,7 @@ import type { AssessmentResult, Exercise, Program, WeeklySchedule, AgeGroup, Dia
 import { getRecommendedCategories, findMatchingExercises } from '@/lib/domain-exercise-map'
 import { ageYearsFromBirthDate } from '@/lib/age'
 import {
-  PersonStanding, ArrowRight, ArrowLeft, Printer, RotateCcw,
+  PersonStanding, ArrowRight, ArrowLeft, RotateCcw,
   CheckCircle2, Sparkles, ClipboardList, Save, Clock, TimerReset, AlertTriangle, CalendarClock,
   Brain, Activity, Eye, BookOpen, Wand2, HeartHandshake, HeartPulse,
 } from 'lucide-react'
@@ -1527,13 +1527,10 @@ export default function SpecialistToolkitPage() {
               <div className="print:hidden flex gap-3">
                 <input value={therapistName} onChange={e => setTherapistName(e.target.value)} placeholder={t.therapistNamePlaceholder}
                   className="flex-1 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-brand-300 focus:outline-none" />
-                <motion.button {...tapOnly} onClick={() => window.print()}
-                  className="flex items-center gap-2 bg-gray-900 text-white font-bold px-5 py-2.5 rounded-xl hover:bg-gray-800 transition-colors text-sm flex-shrink-0">
-                  <Printer className="w-4 h-4" />
-                  {t.printButton}
-                </motion.button>
+                {/* تحميل PDF هو المخرج الأساسي: ملفّ مُصمَّم على الخادم، مرصوص
+                    ومنظّم الصفحات بعكس طباعة المتصفّح التي تترك فراغات. */}
                 <motion.button {...tapOnly} onClick={downloadPdf} disabled={pdfBusy}
-                  className="flex items-center gap-2 bg-teal-600 text-white font-bold px-5 py-2.5 rounded-xl hover:bg-teal-700 disabled:opacity-60 transition-colors text-sm flex-shrink-0">
+                  className="flex items-center gap-2 bg-teal-600 text-white font-black px-6 py-2.5 rounded-xl hover:bg-teal-700 disabled:opacity-60 transition-colors text-sm flex-shrink-0 shadow-sm">
                   <Save className="w-4 h-4" />
                   {pdfBusy ? 'جارٍ التوليد…' : 'تحميل PDF'}
                 </motion.button>

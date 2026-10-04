@@ -4,6 +4,7 @@ import AdminSidebar from '@/components/dashboard/AdminSidebar'
 import AdminHeader  from '@/components/dashboard/AdminHeader'
 import { ToastProvider }   from '@/components/ui/Toast'
 import { CommandPalette }  from '@/components/ui/CommandPalette'
+import ReminderWatcher     from '@/components/worklog/ReminderWatcher'
 import { useLang } from '@/lib/i18n'
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -51,6 +52,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {/* Global: Command palette (Ctrl+K) */}
       <CommandPalette />
+      {/* Private-lesson reminders while any dashboard page is open (owner only — staff get 401 and it stops) */}
+      <ReminderWatcher />
     </ToastProvider>
   )
 }

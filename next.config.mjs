@@ -73,8 +73,11 @@ const SessionContentSecurityPolicy = buildCSP("'self' https: https://*.daily.co"
 // Permissions-Policy directives this app doesn't use at all — locked down
 // everywhere, session pages included (camera/mic/display-capture are handled
 // separately per-route below since /session/* genuinely needs them).
+// Geolocation is the exception, allowed to our own origin only: the work-log
+// «use my current location» button pins a family's address while standing at
+// their door. Third-party frames still get nothing.
 const UNUSED_PERMISSIONS =
-  'usb=(), midi=(), payment=(), geolocation=(), interest-cohort=(), browsing-topics=(), ' +
+  'usb=(), midi=(), payment=(), geolocation=(self), interest-cohort=(), browsing-topics=(), ' +
   'accelerometer=(), gyroscope=(), magnetometer=(), fullscreen=(self), clipboard-write=(self)'
 
 const baseHeaders = [

@@ -17,6 +17,7 @@ import {
   getStudentsByParent,
   getThreadMessages,
 } from './db'
+import { listWork } from './worklog-store'
 
 // A backup of everything, and a way to read it back.
 //
@@ -115,6 +116,12 @@ export async function buildFullBackup(): Promise<FullBackup> {
       messages: await getThreadMessages(t.parentId),
     })))).filter(t => t.messages.length > 0)
   })
+
+  // The private-lesson ledger.
+  await section('worklogClients', () => listWork('clients'))
+  await section('worklogLessons', () => listWork('lessons'))
+  await section('worklogPayments', () => listWork('payments'))
+  await section('worklogExpenses', () => listWork('expenses'))
 
   const counts = Object.fromEntries(
     BACKUP_RECORD_TYPES.map(t => [t, data[t].length]),

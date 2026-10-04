@@ -1,0 +1,140 @@
+'use client'
+import { useEffect, useState } from 'react'
+import { BellRing, CalendarPlus, Copy, RefreshCw, Send, ShieldOff } from 'lucide-react'
+import { useToast } from '@/components/ui/Toast'
+import { useWorkLog } from './useWorkLog'
+import { Field, Segmented, ghostBtn, inputCls, primaryBtn } from './ui'
+import { notificationState, requestNotifications, showLessonNotification } from './notify'
+
+const ZONES = ['Asia/Qatar', 'Africa/Tunis', 'Asia/Riyadh', 'Asia/Dubai', 'Africa/Cairo', 'Europe/Paris']
+
+export default function SettingsView() {
+  const { settings, saveSettings } = useWorkLog()
+  const { toast } = useToast()
+  const [perm, setPerm] = useState<string>('default')
+  const [busy, setBusy] = useState(false)
+  const [origin, setOrigin] = useState('')
+
+  useEffect(() => { setPerm(notificationState()); setOrigin(window.location.origin) }, [])
+
+  async function save(body: object, msg = 'حُفظ') {
+    setBusy(true)
+    try { await saveSettings(body); toast(msg) } catch (e) { toast((e as Error).message, 'error') } finally { setBusy(false) }
+  }
+
+  const browserZone = typeof Intl !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone : ''
+  const zones = [...new Set([settings.timezone, browserZone, ...ZONES].filter(Boolean))]
+  const feedUrl = settings.calendarToken ? `${origin}/api/worklog-calendar/${settings.calendarToken}.ics` : ''
+  const webcal = feedUrl.replace(/^https?:/, 'webcal:')
+
+  return (
+    <div className="space-y-4 max-w-2xl">
+      {/* Reminders */}
+      <section className="rounded-3xl bg-white border border-gray-100 shadow-sm p-5 space-y-4">
+        <div className="flex items-center gap-2"><BellRing className="w-5 h-5 text-brand-600" /><h3 className="font-black text-gray-900">التذكيرات</h3></div>
+        <p className="text-xs text-gray-500 leading-relaxed">
+          ثلاث طبقات، كل واحدة تغطي ما لا تغطيه الأخرى:
+          <b> (1)</b> إشعار في المتصفح ما دامت لوحة التحكم مفتوحة،
+          <b> (2)</b> تقويم هاتفك يرنّ قبل كل حصة حتى والتطبيق مغلق،
+          <b> (3)</b> ملخّص صباحي بحصص اليوم ومسارها على تيليغرام والبريد.
+        </p>
+
+        <div className="rounded-2xl bg-gray-50 p-4 space-y-3">
+          <p className="text-sm font-bold text-gray-800">1 · إشعارات هذا الجهاز</p>
+          {perm === 'unsupported' ? <p className="text-xs text-gray-500">هذا المتصفح لا يدعم الإشعارات — استعمل تقويم الهاتف (2).</p>
+            : perm === 'granted' ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-bold text-emerald-700">✓ مفعّلة على هذا الجهاز</span>
+                <button onClick={() => showLessonNotification('تجربة تذكير', 'هكذا سيظهر التذكير قبل الحصة', 'test')} className={ghostBtn('text-xs')}>
+                  <Send className="w-3.5 h-3.5" /> إشعار تجريبي
+                </button>
+              </div>
+            ) : perm === 'denied' ? (
+              <p className="text-xs text-rose-700">الإشعارات محجوبة لهذا الموقع — فعّلها من إعدادات المتصفح (رمز القفل بجانب العنوان)، ثم أعد تحميل الصفحة.</p>
+            ) : (
+              <button onClick={async () => { setPerm(await requestNotifications()) }} className={primaryBtn('text-xs')}>
+                <BellRing className="w-4 h-4" /> تفعيل الإشعارات
+              </button>
+            )}
+          <div className="grid sm:grid-cols-2 gap-3">
+            <Field label="التذكير الافتراضي للحصص الجديدة">
+              {id => (
+                <select id={id} className={inputCls} disabled={busy} value={settings.defaultReminderMin === null ? 'none' : String(settings.defaultReminderMin)}
+                  onChange={e => save({ defaultReminderMin: e.target.value === 'none' ? null : Number(e.target.value) })}>
+                  <option value="none">بلا تذكير</option><option value="15">قبل 15 د</option><option value="30">قبل 30 د</option>
+                  <option value="60">قبل ساعة</option><option value="120">قبل ساعتين</option><option value="1440">قبل يوم</option>
+                </select>
+              )}
+            </Field>
+            <Field label="مدة الحصة الافتراضية">
+              {id => (
+                <select id={id} className={inputCls} disabled={busy} value={settings.defaultDurationMin} onChange={e => save({ defaultDurationMin: Number(e.target.value) })}>
+                  {[30, 45, 60, 90, 120].map(d => <option key={d} value={d}>{d} دقيقة</option>)}
+                </select>
+              )}
+            </Field>
+          </div>
+        </div>
+
+        <div className="rounded-2xl bg-gray-50 p-4 space-y-3">
+          <p className="text-sm font-bold text-gray-800">2 · تقويم الهاتف (الأقوى — يعمل والتطبيق مغلق)</p>
+          {!settings.calendarToken ? (
+            <>
+              <p className="text-xs text-gray-500 leading-relaxed">رابط سرّي يشترك فيه تقويم هاتفك (iPhone أو Google)، فتظهر كل حصة بعنوانها ورابط الطريق، ويرنّ التذكير في وقته. يتحدّث تلقائياً عند كل تعديل.</p>
+              <button disabled={busy} onClick={() => save({ calendar: 'enable' }, 'أُنشئ رابط التقويم')} className={primaryBtn('text-xs')}>
+                <CalendarPlus className="w-4 h-4" /> إنشاء رابط التقويم
+              </button>
+            </>
+          ) : (
+            <>
+              <div className="flex gap-2">
+                <input readOnly value={feedUrl} dir="ltr" className={`${inputCls} text-[11px] font-mono`} aria-label="رابط التقويم" onFocus={e => e.currentTarget.select()} />
+                <button onClick={async () => { try { await navigator.clipboard.writeText(feedUrl); toast('نُسخ الرابط') } catch { toast('انسخ الرابط يدوياً', 'info') } }}
+                  className={ghostBtn()} aria-label="نسخ"><Copy className="w-4 h-4" /></button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <a href={webcal} className={primaryBtn('text-xs')}><CalendarPlus className="w-4 h-4" /> إضافة إلى تقويم هذا الجهاز</a>
+                <a href={`https://calendar.google.com/calendar/r?cid=${encodeURIComponent(webcal)}`} target="_blank" rel="noopener noreferrer" className={ghostBtn('text-xs')}>Google Calendar</a>
+              </div>
+              <ul className="text-[11px] text-gray-500 space-y-1 leading-relaxed list-disc pr-4">
+                <li><b>iPhone:</b> اضغط «إضافة إلى تقويم هذا الجهاز» ← اشتراك. يتحدّث كل ساعة تقريباً.</li>
+                <li><b>Android:</b> افتح الرابط في Google Calendar من الحاسوب (إضافة تقويم ← من رابط). Google يحدّث الاشتراكات ببطء (حتى عدة ساعات) — لحصة أُضيفت للتو اعتمد على الإشعار (1).</li>
+                <li>الرابط يحوي أسماء العائلات وعناوينها: لا تشاركه. إن تسرّب، أنشئ رابطاً جديداً فيتوقف القديم فوراً.</li>
+              </ul>
+              <div className="flex flex-wrap gap-2">
+                <button disabled={busy} onClick={() => save({ calendar: 'rotate' }, 'رابط جديد — أعد الاشتراك به')} className={ghostBtn('text-xs')}><RefreshCw className="w-3.5 h-3.5" /> رابط جديد</button>
+                <button disabled={busy} onClick={() => save({ calendar: 'disable' }, 'أُوقف التقويم')} className={ghostBtn('text-xs text-rose-600')}><ShieldOff className="w-3.5 h-3.5" /> إيقاف</button>
+              </div>
+            </>
+          )}
+        </div>
+
+        <div className="rounded-2xl bg-gray-50 p-4 space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm font-bold text-gray-800">3 · الملخّص الصباحي</p>
+            <Segmented size="sm" value={settings.dailyDigest ? 'on' : 'off'} onChange={v => save({ dailyDigest: v === 'on' })}
+              options={[{ value: 'on', label: 'مفعّل' }, { value: 'off', label: 'متوقف' }]} />
+          </div>
+          <p className="text-[11px] text-gray-500 leading-relaxed">كل صباح (7:00 بتوقيت قطر): حصص اليوم بالترتيب، رابط الطريق لكل منزل، مسار اليوم كاملاً، والمستحقات. يصل عبر تيليغرام والبريد المضبوطين في المنصة. لا يُرسَل شيء في يوم فارغ.</p>
+        </div>
+      </section>
+
+      {/* General */}
+      <section className="rounded-3xl bg-white border border-gray-100 shadow-sm p-5 space-y-4">
+        <h3 className="font-black text-gray-900">عام</h3>
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-sm font-bold text-gray-700">العملة</span>
+          <Segmented value={settings.currency} onChange={v => save({ currency: v })} options={[{ value: 'QAR', label: 'ريال قطري' }, { value: 'TND', label: 'دينار تونسي' }]} />
+        </div>
+        <Field label="المنطقة الزمنية (لتحديد «اليوم» في الملخّص الصباحي)">
+          {id => (
+            <select id={id} className={inputCls} disabled={busy} value={settings.timezone} onChange={e => save({ timezone: e.target.value })}>
+              {zones.map(z => <option key={z} value={z}>{z}{z === browserZone ? ' (هذا الجهاز)' : ''}</option>)}
+            </select>
+          )}
+        </Field>
+        <p className="text-[11px] text-gray-400">تغيير العملة يغيّر الرمز المعروض فقط — المبالغ المسجّلة لا تُحوَّل.</p>
+      </section>
+    </div>
+  )
+}

@@ -1,6 +1,7 @@
 'use client'
 // البوصلة السلوكية–التعلّمية — نسخة رقميّة بتصحيح أوتوماتيكي (AMINE ACADEMY)
 // تُدار بالكامل على الشاشة — لا طباعة للاستمارات، والتصحيح يحدث فوراً.
+import { ARABIC_LOCALE, formatDateTime } from '@/lib/format'
 import { useMemo, useState, useEffect } from 'react'
 import {
   Compass, ArrowRight, ArrowLeft, Printer, RotateCcw, CheckCircle2,
@@ -129,7 +130,7 @@ export default function BehavioralCompass() {
   const [obs, setObs] = useState<ObservationRecord>(emptyObservation())
   const [interview, setInterview] = useState<Record<number, string>>({})
   const [open, setOpen] = useState<Record<number, string>>({})
-  const today = useMemo(() => new Date().toLocaleDateString('ar', { year: 'numeric', month: 'long', day: 'numeric' }), [])
+  const today = useMemo(() => formatDateTime(new Date(), ARABIC_LOCALE, { year: 'numeric', month: 'long', day: 'numeric' }), [])
 
   // ربط الطفل + السجلّ + الحفظ
   const [childId, setChildId] = useState('')
@@ -654,7 +655,7 @@ function Report({ name, age, specialist, appNo, today, score, grade, reading, ob
           <div className="bg-brand-50/60 border border-brand-100 rounded-xl p-4">
             <p className="font-black text-slate-800 text-sm mb-3 flex items-center gap-1.5">
               <TrendingUp className="w-4 h-4 text-brand-500" /> المقارنة بالقياس السابق
-              <span className="text-[11px] font-normal text-slate-400">({previous.appNo} · {new Date(previous.createdAt).toLocaleDateString('ar', { month: 'short', day: 'numeric' })} · منذ {comparison.daysBetween} يوماً)</span>
+              <span className="text-[11px] font-normal text-slate-400">({previous.appNo} · {formatDateTime(previous.createdAt, ARABIC_LOCALE, { month: 'short', day: 'numeric' })} · منذ {comparison.daysBetween} يوماً)</span>
             </p>
             <div className="grid sm:grid-cols-2 gap-2 mb-3">
               {comparison.axes.map(d => {
@@ -695,7 +696,7 @@ function Report({ name, age, specialist, appNo, today, score, grade, reading, ob
             <div className="space-y-1.5">
               {history.slice(0, 6).map(rec => (
                 <div key={rec.id} className="flex items-center justify-between bg-slate-50 rounded-lg px-3 py-2 text-xs border border-slate-100">
-                  <span className="font-bold text-slate-600">{rec.appNo} · {new Date(rec.createdAt).toLocaleDateString('ar', { year: 'numeric', month: 'short', day: 'numeric' })}</span>
+                  <span className="font-bold text-slate-600">{rec.appNo} · {formatDateTime(rec.createdAt, ARABIC_LOCALE, { year: 'numeric', month: 'short', day: 'numeric' })}</span>
                   <span className="text-slate-500" dir="ltr">أ{rec.axes.A} · ب{rec.axes.B} · ج{rec.axes.C} · د{rec.axes.D}</span>
                 </div>
               ))}

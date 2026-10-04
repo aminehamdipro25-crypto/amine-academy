@@ -1,4 +1,5 @@
 'use client'
+import { ARABIC_LOCALE, formatTime } from '@/lib/format'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useLang, pickLang } from '@/lib/i18n'
 import { Send, Loader2, MessageCircle } from 'lucide-react'
@@ -78,7 +79,7 @@ export default function ChatPanel() {
                 style={mine ? { background: PURPLE } : undefined}>
                 {m.text}
                 <span className={`block text-[10px] mt-1 ${mine ? 'text-white/60' : 'text-slate-300'}`} dir="ltr">
-                  {new Date(m.createdAt).toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit' })}
+                  {formatTime(m.createdAt, ARABIC_LOCALE)}
                 </span>
               </div>
             </div>

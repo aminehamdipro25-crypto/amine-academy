@@ -7,6 +7,9 @@ export const BACKUP_RECORD_TYPES = [
   'appointments', 'reports', 'assessments', 'assessmentProfiles',
   'apaRecords', 'messages', 'gameResults', 'payments',
   'learningDifficultyProfiles', 'treatmentPlans', 'homework',
+  // The private-lesson ledger (lib/worklog-store.ts): money owed and paid has
+  // no other copy anywhere.
+  'worklogClients', 'worklogLessons', 'worklogPayments', 'worklogExpenses',
 ] as const
 
 export type BackupRecordType = (typeof BACKUP_RECORD_TYPES)[number]

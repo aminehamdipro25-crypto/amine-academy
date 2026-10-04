@@ -14,7 +14,8 @@ export default function SpeakButton({ text, className = '', size = 16 }: { text:
       if (!synth) return
       synth.cancel()
       const u = new SpeechSynthesisUtterance(text)
-      u.lang = 'fr-FR'
+      // A speech-voice tag, not a formatting locale; the French voice itself is picked below.
+      u.lang = 'fr'
       u.rate = 0.92
       const fr = synth.getVoices().find(v => v.lang?.toLowerCase().startsWith('fr'))
       if (fr) u.voice = fr

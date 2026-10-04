@@ -7,7 +7,12 @@ export function tgEsc(s: string): string {
 }
 
 export async function tg(message: string): Promise<void> {
-  if (!TOKEN || !CHAT) return
+  await tgSend(message)
+}
+
+/** Same as tg(), but says whether Telegram accepted it — for callers that decide on it. */
+export async function tgSend(message: string): Promise<boolean> {
+  if (!TOKEN || !CHAT) return false
   try {
     const res = await fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`, {
       method: 'POST',
@@ -15,7 +20,9 @@ export async function tg(message: string): Promise<void> {
       body: JSON.stringify({ chat_id: CHAT, text: message, parse_mode: 'HTML' }),
     })
     if (!res.ok) console.warn('[telegram] API error', res.status, await res.text())
+    return res.ok
   } catch (e) {
     console.warn('[telegram] send failed:', (e as Error).message)
+    return false
   }
 }

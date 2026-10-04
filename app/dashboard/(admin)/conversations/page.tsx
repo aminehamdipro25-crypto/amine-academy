@@ -1,5 +1,6 @@
 'use client'
 
+import { ARABIC_LOCALE, formatTime } from '@/lib/format'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { MessageSquare, Send, Loader2, RefreshCw, ArrowRight, Video } from 'lucide-react'
@@ -153,7 +154,7 @@ export default function ConversationsPage() {
                     <div key={m.id} className={`flex ${mine ? 'justify-start' : 'justify-end'}`}>
                       <div className={`max-w-[75%] px-3.5 py-2 rounded-2xl text-sm leading-relaxed ${mine ? 'bg-brand-600 text-white' : 'bg-white border border-gray-100 text-gray-700'}`}>
                         {m.text}
-                        <span className={`block text-[10px] mt-1 ${mine ? 'text-white/60' : 'text-gray-300'}`} dir="ltr">{new Date(m.createdAt).toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit' })}</span>
+                        <span className={`block text-[10px] mt-1 ${mine ? 'text-white/60' : 'text-gray-300'}`} dir="ltr">{formatTime(m.createdAt, ARABIC_LOCALE)}</span>
                       </div>
                     </div>
                   )

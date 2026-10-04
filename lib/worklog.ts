@@ -1,0 +1,770 @@
+// دفتر الحصص الخاصة — the logic of the specialist's private home-lesson ledger.
+//
+// Everything here is pure (no Redis, no DOM), so the numbers the page shows and
+// the numbers the tests check are produced by the same lines.
+//
+// The model follows how private lessons are actually paid: there is no fixed
+// fee and no fixed pay day. A lesson that happened is OWED; a payment is money
+// that ARRIVED, whenever the family chose to pay. They are separate records and
+// are never tied one-to-one, so the balance of a family is simply
+//
+//     billable lessons (all time) − payments (all time)
+//
+// positive = the family owes, negative = the family paid ahead (credit).
+//
+// Two words are kept apart on purpose everywhere below:
+//   earned    — value of lessons delivered in the period (what you WORKED for)
+//   collected — payments received in the period (what actually CAME IN)
+// A month where many families paid late looks great on "earned" and poor on
+// "collected"; showing only one of them hides exactly what this page is for.
+
+import { sanitizePersonName } from './person-name'
+
+export type LessonStatus = 'scheduled' | 'done' | 'cancelled'
+export type CancelledBy = 'family' | 'me'
+export type PaymentMethod = 'cash' | 'transfer' | 'other'
+export type ExpenseCategory = 'transport' | 'materials' | 'phone' | 'food' | 'other'
+export type WorkCurrency = 'QAR' | 'TND'
+
+export interface GeoPoint { lat: number; lng: number }
+
+export interface WorkClient {
+  id: string
+  /** The parent / family name — the person who pays. */
+  name: string
+  childName?: string
+  phone?: string
+  address?: string
+  location?: GeoPoint
+  /** Usual price of ONE HOUR. Prefills new lessons; each lesson keeps its own price. */
+  hourlyRate: number
+  /** Palette key, so a family keeps the same colour across the agenda and charts. */
+  color: string
+  notes?: string
+  archived?: boolean
+  createdAt: string
+}
+
+export interface WorkLesson {
+  id: string
+  clientId: string
+  /** Local calendar date, YYYY-MM-DD. */
+  date: string
+  /** Local wall-clock start, HH:MM. */
+  start: string
+  durationMin: number
+  /** Price of THIS lesson (a snapshot — changing the family's rate never rewrites history). */
+  price: number
+  status: LessonStatus
+  cancelledBy?: CancelledBy
+  /** A late cancellation the family still pays for. */
+  charged?: boolean
+  note?: string
+  /** Minutes before start to remind; null = no reminder. */
+  reminderMin: number | null
+  /** Lessons created together as a weekly series share this id. */
+  seriesId?: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface WorkPayment {
+  id: string
+  clientId: string
+  date: string
+  amount: number
+  method: PaymentMethod
+  note?: string
+  createdAt: string
+}
+
+export interface WorkExpense {
+  id: string
+  date: string
+  amount: number
+  category: ExpenseCategory
+  note?: string
+  createdAt: string
+}
+
+export interface WorkSettings {
+  currency: WorkCurrency
+  /** IANA zone used by the server for "today" (morning digest). */
+  timezone: string
+  defaultReminderMin: number | null
+  defaultDurationMin: number
+  /** Secret token of the calendar feed; absent = feed disabled. */
+  calendarToken?: string
+  dailyDigest: boolean
+}
+
+export const DEFAULT_SETTINGS: WorkSettings = {
+  currency: 'QAR',
+  timezone: 'Asia/Qatar',
+  defaultReminderMin: 60,
+  defaultDurationMin: 60,
+  dailyDigest: true,
+}
+
+// ── Labels & colours ─────────────────────────────────────────────────────────
+
+/** Family colours — fixed order, assigned to new families in turn. */
+export const CLIENT_COLORS = [
+  '#7C5CFC', '#0EA5E9', '#F97316', '#14B8A6', '#E11D48',
+  '#84CC16', '#A855F7', '#F59E0B', '#06B6D4', '#64748B',
+] as const
+
+/**
+ * Status colours. Green/red alone fails deuteranopia (ΔE 5), so these steps
+ * were validated for colour-blind separation — and every status is ALWAYS shown
+ * with its icon and word as well, never colour alone.
+ */
+export const STATUS_META: Record<LessonStatus, { label: string; color: string; soft: string; text: string; icon: string }> = {
+  scheduled: { label: 'مجدولة',  color: '#3B82F6', soft: 'bg-blue-50',    text: 'text-blue-700',    icon: '◷' },
+  done:      { label: 'تمّت',    color: '#15803D', soft: 'bg-emerald-50', text: 'text-emerald-700', icon: '✓' },
+  cancelled: { label: 'ملغاة',   color: '#FB7185', soft: 'bg-rose-50',    text: 'text-rose-700',    icon: '✕' },
+}
+
+export const PAYMENT_METHOD_LABEL: Record<PaymentMethod, string> = {
+  cash: 'نقداً', transfer: 'تحويل', other: 'أخرى',
+}
+
+export const EXPENSE_LABEL: Record<ExpenseCategory, string> = {
+  transport: 'تنقّل ووقود', materials: 'أدوات ومواد', phone: 'هاتف وإنترنت', food: 'أكل', other: 'أخرى',
+}
+
+export const CURRENCY_LABEL: Record<WorkCurrency, string> = { QAR: 'ر.ق', TND: 'د.ت' }
+
+// ── Small helpers ────────────────────────────────────────────────────────────
+
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
+const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/
+
+/** Money is kept to 2 decimals (TND uses millimes, but no one bills a lesson in them). */
+export function round2(n: number): number {
+  return Math.round(n * 100) / 100
+}
+
+/** A real calendar date — rejects 2026-02-30, which JS would roll into March. */
+export function isValidDate(s: unknown): s is string {
+  if (typeof s !== 'string' || !DATE_RE.test(s)) return false
+  const [y, m, d] = s.split('-').map(Number)
+  const dt = new Date(Date.UTC(y, m - 1, d))
+  return dt.getUTCFullYear() === y && dt.getUTCMonth() === m - 1 && dt.getUTCDate() === d
+}
+
+export function isValidTime(s: unknown): s is string {
+  return typeof s === 'string' && TIME_RE.test(s)
+}
+
+export function addDays(date: string, days: number): string {
+  const [y, m, d] = date.split('-').map(Number)
+  const dt = new Date(Date.UTC(y, m - 1, d + days))
+  return dt.toISOString().slice(0, 10)
+}
+
+/** 0 = Monday … 6 = Sunday. */
+export function weekdayMon0(date: string): number {
+  const [y, m, d] = date.split('-').map(Number)
+  return (new Date(Date.UTC(y, m - 1, d)).getUTCDay() + 6) % 7
+}
+
+export function startOfWeek(date: string): string {
+  return addDays(date, -weekdayMon0(date))
+}
+
+export function startOfMonth(date: string): string {
+  return date.slice(0, 7) + '-01'
+}
+
+export function endOfMonth(date: string): string {
+  const [y, m] = date.split('-').map(Number)
+  return new Date(Date.UTC(y, m, 0)).toISOString().slice(0, 10)
+}
+
+export function minutesOf(time: string): number {
+  const [h, m] = time.split(':').map(Number)
+  return h * 60 + m
+}
+
+export function endTime(start: string, durationMin: number): string {
+  const t = (minutesOf(start) + durationMin) % (24 * 60)
+  return `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`
+}
+
+/** "1:30" style duration, or "45 د" under an hour. */
+export function formatDuration(min: number): string {
+  if (min <= 0) return '0 س'
+  if (min < 60) return `${min} د`
+  const h = Math.floor(min / 60)
+  const m = min % 60
+  return m ? `${h}:${String(m).padStart(2, '0')} س` : `${h} س`
+}
+
+/** Hours with at most one decimal, never "2.0". */
+export function formatHours(min: number): string {
+  const h = Math.round((min / 60) * 10) / 10
+  return Number.isInteger(h) ? String(h) : h.toFixed(1)
+}
+
+export function formatMoney(n: number, currency: WorkCurrency): string {
+  const v = round2(n)
+  // Latin digits by construction (standing rule 8), with a thin grouping comma.
+  const [int, frac] = Math.abs(v).toFixed(Number.isInteger(v) ? 0 : 2).split('.')
+  const grouped = int.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+  return `${v < 0 ? '-' : ''}${grouped}${frac ? '.' + frac : ''} ${CURRENCY_LABEL[currency]}`
+}
+
+export function priceFor(hourlyRate: number, durationMin: number): number {
+  return round2((Math.max(0, hourlyRate) * Math.max(0, durationMin)) / 60)
+}
+
+/** "Today" as a calendar date in the given IANA zone (the server runs in UTC). */
+export function todayIn(timeZone: string, now: Date = new Date()): string {
+  try {
+    // en-CA formats as YYYY-MM-DD.
+    return new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(now)
+  } catch {
+    return now.toISOString().slice(0, 10)
+  }
+}
+
+export function isValidTimeZone(tz: unknown): tz is string {
+  if (typeof tz !== 'string' || !tz || tz.length > 64) return false
+  try { new Intl.DateTimeFormat('en-US', { timeZone: tz }); return true } catch { return false }
+}
+
+// ── Money logic ──────────────────────────────────────────────────────────────
+
+/** Whether a lesson is owed: delivered, or cancelled late and still charged. */
+export function isBillable(l: Pick<WorkLesson, 'status' | 'charged'>): boolean {
+  return l.status === 'done' || (l.status === 'cancelled' && !!l.charged)
+}
+
+export function lessonValue(l: Pick<WorkLesson, 'status' | 'charged' | 'price'>): number {
+  return isBillable(l) ? l.price : 0
+}
+
+export interface ClientBalance {
+  clientId: string
+  billed: number
+  paid: number
+  /** billed − paid. Positive = owes, negative = credit. */
+  balance: number
+  lastPaymentDate: string | null
+  /** Billable lessons delivered after the last payment (what the next payment usually covers). */
+  lessonsSinceLastPayment: number
+  /** Past lessons still marked "scheduled" — they may be missing from the balance. */
+  unconfirmed: number
+}
+
+export function clientBalances(
+  clients: WorkClient[],
+  lessons: WorkLesson[],
+  payments: WorkPayment[],
+  today: string,
+): ClientBalance[] {
+  return clients.map(c => {
+    const ls = lessons.filter(l => l.clientId === c.id)
+    const ps = payments.filter(p => p.clientId === c.id)
+    const billed = round2(ls.reduce((s, l) => s + lessonValue(l), 0))
+    const paid = round2(ps.reduce((s, p) => s + p.amount, 0))
+    const lastPaymentDate = ps.length ? ps.map(p => p.date).sort().at(-1)! : null
+    return {
+      clientId: c.id,
+      billed,
+      paid,
+      balance: round2(billed - paid),
+      lastPaymentDate,
+      lessonsSinceLastPayment: ls.filter(l => isBillable(l) && (!lastPaymentDate || l.date > lastPaymentDate)).length,
+      unconfirmed: ls.filter(l => l.status === 'scheduled' && l.date < today).length,
+    }
+  })
+}
+
+// ── Period statistics ────────────────────────────────────────────────────────
+
+export interface PeriodStats {
+  from: string
+  to: string
+  lessonsDone: number
+  lessonsCancelled: number
+  lessonsScheduled: number
+  minutesDone: number
+  minutesCancelled: number
+  minutesScheduled: number
+  /** Value of delivered (and charged-cancelled) lessons in the period. */
+  earned: number
+  /** Value of the lessons lost to non-charged cancellations. */
+  lostToCancellations: number
+  /** Value still ahead: scheduled lessons in the period. */
+  expected: number
+  collected: number
+  expenses: number
+  /** collected − expenses: the money that actually stays with you. */
+  net: number
+  /** null when no lesson happened or was cancelled — 0% would be a claim. */
+  cancellationRate: number | null
+  /** null with no hours done. */
+  avgHourly: number | null
+  cancelledByFamily: number
+  cancelledByMe: number
+  byClient: { clientId: string; lessons: number; minutes: number; earned: number; collected: number; cancelled: number }[]
+  byExpenseCategory: { category: ExpenseCategory; amount: number }[]
+  byWeekday: { weekday: number; minutes: number }[]
+}
+
+const inRange = (d: string, from: string, to: string) => d >= from && d <= to
+
+export function periodStats(
+  lessons: WorkLesson[],
+  payments: WorkPayment[],
+  expenses: WorkExpense[],
+  from: string,
+  to: string,
+): PeriodStats {
+  const ls = lessons.filter(l => inRange(l.date, from, to))
+  const ps = payments.filter(p => inRange(p.date, from, to))
+  const es = expenses.filter(e => inRange(e.date, from, to))
+
+  const done = ls.filter(l => l.status === 'done')
+  const cancelled = ls.filter(l => l.status === 'cancelled')
+  const scheduled = ls.filter(l => l.status === 'scheduled')
+  const sumMin = (xs: WorkLesson[]) => xs.reduce((s, l) => s + l.durationMin, 0)
+  const sumAmount = (xs: { amount: number }[]) => round2(xs.reduce((s, x) => s + x.amount, 0))
+
+  const earned = round2(ls.reduce((s, l) => s + lessonValue(l), 0))
+  const minutesDone = sumMin(done)
+  const collected = sumAmount(ps)
+  const expenseTotal = sumAmount(es)
+  const decided = done.length + cancelled.length
+
+  const clientIds = [...new Set([...ls.map(l => l.clientId), ...ps.map(p => p.clientId)])]
+  const byClient = clientIds.map(id => {
+    const cl = ls.filter(l => l.clientId === id)
+    const cd = cl.filter(l => l.status === 'done')
+    return {
+      clientId: id,
+      lessons: cd.length,
+      minutes: sumMin(cd),
+      earned: round2(cl.reduce((s, l) => s + lessonValue(l), 0)),
+      collected: sumAmount(ps.filter(p => p.clientId === id)),
+      cancelled: cl.filter(l => l.status === 'cancelled').length,
+    }
+  }).sort((a, b) => b.earned - a.earned || b.collected - a.collected)
+
+  const cats = [...new Set(es.map(e => e.category))]
+  const byExpenseCategory = cats
+    .map(category => ({ category, amount: sumAmount(es.filter(e => e.category === category)) }))
+    .sort((a, b) => b.amount - a.amount)
+
+  const byWeekday = Array.from({ length: 7 }, (_, weekday) => ({
+    weekday,
+    minutes: sumMin(done.filter(l => weekdayMon0(l.date) === weekday)),
+  }))
+
+  return {
+    from, to,
+    lessonsDone: done.length,
+    lessonsCancelled: cancelled.length,
+    lessonsScheduled: scheduled.length,
+    minutesDone,
+    minutesCancelled: sumMin(cancelled),
+    minutesScheduled: sumMin(scheduled),
+    earned,
+    lostToCancellations: round2(cancelled.filter(l => !l.charged).reduce((s, l) => s + l.price, 0)),
+    expected: round2(scheduled.reduce((s, l) => s + l.price, 0)),
+    collected,
+    expenses: expenseTotal,
+    net: round2(collected - expenseTotal),
+    cancellationRate: decided ? cancelled.length / decided : null,
+    avgHourly: minutesDone ? round2(done.reduce((s, l) => s + l.price, 0) / (minutesDone / 60)) : null,
+    cancelledByFamily: cancelled.filter(l => l.cancelledBy !== 'me').length,
+    cancelledByMe: cancelled.filter(l => l.cancelledBy === 'me').length,
+    byClient,
+    byExpenseCategory,
+    byWeekday,
+  }
+}
+
+/** Hours done / cancelled per Monday-week, every week present (a quiet week is a zero, not a gap). */
+export function weeklyHours(lessons: WorkLesson[], from: string, to: string) {
+  const out: { week: string; done: number; cancelled: number; scheduled: number }[] = []
+  for (let w = startOfWeek(from); w <= to; w = addDays(w, 7)) {
+    const end = addDays(w, 6)
+    const ls = lessons.filter(l => l.date >= w && l.date <= end && l.date >= from && l.date <= to)
+    const h = (s: LessonStatus) => Math.round(ls.filter(l => l.status === s).reduce((a, l) => a + l.durationMin, 0) / 6) / 10
+    out.push({ week: w, done: h('done'), cancelled: h('cancelled'), scheduled: h('scheduled') })
+  }
+  return out
+}
+
+/** Earned / collected / expenses per calendar month, every month present. */
+export function monthlyMoney(
+  lessons: WorkLesson[], payments: WorkPayment[], expenses: WorkExpense[], from: string, to: string,
+) {
+  const out: { month: string; earned: number; collected: number; expenses: number; net: number }[] = []
+  for (let m = startOfMonth(from); m <= to; m = addDays(endOfMonth(m), 1)) {
+    const s = periodStats(lessons, payments, expenses, m, endOfMonth(m))
+    out.push({ month: m.slice(0, 7), earned: s.earned, collected: s.collected, expenses: s.expenses, net: s.net })
+  }
+  return out
+}
+
+// ── Scheduling ───────────────────────────────────────────────────────────────
+
+/** Dates of a weekly series: the first date plus `count − 1` more, a week apart. */
+export function weeklySeries(firstDate: string, count: number): string[] {
+  const n = Math.min(52, Math.max(1, Math.floor(count)))
+  return Array.from({ length: n }, (_, i) => addDays(firstDate, i * 7))
+}
+
+/** Lessons that overlap `candidate` on the same day (cancelled ones free the slot). */
+export function findConflicts(
+  candidate: Pick<WorkLesson, 'date' | 'start' | 'durationMin'> & { id?: string },
+  lessons: WorkLesson[],
+): WorkLesson[] {
+  const a0 = minutesOf(candidate.start)
+  const a1 = a0 + candidate.durationMin
+  return lessons.filter(l => {
+    if (l.id === candidate.id || l.date !== candidate.date || l.status === 'cancelled') return false
+    const b0 = minutesOf(l.start)
+    return a0 < b0 + l.durationMin && b0 < a1
+  })
+}
+
+export function sortLessons(ls: WorkLesson[]): WorkLesson[] {
+  return [...ls].sort((a, b) => (a.date === b.date ? a.start.localeCompare(b.start) : a.date.localeCompare(b.date)))
+}
+
+/** Local Date of a lesson's start, in the zone of whoever is running this code. */
+export function lessonStartLocal(l: Pick<WorkLesson, 'date' | 'start'>): Date {
+  const [y, m, d] = l.date.split('-').map(Number)
+  const [hh, mm] = l.start.split(':').map(Number)
+  return new Date(y, m - 1, d, hh, mm)
+}
+
+/**
+ * Reminders that are due now: scheduled, reminder set, the reminder moment has
+ * passed and the lesson has not started yet. Already-sent ids are skipped, so
+ * a page reload never repeats a notification.
+ */
+export function dueReminders(lessons: WorkLesson[], now: Date, alreadySent: Set<string>): WorkLesson[] {
+  const t = now.getTime()
+  return lessons.filter(l => {
+    if (l.status !== 'scheduled' || l.reminderMin === null || alreadySent.has(l.id)) return false
+    const start = lessonStartLocal(l).getTime()
+    return t >= start - l.reminderMin * 60_000 && t < start
+  })
+}
+
+// ── Maps ─────────────────────────────────────────────────────────────────────
+
+export function isValidPoint(p: unknown): p is GeoPoint {
+  if (!p || typeof p !== 'object') return false
+  const { lat, lng } = p as GeoPoint
+  return Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180 && !(lat === 0 && lng === 0)
+}
+
+function point(lat: string, lng: string): GeoPoint | null {
+  const p = { lat: Math.round(Number(lat) * 1e6) / 1e6, lng: Math.round(Number(lng) * 1e6) / 1e6 }
+  return isValidPoint(p) ? p : null
+}
+
+/**
+ * Coordinates out of whatever the user pasted: plain "25.28, 51.52", or a
+ * Google Maps / Waze / Apple / OSM link. Short links (maps.app.goo.gl) carry no
+ * coordinates — those are resolved on the server first.
+ */
+export function parseMapLink(input: string): GeoPoint | null {
+  if (!input) return null
+  let s = input.trim()
+  try { s = decodeURIComponent(s) } catch { /* keep as is */ }
+  const num = '(-?\\d{1,3}(?:\\.\\d+)?)'
+  const patterns = [
+    // Place pages put the real pin in !3d<lat>!4d<lng>; the @ part is only the viewport.
+    new RegExp(`!3d${num}!4d${num}`),
+    new RegExp(`[?&](?:q|query|ll|destination|daddr|center|sll)=(?:loc:)?${num}\\s*,\\s*${num}`),
+    new RegExp(`[?&]mlat=${num}&mlon=${num}`),
+    new RegExp(`@${num},${num}`),
+    new RegExp(`#map=\\d+/${num}/${num}`),
+    new RegExp(`^${num}\\s*[, ]\\s*${num}$`),
+  ]
+  for (const re of patterns) {
+    const m = s.match(re)
+    if (m) { const p = point(m[1], m[2]); if (p) return p }
+  }
+  return null
+}
+
+/** Hosts whose short links the server may follow to find coordinates. */
+export const MAP_LINK_HOSTS = ['maps.app.goo.gl', 'goo.gl', 'g.co', 'www.google.com', 'google.com', 'maps.google.com', 'consent.google.com']
+
+export function isAllowedMapHost(url: string): boolean {
+  try {
+    const u = new URL(url)
+    return u.protocol === 'https:' && MAP_LINK_HOSTS.includes(u.hostname)
+  } catch { return false }
+}
+
+export function googleDirectionsUrl(p: GeoPoint): string {
+  return `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}`
+}
+
+export function wazeUrl(p: GeoPoint): string {
+  return `https://waze.com/ul?ll=${p.lat},${p.lng}&navigate=yes`
+}
+
+/** A Google Maps route through several stops, in order (max 9 waypoints + destination). */
+export function googleRouteUrl(points: GeoPoint[]): string | null {
+  if (!points.length) return null
+  const stops = points.slice(0, 10)
+  const dest = stops[stops.length - 1]
+  const way = stops.slice(0, -1).map(p => `${p.lat},${p.lng}`).join('|')
+  return `https://www.google.com/maps/dir/?api=1&destination=${dest.lat},${dest.lng}${way ? `&waypoints=${encodeURIComponent(way)}` : ''}`
+}
+
+/** Straight-line distance in km — enough to warn about two lessons too far apart. */
+export function distanceKm(a: GeoPoint, b: GeoPoint): number {
+  const R = 6371
+  const toRad = (x: number) => (x * Math.PI) / 180
+  const dLat = toRad(b.lat - a.lat)
+  const dLng = toRad(b.lng - a.lng)
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLng / 2) ** 2
+  return 2 * R * Math.asin(Math.sqrt(h))
+}
+
+/** wa.me wants digits only; a local Qatari / Tunisian number gets its country code. */
+export function phoneDigits(phone: string | undefined, currency: WorkCurrency): string | null {
+  if (!phone) return null
+  let d = phone.replace(/\D/g, '')
+  if (d.startsWith('00')) d = d.slice(2)
+  if (!d) return null
+  if (currency === 'QAR' && d.length === 8) d = '974' + d
+  if (currency === 'TND' && d.length === 8) d = '216' + d
+  return d.length >= 8 ? d : null
+}
+
+// ── Calendar feed (iCalendar, RFC 5545) ──────────────────────────────────────
+
+function icsEscape(s: string): string {
+  return s.replace(/\\/g, '\\\\').replace(/\r?\n/g, '\\n').replace(/([,;])/g, '\\$1')
+}
+
+/** Lines over 75 octets are folded — a long address must not break the feed. */
+function icsFold(line: string): string {
+  const bytes = new TextEncoder().encode(line)
+  if (bytes.length <= 75) return line
+  const out: string[] = []
+  let cur = ''
+  let curLen = 0
+  for (const ch of line) {
+    const n = new TextEncoder().encode(ch).length
+    const limit = out.length ? 74 : 75
+    if (curLen + n > limit) { out.push(cur); cur = ''; curLen = 0 }
+    cur += ch
+    curLen += n
+  }
+  out.push(cur)
+  return out.join('\r\n ')
+}
+
+const icsDate = (date: string, time: string) => `${date.replace(/-/g, '')}T${time.replace(':', '')}00`
+
+/**
+ * The lessons as a calendar the phone subscribes to. This is what makes
+ * reminders work when the dashboard is closed: the phone's own calendar raises
+ * the alarm. Times are written as "floating" local times, so a lesson at 16:00
+ * stays at 16:00 on the phone without any time-zone conversion to get wrong.
+ */
+export function buildIcs(lessons: WorkLesson[], clients: WorkClient[], now: Date = new Date()): string {
+  const byId = new Map(clients.map(c => [c.id, c]))
+  const stamp = now.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')
+  const lines = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Amine Academy//Work Log//AR',
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
+    'X-WR-CALNAME:حصصي الخاصة',
+    'REFRESH-INTERVAL;VALUE=DURATION:PT1H',
+    'X-PUBLISHED-TTL:PT1H',
+  ]
+  for (const l of sortLessons(lessons)) {
+    const c = byId.get(l.clientId)
+    const who = c ? (c.childName ? `${c.childName} (${c.name})` : c.name) : 'حصة'
+    const desc = [
+      c?.phone ? `الهاتف: ${c.phone}` : '',
+      c?.location ? `الطريق: ${googleDirectionsUrl(c.location)}` : '',
+      l.note ? `ملاحظة: ${l.note}` : '',
+    ].filter(Boolean).join('\n')
+    lines.push(
+      'BEGIN:VEVENT',
+      `UID:${l.id}@amine-academy-worklog`,
+      `DTSTAMP:${stamp}`,
+      `DTSTART:${icsDate(l.date, l.start)}`,
+      `DURATION:PT${l.durationMin}M`,
+      `SUMMARY:${icsEscape((l.status === 'cancelled' ? '✕ ملغاة — ' : '') + 'حصة: ' + who)}`,
+      `STATUS:${l.status === 'cancelled' ? 'CANCELLED' : 'CONFIRMED'}`,
+    )
+    if (c?.address || c?.location) {
+      lines.push(`LOCATION:${icsEscape(c.address || `${c.location!.lat},${c.location!.lng}`)}`)
+    }
+    if (c?.location) lines.push(`GEO:${c.location.lat};${c.location.lng}`)
+    if (desc) lines.push(`DESCRIPTION:${icsEscape(desc)}`)
+    if (l.status === 'scheduled' && l.reminderMin !== null) {
+      lines.push(
+        'BEGIN:VALARM',
+        'ACTION:DISPLAY',
+        `DESCRIPTION:${icsEscape('تذكير: حصة ' + who)}`,
+        `TRIGGER:-PT${l.reminderMin}M`,
+        'END:VALARM',
+      )
+    }
+    lines.push('END:VEVENT')
+  }
+  lines.push('END:VCALENDAR')
+  return lines.map(icsFold).join('\r\n') + '\r\n'
+}
+
+// ── Input sanitising (every body that reaches the store passes through here) ──
+
+function cleanText(v: unknown, max: number): string | undefined {
+  if (typeof v !== 'string') return undefined
+  // No control or bidi-override characters: these notes reach the calendar feed and Telegram.
+  // eslint-disable-next-line no-control-regex
+  const s = v.replace(/[\u0000-\u0009\u000B-\u001F\u007F\u202A-\u202E\u2066-\u2069]/g, '').trim().slice(0, max)
+  return s || undefined
+}
+
+function cleanAmount(v: unknown, max = 1_000_000): number | null {
+  const n = typeof v === 'string' ? Number(v.replace(',', '.')) : Number(v)
+  if (!Number.isFinite(n) || n < 0 || n > max) return null
+  return round2(n)
+}
+
+function cleanReminder(v: unknown): number | null | undefined {
+  if (v === null || v === '' || v === 'none') return null
+  const n = Number(v)
+  if (!Number.isFinite(n) || n < 0 || n > 7 * 24 * 60) return undefined
+  return Math.round(n)
+}
+
+export type Clean<T> = { ok: true; value: T } | { ok: false; error: string }
+
+export function sanitizeClient(body: Record<string, unknown>, partial = false): Clean<Partial<WorkClient>> {
+  const out: Partial<WorkClient> = {}
+  if (!partial || 'name' in body) {
+    const name = sanitizePersonName(body.name)
+    if (!name) return { ok: false, error: 'اسم العائلة مطلوب' }
+    out.name = name
+  }
+  if ('childName' in body) out.childName = sanitizePersonName(body.childName) || undefined
+  if ('phone' in body) {
+    const p = cleanText(body.phone, 30)
+    if (p && !/^[+\d\s()-]{6,30}$/.test(p)) return { ok: false, error: 'رقم الهاتف غير صالح' }
+    out.phone = p
+  }
+  if ('address' in body) out.address = cleanText(body.address, 200)
+  if ('notes' in body) out.notes = cleanText(body.notes, 1000)
+  if ('location' in body) {
+    if (body.location === null || body.location === '') out.location = undefined
+    else if (isValidPoint(body.location)) {
+      const p = body.location as GeoPoint
+      out.location = { lat: Math.round(p.lat * 1e6) / 1e6, lng: Math.round(p.lng * 1e6) / 1e6 }
+    } else return { ok: false, error: 'الموقع غير صالح' }
+  }
+  if (!partial || 'hourlyRate' in body) {
+    const r = cleanAmount(body.hourlyRate ?? 0, 100_000)
+    if (r === null) return { ok: false, error: 'سعر الساعة غير صالح' }
+    out.hourlyRate = r
+  }
+  if ('color' in body) {
+    out.color = (CLIENT_COLORS as readonly string[]).includes(String(body.color)) ? String(body.color) : CLIENT_COLORS[0]
+  }
+  if ('archived' in body) out.archived = !!body.archived
+  return { ok: true, value: out }
+}
+
+export function sanitizeLesson(body: Record<string, unknown>, partial = false): Clean<Partial<WorkLesson>> {
+  const out: Partial<WorkLesson> = {}
+  if (!partial || 'clientId' in body) {
+    const id = cleanText(body.clientId, 80)
+    if (!id) return { ok: false, error: 'اختر العائلة' }
+    out.clientId = id
+  }
+  if (!partial || 'date' in body) {
+    if (!isValidDate(body.date)) return { ok: false, error: 'التاريخ غير صالح' }
+    out.date = body.date
+  }
+  if (!partial || 'start' in body) {
+    if (!isValidTime(body.start)) return { ok: false, error: 'وقت البداية غير صالح' }
+    out.start = body.start
+  }
+  if (!partial || 'durationMin' in body) {
+    const d = Number(body.durationMin)
+    if (!Number.isFinite(d) || d < 5 || d > 12 * 60) return { ok: false, error: 'مدة الحصة غير صالحة (5 دقائق إلى 12 ساعة)' }
+    out.durationMin = Math.round(d)
+  }
+  if (!partial || 'price' in body) {
+    const p = cleanAmount(body.price ?? 0, 100_000)
+    if (p === null) return { ok: false, error: 'سعر الحصة غير صالح' }
+    out.price = p
+  }
+  if (!partial || 'status' in body) {
+    const s = String(body.status ?? 'scheduled')
+    if (!['scheduled', 'done', 'cancelled'].includes(s)) return { ok: false, error: 'حالة غير معروفة' }
+    out.status = s as LessonStatus
+  }
+  if ('cancelledBy' in body) out.cancelledBy = body.cancelledBy === 'me' ? 'me' : body.cancelledBy === 'family' ? 'family' : undefined
+  if ('charged' in body) out.charged = !!body.charged
+  if ('note' in body) out.note = cleanText(body.note, 500)
+  if (!partial || 'reminderMin' in body) {
+    const r = cleanReminder(body.reminderMin ?? null)
+    if (r === undefined) return { ok: false, error: 'وقت التذكير غير صالح' }
+    out.reminderMin = r
+  }
+  // Only a cancelled lesson carries cancellation details.
+  if (out.status && out.status !== 'cancelled') { out.cancelledBy = undefined; out.charged = false }
+  return { ok: true, value: out }
+}
+
+export function sanitizePayment(body: Record<string, unknown>): Clean<Omit<WorkPayment, 'id' | 'createdAt'>> {
+  const clientId = cleanText(body.clientId, 80)
+  if (!clientId) return { ok: false, error: 'اختر العائلة' }
+  if (!isValidDate(body.date)) return { ok: false, error: 'التاريخ غير صالح' }
+  const amount = cleanAmount(body.amount)
+  if (amount === null || amount === 0) return { ok: false, error: 'المبلغ غير صالح' }
+  const method = (['cash', 'transfer', 'other'] as const).includes(body.method as PaymentMethod) ? body.method as PaymentMethod : 'cash'
+  return { ok: true, value: { clientId, date: body.date, amount, method, note: cleanText(body.note, 300) } }
+}
+
+export function sanitizeExpense(body: Record<string, unknown>): Clean<Omit<WorkExpense, 'id' | 'createdAt'>> {
+  if (!isValidDate(body.date)) return { ok: false, error: 'التاريخ غير صالح' }
+  const amount = cleanAmount(body.amount)
+  if (amount === null || amount === 0) return { ok: false, error: 'المبلغ غير صالح' }
+  const category = (Object.keys(EXPENSE_LABEL) as ExpenseCategory[]).includes(body.category as ExpenseCategory)
+    ? body.category as ExpenseCategory : 'other'
+  return { ok: true, value: { date: body.date, amount, category, note: cleanText(body.note, 300) } }
+}
+
+export function sanitizeSettings(body: Record<string, unknown>, current: WorkSettings): Clean<WorkSettings> {
+  const next = { ...current }
+  if ('currency' in body) next.currency = body.currency === 'TND' ? 'TND' : 'QAR'
+  if ('timezone' in body) {
+    if (!isValidTimeZone(body.timezone)) return { ok: false, error: 'المنطقة الزمنية غير صالحة' }
+    next.timezone = body.timezone
+  }
+  if ('defaultReminderMin' in body) {
+    const r = cleanReminder(body.defaultReminderMin)
+    if (r === undefined) return { ok: false, error: 'وقت التذكير غير صالح' }
+    next.defaultReminderMin = r
+  }
+  if ('defaultDurationMin' in body) {
+    const d = Number(body.defaultDurationMin)
+    if (!Number.isFinite(d) || d < 5 || d > 12 * 60) return { ok: false, error: 'المدة غير صالحة' }
+    next.defaultDurationMin = Math.round(d)
+  }
+  if ('dailyDigest' in body) next.dailyDigest = !!body.dailyDigest
+  return { ok: true, value: next }
+}

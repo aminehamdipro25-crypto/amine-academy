@@ -52,6 +52,18 @@ export default function WorkLogApp() {
   const go = (t: Tab) => { setTab(t); writeStorage(TAB_KEY, t); window.scrollTo({ top: 0, behavior: 'smooth' }) }
 
   const openLesson = (d?: LessonDraft) => { setEditLesson(null); setDraft(d); setLessonOpen(true) }
+  /** Same family, time, length, price and reminder — only the date is left to choose. */
+  const copyLesson = (l: WorkLesson) => openLesson({
+    clientId: l.clientId, start: l.start, durationMin: l.durationMin, price: l.price,
+    reminderMin: l.reminderMin, date: addDays(l.date, 7),
+  })
+  const editClientById = (id: string) => {
+    const c = state.clientsById.get(id)
+    if (!c) return
+    // Opened on top of the lesson form, which stays open with its unsaved edits.
+    setEditClient(c); setReopenLesson(false)
+    setClientOpen(true)
+  }
   const openNewClient = (fromLesson = false) => {
     setEditClient(null); setReopenLesson(fromLesson)
     if (fromLesson) setLessonOpen(false)
@@ -102,9 +114,9 @@ export default function WorkLogApp() {
             </nav>
 
             <motion.div key={tab} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
-              {tab === 'agenda' && <AgendaView onAdd={openLesson} onEdit={l => { setEditLesson(l); setLessonOpen(true) }} />}
+              {tab === 'agenda' && <AgendaView onAdd={openLesson} onEdit={l => { setEditLesson(l); setLessonOpen(true) }} onCopy={copyLesson} onLocate={id => editClientById(id)} />}
               {tab === 'clients' && (
-                <ClientsView onAdd={() => openNewClient()} onEdit={c => { setEditClient(c); setClientOpen(true) }}
+                <ClientsView onAdd={() => openNewClient()} onEdit={c => { setEditClient(c); setClientOpen(true) }} onAddLesson={id => openLesson({ clientId: id })}
                   onPay={id => { setEditPayment(null); setPayClient(id); setPayOpen(true) }} />
               )}
               {tab === 'money' && (
@@ -128,7 +140,8 @@ export default function WorkLogApp() {
           </button>
         )}
 
-        <LessonForm open={lessonOpen} onClose={() => setLessonOpen(false)} lesson={editLesson} draft={draft} onNewClient={() => openNewClient(true)} />
+        <LessonForm open={lessonOpen} onClose={() => setLessonOpen(false)} lesson={editLesson} draft={draft} onNewClient={() => openNewClient(true)}
+          onEditClient={id => editClientById(id)} onCopy={copyLesson} />
         <ClientForm open={clientOpen} client={editClient}
           onClose={() => { setClientOpen(false); if (reopenLesson) { setReopenLesson(false); setLessonOpen(true) } }}
           onCreated={c => { if (reopenLesson) setDraft(d => ({ ...d, clientId: c.id })) }} />

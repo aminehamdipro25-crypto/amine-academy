@@ -38,7 +38,12 @@ export function Sheet({ open, title, onClose, children, footer, wide }: {
   useEffect(() => setMounted(true), [])
   useEffect(() => {
     if (!open) return
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    // With two sheets stacked, Esc closes only the one on top.
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return
+      const dialogs = document.querySelectorAll('[role=dialog]')
+      if (dialogs[dialogs.length - 1] === panel.current) onClose()
+    }
     window.addEventListener('keydown', onKey)
     const prev = document.body.style.overflow
     document.body.style.overflow = 'hidden'

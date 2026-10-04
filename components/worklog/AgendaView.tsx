@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
-  AlertTriangle, Banknote, Bell, CalendarDays, Check, ChevronLeft, ChevronRight, Clock, MapPin, MessageCircle,
+  AlertTriangle, Banknote, Bell, Copy, CalendarDays, Check, ChevronLeft, ChevronRight, Clock, MapPin, MessageCircle,
   Navigation, Pencil, Phone, Plus, Route, X,
 } from 'lucide-react'
 import {
@@ -22,7 +22,9 @@ const StopsMap = dynamic(() => import('./WorkMap').then(m => m.StopsMap), {
 
 const WEEKDAYS = ['إثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة', 'سبت', 'أحد']
 
-export default function AgendaView({ onAdd, onEdit }: { onAdd: (d?: LessonDraft) => void; onEdit: (l: WorkLesson) => void }) {
+export default function AgendaView({ onAdd, onEdit, onCopy, onLocate }: {
+  onAdd: (d?: LessonDraft) => void; onEdit: (l: WorkLesson) => void; onCopy: (l: WorkLesson) => void; onLocate: (clientId: string) => void
+}) {
   const { lessons, payments, clientsById, settings, update } = useWorkLog()
   const { toast } = useToast()
   const today = localToday()
@@ -228,7 +230,8 @@ export default function AgendaView({ onAdd, onEdit }: { onAdd: (d?: LessonDraft)
         <motion.ul layout className="space-y-3">
           <AnimatePresence initial={false}>
             {dayLessons.map(l => (
-              <LessonCard key={l.id} lesson={l} paid={paidLessons.has(l.id)} onPaid={() => setAskPaid(l)} onEdit={() => onEdit(l)} onStatus={s => setStatus(l, s)} />
+              <LessonCard key={l.id} lesson={l} paid={paidLessons.has(l.id)} onPaid={() => setAskPaid(l)} onEdit={() => onEdit(l)}
+                onCopy={() => onCopy(l)} onLocate={() => onLocate(l.clientId)} onStatus={s => setStatus(l, s)} />
             ))}
           </AnimatePresence>
         </motion.ul>
@@ -250,8 +253,9 @@ function Dots({ lessons, light }: { lessons: WorkLesson[]; light?: boolean }) {
   )
 }
 
-function LessonCard({ lesson: l, paid, onPaid, onEdit, onStatus }: {
-  lesson: WorkLesson; paid: boolean; onPaid: () => void; onEdit: () => void; onStatus: (s: LessonStatus) => void
+function LessonCard({ lesson: l, paid, onPaid, onEdit, onCopy, onLocate, onStatus }: {
+  lesson: WorkLesson; paid: boolean; onPaid: () => void; onEdit: () => void; onCopy: () => void; onLocate: () => void
+  onStatus: (s: LessonStatus) => void
 }) {
   const { clientsById, settings } = useWorkLog()
   const c = clientsById.get(l.clientId)
@@ -309,6 +313,11 @@ function LessonCard({ lesson: l, paid, onPaid, onEdit, onStatus }: {
             <button onClick={() => onStatus('scheduled')} className={`rounded-xl px-3 py-2 text-xs font-bold ${m.text} hover:bg-gray-50`}>تراجع</button>
           )}
           <span className="flex-1" />
+          {c && !c.location && (
+            <button onClick={onLocate} className="inline-flex items-center gap-1 h-9 rounded-xl border border-dashed border-gray-300 px-2.5 text-[11px] font-bold text-gray-500" aria-label="حدّد موقع المنزل">
+              <MapPin className="w-3.5 h-3.5" /> الموقع
+            </button>
+          )}
           {c?.location && (
             <a href={googleDirectionsUrl(c.location)} target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-xl bg-gray-900 text-white flex items-center justify-center" aria-label="الطريق إلى المنزل">
               <Navigation className="w-4 h-4" />
@@ -320,6 +329,7 @@ function LessonCard({ lesson: l, paid, onPaid, onEdit, onStatus }: {
               <a href={`https://wa.me/${tel}`} target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center" aria-label="واتساب"><MessageCircle className="w-4 h-4" /></a>
             </>
           )}
+          <button onClick={onCopy} className="w-9 h-9 rounded-xl bg-gray-100 text-gray-700 flex items-center justify-center" aria-label="نسخ الحصة إلى تاريخ آخر" title="نسخ"><Copy className="w-4 h-4" /></button>
           <button onClick={onEdit} className="w-9 h-9 rounded-xl bg-gray-100 text-gray-700 flex items-center justify-center" aria-label="تعديل"><Pencil className="w-4 h-4" /></button>
         </div>
       </div>

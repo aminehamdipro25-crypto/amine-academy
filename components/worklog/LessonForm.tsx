@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useMemo, useState } from 'react'
-import { AlertTriangle, Repeat, Trash2 } from 'lucide-react'
+import { AlertTriangle, Copy, MapPin, Repeat, Trash2 } from 'lucide-react'
 import {
   CURRENCY_LABEL, STATUS_META, addDays, endTime, findConflicts, formatMoney, priceFor,
   type LessonStatus, type WorkLesson,
@@ -19,14 +19,21 @@ const REMINDERS: { value: string; label: string }[] = [
   { value: '1440', label: 'قبل يوم' },
 ]
 
-export interface LessonDraft { date?: string; start?: string; clientId?: string }
+/** Prefill for a new lesson. A copied lesson carries everything but its date. */
+export interface LessonDraft {
+  date?: string; start?: string; clientId?: string
+  durationMin?: number; price?: number; reminderMin?: number | null; note?: string
+}
 
-export default function LessonForm({ open, onClose, lesson, draft, onNewClient }: {
+export default function LessonForm({ open, onClose, lesson, draft, onNewClient, onEditClient, onCopy }: {
   open: boolean
   onClose: () => void
   lesson?: WorkLesson | null
   draft?: LessonDraft
   onNewClient: () => void
+  /** Open the family's details (to pin their home on the map). */
+  onEditClient: (clientId: string) => void
+  onCopy: (l: WorkLesson) => void
 }) {
   const { clients, lessons, payments, settings, clientsById, create, update, remove } = useWorkLog()
   const { toast } = useToast()
@@ -65,16 +72,18 @@ export default function LessonForm({ open, onClose, lesson, draft, onNewClient }
       // A family's usual time: the start of their most recent lesson.
       const last = lessons.filter(l => l.clientId === cid).sort((a, b) => (a.date < b.date ? 1 : -1))[0]
       setClientId(cid); setDate(draft?.date ?? localToday()); setStart(draft?.start ?? last?.start ?? '16:00')
-      const d = last?.durationMin ?? settings.defaultDurationMin
+      const d = draft?.durationMin ?? last?.durationMin ?? settings.defaultDurationMin
       setDuration(d)
       const c = clientsById.get(cid)
-      setPrice(c ? String(priceFor(c.hourlyRate, d)) : ''); setPriceTouched(false)
+      if (draft?.price !== undefined) { setPrice(String(draft.price)); setPriceTouched(true) }
+      else { setPrice(c ? String(priceFor(c.hourlyRate, d)) : ''); setPriceTouched(false) }
       setStatus('scheduled'); setCancelledBy('family'); setCharged(false)
-      setReminder(settings.defaultReminderMin === null ? 'none' : String(settings.defaultReminderMin))
-      setRepeat(1); setNote('')
+      const rem = draft && 'reminderMin' in draft ? draft.reminderMin : settings.defaultReminderMin
+      setReminder(rem === null || rem === undefined ? 'none' : String(rem))
+      setRepeat(1); setNote(draft?.note ?? '')
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, lesson?.id])
+  }, [open, lesson?.id, draft])
 
   // Price follows family × duration until the user types their own.
   useEffect(() => {
@@ -157,6 +166,11 @@ export default function LessonForm({ open, onClose, lesson, draft, onNewClient }
             {saving ? 'جارٍ الحفظ…' : lesson ? 'حفظ التعديلات' : repeat > 1 ? `إضافة ${repeat} حصص` : 'إضافة الحصة'}
           </button>
           {lesson && !confirmDelete && (
+            <button onClick={() => onCopy(lesson)} className={ghostBtn()} title="نسخ إلى تاريخ آخر">
+              <Copy className="w-4 h-4" /><span className="hidden sm:inline">نسخ</span>
+            </button>
+          )}
+          {lesson && !confirmDelete && (
             <button onClick={() => setConfirmDelete(true)} className={ghostBtn('text-rose-600')} aria-label="حذف الحصة">
               <Trash2 className="w-4 h-4" />
             </button>
@@ -197,10 +211,28 @@ export default function LessonForm({ open, onClose, lesson, draft, onNewClient }
             <button id={id} type="button" onClick={onNewClient} className={ghostBtn('w-full border-dashed')}>+ أضف أول عائلة</button>
           )}
         </Field>
+        {clientId && clientsById.get(clientId) && !clientsById.get(clientId)!.location && (
+          <button type="button" onClick={() => onEditClient(clientId)}
+            className="-mt-2 w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-dashed border-brand-300 bg-brand-50 px-3 py-2 text-xs font-bold text-brand-700">
+            <MapPin className="w-3.5 h-3.5" /> لم يُحدَّد موقع منزل هذه العائلة — حدّده الآن
+          </button>
+        )}
 
         <div className="grid grid-cols-2 gap-3">
           <Field label="التاريخ">{id => <input id={id} type="date" className={inputCls} value={date} onChange={e => setDate(e.target.value)} />}</Field>
           <Field label="البداية">{id => <input id={id} type="time" step={300} className={inputCls} value={start} onChange={e => setStart(e.target.value)} />}</Field>
+        </div>
+        <div className="flex flex-wrap gap-1.5 -mt-2" aria-label="تاريخ سريع">
+          {[
+            { label: 'اليوم', value: localToday() },
+            { label: 'غداً', value: addDays(localToday(), 1) },
+            { label: '+ أسبوع', value: /^\d{4}-\d{2}-\d{2}$/.test(date) ? addDays(date, 7) : addDays(localToday(), 7) },
+          ].map(c => (
+            <button key={c.label} type="button" onClick={() => setDate(c.value)}
+              className={`rounded-lg px-2.5 py-1 text-[11px] font-bold border transition ${date === c.value ? 'bg-brand-600 text-white border-brand-600' : 'bg-white border-gray-200 text-gray-600 hover:border-brand-300'}`}>
+              {c.label}
+            </button>
+          ))}
         </div>
 
         <Field label={`المدة · تنتهي ${/^\d\d:\d\d$/.test(start) ? endTime(start, duration) : '—'}`}>

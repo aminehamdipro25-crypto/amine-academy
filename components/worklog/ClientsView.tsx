@@ -14,8 +14,8 @@ const StopsMap = dynamic(() => import('./WorkMap').then(m => m.StopsMap), {
 
 type Filter = 'active' | 'owes' | 'archived'
 
-export default function ClientsView({ onAdd, onEdit, onPay }: {
-  onAdd: () => void; onEdit: (c: WorkClient) => void; onPay: (clientId: string) => void
+export default function ClientsView({ onAdd, onEdit, onPay, onAddLesson }: {
+  onAdd: () => void; onEdit: (c: WorkClient) => void; onPay: (clientId: string) => void; onAddLesson: (clientId: string) => void
 }) {
   const { clients, lessons, payments, settings } = useWorkLog()
   const [filter, setFilter] = useState<Filter>('active')
@@ -109,6 +109,11 @@ export default function ClientsView({ onAdd, onEdit, onPay }: {
                     <p className="font-black text-gray-900 truncate">{c.childName || c.name}</p>
                     <p className="text-[11px] text-gray-400 truncate">{c.childName ? c.name + ' · ' : ''}{formatMoney(c.hourlyRate, settings.currency)} / ساعة</p>
                   </button>
+                  {!c.archived && (
+                    <button onClick={() => onAddLesson(c.id)} className="inline-flex items-center gap-1 h-8 rounded-lg bg-brand-50 px-2 text-[11px] font-bold text-brand-700" aria-label="حصة جديدة لهذه العائلة">
+                      <Plus className="w-3.5 h-3.5" /> حصة
+                    </button>
+                  )}
                   <button onClick={() => onEdit(c)} className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-400" aria-label="تعديل"><Pencil className="w-3.5 h-3.5" /></button>
                 </div>
 

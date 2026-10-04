@@ -123,7 +123,7 @@ export default function ClientForm({ open, onClose, client, onCreated }: {
 
         <div className="space-y-1.5">
           <p className="text-xs font-bold text-gray-600">الموقع على الخريطة</p>
-          {open && <LocationPicker value={location} onChange={setLocation} color={color || CLIENT_COLORS[0]} currency={settings.currency} />}
+          {open && <LocationPicker value={location} onChange={setLocation} color={color || CLIENT_COLORS[0]} currency={settings.currency} addressHint={address} />}
         </div>
 
         <div className="space-y-1.5">

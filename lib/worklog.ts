@@ -75,6 +75,12 @@ export interface WorkPayment {
   amount: number
   method: PaymentMethod
   note?: string
+  /**
+   * Set when the payment was taken at the end of a specific lesson. Purely a
+   * trace for the agenda («مدفوعة» on that card) — balances still sum every
+   * payment against every billable lesson, so this can never count twice.
+   */
+  lessonId?: string
   createdAt: string
 }
 
@@ -534,6 +540,27 @@ export function distanceKm(a: GeoPoint, b: GeoPoint): number {
   return 2 * R * Math.asin(Math.sqrt(h))
 }
 
+export interface GeocodeHit { label: string; point: GeoPoint }
+
+/**
+ * Nominatim (OpenStreetMap search) results → a short list of places. Anything
+ * malformed is dropped rather than trusted: these coordinates become a
+ * family's saved address and the place the specialist drives to.
+ */
+export function parseGeocodeResults(json: unknown, max = 5): GeocodeHit[] {
+  if (!Array.isArray(json)) return []
+  const out: GeocodeHit[] = []
+  for (const r of json) {
+    if (!r || typeof r !== 'object') continue
+    const { lat, lon, display_name } = r as { lat?: unknown; lon?: unknown; display_name?: unknown }
+    const p = { lat: Math.round(Number(lat) * 1e6) / 1e6, lng: Math.round(Number(lon) * 1e6) / 1e6 }
+    if (!isValidPoint(p) || typeof display_name !== 'string') continue
+    out.push({ label: display_name.slice(0, 200), point: p })
+    if (out.length >= max) break
+  }
+  return out
+}
+
 /** wa.me wants digits only; a local Qatari / Tunisian number gets its country code. */
 export function phoneDigits(phone: string | undefined, currency: WorkCurrency): string | null {
   if (!phone) return null
@@ -736,7 +763,7 @@ export function sanitizePayment(body: Record<string, unknown>): Clean<Omit<WorkP
   const amount = cleanAmount(body.amount)
   if (amount === null || amount === 0) return { ok: false, error: 'المبلغ غير صالح' }
   const method = (['cash', 'transfer', 'other'] as const).includes(body.method as PaymentMethod) ? body.method as PaymentMethod : 'cash'
-  return { ok: true, value: { clientId, date: body.date, amount, method, note: cleanText(body.note, 300) } }
+  return { ok: true, value: { clientId, date: body.date, amount, method, note: cleanText(body.note, 300), lessonId: cleanText(body.lessonId, 80) } }
 }
 
 export function sanitizeExpense(body: Record<string, unknown>): Clean<Omit<WorkExpense, 'id' | 'createdAt'>> {

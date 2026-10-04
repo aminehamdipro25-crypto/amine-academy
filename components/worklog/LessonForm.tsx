@@ -28,7 +28,7 @@ export default function LessonForm({ open, onClose, lesson, draft, onNewClient }
   draft?: LessonDraft
   onNewClient: () => void
 }) {
-  const { clients, lessons, settings, clientsById, create, update, remove } = useWorkLog()
+  const { clients, lessons, payments, settings, clientsById, create, update, remove } = useWorkLog()
   const { toast } = useToast()
   const active = useMemo(() => clients.filter(c => !c.archived).sort((a, b) => a.name.localeCompare(b.name, 'ar')), [clients])
 
@@ -47,11 +47,14 @@ export default function LessonForm({ open, onClose, lesson, draft, onNewClient }
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [paidNow, setPaidNow] = useState(false)
+  const [paidAmount, setPaidAmount] = useState('')
+  const alreadyPaid = !!lesson && payments.some(p => p.lessonId === lesson.id)
 
   // Fill the form whenever it opens.
   useEffect(() => {
     if (!open) return
-    setError(''); setConfirmDelete(false); setSaving(false)
+    setError(''); setConfirmDelete(false); setSaving(false); setPaidNow(false); setPaidAmount('')
     if (lesson) {
       setClientId(lesson.clientId); setDate(lesson.date); setStart(lesson.start); setDuration(lesson.durationMin)
       setPrice(String(lesson.price)); setPriceTouched(true); setStatus(lesson.status)
@@ -99,12 +102,25 @@ export default function LessonForm({ open, onClose, lesson, draft, onNewClient }
       note,
     }
     try {
+      let saved: WorkLesson
       if (lesson) {
-        await update('lessons', lesson.id, body)
+        saved = await update<WorkLesson>('lessons', lesson.id, body)
         toast('حُفظت التعديلات')
       } else {
         const rows = await create<WorkLesson[]>('lessons', { ...body, repeatWeeks: repeat })
+        saved = rows[0] // the series starts with the lesson as entered; later repeats are scheduled
         toast(rows.length > 1 ? `أُضيفت ${rows.length} حصة أسبوعية` : 'أُضيفت الحصة')
+      }
+      if (status === 'done' && paidNow && !alreadyPaid) {
+        const amount = Number(paidAmount || price || 0)
+        if (amount > 0) {
+          try {
+            await create('payments', { clientId, lessonId: saved.id, date: localToday(), amount, method: 'cash', note: `عن حصة ${date} ${start}` })
+          } catch (e) {
+            // The lesson is saved; say plainly that the payment is not.
+            toast(`حُفظت الحصة، لكن لم تُسجَّل الدفعة: ${(e as Error).message}`, 'error')
+          }
+        }
       }
       onClose()
     } catch (e) {
@@ -239,6 +255,25 @@ export default function LessonForm({ open, onClose, lesson, draft, onNewClient }
         {status === 'scheduled' && isPast && (
           <p className="text-[11px] text-amber-700 -mt-2">هذا التاريخ مضى — هل تمّت الحصة أم أُلغيت؟ الحصة «المجدولة» لا تُحتسب في المستحقات.</p>
         )}
+
+        {status === 'done' && (alreadyPaid ? (
+          <p className="text-xs font-bold text-emerald-700 -mt-2">✓ أجر هذه الحصة مسجّل في الدفعات</p>
+        ) : (
+          <div className="rounded-2xl bg-emerald-50/60 border border-emerald-100 p-3 space-y-2">
+            <label className="flex items-center gap-2 text-sm font-bold text-gray-800 cursor-pointer">
+              <input type="checkbox" className="accent-emerald-600 w-4 h-4" checked={paidNow} onChange={e => setPaidNow(e.target.checked)} />
+              استلمتُ أجر هذه الحصة
+            </label>
+            {paidNow && (
+              <div className="flex items-center gap-2">
+                <input type="number" min={0} step="any" inputMode="decimal" className={`${inputCls} w-32`} aria-label="المبلغ المستلم"
+                  value={paidAmount || price} onChange={e => setPaidAmount(e.target.value)} />
+                <span className="text-xs text-gray-500">{cur} نقداً — تُسجَّل في الدفعات</span>
+              </div>
+            )}
+            {!paidNow && <p className="text-[11px] text-gray-500">إن لم تستلمه، تُضاف قيمتها إلى مستحقات العائلة</p>}
+          </div>
+        ))}
 
         {status === 'cancelled' && (
           <div className="rounded-2xl bg-rose-50/60 border border-rose-100 p-3 space-y-3">

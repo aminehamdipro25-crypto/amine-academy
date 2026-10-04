@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Trash2 } from 'lucide-react'
 import {
   CURRENCY_LABEL, EXPENSE_LABEL, PAYMENT_METHOD_LABEL, clientBalances, formatMoney,
-  type ExpenseCategory, type PaymentMethod, type WorkExpense, type WorkPayment,
+  type ExpenseCategory, type PaymentMethod, type WorkExpense, type WorkLesson, type WorkPayment,
 } from '@/lib/worklog'
 import { useToast } from '@/components/ui/Toast'
 import { clientLabel, useWorkLog } from './useWorkLog'
@@ -171,6 +171,69 @@ export function ExpenseForm({ open, onClose, expense }: { open: boolean; onClose
         <Field label="ملاحظة (اختياري)">{id => <input id={id} className={inputCls} value={note} onChange={e => setNote(e.target.value)} maxLength={300} placeholder="مثال: بنزين الأسبوع" />}</Field>
         {error && <p className="rounded-xl bg-rose-50 px-3 py-2 text-sm font-bold text-rose-700" role="alert">{error}</p>}
       </div>
+    </Sheet>
+  )
+}
+
+/**
+ * «هل استلمت أجر هذه الحصة؟» — asked right after a lesson is marked done,
+ * because many families pay at the door when it ends. «لا» leaves it owed;
+ * nothing is assumed either way.
+ */
+export function PaidPrompt({ lesson, onClose }: { lesson: WorkLesson | null; onClose: () => void }) {
+  const { clientsById, settings, create } = useWorkLog()
+  const { toast } = useToast()
+  const [amount, setAmount] = useState('')
+  const [method, setMethod] = useState<PaymentMethod>('cash')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (!lesson) return
+    setAmount(String(lesson.price)); setMethod('cash'); setError(''); setSaving(false)
+  }, [lesson])
+
+  async function paid() {
+    if (!lesson) return
+    if (!(Number(amount) > 0)) { setError('أدخل المبلغ'); return }
+    setSaving(true); setError('')
+    try {
+      await create('payments', {
+        clientId: lesson.clientId, lessonId: lesson.id, date: localToday(),
+        amount: Number(amount), method, note: `عن حصة ${lesson.date} ${lesson.start}`,
+      })
+      toast(`سُجّلت دفعة ${formatMoney(Number(amount), settings.currency)}`)
+      onClose()
+    } catch (e) { setError((e as Error).message) } finally { setSaving(false) }
+  }
+
+  const c = lesson ? clientsById.get(lesson.clientId) : undefined
+  return (
+    <Sheet open={!!lesson} onClose={onClose} title="هل استلمت أجر هذه الحصة؟"
+      footer={
+        <div className="flex gap-2">
+          <button onClick={paid} disabled={saving} className={primaryBtn('flex-1 bg-emerald-600 hover:bg-emerald-700')}>
+            {saving ? 'جارٍ الحفظ…' : 'نعم، سجّل الدفعة'}
+          </button>
+          <button onClick={onClose} disabled={saving} className={ghostBtn('flex-1')}>لا، تُضاف للمستحقات</button>
+        </div>
+      }>
+      {lesson && (
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600">
+            <b className="text-gray-900">{clientLabel(c)}</b> · {lesson.start} · سعر الحصة {formatMoney(lesson.price, settings.currency)}
+          </p>
+          <Field label={`المبلغ المستلم (${CURRENCY_LABEL[settings.currency]})`} hint="إن دفعوا عن أكثر من حصة أو أقل، عدّل المبلغ — الرصيد يُحسب تلقائياً">
+            {id => <input id={id} type="number" min={0} step="any" inputMode="decimal" className={`${inputCls} text-lg font-black`} value={amount} onChange={e => setAmount(e.target.value)} />}
+          </Field>
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs font-bold text-gray-600">طريقة الدفع</span>
+            <Segmented value={method} onChange={setMethod}
+              options={(Object.keys(PAYMENT_METHOD_LABEL) as PaymentMethod[]).map(m => ({ value: m, label: PAYMENT_METHOD_LABEL[m] }))} />
+          </div>
+          {error && <p className="rounded-xl bg-rose-50 px-3 py-2 text-sm font-bold text-rose-700" role="alert">{error}</p>}
+        </div>
+      )}
     </Sheet>
   )
 }

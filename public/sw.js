@@ -1,4 +1,4 @@
-const CACHE = 'amine-academy-v1'
+const CACHE = 'amine-academy-v2'
 const SHELL = ['/', '/parent/login', '/register', '/offline']
 
 self.addEventListener('install', e => {
@@ -18,6 +18,12 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return
   const url = new URL(e.request.url)
+  // Same-origin only. Re-fetching a third-party request from here runs it
+  // under the service worker's own CSP (connect-src), which does not list map
+  // tile or image hosts — so every cross-origin image on a controlled page
+  // (the work-log map tiles, pasted story images) failed and fell through to
+  // the cache, i.e. rendered as nothing. Let the browser load those itself.
+  if (url.origin !== self.location.origin) return
   // Skip API calls and Next.js internals
   if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/_next/')) return
 

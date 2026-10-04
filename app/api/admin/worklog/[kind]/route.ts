@@ -61,6 +61,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ kin
       const p = sanitizePayment(body)
       if (!p.ok) return bad(p.error)
       if (!(await getWork('clients', p.value.clientId))) return bad('العائلة غير موجودة', 404)
+      if (p.value.lessonId) {
+        const l = await getWork('lessons', p.value.lessonId)
+        if (!l || l.clientId !== p.value.clientId) return bad('الحصة لا تخصّ هذه العائلة')
+      }
       const row = { ...p.value, id: newWorkId('payments'), createdAt: now }
       await putWork('payments', row)
       return NextResponse.json(row, { status: 201 })

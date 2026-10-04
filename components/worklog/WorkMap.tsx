@@ -5,8 +5,8 @@
 import 'leaflet/dist/leaflet.css'
 import { useEffect, useRef, useState } from 'react'
 import type { Map as LMap, Marker as LMarker, LayerGroup } from 'leaflet'
-import { Crosshair, Link2, Loader2, MapPin, Navigation, Trash2 } from 'lucide-react'
-import { googleDirectionsUrl, parseMapLink, wazeUrl, type GeoPoint, type WorkCurrency } from '@/lib/worklog'
+import { Crosshair, Loader2, MapPin, Navigation, Search, Trash2 } from 'lucide-react'
+import { googleDirectionsUrl, parseMapLink, wazeUrl, type GeocodeHit, type GeoPoint, type WorkCurrency } from '@/lib/worklog'
 import { inputCls } from './ui'
 
 const TILE_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
@@ -39,11 +39,13 @@ function pinIcon(L: Leaflet, color: string, label?: string) {
 
 // ── Pick a location ──────────────────────────────────────────────────────────
 
-export function LocationPicker({ value, onChange, color, currency }: {
+export function LocationPicker({ value, onChange, color, currency, addressHint }: {
   value: GeoPoint | undefined
   onChange: (p: GeoPoint | undefined) => void
   color: string
   currency: WorkCurrency
+  /** The written address, offered as a one-tap search while no pin is set. */
+  addressHint?: string
 }) {
   const box = useRef<HTMLDivElement>(null)
   const map = useRef<LMap | null>(null)
@@ -54,6 +56,7 @@ export function LocationPicker({ value, onChange, color, currency }: {
   const [link, setLink] = useState('')
   const [busy, setBusy] = useState<'gps' | 'link' | null>(null)
   const [msg, setMsg] = useState('')
+  const [hits, setHits] = useState<GeocodeHit[]>([])
 
   // Create the map once.
   useEffect(() => {
@@ -88,7 +91,7 @@ export function LocationPicker({ value, onChange, color, currency }: {
       marker.current.setLatLng([value.lat, value.lng])
       marker.current.setIcon(pinIcon(lf, color))
     }
-    if (!m.getBounds().pad(-0.2).contains([value.lat, value.lng])) m.setView([value.lat, value.lng], Math.max(m.getZoom(), 15))
+    if (m.getZoom() < 15 || !m.getBounds().pad(-0.2).contains([value.lat, value.lng])) m.setView([value.lat, value.lng], Math.max(m.getZoom(), 16))
   }, [value, color])
 
   function useMyLocation() {
@@ -112,22 +115,38 @@ export function LocationPicker({ value, onChange, color, currency }: {
     )
   }
 
-  async function applyLink() {
-    const text = link.trim()
+  function place(p: GeoPoint) {
+    onChange(p)
+    map.current?.setView([p.lat, p.lng], 17)
+    setHits([])
+    setLink('')
+  }
+
+  /** One box for everything people have at hand: coordinates, a shared link, or a written address. */
+  async function find(input = link) {
+    const text = input.trim()
     if (!text) return
-    setMsg('')
+    setMsg(''); setHits([])
     const local = parseMapLink(text)
-    if (local) { onChange(local); map.current?.setView([local.lat, local.lng], 17); setLink(''); return }
+    if (local) { place(local); return }
     setBusy('link')
     try {
-      const res = await fetch('/api/admin/worklog/resolve-link', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: text }),
-      })
+      const isUrl = /^https?:\/\//i.test(text)
+      const res = isUrl
+        ? await fetch('/api/admin/worklog/resolve-link', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: text }) })
+        : await fetch(`/api/admin/worklog/geocode?q=${encodeURIComponent(text)}`)
       const data = await res.json().catch(() => ({}))
-      if (!res.ok || !data.location) throw new Error(data.error || 'تعذّر قراءة الرابط')
-      onChange(data.location)
-      map.current?.setView([data.location.lat, data.location.lng], 17)
-      setLink('')
+      if (!res.ok) throw new Error(data.error || 'تعذّر البحث')
+      if (isUrl) { place(data.location); return }
+      const found: GeocodeHit[] = data.results ?? []
+      if (!found.length) {
+        setMsg('لم يُعثر على هذا العنوان — جرّب اسم الحي أو معلماً قريباً، أو اضغط على الخريطة مباشرة')
+      } else if (found.length === 1) {
+        place(found[0].point)
+        setMsg('تحقّق من الدبوس واسحبه إلى باب المنزل إن لزم — نتيجة البحث تقريبية')
+      } else {
+        setHits(found)
+      }
     } catch (e) {
       setMsg((e as Error).message)
     } finally {
@@ -157,22 +176,43 @@ export function LocationPicker({ value, onChange, color, currency }: {
 
       <div className="flex gap-2">
         <div className="relative flex-1">
-          <Link2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
+          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
           <input
             className={`${inputCls} pr-9`}
             value={link}
             onChange={e => setLink(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); applyLink() } }}
-            placeholder="أو الصق رابط موقع (Google Maps / واتساب) أو إحداثيات"
-            aria-label="رابط الموقع أو الإحداثيات"
+            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); find() } }}
+            placeholder="ابحث عن عنوان، أو الصق رابط موقع أو إحداثيات"
+            aria-label="بحث عن عنوان أو رابط موقع"
             dir="auto"
           />
         </div>
-        <button type="button" onClick={applyLink} disabled={!link.trim() || busy !== null}
+        <button type="button" onClick={() => find()} disabled={!link.trim() || busy !== null}
           className="rounded-xl bg-gray-900 px-3 text-xs font-bold text-white disabled:opacity-40">
-          {busy === 'link' ? <Loader2 className="w-4 h-4 animate-spin" /> : 'تثبيت'}
+          {busy === 'link' ? <Loader2 className="w-4 h-4 animate-spin" /> : 'بحث'}
         </button>
       </div>
+
+      {!value && !link && addressHint && addressHint.trim().length >= 3 && busy === null && hits.length === 0 && (
+        <button type="button" onClick={() => find(addressHint)}
+          className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-dashed border-brand-300 bg-brand-50 px-3 py-2 text-xs font-bold text-brand-700">
+          <Search className="w-3.5 h-3.5" /> ابحث عن «{addressHint.trim().slice(0, 40)}» على الخريطة
+        </button>
+      )}
+
+      {hits.length > 0 && (
+        <ul className="rounded-xl border border-gray-200 divide-y divide-gray-100 overflow-hidden" role="listbox" aria-label="نتائج البحث">
+          {hits.map((h, i) => (
+            <li key={i}>
+              <button type="button" role="option" aria-selected={false} onClick={() => place(h.point)}
+                className="w-full flex items-start gap-2 px-3 py-2 text-right text-xs text-gray-700 hover:bg-brand-50">
+                <MapPin className="w-3.5 h-3.5 mt-0.5 text-brand-500 flex-shrink-0" />
+                <span className="line-clamp-2">{h.label}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
 
       {msg && <p className="text-[11px] text-amber-700 bg-amber-50 rounded-lg px-3 py-2">{msg}</p>}
 

@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
-  AlertTriangle, Bell, CalendarDays, Check, ChevronLeft, ChevronRight, Clock, MapPin, MessageCircle,
+  AlertTriangle, Banknote, Bell, CalendarDays, Check, ChevronLeft, ChevronRight, Clock, MapPin, MessageCircle,
   Navigation, Pencil, Phone, Plus, Route, X,
 } from 'lucide-react'
 import {
@@ -14,6 +14,7 @@ import { useToast } from '@/components/ui/Toast'
 import { clientLabel, useWorkLog } from './useWorkLog'
 import { Empty, Segmented, StatusPill, dayLabel, ghostBtn, localToday, monthLabel, primaryBtn, shortDate } from './ui'
 import type { LessonDraft } from './LessonForm'
+import { PaidPrompt } from './MoneyForms'
 
 const StopsMap = dynamic(() => import('./WorkMap').then(m => m.StopsMap), {
   ssr: false, loading: () => <div className="h-56 rounded-2xl bg-gray-100 animate-pulse" />,
@@ -22,13 +23,15 @@ const StopsMap = dynamic(() => import('./WorkMap').then(m => m.StopsMap), {
 const WEEKDAYS = ['إثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة', 'سبت', 'أحد']
 
 export default function AgendaView({ onAdd, onEdit }: { onAdd: (d?: LessonDraft) => void; onEdit: (l: WorkLesson) => void }) {
-  const { lessons, clientsById, settings, update } = useWorkLog()
+  const { lessons, payments, clientsById, settings, update } = useWorkLog()
   const { toast } = useToast()
   const today = localToday()
   const [selected, setSelected] = useState(today)
   const [mode, setMode] = useState<'week' | 'month'>('week')
   const [showMap, setShowMap] = useState(false)
   const [reviewOpen, setReviewOpen] = useState(false)
+  const [askPaid, setAskPaid] = useState<WorkLesson | null>(null)
+  const paidLessons = useMemo(() => new Set(payments.map(p => p.lessonId).filter(Boolean)), [payments])
 
   const byDate = useMemo(() => {
     const m = new Map<string, WorkLesson[]>()
@@ -60,7 +63,9 @@ export default function AgendaView({ onAdd, onEdit }: { onAdd: (d?: LessonDraft)
   async function setStatus(l: WorkLesson, status: LessonStatus) {
     try {
       await update('lessons', l.id, { status, ...(status === 'cancelled' ? { cancelledBy: 'family', charged: false } : {}) }, true)
-      toast(status === 'done' ? 'تمّت الحصة ✓' : status === 'cancelled' ? 'سُجّلت كملغاة' : 'أُعيدت إلى «مجدولة»', status === 'cancelled' ? 'info' : 'success')
+      // Many families pay at the door: ask at the moment it happens, not later.
+      if (status === 'done' && !paidLessons.has(l.id)) setAskPaid({ ...l, status })
+      else toast(status === 'done' ? 'تمّت الحصة ✓' : status === 'cancelled' ? 'سُجّلت كملغاة' : 'أُعيدت إلى «مجدولة»', status === 'cancelled' ? 'info' : 'success')
     } catch (e) {
       toast((e as Error).message, 'error')
     }
@@ -223,11 +228,13 @@ export default function AgendaView({ onAdd, onEdit }: { onAdd: (d?: LessonDraft)
         <motion.ul layout className="space-y-3">
           <AnimatePresence initial={false}>
             {dayLessons.map(l => (
-              <LessonCard key={l.id} lesson={l} onEdit={() => onEdit(l)} onStatus={s => setStatus(l, s)} />
+              <LessonCard key={l.id} lesson={l} paid={paidLessons.has(l.id)} onPaid={() => setAskPaid(l)} onEdit={() => onEdit(l)} onStatus={s => setStatus(l, s)} />
             ))}
           </AnimatePresence>
         </motion.ul>
       )}
+
+      <PaidPrompt lesson={askPaid} onClose={() => setAskPaid(null)} />
     </div>
   )
 }
@@ -243,7 +250,9 @@ function Dots({ lessons, light }: { lessons: WorkLesson[]; light?: boolean }) {
   )
 }
 
-function LessonCard({ lesson: l, onEdit, onStatus }: { lesson: WorkLesson; onEdit: () => void; onStatus: (s: LessonStatus) => void }) {
+function LessonCard({ lesson: l, paid, onPaid, onEdit, onStatus }: {
+  lesson: WorkLesson; paid: boolean; onPaid: () => void; onEdit: () => void; onStatus: (s: LessonStatus) => void
+}) {
   const { clientsById, settings } = useWorkLog()
   const c = clientsById.get(l.clientId)
   const tel = phoneDigits(c?.phone, settings.currency)
@@ -271,6 +280,7 @@ function LessonCard({ lesson: l, onEdit, onStatus }: { lesson: WorkLesson; onEdi
             <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-gray-500">
               <span className="inline-flex items-center gap-1"><Clock className="w-3 h-3" />{formatDuration(l.durationMin)}</span>
               <span className="font-bold text-gray-700">{formatMoney(l.price, settings.currency)}</span>
+              {paid && <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 font-bold text-emerald-700"><Banknote className="w-3 h-3" />مدفوعة</span>}
               {l.status === 'scheduled' && l.reminderMin !== null && <span className="inline-flex items-center gap-1"><Bell className="w-3 h-3" />{l.reminderMin >= 60 ? `${l.reminderMin / 60} س` : `${l.reminderMin} د`}</span>}
               {l.status === 'cancelled' && <span>{l.cancelledBy === 'me' ? 'ألغيتُها أنا' : 'ألغتها العائلة'}</span>}
             </div>
@@ -288,6 +298,11 @@ function LessonCard({ lesson: l, onEdit, onStatus }: { lesson: WorkLesson; onEdi
           {l.status !== 'cancelled' && (
             <button onClick={() => onStatus('cancelled')} className="inline-flex items-center gap-1 rounded-xl bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 hover:bg-rose-100 active:scale-95 transition">
               <X className="w-3.5 h-3.5" /> ألغيت
+            </button>
+          )}
+          {l.status === 'done' && !paid && (
+            <button onClick={onPaid} className="inline-flex items-center gap-1 rounded-xl bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-100 active:scale-95 transition">
+              <Banknote className="w-3.5 h-3.5" /> استلمت الأجر
             </button>
           )}
           {l.status !== 'scheduled' && (

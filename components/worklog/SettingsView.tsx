@@ -1,15 +1,16 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { BellRing, CalendarPlus, Copy, RefreshCw, Send, ShieldOff } from 'lucide-react'
+import { BellRing, CalendarPlus, Copy, FileSpreadsheet, RefreshCw, Send, ShieldOff } from 'lucide-react'
 import { useToast } from '@/components/ui/Toast'
 import { useWorkLog } from './useWorkLog'
-import { Field, Segmented, ghostBtn, inputCls, primaryBtn } from './ui'
+import { Field, Segmented, ghostBtn, inputCls, localToday, primaryBtn } from './ui'
 import { notificationState, requestNotifications, showLessonNotification } from './notify'
+import { downloadLedgerXlsx } from './exportXlsx'
 
 const ZONES = ['Asia/Qatar', 'Africa/Tunis', 'Asia/Riyadh', 'Asia/Dubai', 'Africa/Cairo', 'Europe/Paris']
 
 export default function SettingsView() {
-  const { settings, saveSettings } = useWorkLog()
+  const { settings, saveSettings, data } = useWorkLog()
   const { toast } = useToast()
   const [perm, setPerm] = useState<string>('default')
   const [busy, setBusy] = useState(false)
@@ -117,6 +118,21 @@ export default function SettingsView() {
           </div>
           <p className="text-[11px] text-gray-500 leading-relaxed">كل صباح (7:00 بتوقيت قطر): حصص اليوم بالترتيب، رابط الطريق لكل منزل، مسار اليوم كاملاً، والمستحقات. يصل عبر تيليغرام والبريد المضبوطين في المنصة. لا يُرسَل شيء في يوم فارغ.</p>
         </div>
+      </section>
+
+      {/* Export */}
+      <section className="rounded-3xl bg-white border border-gray-100 shadow-sm p-5 space-y-3">
+        <div className="flex items-center gap-2"><FileSpreadsheet className="w-5 h-5 text-emerald-600" /><h3 className="font-black text-gray-900">تصدير إلى Excel</h3></div>
+        <p className="text-xs text-gray-500 leading-relaxed">ملف واحد فيه: ملخص الفترة، كل الحصص، الدفعات، المصاريف، وأرصدة العائلات. التواريخ والمبالغ أرقام حقيقية فيمكنك الفرز والجمع فيها. لفترة محدّدة استعمل الزر في «إحصائيات».</p>
+        <button disabled={busy} className={primaryBtn('bg-emerald-600 hover:bg-emerald-700 text-xs')}
+          onClick={async () => {
+            const dates = [...data.lessons, ...data.payments, ...data.expenses].map(x => x.date).sort()
+            const today = localToday()
+            try { await downloadLedgerXlsx(data, dates[0] ?? today, dates.at(-1) ?? today, today); toast('نُزّل ملف Excel') }
+            catch (e) { toast(`تعذّر إنشاء الملف: ${(e as Error).message}`, 'error') }
+          }}>
+          <FileSpreadsheet className="w-4 h-4" /> تصدير كل البيانات
+        </button>
       </section>
 
       {/* General */}

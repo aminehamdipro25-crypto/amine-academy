@@ -795,3 +795,179 @@ export function sanitizeSettings(body: Record<string, unknown>, current: WorkSet
   if ('dailyDigest' in body) next.dailyDigest = !!body.dailyDigest
   return { ok: true, value: next }
 }
+
+// ── Travel between homes ─────────────────────────────────────────────────────
+
+/**
+ * A deliberately cautious drive-time estimate. Straight-line distance × 1.4
+ * approximates the road distance in a city grid; 35 km/h is a realistic
+ * door-to-door average in Doha or Tunis traffic; 5 minutes covers parking and
+ * the walk to the door. It is a warning threshold, not a routing engine — so
+ * it errs towards "this is tight" rather than promising a gap that is not there.
+ */
+export const ROAD_FACTOR = 1.4
+export const CITY_KMH = 35
+export const DOOR_BUFFER_MIN = 5
+
+export function travelMinutes(a: GeoPoint, b: GeoPoint): number {
+  const km = distanceKm(a, b) * ROAD_FACTOR
+  return Math.round((km / CITY_KMH) * 60) + DOOR_BUFFER_MIN
+}
+
+export interface TravelLeg {
+  fromId: string
+  toId: string
+  /** Estimated road distance. */
+  km: number
+  needMin: number
+  gapMin: number
+  tight: boolean
+}
+
+type Locate = (clientId: string) => GeoPoint | undefined
+
+function leg(a: Pick<WorkLesson, 'id' | 'clientId' | 'start' | 'durationMin'>, b: Pick<WorkLesson, 'id' | 'clientId' | 'start'>, locate: Locate): TravelLeg | null {
+  // The same family twice in a row needs no drive.
+  if (a.clientId === b.clientId) return null
+  const pa = locate(a.clientId), pb = locate(b.clientId)
+  if (!pa || !pb) return null
+  const needMin = travelMinutes(pa, pb)
+  const gapMin = minutesOf(b.start) - (minutesOf(a.start) + a.durationMin)
+  return {
+    fromId: a.id, toId: b.id,
+    km: Math.round(distanceKm(pa, pb) * ROAD_FACTOR * 10) / 10,
+    needMin, gapMin, tight: gapMin < needMin,
+  }
+}
+
+/** Every drive of one day, between consecutive non-cancelled lessons at different homes. */
+export function dayLegs(lessons: WorkLesson[], date: string, locate: Locate): TravelLeg[] {
+  const day = sortLessons(lessons.filter(l => l.date === date && l.status !== 'cancelled'))
+  const out: TravelLeg[] = []
+  for (let i = 1; i < day.length; i++) {
+    const l = leg(day[i - 1], day[i], locate)
+    if (l) out.push(l)
+  }
+  return out
+}
+
+/**
+ * The drives a lesson being scheduled would create: from the lesson that ends
+ * just before it, and to the one that starts just after it. Only tight ones
+ * are returned — those are the warnings.
+ */
+export function travelWarnings(
+  candidate: Pick<WorkLesson, 'date' | 'start' | 'durationMin' | 'clientId'> & { id?: string },
+  lessons: WorkLesson[],
+  locate: Locate,
+): (TravelLeg & { otherId: string; direction: 'from' | 'to' })[] {
+  const c = { ...candidate, id: candidate.id ?? '__candidate' }
+  const start = minutesOf(c.start), end = start + c.durationMin
+  const same = lessons.filter(l => l.date === c.date && l.status !== 'cancelled' && l.id !== c.id)
+  const before = same.filter(l => minutesOf(l.start) + l.durationMin <= start)
+    .sort((a, b) => (minutesOf(b.start) + b.durationMin) - (minutesOf(a.start) + a.durationMin))[0]
+  const after = same.filter(l => minutesOf(l.start) >= end).sort((a, b) => minutesOf(a.start) - minutesOf(b.start))[0]
+  const out: (TravelLeg & { otherId: string; direction: 'from' | 'to' })[] = []
+  if (before) { const l = leg(before, c, locate); if (l?.tight) out.push({ ...l, otherId: before.id, direction: 'from' }) }
+  if (after) { const l = leg(c, after, locate); if (l?.tight) out.push({ ...l, otherId: after.id, direction: 'to' }) }
+  return out
+}
+
+// ── Hours at a glance ────────────────────────────────────────────────────────
+
+export interface HoursSummary { done: number; scheduled: number; cancelled: number }
+
+/** Minutes done / still scheduled / cancelled in a date range. */
+export function hoursIn(lessons: WorkLesson[], from: string, to: string): HoursSummary {
+  const out = { done: 0, scheduled: 0, cancelled: 0 }
+  for (const l of lessons) {
+    if (l.date < from || l.date > to) continue
+    out[l.status === 'done' ? 'done' : l.status === 'cancelled' ? 'cancelled' : 'scheduled'] += l.durationMin
+  }
+  return out
+}
+
+// ── Account statement for a family (sent on WhatsApp) ───────────────────────
+
+/** Arabic counted noun: حصة واحدة · حصتان · 3 حصص · 11 حصة. */
+export function lessonsCount(n: number): string {
+  if (n === 0) return 'لا حصص'
+  if (n === 1) return 'حصة واحدة'
+  if (n === 2) return 'حصتان'
+  if (n % 100 >= 3 && n % 100 <= 10) return `${n} حصص`
+  return `${n} حصة`
+}
+
+export interface Statement {
+  from: string
+  to: string
+  lessons: WorkLesson[]
+  payments: WorkPayment[]
+  /** Billable value of the period's lessons. */
+  billed: number
+  billedMinutes: number
+  billedCount: number
+  paidInPeriod: number
+  /** All-time: what is still owed today (negative = paid ahead). */
+  balance: number
+  /** Past lessons in the period with no status yet — not in the totals. */
+  unconfirmed: number
+}
+
+export function buildStatement(
+  clientId: string, lessons: WorkLesson[], payments: WorkPayment[], from: string, to: string, today: string,
+): Statement {
+  const own = lessons.filter(l => l.clientId === clientId)
+  const ownPay = payments.filter(p => p.clientId === clientId)
+  const inPeriod = sortLessons(own.filter(l => l.date >= from && l.date <= to && l.status !== 'scheduled'))
+  const billable = inPeriod.filter(isBillable)
+  const paid = ownPay.filter(p => p.date >= from && p.date <= to).sort((a, b) => a.date.localeCompare(b.date))
+  const allBilled = own.reduce((s, l) => s + lessonValue(l), 0)
+  const allPaid = ownPay.reduce((s, p) => s + p.amount, 0)
+  return {
+    from, to,
+    lessons: inPeriod,
+    payments: paid,
+    billed: round2(billable.reduce((s, l) => s + l.price, 0)),
+    billedMinutes: billable.reduce((s, l) => s + l.durationMin, 0),
+    billedCount: billable.length,
+    paidInPeriod: round2(paid.reduce((s, p) => s + p.amount, 0)),
+    balance: round2(allBilled - allPaid),
+    unconfirmed: own.filter(l => l.status === 'scheduled' && l.date >= from && l.date <= to && l.date < today).length,
+  }
+}
+
+/**
+ * The message itself. Written for a parent, not an accountant: one line per
+ * lesson, then three numbers. "المتبقي حتى اليوم" is the all-time balance on
+ * purpose — a period total alone would hide an older unpaid month.
+ */
+export function statementText(
+  st: Statement, client: Pick<WorkClient, 'name' | 'childName'>, currency: WorkCurrency,
+  formatDay: (date: string) => string,
+): string {
+  const money = (n: number) => formatMoney(n, currency)
+  const lines: string[] = []
+  lines.push(`السلام عليكم ${client.name}،`)
+  lines.push(`كشف حصص${client.childName ? ` ${client.childName}` : ''} من ${formatDay(st.from)} إلى ${formatDay(st.to)}:`)
+  lines.push('')
+  if (!st.lessons.length) lines.push('لا حصص في هذه الفترة.')
+  for (const l of st.lessons) {
+    const tag = l.status === 'done' ? '✓' : l.charged ? '✕ ملغاة (محتسبة)' : '✕ ملغاة (غير محتسبة)'
+    const price = isBillable(l) ? ` — ${money(l.price)}` : ''
+    lines.push(`• ${formatDay(l.date)} ${l.start} — ${formatDuration(l.durationMin)}${price} ${tag}`)
+  }
+  lines.push('')
+  lines.push(`مجموع الحصص المحتسبة: ${lessonsCount(st.billedCount)} · ${formatDuration(st.billedMinutes)} · ${money(st.billed)}`)
+  if (st.payments.length) {
+    lines.push(`الدفعات المستلمة في الفترة: ${money(st.paidInPeriod)}`)
+    // One per line: a day label may itself contain «،», so a joined list reads ambiguously.
+    for (const p of st.payments) lines.push(`  - ${formatDay(p.date)}: ${money(p.amount)}`)
+  }
+  if (st.balance > 0) lines.push(`المتبقي حتى اليوم: ${money(st.balance)}`)
+  else if (st.balance < 0) lines.push(`رصيد مدفوع مسبقاً لديكم: ${money(-st.balance)}`)
+  else lines.push('الحساب مسدّد بالكامل حتى اليوم، شكراً لكم.')
+  lines.push('')
+  lines.push('مع خالص التقدير 🌷')
+  return lines.join('\n')
+}

@@ -2,10 +2,11 @@
 import { useMemo, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { motion } from 'framer-motion'
-import { Banknote, Map as MapIcon, MapPin, MessageCircle, Pencil, Phone, Plus, Search, Users } from 'lucide-react'
+import { Banknote, FileText, Map as MapIcon, MapPin, MessageCircle, Pencil, Phone, Plus, Search, Users } from 'lucide-react'
 import { clientBalances, formatDuration, formatMoney, phoneDigits, type WorkClient } from '@/lib/worklog'
 import { clientLabel, useWorkLog } from './useWorkLog'
 import { NavLinks } from './WorkMap'
+import StatementSheet from './StatementSheet'
 import { Empty, Segmented, ghostBtn, inputCls, localToday, primaryBtn, shortDate } from './ui'
 
 const StopsMap = dynamic(() => import('./WorkMap').then(m => m.StopsMap), {
@@ -21,6 +22,7 @@ export default function ClientsView({ onAdd, onEdit, onPay, onAddLesson }: {
   const [filter, setFilter] = useState<Filter>('active')
   const [q, setQ] = useState('')
   const [showMap, setShowMap] = useState(false)
+  const [statementFor, setStatementFor] = useState<WorkClient | null>(null)
   const today = localToday()
 
   const balances = useMemo(
@@ -128,9 +130,14 @@ export default function ClientsView({ onAdd, onEdit, onPay, onAddLesson }: {
                       {b.balance > 0 && b.lessonsSinceLastPayment ? ` · ${b.lessonsSinceLastPayment} حصة منذها` : ''}
                     </p>
                   </div>
-                  <button onClick={() => onPay(c.id)} className="inline-flex items-center gap-1 rounded-xl bg-white border border-gray-200 px-3 py-2 text-xs font-bold text-gray-800 hover:border-brand-300">
-                    <Banknote className="w-3.5 h-3.5 text-emerald-600" /> دفعة
-                  </button>
+                  <div className="flex flex-col gap-1.5">
+                    <button onClick={() => onPay(c.id)} className="inline-flex items-center justify-center gap-1 rounded-xl bg-white border border-gray-200 px-3 py-1.5 text-xs font-bold text-gray-800 hover:border-brand-300">
+                      <Banknote className="w-3.5 h-3.5 text-emerald-600" /> دفعة
+                    </button>
+                    <button onClick={() => setStatementFor(c)} className="inline-flex items-center justify-center gap-1 rounded-xl bg-white border border-gray-200 px-3 py-1.5 text-xs font-bold text-gray-800 hover:border-brand-300">
+                      <FileText className="w-3.5 h-3.5 text-brand-600" /> كشف حساب
+                    </button>
+                  </div>
                 </div>
 
                 <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-gray-500">
@@ -159,6 +166,7 @@ export default function ClientsView({ onAdd, onEdit, onPay, onAddLesson }: {
           })}
         </div>
       )}
+      <StatementSheet client={statementFor} onClose={() => setStatementFor(null)} />
     </div>
   )
 }

@@ -1,18 +1,18 @@
 'use client'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
-  AlertTriangle, Banknote, Bell, Copy, CalendarDays, Check, ChevronLeft, ChevronRight, Clock, MapPin, MessageCircle,
+  AlertTriangle, Banknote, Bell, Car, CheckCheck, Copy, CalendarDays, Check, ChevronLeft, ChevronRight, Clock, MapPin, MessageCircle,
   Navigation, Pencil, Phone, Plus, Route, X,
 } from 'lucide-react'
 import {
   STATUS_META, addDays, endOfMonth, endTime, formatDuration, formatMoney, googleDirectionsUrl, googleRouteUrl,
-  lessonValue, phoneDigits, sortLessons, startOfMonth, startOfWeek, weekdayMon0, type GeoPoint, type LessonStatus, type WorkLesson,
+  dayLegs, hoursIn, lessonValue, phoneDigits, sortLessons, startOfMonth, startOfWeek, weekdayMon0, type GeoPoint, type LessonStatus, type WorkLesson,
 } from '@/lib/worklog'
 import { useToast } from '@/components/ui/Toast'
 import { clientLabel, useWorkLog } from './useWorkLog'
-import { Empty, Segmented, StatusPill, dayLabel, ghostBtn, localToday, monthLabel, primaryBtn, shortDate } from './ui'
+import { Empty, Segmented, Sheet, StatusPill, dayLabel, ghostBtn, localToday, monthLabel, primaryBtn, shortDate } from './ui'
 import type { LessonDraft } from './LessonForm'
 import { PaidPrompt } from './MoneyForms'
 
@@ -32,7 +32,10 @@ export default function AgendaView({ onAdd, onEdit, onCopy, onLocate }: {
   const [mode, setMode] = useState<'week' | 'month'>('week')
   const [showMap, setShowMap] = useState(false)
   const [reviewOpen, setReviewOpen] = useState(false)
-  const [askPaid, setAskPaid] = useState<WorkLesson | null>(null)
+  // Lessons waiting for «هل استلمت الأجر؟», asked one after another.
+  const [paidQueue, setPaidQueue] = useState<{ items: WorkLesson[]; total: number }>({ items: [], total: 0 })
+  const askPaid = (ls: WorkLesson[]) => setPaidQueue({ items: ls, total: ls.length })
+  const [bulkOpen, setBulkOpen] = useState(false)
   const paidLessons = useMemo(() => new Set(payments.map(p => p.lessonId).filter(Boolean)), [payments])
 
   const byDate = useMemo(() => {
@@ -66,7 +69,7 @@ export default function AgendaView({ onAdd, onEdit, onCopy, onLocate }: {
     try {
       await update('lessons', l.id, { status, ...(status === 'cancelled' ? { cancelledBy: 'family', charged: false } : {}) }, true)
       // Many families pay at the door: ask at the moment it happens, not later.
-      if (status === 'done' && !paidLessons.has(l.id)) setAskPaid({ ...l, status })
+      if (status === 'done' && !paidLessons.has(l.id)) askPaid([{ ...l, status }])
       else toast(status === 'done' ? 'تمّت الحصة ✓' : status === 'cancelled' ? 'سُجّلت كملغاة' : 'أُعيدت إلى «مجدولة»', status === 'cancelled' ? 'info' : 'success')
     } catch (e) {
       toast((e as Error).message, 'error')
@@ -88,8 +91,13 @@ export default function AgendaView({ onAdd, onEdit, onCopy, onLocate }: {
       setSelected(nm)
     }
   }
-  const periodMinutes = (from: string, to: string) =>
-    lessons.filter(l => l.date >= from && l.date <= to && l.status !== 'cancelled').reduce((s, l) => s + l.durationMin, 0)
+  const periodHours = mode === 'week' ? hoursIn(lessons, weekDays[0], weekDays[6]) : hoursIn(lessons, monthStart, endOfMonth(selected))
+  const legs = useMemo(
+    () => new Map(dayLegs(lessons, selected, id => clientsById.get(id)?.location).map(g => [g.toId, g])),
+    [lessons, selected, clientsById],
+  )
+  // «تمّت كلها»: only for a day that has started, and only the lessons still open.
+  const openToday = selected <= today ? dayLessons.filter(l => l.status === 'scheduled') : []
 
   return (
     <div className="space-y-4">
@@ -133,8 +141,10 @@ export default function AgendaView({ onAdd, onEdit, onCopy, onLocate }: {
               <p className="font-black text-gray-900 text-sm sm:text-base">
                 {mode === 'week' ? `${shortDate(weekDays[0])} – ${shortDate(weekDays[6])}` : monthLabel(selected)}
               </p>
-              <p className="text-[11px] text-gray-400">
-                {formatDuration(mode === 'week' ? periodMinutes(weekDays[0], weekDays[6]) : periodMinutes(monthStart, endOfMonth(selected)))} عمل مجدول ومنجز
+              <p className="text-[11px] text-gray-500 flex flex-wrap gap-x-2">
+                <span className="text-emerald-700 font-bold">✓ {formatDuration(periodHours.done)} منجزة</span>
+                {periodHours.scheduled > 0 && <span className="text-blue-700">◷ {formatDuration(periodHours.scheduled)} مجدولة</span>}
+                {periodHours.cancelled > 0 && <span className="text-rose-600">✕ {formatDuration(periodHours.cancelled)} ملغاة</span>}
               </p>
             </div>
           </div>
@@ -192,14 +202,19 @@ export default function AgendaView({ onAdd, onEdit, onCopy, onLocate }: {
       </div>
 
       {/* Selected day */}
-      <div className="flex items-end justify-between gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2">
         <div>
           <h2 className="font-black text-gray-900">{selected === today ? 'اليوم · ' : selected === addDays(today, 1) ? 'غداً · ' : ''}{dayLabel(selected)}</h2>
           <p className="text-xs text-gray-400">
             {dayLessons.length ? `${active.length} حصة · ${formatDuration(dayMinutes)} · ${formatMoney(dayValue, settings.currency)}` : 'يوم فارغ'}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          {openToday.length > 1 && (
+            <button onClick={() => setBulkOpen(true)} className={ghostBtn('text-emerald-700')}>
+              <CheckCheck className="w-4 h-4" /> تمّت كلها ({openToday.length})
+            </button>
+          )}
           {stops.length > 0 && (
             <button onClick={() => setShowMap(s => !s)} className={ghostBtn(showMap ? 'bg-gray-100' : '')}>
               <Route className="w-4 h-4" /> <span className="hidden sm:inline">مسار اليوم</span>
@@ -229,15 +244,32 @@ export default function AgendaView({ onAdd, onEdit, onCopy, onLocate }: {
       ) : (
         <motion.ul layout className="space-y-3">
           <AnimatePresence initial={false}>
-            {dayLessons.map(l => (
-              <LessonCard key={l.id} lesson={l} paid={paidLessons.has(l.id)} onPaid={() => setAskPaid(l)} onEdit={() => onEdit(l)}
-                onCopy={() => onCopy(l)} onLocate={() => onLocate(l.clientId)} onStatus={s => setStatus(l, s)} />
-            ))}
+            {dayLessons.flatMap(l => {
+              const g = legs.get(l.id)
+              const card = (
+                <LessonCard key={l.id} lesson={l} paid={paidLessons.has(l.id)} onPaid={() => askPaid([l])} onEdit={() => onEdit(l)}
+                  onCopy={() => onCopy(l)} onLocate={() => onLocate(l.clientId)} onStatus={s => setStatus(l, s)} />
+              )
+              if (!g) return [card]
+              return [(
+                <motion.li key={`leg-${l.id}`} layout className={`flex items-center gap-2 rounded-xl px-3 py-1.5 text-[11px] ${g.tight ? 'bg-amber-50 text-amber-800 font-bold' : 'text-gray-400'}`}>
+                  <Car className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span>≈ {g.km} كم · ~{g.needMin} د تنقّل · الفاصل {g.gapMin} د{g.tight ? ' — قد لا يكفي الوقت' : ''}</span>
+                </motion.li>
+              ), card]
+            })}
           </AnimatePresence>
         </motion.ul>
       )}
 
-      <PaidPrompt lesson={askPaid} onClose={() => setAskPaid(null)} />
+      <PaidPrompt
+        lesson={paidQueue.items[0] ?? null}
+        step={paidQueue.total > 1 ? `${paidQueue.total - paidQueue.items.length + 1} من ${paidQueue.total}` : undefined}
+        onClose={() => setPaidQueue(q => ({ ...q, items: q.items.slice(1) }))}
+      />
+
+      <BulkDone open={bulkOpen} lessons={openToday} onClose={() => setBulkOpen(false)}
+        onDone={done => askPaid(done.filter(l => !paidLessons.has(l.id)))} />
     </div>
   )
 }
@@ -334,5 +366,60 @@ function LessonCard({ lesson: l, paid, onPaid, onEdit, onCopy, onLocate, onStatu
         </div>
       </div>
     </motion.li>
+  )
+}
+
+/** Close the day in one go: tick the lessons that happened, then ask about payment for each. */
+function BulkDone({ open, lessons, onClose, onDone }: {
+  open: boolean; lessons: WorkLesson[]; onClose: () => void; onDone: (done: WorkLesson[]) => void
+}) {
+  const { clientsById, settings, update } = useWorkLog()
+  const { toast } = useToast()
+  const [picked, setPicked] = useState<Set<string>>(new Set())
+  const [saving, setSaving] = useState(false)
+  useEffect(() => { if (open) setPicked(new Set(lessons.map(l => l.id))) }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function apply() {
+    const chosen = lessons.filter(l => picked.has(l.id))
+    if (!chosen.length) { onClose(); return }
+    setSaving(true)
+    const done: WorkLesson[] = []
+    // One at a time: a failure stops nothing else and is reported by name.
+    for (const l of chosen) {
+      try { await update('lessons', l.id, { status: 'done' }); done.push({ ...l, status: 'done' }) }
+      catch (e) { toast(`${clientLabel(clientsById.get(l.clientId))}: ${(e as Error).message}`, 'error') }
+    }
+    setSaving(false)
+    onClose()
+    if (done.length) { toast(`تمّت ${done.length} حصة ✓`); onDone(done) }
+  }
+
+  return (
+    <Sheet open={open} onClose={onClose} title="تعليم حصص اليوم «تمّت»"
+      footer={
+        <button onClick={apply} disabled={saving || picked.size === 0} className={primaryBtn('w-full bg-emerald-600 hover:bg-emerald-700')}>
+          <CheckCheck className="w-4 h-4" /> {saving ? 'جارٍ الحفظ…' : `تمّت (${picked.size})`}
+        </button>
+      }>
+      <p className="text-xs text-gray-500 mb-3">ألغِ تحديد أي حصة لم تحدث — تبقى «مجدولة» لتعدّلها وحدها. بعدها يسألك عن الأجر لكل عائلة.</p>
+      <ul className="space-y-2">
+        {lessons.map(l => {
+          const c = clientsById.get(l.clientId)
+          return (
+            <li key={l.id}>
+              <label className="flex items-center gap-3 rounded-xl border border-gray-100 px-3 py-2.5 cursor-pointer has-[:checked]:border-emerald-300 has-[:checked]:bg-emerald-50/50">
+                <input type="checkbox" className="w-4 h-4 accent-emerald-600" checked={picked.has(l.id)}
+                  onChange={e => setPicked(p => { const n = new Set(p); if (e.target.checked) n.add(l.id); else n.delete(l.id); return n })} />
+                <span className="w-2 h-8 rounded-full" style={{ backgroundColor: c?.color }} />
+                <span className="flex-1 min-w-0">
+                  <b className="block text-sm text-gray-900 truncate">{clientLabel(c)}</b>
+                  <span className="text-[11px] text-gray-500">{l.start}–{endTime(l.start, l.durationMin)} · {formatMoney(l.price, settings.currency)}</span>
+                </span>
+              </label>
+            </li>
+          )
+        })}
+      </ul>
+    </Sheet>
   )
 }

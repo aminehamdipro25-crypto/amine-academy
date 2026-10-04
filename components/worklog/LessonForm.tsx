@@ -1,8 +1,8 @@
 'use client'
 import { useEffect, useMemo, useState } from 'react'
-import { AlertTriangle, Copy, MapPin, Repeat, Trash2 } from 'lucide-react'
+import { AlertTriangle, Car, Copy, MapPin, Repeat, Trash2 } from 'lucide-react'
 import {
-  CURRENCY_LABEL, STATUS_META, addDays, endTime, findConflicts, formatMoney, priceFor,
+  CURRENCY_LABEL, STATUS_META, addDays, travelWarnings, endTime, findConflicts, formatMoney, priceFor,
   type LessonStatus, type WorkLesson,
 } from '@/lib/worklog'
 import { useToast } from '@/components/ui/Toast'
@@ -96,6 +96,11 @@ export default function LessonForm({ open, onClose, lesson, draft, onNewClient, 
     if (!date || !/^\d\d:\d\d$/.test(start) || status === 'cancelled') return []
     return findConflicts({ id: lesson?.id, date, start, durationMin: duration }, lessons)
   }, [date, start, duration, lessons, lesson?.id, status])
+
+  const drives = useMemo(() => {
+    if (!clientId || !date || !/^\d\d:\d\d$/.test(start) || status === 'cancelled') return []
+    return travelWarnings({ id: lesson?.id, clientId, date, start, durationMin: duration }, lessons, id => clientsById.get(id)?.location)
+  }, [clientId, date, start, duration, lessons, lesson?.id, status, clientsById])
 
   const isPast = date < localToday()
 
@@ -257,6 +262,25 @@ export default function LessonForm({ open, onClose, lesson, draft, onNewClient, 
           <div className="flex gap-2 rounded-xl bg-amber-50 border border-amber-100 px-3 py-2 text-[12px] text-amber-800">
             <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
             <span>تتداخل مع: {conflicts.map(c => `${clientLabel(clientsById.get(c.clientId))} (${c.start}–${endTime(c.start, c.durationMin)})`).join('، ')}</span>
+          </div>
+        )}
+
+        {drives.length > 0 && (
+          <div className="flex gap-2 rounded-xl bg-amber-50 border border-amber-100 px-3 py-2 text-[12px] text-amber-800">
+            <Car className="w-4 h-4 flex-shrink-0 mt-0.5" />
+            <div className="space-y-0.5">
+              {drives.map(d => {
+                const other = lessons.find(l => l.id === d.otherId)
+                const who = clientLabel(clientsById.get(other?.clientId ?? ''))
+                return (
+                  <p key={d.otherId}>
+                    {d.direction === 'from' ? `بعد حصة ${who} (تنتهي ${other ? endTime(other.start, other.durationMin) : ''})` : `قبل حصة ${who} (${other?.start ?? ''})`}:
+                    {' '}التنقّل ≈ {d.km} كم · ~{d.needMin} د، والفاصل {Math.max(0, d.gapMin)} د فقط
+                  </p>
+                )
+              })}
+              <p className="text-[10px] text-amber-700">تقدير بالمسافة وزحمة المدينة، لا مسار فعلي — للتنبيه فقط</p>
+            </div>
           </div>
         )}
 

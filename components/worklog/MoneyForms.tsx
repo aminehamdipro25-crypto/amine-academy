@@ -180,7 +180,7 @@ export function ExpenseForm({ open, onClose, expense }: { open: boolean; onClose
  * because many families pay at the door when it ends. «لا» leaves it owed;
  * nothing is assumed either way.
  */
-export function PaidPrompt({ lesson, onClose }: { lesson: WorkLesson | null; onClose: () => void }) {
+export function PaidPrompt({ lesson, onClose, step }: { lesson: WorkLesson | null; onClose: () => void; step?: string }) {
   const { clientsById, settings, create } = useWorkLog()
   const { toast } = useToast()
   const [amount, setAmount] = useState('')
@@ -209,7 +209,7 @@ export function PaidPrompt({ lesson, onClose }: { lesson: WorkLesson | null; onC
 
   const c = lesson ? clientsById.get(lesson.clientId) : undefined
   return (
-    <Sheet open={!!lesson} onClose={onClose} title="هل استلمت أجر هذه الحصة؟"
+    <Sheet open={!!lesson} onClose={onClose} title={`هل استلمت أجر هذه الحصة؟${step ? ` (${step})` : ''}`}
       footer={
         <div className="flex gap-2">
           <button onClick={paid} disabled={saving} className={primaryBtn('flex-1 bg-emerald-600 hover:bg-emerald-700')}>

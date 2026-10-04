@@ -1,9 +1,9 @@
 'use client'
 import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { BarChart3, CalendarDays, Navigation, NotebookPen, Plus, RefreshCw, Settings2, Users, Wallet } from 'lucide-react'
+import { BarChart3, CalendarDays, Navigation, NotebookPen, Plus, Receipt, RefreshCw, Settings2, Users, Wallet } from 'lucide-react'
 import {
-  addDays, clientBalances, endOfMonth, endTime, formatDuration, formatMoney, googleDirectionsUrl, lessonStartLocal,
+  addDays, clientBalances, endOfMonth, hoursIn, startOfWeek, endTime, formatDuration, formatMoney, googleDirectionsUrl, lessonStartLocal,
   periodStats, sortLessons, startOfMonth, type WorkClient, type WorkExpense, type WorkLesson, type WorkPayment,
 } from '@/lib/worklog'
 import { readStorage, writeStorage } from '@/lib/safe-storage'
@@ -18,13 +18,14 @@ import ClientForm from './ClientForm'
 import { ExpenseForm, PaymentForm } from './MoneyForms'
 import { dayLabel, localToday, primaryBtn } from './ui'
 
-type Tab = 'agenda' | 'clients' | 'money' | 'stats' | 'settings'
+type Tab = 'agenda' | 'clients' | 'payments' | 'expenses' | 'stats' | 'settings'
 const TABS: { id: Tab; label: string; icon: typeof CalendarDays }[] = [
   { id: 'agenda', label: 'اليومية', icon: CalendarDays },
   { id: 'clients', label: 'العائلات', icon: Users },
-  { id: 'money', label: 'المال', icon: Wallet },
-  { id: 'stats', label: 'الإحصائيات', icon: BarChart3 },
-  { id: 'settings', label: 'الإعدادات', icon: Settings2 },
+  { id: 'payments', label: 'الدفعات', icon: Wallet },
+  { id: 'expenses', label: 'المصاريف', icon: Receipt },
+  { id: 'stats', label: 'إحصائيات', icon: BarChart3 },
+  { id: 'settings', label: 'إعدادات', icon: Settings2 },
 ]
 const TAB_KEY = 'worklog-tab'
 
@@ -119,10 +120,14 @@ export default function WorkLogApp() {
                 <ClientsView onAdd={() => openNewClient()} onEdit={c => { setEditClient(c); setClientOpen(true) }} onAddLesson={id => openLesson({ clientId: id })}
                   onPay={id => { setEditPayment(null); setPayClient(id); setPayOpen(true) }} />
               )}
-              {tab === 'money' && (
+              {(tab === 'payments' || tab === 'expenses') && (
                 <MoneyView
-                  onPay={() => { setEditPayment(null); setPayClient(undefined); setPayOpen(true) }}
-                  onExpense={() => { setEditExpense(null); setExpOpen(true) }}
+                  key={tab}
+                  mode={tab}
+                  onAdd={() => {
+                    if (tab === 'payments') { setEditPayment(null); setPayClient(undefined); setPayOpen(true) }
+                    else { setEditExpense(null); setExpOpen(true) }
+                  }}
                   onEditPayment={p => { setEditPayment(p); setPayOpen(true) }}
                   onEditExpense={e => { setEditExpense(e); setExpOpen(true) }} />
               )}
@@ -164,7 +169,7 @@ function Overview({ onAddClient, onAddLesson }: { onAddClient: () => void; onAdd
       .find(l => lessonStartLocal(l).getTime() + l.durationMin * 60_000 > now),
     [lessons, today, now],
   )
-  const todays = lessons.filter(l => l.date === today && l.status !== 'cancelled')
+  const week = hoursIn(lessons, startOfWeek(today), addDays(startOfWeek(today), 6))
   const month = useMemo(() => periodStats(lessons, payments, expenses, startOfMonth(today), endOfMonth(today)), [lessons, payments, expenses, today])
   const owed = useMemo(() => clientBalances(clients, lessons, payments, today).reduce((s, b) => s + Math.max(0, b.balance), 0), [clients, lessons, payments, today])
 
@@ -219,13 +224,25 @@ function Overview({ onAddClient, onAddLesson }: { onAddClient: () => void; onAdd
         )}
       </div>
       <div className="lg:col-span-2 grid grid-cols-2 gap-3">
-        <MiniStat label="اليوم" value={formatDuration(todays.reduce((s, l) => s + l.durationMin, 0))} sub={`${todays.length} حصة`} />
-        <MiniStat label="ساعات الشهر" value={formatDuration(month.minutesDone)} sub={`${month.lessonsDone} منجزة · ${month.lessonsCancelled} ملغاة`} />
-        <MiniStat label="مستلم الشهر" value={formatMoney(month.collected, settings.currency)} sub={`عمل منجز ${formatMoney(month.earned, settings.currency)}`} />
+        <MiniStat label="ساعات الأسبوع (منجزة)" value={formatDuration(week.done)}
+          sub={hoursSub(week.scheduled, week.cancelled)} />
+        <MiniStat label="ساعات الشهر (منجزة)" value={formatDuration(month.minutesDone)}
+          sub={hoursSub(month.minutesScheduled, month.minutesCancelled)} />
+        <MiniStat label="صافي الشهر" value={formatMoney(month.net, settings.currency)}
+          sub={`مستلم ${formatMoney(month.collected, settings.currency)} − مصاريف ${formatMoney(month.expenses, settings.currency)}`} />
         <MiniStat label="مستحقات معلّقة" value={formatMoney(owed, settings.currency)} sub="لدى العائلات" warn={owed > 0} />
       </div>
     </div>
   )
+}
+
+/** "+ 3 س مجدولة · 1 س ملغاة" — empty parts left out rather than shown as zero. */
+function hoursSub(scheduled: number, cancelled: number): string {
+  const parts = [
+    scheduled ? `+ ${formatDuration(scheduled)} مجدولة` : '',
+    cancelled ? `${formatDuration(cancelled)} ملغاة` : '',
+  ].filter(Boolean)
+  return parts.length ? parts.join(' · ') : 'لا مجدولة ولا ملغاة'
 }
 
 function MiniStat({ label, value, sub, warn }: { label: string; value: string; sub: string; warn?: boolean }) {

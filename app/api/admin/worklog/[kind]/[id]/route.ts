@@ -1,10 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse, after } from 'next/server'
 import { isOwnerUser } from '@/lib/auth'
 import {
   sanitizeClient, sanitizeExpense, sanitizeLesson, sanitizePayment, seriesEditTargets,
   type SeriesPatch, type WorkLesson,
 } from '@/lib/worklog'
 import { deleteWork, getWork, listWork, putManyWork, putWork, type WorkKind } from '@/lib/worklog-store'
+import { archiveLessonsInNotion, resyncFamilyInNotion, syncLessonsToNotion } from '@/lib/worklog-notion-sync'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -29,6 +30,11 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
       if (!c.ok) return bad(c.error)
       const row = { ...(current as object), ...c.value, id }
       await putWork('clients', row as never)
+      // Notion row titles carry the family and child names.
+      const was = current as { name?: string; childName?: string }
+      if (('name' in c.value && c.value.name !== was.name) || ('childName' in c.value && c.value.childName !== was.childName)) {
+        after(() => resyncFamilyInNotion(id))
+      }
       return NextResponse.json(row)
     }
     if (kind === 'lessons') {
@@ -47,10 +53,12 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
         const targets = seriesEditTargets(await listWork('lessons'), lesson, patch)
           .map(t => (t.id === id ? { ...t, ...l.value, id, updatedAt: now } : { ...t, updatedAt: now }))
         await putManyWork('lessons', targets)
+        after(() => syncLessonsToNotion(targets))
         return NextResponse.json(targets)
       }
       const row = { ...(current as object), ...l.value, id, updatedAt: new Date().toISOString() }
       await putWork('lessons', row as never)
+      after(() => syncLessonsToNotion([row as WorkLesson]))
       return NextResponse.json(row)
     }
     // Payments and expenses are re-validated whole: a partial edit must not
@@ -101,10 +109,12 @@ export async function DELETE(req: NextRequest, { params }: Ctx) {
         : []
       const all = [...new Set([id, ...ids])]
       await deleteWork('lessons', all)
+      after(() => archiveLessonsInNotion(all))
       return NextResponse.json({ deleted: all })
     }
 
     await deleteWork(kind as WorkKind, [id])
+    if (kind === 'lessons') after(() => archiveLessonsInNotion([id]))
     return NextResponse.json({ deleted: [id] })
   } catch (err) {
     console.error(`[worklog DELETE ${kind}]`, err)

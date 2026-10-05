@@ -1,0 +1,38 @@
+name: Work-log lesson reminders
+
+# Sends the «قبل ساعة» Telegram reminder for each home lesson. Vercel's cron
+# on this plan runs at most once a day, so the 5-minute tick comes from here.
+# GitHub may start a scheduled run a few minutes late; the endpoint sends any
+# reminder whose window is open until the lesson starts, so a late run still
+# delivers it.
+#
+# Needs two repository secrets (Settings → Secrets and variables → Actions):
+#   APP_URL      e.g. https://academy.amine-fit.com
+#   CRON_SECRET  the same value as CRON_SECRET in Vercel
+# Without them the job exits quietly instead of failing every 5 minutes.
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Call the reminder endpoint
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$APP_URL" ] || [ -z "$CRON_SECRET" ]; then
+            echo "::notice::APP_URL / CRON_SECRET secrets are not set — skipping."
+            exit 0
+          fi
+          code=$(curl -sS -o body.json -w '%{http_code}' --max-time 60 \
+            -H "Authorization: Bearer $CRON_SECRET" "${APP_URL%/}/api/cron/worklog-reminders")
+          cat body.json; echo
+          if [ "$code" != "200" ]; then echo "::error::reminder endpoint returned $code"; exit 1; fi

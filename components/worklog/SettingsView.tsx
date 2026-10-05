@@ -6,6 +6,7 @@ import { useWorkLog } from './useWorkLog'
 import { Field, Segmented, ghostBtn, inputCls, localToday, primaryBtn } from './ui'
 import { notificationState, requestNotifications, showLessonNotification } from './notify'
 import { downloadLedgerXlsx } from './exportXlsx'
+import { NotionSection, TelegramReminderStatus, useIntegrations } from './IntegrationsPanel'
 
 const ZONES = ['Asia/Qatar', 'Africa/Tunis', 'Asia/Riyadh', 'Asia/Dubai', 'Africa/Cairo', 'Europe/Paris']
 
@@ -15,6 +16,7 @@ export default function SettingsView() {
   const [perm, setPerm] = useState<string>('default')
   const [busy, setBusy] = useState(false)
   const [origin, setOrigin] = useState('')
+  const integrations = useIntegrations()
 
   useEffect(() => { setPerm(notificationState()); setOrigin(window.location.origin) }, [])
 
@@ -34,10 +36,10 @@ export default function SettingsView() {
       <section className="rounded-3xl bg-white border border-gray-100 shadow-sm p-5 space-y-4">
         <div className="flex items-center gap-2"><BellRing className="w-5 h-5 text-brand-600" /><h3 className="font-black text-gray-900">التذكيرات</h3></div>
         <p className="text-xs text-gray-500 leading-relaxed">
-          ثلاث طبقات، كل واحدة تغطي ما لا تغطيه الأخرى:
-          <b> (1)</b> إشعار في المتصفح ما دامت لوحة التحكم مفتوحة،
-          <b> (2)</b> تقويم هاتفك يرنّ قبل كل حصة حتى والتطبيق مغلق،
-          <b> (3)</b> ملخّص صباحي بحصص اليوم ومسارها على تيليغرام والبريد.
+          <b>(1)</b> إشعار في المتصفح — <b>فقط ما دامت لوحة التحكم مفتوحة</b>؛ إن أغلقتها أو أقفلت الهاتف لا يصل.
+          <b> (2)</b> رسالة تيليغرام قبل كل حصة — <b>تصل والهاتف مقفل</b>، وهي التذكير الذي يُعتمد عليه.
+          <b> (3)</b> تقويم الهاتف لرؤية كل الحصص في تقويمك.
+          <b> (4)</b> ملخّص صباحي بحصص اليوم ومسارها.
         </p>
 
         <div className="rounded-2xl bg-gray-50 p-4 space-y-3">
@@ -78,10 +80,16 @@ export default function SettingsView() {
         </div>
 
         <div className="rounded-2xl bg-gray-50 p-4 space-y-3">
-          <p className="text-sm font-bold text-gray-800">2 · تقويم الهاتف (الأقوى — يعمل والتطبيق مغلق)</p>
+          <p className="text-sm font-bold text-gray-800">2 · تذكير تيليغرام قبل كل حصة (يصل والهاتف مقفل)</p>
+          <p className="text-[11px] text-gray-500 leading-relaxed">في وقت التذكير المضبوط لكل حصة (الافتراضي أعلاه) تصلك رسالة من بوت المنصة: الطفل، الوقت، السعر، العنوان، رابط الطريق، والهاتف. فحص كل 5 دقائق، فقد تصل متأخرة بضع دقائق — لكن دائماً قبل بدء الحصة.</p>
+          <TelegramReminderStatus status={integrations.status} />
+        </div>
+
+        <div className="rounded-2xl bg-gray-50 p-4 space-y-3">
+          <p className="text-sm font-bold text-gray-800">3 · تقويم الهاتف (لرؤية الحصص في تقويمك)</p>
           {!settings.calendarToken ? (
             <>
-              <p className="text-xs text-gray-500 leading-relaxed">رابط سرّي يشترك فيه تقويم هاتفك (iPhone أو Google)، فتظهر كل حصة بعنوانها ورابط الطريق، ويرنّ التذكير في وقته. يتحدّث تلقائياً عند كل تعديل.</p>
+              <p className="text-xs text-gray-500 leading-relaxed">رابط سرّي يشترك فيه تقويم هاتفك (iPhone أو Google)، فتظهر كل حصة بعنوانها ورابط الطريق بجانب مواعيدك الأخرى، ويتحدّث تلقائياً. للتذكير نفسه اعتمد على تيليغرام (2): التقويمات المشترَك فيها لا ترنّ بثقة.</p>
               <button disabled={busy} onClick={() => save({ calendar: 'enable' }, 'أُنشئ رابط التقويم')} className={primaryBtn('text-xs')}>
                 <CalendarPlus className="w-4 h-4" /> إنشاء رابط التقويم
               </button>
@@ -98,8 +106,9 @@ export default function SettingsView() {
                 <a href={`https://calendar.google.com/calendar/r?cid=${encodeURIComponent(webcal)}`} target="_blank" rel="noopener noreferrer" className={ghostBtn('text-xs')}>Google Calendar</a>
               </div>
               <ul className="text-[11px] text-gray-500 space-y-1 leading-relaxed list-disc pr-4">
-                <li><b>iPhone:</b> اضغط «إضافة إلى تقويم هذا الجهاز» ← اشتراك. يتحدّث كل ساعة تقريباً.</li>
-                <li><b>Android:</b> افتح الرابط في Google Calendar من الحاسوب (إضافة تقويم ← من رابط). Google يحدّث الاشتراكات ببطء (حتى عدة ساعات) — لحصة أُضيفت للتو اعتمد على الإشعار (1).</li>
+                <li><b>iPhone:</b> اضغط «إضافة إلى تقويم هذا الجهاز» ← اشتراك، واختر «تحديث تلقائي: كل ساعة». ليرنّ التقويم أيضاً أطفئ «إزالة التنبيهات» في صفحة الاشتراك.</li>
+                <li><b>Android / Google:</b> افتح «Google Calendar» من الحاسوب ← إضافة تقويم ← من رابط. Google يحدّث الاشتراكات ببطء (عدة ساعات حتى يوم) <b>ويتجاهل تنبيهاتها</b> — فهو للعرض فقط.</li>
+                <li><b>Notion Calendar:</b> بعد إضافته إلى Google يظهر تلقائياً في Notion Calendar المربوط بنفس حساب Google.</li>
                 <li>الرابط يحوي أسماء العائلات وعناوينها: لا تشاركه. إن تسرّب، أنشئ رابطاً جديداً فيتوقف القديم فوراً.</li>
               </ul>
               <div className="flex flex-wrap gap-2">
@@ -118,6 +127,13 @@ export default function SettingsView() {
           </div>
           <p className="text-[11px] text-gray-500 leading-relaxed">كل صباح (7:00 بتوقيت قطر): حصص اليوم بالترتيب، رابط الطريق لكل منزل، مسار اليوم كاملاً، والمستحقات. يصل عبر تيليغرام والبريد المضبوطين في المنصة. لا يُرسَل شيء في يوم فارغ.</p>
         </div>
+      </section>
+
+      {/* Notion */}
+      <section className="rounded-3xl bg-white border border-gray-100 shadow-sm p-5 space-y-3">
+        <h3 className="font-black text-gray-900">🗂️ نسخ الحصص إلى نوشن</h3>
+        <NotionSection status={integrations.status} reload={integrations.reload} />
+        {integrations.error && <p className="text-[11px] text-rose-700">{integrations.error}</p>}
       </section>
 
       {/* Messages to parents */}

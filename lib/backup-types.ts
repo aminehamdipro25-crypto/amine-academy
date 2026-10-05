@@ -10,6 +10,8 @@ export const BACKUP_RECORD_TYPES = [
   // The private-lesson ledger (lib/worklog-store.ts): money owed and paid has
   // no other copy anywhere.
   'worklogClients', 'worklogLessons', 'worklogPayments', 'worklogExpenses',
+  // Which Notion row holds which lesson: lose it and a re-sync duplicates every row.
+  'worklogNotionPages',
 ] as const
 
 export type BackupRecordType = (typeof BACKUP_RECORD_TYPES)[number]

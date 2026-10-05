@@ -18,6 +18,7 @@ import {
   getThreadMessages,
 } from './db'
 import { listWork } from './worklog-store'
+import { listNotionPageLinks } from './worklog-notion-sync'
 
 // A backup of everything, and a way to read it back.
 //
@@ -122,6 +123,7 @@ export async function buildFullBackup(): Promise<FullBackup> {
   await section('worklogLessons', () => listWork('lessons'))
   await section('worklogPayments', () => listWork('payments'))
   await section('worklogExpenses', () => listWork('expenses'))
+  await section('worklogNotionPages', () => listNotionPageLinks())
 
   const counts = Object.fromEntries(
     BACKUP_RECORD_TYPES.map(t => [t, data[t].length]),

@@ -121,6 +121,12 @@ export interface WorkSettings {
   monthlyGoal?: number | null
   /** How messages to parents are signed, e.g. «الأستاذ أمين». Absent = unsigned. */
   senderName?: string
+  /**
+   * The owner's Notion database lessons are copied into, and which column gets
+   * what. Written only by /api/admin/worklog/notion (it validates the database
+   * first); the general settings PUT never touches it.
+   */
+  notion?: { databaseId: string; map: Partial<Record<string, string>> }
 }
 
 export const DEFAULT_SETTINGS: WorkSettings = {
@@ -260,6 +266,24 @@ export function todayIn(timeZone: string, now: Date = new Date()): string {
     return new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(now)
   } catch {
     return now.toISOString().slice(0, 10)
+  }
+}
+
+/**
+ * The wall clock in a zone, as a Date whose *local* getters read that wall
+ * time — the same convention as lessonStartLocal(), so the two compare
+ * directly on a server that runs in UTC (Vercel) while the lessons are in
+ * Doha or Tunis.
+ */
+export function wallClockIn(timeZone: string, now: Date = new Date()): Date {
+  try {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23',
+    }).formatToParts(now)
+    const n = (t: string) => Number(parts.find(p => p.type === t)?.value)
+    return new Date(n('year'), n('month') - 1, n('day'), n('hour'), n('minute'), n('second'))
+  } catch {
+    return new Date(now)
   }
 }
 

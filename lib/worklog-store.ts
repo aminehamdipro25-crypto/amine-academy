@@ -29,6 +29,10 @@ const SETTINGS_KEY = 'worklog:settings'
 
 export const WORK_KINDS: WorkKind[] = ['clients', 'lessons', 'payments', 'expenses']
 
+/** Written by every run of /api/cron/worklog-reminders, so the settings page can show the schedule is alive. */
+export const REMINDERS_LAST_RUN_KEY = 'worklog:reminders:last-run'
+export interface RemindersLastRun { at: string; sent: number; failed: number }
+
 export function newWorkId(kind: WorkKind): string {
   return `wl${SINGULAR[kind][0]}_${randomUUID()}`
 }

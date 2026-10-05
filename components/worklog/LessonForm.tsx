@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AlertTriangle, Car, Copy, MapPin, Repeat, Trash2 } from 'lucide-react'
 import {
-  CURRENCY_LABEL, STATUS_META, addDays, lessonsCount, travelWarnings, endTime, findConflicts, formatMoney, priceFor,
+  CURRENCY_LABEL, STATUS_META, addDays, durationText, lessonsCount, travelWarnings, endTime, findConflicts, formatMoney, priceFor,
   type LessonStatus, type WorkLesson,
 } from '@/lib/worklog'
 import { useToast } from '@/components/ui/Toast'
@@ -299,10 +299,13 @@ export default function LessonForm({ open, onClose, lesson, draft, onNewClient, 
               {drives.map(d => {
                 const other = lessons.find(l => l.id === d.otherId)
                 const who = clientLabel(clientsById.get(other?.clientId ?? ''))
+                if (d.implausible) return (
+                  <p key={d.otherId}>المسافة إلى منزل {who} ≈ {Math.round(d.km)} كم — غير ممكنة، فموقع إحدى العائلتين على الخريطة خاطئ. صحّحه من «بيانات العائلة».</p>
+                )
                 return (
                   <p key={d.otherId}>
-                    {d.direction === 'from' ? `بعد حصة ${who} (تنتهي ${other ? endTime(other.start, other.durationMin) : ''})` : `قبل حصة ${who} (${other?.start ?? ''})`}:
-                    {' '}التنقّل ≈ {d.km} كم · ~{d.needMin} د، والفاصل {Math.max(0, d.gapMin)} د فقط
+                    {d.direction === 'from' ? `بعد حصة ${who} (تنتهي ${other ? endTime(other.start, other.durationMin) : ''})` : `قبل حصة ${who} (تبدأ ${other?.start ?? ''})`}:
+                    {' '}الطريق ≈ {d.km} كم ≈ {durationText(d.needMin)} بالسيارة، والوقت بين الحصتين {d.gapMin > 0 ? durationText(d.gapMin) : 'لا شيء'} فقط
                   </p>
                 )
               })}

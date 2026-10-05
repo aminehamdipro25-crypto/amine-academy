@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
-  DEFAULT_SETTINGS, lessonReminderText, monthForecast, packageNeedsRenewal, packageStatus, progressSummary, progressText,
-  renewalText, sanitizeLesson, sanitizePayment, sanitizeSettings, seriesEditTargets,
+  DEFAULT_SETTINGS, MAX_PLAUSIBLE_KM, dayLegs, durationText, lessonReminderText, monthForecast, packageNeedsRenewal, packageStatus, progressSummary, progressText,
+  renewalText, sanitizeLesson, sanitizePayment, sanitizeSettings, seriesEditTargets, travelWarnings,
   type WorkLesson, type WorkPayment,
 } from '@/lib/worklog'
 
@@ -155,5 +155,39 @@ describe('5. a child\'s progress', () => {
     expect(text).toContain('ملخّص حصص سيف')
     expect(text).toContain('⭐⭐⭐⭐')
     expect(text).toContain('أتقن جدول 7')
+  })
+})
+
+describe('6. the drive between two lessons', () => {
+  const doha = { lat: 25.2854, lng: 51.531 }, nearby = { lat: 25.3, lng: 51.5 }
+  const far = { lat: -33.86, lng: 151.2 } // a pin dropped in Sydney by mistake
+  const day = [
+    lesson({ id: 'a1', clientId: 'a', start: '10:00', durationMin: 60, status: 'scheduled' }),
+    lesson({ id: 'b1', clientId: 'b', start: '15:30', durationMin: 60, status: 'scheduled' }),
+  ]
+
+  it('reads the gap and the drive in words people use', () => {
+    expect(durationText(45)).toBe('45 د')
+    expect(durationText(60)).toBe('ساعة')
+    expect(durationText(270)).toBe('4 س و30 د')
+    expect(durationText(150)).toBe('ساعتان و30 د')
+  })
+
+  it('a normal drive: gap from end of one lesson to start of the next', () => {
+    const [g] = dayLegs(day, '2026-10-05', id => (id === 'a' ? doha : nearby))
+    expect(g).toMatchObject({ gapMin: 270, tight: false, implausible: false })
+  })
+
+  it('an impossible distance is a wrong pin — flagged, never a "tight" drive of thousands of minutes', () => {
+    const [g] = dayLegs(day, '2026-10-05', id => (id === 'a' ? doha : far))
+    expect(g.km).toBeGreaterThan(MAX_PLAUSIBLE_KM)
+    expect(g).toMatchObject({ implausible: true, tight: false })
+    // Back and forth to the same wrong pin is said once, not on every drive.
+    const thrice = [...day, lesson({ id: 'a2', clientId: 'a', start: '17:00', status: 'scheduled' })]
+    expect(dayLegs(thrice, '2026-10-05', id => (id === 'a' ? doha : far))).toHaveLength(1)
+    // The lesson form surfaces it too, even though the gap would be "enough".
+    const w = travelWarnings({ clientId: 'b', date: '2026-10-05', start: '15:30', durationMin: 60 }, [day[0]], id => (id === 'a' ? doha : far))
+    expect(w).toHaveLength(1)
+    expect(w[0].implausible).toBe(true)
   })
 })

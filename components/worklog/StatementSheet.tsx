@@ -31,8 +31,11 @@ export default function StatementSheet({ client, onClose }: { client: WorkClient
     [client, lessons, payments, today],
   )
 
-  // Open on the period that answers "what is owed": since the last payment.
-  useEffect(() => { if (client) setPeriod('since') }, [client])
+  // Open on the period that answers "what is owed": since the last payment —
+  // unless nothing is owed, where that range is empty (a payment received
+  // today gives "5 → 5 October, no lessons") and this month is what is useful.
+  const owes = (balance?.balance ?? 0) > 0
+  useEffect(() => { if (client) setPeriod(owes ? 'since' : 'month') }, [client?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const range = useMemo(() => {
     if (!client) return { from: today, to: today }
@@ -106,7 +109,13 @@ export default function StatementSheet({ client, onClose }: { client: WorkClient
           )}
 
           <ul className="rounded-xl border border-gray-100 divide-y divide-gray-50 text-xs">
-            {st.lessons.length === 0 && <li className="px-3 py-4 text-center text-gray-400">لا حصص في هذه الفترة</li>}
+            {st.lessons.length === 0 && (
+              <li className="px-3 py-4 text-center text-gray-400">
+                {period === 'since' && balance?.lastPaymentDate
+                  ? `لا حصص بعد آخر مبلغ استلمته (${msgDay(balance.lastPaymentDate)})${owes ? '' : ' — الحساب مسدَّد'}. اختر «هذا الشهر» أو «الكل» لكشف أطول.`
+                  : 'لا حصص في هذه الفترة'}
+              </li>
+            )}
             {st.lessons.map(l => (
               <li key={l.id} className="flex items-center justify-between gap-2 px-3 py-2">
                 <span className="text-gray-700">{msgDay(l.date)} · {l.start} · {formatDuration(l.durationMin)}</span>

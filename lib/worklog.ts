@@ -225,6 +225,15 @@ export function formatHours(min: number): string {
   return Number.isInteger(h) ? String(h) : h.toFixed(1)
 }
 
+/** A span of minutes as people say it: «45 د» · «ساعة» · «4 س 30 د». */
+export function durationText(min: number): string {
+  const m = Math.max(0, Math.round(min))
+  const h = Math.floor(m / 60), r = m % 60
+  if (h === 0) return `${r} د`
+  const hs = h === 1 ? 'ساعة' : h === 2 ? 'ساعتان' : `${h} س`
+  return r === 0 ? hs : `${hs} و${r} د`
+}
+
 export function formatMoney(n: number, currency: WorkCurrency): string {
   const v = round2(n)
   // Latin digits by construction (standing rule 8), with a thin grouping comma.
@@ -844,6 +853,13 @@ export function sanitizeSettings(body: Record<string, unknown>, current: WorkSet
 export const ROAD_FACTOR = 1.4
 export const CITY_KMH = 35
 export const DOOR_BUFFER_MIN = 5
+/**
+ * Two homes this far apart (road estimate) cannot both be on one day's round
+ * of home lessons — one of the pins is wrong (a pasted link of another city,
+ * a mis-picked search result). Saying "you need 26778 minutes" would be a
+ * number nobody can act on; saying "check this pin" is.
+ */
+export const MAX_PLAUSIBLE_KM = 150
 
 export function travelMinutes(a: GeoPoint, b: GeoPoint): number {
   const km = distanceKm(a, b) * ROAD_FACTOR
@@ -856,8 +872,11 @@ export interface TravelLeg {
   /** Estimated road distance. */
   km: number
   needMin: number
+  /** Free minutes between the end of the first lesson and the start of the next. */
   gapMin: number
   tight: boolean
+  /** The distance is too large to be real: a location needs fixing, not a faster drive. */
+  implausible: boolean
 }
 
 type Locate = (clientId: string) => GeoPoint | undefined
@@ -869,20 +888,26 @@ function leg(a: Pick<WorkLesson, 'id' | 'clientId' | 'start' | 'durationMin'>, b
   if (!pa || !pb) return null
   const needMin = travelMinutes(pa, pb)
   const gapMin = minutesOf(b.start) - (minutesOf(a.start) + a.durationMin)
-  return {
-    fromId: a.id, toId: b.id,
-    km: Math.round(distanceKm(pa, pb) * ROAD_FACTOR * 10) / 10,
-    needMin, gapMin, tight: gapMin < needMin,
-  }
+  const km = Math.round(distanceKm(pa, pb) * ROAD_FACTOR * 10) / 10
+  const implausible = km > MAX_PLAUSIBLE_KM
+  return { fromId: a.id, toId: b.id, km, needMin, gapMin, tight: !implausible && gapMin < needMin, implausible }
 }
 
 /** Every drive of one day, between consecutive non-cancelled lessons at different homes. */
 export function dayLegs(lessons: WorkLesson[], date: string, locate: Locate): TravelLeg[] {
   const day = sortLessons(lessons.filter(l => l.date === date && l.status !== 'cancelled'))
   const out: TravelLeg[] = []
+  const wrongPins = new Set<string>()
   for (let i = 1; i < day.length; i++) {
     const l = leg(day[i - 1], day[i], locate)
-    if (l) out.push(l)
+    if (!l) continue
+    if (l.implausible) {
+      // A wrong pin shows up on every drive to and from that home — say it once a day.
+      const pair = [day[i - 1].clientId, day[i].clientId].sort().join('|')
+      if (wrongPins.has(pair)) continue
+      wrongPins.add(pair)
+    }
+    out.push(l)
   }
   return out
 }
@@ -890,7 +915,7 @@ export function dayLegs(lessons: WorkLesson[], date: string, locate: Locate): Tr
 /**
  * The drives a lesson being scheduled would create: from the lesson that ends
  * just before it, and to the one that starts just after it. Only tight ones
- * are returned — those are the warnings.
+ * (and impossible distances — a wrong pin) are returned: those are the warnings.
  */
 export function travelWarnings(
   candidate: Pick<WorkLesson, 'date' | 'start' | 'durationMin' | 'clientId'> & { id?: string },
@@ -904,8 +929,8 @@ export function travelWarnings(
     .sort((a, b) => (minutesOf(b.start) + b.durationMin) - (minutesOf(a.start) + a.durationMin))[0]
   const after = same.filter(l => minutesOf(l.start) >= end).sort((a, b) => minutesOf(a.start) - minutesOf(b.start))[0]
   const out: (TravelLeg & { otherId: string; direction: 'from' | 'to' })[] = []
-  if (before) { const l = leg(before, c, locate); if (l?.tight) out.push({ ...l, otherId: before.id, direction: 'from' }) }
-  if (after) { const l = leg(c, after, locate); if (l?.tight) out.push({ ...l, otherId: after.id, direction: 'to' }) }
+  if (before) { const l = leg(before, c, locate); if (l?.tight || l?.implausible) out.push({ ...l, otherId: before.id, direction: 'from' }) }
+  if (after) { const l = leg(c, after, locate); if (l?.tight || l?.implausible) out.push({ ...l, otherId: after.id, direction: 'to' }) }
   return out
 }
 

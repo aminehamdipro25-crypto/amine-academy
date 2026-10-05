@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useMemo, useState } from 'react'
-import { AlertTriangle, Copy, MessageCircle } from 'lucide-react'
+import { AlertTriangle, Copy, FileDown, Loader2, MessageCircle, Share2 } from 'lucide-react'
 import {
   addDays, buildStatement, clientBalances, endOfMonth, formatDuration, formatMoney, isBillable, lessonsCount, phoneDigits,
   startOfMonth, statementText, type WorkClient,
@@ -58,6 +58,46 @@ export default function StatementSheet({ client, onClose }: { client: WorkClient
   const tel = phoneDigits(client?.phone, settings.currency)
   const money = (n: number) => formatMoney(n, settings.currency)
 
+  const [pdfBusy, setPdfBusy] = useState<'' | 'download' | 'share'>('')
+  // Read after mount, not during render, so the server and first client render agree.
+  const [canShareFiles, setCanShareFiles] = useState(false)
+  useEffect(() => { setCanShareFiles(typeof navigator.canShare === 'function') }, [])
+
+  /** The PDF is built on the server from the stored ledger — the page only says which family and period. */
+  async function fetchPdf(): Promise<File> {
+    const q = new URLSearchParams({ client: client!.id, from: range.from, to: range.to })
+    const res = await fetch(`/api/admin/worklog/statement/pdf?${q}`, { cache: 'no-store' })
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}))
+      throw new Error(body.error ?? `تعذّر إنشاء الملف (${res.status})`)
+    }
+    const name = res.headers.get('Content-Disposition')?.match(/filename="([^"]+)"/)?.[1] ?? 'statement.pdf'
+    return new File([await res.blob()], name, { type: 'application/pdf' })
+  }
+  function save(file: File) {
+    const url = URL.createObjectURL(file)
+    const a = document.createElement('a')
+    a.href = url; a.download = file.name
+    document.body.appendChild(a); a.click(); a.remove()
+    setTimeout(() => URL.revokeObjectURL(url), 10_000)
+  }
+  async function downloadPdf() {
+    setPdfBusy('download')
+    try { save(await fetchPdf()); toast('نُزّل كشف الحساب PDF') } catch (e) { toast((e as Error).message, 'error') } finally { setPdfBusy('') }
+  }
+  /** On a phone this opens the share menu, so the file goes straight into the family's WhatsApp chat. */
+  async function sharePdf() {
+    setPdfBusy('share')
+    try {
+      const file = await fetchPdf()
+      if (navigator.canShare?.({ files: [file] })) {
+        try { await navigator.share({ files: [file], title: 'كشف حساب' }) } catch (e) { if ((e as Error).name !== 'AbortError') throw e }
+      } else {
+        save(file); toast('هذا المتصفح لا يشارك الملفات — نُزّل الملف، أرفقه في واتساب يدوياً')
+      }
+    } catch (e) { toast((e as Error).message, 'error') } finally { setPdfBusy('') }
+  }
+
   async function copy() {
     try { await navigator.clipboard.writeText(text); toast('نُسخ الكشف') } catch { toast('تعذّر النسخ — حدّد النص وانسخه يدوياً', 'error') }
   }
@@ -65,6 +105,17 @@ export default function StatementSheet({ client, onClose }: { client: WorkClient
   return (
     <Sheet open={!!client} onClose={onClose} wide title={client ? `كشف حساب · ${clientLabel(client)}` : 'كشف حساب'}
       footer={
+        <div className="space-y-2">
+        <div className="flex gap-2">
+          <button onClick={downloadPdf} disabled={!!pdfBusy || !st} className={primaryBtn('flex-1')}>
+            {pdfBusy === 'download' ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />} تنزيل PDF
+          </button>
+          {canShareFiles && (
+            <button onClick={sharePdf} disabled={!!pdfBusy || !st} className={ghostBtn('flex-1')}>
+              {pdfBusy === 'share' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Share2 className="w-4 h-4" />} مشاركة PDF
+            </button>
+          )}
+        </div>
         <div className="flex gap-2">
           {tel ? (
             <a href={`https://wa.me/${tel}?text=${encodeURIComponent(text)}`} target="_blank" rel="noopener noreferrer"
@@ -78,6 +129,7 @@ export default function StatementSheet({ client, onClose }: { client: WorkClient
             </a>
           )}
           <button onClick={copy} className={ghostBtn()}><Copy className="w-4 h-4" /> نسخ</button>
+        </div>
         </div>
       }>
       {client && st && (
@@ -127,7 +179,7 @@ export default function StatementSheet({ client, onClose }: { client: WorkClient
           </ul>
 
           <div>
-            <p className="text-xs font-bold text-gray-600 mb-1.5">نص الرسالة كما سيُرسَل</p>
+            <p className="text-xs font-bold text-gray-600 mb-1.5">نص الرسالة كما سيُرسَل — أو أرسل الكشف ملف PDF من الزر أدناه</p>
             <pre dir="rtl" className="whitespace-pre-wrap rounded-xl bg-[#e7fbe6] border border-emerald-100 p-3 text-[12px] leading-relaxed text-gray-800 font-sans max-h-60 overflow-y-auto">{text}</pre>
           </div>
         </div>

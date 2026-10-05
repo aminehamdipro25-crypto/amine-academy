@@ -269,3 +269,25 @@ describe('8. two children in one family', () => {
     expect(lessonWho({ child: 'تميم' }, fam)).toBe('تميم — أبو خالد')
   })
 })
+
+describe('9. why a lesson was cancelled', () => {
+  it('is kept only on a cancelled lesson, trimmed and capped', () => {
+    const c = sanitizeLesson({ status: 'cancelled', cancelReason: '  ظرف طارئ  ' }, true)
+    expect(c.ok && c.value.cancelReason).toBe('ظرف طارئ')
+    const done = sanitizeLesson({ status: 'done', cancelReason: 'ظرف طارئ' }, true)
+    expect(done.ok && done.value.cancelReason).toBeUndefined()
+    const long = sanitizeLesson({ status: 'cancelled', cancelReason: 'x'.repeat(500) }, true)
+    expect(long.ok && long.value.cancelReason!.length).toBeLessThanOrEqual(120)
+  })
+
+  it('the statement lists the free cancellation with its reason, and does not bill it', () => {
+    const ls = [
+      lesson({ clientId: 'k', date: '2026-10-02', status: 'done', price: 120 }),
+      lesson({ clientId: 'k', date: '2026-10-05', status: 'cancelled', charged: false, cancelReason: 'ظرف طارئ', price: 120 }),
+    ]
+    const st = buildStatement('k', ls, [], '2026-10-01', '2026-10-05', '2026-10-05')
+    const text = statementText(st, { name: 'أبو خالد', childName: 'خالد' }, 'QAR', d => d)
+    expect(text).toContain('✕ ملغاة (غير محتسبة) — ظرف طارئ')
+    expect(st.billed).toBe(120)
+  })
+})

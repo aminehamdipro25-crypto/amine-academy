@@ -51,6 +51,7 @@ export default function LessonForm({ open, onClose, lesson, draft, onNewClient, 
   const [child, setChild] = useState('')
   const [otherChild, setOtherChild] = useState(false)
   const [cancelledBy, setCancelledBy] = useState<'family' | 'me'>('family')
+  const [cancelReason, setCancelReason] = useState('')
   const [charged, setCharged] = useState(false)
   const [reminder, setReminder] = useState('60')
   const [repeat, setRepeat] = useState(1)
@@ -71,7 +72,7 @@ export default function LessonForm({ open, onClose, lesson, draft, onNewClient, 
     if (lesson) {
       setClientId(lesson.clientId); setDate(lesson.date); setStart(lesson.start); setDuration(lesson.durationMin)
       setPrice(String(lesson.price)); setPriceTouched(true); setStatus(lesson.status)
-      setCancelledBy(lesson.cancelledBy ?? 'family'); setCharged(!!lesson.charged); setStatusTouched(true)
+      setCancelledBy(lesson.cancelledBy ?? 'family'); setCharged(!!lesson.charged); setStatusTouched(true); setCancelReason(lesson.cancelReason ?? '')
       setChild(lesson.child ?? ''); setOtherChild(false)
       setReminder(lesson.reminderMin === null ? 'none' : String(lesson.reminderMin)); setRepeat(1); setNote(lesson.note ?? ''); setRating(lesson.rating ?? null); setScope('one')
     } else {
@@ -84,7 +85,7 @@ export default function LessonForm({ open, onClose, lesson, draft, onNewClient, 
       const c = clientsById.get(cid)
       if (draft?.price !== undefined) { setPrice(String(draft.price)); setPriceTouched(true) }
       else { setPrice(c ? String(priceFor(c.hourlyRate, d)) : ''); setPriceTouched(false) }
-      setStatus('scheduled'); setStatusTouched(false); setCancelledBy('family'); setCharged(false)
+      setStatus('scheduled'); setStatusTouched(false); setCancelledBy('family'); setCharged(false); setCancelReason('')
       setChild(draft?.child ?? ''); setOtherChild(false)
       const rem = draft && 'reminderMin' in draft ? draft.reminderMin : settings.defaultReminderMin
       setReminder(rem === null || rem === undefined ? 'none' : String(rem))
@@ -142,6 +143,7 @@ export default function LessonForm({ open, onClose, lesson, draft, onNewClient, 
     const body = {
       clientId, date, start, durationMin: duration, price: Number(price || 0), status,
       cancelledBy: status === 'cancelled' ? cancelledBy : undefined,
+      cancelReason: status === 'cancelled' ? cancelReason.trim() : '',
       charged: status === 'cancelled' ? charged : false,
       reminderMin: reminder === 'none' ? null : Number(reminder),
       note,
@@ -424,6 +426,21 @@ export default function LessonForm({ open, onClose, lesson, draft, onNewClient, 
               <input type="checkbox" className="mt-0.5 accent-brand-600" checked={charged} onChange={e => setCharged(e.target.checked)} />
               <span><b>إلغاء متأخر يُدفع ثمنه</b> — تُضاف قيمتها إلى مستحقات العائلة</span>
             </label>
+            <Field label="سبب الإلغاء (يظهر في كشف الحساب)">
+              {id => (
+                <div className="space-y-2">
+                  <input id={id} className={inputCls} maxLength={120} value={cancelReason} onChange={e => setCancelReason(e.target.value)} placeholder="مثال: ظرف طارئ" />
+                  <div className="flex flex-wrap gap-1.5">
+                    {['ظرف طارئ', 'مرض الطفل', 'سفر', 'امتحانات', 'مناسبة عائلية'].map(r => (
+                      <button key={r} type="button" onClick={() => setCancelReason(r)}
+                        className={`rounded-lg px-2.5 py-1 text-[11px] font-bold border transition ${cancelReason === r ? 'bg-rose-600 text-white border-rose-600' : 'bg-white border-rose-200 text-rose-700'}`}>
+                        {r}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </Field>
           </div>
         )}
 

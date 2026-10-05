@@ -371,6 +371,9 @@ function LessonCard({ lesson: l, paid, onPaid, onEdit, onCopy, onLocate, onStatu
                 : <button onClick={onEdit} className="rounded-full bg-amber-50 px-2 py-0.5 font-bold text-amber-700">⭐ قيّم الحصة</button>)}
               {l.status === 'scheduled' && l.reminderMin !== null && <span className="inline-flex items-center gap-1"><Bell className="w-3 h-3" />{l.reminderMin >= 60 ? `${l.reminderMin / 60} س` : `${l.reminderMin} د`}</span>}
               {l.status === 'cancelled' && <span>{l.cancelledBy === 'me' ? 'ألغيتُها أنا' : 'ألغتها العائلة'}</span>}
+              {l.status === 'cancelled' && (l.cancelReason
+                ? <span className="font-bold text-rose-700">السبب: {l.cancelReason}</span>
+                : <button onClick={onEdit} className="rounded-full bg-rose-50 px-2 py-0.5 font-bold text-rose-700">+ سبب الإلغاء</button>)}
             </div>
             {c?.address && <p className="mt-1 text-[11px] text-gray-400 truncate inline-flex items-center gap-1 max-w-full"><MapPin className="w-3 h-3 flex-shrink-0" />{c.address}</p>}
             {l.note && <p className="mt-2 rounded-lg bg-gray-50 px-2.5 py-1.5 text-[11px] text-gray-600">{l.note}</p>}

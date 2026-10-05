@@ -175,6 +175,6 @@ export function lessonNotionProperties(
   }
   put('family', family)
   put('child', child)
-  put('note', l.note ?? '')
+  put('note', [l.status === 'cancelled' && l.cancelReason ? `سبب الإلغاء: ${l.cancelReason}` : '', l.note ?? ''].filter(Boolean).join(' · '))
   return out
 }

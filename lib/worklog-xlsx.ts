@@ -170,7 +170,7 @@ export function ledgerSheets(
         D(l.date), S(l.start), S(endTime(l.start, l.durationMin)), S(who(l.clientId)), N(hours(l.durationMin), 'hours'),
         N(l.price, 'money'),
         S(STATUS_META[l.status].label + (l.status === 'cancelled' ? (l.cancelledBy === 'me' ? ' (منّي)' : ' (العائلة)') + (l.charged ? ' · محتسبة' : '') : '')),
-        N(isBillable(l) ? l.price : 0, 'money'), S(l.note),
+        N(isBillable(l) ? l.price : 0, 'money'), S([l.status === 'cancelled' && l.cancelReason ? `سبب الإلغاء: ${l.cancelReason}` : '', l.note ?? ''].filter(Boolean).join(' · ')),
       ]),
     ],
   }

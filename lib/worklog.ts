@@ -57,6 +57,8 @@ export interface WorkLesson {
   price: number
   status: LessonStatus
   cancelledBy?: CancelledBy
+  /** Why it was cancelled («ظرف طارئ») — shown on the card and in the family's statement. */
+  cancelReason?: string
   /** A late cancellation the family still pays for. */
   charged?: boolean
   note?: string
@@ -795,6 +797,7 @@ export function sanitizeLesson(body: Record<string, unknown>, partial = false): 
     if (!['scheduled', 'done', 'cancelled'].includes(s)) return { ok: false, error: 'حالة غير معروفة' }
     out.status = s as LessonStatus
   }
+  if ('cancelReason' in body) out.cancelReason = cleanText(body.cancelReason, 120) || undefined
   if ('cancelledBy' in body) out.cancelledBy = body.cancelledBy === 'me' ? 'me' : body.cancelledBy === 'family' ? 'family' : undefined
   if ('charged' in body) out.charged = !!body.charged
   if ('note' in body) out.note = cleanText(body.note, 500)
@@ -815,7 +818,7 @@ export function sanitizeLesson(body: Record<string, unknown>, partial = false): 
     out.reminderMin = r
   }
   // Only a cancelled lesson carries cancellation details.
-  if (out.status && out.status !== 'cancelled') { out.cancelledBy = undefined; out.charged = false }
+  if (out.status && out.status !== 'cancelled') { out.cancelledBy = undefined; out.charged = false; out.cancelReason = undefined }
   return { ok: true, value: out }
 }
 
@@ -1098,7 +1101,8 @@ export function statementText(
     const tag = l.status === 'done' ? '✓' : l.charged ? '✕ ملغاة (محتسبة)' : '✕ ملغاة (غير محتسبة)'
     const price = isBillable(l) ? ` — ${money(l.price)}` : ''
     const whose = several && lessonChild(l, client) ? ` — ${lessonChild(l, client)}` : ''
-    lines.push(`• ${formatDay(l.date)} ${l.start}${whose} — ${formatDuration(l.durationMin)}${price} ${tag}`)
+    const why = l.status === 'cancelled' && l.cancelReason ? ` — ${l.cancelReason}` : ''
+    lines.push(`• ${formatDay(l.date)} ${l.start}${whose} — ${formatDuration(l.durationMin)}${price} ${tag}${why}`)
   }
   lines.push('')
   lines.push(`مجموع الحصص المحتسبة: ${lessonsCount(st.billedCount)} · ${formatDuration(st.billedMinutes)} · ${money(st.billed)}`)

@@ -120,7 +120,7 @@ export default function StatementSheet({ client, onClose }: { client: WorkClient
               <li key={l.id} className="flex items-center justify-between gap-2 px-3 py-2">
                 <span className="text-gray-700">{msgDay(l.date)} · {l.start} · {formatDuration(l.durationMin)}</span>
                 <span className={isBillable(l) ? 'font-bold text-gray-900' : 'text-rose-600'}>
-                  {l.status === 'done' ? money(l.price) : l.charged ? `ملغاة · ${money(l.price)}` : 'ملغاة · غير محتسبة'}
+                  {l.status === 'done' ? money(l.price) : l.charged ? `ملغاة · ${money(l.price)}` : 'ملغاة · غير محتسبة'}{l.status === 'cancelled' && l.cancelReason ? ` · ${l.cancelReason}` : ''}
                 </span>
               </li>
             ))}

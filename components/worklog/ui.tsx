@@ -1,6 +1,7 @@
 'use client'
 // Small building blocks shared by the work-log screens.
-import { useEffect, useId, useRef, type ReactNode } from 'react'
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { X } from 'lucide-react'
 import { STATUS_META, type LessonStatus } from '@/lib/worklog'
@@ -22,14 +23,27 @@ export function Field({ label, hint, children, id }: { label: string; hint?: str
   )
 }
 
-/** Bottom sheet on phones, centred dialog on larger screens. Esc and backdrop close it. */
+/**
+ * Bottom sheet on phones, centred dialog on larger screens. Esc and backdrop close it.
+ *
+ * Rendered into <body> through a portal: a sheet opened from inside an
+ * animated (transformed) container is otherwise positioned and stacked inside
+ * that container, and the very card that opened it draws on top of it.
+ */
 export function Sheet({ open, title, onClose, children, footer, wide }: {
   open: boolean; title: string; onClose: () => void; children: ReactNode; footer?: ReactNode; wide?: boolean
 }) {
   const panel = useRef<HTMLDivElement>(null)
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
   useEffect(() => {
     if (!open) return
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    // With two sheets stacked, Esc closes only the one on top.
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return
+      const dialogs = document.querySelectorAll('[role=dialog]')
+      if (dialogs[dialogs.length - 1] === panel.current) onClose()
+    }
     window.addEventListener('keydown', onKey)
     const prev = document.body.style.overflow
     document.body.style.overflow = 'hidden'
@@ -37,7 +51,8 @@ export function Sheet({ open, title, onClose, children, footer, wide }: {
     return () => { window.removeEventListener('keydown', onKey); document.body.style.overflow = prev }
   }, [open, onClose])
 
-  return (
+  if (!mounted) return null
+  return createPortal(
     <AnimatePresence>
       {open && (
         <motion.div
@@ -69,7 +84,8 @@ export function Sheet({ open, title, onClose, children, footer, wide }: {
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   )
 }
 

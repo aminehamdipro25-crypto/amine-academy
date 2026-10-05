@@ -1,9 +1,9 @@
 'use client'
 import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { BarChart3, CalendarDays, Navigation, NotebookPen, Plus, RefreshCw, Settings2, Users, Wallet } from 'lucide-react'
+import { BarChart3, CalendarDays, Navigation, NotebookPen, Plus, Receipt, RefreshCw, Settings2, Users, Wallet } from 'lucide-react'
 import {
-  addDays, clientBalances, endOfMonth, endTime, formatDuration, formatMoney, googleDirectionsUrl, lessonStartLocal,
+  addDays, clientBalances, endOfMonth, hoursIn, startOfWeek, endTime, formatDuration, formatMoney, googleDirectionsUrl, lessonStartLocal,
   periodStats, sortLessons, startOfMonth, type WorkClient, type WorkExpense, type WorkLesson, type WorkPayment,
 } from '@/lib/worklog'
 import { readStorage, writeStorage } from '@/lib/safe-storage'
@@ -18,13 +18,14 @@ import ClientForm from './ClientForm'
 import { ExpenseForm, PaymentForm } from './MoneyForms'
 import { dayLabel, localToday, primaryBtn } from './ui'
 
-type Tab = 'agenda' | 'clients' | 'money' | 'stats' | 'settings'
+type Tab = 'agenda' | 'clients' | 'payments' | 'expenses' | 'stats' | 'settings'
 const TABS: { id: Tab; label: string; icon: typeof CalendarDays }[] = [
   { id: 'agenda', label: 'اليومية', icon: CalendarDays },
   { id: 'clients', label: 'العائلات', icon: Users },
-  { id: 'money', label: 'المال', icon: Wallet },
-  { id: 'stats', label: 'الإحصائيات', icon: BarChart3 },
-  { id: 'settings', label: 'الإعدادات', icon: Settings2 },
+  { id: 'payments', label: 'الدفعات', icon: Wallet },
+  { id: 'expenses', label: 'المصاريف', icon: Receipt },
+  { id: 'stats', label: 'إحصائيات', icon: BarChart3 },
+  { id: 'settings', label: 'إعدادات', icon: Settings2 },
 ]
 const TAB_KEY = 'worklog-tab'
 
@@ -52,6 +53,18 @@ export default function WorkLogApp() {
   const go = (t: Tab) => { setTab(t); writeStorage(TAB_KEY, t); window.scrollTo({ top: 0, behavior: 'smooth' }) }
 
   const openLesson = (d?: LessonDraft) => { setEditLesson(null); setDraft(d); setLessonOpen(true) }
+  /** Same family, time, length, price and reminder — only the date is left to choose. */
+  const copyLesson = (l: WorkLesson) => openLesson({
+    clientId: l.clientId, start: l.start, durationMin: l.durationMin, price: l.price,
+    reminderMin: l.reminderMin, date: addDays(l.date, 7),
+  })
+  const editClientById = (id: string) => {
+    const c = state.clientsById.get(id)
+    if (!c) return
+    // Opened on top of the lesson form, which stays open with its unsaved edits.
+    setEditClient(c); setReopenLesson(false)
+    setClientOpen(true)
+  }
   const openNewClient = (fromLesson = false) => {
     setEditClient(null); setReopenLesson(fromLesson)
     if (fromLesson) setLessonOpen(false)
@@ -102,15 +115,19 @@ export default function WorkLogApp() {
             </nav>
 
             <motion.div key={tab} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
-              {tab === 'agenda' && <AgendaView onAdd={openLesson} onEdit={l => { setEditLesson(l); setLessonOpen(true) }} />}
+              {tab === 'agenda' && <AgendaView onAdd={openLesson} onEdit={l => { setEditLesson(l); setLessonOpen(true) }} onCopy={copyLesson} onLocate={id => editClientById(id)} />}
               {tab === 'clients' && (
-                <ClientsView onAdd={() => openNewClient()} onEdit={c => { setEditClient(c); setClientOpen(true) }}
+                <ClientsView onAdd={() => openNewClient()} onEdit={c => { setEditClient(c); setClientOpen(true) }} onAddLesson={id => openLesson({ clientId: id })}
                   onPay={id => { setEditPayment(null); setPayClient(id); setPayOpen(true) }} />
               )}
-              {tab === 'money' && (
+              {(tab === 'payments' || tab === 'expenses') && (
                 <MoneyView
-                  onPay={() => { setEditPayment(null); setPayClient(undefined); setPayOpen(true) }}
-                  onExpense={() => { setEditExpense(null); setExpOpen(true) }}
+                  key={tab}
+                  mode={tab}
+                  onAdd={() => {
+                    if (tab === 'payments') { setEditPayment(null); setPayClient(undefined); setPayOpen(true) }
+                    else { setEditExpense(null); setExpOpen(true) }
+                  }}
                   onEditPayment={p => { setEditPayment(p); setPayOpen(true) }}
                   onEditExpense={e => { setEditExpense(e); setExpOpen(true) }} />
               )}
@@ -128,7 +145,8 @@ export default function WorkLogApp() {
           </button>
         )}
 
-        <LessonForm open={lessonOpen} onClose={() => setLessonOpen(false)} lesson={editLesson} draft={draft} onNewClient={() => openNewClient(true)} />
+        <LessonForm open={lessonOpen} onClose={() => setLessonOpen(false)} lesson={editLesson} draft={draft} onNewClient={() => openNewClient(true)}
+          onEditClient={id => editClientById(id)} onCopy={copyLesson} />
         <ClientForm open={clientOpen} client={editClient}
           onClose={() => { setClientOpen(false); if (reopenLesson) { setReopenLesson(false); setLessonOpen(true) } }}
           onCreated={c => { if (reopenLesson) setDraft(d => ({ ...d, clientId: c.id })) }} />
@@ -151,7 +169,7 @@ function Overview({ onAddClient, onAddLesson }: { onAddClient: () => void; onAdd
       .find(l => lessonStartLocal(l).getTime() + l.durationMin * 60_000 > now),
     [lessons, today, now],
   )
-  const todays = lessons.filter(l => l.date === today && l.status !== 'cancelled')
+  const week = hoursIn(lessons, startOfWeek(today), addDays(startOfWeek(today), 6))
   const month = useMemo(() => periodStats(lessons, payments, expenses, startOfMonth(today), endOfMonth(today)), [lessons, payments, expenses, today])
   const owed = useMemo(() => clientBalances(clients, lessons, payments, today).reduce((s, b) => s + Math.max(0, b.balance), 0), [clients, lessons, payments, today])
 
@@ -206,13 +224,25 @@ function Overview({ onAddClient, onAddLesson }: { onAddClient: () => void; onAdd
         )}
       </div>
       <div className="lg:col-span-2 grid grid-cols-2 gap-3">
-        <MiniStat label="اليوم" value={formatDuration(todays.reduce((s, l) => s + l.durationMin, 0))} sub={`${todays.length} حصة`} />
-        <MiniStat label="ساعات الشهر" value={formatDuration(month.minutesDone)} sub={`${month.lessonsDone} منجزة · ${month.lessonsCancelled} ملغاة`} />
-        <MiniStat label="مستلم الشهر" value={formatMoney(month.collected, settings.currency)} sub={`عمل منجز ${formatMoney(month.earned, settings.currency)}`} />
+        <MiniStat label="ساعات الأسبوع (منجزة)" value={formatDuration(week.done)}
+          sub={hoursSub(week.scheduled, week.cancelled)} />
+        <MiniStat label="ساعات الشهر (منجزة)" value={formatDuration(month.minutesDone)}
+          sub={hoursSub(month.minutesScheduled, month.minutesCancelled)} />
+        <MiniStat label="صافي الشهر" value={formatMoney(month.net, settings.currency)}
+          sub={`مستلم ${formatMoney(month.collected, settings.currency)} − مصاريف ${formatMoney(month.expenses, settings.currency)}`} />
         <MiniStat label="مستحقات معلّقة" value={formatMoney(owed, settings.currency)} sub="لدى العائلات" warn={owed > 0} />
       </div>
     </div>
   )
+}
+
+/** "+ 3 س مجدولة · 1 س ملغاة" — empty parts left out rather than shown as zero. */
+function hoursSub(scheduled: number, cancelled: number): string {
+  const parts = [
+    scheduled ? `+ ${formatDuration(scheduled)} مجدولة` : '',
+    cancelled ? `${formatDuration(cancelled)} ملغاة` : '',
+  ].filter(Boolean)
+  return parts.length ? parts.join(' · ') : 'لا مجدولة ولا ملغاة'
 }
 
 function MiniStat({ label, value, sub, warn }: { label: string; value: string; sub: string; warn?: boolean }) {

@@ -1,8 +1,8 @@
 'use client'
 import { useEffect, useMemo, useState } from 'react'
-import { AlertTriangle, Repeat, Trash2 } from 'lucide-react'
+import { AlertTriangle, Car, Copy, MapPin, Repeat, Trash2 } from 'lucide-react'
 import {
-  CURRENCY_LABEL, STATUS_META, addDays, endTime, findConflicts, formatMoney, priceFor,
+  CURRENCY_LABEL, STATUS_META, addDays, travelWarnings, endTime, findConflicts, formatMoney, priceFor,
   type LessonStatus, type WorkLesson,
 } from '@/lib/worklog'
 import { useToast } from '@/components/ui/Toast'
@@ -19,16 +19,23 @@ const REMINDERS: { value: string; label: string }[] = [
   { value: '1440', label: 'قبل يوم' },
 ]
 
-export interface LessonDraft { date?: string; start?: string; clientId?: string }
+/** Prefill for a new lesson. A copied lesson carries everything but its date. */
+export interface LessonDraft {
+  date?: string; start?: string; clientId?: string
+  durationMin?: number; price?: number; reminderMin?: number | null; note?: string
+}
 
-export default function LessonForm({ open, onClose, lesson, draft, onNewClient }: {
+export default function LessonForm({ open, onClose, lesson, draft, onNewClient, onEditClient, onCopy }: {
   open: boolean
   onClose: () => void
   lesson?: WorkLesson | null
   draft?: LessonDraft
   onNewClient: () => void
+  /** Open the family's details (to pin their home on the map). */
+  onEditClient: (clientId: string) => void
+  onCopy: (l: WorkLesson) => void
 }) {
-  const { clients, lessons, settings, clientsById, create, update, remove } = useWorkLog()
+  const { clients, lessons, payments, settings, clientsById, create, update, remove } = useWorkLog()
   const { toast } = useToast()
   const active = useMemo(() => clients.filter(c => !c.archived).sort((a, b) => a.name.localeCompare(b.name, 'ar')), [clients])
 
@@ -47,11 +54,14 @@ export default function LessonForm({ open, onClose, lesson, draft, onNewClient }
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [paidNow, setPaidNow] = useState(false)
+  const [paidAmount, setPaidAmount] = useState('')
+  const alreadyPaid = !!lesson && payments.some(p => p.lessonId === lesson.id)
 
   // Fill the form whenever it opens.
   useEffect(() => {
     if (!open) return
-    setError(''); setConfirmDelete(false); setSaving(false)
+    setError(''); setConfirmDelete(false); setSaving(false); setPaidNow(false); setPaidAmount('')
     if (lesson) {
       setClientId(lesson.clientId); setDate(lesson.date); setStart(lesson.start); setDuration(lesson.durationMin)
       setPrice(String(lesson.price)); setPriceTouched(true); setStatus(lesson.status)
@@ -62,16 +72,18 @@ export default function LessonForm({ open, onClose, lesson, draft, onNewClient }
       // A family's usual time: the start of their most recent lesson.
       const last = lessons.filter(l => l.clientId === cid).sort((a, b) => (a.date < b.date ? 1 : -1))[0]
       setClientId(cid); setDate(draft?.date ?? localToday()); setStart(draft?.start ?? last?.start ?? '16:00')
-      const d = last?.durationMin ?? settings.defaultDurationMin
+      const d = draft?.durationMin ?? last?.durationMin ?? settings.defaultDurationMin
       setDuration(d)
       const c = clientsById.get(cid)
-      setPrice(c ? String(priceFor(c.hourlyRate, d)) : ''); setPriceTouched(false)
+      if (draft?.price !== undefined) { setPrice(String(draft.price)); setPriceTouched(true) }
+      else { setPrice(c ? String(priceFor(c.hourlyRate, d)) : ''); setPriceTouched(false) }
       setStatus('scheduled'); setCancelledBy('family'); setCharged(false)
-      setReminder(settings.defaultReminderMin === null ? 'none' : String(settings.defaultReminderMin))
-      setRepeat(1); setNote('')
+      const rem = draft && 'reminderMin' in draft ? draft.reminderMin : settings.defaultReminderMin
+      setReminder(rem === null || rem === undefined ? 'none' : String(rem))
+      setRepeat(1); setNote(draft?.note ?? '')
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, lesson?.id])
+  }, [open, lesson?.id, draft])
 
   // Price follows family × duration until the user types their own.
   useEffect(() => {
@@ -84,6 +96,11 @@ export default function LessonForm({ open, onClose, lesson, draft, onNewClient }
     if (!date || !/^\d\d:\d\d$/.test(start) || status === 'cancelled') return []
     return findConflicts({ id: lesson?.id, date, start, durationMin: duration }, lessons)
   }, [date, start, duration, lessons, lesson?.id, status])
+
+  const drives = useMemo(() => {
+    if (!clientId || !date || !/^\d\d:\d\d$/.test(start) || status === 'cancelled') return []
+    return travelWarnings({ id: lesson?.id, clientId, date, start, durationMin: duration }, lessons, id => clientsById.get(id)?.location)
+  }, [clientId, date, start, duration, lessons, lesson?.id, status, clientsById])
 
   const isPast = date < localToday()
 
@@ -99,12 +116,25 @@ export default function LessonForm({ open, onClose, lesson, draft, onNewClient }
       note,
     }
     try {
+      let saved: WorkLesson
       if (lesson) {
-        await update('lessons', lesson.id, body)
+        saved = await update<WorkLesson>('lessons', lesson.id, body)
         toast('حُفظت التعديلات')
       } else {
         const rows = await create<WorkLesson[]>('lessons', { ...body, repeatWeeks: repeat })
+        saved = rows[0] // the series starts with the lesson as entered; later repeats are scheduled
         toast(rows.length > 1 ? `أُضيفت ${rows.length} حصة أسبوعية` : 'أُضيفت الحصة')
+      }
+      if (status === 'done' && paidNow && !alreadyPaid) {
+        const amount = Number(paidAmount || price || 0)
+        if (amount > 0) {
+          try {
+            await create('payments', { clientId, lessonId: saved.id, date: localToday(), amount, method: 'cash', note: `عن حصة ${date} ${start}` })
+          } catch (e) {
+            // The lesson is saved; say plainly that the payment is not.
+            toast(`حُفظت الحصة، لكن لم تُسجَّل الدفعة: ${(e as Error).message}`, 'error')
+          }
+        }
       }
       onClose()
     } catch (e) {
@@ -140,6 +170,11 @@ export default function LessonForm({ open, onClose, lesson, draft, onNewClient }
           <button onClick={save} disabled={saving} className={primaryBtn('flex-1')}>
             {saving ? 'جارٍ الحفظ…' : lesson ? 'حفظ التعديلات' : repeat > 1 ? `إضافة ${repeat} حصص` : 'إضافة الحصة'}
           </button>
+          {lesson && !confirmDelete && (
+            <button onClick={() => onCopy(lesson)} className={ghostBtn()} title="نسخ إلى تاريخ آخر">
+              <Copy className="w-4 h-4" /><span className="hidden sm:inline">نسخ</span>
+            </button>
+          )}
           {lesson && !confirmDelete && (
             <button onClick={() => setConfirmDelete(true)} className={ghostBtn('text-rose-600')} aria-label="حذف الحصة">
               <Trash2 className="w-4 h-4" />
@@ -181,10 +216,28 @@ export default function LessonForm({ open, onClose, lesson, draft, onNewClient }
             <button id={id} type="button" onClick={onNewClient} className={ghostBtn('w-full border-dashed')}>+ أضف أول عائلة</button>
           )}
         </Field>
+        {clientId && clientsById.get(clientId) && !clientsById.get(clientId)!.location && (
+          <button type="button" onClick={() => onEditClient(clientId)}
+            className="-mt-2 w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-dashed border-brand-300 bg-brand-50 px-3 py-2 text-xs font-bold text-brand-700">
+            <MapPin className="w-3.5 h-3.5" /> لم يُحدَّد موقع منزل هذه العائلة — حدّده الآن
+          </button>
+        )}
 
         <div className="grid grid-cols-2 gap-3">
           <Field label="التاريخ">{id => <input id={id} type="date" className={inputCls} value={date} onChange={e => setDate(e.target.value)} />}</Field>
           <Field label="البداية">{id => <input id={id} type="time" step={300} className={inputCls} value={start} onChange={e => setStart(e.target.value)} />}</Field>
+        </div>
+        <div className="flex flex-wrap gap-1.5 -mt-2" aria-label="تاريخ سريع">
+          {[
+            { label: 'اليوم', value: localToday() },
+            { label: 'غداً', value: addDays(localToday(), 1) },
+            { label: '+ أسبوع', value: /^\d{4}-\d{2}-\d{2}$/.test(date) ? addDays(date, 7) : addDays(localToday(), 7) },
+          ].map(c => (
+            <button key={c.label} type="button" onClick={() => setDate(c.value)}
+              className={`rounded-lg px-2.5 py-1 text-[11px] font-bold border transition ${date === c.value ? 'bg-brand-600 text-white border-brand-600' : 'bg-white border-gray-200 text-gray-600 hover:border-brand-300'}`}>
+              {c.label}
+            </button>
+          ))}
         </div>
 
         <Field label={`المدة · تنتهي ${/^\d\d:\d\d$/.test(start) ? endTime(start, duration) : '—'}`}>
@@ -209,6 +262,25 @@ export default function LessonForm({ open, onClose, lesson, draft, onNewClient }
           <div className="flex gap-2 rounded-xl bg-amber-50 border border-amber-100 px-3 py-2 text-[12px] text-amber-800">
             <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
             <span>تتداخل مع: {conflicts.map(c => `${clientLabel(clientsById.get(c.clientId))} (${c.start}–${endTime(c.start, c.durationMin)})`).join('، ')}</span>
+          </div>
+        )}
+
+        {drives.length > 0 && (
+          <div className="flex gap-2 rounded-xl bg-amber-50 border border-amber-100 px-3 py-2 text-[12px] text-amber-800">
+            <Car className="w-4 h-4 flex-shrink-0 mt-0.5" />
+            <div className="space-y-0.5">
+              {drives.map(d => {
+                const other = lessons.find(l => l.id === d.otherId)
+                const who = clientLabel(clientsById.get(other?.clientId ?? ''))
+                return (
+                  <p key={d.otherId}>
+                    {d.direction === 'from' ? `بعد حصة ${who} (تنتهي ${other ? endTime(other.start, other.durationMin) : ''})` : `قبل حصة ${who} (${other?.start ?? ''})`}:
+                    {' '}التنقّل ≈ {d.km} كم · ~{d.needMin} د، والفاصل {Math.max(0, d.gapMin)} د فقط
+                  </p>
+                )
+              })}
+              <p className="text-[10px] text-amber-700">تقدير بالمسافة وزحمة المدينة، لا مسار فعلي — للتنبيه فقط</p>
+            </div>
           </div>
         )}
 
@@ -239,6 +311,25 @@ export default function LessonForm({ open, onClose, lesson, draft, onNewClient }
         {status === 'scheduled' && isPast && (
           <p className="text-[11px] text-amber-700 -mt-2">هذا التاريخ مضى — هل تمّت الحصة أم أُلغيت؟ الحصة «المجدولة» لا تُحتسب في المستحقات.</p>
         )}
+
+        {status === 'done' && (alreadyPaid ? (
+          <p className="text-xs font-bold text-emerald-700 -mt-2">✓ أجر هذه الحصة مسجّل في الدفعات</p>
+        ) : (
+          <div className="rounded-2xl bg-emerald-50/60 border border-emerald-100 p-3 space-y-2">
+            <label className="flex items-center gap-2 text-sm font-bold text-gray-800 cursor-pointer">
+              <input type="checkbox" className="accent-emerald-600 w-4 h-4" checked={paidNow} onChange={e => setPaidNow(e.target.checked)} />
+              استلمتُ أجر هذه الحصة
+            </label>
+            {paidNow && (
+              <div className="flex items-center gap-2">
+                <input type="number" min={0} step="any" inputMode="decimal" className={`${inputCls} w-32`} aria-label="المبلغ المستلم"
+                  value={paidAmount || price} onChange={e => setPaidAmount(e.target.value)} />
+                <span className="text-xs text-gray-500">{cur} نقداً — تُسجَّل في الدفعات</span>
+              </div>
+            )}
+            {!paidNow && <p className="text-[11px] text-gray-500">إن لم تستلمه، تُضاف قيمتها إلى مستحقات العائلة</p>}
+          </div>
+        ))}
 
         {status === 'cancelled' && (
           <div className="rounded-2xl bg-rose-50/60 border border-rose-100 p-3 space-y-3">

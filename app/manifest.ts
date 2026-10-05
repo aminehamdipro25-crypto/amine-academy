@@ -9,7 +9,9 @@ export default function manifest(): MetadataRoute.Manifest {
     display: 'standalone',
     background_color: '#ffffff',
     theme_color: '#7c3aed',
-    orientation: 'portrait',
+    // 'any', not 'portrait': on a tablet the dashboard and the work log are
+    // used in landscape, and a portrait lock made the installed app refuse to turn.
+    orientation: 'any',
     lang: 'ar',
     dir: 'rtl',
     // PNG icons at 192 and 512 are REQUIRED for install (the "Add to Home
@@ -25,6 +27,14 @@ export default function manifest(): MetadataRoute.Manifest {
     ],
     categories: ['education', 'health'],
     shortcuts: [
+      {
+        // Long-press the installed icon (Android) → straight into the work log.
+        name: 'دفتر الحصص',
+        short_name: 'دفتر الحصص',
+        url: '/dashboard/work-log',
+        description: 'اليومية والدفعات والمصاريف',
+        icons: [{ src: '/icon-192.png', sizes: '192x192', type: 'image/png' }],
+      },
       {
         name: 'تسجيل الدخول',
         url: '/parent/login',

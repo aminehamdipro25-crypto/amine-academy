@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   buildIcs, clientBalances, dueReminders, endTime, findConflicts, formatMoney, isAllowedMapHost, isValidDate,
-  lessonValue, monthlyMoney, parseMapLink, periodStats, phoneDigits, priceFor, sanitizeClient, sanitizeLesson,
+  lessonValue, monthlyMoney, parseGeocodeResults, parseMapLink, periodStats, phoneDigits, priceFor, sanitizeClient, sanitizeLesson,
   sanitizePayment, todayIn, weeklyHours, weeklySeries,
   type WorkClient, type WorkLesson, type WorkPayment, type WorkExpense,
 } from '@/lib/worklog'
@@ -216,6 +216,29 @@ describe('locations', () => {
     expect(phoneDigits('+216 22 123 456', 'TND')).toBe('21622123456')
     expect(phoneDigits('0097430653759', 'QAR')).toBe('97430653759')
     expect(phoneDigits('', 'QAR')).toBeNull()
+  })
+})
+
+describe('address search results', () => {
+  it('keeps valid places and drops malformed ones', () => {
+    const hits = parseGeocodeResults([
+      { lat: '25.3698', lon: '51.5513', display_name: 'Zig Zag Tower A, West Bay Lagoon, Doha' },
+      { lat: 'x', lon: '51.5', display_name: 'broken' },
+      { lat: '95', lon: '51.5', display_name: 'out of range' },
+      { lat: '25.1', lon: '51.2' }, // no name
+      null,
+    ])
+    expect(hits).toEqual([{ label: 'Zig Zag Tower A, West Bay Lagoon, Doha', point: { lat: 25.3698, lng: 51.5513 } }])
+  })
+
+  it('never trusts a non-list response', () => {
+    expect(parseGeocodeResults({ error: 'rate limited' })).toEqual([])
+    expect(parseGeocodeResults(null)).toEqual([])
+  })
+
+  it('caps the list', () => {
+    const many = Array.from({ length: 9 }, (_, i) => ({ lat: '25.' + (i + 1), lon: '51.5', display_name: 'p' + i }))
+    expect(parseGeocodeResults(many)).toHaveLength(5)
   })
 })
 

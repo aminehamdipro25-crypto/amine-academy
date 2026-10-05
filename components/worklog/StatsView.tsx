@@ -3,13 +3,15 @@ import { useMemo, useState } from 'react'
 import {
   Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts'
-import { Ban, CheckCircle2, Clock, Coins, Hourglass, PiggyBank, TrendingDown, Wallet } from 'lucide-react'
+import { Ban, CheckCircle2, FileSpreadsheet, Clock, Coins, Hourglass, PiggyBank, TrendingDown, Wallet } from 'lucide-react'
 import {
   EXPENSE_LABEL, STATUS_META, addDays, endOfMonth, formatHours, formatMoney, monthlyMoney, periodStats,
   startOfMonth, startOfWeek, weeklyHours,
 } from '@/lib/worklog'
 import { clientLabel, useWorkLog } from './useWorkLog'
-import { Field, Segmented, Stat, inputCls, localToday, monthLabel, shortDate } from './ui'
+import { useToast } from '@/components/ui/Toast'
+import { downloadLedgerXlsx } from './exportXlsx'
+import { Field, Segmented, Stat, ghostBtn, inputCls, localToday, monthLabel, shortDate } from './ui'
 
 type Preset = 'week' | 'month' | 'lastMonth' | 'quarter' | 'year' | 'custom'
 const INCOME_COLOR = '#7C5CFC'
@@ -28,7 +30,9 @@ function range(p: Preset, today: string, custom: { from: string; to: string }) {
 }
 
 export default function StatsView() {
-  const { lessons, payments, expenses, clientsById, settings } = useWorkLog()
+  const { lessons, payments, expenses, clientsById, settings, data } = useWorkLog()
+  const { toast } = useToast()
+  const [exporting, setExporting] = useState(false)
   const today = localToday()
   const [preset, setPreset] = useState<Preset>('month')
   const [custom, setCustom] = useState({ from: startOfMonth(today), to: today })
@@ -65,7 +69,18 @@ export default function StatsView() {
             <Field label="إلى">{id => <input id={id} type="date" className={inputCls} value={custom.to} onChange={e => setCustom(c => ({ ...c, to: e.target.value }))} />}</Field>
           </div>
         )}
-        <p className="text-xs text-gray-400">{shortDate(from)} – {shortDate(to)}</p>
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-xs text-gray-400">{shortDate(from)} – {shortDate(to)}</p>
+          <button disabled={exporting} className={ghostBtn('text-xs')}
+            onClick={async () => {
+              setExporting(true)
+              try { await downloadLedgerXlsx(data, from, to, today); toast('نُزّل ملف Excel') }
+              catch (e) { toast(`تعذّر إنشاء الملف: ${(e as Error).message}`, 'error') }
+              finally { setExporting(false) }
+            }}>
+            <FileSpreadsheet className="w-4 h-4 text-emerald-600" /> {exporting ? 'جارٍ التجهيز…' : 'تصدير Excel لهذه الفترة'}
+          </button>
+        </div>
       </div>
 
       {/* Hours */}

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   DEFAULT_SETTINGS, MAX_PLAUSIBLE_KM, dayLegs, durationText, lessonReminderText, monthForecast, packageNeedsRenewal, packageStatus, progressSummary, progressText,
-  renewalText, sanitizeLesson, sanitizePayment, sanitizeSettings, seriesEditTargets, travelWarnings,
+  renewalText, sanitizeLesson, sanitizePayment, sanitizeSettings, seriesEditTargets, statementText, travelWarnings,
   type WorkLesson, type WorkPayment,
 } from '@/lib/worklog'
 
@@ -83,7 +83,7 @@ describe('2. prepaid packages', () => {
 describe('3. reminding a parent', () => {
   const c = { name: 'أم سيف', childName: 'سيف' }
   it('says today / tomorrow when it is, and the date otherwise', () => {
-    expect(lessonReminderText({ date: '2026-10-05', start: '16:00' }, c, d => d, '2026-10-05')).toContain('تذكير بحصة سيف اليوم الساعة 16:00')
+    expect(lessonReminderText({ date: '2026-10-05', start: '16:00' }, c, d => d, '2026-10-05')).toContain('بموعد حصة سيف اليوم الساعة 16:00')
     expect(lessonReminderText({ date: '2026-10-06', start: '16:00' }, c, d => d, '2026-10-05')).toContain('غداً')
     expect(lessonReminderText({ date: '2026-10-09', start: '16:00' }, c, d => `D:${d}`, '2026-10-05')).toContain('D:2026-10-09')
   })
@@ -189,5 +189,47 @@ describe('6. the drive between two lessons', () => {
     const w = travelWarnings({ clientId: 'b', date: '2026-10-05', start: '15:30', durationMin: 60 }, [day[0]], id => (id === 'a' ? doha : far))
     expect(w).toHaveLength(1)
     expect(w[0].implausible).toBe(true)
+  })
+})
+
+describe('7. messages to parents are formal', () => {
+  const c = { name: 'أم سيف', childName: 'سيف' }
+  const st = { from: '2026-10-01', to: '2026-10-05', lessons: [], payments: [], billed: 0, billedCount: 0, billedMinutes: 0, paidInPeriod: 0, balance: 300, unconfirmed: 0 }
+  const all = [
+    lessonReminderText({ date: '2026-10-05', start: '20:00' }, c, d => d, '2026-10-05', 'الأستاذ أمين'),
+    statementText(st as never, c, 'QAR', d => d, 'الأستاذ أمين'),
+    renewalText(c, { covered: 8, used: 7, remaining: 1, since: '2026-10-01' } as never, 'الأستاذ أمين'),
+    progressText({ lessons: [], rated: 0, average: null, trend: null } as never, c, d => d, 'الأستاذ أمين'),
+  ]
+
+  it('every message opens with the full greeting and closes with thanks and the signature', () => {
+    for (const t of all) {
+      const lines = t.split('\n')
+      expect(lines[0]).toBe('السلام عليكم ورحمة الله وبركاته،')
+      expect(lines[1]).toBe('أسعد الله أوقاتكم أم سيف،')
+      expect(lines.at(-1)).toBe('الأستاذ أمين')
+      expect(lines.at(-2)).toMatch(/شاكرين|الشكر/)
+    }
+  })
+
+  it('the reminder names the child and asks — politely — to be told of any change', () => {
+    expect(all[0]).toContain('نودّ تذكيركم بموعد حصة سيف اليوم الساعة 20:00 بإذن الله.')
+    expect(all[0]).toContain('نرجو التكرّم بإعلامنا مسبقاً')
+  })
+
+  it('an amount still owed is asked for courteously', () => {
+    expect(all[1]).toContain('نرجو التكرّم بتسويته في الوقت الذي يناسبكم.')
+  })
+
+  it('no signature set → the message just ends on the thanks', () => {
+    const t = lessonReminderText({ date: '2026-10-05', start: '20:00' }, c, d => d, '2026-10-05')
+    expect(t.split('\n').at(-1)).toBe('شاكرين لكم حسن تعاونكم 🌷')
+  })
+
+  it('the signature is a sanitised name, and clearing it removes it', () => {
+    const set = sanitizeSettings({ senderName: '  الأستاذ\nأمين  ' }, DEFAULT_SETTINGS)
+    expect(set.ok && set.value.senderName).toBe('الأستاذ أمين')
+    const cleared = sanitizeSettings({ senderName: '' }, { ...DEFAULT_SETTINGS, senderName: 'x' })
+    expect(cleared.ok && 'senderName' in cleared.value).toBe(false)
   })
 })

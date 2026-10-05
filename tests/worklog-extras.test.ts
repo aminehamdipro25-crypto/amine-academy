@@ -107,7 +107,7 @@ describe('family account statement', () => {
 
   it('reads as a message to a parent, with Latin digits', () => {
     const text = statementText(st, { name: 'عائلة الكعبي', childName: 'سارة' }, 'QAR', d => d.slice(5))
-    expect(text).toContain('السلام عليكم عائلة الكعبي')
+    expect(text).toContain('أسعد الله أوقاتكم عائلة الكعبي')
     expect(text).toContain('كشف حصص سارة')
     expect(text).toContain('✕ ملغاة (محتسبة)')
     expect(text).toContain('✕ ملغاة (غير محتسبة)')

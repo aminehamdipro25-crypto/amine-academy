@@ -114,6 +114,8 @@ export interface WorkSettings {
   dailyDigest: boolean
   /** Monthly income goal (value of work done); null = none set. */
   monthlyGoal?: number | null
+  /** How messages to parents are signed, e.g. «الأستاذ أمين». Absent = unsigned. */
+  senderName?: string
 }
 
 export const DEFAULT_SETTINGS: WorkSettings = {
@@ -838,6 +840,11 @@ export function sanitizeSettings(body: Record<string, unknown>, current: WorkSet
       next.monthlyGoal = g
     }
   }
+  if ('senderName' in body) {
+    const v = sanitizePersonName(body.senderName)
+    if (v) next.senderName = v
+    else delete next.senderName
+  }
   return { ok: true, value: next }
 }
 
@@ -998,6 +1005,24 @@ export function buildStatement(
   }
 }
 
+// ── Messages to parents ──────────────────────────────────────────────────────
+
+/**
+ * Every message to a parent opens and closes the same way. These go to
+ * families from the teacher's own WhatsApp, so the register is formal: the
+ * full greeting, and the plural «أوقاتكم / لكم» — the respectful form, which
+ * also needs no guess at the reader's gender.
+ */
+function parentOpening(client: Pick<WorkClient, 'name'>): string[] {
+  const name = client.name?.trim()
+  return ['السلام عليكم ورحمة الله وبركاته،', `أسعد الله أوقاتكم${name ? ` ${name}` : ''}،`, '']
+}
+
+function parentClosing(thanks: string, sender?: string): string[] {
+  const who = sender?.trim()
+  return ['', thanks, ...(who ? [who] : [])]
+}
+
 /**
  * The message itself. Written for a parent, not an accountant: one line per
  * lesson, then three numbers. "المتبقي حتى اليوم" is the all-time balance on
@@ -1005,12 +1030,11 @@ export function buildStatement(
  */
 export function statementText(
   st: Statement, client: Pick<WorkClient, 'name' | 'childName'>, currency: WorkCurrency,
-  formatDay: (date: string) => string,
+  formatDay: (date: string) => string, sender?: string,
 ): string {
   const money = (n: number) => formatMoney(n, currency)
-  const lines: string[] = []
-  lines.push(`السلام عليكم ${client.name}،`)
-  lines.push(`كشف حصص${client.childName ? ` ${client.childName}` : ''} من ${formatDay(st.from)} إلى ${formatDay(st.to)}:`)
+  const lines: string[] = parentOpening(client)
+  lines.push(`نرفق لكم كشف حصص${client.childName ? ` ${client.childName}` : ''} للفترة من ${formatDay(st.from)} إلى ${formatDay(st.to)}:`)
   lines.push('')
   if (!st.lessons.length) lines.push('لا حصص في هذه الفترة.')
   for (const l of st.lessons) {
@@ -1021,15 +1045,16 @@ export function statementText(
   lines.push('')
   lines.push(`مجموع الحصص المحتسبة: ${lessonsCount(st.billedCount)} · ${formatDuration(st.billedMinutes)} · ${money(st.billed)}`)
   if (st.payments.length) {
-    lines.push(`الدفعات المستلمة في الفترة: ${money(st.paidInPeriod)}`)
+    lines.push(`المبالغ المستلمة في الفترة: ${money(st.paidInPeriod)}`)
     // One per line: a day label may itself contain «،», so a joined list reads ambiguously.
     for (const p of st.payments) lines.push(`  - ${formatDay(p.date)}: ${money(p.amount)}`)
   }
-  if (st.balance > 0) lines.push(`المتبقي حتى اليوم: ${money(st.balance)}`)
-  else if (st.balance < 0) lines.push(`رصيد مدفوع مسبقاً لديكم: ${money(-st.balance)}`)
-  else lines.push('الحساب مسدّد بالكامل حتى اليوم، شكراً لكم.')
-  lines.push('')
-  lines.push('مع خالص التقدير 🌷')
+  if (st.balance > 0) {
+    lines.push(`المتبقي حتى اليوم: ${money(st.balance)}`)
+    lines.push('نرجو التكرّم بتسويته في الوقت الذي يناسبكم.')
+  } else if (st.balance < 0) lines.push(`رصيد مدفوع مسبقاً لديكم: ${money(-st.balance)}`)
+  else lines.push('الحساب مسدّد بالكامل حتى اليوم.')
+  lines.push(...parentClosing('مع خالص الشكر والتقدير 🌷', sender))
   return lines.join('\n')
 }
 
@@ -1084,16 +1109,18 @@ export function packageNeedsRenewal(p: PackageStatus | null): boolean {
   return !!p && p.remaining <= 1
 }
 
-export function renewalText(client: Pick<WorkClient, 'name' | 'childName'>, p: PackageStatus): string {
-  const left = p.remaining > 0
-    ? `بقيت ${lessonsCount(p.remaining)} من باقة ${p.covered} حصص`
+export function renewalText(client: Pick<WorkClient, 'name' | 'childName'>, p: PackageStatus, sender?: string): string {
+  const pkg = `باقة ${client.childName ? `حصص ${client.childName}` : 'الحصص'} (${lessonsCount(p.covered)})`
+  const news = p.remaining > 0
+    ? `نحيطكم علماً بأنه بقيت ${lessonsCount(p.remaining)} من ${pkg}.`
     : p.remaining === 0
-      ? `انتهت باقة ${p.covered} حصص`
-      : `انتهت باقة ${p.covered} حصص وتجاوزناها بـ${lessonsCount(-p.remaining)}`
+      ? `نحيطكم علماً بانتهاء ${pkg}.`
+      : `نحيطكم علماً بانتهاء ${pkg}، وقد تجاوزناها بـ${lessonsCount(-p.remaining)}.`
   return [
-    `السلام عليكم ${client.name}،`,
-    `${left}${client.childName ? ` لـ${client.childName}` : ''}.`,
-    'هل نجدّد الباقة؟ شكراً لكم 🌷',
+    ...parentOpening(client),
+    news,
+    'نرجو إعلامنا إن كنتم ترغبون في تجديدها.',
+    ...parentClosing('شاكرين لكم ثقتكم 🌷', sender),
   ].join('\n')
 }
 
@@ -1101,13 +1128,14 @@ export function renewalText(client: Pick<WorkClient, 'name' | 'childName'>, p: P
 
 export function lessonReminderText(
   lesson: Pick<WorkLesson, 'date' | 'start'>, client: Pick<WorkClient, 'name' | 'childName'>,
-  formatDay: (date: string) => string, today: string,
+  formatDay: (date: string) => string, today: string, sender?: string,
 ): string {
-  const when = lesson.date === today ? 'اليوم' : lesson.date === addDays(today, 1) ? 'غداً' : formatDay(lesson.date)
+  const when = lesson.date === today ? 'اليوم' : lesson.date === addDays(today, 1) ? 'غداً' : `يوم ${formatDay(lesson.date)}`
   return [
-    `السلام عليكم ${client.name}،`,
-    `تذكير بحصة${client.childName ? ` ${client.childName}` : ''} ${when} الساعة ${lesson.start}.`,
-    'نراكم إن شاء الله 🌷',
+    ...parentOpening(client),
+    `نودّ تذكيركم بموعد ${client.childName ? `حصة ${client.childName}` : 'الحصة'} ${when} الساعة ${lesson.start} بإذن الله.`,
+    'وفي حال طرأ أي ظرف، نرجو التكرّم بإعلامنا مسبقاً.',
+    ...parentClosing('شاكرين لكم حسن تعاونكم 🌷', sender),
   ].join('\n')
 }
 
@@ -1172,14 +1200,14 @@ export function progressSummary(clientId: string, lessons: WorkLesson[], from: s
 }
 
 export function progressText(
-  ps: ProgressSummary, client: Pick<WorkClient, 'name' | 'childName'>, formatDay: (date: string) => string,
+  ps: ProgressSummary, client: Pick<WorkClient, 'name' | 'childName'>, formatDay: (date: string) => string, sender?: string,
 ): string {
-  const lines = [`السلام عليكم ${client.name}،`, `ملخّص حصص${client.childName ? ` ${client.childName}` : ''} الأخيرة:`, '']
+  const lines = [...parentOpening(client), `يسعدنا أن نشارككم ملخّص ${client.childName ? `حصص ${client.childName}` : 'الحصص'} الأخيرة:`, '']
   if (!ps.lessons.length) lines.push('لا حصص منجزة في هذه الفترة.')
   for (const l of ps.lessons) {
     const stars = l.rating ? ' ' + '⭐'.repeat(l.rating) : ''
     lines.push(`• ${formatDay(l.date)}${stars}${l.note ? `\n   ${l.note}` : ''}`)
   }
-  lines.push('', 'مع خالص التقدير 🌷')
+  lines.push(...parentClosing('مع خالص الشكر والتقدير 🌷', sender))
   return lines.join('\n')
 }

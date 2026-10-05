@@ -491,7 +491,7 @@ function useParentReminder() {
     href(l: WorkLesson) {
       const c = clientsById.get(l.clientId)
       const tel = phoneDigits(c?.phone, settings.currency)
-      const text = c ? lessonReminderText(l, c, dayLabel, today) : ''
+      const text = c ? lessonReminderText(l, c, dayLabel, today, settings.senderName) : ''
       // Without a number wa.me opens the chat picker with the text ready.
       return `https://wa.me/${tel ?? ''}?text=${encodeURIComponent(text)}`
     },

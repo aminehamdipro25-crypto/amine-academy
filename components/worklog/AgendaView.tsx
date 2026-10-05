@@ -8,7 +8,7 @@ import {
 } from 'lucide-react'
 import {
   STATUS_META, addDays, durationText, endOfMonth, endTime, formatDuration, formatMoney, googleDirectionsUrl, googleRouteUrl,
-  dayLegs, hoursIn, lessonReminderText, lessonValue, phoneDigits, sortLessons, startOfMonth, startOfWeek, weekdayMon0, type GeoPoint, type LessonStatus, type TravelLeg, type WorkLesson,
+  dayLegs, hoursIn, lessonChild, lessonReminderText, lessonValue, phoneDigits, sortLessons, startOfMonth, startOfWeek, weekdayMon0, type GeoPoint, type LessonStatus, type TravelLeg, type WorkLesson,
 } from '@/lib/worklog'
 import { useToast } from '@/components/ui/Toast'
 import { clientLabel, useWorkLog } from './useWorkLog'
@@ -357,8 +357,8 @@ function LessonCard({ lesson: l, paid, onPaid, onEdit, onCopy, onLocate, onStatu
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
               <button onClick={onEdit} className="text-right min-w-0">
-                <p className={`font-black truncate ${faded ? 'text-gray-400' : 'text-gray-900'}`}>{c?.childName || c?.name || 'عائلة محذوفة'}</p>
-                {c?.childName && <p className="text-[11px] text-gray-400 truncate">{c.name}</p>}
+                <p className={`font-black truncate ${faded ? 'text-gray-400' : 'text-gray-900'}`}>{lessonChild(l, c) || c?.name || 'عائلة محذوفة'}</p>
+                {c && lessonChild(l, c) && <p className="text-[11px] text-gray-400 truncate">{c.name}</p>}
               </button>
               <StatusPill status={l.status} charged={l.charged} />
             </div>

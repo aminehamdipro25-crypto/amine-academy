@@ -1,6 +1,6 @@
 'use client'
 import { useEffect } from 'react'
-import { dueReminders, endTime, type WorkLesson } from '@/lib/worklog'
+import { dueReminders, endTime, lessonWho, type WorkLesson } from '@/lib/worklog'
 import { readStorageJson, writeStorageJson } from '@/lib/safe-storage'
 import { notificationState, showLessonNotification } from './notify'
 
@@ -43,7 +43,7 @@ export default function ReminderWatcher() {
       const now = Date.now()
       for (const l of due) {
         const c = clients.get(l.clientId)
-        const who = c ? (c.childName ? `${c.childName} (${c.name})` : c.name) : 'حصة'
+        const who = c ? lessonWho(l, { name: c.name, childName: c.childName }, ' · ') : 'حصة'
         showLessonNotification(`حصة ${l.start}–${endTime(l.start, l.durationMin)} · ${who}`, c?.address ? `📍 ${c.address}` : 'اضغط لفتح اليومية والطريق', l.id)
         sent[keyOf(l)] = now
       }

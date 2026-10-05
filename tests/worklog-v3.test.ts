@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  DEFAULT_SETTINGS, MAX_PLAUSIBLE_KM, dayLegs, durationText, lessonReminderText, monthForecast, packageNeedsRenewal, packageStatus, progressSummary, progressText,
+  DEFAULT_SETTINGS, MAX_PLAUSIBLE_KM, buildStatement, dayLegs, durationText, familyChildren, lessonChild, lessonReminderText, lessonWho, monthForecast, packageNeedsRenewal, packageStatus, progressSummary, progressText,
   renewalText, sanitizeLesson, sanitizePayment, sanitizeSettings, seriesEditTargets, statementText, travelWarnings,
   type WorkLesson, type WorkPayment,
 } from '@/lib/worklog'
@@ -231,5 +231,41 @@ describe('7. messages to parents are formal', () => {
     expect(set.ok && set.value.senderName).toBe('الأستاذ أمين')
     const cleared = sanitizeSettings({ senderName: '' }, { ...DEFAULT_SETTINGS, senderName: 'x' })
     expect(cleared.ok && 'senderName' in cleared.value).toBe(false)
+  })
+})
+
+describe('8. two children in one family', () => {
+  const fam = { name: 'أبو خالد', childName: 'خالد' }
+  const day = (over: Partial<WorkLesson>) => lesson({ clientId: 'k', date: '2026-10-02', ...over })
+
+  it('a lesson may name its own child; absent means the family\'s child', () => {
+    expect(lessonChild({}, fam)).toBe('خالد')
+    expect(lessonChild({ child: 'تميم' }, fam)).toBe('تميم')
+    const ok = sanitizeLesson({ child: '  تميم\n' }, true)
+    expect(ok.ok && ok.value.child).toBe('تميم')
+    const cleared = sanitizeLesson({ child: null }, true)
+    expect(cleared.ok && cleared.value.child).toBeUndefined()
+  })
+
+  it('lists the family\'s children, its own first, without repeats', () => {
+    const ls = [day({ child: 'تميم' }), day({}), day({ child: 'تميم', date: '2026-09-25' }), lesson({ clientId: 'x', child: 'غريب' })]
+    expect(familyChildren('k', fam, ls)).toEqual(['خالد', 'تميم'])
+  })
+
+  it('the statement says whose lesson each line was, once there are two children', () => {
+    const ls = [day({ start: '15:00', price: 120 }), day({ start: '16:00', price: 120, child: 'تميم' })]
+    const st = buildStatement('k', ls, [], '2026-10-01', '2026-10-05', '2026-10-05')
+    const text = statementText(st, fam, 'QAR', d => d)
+    expect(text).toContain('نرفق لكم كشف حصص خالد وتميم')
+    expect(text).toContain('15:00 — خالد')
+    expect(text).toContain('16:00 — تميم')
+    // One child only: no name on every line.
+    const one = statementText(buildStatement('k', [ls[0]], [], '2026-10-01', '2026-10-05', '2026-10-05'), fam, 'QAR', d => d)
+    expect(one).not.toContain('15:00 — خالد')
+  })
+
+  it('the reminder names the child the lesson is for', () => {
+    expect(lessonReminderText({ date: '2026-10-05', start: '16:00', child: 'تميم' }, fam, d => d, '2026-10-05')).toContain('بموعد حصة تميم')
+    expect(lessonWho({ child: 'تميم' }, fam)).toBe('تميم — أبو خالد')
   })
 })

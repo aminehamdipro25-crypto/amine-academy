@@ -6,7 +6,7 @@ import { tgEsc, tgSend } from '@/lib/telegram'
 import { baseUrl } from '@/lib/base-url'
 import {
   clientBalances, endTime, formatDuration, formatMoney, googleDirectionsUrl, googleRouteUrl,
-  sortLessons, todayIn, type GeoPoint,
+  lessonWho, sortLessons, todayIn, type GeoPoint,
 } from '@/lib/worklog'
 import { loadAllWork } from '@/lib/worklog-store'
 
@@ -51,7 +51,7 @@ export async function GET(req: Request) {
 
   const rows = todays.map(l => {
     const c = byId.get(l.clientId)
-    const who = c ? (c.childName ? `${c.childName} — ${c.name}` : c.name) : 'حصة'
+    const who = lessonWho(l, c)
     return { l, c, who }
   })
 

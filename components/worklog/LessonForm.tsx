@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AlertTriangle, Car, Copy, MapPin, Repeat, Trash2 } from 'lucide-react'
 import {
-  CURRENCY_LABEL, STATUS_META, addDays, durationText, lessonsCount, travelWarnings, endTime, findConflicts, formatMoney, priceFor,
+  CURRENCY_LABEL, STATUS_META, addDays, durationText, familyChildren, lessonsCount, minutesOf, travelWarnings, endTime, findConflicts, formatMoney, priceFor,
   type LessonStatus, type WorkLesson,
 } from '@/lib/worklog'
 import { useToast } from '@/components/ui/Toast'
@@ -22,7 +22,7 @@ const REMINDERS: { value: string; label: string }[] = [
 /** Prefill for a new lesson. A copied lesson carries everything but its date. */
 export interface LessonDraft {
   date?: string; start?: string; clientId?: string
-  durationMin?: number; price?: number; reminderMin?: number | null; note?: string
+  durationMin?: number; price?: number; reminderMin?: number | null; note?: string; child?: string
 }
 
 export default function LessonForm({ open, onClose, lesson, draft, onNewClient, onEditClient, onCopy }: {
@@ -46,6 +46,10 @@ export default function LessonForm({ open, onClose, lesson, draft, onNewClient, 
   const [price, setPrice] = useState('')
   const [priceTouched, setPriceTouched] = useState(false)
   const [status, setStatus] = useState<LessonStatus>('scheduled')
+  // A new lesson's status follows its date until the user picks one.
+  const [statusTouched, setStatusTouched] = useState(false)
+  const [child, setChild] = useState('')
+  const [otherChild, setOtherChild] = useState(false)
   const [cancelledBy, setCancelledBy] = useState<'family' | 'me'>('family')
   const [charged, setCharged] = useState(false)
   const [reminder, setReminder] = useState('60')
@@ -67,7 +71,8 @@ export default function LessonForm({ open, onClose, lesson, draft, onNewClient, 
     if (lesson) {
       setClientId(lesson.clientId); setDate(lesson.date); setStart(lesson.start); setDuration(lesson.durationMin)
       setPrice(String(lesson.price)); setPriceTouched(true); setStatus(lesson.status)
-      setCancelledBy(lesson.cancelledBy ?? 'family'); setCharged(!!lesson.charged)
+      setCancelledBy(lesson.cancelledBy ?? 'family'); setCharged(!!lesson.charged); setStatusTouched(true)
+      setChild(lesson.child ?? ''); setOtherChild(false)
       setReminder(lesson.reminderMin === null ? 'none' : String(lesson.reminderMin)); setRepeat(1); setNote(lesson.note ?? ''); setRating(lesson.rating ?? null); setScope('one')
     } else {
       const cid = draft?.clientId ?? (active.length === 1 ? active[0].id : '')
@@ -79,7 +84,8 @@ export default function LessonForm({ open, onClose, lesson, draft, onNewClient, 
       const c = clientsById.get(cid)
       if (draft?.price !== undefined) { setPrice(String(draft.price)); setPriceTouched(true) }
       else { setPrice(c ? String(priceFor(c.hourlyRate, d)) : ''); setPriceTouched(false) }
-      setStatus('scheduled'); setCancelledBy('family'); setCharged(false)
+      setStatus('scheduled'); setStatusTouched(false); setCancelledBy('family'); setCharged(false)
+      setChild(draft?.child ?? ''); setOtherChild(false)
       const rem = draft && 'reminderMin' in draft ? draft.reminderMin : settings.defaultReminderMin
       setReminder(rem === null || rem === undefined ? 'none' : String(rem))
       setRepeat(1); setNote(draft?.note ?? ''); setRating(null); setScope('one')
@@ -105,6 +111,22 @@ export default function LessonForm({ open, onClose, lesson, draft, onNewClient, 
   }, [clientId, date, start, duration, lessons, lesson?.id, status, clientsById])
 
   const isPast = date < localToday()
+  // Already over: an earlier day, or today with the end time behind us.
+  const ended = /^\d{4}-\d{2}-\d{2}$/.test(date) && /^\d\d:\d\d$/.test(start) && (isPast || (date === localToday() && (() => {
+    const now = new Date()
+    return minutesOf(start) + duration <= now.getHours() * 60 + now.getMinutes()
+  })()))
+
+  // Recording a lesson that already happened: it is done unless said otherwise —
+  // a past lesson left «مجدولة» counts for nothing and the balance never moves.
+  useEffect(() => {
+    if (!open || lesson || statusTouched) return
+    setStatus(ended ? 'done' : 'scheduled')
+  }, [open, lesson, statusTouched, ended])
+
+  const kids = useMemo(() => familyChildren(clientId, clientsById.get(clientId), lessons), [clientId, clientsById, lessons])
+  const familyChild = clientsById.get(clientId)?.childName?.trim() ?? ''
+  const chosenChild = child.trim() || familyChild
 
   // A weekly series: how many scheduled lessons a "this and after" edit would move.
   const seriesAfter = lesson?.seriesId
@@ -123,6 +145,8 @@ export default function LessonForm({ open, onClose, lesson, draft, onNewClient, 
       charged: status === 'cancelled' ? charged : false,
       reminderMin: reminder === 'none' ? null : Number(reminder),
       note,
+      // Stored only when it differs from the family's child, so renaming the family's child follows through.
+      child: child.trim() && child.trim() !== familyChild ? child.trim() : null,
       ...(status === 'done' ? { rating } : {}),
     }
     try {
@@ -237,6 +261,31 @@ export default function LessonForm({ open, onClose, lesson, draft, onNewClient, 
           </button>
         )}
 
+        {clientId && (
+          <Field label="الحصة لـ" hint={kids.length > 1 || otherChild ? 'لكل طفل حصته وسعره ووقته — أضف حصة ثانية للأخ بدل جمعهما في حصة واحدة' : undefined}>
+            {id => (
+              <div className="flex flex-wrap items-center gap-1.5" id={id}>
+                {kids.map(k => (
+                  <button key={k} type="button" onClick={() => { setChild(k === familyChild ? '' : k); setOtherChild(false) }}
+                    aria-pressed={!otherChild && chosenChild === k}
+                    className={`rounded-lg px-3 py-1.5 text-xs font-bold border transition ${!otherChild && chosenChild === k ? 'bg-brand-600 text-white border-brand-600' : 'bg-white border-gray-200 text-gray-600 hover:border-brand-300'}`}>
+                    {k}
+                  </button>
+                ))}
+                {otherChild ? (
+                  <input className={`${inputCls} max-w-[12rem] py-1.5`} autoFocus maxLength={60} placeholder="اسم الطفل" aria-label="اسم طفل آخر"
+                    value={child} onChange={e => setChild(e.target.value)} />
+                ) : (
+                  <button type="button" onClick={() => { setOtherChild(true); setChild('') }}
+                    className="rounded-lg px-3 py-1.5 text-xs font-bold border border-dashed border-gray-300 text-gray-500 hover:border-brand-300">
+                    + {kids.length ? 'طفل آخر (أخ/أخت)' : 'اسم الطفل'}
+                  </button>
+                )}
+              </div>
+            )}
+          </Field>
+        )}
+
         <div className="grid grid-cols-2 gap-3">
           <Field label="التاريخ">{id => <input id={id} type="date" className={inputCls} value={date} onChange={e => setDate(e.target.value)} />}</Field>
           <Field label="البداية">{id => <input id={id} type="time" step={300} className={inputCls} value={start} onChange={e => setStart(e.target.value)} />}</Field>
@@ -328,7 +377,7 @@ export default function LessonForm({ open, onClose, lesson, draft, onNewClient, 
                 const m = STATUS_META[s]
                 const on = status === s
                 return (
-                  <button key={s} type="button" onClick={() => setStatus(s)} aria-pressed={on}
+                  <button key={s} type="button" onClick={() => { setStatus(s); setStatusTouched(true) }} aria-pressed={on}
                     className={`rounded-xl border-2 px-2 py-2.5 text-xs font-black transition ${on ? `${m.soft} ${m.text}` : 'border-gray-100 text-gray-400 hover:border-gray-200'}`}
                     style={on ? { borderColor: m.color } : undefined}>
                     <span aria-hidden className="ml-1">{m.icon}</span>{m.label}
@@ -338,6 +387,9 @@ export default function LessonForm({ open, onClose, lesson, draft, onNewClient, 
             </div>
           )}
         </Field>
+        {!lesson && !statusTouched && status === 'done' && (
+          <p className="text-[11px] text-emerald-700 -mt-2">حصة سابقة — سُجّلت «تمّت» تلقائياً فتُحتسب في المستحقات. غيّرها إن أُلغيت.</p>
+        )}
         {status === 'scheduled' && isPast && (
           <p className="text-[11px] text-amber-700 -mt-2">هذا التاريخ مضى — هل تمّت الحصة أم أُلغيت؟ الحصة «المجدولة» لا تُحتسب في المستحقات.</p>
         )}

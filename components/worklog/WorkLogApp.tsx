@@ -56,7 +56,7 @@ export default function WorkLogApp() {
   /** Same family, time, length, price and reminder — only the date is left to choose. */
   const copyLesson = (l: WorkLesson) => openLesson({
     clientId: l.clientId, start: l.start, durationMin: l.durationMin, price: l.price,
-    reminderMin: l.reminderMin, date: addDays(l.date, 7),
+    reminderMin: l.reminderMin, date: addDays(l.date, 7), child: l.child,
   })
   const editClientById = (id: string) => {
     const c = state.clientsById.get(id)

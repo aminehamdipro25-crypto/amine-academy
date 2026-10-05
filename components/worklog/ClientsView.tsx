@@ -146,7 +146,7 @@ export default function ClientsView({ onAdd, onEdit, onPay, onAddLesson, onEditL
                 <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-gray-500">
                   <span>{formatDuration(doneMinutes.get(c.id) ?? 0)} منجزة</span>
                   <span>{next ? `القادمة: ${shortDate(next.slice(0, 10))} ${next.slice(11)}` : 'لا حصة قادمة'}</span>
-                  {b.unconfirmed > 0 && <span className="text-amber-700 font-bold">{b.unconfirmed} بلا حالة</span>}
+                  {b.unconfirmed > 0 && <span className="text-amber-700 font-bold" title="حصص مضى تاريخها وما زالت «مجدولة» — افتحها في اليومية واختر «تمّت» أو «أُلغيت»">⚠ {lessonsCount(b.unconfirmed)} سابقة لم تُحدَّد (لا تُحتسب بعد)</span>}
                 </div>
 
                 {(() => {

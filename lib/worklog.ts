@@ -68,6 +68,11 @@ export interface WorkLesson {
   rating?: number
   /** When the parent was sent a WhatsApp reminder for this lesson (set by the server). */
   parentRemindedAt?: string
+  /**
+   * Which child this lesson was for, when a family has more than one (a
+   * sibling's assessment after the usual lesson). Absent = the family's child.
+   */
+  child?: string
   createdAt: string
   updatedAt: string
 }
@@ -642,7 +647,7 @@ export function buildIcs(lessons: WorkLesson[], clients: WorkClient[], now: Date
   ]
   for (const l of sortLessons(lessons)) {
     const c = byId.get(l.clientId)
-    const who = c ? (c.childName ? `${c.childName} (${c.name})` : c.name) : 'حصة'
+    const who = lessonWho(l, c, ' — ')
     const desc = [
       c?.phone ? `الهاتف: ${c.phone}` : '',
       c?.location ? `الطريق: ${googleDirectionsUrl(c.location)}` : '',
@@ -769,6 +774,7 @@ export function sanitizeLesson(body: Record<string, unknown>, partial = false): 
   if ('cancelledBy' in body) out.cancelledBy = body.cancelledBy === 'me' ? 'me' : body.cancelledBy === 'family' ? 'family' : undefined
   if ('charged' in body) out.charged = !!body.charged
   if ('note' in body) out.note = cleanText(body.note, 500)
+  if ('child' in body) out.child = sanitizePersonName(body.child) || undefined
   if ('rating' in body) {
     if (body.rating === null || body.rating === '' || body.rating === 0) out.rating = undefined
     else {
@@ -1005,6 +1011,29 @@ export function buildStatement(
   }
 }
 
+// ── Which child a lesson was for ─────────────────────────────────────────────
+
+/** The child a lesson was for: its own, else the family's. */
+export function lessonChild(l: Pick<WorkLesson, 'child'>, c: Pick<WorkClient, 'childName'> | undefined): string {
+  return l.child?.trim() || c?.childName?.trim() || ''
+}
+
+/** «سيف (أم سيف)» — child and family, for calendar entries and notifications. */
+export function lessonWho(l: Pick<WorkLesson, 'child'>, c: Pick<WorkClient, 'name' | 'childName'> | undefined, sep = ' — '): string {
+  if (!c) return 'حصة'
+  const child = lessonChild(l, c)
+  return child ? `${child}${sep}${c.name}` : c.name
+}
+
+/** Every child this family's lessons have been for — the family's own first. */
+export function familyChildren(clientId: string, client: Pick<WorkClient, 'childName'> | undefined, lessons: WorkLesson[]): string[] {
+  const out: string[] = []
+  const add = (n: string | undefined) => { const v = n?.trim(); if (v && !out.includes(v)) out.push(v) }
+  add(client?.childName)
+  for (const l of [...lessons].sort((a, b) => (a.date < b.date ? 1 : -1))) if (l.clientId === clientId) add(l.child)
+  return out
+}
+
 // ── Messages to parents ──────────────────────────────────────────────────────
 
 /**
@@ -1034,13 +1063,18 @@ export function statementText(
 ): string {
   const money = (n: number) => formatMoney(n, currency)
   const lines: string[] = parentOpening(client)
-  lines.push(`نرفق لكم كشف حصص${client.childName ? ` ${client.childName}` : ''} للفترة من ${formatDay(st.from)} إلى ${formatDay(st.to)}:`)
+  const kids = [...new Set(st.lessons.map(l => lessonChild(l, client)).filter(Boolean))]
+  const whom = kids.length > 1 ? kids.join(' و') : kids[0] ?? client.childName ?? ''
+  lines.push(`نرفق لكم كشف حصص${whom ? ` ${whom}` : ''} للفترة من ${formatDay(st.from)} إلى ${formatDay(st.to)}:`)
   lines.push('')
   if (!st.lessons.length) lines.push('لا حصص في هذه الفترة.')
+  // With two children in the period, each line says whose lesson it was.
+  const several = new Set(st.lessons.map(l => lessonChild(l, client))).size > 1
   for (const l of st.lessons) {
     const tag = l.status === 'done' ? '✓' : l.charged ? '✕ ملغاة (محتسبة)' : '✕ ملغاة (غير محتسبة)'
     const price = isBillable(l) ? ` — ${money(l.price)}` : ''
-    lines.push(`• ${formatDay(l.date)} ${l.start} — ${formatDuration(l.durationMin)}${price} ${tag}`)
+    const whose = several && lessonChild(l, client) ? ` — ${lessonChild(l, client)}` : ''
+    lines.push(`• ${formatDay(l.date)} ${l.start}${whose} — ${formatDuration(l.durationMin)}${price} ${tag}`)
   }
   lines.push('')
   lines.push(`مجموع الحصص المحتسبة: ${lessonsCount(st.billedCount)} · ${formatDuration(st.billedMinutes)} · ${money(st.billed)}`)
@@ -1127,13 +1161,13 @@ export function renewalText(client: Pick<WorkClient, 'name' | 'childName'>, p: P
 // ── 3. Reminding a parent of a lesson ────────────────────────────────────────
 
 export function lessonReminderText(
-  lesson: Pick<WorkLesson, 'date' | 'start'>, client: Pick<WorkClient, 'name' | 'childName'>,
+  lesson: Pick<WorkLesson, 'date' | 'start' | 'child'>, client: Pick<WorkClient, 'name' | 'childName'>,
   formatDay: (date: string) => string, today: string, sender?: string,
 ): string {
   const when = lesson.date === today ? 'اليوم' : lesson.date === addDays(today, 1) ? 'غداً' : `يوم ${formatDay(lesson.date)}`
   return [
     ...parentOpening(client),
-    `نودّ تذكيركم بموعد ${client.childName ? `حصة ${client.childName}` : 'الحصة'} ${when} الساعة ${lesson.start} بإذن الله.`,
+    `نودّ تذكيركم بموعد ${lessonChild(lesson, client) ? `حصة ${lessonChild(lesson, client)}` : 'الحصة'} ${when} الساعة ${lesson.start} بإذن الله.`,
     'وفي حال طرأ أي ظرف، نرجو التكرّم بإعلامنا مسبقاً.',
     ...parentClosing('شاكرين لكم حسن تعاونكم 🌷', sender),
   ].join('\n')
@@ -1202,11 +1236,14 @@ export function progressSummary(clientId: string, lessons: WorkLesson[], from: s
 export function progressText(
   ps: ProgressSummary, client: Pick<WorkClient, 'name' | 'childName'>, formatDay: (date: string) => string, sender?: string,
 ): string {
-  const lines = [...parentOpening(client), `يسعدنا أن نشارككم ملخّص ${client.childName ? `حصص ${client.childName}` : 'الحصص'} الأخيرة:`, '']
+  const kids = [...new Set(ps.lessons.map(l => lessonChild(l, client)).filter(Boolean))]
+  const whom = kids.length > 1 ? kids.join(' و') : kids[0] ?? client.childName ?? ''
+  const lines = [...parentOpening(client), `يسعدنا أن نشارككم ملخّص ${whom ? `حصص ${whom}` : 'الحصص'} الأخيرة:`, '']
   if (!ps.lessons.length) lines.push('لا حصص منجزة في هذه الفترة.')
   for (const l of ps.lessons) {
     const stars = l.rating ? ' ' + '⭐'.repeat(l.rating) : ''
-    lines.push(`• ${formatDay(l.date)}${stars}${l.note ? `\n   ${l.note}` : ''}`)
+    const whose = kids.length > 1 && lessonChild(l, client) ? ` — ${lessonChild(l, client)}` : ''
+    lines.push(`• ${formatDay(l.date)}${whose}${stars}${l.note ? `\n   ${l.note}` : ''}`)
   }
   lines.push(...parentClosing('مع خالص الشكر والتقدير 🌷', sender))
   return lines.join('\n')

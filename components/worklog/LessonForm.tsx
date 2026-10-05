@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AlertTriangle, Car, Copy, MapPin, Repeat, Trash2 } from 'lucide-react'
 import {
-  CURRENCY_LABEL, STATUS_META, addDays, travelWarnings, endTime, findConflicts, formatMoney, priceFor,
+  CURRENCY_LABEL, STATUS_META, addDays, lessonsCount, travelWarnings, endTime, findConflicts, formatMoney, priceFor,
   type LessonStatus, type WorkLesson,
 } from '@/lib/worklog'
 import { useToast } from '@/components/ui/Toast'
@@ -35,7 +35,7 @@ export default function LessonForm({ open, onClose, lesson, draft, onNewClient, 
   onEditClient: (clientId: string) => void
   onCopy: (l: WorkLesson) => void
 }) {
-  const { clients, lessons, payments, settings, clientsById, create, update, remove } = useWorkLog()
+  const { clients, lessons, payments, settings, clientsById, create, update, updateSeries, remove } = useWorkLog()
   const { toast } = useToast()
   const active = useMemo(() => clients.filter(c => !c.archived).sort((a, b) => a.name.localeCompare(b.name, 'ar')), [clients])
 
@@ -51,6 +51,8 @@ export default function LessonForm({ open, onClose, lesson, draft, onNewClient, 
   const [reminder, setReminder] = useState('60')
   const [repeat, setRepeat] = useState(1)
   const [note, setNote] = useState('')
+  const [rating, setRating] = useState<number | null>(null)
+  const [scope, setScope] = useState<'one' | 'future'>('one')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -66,7 +68,7 @@ export default function LessonForm({ open, onClose, lesson, draft, onNewClient, 
       setClientId(lesson.clientId); setDate(lesson.date); setStart(lesson.start); setDuration(lesson.durationMin)
       setPrice(String(lesson.price)); setPriceTouched(true); setStatus(lesson.status)
       setCancelledBy(lesson.cancelledBy ?? 'family'); setCharged(!!lesson.charged)
-      setReminder(lesson.reminderMin === null ? 'none' : String(lesson.reminderMin)); setRepeat(1); setNote(lesson.note ?? '')
+      setReminder(lesson.reminderMin === null ? 'none' : String(lesson.reminderMin)); setRepeat(1); setNote(lesson.note ?? ''); setRating(lesson.rating ?? null); setScope('one')
     } else {
       const cid = draft?.clientId ?? (active.length === 1 ? active[0].id : '')
       // A family's usual time: the start of their most recent lesson.
@@ -80,7 +82,7 @@ export default function LessonForm({ open, onClose, lesson, draft, onNewClient, 
       setStatus('scheduled'); setCancelledBy('family'); setCharged(false)
       const rem = draft && 'reminderMin' in draft ? draft.reminderMin : settings.defaultReminderMin
       setReminder(rem === null || rem === undefined ? 'none' : String(rem))
-      setRepeat(1); setNote(draft?.note ?? '')
+      setRepeat(1); setNote(draft?.note ?? ''); setRating(null); setScope('one')
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, lesson?.id, draft])
@@ -104,6 +106,13 @@ export default function LessonForm({ open, onClose, lesson, draft, onNewClient, 
 
   const isPast = date < localToday()
 
+  // A weekly series: how many scheduled lessons a "this and after" edit would move.
+  const seriesAfter = lesson?.seriesId
+    ? lessons.filter(l => l.seriesId === lesson.seriesId && l.date > lesson.date && l.status === 'scheduled').length
+    : 0
+  const scheduleChanged = !!lesson && (date !== lesson.date || start !== lesson.start || duration !== lesson.durationMin
+    || Number(price || 0) !== lesson.price || (reminder === 'none' ? null : Number(reminder)) !== lesson.reminderMin)
+
   async function save() {
     setError('')
     if (!clientId) { setError('اختر العائلة أولاً'); return }
@@ -114,10 +123,15 @@ export default function LessonForm({ open, onClose, lesson, draft, onNewClient, 
       charged: status === 'cancelled' ? charged : false,
       reminderMin: reminder === 'none' ? null : Number(reminder),
       note,
+      ...(status === 'done' ? { rating } : {}),
     }
     try {
       let saved: WorkLesson
-      if (lesson) {
+      if (lesson && scope === 'future' && seriesAfter > 0 && scheduleChanged) {
+        const rows = await updateSeries(lesson.id, body)
+        saved = rows.find(r => r.id === lesson.id) ?? rows[0]
+        toast(`عُدّلت ${lessonsCount(rows.length)} من السلسلة`)
+      } else if (lesson) {
         saved = await update<WorkLesson>('lessons', lesson.id, body)
         toast('حُفظت التعديلات')
       } else {
@@ -168,7 +182,7 @@ export default function LessonForm({ open, onClose, lesson, draft, onNewClient, 
       footer={
         <div className="flex items-center gap-2">
           <button onClick={save} disabled={saving} className={primaryBtn('flex-1')}>
-            {saving ? 'جارٍ الحفظ…' : lesson ? 'حفظ التعديلات' : repeat > 1 ? `إضافة ${repeat} حصص` : 'إضافة الحصة'}
+            {saving ? 'جارٍ الحفظ…' : lesson ? (scope === 'future' && seriesAfter > 0 && scheduleChanged ? `حفظ لـ${lessonsCount(seriesAfter + 1)}` : 'حفظ التعديلات') : repeat > 1 ? `إضافة ${repeat} حصص` : 'إضافة الحصة'}
           </button>
           {lesson && !confirmDelete && (
             <button onClick={() => onCopy(lesson)} className={ghostBtn()} title="نسخ إلى تاريخ آخر">
@@ -239,6 +253,19 @@ export default function LessonForm({ open, onClose, lesson, draft, onNewClient, 
             </button>
           ))}
         </div>
+
+        {lesson && seriesAfter > 0 && scheduleChanged && (
+          <div className="rounded-2xl border border-brand-200 bg-brand-50 p-3 space-y-2">
+            <p className="text-xs font-bold text-brand-800">هذه الحصة جزء من سلسلة أسبوعية — أين يُطبَّق التعديل؟</p>
+            <Segmented size="sm" value={scope} onChange={setScope} options={[
+              { value: 'one', label: 'هذه الحصة فقط' },
+              { value: 'future', label: `هذه + ${lessonsCount(seriesAfter)} بعدها` },
+            ]} />
+            {scope === 'future' && (
+              <p className="text-[11px] text-brand-700">يتغيّر الموعد والمدة والسعر والتذكير في كل الحصص المجدولة بعدها{date !== lesson.date ? '، وتنتقل كلها بالفارق نفسه في الأيام' : ''}. الحصص التي تمّت أو أُلغيت لا تُلمس.</p>
+            )}
+          </div>
+        )}
 
         <Field label={`المدة · تنتهي ${/^\d\d:\d\d$/.test(start) ? endTime(start, duration) : '—'}`}>
           {id => (
@@ -370,8 +397,23 @@ export default function LessonForm({ open, onClose, lesson, draft, onNewClient, 
           </Field>
         )}
 
-        <Field label="ملاحظة (اختياري)">
-          {id => <textarea id={id} rows={2} className={inputCls} value={note} onChange={e => setNote(e.target.value)} maxLength={500} placeholder="ما تمّ في الحصة، واجب، تذكير…" />}
+        {status === 'done' && (
+          <div className="space-y-1.5">
+            <p className="text-xs font-bold text-gray-600">كيف كانت الحصة؟ <span className="font-normal text-gray-400">(تقديرك أنت — يظهر في سجل تقدّم الطفل)</span></p>
+            <div className="flex items-center gap-1" role="radiogroup" aria-label="تقييم الحصة">
+              {[1, 2, 3, 4, 5].map(n => (
+                <button key={n} type="button" role="radio" aria-checked={rating === n} aria-label={`${n} من 5`}
+                  onClick={() => setRating(rating === n ? null : n)}
+                  className={`text-2xl leading-none transition ${rating !== null && n <= rating ? 'opacity-100 scale-110' : 'opacity-25 grayscale hover:opacity-60'}`}>⭐</button>
+              ))}
+              {rating !== null && <button type="button" onClick={() => setRating(null)} className="mr-2 text-[11px] text-gray-400 underline">مسح</button>}
+            </div>
+          </div>
+        )}
+
+        <Field label={status === 'done' ? 'ما تمّ في الحصة (يظهر في سجل التقدّم)' : 'ملاحظة (اختياري)'}>
+          {id => <textarea id={id} rows={2} className={inputCls} value={note} onChange={e => setNote(e.target.value)} maxLength={500}
+            placeholder={status === 'done' ? 'مثال: أتقن جدول الضرب 7، يحتاج تدريباً على القراءة الجهرية' : 'واجب، تذكير، رمز البوابة…'} />}
         </Field>
 
         {error && <p className="rounded-xl bg-rose-50 px-3 py-2 text-sm font-bold text-rose-700" role="alert">{error}</p>}

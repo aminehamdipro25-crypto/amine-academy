@@ -64,6 +64,10 @@ export interface WorkLesson {
   reminderMin: number | null
   /** Lessons created together as a weekly series share this id. */
   seriesId?: string
+  /** The specialist's own 1–5 rating of how the lesson went — a judgement, not a measurement. */
+  rating?: number
+  /** When the parent was sent a WhatsApp reminder for this lesson (set by the server). */
+  parentRemindedAt?: string
   createdAt: string
   updatedAt: string
 }
@@ -81,6 +85,12 @@ export interface WorkPayment {
    * payment against every billable lesson, so this can never count twice.
    */
   lessonId?: string
+  /**
+   * A prepaid package: this payment covers the family's next N billable
+   * lessons, counted from its date. Money still balances the usual way —
+   * this only lets the ledger say "3 of 8 left" and warn before it runs out.
+   */
+  lessonsCovered?: number
   createdAt: string
 }
 
@@ -102,6 +112,8 @@ export interface WorkSettings {
   /** Secret token of the calendar feed; absent = feed disabled. */
   calendarToken?: string
   dailyDigest: boolean
+  /** Monthly income goal (value of work done); null = none set. */
+  monthlyGoal?: number | null
 }
 
 export const DEFAULT_SETTINGS: WorkSettings = {
@@ -746,6 +758,16 @@ export function sanitizeLesson(body: Record<string, unknown>, partial = false): 
   if ('cancelledBy' in body) out.cancelledBy = body.cancelledBy === 'me' ? 'me' : body.cancelledBy === 'family' ? 'family' : undefined
   if ('charged' in body) out.charged = !!body.charged
   if ('note' in body) out.note = cleanText(body.note, 500)
+  if ('rating' in body) {
+    if (body.rating === null || body.rating === '' || body.rating === 0) out.rating = undefined
+    else {
+      const r = Number(body.rating)
+      if (!Number.isInteger(r) || r < 1 || r > 5) return { ok: false, error: 'التقييم من 1 إلى 5' }
+      out.rating = r
+    }
+  }
+  // The timestamp is the server's, never the browser's: it records when the reminder was sent.
+  if ('parentReminded' in body) out.parentRemindedAt = body.parentReminded ? new Date().toISOString() : undefined
   if (!partial || 'reminderMin' in body) {
     const r = cleanReminder(body.reminderMin ?? null)
     if (r === undefined) return { ok: false, error: 'وقت التذكير غير صالح' }
@@ -763,7 +785,13 @@ export function sanitizePayment(body: Record<string, unknown>): Clean<Omit<WorkP
   const amount = cleanAmount(body.amount)
   if (amount === null || amount === 0) return { ok: false, error: 'المبلغ غير صالح' }
   const method = (['cash', 'transfer', 'other'] as const).includes(body.method as PaymentMethod) ? body.method as PaymentMethod : 'cash'
-  return { ok: true, value: { clientId, date: body.date, amount, method, note: cleanText(body.note, 300), lessonId: cleanText(body.lessonId, 80) } }
+  let lessonsCovered: number | undefined
+  if (body.lessonsCovered !== undefined && body.lessonsCovered !== null && body.lessonsCovered !== '' && body.lessonsCovered !== 0) {
+    const n = Number(body.lessonsCovered)
+    if (!Number.isInteger(n) || n < 1 || n > 200) return { ok: false, error: 'عدد حصص الباقة غير صالح (1 إلى 200)' }
+    lessonsCovered = n
+  }
+  return { ok: true, value: { clientId, date: body.date, amount, method, note: cleanText(body.note, 300), lessonId: cleanText(body.lessonId, 80), lessonsCovered } }
 }
 
 export function sanitizeExpense(body: Record<string, unknown>): Clean<Omit<WorkExpense, 'id' | 'createdAt'>> {
@@ -793,6 +821,14 @@ export function sanitizeSettings(body: Record<string, unknown>, current: WorkSet
     next.defaultDurationMin = Math.round(d)
   }
   if ('dailyDigest' in body) next.dailyDigest = !!body.dailyDigest
+  if ('monthlyGoal' in body) {
+    if (body.monthlyGoal === null || body.monthlyGoal === '' || body.monthlyGoal === 0) next.monthlyGoal = null
+    else {
+      const g = cleanAmount(body.monthlyGoal, 10_000_000)
+      if (g === null) return { ok: false, error: 'الهدف الشهري غير صالح' }
+      next.monthlyGoal = g
+    }
+  }
   return { ok: true, value: next }
 }
 
@@ -969,5 +1005,156 @@ export function statementText(
   else lines.push('الحساب مسدّد بالكامل حتى اليوم، شكراً لكم.')
   lines.push('')
   lines.push('مع خالص التقدير 🌷')
+  return lines.join('\n')
+}
+
+// ── 1. Editing a weekly series ───────────────────────────────────────────────
+
+/** What a series edit may carry forward. Status, payment and notes stay per lesson. */
+export type SeriesPatch = Partial<Pick<WorkLesson, 'date' | 'start' | 'durationMin' | 'price' | 'reminderMin'>>
+
+/**
+ * "This lesson and every scheduled one after it". A changed date moves every
+ * lesson by the same number of days, so the weekly rhythm is kept (Sunday →
+ * Monday moves all the Sundays). Lessons already done or cancelled are never
+ * touched: they are history.
+ */
+export function seriesEditTargets(lessons: WorkLesson[], anchor: WorkLesson, patch: SeriesPatch): WorkLesson[] {
+  if (!anchor.seriesId) return []
+  const shift = patch.date && isValidDate(patch.date) && isValidDate(anchor.date)
+    ? Math.round((Date.parse(patch.date) - Date.parse(anchor.date)) / 864e5) : 0
+  return lessons
+    .filter(l => l.seriesId === anchor.seriesId && l.date >= anchor.date && (l.id === anchor.id || l.status === 'scheduled'))
+    .map(l => {
+      const { date: _d, ...rest } = patch
+      return { ...l, ...rest, date: shift ? addDays(l.date, shift) : l.date }
+    })
+}
+
+// ── 2. Prepaid packages ──────────────────────────────────────────────────────
+
+export interface PackageStatus {
+  paymentId: string
+  startDate: string
+  covered: number
+  used: number
+  /** Negative = lessons beyond the package, owed separately. */
+  remaining: number
+  amount: number
+}
+
+/** The family's current package: its latest payment with lessonsCovered, consumed by billable lessons from its date. */
+export function packageStatus(clientId: string, lessons: WorkLesson[], payments: WorkPayment[]): PackageStatus | null {
+  const pkg = payments
+    .filter(p => p.clientId === clientId && p.lessonsCovered)
+    .sort((a, b) => (a.date === b.date ? a.createdAt.localeCompare(b.createdAt) : a.date.localeCompare(b.date)))
+    .at(-1)
+  if (!pkg) return null
+  const used = lessons.filter(l => l.clientId === clientId && l.date >= pkg.date && isBillable(l)).length
+  return { paymentId: pkg.id, startDate: pkg.date, covered: pkg.lessonsCovered!, used, remaining: pkg.lessonsCovered! - used, amount: pkg.amount }
+}
+
+/** Running low: one lesson or fewer left, or already past the end. */
+export function packageNeedsRenewal(p: PackageStatus | null): boolean {
+  return !!p && p.remaining <= 1
+}
+
+export function renewalText(client: Pick<WorkClient, 'name' | 'childName'>, p: PackageStatus): string {
+  const left = p.remaining > 0
+    ? `بقيت ${lessonsCount(p.remaining)} من باقة ${p.covered} حصص`
+    : p.remaining === 0
+      ? `انتهت باقة ${p.covered} حصص`
+      : `انتهت باقة ${p.covered} حصص وتجاوزناها بـ${lessonsCount(-p.remaining)}`
+  return [
+    `السلام عليكم ${client.name}،`,
+    `${left}${client.childName ? ` لـ${client.childName}` : ''}.`,
+    'هل نجدّد الباقة؟ شكراً لكم 🌷',
+  ].join('\n')
+}
+
+// ── 3. Reminding a parent of a lesson ────────────────────────────────────────
+
+export function lessonReminderText(
+  lesson: Pick<WorkLesson, 'date' | 'start'>, client: Pick<WorkClient, 'name' | 'childName'>,
+  formatDay: (date: string) => string, today: string,
+): string {
+  const when = lesson.date === today ? 'اليوم' : lesson.date === addDays(today, 1) ? 'غداً' : formatDay(lesson.date)
+  return [
+    `السلام عليكم ${client.name}،`,
+    `تذكير بحصة${client.childName ? ` ${client.childName}` : ''} ${when} الساعة ${lesson.start}.`,
+    'نراكم إن شاء الله 🌷',
+  ].join('\n')
+}
+
+// ── 4. Monthly goal and forecast ─────────────────────────────────────────────
+
+export interface MonthForecast {
+  /** Value of work done so far this month. */
+  earned: number
+  /** Scheduled lessons from today to month end. */
+  ahead: number
+  /** Past lessons of the month still marked scheduled — neither earned nor ahead. */
+  unconfirmed: number
+  projected: number
+  collected: number
+  goal: number | null
+  /** projected / goal, 0..∞; null without a goal. */
+  progress: number | null
+  /** Still needed beyond what is projected; 0 when on track. */
+  gap: number | null
+}
+
+export function monthForecast(
+  lessons: WorkLesson[], payments: WorkPayment[], today: string, goal: number | null | undefined,
+): MonthForecast {
+  const from = startOfMonth(today), to = endOfMonth(today)
+  const st = periodStats(lessons, payments, [], from, to)
+  const sched = lessons.filter(l => l.status === 'scheduled' && l.date >= from && l.date <= to)
+  const ahead = round2(sched.filter(l => l.date >= today).reduce((s, l) => s + l.price, 0))
+  const unconfirmed = round2(sched.filter(l => l.date < today).reduce((s, l) => s + l.price, 0))
+  const projected = round2(st.earned + ahead)
+  const g = goal && goal > 0 ? goal : null
+  return {
+    earned: st.earned, ahead, unconfirmed, projected, collected: st.collected, goal: g,
+    progress: g ? projected / g : null,
+    gap: g ? round2(Math.max(0, g - projected)) : null,
+  }
+}
+
+// ── 5. A child's progress, lesson by lesson ──────────────────────────────────
+
+export interface ProgressSummary {
+  lessons: WorkLesson[]
+  rated: number
+  average: number | null
+  /** Last up-to-5 ratings vs the 5 before them; null without enough of both. */
+  trend: { recent: number; before: number } | null
+}
+
+/** Done lessons in a range, newest last, with the specialist's ratings summarised. */
+export function progressSummary(clientId: string, lessons: WorkLesson[], from: string, to: string): ProgressSummary {
+  const done = sortLessons(lessons.filter(l => l.clientId === clientId && l.status === 'done' && l.date >= from && l.date <= to))
+  const ratings = done.map(l => l.rating).filter((r): r is number => typeof r === 'number')
+  const avg = (xs: number[]) => Math.round((xs.reduce((s, x) => s + x, 0) / xs.length) * 10) / 10
+  const recent = ratings.slice(-5), before = ratings.slice(-10, -5)
+  return {
+    lessons: done,
+    rated: ratings.length,
+    average: ratings.length ? avg(ratings) : null,
+    // Fewer than 3 on either side is noise, not a trend.
+    trend: recent.length >= 3 && before.length >= 3 ? { recent: avg(recent), before: avg(before) } : null,
+  }
+}
+
+export function progressText(
+  ps: ProgressSummary, client: Pick<WorkClient, 'name' | 'childName'>, formatDay: (date: string) => string,
+): string {
+  const lines = [`السلام عليكم ${client.name}،`, `ملخّص حصص${client.childName ? ` ${client.childName}` : ''} الأخيرة:`, '']
+  if (!ps.lessons.length) lines.push('لا حصص منجزة في هذه الفترة.')
+  for (const l of ps.lessons) {
+    const stars = l.rating ? ' ' + '⭐'.repeat(l.rating) : ''
+    lines.push(`• ${formatDay(l.date)}${stars}${l.note ? `\n   ${l.note}` : ''}`)
+  }
+  lines.push('', 'مع خالص التقدير 🌷')
   return lines.join('\n')
 }

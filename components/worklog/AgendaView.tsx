@@ -3,12 +3,12 @@ import { useEffect, useMemo, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
-  AlertTriangle, Banknote, Bell, Car, CheckCheck, Copy, CalendarDays, Check, ChevronLeft, ChevronRight, Clock, MapPin, MessageCircle,
+  AlertTriangle, Banknote, Bell, BellRing, Car, CheckCheck, Copy, CalendarDays, Check, ChevronLeft, ChevronRight, Clock, MapPin, MessageCircle,
   Navigation, Pencil, Phone, Plus, Route, X,
 } from 'lucide-react'
 import {
   STATUS_META, addDays, endOfMonth, endTime, formatDuration, formatMoney, googleDirectionsUrl, googleRouteUrl,
-  dayLegs, hoursIn, lessonValue, phoneDigits, sortLessons, startOfMonth, startOfWeek, weekdayMon0, type GeoPoint, type LessonStatus, type WorkLesson,
+  dayLegs, hoursIn, lessonReminderText, lessonValue, phoneDigits, sortLessons, startOfMonth, startOfWeek, weekdayMon0, type GeoPoint, type LessonStatus, type WorkLesson,
 } from '@/lib/worklog'
 import { useToast } from '@/components/ui/Toast'
 import { clientLabel, useWorkLog } from './useWorkLog'
@@ -36,6 +36,7 @@ export default function AgendaView({ onAdd, onEdit, onCopy, onLocate }: {
   const [paidQueue, setPaidQueue] = useState<{ items: WorkLesson[]; total: number }>({ items: [], total: 0 })
   const askPaid = (ls: WorkLesson[]) => setPaidQueue({ items: ls, total: ls.length })
   const [bulkOpen, setBulkOpen] = useState(false)
+  const [remindOpen, setRemindOpen] = useState(false)
   const paidLessons = useMemo(() => new Set(payments.map(p => p.lessonId).filter(Boolean)), [payments])
 
   const byDate = useMemo(() => {
@@ -98,6 +99,8 @@ export default function AgendaView({ onAdd, onEdit, onCopy, onLocate }: {
   )
   // «تمّت كلها»: only for a day that has started, and only the lessons still open.
   const openToday = selected <= today ? dayLessons.filter(l => l.status === 'scheduled') : []
+  // Lessons of a day still ahead whose parent can be reminded.
+  const remindable = selected >= today ? dayLessons.filter(l => l.status === 'scheduled') : []
 
   return (
     <div className="space-y-4">
@@ -210,6 +213,11 @@ export default function AgendaView({ onAdd, onEdit, onCopy, onLocate }: {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          {remindable.length > 0 && (
+            <button onClick={() => setRemindOpen(true)} className={ghostBtn('text-emerald-700')}>
+              <BellRing className="w-4 h-4" /> ذكّر العائلات ({remindable.filter(l => !l.parentRemindedAt).length}/{remindable.length})
+            </button>
+          )}
           {openToday.length > 1 && (
             <button onClick={() => setBulkOpen(true)} className={ghostBtn('text-emerald-700')}>
               <CheckCheck className="w-4 h-4" /> تمّت كلها ({openToday.length})
@@ -268,6 +276,8 @@ export default function AgendaView({ onAdd, onEdit, onCopy, onLocate }: {
         onClose={() => setPaidQueue(q => ({ ...q, items: q.items.slice(1) }))}
       />
 
+      <RemindDay open={remindOpen} lessons={remindable} onClose={() => setRemindOpen(false)} />
+
       <BulkDone open={bulkOpen} lessons={openToday} onClose={() => setBulkOpen(false)}
         onDone={done => askPaid(done.filter(l => !paidLessons.has(l.id)))} />
     </div>
@@ -292,6 +302,8 @@ function LessonCard({ lesson: l, paid, onPaid, onEdit, onCopy, onLocate, onStatu
   const { clientsById, settings } = useWorkLog()
   const c = clientsById.get(l.clientId)
   const tel = phoneDigits(c?.phone, settings.currency)
+  const remind = useParentReminder()
+  const canRemind = l.status === 'scheduled' && l.date >= localToday() && !!c
   const m = STATUS_META[l.status]
   const faded = l.status === 'cancelled'
 
@@ -317,6 +329,9 @@ function LessonCard({ lesson: l, paid, onPaid, onEdit, onCopy, onLocate, onStatu
               <span className="inline-flex items-center gap-1"><Clock className="w-3 h-3" />{formatDuration(l.durationMin)}</span>
               <span className="font-bold text-gray-700">{formatMoney(l.price, settings.currency)}</span>
               {paid && <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 font-bold text-emerald-700"><Banknote className="w-3 h-3" />مدفوعة</span>}
+              {l.status === 'done' && (l.rating
+                ? <button onClick={onEdit} className="text-[11px]" aria-label={`تقييم الحصة ${l.rating} من 5`}>{'⭐'.repeat(l.rating)}</button>
+                : <button onClick={onEdit} className="rounded-full bg-amber-50 px-2 py-0.5 font-bold text-amber-700">⭐ قيّم الحصة</button>)}
               {l.status === 'scheduled' && l.reminderMin !== null && <span className="inline-flex items-center gap-1"><Bell className="w-3 h-3" />{l.reminderMin >= 60 ? `${l.reminderMin / 60} س` : `${l.reminderMin} د`}</span>}
               {l.status === 'cancelled' && <span>{l.cancelledBy === 'me' ? 'ألغيتُها أنا' : 'ألغتها العائلة'}</span>}
             </div>
@@ -358,8 +373,15 @@ function LessonCard({ lesson: l, paid, onPaid, onEdit, onCopy, onLocate, onStatu
           {tel && (
             <>
               <a href={`tel:+${tel}`} className="w-9 h-9 rounded-xl bg-gray-100 text-gray-700 flex items-center justify-center" aria-label="اتصال"><Phone className="w-4 h-4" /></a>
-              <a href={`https://wa.me/${tel}`} target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center" aria-label="واتساب"><MessageCircle className="w-4 h-4" /></a>
+              {!canRemind && <a href={`https://wa.me/${tel}`} target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center" aria-label="واتساب"><MessageCircle className="w-4 h-4" /></a>}
             </>
+          )}
+          {canRemind && (
+            <a href={remind.href(l)} target="_blank" rel="noopener noreferrer" onClick={() => remind.mark(l)}
+              className={`inline-flex items-center gap-1 h-9 rounded-xl px-2.5 text-[11px] font-bold ${l.parentRemindedAt ? 'bg-emerald-50 text-emerald-700' : 'bg-emerald-600 text-white'}`}
+              aria-label="تذكير الولي بالحصة على واتساب" title={l.parentRemindedAt ? 'أُرسل التذكير — اضغط لإرساله مجدداً' : 'تذكير الولي على واتساب'}>
+              <BellRing className="w-3.5 h-3.5" /> {l.parentRemindedAt ? 'ذُكّر ✓' : 'ذكّر الولي'}
+            </a>
           )}
           <button onClick={onCopy} className="w-9 h-9 rounded-xl bg-gray-100 text-gray-700 flex items-center justify-center" aria-label="نسخ الحصة إلى تاريخ آخر" title="نسخ"><Copy className="w-4 h-4" /></button>
           <button onClick={onEdit} className="w-9 h-9 rounded-xl bg-gray-100 text-gray-700 flex items-center justify-center" aria-label="تعديل"><Pencil className="w-4 h-4" /></button>
@@ -416,6 +438,54 @@ function BulkDone({ open, lessons, onClose, onDone }: {
                   <span className="text-[11px] text-gray-500">{l.start}–{endTime(l.start, l.durationMin)} · {formatMoney(l.price, settings.currency)}</span>
                 </span>
               </label>
+            </li>
+          )
+        })}
+      </ul>
+    </Sheet>
+  )
+}
+
+/** WhatsApp reminder to a parent, and the server-side record that it was sent. */
+function useParentReminder() {
+  const { clientsById, settings, update } = useWorkLog()
+  const today = localToday()
+  return {
+    href(l: WorkLesson) {
+      const c = clientsById.get(l.clientId)
+      const tel = phoneDigits(c?.phone, settings.currency)
+      const text = c ? lessonReminderText(l, c, dayLabel, today) : ''
+      // Without a number wa.me opens the chat picker with the text ready.
+      return `https://wa.me/${tel ?? ''}?text=${encodeURIComponent(text)}`
+    },
+    mark(l: WorkLesson) {
+      // Recorded when the link is opened; WhatsApp gives no delivery receipt back to a web page.
+      update('lessons', l.id, { parentReminded: true }).catch(() => {})
+    },
+  }
+}
+
+/** The day's families, one tap each — wa.me opens one chat at a time, so this is a checklist. */
+function RemindDay({ open, lessons, onClose }: { open: boolean; lessons: WorkLesson[]; onClose: () => void }) {
+  const { clientsById } = useWorkLog()
+  const remind = useParentReminder()
+  return (
+    <Sheet open={open} onClose={onClose} title="تذكير العائلات بحصص اليوم المحدّد">
+      <p className="text-xs text-gray-500 mb-3">اضغط «أرسل» لكل عائلة: يفتح واتساب بالرسالة جاهزة، ثم عُد إلى هنا للعائلة التالية. تظهر ✓ بجانب من أرسلتَ له.</p>
+      <ul className="space-y-2">
+        {lessons.map(l => {
+          const c = clientsById.get(l.clientId)
+          return (
+            <li key={l.id} className="flex items-center gap-3 rounded-xl border border-gray-100 px-3 py-2.5">
+              <span className="w-2 h-8 rounded-full" style={{ backgroundColor: c?.color }} />
+              <span className="flex-1 min-w-0">
+                <b className="block text-sm text-gray-900 truncate">{clientLabel(c)}</b>
+                <span className="text-[11px] text-gray-500">{l.start}{c?.phone ? '' : ' · لا رقم هاتف — اختر المحادثة يدوياً'}</span>
+              </span>
+              <a href={remind.href(l)} target="_blank" rel="noopener noreferrer" onClick={() => remind.mark(l)}
+                className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-bold ${l.parentRemindedAt ? 'bg-emerald-50 text-emerald-700' : 'bg-emerald-600 text-white'}`}>
+                {l.parentRemindedAt ? '✓ أُرسل' : 'أرسل'}
+              </a>
             </li>
           )
         })}

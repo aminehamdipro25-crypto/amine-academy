@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Trash2 } from 'lucide-react'
 import {
-  CURRENCY_LABEL, EXPENSE_LABEL, PAYMENT_METHOD_LABEL, clientBalances, formatMoney,
+  CURRENCY_LABEL, EXPENSE_LABEL, PAYMENT_METHOD_LABEL, clientBalances, formatMoney, priceFor, round2,
   type ExpenseCategory, type PaymentMethod, type WorkExpense, type WorkLesson, type WorkPayment,
 } from '@/lib/worklog'
 import { useToast } from '@/components/ui/Toast'
@@ -19,6 +19,8 @@ export function PaymentForm({ open, onClose, payment, clientId: presetClient }: 
   const [amount, setAmount] = useState('')
   const [method, setMethod] = useState<PaymentMethod>('cash')
   const [note, setNote] = useState('')
+  const [isPackage, setIsPackage] = useState(false)
+  const [pkgLessons, setPkgLessons] = useState(8)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
@@ -32,7 +34,21 @@ export function PaymentForm({ open, onClose, payment, clientId: presetClient }: 
     setError(''); setSaving(false)
     setClientId(payment?.clientId ?? presetClient ?? ''); setDate(payment?.date ?? localToday())
     setAmount(payment ? String(payment.amount) : ''); setMethod(payment?.method ?? 'cash'); setNote(payment?.note ?? '')
+    setIsPackage(!!payment?.lessonsCovered); setPkgLessons(payment?.lessonsCovered ?? 8)
   }, [open, payment, presetClient])
+
+  // The family's usual lesson price: their latest lesson, else their hourly rate for the default length.
+  const usualPrice = useMemo(() => {
+    const last = lessons.filter(l => l.clientId === clientId).sort((a, b) => (a.date < b.date ? 1 : -1))[0]
+    if (last) return last.price
+    const c = clients.find(x => x.id === clientId)
+    return c ? priceFor(c.hourlyRate, settings.defaultDurationMin) : 0
+  }, [lessons, clients, clientId, settings.defaultDurationMin])
+
+  function pickPackage(n: number) {
+    setPkgLessons(n)
+    if (usualPrice) setAmount(String(round2(usualPrice * n)))
+  }
 
   const bal = balances.get(clientId)
   const options = clients.filter(c => !c.archived || c.id === clientId || c.id === payment?.clientId)
@@ -43,10 +59,10 @@ export function PaymentForm({ open, onClose, payment, clientId: presetClient }: 
     if (!(Number(amount) > 0)) { setError('أدخل المبلغ'); return }
     setSaving(true)
     try {
-      const body = { clientId, date, amount: Number(amount), method, note }
+      const body = { clientId, date, amount: Number(amount), method, note, lessonsCovered: isPackage ? pkgLessons : null }
       if (payment) await update('payments', payment.id, body)
       else await create('payments', body)
-      toast(payment ? 'حُفظت الدفعة' : `سُجّلت دفعة ${formatMoney(Number(amount), settings.currency)}`)
+      toast(payment ? 'حُفظ المبلغ' : isPackage ? `سُجّلت باقة ${pkgLessons} حصص` : `سُجّل مبلغ ${formatMoney(Number(amount), settings.currency)}`)
       onClose()
     } catch (e) { setError((e as Error).message) } finally { setSaving(false) }
   }
@@ -92,6 +108,31 @@ export function PaymentForm({ open, onClose, payment, clientId: presetClient }: 
             {id => <input id={id} type="number" min={0} step="any" inputMode="decimal" className={`${inputCls} text-lg font-black`} value={amount} onChange={e => setAmount(e.target.value)} />}
           </Field>
           <Field label="تاريخ الاستلام">{id => <input id={id} type="date" className={inputCls} value={date} onChange={e => setDate(e.target.value)} />}</Field>
+        </div>
+        <div className={`rounded-2xl border p-3 space-y-2 ${isPackage ? 'border-brand-200 bg-brand-50' : 'border-gray-100'}`}>
+          <label className="flex items-center gap-2 text-sm font-bold text-gray-800 cursor-pointer">
+            <input type="checkbox" className="w-4 h-4 accent-brand-600" checked={isPackage}
+              onChange={e => { setIsPackage(e.target.checked); if (e.target.checked && !amount) pickPackage(pkgLessons) }} />
+            باقة مدفوعة مسبقاً
+          </label>
+          {isPackage && (
+            <>
+              <div className="flex flex-wrap items-center gap-1.5">
+                {[4, 8, 10, 12].map(n => (
+                  <button key={n} type="button" onClick={() => pickPackage(n)}
+                    className={`rounded-lg px-3 py-1.5 text-xs font-bold border ${pkgLessons === n ? 'bg-brand-600 text-white border-brand-600' : 'bg-white border-gray-200 text-gray-700'}`}>
+                    {n} حصص
+                  </button>
+                ))}
+                <input type="number" min={1} max={200} className={`${inputCls} w-20 text-center`} aria-label="عدد حصص الباقة"
+                  value={pkgLessons} onChange={e => setPkgLessons(Math.max(1, Math.min(200, Number(e.target.value) || 1)))} />
+              </div>
+              <p className="text-[11px] text-brand-800 leading-relaxed">
+                تُحسب الحصص من تاريخ هذه الدفعة. على بطاقة العائلة يظهر «بقيت X من {pkgLessons}»، وأُنبّهك حين تبقى حصة واحدة لتطلب التجديد.
+                {usualPrice ? ` السعر المقترح: ${pkgLessons} × ${formatMoney(usualPrice, settings.currency)}.` : ''}
+              </p>
+            </>
+          )}
         </div>
         <div className="flex items-center justify-between gap-2">
           <span className="text-xs font-bold text-gray-600">طريقة الدفع</span>

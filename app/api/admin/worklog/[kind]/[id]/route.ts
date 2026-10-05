@@ -92,11 +92,26 @@ export async function DELETE(req: NextRequest, { params }: Ctx) {
       // A family with history is archived, never deleted: deleting it would
       // orphan its lessons and payments and silently change every past total.
       const [lessons, payments] = await Promise.all([listWork('lessons'), listWork('payments')])
-      if (lessons.some(l => l.clientId === id) || payments.some(p => p.clientId === id)) {
-        return bad('لهذه العائلة حصص أو دفعات مسجّلة — أرشِفها بدل حذفها حتى تبقى الإحصائيات صحيحة', 409)
+      const ownLessons = lessons.filter(l => l.clientId === id).map(l => l.id)
+      const ownPayments = payments.filter(p => p.clientId === id).map(p => p.id)
+      if (ownLessons.length || ownPayments.length) {
+        // Deleting a family with history is allowed (a test family must be
+        // removable) but only on purpose: the request must carry the family's
+        // exact name, typed by the owner. Everything of that family goes with it.
+        const client = await getWork('clients', id)
+        if (!client) return bad('السجل غير موجود', 404)
+        const confirmName = req.nextUrl.searchParams.get('confirm')
+        if (req.nextUrl.searchParams.get('cascade') !== '1' || confirmName?.trim() !== client.name.trim()) {
+          return bad('لهذه العائلة حصص أو دفعات مسجّلة — اكتب اسم العائلة لتأكيد حذفها مع كل سجلاتها، أو أرشِفها', 409)
+        }
+        await deleteWork('lessons', ownLessons)
+        await deleteWork('payments', ownPayments)
+        await deleteWork('clients', [id])
+        after(() => archiveLessonsInNotion(ownLessons))
+        return NextResponse.json({ deleted: [id], lessons: ownLessons, payments: ownPayments })
       }
       await deleteWork('clients', [id])
-      return NextResponse.json({ deleted: [id] })
+      return NextResponse.json({ deleted: [id], lessons: [], payments: [] })
     }
 
     if (kind === 'lessons' && req.nextUrl.searchParams.get('scope') === 'future') {

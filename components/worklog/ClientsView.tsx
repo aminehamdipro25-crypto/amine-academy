@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { motion } from 'framer-motion'
 import { Banknote, FileText, Map as MapIcon, MapPin, MessageCircle, Pencil, Phone, Plus, Search, Users } from 'lucide-react'
-import { clientBalances, formatDuration, formatMoney, phoneDigits, type WorkClient } from '@/lib/worklog'
+import { clientBalances, formatDuration, formatMoney, lessonsCount, phoneDigits, type ClientBalance, type WorkClient } from '@/lib/worklog'
 import { clientLabel, useWorkLog } from './useWorkLog'
 import { NavLinks } from './WorkMap'
 import StatementSheet from './StatementSheet'
@@ -120,21 +120,18 @@ export default function ClientsView({ onAdd, onEdit, onPay, onAddLesson }: {
                 </div>
 
                 <div className={`rounded-xl px-3 py-2.5 flex items-center justify-between gap-2 ${b.balance > 0 ? 'bg-amber-50' : b.balance < 0 ? 'bg-emerald-50' : 'bg-gray-50'}`}>
-                  <div>
+                  <div className="min-w-0">
                     <p className={`text-[10px] font-bold ${b.balance > 0 ? 'text-amber-700' : b.balance < 0 ? 'text-emerald-700' : 'text-gray-500'}`}>
-                      {b.balance > 0 ? 'مستحق عليها' : b.balance < 0 ? 'رصيد مدفوع مسبقاً' : 'مسدّدة بالكامل'}
+                      {b.balance > 0 ? 'مستحق عليها' : b.balance < 0 ? 'دفعت مسبقاً (رصيد لها)' : b.billed > 0 ? 'مسدّدة بالكامل ✓' : 'لا شيء مستحق بعد'}
                     </p>
                     <p className="font-black text-gray-900">{formatMoney(Math.abs(b.balance), settings.currency)}</p>
-                    <p className="text-[10px] text-gray-500">
-                      {b.lastPaymentDate ? `آخر دفعة ${shortDate(b.lastPaymentDate)}` : 'لم تدفع بعد'}
-                      {b.balance > 0 && b.lessonsSinceLastPayment ? ` · ${b.lessonsSinceLastPayment} حصة منذها` : ''}
-                    </p>
+                    <p className="text-[10px] text-gray-500">{paymentLine(b)}</p>
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <button onClick={() => onPay(c.id)} className="inline-flex items-center justify-center gap-1 rounded-xl bg-white border border-gray-200 px-3 py-1.5 text-xs font-bold text-gray-800 hover:border-brand-300">
-                      <Banknote className="w-3.5 h-3.5 text-emerald-600" /> دفعة
+                    <button onClick={() => onPay(c.id)} className="inline-flex items-center justify-center gap-1 whitespace-nowrap rounded-xl bg-white border border-gray-200 px-2.5 py-1.5 text-[11px] sm:text-xs font-bold text-gray-800 hover:border-brand-300">
+                      <Banknote className="w-3.5 h-3.5 text-emerald-600" /> استلمت مبلغاً
                     </button>
-                    <button onClick={() => setStatementFor(c)} className="inline-flex items-center justify-center gap-1 rounded-xl bg-white border border-gray-200 px-3 py-1.5 text-xs font-bold text-gray-800 hover:border-brand-300">
+                    <button onClick={() => setStatementFor(c)} className="inline-flex items-center justify-center gap-1 whitespace-nowrap rounded-xl bg-white border border-gray-200 px-2.5 py-1.5 text-[11px] sm:text-xs font-bold text-gray-800 hover:border-brand-300">
                       <FileText className="w-3.5 h-3.5 text-brand-600" /> كشف حساب
                     </button>
                   </div>
@@ -169,4 +166,19 @@ export default function ClientsView({ onAdd, onEdit, onPay, onAddLesson }: {
       <StatementSheet client={statementFor} onClose={() => setStatementFor(null)} />
     </div>
   )
+}
+
+/**
+ * The small line under a family's balance, in plain words. "دفعة" alone read
+ * as a verb («دفعت؟») to the person using it — so every case says what
+ * happened and what is left, rather than a noun to decode.
+ */
+function paymentLine(b: ClientBalance): string {
+  const unpaid = b.balance > 0 && b.lessonsSinceLastPayment ? lessonsCount(b.lessonsSinceLastPayment) : ''
+  if (!b.lastPaymentDate) {
+    if (b.billed === 0) return 'لا حصص منجزة بعد'
+    return unpaid ? `لم تدفع أي مبلغ بعد · ${unpaid} غير مدفوعة` : 'لم تدفع أي مبلغ بعد'
+  }
+  const last = `آخر مبلغ استلمته منها ${shortDate(b.lastPaymentDate)}`
+  return unpaid ? `${last} · ${unpaid} بعده` : last
 }

@@ -59,10 +59,10 @@ export function PaymentForm({ open, onClose, payment, clientId: presetClient }: 
   }
 
   return (
-    <Sheet open={open} onClose={onClose} title={payment ? 'تعديل دفعة' : 'تسجيل دفعة مستلمة'}
+    <Sheet open={open} onClose={onClose} title={payment ? 'تعديل مبلغ مستلم' : 'استلمتُ مبلغاً من عائلة'}
       footer={
         <div className="flex gap-2">
-          <button onClick={save} disabled={saving} className={primaryBtn('flex-1')}>{saving ? 'جارٍ الحفظ…' : 'حفظ الدفعة'}</button>
+          <button onClick={save} disabled={saving} className={primaryBtn('flex-1')}>{saving ? 'جارٍ الحفظ…' : 'حفظ المبلغ المستلم'}</button>
           {payment && <button onClick={del} disabled={saving} className={ghostBtn('text-rose-600')} aria-label="حذف"><Trash2 className="w-4 h-4" /></button>}
         </div>
       }>

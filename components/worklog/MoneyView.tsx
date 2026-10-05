@@ -67,7 +67,7 @@ export default function MoneyView({ mode, onAdd, onEditPayment, onEditExpense }:
           <button onClick={() => shiftMonth(1)} className="w-9 h-9 rounded-xl hover:bg-white flex items-center justify-center" aria-label="الشهر التالي"><ChevronLeft className="w-4 h-4" /></button>
         </div>
         <button onClick={onAdd} className={primaryBtn(isIn ? '' : 'bg-orange-600 hover:bg-orange-700')}>
-          <Plus className="w-4 h-4" /> {isIn ? 'دفعة مستلمة' : 'مصروف'}
+          <Plus className="w-4 h-4" /> {isIn ? 'استلمت مبلغاً' : 'مصروف'}
         </button>
       </div>
 
@@ -105,7 +105,7 @@ export default function MoneyView({ mode, onAdd, onEditPayment, onEditExpense }:
           text={isIn
             ? 'سجّل كل دفعة يوم تستلمها، مهما كان مبلغها — والمستحقات تُحسب تلقائياً من الحصص المنجزة.'
             : 'البنزين، مواصلات، أدوات ومواد الحصص، الهاتف… سجّلها هنا لترى ربحك الصافي الحقيقي.'}
-          action={<button onClick={onAdd} className={primaryBtn(isIn ? '' : 'bg-orange-600 hover:bg-orange-700')}><Plus className="w-4 h-4" /> {isIn ? 'تسجيل دفعة' : 'إضافة مصروف'}</button>} />
+          action={<button onClick={onAdd} className={primaryBtn(isIn ? '' : 'bg-orange-600 hover:bg-orange-700')}><Plus className="w-4 h-4" /> {isIn ? 'سجّل مبلغاً استلمته' : 'إضافة مصروف'}</button>} />
       ) : (
         <div className="space-y-4">
           {groups.map(g => (

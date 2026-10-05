@@ -7,8 +7,8 @@ import {
   Navigation, Pencil, Phone, Plus, Route, X,
 } from 'lucide-react'
 import {
-  STATUS_META, addDays, endOfMonth, endTime, formatDuration, formatMoney, googleDirectionsUrl, googleRouteUrl,
-  dayLegs, hoursIn, lessonReminderText, lessonValue, phoneDigits, sortLessons, startOfMonth, startOfWeek, weekdayMon0, type GeoPoint, type LessonStatus, type WorkLesson,
+  STATUS_META, addDays, durationText, endOfMonth, endTime, formatDuration, formatMoney, googleDirectionsUrl, googleRouteUrl,
+  dayLegs, hoursIn, lessonReminderText, lessonValue, phoneDigits, sortLessons, startOfMonth, startOfWeek, weekdayMon0, type GeoPoint, type LessonStatus, type TravelLeg, type WorkLesson,
 } from '@/lib/worklog'
 import { useToast } from '@/components/ui/Toast'
 import { clientLabel, useWorkLog } from './useWorkLog'
@@ -260,10 +260,7 @@ export default function AgendaView({ onAdd, onEdit, onCopy, onLocate }: {
               )
               if (!g) return [card]
               return [(
-                <motion.li key={`leg-${l.id}`} layout className={`flex items-center gap-2 rounded-xl px-3 py-1.5 text-[11px] ${g.tight ? 'bg-amber-50 text-amber-800 font-bold' : 'text-gray-400'}`}>
-                  <Car className="w-3.5 h-3.5 flex-shrink-0" />
-                  <span>≈ {g.km} كم · ~{g.needMin} د تنقّل · الفاصل {g.gapMin} د{g.tight ? ' — قد لا يكفي الوقت' : ''}</span>
-                </motion.li>
+                <TravelRow key={`leg-${l.id}`} leg={g} from={dayLessons.find(x => x.id === g.fromId)} to={l} onLocate={onLocate} />
               ), card]
             })}
           </AnimatePresence>
@@ -292,6 +289,46 @@ function Dots({ lessons, light }: { lessons: WorkLesson[]; light?: boolean }) {
         <span key={l.id} className={`w-1.5 h-1.5 rounded-full ${light ? 'ring-1 ring-white/60' : ''}`} style={{ backgroundColor: STATUS_META[l.status].color }} />
       ))}
     </span>
+  )
+}
+
+/**
+ * The drive between two consecutive lessons, in words: when the first one
+ * ends, when the next one starts, how much free time that leaves, and the
+ * estimated drive. An impossible distance is a wrong map pin, so it asks for
+ * the pin to be fixed instead of reporting thousands of minutes of driving.
+ */
+function TravelRow({ leg: g, from, to, onLocate }: {
+  leg: TravelLeg; from: WorkLesson | undefined; to: WorkLesson; onLocate: (clientId: string) => void
+}) {
+  const { clientsById } = useWorkLog()
+  const short = (id: string | undefined) => { const c = clientsById.get(id ?? ''); return c?.childName || c?.name || '—' }
+  const fromName = short(from?.clientId), toName = short(to.clientId)
+  if (g.implausible) {
+    return (
+      <motion.li layout className="rounded-xl bg-rose-50 border border-rose-100 px-3 py-2 text-[12px] text-rose-800 space-y-1.5">
+        <p className="flex items-start gap-2 font-bold">
+          <MapPin className="w-4 h-4 flex-shrink-0 mt-0.5" />
+          <span>المسافة بين منزلي {fromName} و{toName} على الخريطة ≈ {Math.round(g.km)} كم — هذا غير ممكن، فموقع إحدى العائلتين مسجّل خطأً.</span>
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {from && <button onClick={() => onLocate(from.clientId)} className="h-8 rounded-lg bg-white border border-rose-200 px-2.5 text-[11px] font-bold">صحّح موقع {fromName}</button>}
+          <button onClick={() => onLocate(to.clientId)} className="h-8 rounded-lg bg-white border border-rose-200 px-2.5 text-[11px] font-bold">صحّح موقع {toName}</button>
+        </div>
+      </motion.li>
+    )
+  }
+  const ends = from ? endTime(from.start, from.durationMin) : ''
+  const gap = g.gapMin < 0 ? 'الحصتان متداخلتان' : g.gapMin === 0 ? 'لا وقت بينهما' : `بينهما ${durationText(g.gapMin)} فراغ`
+  return (
+    <motion.li layout className={`flex items-start gap-2 rounded-xl px-3 py-1.5 text-[11px] ${g.tight ? 'bg-amber-50 text-amber-800 font-bold' : 'text-gray-500'}`}>
+      <Car className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+      <span>
+        {ends && <>تنتهي حصة {fromName} {ends} وتبدأ حصة {toName} {to.start} — </>}{gap}
+        {' · '}الطريق ≈ {g.km} كم ≈ {durationText(g.needMin)} بالسيارة
+        {g.tight && ' — قد لا يكفي الوقت للوصول'}
+      </span>
+    </motion.li>
   )
 }
 

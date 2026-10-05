@@ -27,7 +27,7 @@ export default function ProgressSheet({ client, onClose, onEditLesson }: {
   const from = period === 'month' ? startOfMonth(today) : period === '30' ? addDays(today, -30) : period === '90' ? addDays(today, -90) : '0000-01-01'
 
   const ps = useMemo(() => (client ? progressSummary(client.id, lessons, from, today) : null), [client, lessons, from, today])
-  const text = client && ps ? progressText(ps, client, msgDay) : ''
+  const text = client && ps ? progressText(ps, client, msgDay, settings.senderName) : ''
   const tel = phoneDigits(client?.phone, settings.currency)
   const unrated = ps ? ps.lessons.length - ps.rated : 0
 

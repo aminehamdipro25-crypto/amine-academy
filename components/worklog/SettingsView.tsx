@@ -120,6 +120,14 @@ export default function SettingsView() {
         </div>
       </section>
 
+      {/* Messages to parents */}
+      <section className="rounded-3xl bg-white border border-gray-100 shadow-sm p-5 space-y-3">
+        <h3 className="font-black text-gray-900">✉️ رسائل أولياء الأمور</h3>
+        <p className="text-xs text-gray-500 leading-relaxed">التذكير بالحصة، وكشف الحساب، وتجديد الباقة، وملخّص التقدّم — كلها تبدأ بـ«السلام عليكم ورحمة الله وبركاته، أسعد الله أوقاتكم» وتنتهي بعبارة شكر. اكتب هنا الاسم الذي تُوقَّع به الرسائل في آخرها، ويمكنك دائماً تعديل الرسالة في واتساب قبل إرسالها.</p>
+        <SenderInput value={settings.senderName ?? ''} busy={busy}
+          onSave={v => save({ senderName: v }, v ? 'حُفظ التوقيع' : 'أُزيل التوقيع')} />
+      </section>
+
       {/* Goal */}
       <section className="rounded-3xl bg-white border border-gray-100 shadow-sm p-5 space-y-3">
         <h3 className="font-black text-gray-900">🎯 الهدف الشهري</h3>
@@ -159,6 +167,18 @@ export default function SettingsView() {
         </Field>
         <p className="text-[11px] text-gray-400">تغيير العملة يغيّر الرمز المعروض فقط — المبالغ المسجّلة لا تُحوَّل.</p>
       </section>
+    </div>
+  )
+}
+
+function SenderInput({ value, busy, onSave }: { value: string; busy: boolean; onSave: (v: string) => void }) {
+  const [v, setV] = useState(value)
+  useEffect(() => { setV(value) }, [value])
+  return (
+    <div className="flex items-center gap-2">
+      <input className={`${inputCls} max-w-[16rem]`} aria-label="توقيع الرسائل" maxLength={60}
+        value={v} onChange={e => setV(e.target.value)} placeholder="مثال: الأستاذ أمين" />
+      <button disabled={busy || v.trim() === value} onClick={() => onSave(v.trim())} className={primaryBtn('text-xs')}>حفظ</button>
     </div>
   )
 }

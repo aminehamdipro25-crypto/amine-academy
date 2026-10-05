@@ -54,7 +54,7 @@ export default function StatementSheet({ client, onClose }: { client: WorkClient
     () => (client ? buildStatement(client.id, lessons, payments, range.from, range.to, today) : null),
     [client, lessons, payments, range, today],
   )
-  const text = client && st ? statementText(st, client, settings.currency, msgDay) : ''
+  const text = client && st ? statementText(st, client, settings.currency, msgDay, settings.senderName) : ''
   const tel = phoneDigits(client?.phone, settings.currency)
   const money = (n: number) => formatMoney(n, settings.currency)
 

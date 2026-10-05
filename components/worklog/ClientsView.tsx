@@ -167,7 +167,7 @@ export default function ClientsView({ onAdd, onEdit, onPay, onAddLesson, onEditL
                         </div>
                       </div>
                       {low && (
-                        <a href={`https://wa.me/${phoneDigits(c.phone, settings.currency) ?? ''}?text=${encodeURIComponent(renewalText(c, pk))}`} target="_blank" rel="noopener noreferrer"
+                        <a href={`https://wa.me/${phoneDigits(c.phone, settings.currency) ?? ''}?text=${encodeURIComponent(renewalText(c, pk, settings.senderName))}`} target="_blank" rel="noopener noreferrer"
                           className="whitespace-nowrap inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-2.5 py-1.5 text-[11px] font-bold text-white">
                           <MessageCircle className="w-3.5 h-3.5" /> اطلب التجديد
                         </a>

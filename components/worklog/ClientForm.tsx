@@ -1,8 +1,8 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { Archive, ArchiveRestore, Trash2 } from 'lucide-react'
-import { CLIENT_COLORS, CURRENCY_LABEL, type GeoPoint, type WorkClient } from '@/lib/worklog'
+import { CLIENT_COLORS, CURRENCY_LABEL, formatMoney, lessonsCount, type GeoPoint, type WorkClient } from '@/lib/worklog'
 import { useToast } from '@/components/ui/Toast'
 import { useWorkLog } from './useWorkLog'
 import { Field, Sheet, ghostBtn, inputCls, primaryBtn } from './ui'
@@ -13,13 +13,15 @@ const LocationPicker = dynamic(() => import('./WorkMap').then(m => m.LocationPic
   loading: () => <div className="h-56 rounded-2xl bg-gray-100 animate-pulse" />,
 })
 
+const paymentsCount = (n: number) => (n === 1 ? 'دفعة واحدة' : n === 2 ? 'دفعتان' : n <= 10 ? `${n} دفعات` : `${n} دفعة`)
+
 export default function ClientForm({ open, onClose, client, onCreated }: {
   open: boolean
   onClose: () => void
   client?: WorkClient | null
   onCreated?: (c: WorkClient) => void
 }) {
-  const { settings, lessons, payments, create, update, remove } = useWorkLog()
+  const { settings, lessons, payments, create, update, remove, removeFamily } = useWorkLog()
   const { toast } = useToast()
   const [name, setName] = useState('')
   const [childName, setChildName] = useState('')
@@ -79,6 +81,26 @@ export default function ClientForm({ open, onClose, client, onCreated }: {
     } catch (e) { setError((e as Error).message) } finally { setSaving(false) }
   }
 
+  // Permanent delete of a family with history: shows exactly what goes, and
+  // only unlocks once the family's name is typed (a slip cannot erase a ledger).
+  const [purge, setPurge] = useState(false)
+  const [purgeName, setPurgeName] = useState('')
+  useEffect(() => { setPurge(false); setPurgeName('') }, [client?.id, open])
+  // The button is in the footer, the panel at the top of a long form: bring it into view.
+  const purgeRef = useRef<HTMLDivElement>(null)
+  useEffect(() => { if (purge) purgeRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }, [purge])
+  const ownLessons = client ? lessons.filter(l => l.clientId === client.id) : []
+  const ownPaid = client ? payments.filter(p => p.clientId === client.id) : []
+  async function purgeFamily() {
+    if (!client) return
+    setSaving(true)
+    try {
+      const r = await removeFamily(client.id, purgeName.trim())
+      toast(`حُذفت العائلة مع ${lessonsCount(r.lessons.length)}${r.payments.length ? ` و${paymentsCount(r.payments.length)}` : ''}`)
+      onClose()
+    } catch (e) { setError((e as Error).message) } finally { setSaving(false) }
+  }
+
   async function del() {
     if (!client) return
     setSaving(true)
@@ -98,18 +120,38 @@ export default function ClientForm({ open, onClose, client, onCreated }: {
       footer={
         <div className="flex items-center gap-2">
           <button onClick={save} disabled={saving} className={primaryBtn('flex-1')}>{saving ? 'جارٍ الحفظ…' : 'حفظ'}</button>
-          {client && (hasHistory ? (
+          {client && (hasHistory ? (<>
             <button onClick={toggleArchive} disabled={saving} className={ghostBtn()} title={client.archived ? 'إلغاء الأرشفة' : 'أرشفة'}>
               {client.archived ? <ArchiveRestore className="w-4 h-4" /> : <Archive className="w-4 h-4" />}
               <span className="hidden sm:inline">{client.archived ? 'إعادة' : 'أرشفة'}</span>
             </button>
-          ) : (
+            <button onClick={() => setPurge(v => !v)} disabled={saving} className={ghostBtn('text-rose-600')} aria-label="حذف العائلة نهائياً مع سجلاتها" aria-expanded={purge}><Trash2 className="w-4 h-4" /></button>
+          </>) : (
             <button onClick={del} disabled={saving} className={ghostBtn('text-rose-600')} aria-label="حذف العائلة"><Trash2 className="w-4 h-4" /></button>
           ))}
         </div>
       }
     >
       <div className="space-y-4">
+        {client && hasHistory && purge && (
+          <div ref={purgeRef} className="rounded-2xl border-2 border-rose-200 bg-rose-50 p-3 space-y-2 text-sm">
+            <p className="font-bold text-rose-800">حذف «{client.name}» نهائياً</p>
+            <p className="text-rose-700 text-xs leading-relaxed">
+              سيُحذف معها {lessonsCount(ownLessons.length)}{ownPaid.length ? ` و${paymentsCount(ownPaid.length)} (${formatMoney(ownPaid.reduce((n, p) => n + p.amount, 0), settings.currency)})` : ''}،
+              وتتغيّر الإحصائيات والمبالغ السابقة. لا يمكن التراجع. إن كانت عائلة حقيقية انتهى التعامل معها فالأرشفة أفضل — تُخفيها وتُبقي أرقامك صحيحة.
+            </p>
+            <Field label={`اكتب اسم العائلة «${client.name}» للتأكيد`}>
+              {id => <input id={id} className={inputCls} value={purgeName} onChange={e => setPurgeName(e.target.value)} autoComplete="off" />}
+            </Field>
+            <div className="flex gap-2">
+              <button onClick={purgeFamily} disabled={saving || purgeName.trim() !== client.name.trim()}
+                className={primaryBtn('flex-1 bg-rose-600 hover:bg-rose-700 disabled:opacity-40')}>
+                <Trash2 className="w-4 h-4" /> حذف العائلة وكل سجلاتها
+              </button>
+              <button onClick={() => setPurge(false)} className={ghostBtn()}>تراجع</button>
+            </div>
+          </div>
+        )}
         <div className="grid sm:grid-cols-2 gap-3">
           <Field label="اسم الولي / العائلة">{id => <input id={id} className={inputCls} value={name} onChange={e => setName(e.target.value)} maxLength={60} placeholder="مثال: عائلة الكعبي" autoFocus={!client} />}</Field>
           <Field label="اسم الطفل (اختياري)">{id => <input id={id} className={inputCls} value={childName} onChange={e => setChildName(e.target.value)} maxLength={60} />}</Field>

@@ -93,6 +93,21 @@ export function useWorkLogState() {
     return res.deleted.length
   }, [])
 
+  /** Deletes a family with every lesson and payment of it — `confirm` is the family's name as typed by the owner. */
+  const removeFamily = useCallback(async (id: string, confirm: string) => {
+    const q = new URLSearchParams({ cascade: '1', confirm })
+    const res = await call<{ deleted: string[]; lessons: string[]; payments: string[] }>(`/api/admin/worklog/clients/${id}?${q}`, { method: 'DELETE' })
+    const gone = new Set([...res.deleted, ...res.lessons, ...res.payments])
+    setData(d => ({
+      ...d,
+      clients: d.clients.filter(c => !gone.has(c.id)),
+      lessons: d.lessons.filter(l => !gone.has(l.id)),
+      payments: d.payments.filter(p => !gone.has(p.id)),
+    }))
+    changed()
+    return res
+  }, [])
+
   const saveSettings = useCallback(async (body: object) => {
     const s = await call<WorkSettings>('/api/admin/worklog/settings', { method: 'PUT', body: JSON.stringify(body) })
     setData(d => ({ ...d, settings: s }))
@@ -101,7 +116,7 @@ export function useWorkLogState() {
 
   const clientsById = useMemo(() => new Map(data.clients.map(c => [c.id, c])), [data.clients])
 
-  return { ...data, data, loading, error, reload, create, update, updateSeries, remove, saveSettings, clientsById }
+  return { ...data, data, loading, error, reload, create, update, updateSeries, remove, removeFamily, saveSettings, clientsById }
 }
 
 export type WorkLogCtx = ReturnType<typeof useWorkLogState>

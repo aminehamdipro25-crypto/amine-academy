@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isOwnerUser } from '@/lib/auth'
 import {
-  sanitizeClient, sanitizeExpense, sanitizeLesson, sanitizePayment,
+  sanitizeClient, sanitizeExpense, sanitizeLesson, sanitizePayment, seriesEditTargets,
+  type SeriesPatch, type WorkLesson,
 } from '@/lib/worklog'
-import { deleteWork, getWork, listWork, putWork, type WorkKind } from '@/lib/worklog-store'
+import { deleteWork, getWork, listWork, putManyWork, putWork, type WorkKind } from '@/lib/worklog-store'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -34,6 +35,20 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
       const l = sanitizeLesson(body, true)
       if (!l.ok) return bad(l.error)
       if (l.value.clientId && !(await getWork('clients', l.value.clientId))) return bad('العائلة غير موجودة', 404)
+      const lesson = current as WorkLesson
+      // ?scope=future: carry the schedule fields to every scheduled lesson after this one
+      // in its weekly series. Everything else in the body applies to this lesson only.
+      if (req.nextUrl.searchParams.get('scope') === 'future' && lesson.seriesId) {
+        const patch: SeriesPatch = {}
+        for (const k of ['date', 'start', 'durationMin', 'price', 'reminderMin'] as const) {
+          if (k in l.value) (patch as Record<string, unknown>)[k] = l.value[k]
+        }
+        const now = new Date().toISOString()
+        const targets = seriesEditTargets(await listWork('lessons'), lesson, patch)
+          .map(t => (t.id === id ? { ...t, ...l.value, id, updatedAt: now } : { ...t, updatedAt: now }))
+        await putManyWork('lessons', targets)
+        return NextResponse.json(targets)
+      }
       const row = { ...(current as object), ...l.value, id, updatedAt: new Date().toISOString() }
       await putWork('lessons', row as never)
       return NextResponse.json(row)

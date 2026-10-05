@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { BarChart3, CalendarDays, Navigation, NotebookPen, Plus, Receipt, RefreshCw, Settings2, Users, Wallet } from 'lucide-react'
 import {
-  addDays, clientBalances, endOfMonth, hoursIn, startOfWeek, endTime, formatDuration, formatMoney, googleDirectionsUrl, lessonStartLocal,
+  addDays, clientBalances, endOfMonth, hoursIn, monthForecast, startOfWeek, endTime, formatDuration, formatMoney, googleDirectionsUrl, lessonStartLocal,
   periodStats, sortLessons, startOfMonth, type WorkClient, type WorkExpense, type WorkLesson, type WorkPayment,
 } from '@/lib/worklog'
 import { readStorage, writeStorage } from '@/lib/safe-storage'
@@ -97,6 +97,7 @@ export default function WorkLogApp() {
         ) : (
           <>
             <Overview onAddClient={() => openNewClient()} onAddLesson={() => openLesson()} />
+            {state.clients.length > 0 && <GoalCard onSetGoal={() => go('settings')} />}
 
             <nav className="sticky top-0 z-30 -mx-4 md:-mx-6 lg:-mx-8 px-4 md:px-6 lg:px-8 py-2 mb-4 bg-slate-100/90 backdrop-blur" aria-label="أقسام الدفتر">
               <div className="flex gap-1 rounded-2xl bg-white p-1 shadow-sm border border-gray-100">
@@ -118,6 +119,7 @@ export default function WorkLogApp() {
               {tab === 'agenda' && <AgendaView onAdd={openLesson} onEdit={l => { setEditLesson(l); setLessonOpen(true) }} onCopy={copyLesson} onLocate={id => editClientById(id)} />}
               {tab === 'clients' && (
                 <ClientsView onAdd={() => openNewClient()} onEdit={c => { setEditClient(c); setClientOpen(true) }} onAddLesson={id => openLesson({ clientId: id })}
+                  onEditLesson={l => { setEditLesson(l); setLessonOpen(true) }}
                   onPay={id => { setEditPayment(null); setPayClient(id); setPayOpen(true) }} />
               )}
               {(tab === 'payments' || tab === 'expenses') && (
@@ -251,6 +253,53 @@ function MiniStat({ label, value, sub, warn }: { label: string; value: string; s
       <p className={`text-[10px] font-bold ${warn ? 'text-amber-700' : 'text-gray-400'}`}>{label}</p>
       <p className="text-base sm:text-lg font-black text-gray-900 mt-0.5 leading-tight">{value}</p>
       <p className="text-[10px] text-gray-400 mt-0.5 truncate">{sub}</p>
+    </div>
+  )
+}
+
+/**
+ * This month against the goal: what is done, what is still on the calendar,
+ * and what that adds up to. Unconfirmed past lessons are named separately —
+ * counting them would promise money for lessons that may not have happened.
+ */
+function GoalCard({ onSetGoal }: { onSetGoal: () => void }) {
+  const { lessons, payments, settings } = useWorkLog()
+  const today = localToday()
+  const f = useMemo(() => monthForecast(lessons, payments, today, settings.monthlyGoal), [lessons, payments, today, settings.monthlyGoal])
+  const money = (n: number) => formatMoney(n, settings.currency)
+
+  if (!f.goal) {
+    return (
+      <div className="mb-4 rounded-2xl border border-dashed border-gray-300 bg-white/60 px-4 py-3 flex items-center justify-between gap-3">
+        <p className="text-xs text-gray-600">
+          <b>هذا الشهر:</b> منجز {money(f.earned)} + مجدول {money(f.ahead)} = متوقّع <b>{money(f.projected)}</b>
+        </p>
+        <button onClick={onSetGoal} className="whitespace-nowrap rounded-lg bg-gray-900 px-3 py-1.5 text-[11px] font-bold text-white">🎯 حدّد هدفاً</button>
+      </div>
+    )
+  }
+  const pctDone = Math.min(100, (f.earned / f.goal) * 100)
+  const pctAhead = Math.min(100 - pctDone, (f.ahead / f.goal) * 100)
+  const onTrack = (f.progress ?? 0) >= 1
+  return (
+    <div className="mb-4 rounded-2xl bg-white border border-gray-100 shadow-sm p-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-2 mb-2">
+        <p className="text-sm font-black text-gray-900">🎯 هدف الشهر {money(f.goal)}</p>
+        <p className={`text-xs font-bold ${onTrack ? 'text-emerald-700' : 'text-amber-700'}`}>
+          {onTrack ? `على المسار ✓ متوقّع ${money(f.projected)}` : `ينقص ${money(f.gap ?? 0)} — متوقّع ${money(f.projected)}`}
+        </p>
+      </div>
+      <div className="h-3 w-full rounded-full bg-gray-100 overflow-hidden flex" role="img"
+        aria-label={`منجز ${Math.round(pctDone)}٪ ومجدول ${Math.round(pctAhead)}٪ من الهدف`}>
+        <div className="h-full bg-emerald-600" style={{ width: `${pctDone}%` }} />
+        <div className="h-full bg-emerald-300" style={{ width: `${pctAhead}%` }} />
+      </div>
+      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-gray-500">
+        <span><span className="inline-block w-2 h-2 rounded-full bg-emerald-600 ml-1" />منجز {money(f.earned)}</span>
+        <span><span className="inline-block w-2 h-2 rounded-full bg-emerald-300 ml-1" />مجدول متبقٍّ {money(f.ahead)}</span>
+        <span>مستلم فعلاً {money(f.collected)}</span>
+        {f.unconfirmed > 0 && <span className="text-amber-700">+ {money(f.unconfirmed)} في حصص بلا حالة (غير محسوبة)</span>}
+      </div>
     </div>
   )
 }

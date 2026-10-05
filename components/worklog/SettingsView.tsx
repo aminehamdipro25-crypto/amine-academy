@@ -120,6 +120,14 @@ export default function SettingsView() {
         </div>
       </section>
 
+      {/* Goal */}
+      <section className="rounded-3xl bg-white border border-gray-100 shadow-sm p-5 space-y-3">
+        <h3 className="font-black text-gray-900">🎯 الهدف الشهري</h3>
+        <p className="text-xs text-gray-500 leading-relaxed">قيمة العمل التي تريد إنجازها كل شهر. في أعلى الدفتر ترى: المنجز + المجدول المتبقي = المتوقّع آخر الشهر، والفرق عن الهدف.</p>
+        <GoalInput value={settings.monthlyGoal ?? null} currency={settings.currency} busy={busy}
+          onSave={v => save({ monthlyGoal: v }, v ? 'حُفظ الهدف' : 'أُزيل الهدف')} />
+      </section>
+
       {/* Export */}
       <section className="rounded-3xl bg-white border border-gray-100 shadow-sm p-5 space-y-3">
         <div className="flex items-center gap-2"><FileSpreadsheet className="w-5 h-5 text-emerald-600" /><h3 className="font-black text-gray-900">تصدير إلى Excel</h3></div>
@@ -151,6 +159,22 @@ export default function SettingsView() {
         </Field>
         <p className="text-[11px] text-gray-400">تغيير العملة يغيّر الرمز المعروض فقط — المبالغ المسجّلة لا تُحوَّل.</p>
       </section>
+    </div>
+  )
+}
+
+function GoalInput({ value, currency, busy, onSave }: {
+  value: number | null; currency: 'QAR' | 'TND'; busy: boolean; onSave: (v: number | null) => void
+}) {
+  const [v, setV] = useState(value ? String(value) : '')
+  useEffect(() => { setV(value ? String(value) : '') }, [value])
+  return (
+    <div className="flex items-center gap-2">
+      <input type="number" min={0} step="any" inputMode="decimal" className={`${inputCls} max-w-[10rem]`} aria-label="الهدف الشهري"
+        value={v} onChange={e => setV(e.target.value)} placeholder="مثال: 6000" />
+      <span className="text-xs text-gray-500">{currency === 'TND' ? 'د.ت' : 'ر.ق'}</span>
+      <button disabled={busy} onClick={() => onSave(Number(v) > 0 ? Number(v) : null)} className={primaryBtn('text-xs')}>حفظ</button>
+      {value ? <button disabled={busy} onClick={() => onSave(null)} className={ghostBtn('text-xs')}>إزالة</button> : null}
     </div>
   )
 }

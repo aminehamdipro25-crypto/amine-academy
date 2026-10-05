@@ -76,6 +76,15 @@ export function useWorkLogState() {
     }
   }, [])
 
+  /** Edit a lesson and every scheduled lesson after it in its weekly series. */
+  const updateSeries = useCallback(async (id: string, body: object): Promise<WorkLesson[]> => {
+    const rows = await call<WorkLesson[]>(`/api/admin/worklog/lessons/${id}?scope=future`, { method: 'PATCH', body: JSON.stringify(body) })
+    const byId = new Map(rows.map(r => [r.id, r]))
+    setData(d => ({ ...d, lessons: d.lessons.map(l => byId.get(l.id) ?? l) }))
+    changed()
+    return rows
+  }, [])
+
   const remove = useCallback(async (kind: Kind, id: string, scope?: 'future') => {
     const res = await call<{ deleted: string[] }>(`/api/admin/worklog/${kind}/${id}${scope ? `?scope=${scope}` : ''}`, { method: 'DELETE' })
     const gone = new Set(res.deleted)
@@ -92,7 +101,7 @@ export function useWorkLogState() {
 
   const clientsById = useMemo(() => new Map(data.clients.map(c => [c.id, c])), [data.clients])
 
-  return { ...data, data, loading, error, reload, create, update, remove, saveSettings, clientsById }
+  return { ...data, data, loading, error, reload, create, update, updateSeries, remove, saveSettings, clientsById }
 }
 
 export type WorkLogCtx = ReturnType<typeof useWorkLogState>

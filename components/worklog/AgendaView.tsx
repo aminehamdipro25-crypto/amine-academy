@@ -22,8 +22,9 @@ const StopsMap = dynamic(() => import('./WorkMap').then(m => m.StopsMap), {
 
 const WEEKDAYS = ['إثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة', 'سبت', 'أحد']
 
-export default function AgendaView({ onAdd, onEdit, onCopy, onLocate }: {
+export default function AgendaView({ onAdd, onEdit, onCopy, onLocate, onFindTime }: {
   onAdd: (d?: LessonDraft) => void; onEdit: (l: WorkLesson) => void; onCopy: (l: WorkLesson) => void; onLocate: (clientId: string) => void
+  onFindTime: () => void
 }) {
   const { lessons, payments, clientsById, settings, update } = useWorkLog()
   const { toast } = useToast()
@@ -133,6 +134,10 @@ export default function AgendaView({ onAdd, onEdit, onCopy, onLocate }: {
           </AnimatePresence>
         </div>
       )}
+
+      <div className="flex justify-end">
+        <button onClick={onFindTime} className={ghostBtn('text-xs')}><Clock className="w-3.5 h-3.5 text-brand-600" /> متى أنا متاح؟</button>
+      </div>
 
       {/* Period header */}
       <div className="rounded-3xl bg-white border border-gray-100 shadow-sm p-3 sm:p-4">

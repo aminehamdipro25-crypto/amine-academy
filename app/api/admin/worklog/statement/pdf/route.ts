@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import React from 'react'
-import { Font, renderToBuffer, type DocumentProps } from '@react-pdf/renderer'
+import { renderToBuffer, type DocumentProps } from '@react-pdf/renderer'
 import { isOwnerUser } from '@/lib/auth'
-import { TAJAWAL_BOLD, TAJAWAL_REGULAR } from '@/lib/fonts-tajawal'
+import { registerTajawal } from '@/lib/pdf-fonts'
 import { buildStatement, todayIn } from '@/lib/worklog'
 import { loadAllWork } from '@/lib/worklog-store'
 import { StatementPdf, statementPdfModel } from '@/lib/worklog-statement-pdf'
@@ -10,16 +10,6 @@ import { StatementPdf, statementPdfModel } from '@/lib/worklog-statement-pdf'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 30
-
-// Same registration as the toolkit report: data URIs (a file path fails on
-// Vercel), and no hyphenation, which mangles Arabic words.
-let fontsReady = false
-function registerFonts() {
-  if (fontsReady) return
-  Font.register({ family: 'Tajawal', fonts: [{ src: TAJAWAL_REGULAR, fontWeight: 400 }, { src: TAJAWAL_BOLD, fontWeight: 700 }] })
-  Font.registerHyphenationCallback(word => [word])
-  fontsReady = true
-}
 
 const DAY = /^\d{4}-\d{2}-\d{2}$/
 const bad = (error: string, status = 400) => NextResponse.json({ error }, { status })
@@ -47,7 +37,7 @@ export async function GET(req: NextRequest) {
     const st = buildStatement(client.id, lessons, payments, from, to, today)
     const model = statementPdfModel(st, client, settings.currency, { sender: settings.senderName, today })
 
-    registerFonts()
+    registerTajawal()
     const el = React.createElement(StatementPdf, { m: model }) as React.ReactElement<DocumentProps>
     const buf = await renderToBuffer(el)
 

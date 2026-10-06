@@ -63,20 +63,20 @@ describe('freeSlots — when a lesson still fits', () => {
   const base = { from: '2026-10-05', days: 1, durationMin: 60, availability: av, locate }
 
   it('an empty day is one window, start times up to an hour before closing', () => {
-    expect(freeSlots([], base)).toEqual([{ date: '2026-10-05', windows: [{ earliest: '14:00', latest: '20:00' }], booked: [] }])
+    expect(freeSlots([], base)).toEqual([{ date: '2026-10-05', windows: [{ earliest: '14:00', latest: '20:00', until: '21:00' }], booked: [] }])
   })
 
   it('reserves the drive to and from the other homes around a booked lesson', () => {
     const ls = [lesson({ clientId: 'b', start: '16:00', durationMin: 60, status: 'scheduled' })]
     const [day] = freeSlots(ls, { ...base, clientId: 'a' })
     // a→b is ~13 min: the lesson must end by ~15:47 → start by 14:45; after 17:00 + ~13 min → 17:15.
-    expect(day.windows).toEqual([{ earliest: '14:00', latest: '14:45' }, { earliest: '17:15', latest: '20:00' }])
+    expect(day.windows).toEqual([{ earliest: '14:00', latest: '14:45', until: '15:45' }, { earliest: '17:15', latest: '20:00', until: '21:00' }])
   })
 
   it('the same family before or after needs no drive', () => {
     const ls = [lesson({ clientId: 'a', start: '16:00', status: 'scheduled' })]
     const [day] = freeSlots(ls, { ...base, clientId: 'a' })
-    expect(day.windows).toEqual([{ earliest: '14:00', latest: '15:00' }, { earliest: '17:00', latest: '20:00' }])
+    expect(day.windows).toEqual([{ earliest: '14:00', latest: '15:00', until: '16:00' }, { earliest: '17:00', latest: '20:00', until: '21:00' }])
   })
 
   it('a new family with no pin gets a cautious drive buffer, never zero', () => {
@@ -92,8 +92,8 @@ describe('freeSlots — when a lesson still fits', () => {
       ...base, days: 3, availability: { ...av, days: [0, 2] }, today: '2026-10-05', nowMin: 17 * 60 + 5,
     })
     expect(r).toEqual([
-      { date: '2026-10-05', windows: [{ earliest: '17:15', latest: '20:00' }], booked: [] },
-      { date: '2026-10-07', windows: [{ earliest: '14:00', latest: '20:00' }], booked: [] },
+      { date: '2026-10-05', windows: [{ earliest: '17:15', latest: '20:00', until: '21:00' }], booked: [] },
+      { date: '2026-10-07', windows: [{ earliest: '14:00', latest: '20:00', until: '21:00' }], booked: [] },
     ])
   })
 
@@ -101,7 +101,7 @@ describe('freeSlots — when a lesson still fits', () => {
     const ls = [lesson({ clientId: 'b', start: '16:00', status: 'scheduled' })]
     const [day] = freeSlots(ls, { ...base, clientId: 'a', availability: { ...av, gapMin: 45 } })
     // ~13 min drive, but 45 min is the floor: done by 15:15 → start by 14:15; after 17:00 + 45 → 17:45.
-    expect(day.windows).toEqual([{ earliest: '14:00', latest: '14:15' }, { earliest: '17:45', latest: '20:00' }])
+    expect(day.windows).toEqual([{ earliest: '14:00', latest: '14:15', until: '15:15' }, { earliest: '17:45', latest: '20:00', until: '21:00' }])
     // The same family needs no gap.
     const [same] = freeSlots(ls, { ...base, clientId: 'b', availability: { ...av, gapMin: 45 } })
     expect(same.windows[1].earliest).toBe('17:00')
@@ -115,13 +115,24 @@ describe('freeSlots — when a lesson still fits', () => {
     expect(day).toEqual({ date: '2026-10-05', windows: [], booked: [{ start: '15:30', end: '16:30' }, { start: '18:30', end: '19:30' }] })
     // Open the morning and the day has room again.
     const [morning] = freeSlots(ls, { ...base, availability: { ...narrow, start: '08:00' } })
-    expect(morning.windows[0]).toEqual({ earliest: '08:00', latest: '13:45' })
+    expect(morning.windows[0]).toEqual({ earliest: '08:00', latest: '13:45', until: '14:45' })
   })
 
   it('a day with no room is not written into the message', () => {
     const t = availabilityText([{ date: 'X', windows: [], booked: [{ start: '15:30', end: '16:30' }] }], { durationMin: 60, formatDay: d => d })
     expect(t).not.toContain('• X')
     expect(t).toContain('لا أوقات متاحة')
+  })
+
+  it('the owner\'s Thursday: free time reads as spans that fit an hour, never as a 15-minute gap', () => {
+    const ls = [lesson({ clientId: 'b', start: '10:00', status: 'scheduled' }), lesson({ clientId: 'b', start: '14:00', status: 'scheduled' })]
+    const [day] = freeSlots(ls, { ...base, availability: { ...av, start: '08:00', gapMin: 45 } })
+    // Shown «08:00 – 08:15» before: start times. The spans are what a family can read.
+    expect(day.windows.map(w => [w.earliest, w.until])).toEqual([['08:00', '09:15'], ['11:45', '13:15'], ['15:45', '21:00']])
+    for (const w of day.windows) {
+      const span = (Number(w.until.slice(0, 2)) * 60 + Number(w.until.slice(3))) - (Number(w.earliest.slice(0, 2)) * 60 + Number(w.earliest.slice(3)))
+      expect(span).toBeGreaterThanOrEqual(60)
+    }
   })
 
   it('a fully booked day is left out', () => {
@@ -131,11 +142,11 @@ describe('freeSlots — when a lesson still fits', () => {
 
   it('the reply names start times, politely, and signs', () => {
     const t = availabilityText(
-      [{ date: '2026-10-05', windows: [{ earliest: '14:00', latest: '15:00' }, { earliest: '18:00', latest: '18:00' }], booked: [] }],
+      [{ date: '2026-10-05', windows: [{ earliest: '14:00', latest: '15:00', until: '16:00' }, { earliest: '18:00', latest: '18:00', until: '19:00' }], booked: [] }],
       { client: { name: 'أبو خالد' }, durationMin: 60, formatDay: d => d, sender: 'الأستاذ أمين' },
     )
     expect(t).toContain('أسعد الله أوقاتكم أبو خالد')
-    expect(t).toContain('2026-10-05: بين 14:00 و15:00، أو الساعة 18:00')
+    expect(t).toContain('2026-10-05: من 14:00 إلى 16:00، أو من 18:00 إلى 19:00')
     expect(t.trim().endsWith('الأستاذ أمين')).toBe(true)
   })
 })
@@ -180,10 +191,10 @@ describe('available times as a PDF', () => {
     const { availabilityPdfModel, AvailabilityPdf } = await import('@/lib/worklog-availability-pdf')
     const m = availabilityPdfModel([
       { date: '2026-10-07', windows: [], booked: [{ start: '15:30', end: '16:30' }] },
-      { date: '2026-10-08', windows: [{ earliest: '08:00', latest: '13:45' }, { earliest: '18:00', latest: '18:00' }], booked: [] },
+      { date: '2026-10-08', windows: [{ earliest: '08:00', latest: '13:45', until: '14:45' }, { earliest: '18:00', latest: '18:00', until: '19:00' }], booked: [] },
     ], { family: 'أبو خالد', durationMin: 60, sender: 'الأستاذ أمين', today: '2026-10-06' })
     expect(m.days).toHaveLength(1)
-    expect(m.days[0].slots).toEqual([['08:00', '13:45'], ['18:00', '18:00']])
+    expect(m.days[0].slots).toEqual([['08:00', '14:45'], ['18:00', '19:00']])
     expect(m).toMatchObject({ to: 'إلى: أبو خالد', duration: 'مدة الحصة: ساعة', issuer: 'الأستاذ أمين' })
     expect(JSON.stringify(m)).not.toMatch(/[٠-٩]/)
 

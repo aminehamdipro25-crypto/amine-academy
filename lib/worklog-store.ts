@@ -2,7 +2,7 @@ import 'server-only'
 import { randomBytes, randomUUID } from 'crypto'
 import { redis } from './redis'
 import {
-  CLIENT_COLORS, DEFAULT_SETTINGS,
+  CLIENT_COLORS, DEFAULT_SETTINGS, dueRecurring, todayIn,
   type WorkClient, type WorkExpense, type WorkLesson, type WorkPayment, type WorkSettings,
 } from './worklog'
 
@@ -96,7 +96,37 @@ export function nextClientColor(clients: WorkClient[]): string {
   return [...CLIENT_COLORS].sort((a, b) => (used.get(a) ?? 0) - (used.get(b) ?? 0))[0]
 }
 
+/**
+ * Writes the fixed monthly expenses (rent…) that have come due since they were
+ * last written. Ids are deterministic per item and month, so two requests
+ * racing here write the same record twice rather than two records; and
+ * `lastMonth` moves forward, so a month the owner deleted is not rewritten.
+ */
+export async function ensureRecurringExpenses(settings?: WorkSettings): Promise<number> {
+  const s = settings ?? await getWorkSettings()
+  const items = s.recurringExpenses ?? []
+  if (!items.length) return 0
+  const due = dueRecurring(items, todayIn(s.timezone))
+  if (!due.length) return 0
+  const now = new Date().toISOString()
+  await putManyWork('expenses', due.map(({ item, month, date }) => ({
+    id: `wle_rec_${item.id}_${month}`, date, amount: item.amount, category: item.category,
+    note: item.label, recurringId: item.id, createdAt: now,
+  })))
+  const last = new Map<string, string>()
+  for (const d of due) if (!last.has(d.item.id) || d.month > last.get(d.item.id)!) last.set(d.item.id, d.month)
+  // Re-read before writing: the owner may have edited settings in between.
+  const fresh = await getWorkSettings()
+  await saveWorkSettings({
+    ...fresh,
+    recurringExpenses: (fresh.recurringExpenses ?? []).map(r => (last.has(r.id) && (!r.lastMonth || last.get(r.id)! > r.lastMonth) ? { ...r, lastMonth: last.get(r.id)! } : r)),
+  })
+  return due.length
+}
+
 export async function loadAllWork() {
+  // Fixed expenses that fell due are written first, so every total below includes them.
+  try { await ensureRecurringExpenses() } catch (e) { console.error('[worklog] recurring expenses', (e as Error).message) }
   const [clients, lessons, payments, expenses, settings] = await Promise.all([
     listWork('clients'), listWork('lessons'), listWork('payments'), listWork('expenses'), getWorkSettings(),
   ])

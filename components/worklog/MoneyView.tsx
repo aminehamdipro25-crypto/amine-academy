@@ -7,6 +7,7 @@ import {
 } from '@/lib/worklog'
 import { clientLabel, useWorkLog } from './useWorkLog'
 import { Empty, Stat, dayLabel, localToday, monthLabel, primaryBtn } from './ui'
+import RecurringExpenses from './RecurringExpenses'
 
 const EXPENSE_COLOR = '#E8890C'
 
@@ -77,6 +78,8 @@ export default function MoneyView({ mode, onAdd, onEditPayment, onEditExpense }:
         <Stat label="الصافي" tone="violet" icon={<Wallet className="w-3.5 h-3.5" />} value={money(income - spent)} sub="المستلم − المصاريف" />
       </div>
 
+      {!isIn && <RecurringExpenses />}
+
       {/* Where it came from / went */}
       {(isIn ? byFamily.length : byCategory.length) > 0 && (
         <section className="rounded-2xl bg-white border border-gray-100 shadow-sm p-4">
@@ -127,7 +130,7 @@ export default function MoneyView({ mode, onAdd, onEditPayment, onEditExpense }:
                             {p ? clientLabel(clientsById.get(p.clientId)) : EXPENSE_LABEL[e!.category]}
                           </span>
                           <span className="block text-[11px] text-gray-400 truncate">
-                            {p ? PAYMENT_METHOD_LABEL[p.method] + (p.lessonId ? ' · عند انتهاء الحصة' : '') : 'مصروف'}{r.note ? ` · ${r.note}` : ''}
+                            {p ? PAYMENT_METHOD_LABEL[p.method] + (p.lessonId ? ' · عند انتهاء الحصة' : '') : e!.recurringId ? '🔁 ثابت شهري' : 'مصروف'}{r.note ? ` · ${r.note}` : ''}
                           </span>
                         </span>
                         <span className={`font-black text-sm ${isIn ? 'text-emerald-700' : 'text-orange-600'}`}>

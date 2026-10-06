@@ -23,7 +23,7 @@ import { sanitizePersonName } from './person-name'
 export type LessonStatus = 'scheduled' | 'done' | 'cancelled'
 export type CancelledBy = 'family' | 'me'
 export type PaymentMethod = 'cash' | 'transfer' | 'other'
-export type ExpenseCategory = 'transport' | 'materials' | 'phone' | 'food' | 'other'
+export type ExpenseCategory = 'transport' | 'materials' | 'phone' | 'food' | 'rent' | 'other'
 export type WorkCurrency = 'QAR' | 'TND'
 
 export interface GeoPoint { lat: number; lng: number }
@@ -107,7 +107,29 @@ export interface WorkExpense {
   amount: number
   category: ExpenseCategory
   note?: string
+  /** Set when the expense was written by a monthly fixed expense (rent…). */
+  recurringId?: string
   createdAt: string
+}
+
+/**
+ * A fixed monthly expense — the rent on the 10th, 2300. Each month, on that
+ * day, a real expense record is written (so it counts in every total, the
+ * report and the export like any other). `lastMonth` is the last month
+ * written; it is kept by the server, so deleting one month's record does not
+ * bring it back.
+ */
+export interface RecurringExpense {
+  id: string
+  label: string
+  category: ExpenseCategory
+  amount: number
+  /** Day of the month, 1–31; a short month uses its last day. */
+  day: number
+  /** First month it applies to (YYYY-MM). */
+  since: string
+  lastMonth?: string
+  paused?: boolean
 }
 
 export interface WorkSettings {
@@ -133,12 +155,18 @@ export interface WorkSettings {
   weeklyDigest?: boolean
   /** When home lessons can be booked — used by «متى أنا متاح؟». Absent = AVAILABILITY_DEFAULT. */
   availability?: Availability
+  /** Fixed monthly expenses (rent…), written as expenses on their day. */
+  recurringExpenses?: RecurringExpense[]
 }
 
 /** Working days (Monday = 0 … Sunday = 6) and hours offered to families. */
-export interface Availability { days: number[]; start: string; end: string }
+export interface Availability {
+  days: number[]; start: string; end: string
+  /** Minimum free minutes after a lesson before the next one at another home — the drive can be long. Absent = 45. */
+  gapMin?: number
+}
 /** Every day but Friday, 14:00–21:00 — home lessons are after school. */
-export const AVAILABILITY_DEFAULT: Availability = { days: [0, 1, 2, 3, 5, 6], start: '14:00', end: '21:00' }
+export const AVAILABILITY_DEFAULT: Availability = { days: [0, 1, 2, 3, 5, 6], start: '14:00', end: '21:00', gapMin: 45 }
 
 export const DEFAULT_SETTINGS: WorkSettings = {
   currency: 'QAR',
@@ -172,7 +200,7 @@ export const PAYMENT_METHOD_LABEL: Record<PaymentMethod, string> = {
 }
 
 export const EXPENSE_LABEL: Record<ExpenseCategory, string> = {
-  transport: 'تنقّل ووقود', materials: 'أدوات ومواد', phone: 'هاتف وإنترنت', food: 'أكل', other: 'أخرى',
+  transport: 'تنقّل ووقود', materials: 'أدوات ومواد', phone: 'هاتف وإنترنت', food: 'أكل', rent: 'الكراء', other: 'أخرى',
 }
 
 export const CURRENCY_LABEL: Record<WorkCurrency, string> = { QAR: 'ر.ق', TND: 'د.ت' }
@@ -889,7 +917,29 @@ export function sanitizeSettings(body: Record<string, unknown>, current: WorkSet
     if (!a || !days.length || !isValidTime(a.start) || !isValidTime(a.end) || minutesOf(a.start) >= minutesOf(a.end)) {
       return { ok: false, error: 'أوقات الإتاحة غير صالحة' }
     }
-    next.availability = { days, start: a.start, end: a.end }
+    const gap = a.gapMin === undefined || a.gapMin === null ? AVAILABILITY_DEFAULT.gapMin! : Number(a.gapMin)
+    if (!Number.isInteger(gap) || gap < 0 || gap > 180) return { ok: false, error: 'الفاصل بين الحصص غير صالح' }
+    next.availability = { days, start: a.start, end: a.end, gapMin: gap }
+  }
+  if ('recurringExpenses' in body) {
+    if (!Array.isArray(body.recurringExpenses) || body.recurringExpenses.length > 20) return { ok: false, error: 'المصاريف الثابتة غير صالحة' }
+    const prev = new Map((current.recurringExpenses ?? []).map(r => [r.id, r]))
+    const out: RecurringExpense[] = []
+    for (const raw of body.recurringExpenses as Record<string, unknown>[]) {
+      const label = cleanText(raw?.label, 60)
+      const amount = cleanAmount(raw?.amount)
+      const day = Number(raw?.day)
+      const since = typeof raw?.since === 'string' && /^\d{4}-(0[1-9]|1[0-2])$/.test(raw.since) ? raw.since : null
+      if (!label || !amount || !Number.isInteger(day) || day < 1 || day > 31 || !since) {
+        return { ok: false, error: 'أكمل بيانات المصروف الثابت: الاسم والمبلغ واليوم' }
+      }
+      const category = (Object.keys(EXPENSE_LABEL) as ExpenseCategory[]).includes(raw.category as ExpenseCategory) ? raw.category as ExpenseCategory : 'other'
+      const id = typeof raw.id === 'string' && /^rec_[\w-]{4,40}$/.test(raw.id) ? raw.id : `rec_${Math.random().toString(36).slice(2, 10)}`
+      // lastMonth is the server's bookkeeping: never taken from the request.
+      const old = prev.get(id)
+      out.push({ id, label, category, amount, day, since, ...(old?.lastMonth ? { lastMonth: old.lastMonth } : {}), ...(raw.paused ? { paused: true } : {}) })
+    }
+    next.recurringExpenses = out
   }
   if ('senderName' in body) {
     const v = sanitizePersonName(body.senderName)
@@ -1293,4 +1343,83 @@ export function progressText(
   }
   lines.push(...parentClosing('مع خالص الشكر والتقدير 🌷', sender))
   return lines.join('\n')
+}
+
+// ── Calculator in the amount field ───────────────────────────────────────────
+
+/**
+ * «12+15+8.5» → 35.5. The expenses of one outing (two Ubers, a coffee, some
+ * supplies) are typed as they come, and summed here. Only numbers, + − × ÷
+ * and brackets are read — nothing is evaluated as code. Arabic-Indic digits
+ * and «٫» are accepted, as a phone keyboard may type them. null = not a sum.
+ */
+export function evalAmount(input: string): number | null {
+  const src = input
+    .replace(/[\u0660-\u0669]/g, d => String(d.charCodeAt(0) - 0x0660))
+    .replace(/[\u06F0-\u06F9]/g, d => String(d.charCodeAt(0) - 0x06F0))
+    .replace(/[٫,]/g, '.').replace(/[×xX]/g, '*').replace(/÷/g, '/').replace(/[−–]/g, '-').replace(/\s+/g, '')
+  if (!src || !/^[\d.+\-*/()]+$/.test(src)) return null
+  let i = 0
+  const peek = () => src[i]
+  function num(): number {
+    if (peek() === '(') { i++; const v = expr(); if (peek() !== ')') throw new Error(); i++; return v }
+    if (peek() === '-') { i++; return -num() }
+    const m = /^\d*\.?\d+|^\d+\.?/.exec(src.slice(i))
+    if (!m) throw new Error()
+    i += m[0].length
+    return Number(m[0])
+  }
+  function term(): number {
+    let v = num()
+    while (peek() === '*' || peek() === '/') {
+      const op = src[i++]; const r = num()
+      if (op === '/' && r === 0) throw new Error()
+      v = op === '*' ? v * r : v / r
+    }
+    return v
+  }
+  function expr(): number {
+    let v = term()
+    while (peek() === '+' || peek() === '-') { const op = src[i++]; const r = term(); v = op === '+' ? v + r : v - r }
+    return v
+  }
+  try {
+    const v = expr()
+    if (i !== src.length || !Number.isFinite(v)) return null
+    return round2(v)
+  } catch { return null }
+}
+
+/** True when the text is a calculation rather than a plain number. */
+export function isCalculation(input: string): boolean {
+  return /\d\s*[+\-*/×÷xX−]\s*[\d(]/.test(input.trim())
+}
+
+// ── Fixed monthly expenses ───────────────────────────────────────────────────
+
+const nextMonth = (m: string) => {
+  const [y, mo] = m.split('-').map(Number)
+  return mo === 12 ? `${y + 1}-01` : `${y}-${String(mo + 1).padStart(2, '0')}`
+}
+
+/** The date a fixed expense falls on in a month — the 31st in a 30-day month is its last day. */
+export function recurringDate(month: string, day: number): string {
+  const last = Number(endOfMonth(`${month}-01`).slice(8))
+  return `${month}-${String(Math.min(day, last)).padStart(2, '0')}`
+}
+
+/** Months (and dates) whose fixed expense is due by today and not yet written. Capped at 24 to bound a catch-up. */
+export function dueRecurring(items: RecurringExpense[], today: string): { item: RecurringExpense; month: string; date: string }[] {
+  const out: { item: RecurringExpense; month: string; date: string }[] = []
+  const current = today.slice(0, 7)
+  for (const item of items) {
+    if (item.paused) continue
+    let m = item.lastMonth ? nextMonth(item.lastMonth) : item.since
+    for (let n = 0; m <= current && n < 24; m = nextMonth(m), n++) {
+      const date = recurringDate(m, item.day)
+      if (date > today) break
+      out.push({ item, month: m, date })
+    }
+  }
+  return out
 }

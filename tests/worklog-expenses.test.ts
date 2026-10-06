@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  DEFAULT_SETTINGS, dueRecurring, evalAmount, isCalculation, recurringDate, sanitizeExpense, sanitizeSettings, type RecurringExpense,
+  DEFAULT_SETTINGS, dueRecurring, evalAmount, expenseItemsText, isCalculation, recurringDate, sanitizeExpense, sanitizeSettings, type RecurringExpense,
 } from '@/lib/worklog'
 
 describe('calculator in the amount field', () => {
@@ -58,5 +58,30 @@ describe('rent and other fixed monthly expenses', () => {
     expect(r.ok && r.value.recurringExpenses).toEqual([{ ...rent, amount: 2400, lastMonth: '2026-10' }])
     expect(sanitizeSettings({ recurringExpenses: [{ ...rent, amount: 0 }] }, current).ok).toBe(false)
     expect(sanitizeSettings({ recurringExpenses: [{ ...rent, day: 40 }] }, current).ok).toBe(false)
+  })
+})
+
+describe('itemised expenses', () => {
+  it('the amount is the sum of the items, whatever total the page sent', () => {
+    const r = sanitizeExpense({ date: '2026-10-06', category: 'transport', amount: 999, items: [{ label: 'أوبر', amount: 12 }, { label: 'أوبر', amount: '15.5' }] })
+    expect(r.ok && r.value).toMatchObject({ amount: 27.5, items: [{ label: 'أوبر', amount: 12 }, { label: 'أوبر', amount: 15.5 }] })
+  })
+  it('a single unnamed item is a plain amount — and the key is there so an edit clears old items', () => {
+    const r = sanitizeExpense({ date: '2026-10-06', category: 'food', items: [{ amount: 8 }] })
+    expect(r.ok && r.value.amount).toBe(8)
+    expect(r.ok && 'items' in r.value && r.value.items).toBeUndefined()
+    expect(r.ok && Object.keys(r.value)).toContain('items')
+  })
+  it('one named item is kept, so even a small expense says what it was', () => {
+    const r = sanitizeExpense({ date: '2026-10-06', category: 'food', items: [{ label: 'قهوة', amount: 8 }] })
+    expect(r.ok && r.value.items).toEqual([{ label: 'قهوة', amount: 8 }])
+  })
+  it('rejects a zero or invalid item, and names are cleaned', () => {
+    expect(sanitizeExpense({ date: '2026-10-06', category: 'food', items: [{ label: 'قهوة', amount: 0 }] }).ok).toBe(false)
+    const r = sanitizeExpense({ date: '2026-10-06', category: 'food', items: [{ label: 'قهوة‮\n', amount: 8 }] })
+    expect(r.ok && r.value.items?.[0].label).toBe('قهوة')
+  })
+  it('reads as «أوبر 12 · قهوة 8»', () => {
+    expect(expenseItemsText([{ label: 'أوبر', amount: 12 }, { amount: 3 }])).toBe('أوبر 12 · 3')
   })
 })

@@ -2,11 +2,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Trash2 } from 'lucide-react'
 import {
-  CURRENCY_LABEL, EXPENSE_LABEL, PAYMENT_METHOD_LABEL, clientBalances, evalAmount, formatMoney, isCalculation, priceFor, round2,
-  type ExpenseCategory, type PaymentMethod, type WorkExpense, type WorkLesson, type WorkPayment,
+  CURRENCY_LABEL, PAYMENT_METHOD_LABEL, clientBalances, formatMoney, priceFor, round2,
+  type PaymentMethod, type WorkLesson, type WorkPayment,
 } from '@/lib/worklog'
 import { useToast } from '@/components/ui/Toast'
-import AmountCalc from './AmountCalc'
 import { clientLabel, useWorkLog } from './useWorkLog'
 import { Field, Sheet, Segmented, ghostBtn, inputCls, localToday, primaryBtn } from './ui'
 
@@ -147,79 +146,7 @@ export function PaymentForm({ open, onClose, payment, clientId: presetClient }: 
   )
 }
 
-export function ExpenseForm({ open, onClose, expense }: { open: boolean; onClose: () => void; expense?: WorkExpense | null }) {
-  const { settings, create, update, remove } = useWorkLog()
-  const { toast } = useToast()
-  const [date, setDate] = useState(localToday())
-  const [amount, setAmount] = useState('')
-  const [category, setCategory] = useState<ExpenseCategory>('transport')
-  const [note, setNote] = useState('')
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState('')
-
-  useEffect(() => {
-    if (!open) return
-    setError(''); setSaving(false)
-    setDate(expense?.date ?? localToday()); setAmount(expense ? String(expense.amount) : '')
-    setCategory(expense?.category ?? 'transport'); setNote(expense?.note ?? '')
-  }, [open, expense])
-
-  async function save() {
-    setError('')
-    const total = evalAmount(amount)
-    if (!(total !== null && total > 0)) { setError(amount.trim() ? 'العملية غير مكتملة — راجع المبلغ' : 'أدخل المبلغ'); return }
-    setSaving(true)
-    try {
-      // A sum keeps its parts in the note, so «35» can still be read as «12 + 15 + 8» later.
-      const parts = isCalculation(amount) ? amount.replace(/\s+/g, '').replace(/([+\-×÷*/])/g, ' $1 ') : ''
-      const body = { date, amount: total, category, note: parts && !note.includes(parts) ? [note.trim(), `(${parts})`].filter(Boolean).join(' ') : note }
-      if (expense) await update('expenses', expense.id, body)
-      else await create('expenses', body)
-      toast('حُفظ المصروف')
-      onClose()
-    } catch (e) { setError((e as Error).message) } finally { setSaving(false) }
-  }
-
-  async function del() {
-    if (!expense) return
-    setSaving(true)
-    try { await remove('expenses', expense.id); toast('حُذف المصروف'); onClose() }
-    catch (e) { setError((e as Error).message) } finally { setSaving(false) }
-  }
-
-  return (
-    <Sheet open={open} onClose={onClose} title={expense ? 'تعديل مصروف' : 'مصروف جديد'}
-      footer={
-        <div className="flex gap-2">
-          <button onClick={save} disabled={saving} className={primaryBtn('flex-1')}>{saving ? 'جارٍ الحفظ…' : 'حفظ'}</button>
-          {expense && <button onClick={del} disabled={saving} className={ghostBtn('text-rose-600')} aria-label="حذف"><Trash2 className="w-4 h-4" /></button>}
-        </div>
-      }>
-      <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-3">
-          <Field label={`المبلغ (${CURRENCY_LABEL[settings.currency]})`}>
-            {id => <AmountCalc id={id} value={amount} onChange={setAmount} currency={settings.currency} autoFocus={!expense} />}
-          </Field>
-          <Field label="التاريخ">{id => <input id={id} type="date" className={inputCls} value={date} onChange={e => setDate(e.target.value)} />}</Field>
-        </div>
-        <p className="-mt-2 text-[11px] text-gray-400">عدة مصاريف من مشوار واحد؟ اكتبها بعلامة +، مثل «12+15+8»، ويُحسب المجموع.</p>
-        <div className="space-y-1.5">
-          <p className="text-xs font-bold text-gray-600">الفئة</p>
-          <div className="flex flex-wrap gap-2">
-            {(Object.keys(EXPENSE_LABEL) as ExpenseCategory[]).map(c => (
-              <button key={c} type="button" onClick={() => setCategory(c)} aria-pressed={category === c}
-                className={`rounded-xl px-3 py-2 text-xs font-bold border transition ${category === c ? 'bg-gray-900 text-white border-gray-900' : 'bg-white border-gray-200 text-gray-600'}`}>
-                {EXPENSE_LABEL[c]}
-              </button>
-            ))}
-          </div>
-        </div>
-        <Field label="ملاحظة (اختياري)">{id => <input id={id} className={inputCls} value={note} onChange={e => setNote(e.target.value)} maxLength={300} placeholder="مثال: بنزين الأسبوع" />}</Field>
-        {error && <p className="rounded-xl bg-rose-50 px-3 py-2 text-sm font-bold text-rose-700" role="alert">{error}</p>}
-      </div>
-    </Sheet>
-  )
-}
+export { default as ExpenseForm } from './ExpenseForm'
 
 /**
  * «هل استلمت أجر هذه الحصة؟» — asked right after a lesson is marked done,

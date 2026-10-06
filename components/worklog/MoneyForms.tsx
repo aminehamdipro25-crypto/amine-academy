@@ -2,10 +2,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Trash2 } from 'lucide-react'
 import {
-  CURRENCY_LABEL, EXPENSE_LABEL, PAYMENT_METHOD_LABEL, clientBalances, formatMoney, priceFor, round2,
+  CURRENCY_LABEL, EXPENSE_LABEL, PAYMENT_METHOD_LABEL, clientBalances, evalAmount, formatMoney, isCalculation, priceFor, round2,
   type ExpenseCategory, type PaymentMethod, type WorkExpense, type WorkLesson, type WorkPayment,
 } from '@/lib/worklog'
 import { useToast } from '@/components/ui/Toast'
+import AmountCalc from './AmountCalc'
 import { clientLabel, useWorkLog } from './useWorkLog'
 import { Field, Sheet, Segmented, ghostBtn, inputCls, localToday, primaryBtn } from './ui'
 
@@ -165,10 +166,13 @@ export function ExpenseForm({ open, onClose, expense }: { open: boolean; onClose
 
   async function save() {
     setError('')
-    if (!(Number(amount) > 0)) { setError('أدخل المبلغ'); return }
+    const total = evalAmount(amount)
+    if (!(total !== null && total > 0)) { setError(amount.trim() ? 'العملية غير مكتملة — راجع المبلغ' : 'أدخل المبلغ'); return }
     setSaving(true)
     try {
-      const body = { date, amount: Number(amount), category, note }
+      // A sum keeps its parts in the note, so «35» can still be read as «12 + 15 + 8» later.
+      const parts = isCalculation(amount) ? amount.replace(/\s+/g, '').replace(/([+\-×÷*/])/g, ' $1 ') : ''
+      const body = { date, amount: total, category, note: parts && !note.includes(parts) ? [note.trim(), `(${parts})`].filter(Boolean).join(' ') : note }
       if (expense) await update('expenses', expense.id, body)
       else await create('expenses', body)
       toast('حُفظ المصروف')
@@ -194,10 +198,11 @@ export function ExpenseForm({ open, onClose, expense }: { open: boolean; onClose
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-3">
           <Field label={`المبلغ (${CURRENCY_LABEL[settings.currency]})`}>
-            {id => <input id={id} type="number" min={0} step="any" inputMode="decimal" className={`${inputCls} text-lg font-black`} value={amount} onChange={e => setAmount(e.target.value)} autoFocus />}
+            {id => <AmountCalc id={id} value={amount} onChange={setAmount} currency={settings.currency} autoFocus={!expense} />}
           </Field>
           <Field label="التاريخ">{id => <input id={id} type="date" className={inputCls} value={date} onChange={e => setDate(e.target.value)} />}</Field>
         </div>
+        <p className="-mt-2 text-[11px] text-gray-400">عدة مصاريف من مشوار واحد؟ اكتبها بعلامة +، مثل «12+15+8»، ويُحسب المجموع.</p>
         <div className="space-y-1.5">
           <p className="text-xs font-bold text-gray-600">الفئة</p>
           <div className="flex flex-wrap gap-2">

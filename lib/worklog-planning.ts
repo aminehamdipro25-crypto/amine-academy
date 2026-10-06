@@ -123,11 +123,12 @@ export function freeSlots(lessons: WorkLesson[], o: FreeSlotOptions): FreeDay[] 
   const av = o.availability ?? AVAILABILITY_DEFAULT
   const step = o.step ?? 15
   const target = o.clientId
+  // The owner's own floor: at least this long between lessons at two homes, whatever the map says.
+  const gap = av.gapMin ?? AVAILABILITY_DEFAULT.gapMin ?? 0
   const travel = (a: string | undefined, b: string | undefined): number => {
     if (a && a === b) return 0 // the same home twice in a row: no drive
-    if (!a || !b) return UNKNOWN_TRAVEL_MIN
-    const pa = o.locate(a), pb = o.locate(b)
-    return pa && pb ? travelMinutes(pa, pb) : UNKNOWN_TRAVEL_MIN
+    const pa = a ? o.locate(a) : undefined, pb = b ? o.locate(b) : undefined
+    return Math.max(gap, pa && pb ? travelMinutes(pa, pb) : UNKNOWN_TRAVEL_MIN)
   }
   const up = (m: number) => Math.ceil(m / step) * step
   const down = (m: number) => Math.floor(m / step) * step

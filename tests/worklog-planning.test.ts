@@ -57,7 +57,7 @@ describe('receivables — who owes, since when', () => {
 
 describe('freeSlots — when a lesson still fits', () => {
   // Monday 2026-10-05; 14:00–21:00 every day.
-  const av = { days: [0, 1, 2, 3, 4, 5, 6], start: '14:00', end: '21:00' }
+  const av = { days: [0, 1, 2, 3, 4, 5, 6], start: '14:00', end: '21:00', gapMin: 0 }
   const HOME: Record<string, GeoPoint> = { a: { lat: 25.3201, lng: 51.5312 }, b: { lat: 25.3480, lng: 51.5345 }, far: { lat: 25.20, lng: 51.40 } }
   const locate = (id: string) => HOME[id]
   const base = { from: '2026-10-05', days: 1, durationMin: 60, availability: av, locate }
@@ -97,6 +97,16 @@ describe('freeSlots — when a lesson still fits', () => {
     ])
   })
 
+  it('keeps at least the owner\'s minimum gap after a lesson at another home, even when the map says closer', () => {
+    const ls = [lesson({ clientId: 'b', start: '16:00', status: 'scheduled' })]
+    const [day] = freeSlots(ls, { ...base, clientId: 'a', availability: { ...av, gapMin: 45 } })
+    // ~13 min drive, but 45 min is the floor: done by 15:15 → start by 14:15; after 17:00 + 45 → 17:45.
+    expect(day.windows).toEqual([{ earliest: '14:00', latest: '14:15' }, { earliest: '17:45', latest: '20:00' }])
+    // The same family needs no gap.
+    const [same] = freeSlots(ls, { ...base, clientId: 'b', availability: { ...av, gapMin: 45 } })
+    expect(same.windows[1].earliest).toBe('17:00')
+  })
+
   it('a fully booked day is left out', () => {
     const ls = [lesson({ clientId: 'b', start: '14:00', durationMin: 420, status: 'scheduled' })]
     expect(freeSlots(ls, base)).toEqual([])
@@ -116,7 +126,8 @@ describe('freeSlots — when a lesson still fits', () => {
 describe('availability setting', () => {
   it('accepts days and hours, rejects an empty or inverted one', () => {
     const ok = sanitizeSettings({ availability: { days: [6, 0, 0, 9], start: '15:00', end: '20:00' } }, DEFAULT_SETTINGS)
-    expect(ok.ok && ok.value.availability).toEqual({ days: [0, 6], start: '15:00', end: '20:00' })
+    expect(ok.ok && ok.value.availability).toEqual({ days: [0, 6], start: '15:00', end: '20:00', gapMin: 45 })
+    expect(sanitizeSettings({ availability: { days: [1], start: '15:00', end: '20:00', gapMin: 500 } }, DEFAULT_SETTINGS).ok).toBe(false)
     expect(sanitizeSettings({ availability: { days: [], start: '15:00', end: '20:00' } }, DEFAULT_SETTINGS).ok).toBe(false)
     expect(sanitizeSettings({ availability: { days: [1], start: '20:00', end: '15:00' } }, DEFAULT_SETTINGS).ok).toBe(false)
   })

@@ -44,7 +44,8 @@ export default function AvailabilitySheet({ open, onClose, onPick }: {
   const chosen = days.filter(d => !left.has(d.date))
   const text = availabilityText(chosen, { client, durationMin: duration, formatDay: msgDay, sender: settings.senderName })
   const tel = phoneDigits(client?.phone, settings.currency)
-  const hoursChanged = av.start !== saved.start || av.end !== saved.end || av.days.join() !== saved.days.join()
+  const gapOf = (a: Availability) => a.gapMin ?? AVAILABILITY_DEFAULT.gapMin!
+  const hoursChanged = av.start !== saved.start || av.end !== saved.end || av.days.join() !== saved.days.join() || gapOf(av) !== gapOf(saved)
   const hoursValid = av.days.length > 0 && av.start < av.end
 
   async function saveHours() {
@@ -88,7 +89,7 @@ export default function AvailabilitySheet({ open, onClose, onPick }: {
         <div className="flex flex-wrap items-center justify-between gap-2">
           <Segmented size="sm" value={span} onChange={setSpan} options={[{ value: '7', label: 'الأسبوع القادم' }, { value: '14', label: 'أسبوعان' }]} />
           <button onClick={() => setEditHours(v => !v)} className={ghostBtn('text-xs')} aria-expanded={editHours}>
-            <Settings2 className="w-3.5 h-3.5" /> أوقات عملي: <span dir="ltr">{av.start}–{av.end}</span>
+            <Settings2 className="w-3.5 h-3.5" /> أوقات عملي: <span dir="ltr">{av.start}–{av.end}</span> · فاصل {gapOf(av)} د
           </button>
         </div>
 
@@ -110,6 +111,13 @@ export default function AvailabilitySheet({ open, onClose, onPick }: {
               <Field label="من الساعة">{id => <input id={id} type="time" className={inputCls} value={av.start} onChange={e => setAv(a => ({ ...a, start: e.target.value }))} />}</Field>
               <Field label="إلى الساعة">{id => <input id={id} type="time" className={inputCls} value={av.end} onChange={e => setAv(a => ({ ...a, end: e.target.value }))} />}</Field>
             </div>
+            <Field label="أقل فاصل بعد كل حصة قبل حصة في منزل آخر" hint="للطريق والوصول — يُستعمل الأطول بينه وبين تقدير المسافة">
+              {id => (
+                <select id={id} className={`${inputCls} max-w-xs`} value={gapOf(av)} onChange={e => setAv(a => ({ ...a, gapMin: Number(e.target.value) }))}>
+                  {[0, 15, 30, 45, 60, 75, 90, 120].map(m => <option key={m} value={m}>{m === 0 ? 'بلا فاصل' : `${m} دقيقة`}</option>)}
+                </select>
+              )}
+            </Field>
             {!hoursValid && <p className="text-xs text-rose-600">اختر يوماً واحداً على الأقل، وساعة بداية قبل ساعة النهاية.</p>}
             {hoursChanged && hoursValid && <button onClick={saveHours} className={primaryBtn('text-xs')}>احفظها كأوقات عملي الدائمة</button>}
           </div>
@@ -146,7 +154,7 @@ export default function AvailabilitySheet({ open, onClose, onPick }: {
         )}
 
         <p className="text-[11px] text-gray-400 leading-relaxed">
-          الأوقات هي أوقات <b>بدء</b> الحصة. حُجز وقت الطريق من المنزل السابق وإلى التالي{client?.location ? '' : ' (15 دقيقة تقديراً — لا موقع مسجّل لهذه العائلة)'}. اضغط وقتاً لفتح حصة فيه.
+          الأوقات هي أوقات <b>بدء</b> الحصة. بعد كل حصة وقبل التالية في منزل آخر يُترك {gapOf(av)} دقيقة على الأقل، أو أكثر إن كانت المسافة أبعد{client?.location ? '' : ' (لا موقع مسجّل لهذه العائلة، فالمسافة غير معروفة)'}. اضغط وقتاً لفتح حصة فيه.
         </p>
 
         <div>

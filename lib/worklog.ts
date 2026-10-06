@@ -177,8 +177,8 @@ export interface Availability {
   /** Minimum free minutes after a lesson before the next one at another home — the drive can be long. Absent = 45. */
   gapMin?: number
 }
-/** Every day but Friday, 14:00–21:00 — home lessons are after school. */
-export const AVAILABILITY_DEFAULT: Availability = { days: [0, 1, 2, 3, 5, 6], start: '14:00', end: '21:00', gapMin: 45 }
+/** Every day but Friday, 08:00–21:00 — the owner narrows it in «أوقات عملي». */
+export const AVAILABILITY_DEFAULT: Availability = { days: [0, 1, 2, 3, 5, 6], start: '08:00', end: '21:00', gapMin: 45 }
 
 export const DEFAULT_SETTINGS: WorkSettings = {
   currency: 'QAR',

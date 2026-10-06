@@ -63,7 +63,7 @@ describe('freeSlots — when a lesson still fits', () => {
   const base = { from: '2026-10-05', days: 1, durationMin: 60, availability: av, locate }
 
   it('an empty day is one window, start times up to an hour before closing', () => {
-    expect(freeSlots([], base)).toEqual([{ date: '2026-10-05', windows: [{ earliest: '14:00', latest: '20:00' }] }])
+    expect(freeSlots([], base)).toEqual([{ date: '2026-10-05', windows: [{ earliest: '14:00', latest: '20:00' }], booked: [] }])
   })
 
   it('reserves the drive to and from the other homes around a booked lesson', () => {
@@ -92,8 +92,8 @@ describe('freeSlots — when a lesson still fits', () => {
       ...base, days: 3, availability: { ...av, days: [0, 2] }, today: '2026-10-05', nowMin: 17 * 60 + 5,
     })
     expect(r).toEqual([
-      { date: '2026-10-05', windows: [{ earliest: '17:15', latest: '20:00' }] },
-      { date: '2026-10-07', windows: [{ earliest: '14:00', latest: '20:00' }] },
+      { date: '2026-10-05', windows: [{ earliest: '17:15', latest: '20:00' }], booked: [] },
+      { date: '2026-10-07', windows: [{ earliest: '14:00', latest: '20:00' }], booked: [] },
     ])
   })
 
@@ -107,6 +107,23 @@ describe('freeSlots — when a lesson still fits', () => {
     expect(same.windows[1].earliest).toBe('17:00')
   })
 
+  it('the owner\'s Wednesday: 15:30 and 18:30 with a 45-min gap leave no full hour in 14:00–21:00 — said, not hidden', () => {
+    const ls = [lesson({ clientId: 'b', start: '15:30', status: 'scheduled' }), lesson({ clientId: 'b', start: '18:30', status: 'scheduled' })]
+    const narrow = { ...av, gapMin: 45 }
+    expect(freeSlots(ls, { ...base, availability: narrow })).toEqual([])
+    const [day] = freeSlots(ls, { ...base, availability: narrow, includeFull: true })
+    expect(day).toEqual({ date: '2026-10-05', windows: [], booked: [{ start: '15:30', end: '16:30' }, { start: '18:30', end: '19:30' }] })
+    // Open the morning and the day has room again.
+    const [morning] = freeSlots(ls, { ...base, availability: { ...narrow, start: '08:00' } })
+    expect(morning.windows[0]).toEqual({ earliest: '08:00', latest: '13:45' })
+  })
+
+  it('a day with no room is not written into the message', () => {
+    const t = availabilityText([{ date: 'X', windows: [], booked: [{ start: '15:30', end: '16:30' }] }], { durationMin: 60, formatDay: d => d })
+    expect(t).not.toContain('• X')
+    expect(t).toContain('لا أوقات متاحة')
+  })
+
   it('a fully booked day is left out', () => {
     const ls = [lesson({ clientId: 'b', start: '14:00', durationMin: 420, status: 'scheduled' })]
     expect(freeSlots(ls, base)).toEqual([])
@@ -114,7 +131,7 @@ describe('freeSlots — when a lesson still fits', () => {
 
   it('the reply names start times, politely, and signs', () => {
     const t = availabilityText(
-      [{ date: '2026-10-05', windows: [{ earliest: '14:00', latest: '15:00' }, { earliest: '18:00', latest: '18:00' }] }],
+      [{ date: '2026-10-05', windows: [{ earliest: '14:00', latest: '15:00' }, { earliest: '18:00', latest: '18:00' }], booked: [] }],
       { client: { name: 'أبو خالد' }, durationMin: 60, formatDay: d => d, sender: 'الأستاذ أمين' },
     )
     expect(t).toContain('أسعد الله أوقاتكم أبو خالد')
@@ -156,4 +173,25 @@ describe('weekly digest', () => {
     const lines = weeklyDigestLines(weeklyDigest(clients, [], [], [], '2026-10-06'), () => '', 'QAR', x => x)
     expect(lines).toContain('لا حصص مسجّلة في الأسبوع الماضي.')
   })
+})
+
+describe('available times as a PDF', () => {
+  it('lists only days with room, start-time ranges, the family and the length', async () => {
+    const { availabilityPdfModel, AvailabilityPdf } = await import('@/lib/worklog-availability-pdf')
+    const m = availabilityPdfModel([
+      { date: '2026-10-07', windows: [], booked: [{ start: '15:30', end: '16:30' }] },
+      { date: '2026-10-08', windows: [{ earliest: '08:00', latest: '13:45' }, { earliest: '18:00', latest: '18:00' }], booked: [] },
+    ], { family: 'أبو خالد', durationMin: 60, sender: 'الأستاذ أمين', today: '2026-10-06' })
+    expect(m.days).toHaveLength(1)
+    expect(m.days[0].slots).toEqual([['08:00', '13:45'], ['18:00', '18:00']])
+    expect(m).toMatchObject({ to: 'إلى: أبو خالد', duration: 'مدة الحصة: ساعة', issuer: 'الأستاذ أمين' })
+    expect(JSON.stringify(m)).not.toMatch(/[٠-٩]/)
+
+    const React = (await import('react')).default
+    const { renderToBuffer } = await import('@react-pdf/renderer')
+    const { registerTajawal } = await import('@/lib/pdf-fonts')
+    registerTajawal()
+    const buf = await renderToBuffer(React.createElement(AvailabilityPdf, { m }) as never)
+    expect(buf.subarray(0, 5).toString()).toBe('%PDF-')
+  }, 30_000)
 })

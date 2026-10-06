@@ -127,6 +127,15 @@ export default function SettingsView() {
           </div>
           <p className="text-[11px] text-gray-500 leading-relaxed">كل صباح (7:00 بتوقيت قطر): حصص اليوم بالترتيب، رابط الطريق لكل منزل، مسار اليوم كاملاً، والمستحقات. يصل عبر تيليغرام والبريد المضبوطين في المنصة. لا يُرسَل شيء في يوم فارغ.</p>
         </div>
+
+        <div className="rounded-2xl bg-gray-50 p-4 space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm font-bold text-gray-800">4 · الملخّص الأسبوعي</p>
+            <Segmented size="sm" value={settings.weeklyDigest === false ? 'off' : 'on'} onChange={v => save({ weeklyDigest: v === 'on' })}
+              options={[{ value: 'on', label: 'مفعّل' }, { value: 'off', label: 'متوقف' }]} />
+          </div>
+          <p className="text-[11px] text-gray-500 leading-relaxed">كل أحد (7:15 بتوقيت قطر): الأسبوع الماضي بالأرقام (الحصص والساعات وقيمة العمل والمستلم والمصاريف)، الأسبوع القادم، ومن عليه مبالغ ومنذ متى. عبر تيليغرام والبريد.</p>
+        </div>
       </section>
 
       {/* Notion */}

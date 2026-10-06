@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react'
 import {
   Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts'
-import { Ban, CheckCircle2, FileSpreadsheet, Clock, Coins, Hourglass, PiggyBank, TrendingDown, Wallet } from 'lucide-react'
+import { Ban, CheckCircle2, FileDown, FileSpreadsheet, Clock, Coins, Hourglass, PiggyBank, TrendingDown, Wallet } from 'lucide-react'
 import {
   EXPENSE_LABEL, STATUS_META, addDays, endOfMonth, formatHours, formatMoney, monthlyMoney, periodStats,
   startOfMonth, startOfWeek, weeklyHours,
@@ -39,6 +39,25 @@ export default function StatsView() {
   const { from, to } = range(preset, today, custom)
   const cur = settings.currency
   const money = (n: number) => formatMoney(n, cur)
+
+  // Years that have anything in them, newest first — the current year always offered.
+  const years = useMemo(() => [...new Set([today.slice(0, 4), ...lessons.map(l => l.date.slice(0, 4)), ...payments.map(p => p.date.slice(0, 4))])].sort().reverse(), [lessons, payments, today])
+  const [year, setYear] = useState(today.slice(0, 4))
+  const [annualBusy, setAnnualBusy] = useState(false)
+  async function downloadAnnual() {
+    setAnnualBusy(true)
+    try {
+      const res = await fetch(`/api/admin/worklog/annual/pdf?year=${year}`, { cache: 'no-store' })
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? `خطأ ${res.status}`)
+      const url = URL.createObjectURL(await res.blob())
+      const a = document.createElement('a')
+      a.href = url; a.download = `annual-report-${year}.pdf`
+      document.body.appendChild(a); a.click(); a.remove()
+      setTimeout(() => URL.revokeObjectURL(url), 10_000)
+      toast(`نُزّل التقرير السنوي ${year}`)
+    } catch (e) { toast(`تعذّر إنشاء التقرير: ${(e as Error).message}`, 'error') }
+    finally { setAnnualBusy(false) }
+  }
 
   const s = useMemo(() => periodStats(lessons, payments, expenses, from, to), [lessons, payments, expenses, from, to])
   const weeks = useMemo(() => weeklyHours(lessons, from, to), [lessons, from, to])
@@ -79,6 +98,15 @@ export default function StatsView() {
               finally { setExporting(false) }
             }}>
             <FileSpreadsheet className="w-4 h-4 text-emerald-600" /> {exporting ? 'جارٍ التجهيز…' : 'تصدير Excel لهذه الفترة'}
+          </button>
+        </div>
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <label className="sr-only" htmlFor="annual-year">سنة التقرير</label>
+          <select id="annual-year" className={`${inputCls} w-auto text-xs py-1.5`} value={year} onChange={e => setYear(e.target.value)}>
+            {years.map(y => <option key={y} value={y}>{y}</option>)}
+          </select>
+          <button disabled={annualBusy} onClick={downloadAnnual} className={ghostBtn('text-xs')}>
+            <FileDown className="w-4 h-4 text-brand-600" /> {annualBusy ? 'جارٍ التجهيز…' : 'التقرير السنوي PDF'}
           </button>
         </div>
       </div>

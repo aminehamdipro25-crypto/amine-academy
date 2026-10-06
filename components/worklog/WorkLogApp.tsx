@@ -15,6 +15,7 @@ import StatsView from './StatsView'
 import SettingsView from './SettingsView'
 import LessonForm, { type LessonDraft } from './LessonForm'
 import ClientForm from './ClientForm'
+import AvailabilitySheet from './AvailabilitySheet'
 import { ExpenseForm, PaymentForm } from './MoneyForms'
 import { dayLabel, localToday, primaryBtn } from './ui'
 
@@ -45,6 +46,7 @@ export default function WorkLogApp() {
   const [payClient, setPayClient] = useState<string | undefined>()
   const [expOpen, setExpOpen] = useState(false)
   const [editExpense, setEditExpense] = useState<WorkExpense | null>(null)
+  const [findTime, setFindTime] = useState(false)
 
   useEffect(() => {
     const saved = readStorage(TAB_KEY) as Tab | null
@@ -116,7 +118,7 @@ export default function WorkLogApp() {
             </nav>
 
             <motion.div key={tab} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
-              {tab === 'agenda' && <AgendaView onAdd={openLesson} onEdit={l => { setEditLesson(l); setLessonOpen(true) }} onCopy={copyLesson} onLocate={id => editClientById(id)} />}
+              {tab === 'agenda' && <AgendaView onAdd={openLesson} onEdit={l => { setEditLesson(l); setLessonOpen(true) }} onCopy={copyLesson} onLocate={id => editClientById(id)} onFindTime={() => setFindTime(true)} />}
               {tab === 'clients' && (
                 <ClientsView onAdd={() => openNewClient()} onEdit={c => { setEditClient(c); setClientOpen(true) }} onAddLesson={id => openLesson({ clientId: id })}
                   onEditLesson={l => { setEditLesson(l); setLessonOpen(true) }}
@@ -154,6 +156,7 @@ export default function WorkLogApp() {
           onCreated={c => { if (reopenLesson) setDraft(d => ({ ...d, clientId: c.id })) }} />
         <PaymentForm open={payOpen} onClose={() => setPayOpen(false)} payment={editPayment} clientId={payClient} />
         <ExpenseForm open={expOpen} onClose={() => setExpOpen(false)} expense={editExpense} />
+        <AvailabilitySheet open={findTime} onClose={() => setFindTime(false)} onPick={d => openLesson(d)} />
       </div>
     </WorkLogContext.Provider>
   )

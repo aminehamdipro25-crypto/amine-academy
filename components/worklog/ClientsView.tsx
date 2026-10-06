@@ -11,6 +11,7 @@ import { clientLabel, useWorkLog } from './useWorkLog'
 import { NavLinks } from './WorkMap'
 import StatementSheet from './StatementSheet'
 import ProgressSheet from './ProgressSheet'
+import CollectionsSheet from './CollectionsSheet'
 import { Empty, Segmented, ghostBtn, inputCls, localToday, primaryBtn, shortDate } from './ui'
 
 const StopsMap = dynamic(() => import('./WorkMap').then(m => m.StopsMap), {
@@ -29,6 +30,7 @@ export default function ClientsView({ onAdd, onEdit, onPay, onAddLesson, onEditL
   const [showMap, setShowMap] = useState(false)
   const [statementFor, setStatementFor] = useState<WorkClient | null>(null)
   const [progressFor, setProgressFor] = useState<WorkClient | null>(null)
+  const [collectOpen, setCollectOpen] = useState(false)
   const today = localToday()
 
   const balances = useMemo(
@@ -70,11 +72,19 @@ export default function ClientsView({ onAdd, onEdit, onPay, onAddLesson, onEditL
 
   return (
     <div className="space-y-4">
-      <div className="rounded-3xl bg-gradient-to-l from-brand-600 to-brand-800 p-5 text-white shadow-lg shadow-brand-200">
-        <p className="text-xs font-bold text-brand-100">مستحقات لم تُستلم بعد</p>
-        <p className="text-3xl font-black mt-1">{formatMoney(totalOwed, settings.currency)}</p>
-        <p className="text-[11px] text-brand-100 mt-1">{owingCount ? `لدى ${owingCount} من ${clients.filter(c => !c.archived).length} عائلة` : 'كل العائلات مسدّدة'} · محسوبة من الحصص المنجزة ناقص الدفعات</p>
-      </div>
+      <button onClick={() => setCollectOpen(true)} className="block w-full text-right rounded-3xl bg-gradient-to-l from-brand-600 to-brand-800 p-5 text-white shadow-lg shadow-brand-200">
+        <span className="flex items-start justify-between gap-2">
+          <span>
+            <span className="block text-xs font-bold text-brand-100">مستحقات لم تُستلم بعد</span>
+            <span className="block text-3xl font-black mt-1">{formatMoney(totalOwed, settings.currency)}</span>
+            <span className="block text-[11px] text-brand-100 mt-1">{owingCount ? `لدى ${owingCount} من ${clients.filter(c => !c.archived).length} عائلة` : 'كل العائلات مسدّدة'} · محسوبة من الحصص المنجزة ناقص الدفعات</span>
+          </span>
+          {owingCount > 0 && <span className="flex-shrink-0 rounded-xl bg-white/15 px-3 py-1.5 text-xs font-bold">من عليه مبالغ؟ ←</span>}
+        </span>
+      </button>
+      <CollectionsSheet open={collectOpen} onClose={() => setCollectOpen(false)}
+        onStatement={c => { setCollectOpen(false); setStatementFor(c) }}
+        onPay={id => { setCollectOpen(false); onPay(id) }} />
 
       <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
         <div className="relative flex-1">

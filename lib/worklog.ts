@@ -129,7 +129,16 @@ export interface WorkSettings {
    * first); the general settings PUT never touches it.
    */
   notion?: { databaseId: string; map: Partial<Record<string, string>> }
+  /** Weekly summary on Sunday morning (Telegram/email). Absent = on. */
+  weeklyDigest?: boolean
+  /** When home lessons can be booked — used by «متى أنا متاح؟». Absent = AVAILABILITY_DEFAULT. */
+  availability?: Availability
 }
+
+/** Working days (Monday = 0 … Sunday = 6) and hours offered to families. */
+export interface Availability { days: number[]; start: string; end: string }
+/** Every day but Friday, 14:00–21:00 — home lessons are after school. */
+export const AVAILABILITY_DEFAULT: Availability = { days: [0, 1, 2, 3, 5, 6], start: '14:00', end: '21:00' }
 
 export const DEFAULT_SETTINGS: WorkSettings = {
   currency: 'QAR',
@@ -873,6 +882,15 @@ export function sanitizeSettings(body: Record<string, unknown>, current: WorkSet
       next.monthlyGoal = g
     }
   }
+  if ('weeklyDigest' in body) next.weeklyDigest = !!body.weeklyDigest
+  if ('availability' in body) {
+    const a = body.availability as Partial<Availability> | null
+    const days = Array.isArray(a?.days) ? [...new Set(a!.days.map(Number))].filter(d => Number.isInteger(d) && d >= 0 && d <= 6).sort() : []
+    if (!a || !days.length || !isValidTime(a.start) || !isValidTime(a.end) || minutesOf(a.start) >= minutesOf(a.end)) {
+      return { ok: false, error: 'أوقات الإتاحة غير صالحة' }
+    }
+    next.availability = { days, start: a.start, end: a.end }
+  }
   if ('senderName' in body) {
     const v = sanitizePersonName(body.senderName)
     if (v) next.senderName = v
@@ -1069,12 +1087,12 @@ export function familyChildren(clientId: string, client: Pick<WorkClient, 'child
  * full greeting, and the plural «أوقاتكم / لكم» — the respectful form, which
  * also needs no guess at the reader's gender.
  */
-function parentOpening(client: Pick<WorkClient, 'name'>): string[] {
+export function parentOpening(client: Pick<WorkClient, 'name'>): string[] {
   const name = client.name?.trim()
   return ['السلام عليكم ورحمة الله وبركاته،', `أسعد الله أوقاتكم${name ? ` ${name}` : ''}،`, '']
 }
 
-function parentClosing(thanks: string, sender?: string): string[] {
+export function parentClosing(thanks: string, sender?: string): string[] {
   const who = sender?.trim()
   return ['', thanks, ...(who ? [who] : [])]
 }

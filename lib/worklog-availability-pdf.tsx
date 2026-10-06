@@ -16,7 +16,7 @@ export interface AvailabilityPdfModel {
   range: string
   issuer: string
   issuedOn: string
-  /** Each slot is [earliest, latest] start time; the same twice = one exact time. */
+  /** Each slot is a free span [from, to] that fits one lesson. */
   days: { weekday: string; date: string; slots: [string, string][] }[]
   explain: string
   closing: string
@@ -39,10 +39,9 @@ export function availabilityPdfModel(
     days: open.map(d => ({
       weekday: fmt(d.date, { weekday: 'long' }),
       date: fmt(d.date, { day: 'numeric', month: 'long' }),
-      // A range is of START times: «14:00 – 15:30» = the lesson may start any time between.
-      slots: d.windows.map(w => [w.earliest, w.latest] as [string, string]),
+            slots: d.windows.map(w => [w.earliest, w.until] as [string, string]),
     })),
-    explain: 'الأوقات المذكورة هي أوقات بدء الحصة: كل خانة فيها وقتان تعني أن الحصة يمكن أن تبدأ في أي وقت بينهما.',
+    explain: `كل فترة تتّسع لحصة مدتها ${durationText(o.durationMin)}، ويمكن أن تبدأ الحصة في أي وقت داخلها بحيث تنتهي قبل نهايتها.`,
     closing: 'نرجو التكرّم باختيار الوقت الذي يناسبكم، وسنؤكّد الموعد مباشرة. مع خالص الشكر والتقدير.',
   }
 }

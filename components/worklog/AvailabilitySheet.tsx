@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useMemo, useState } from 'react'
-import { Copy, MessageCircle, Settings2 } from 'lucide-react'
-import { AVAILABILITY_DEFAULT, minutesOf, phoneDigits, type Availability } from '@/lib/worklog'
+import { Copy, FileDown, Loader2, MessageCircle, Settings2, Share2 } from 'lucide-react'
+import { AVAILABILITY_DEFAULT, durationText, minutesOf, phoneDigits, type Availability } from '@/lib/worklog'
 import { availabilityText, freeSlots, windowText } from '@/lib/worklog-planning'
 import { ARABIC_LOCALE, formatDateOnly } from '@/lib/format'
 import { useToast } from '@/components/ui/Toast'
@@ -38,10 +38,41 @@ export default function AvailabilitySheet({ open, onClose, onPick }: {
   const today = localToday()
   const days = useMemo(() => freeSlots(lessons, {
     from: today, days: Number(span), durationMin: duration, availability: av, clientId: clientId || undefined,
-    locate: id => clientsById.get(id)?.location, today, nowMin: minutesOf(localNowTime()),
+    locate: id => clientsById.get(id)?.location, today, nowMin: minutesOf(localNowTime()), includeFull: true,
   }), [lessons, today, span, duration, av, clientId, clientsById])
 
-  const chosen = days.filter(d => !left.has(d.date))
+  const chosen = days.filter(d => d.windows.length && !left.has(d.date))
+  const anyFree = days.some(d => d.windows.length)
+
+  // The PDF is rebuilt on the server from these choices — the same times as on screen.
+  const [pdfBusy, setPdfBusy] = useState<'' | 'download' | 'share'>('')
+  const [canShareFiles, setCanShareFiles] = useState(false)
+  useEffect(() => { setCanShareFiles(typeof navigator.canShare === 'function') }, [])
+  async function fetchPdf(): Promise<File> {
+    const res = await fetch('/api/admin/worklog/availability/pdf', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, cache: 'no-store',
+      body: JSON.stringify({ clientId: clientId || undefined, durationMin: duration, days: Number(span), availability: av, exclude: [...left] }),
+    })
+    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? `تعذّر إنشاء الملف (${res.status})`)
+    const name = res.headers.get('Content-Disposition')?.match(/filename="([^"]+)"/)?.[1] ?? 'available-times.pdf'
+    return new File([await res.blob()], name, { type: 'application/pdf' })
+  }
+  function saveFile(file: File) {
+    const url = URL.createObjectURL(file)
+    const a = document.createElement('a')
+    a.href = url; a.download = file.name
+    document.body.appendChild(a); a.click(); a.remove()
+    setTimeout(() => URL.revokeObjectURL(url), 10_000)
+  }
+  async function pdf(mode: 'download' | 'share') {
+    setPdfBusy(mode)
+    try {
+      const file = await fetchPdf()
+      if (mode === 'share' && navigator.canShare?.({ files: [file] })) {
+        try { await navigator.share({ files: [file], title: 'المواعيد المتاحة' }) } catch (e) { if ((e as Error).name !== 'AbortError') throw e }
+      } else { saveFile(file); toast('نُزّل ملف المواعيد PDF') }
+    } catch (e) { toast((e as Error).message, 'error') } finally { setPdfBusy('') }
+  }
   const text = availabilityText(chosen, { client, durationMin: duration, formatDay: msgDay, sender: settings.senderName })
   const tel = phoneDigits(client?.phone, settings.currency)
   const gapOf = (a: Availability) => a.gapMin ?? AVAILABILITY_DEFAULT.gapMin!
@@ -59,12 +90,24 @@ export default function AvailabilitySheet({ open, onClose, onPick }: {
   return (
     <Sheet open={open} onClose={onClose} wide title="متى أنا متاح؟"
       footer={
+        <div className="space-y-2">
+        <div className="flex gap-2">
+          <button onClick={() => pdf('download')} disabled={!!pdfBusy || !anyFree} className={primaryBtn('flex-1')}>
+            {pdfBusy === 'download' ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />} تنزيل PDF
+          </button>
+          {canShareFiles && (
+            <button onClick={() => pdf('share')} disabled={!!pdfBusy || !anyFree} className={ghostBtn('flex-1')}>
+              {pdfBusy === 'share' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Share2 className="w-4 h-4" />} مشاركة PDF
+            </button>
+          )}
+        </div>
         <div className="flex gap-2">
           <a href={`https://wa.me/${tel ?? ''}?text=${encodeURIComponent(text)}`} target="_blank" rel="noopener noreferrer"
             className={primaryBtn('flex-1 bg-emerald-600 hover:bg-emerald-700')}>
             <MessageCircle className="w-4 h-4" /> {tel ? `إرسال لـ${clientLabel(client)}` : 'إرسال عبر واتساب'}
           </a>
           <button onClick={copy} className={ghostBtn()}><Copy className="w-4 h-4" /> نسخ</button>
+        </div>
         </div>
       }>
       <div className="space-y-4">
@@ -123,11 +166,24 @@ export default function AvailabilitySheet({ open, onClose, onPick }: {
           </div>
         )}
 
-        {!hoursValid ? null : days.length === 0 ? (
-          <p className="rounded-2xl bg-amber-50 px-4 py-6 text-center text-sm text-amber-800">لا وقت متاح لحصة مدتها {duration} دقيقة في هذه الفترة.</p>
-        ) : (
+        {hoursValid && !anyFree && (
+          <p className="rounded-2xl bg-amber-50 px-4 py-4 text-center text-sm text-amber-800">لا وقت متاح لحصة مدتها {durationText(duration)} في هذه الفترة — جرّب توسيع «أوقات عملي» أو تقليل الفاصل.</p>
+        )}
+        {!hoursValid || days.length === 0 ? null : (
           <ul className="space-y-2">
             {days.map(d => {
+              if (!d.windows.length) {
+                // A working day with no room is shown with its reason, not dropped silently.
+                return (
+                  <li key={d.date} className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 p-3">
+                    <p className="font-black text-sm text-gray-500">{msgDay(d.date)}{d.date === today ? ' (اليوم)' : ''} <span className="text-[11px] font-bold text-rose-500">— لا متّسع</span></p>
+                    <p className="mt-1 text-[11px] text-gray-500 leading-relaxed">
+                      {d.booked.length ? <>الحصص {d.booked.map((b, i) => <span key={i}>{i ? '، ' : ''}<span dir="ltr">{b.start}–{b.end}</span></span>)} مع فاصل {gapOf(av)} د بعد كل حصة لا تترك {durationText(duration)} كاملة </> : 'لا وقت متبقٍّ '}
+                      بين <span dir="ltr">{av.start}</span> و<span dir="ltr">{av.end}</span>.
+                    </p>
+                  </li>
+                )
+              }
               const inMsg = !left.has(d.date)
               return (
                 <li key={d.date} className={`rounded-2xl border p-3 ${inMsg ? 'border-gray-100 bg-white' : 'border-dashed border-gray-200 bg-gray-50 opacity-60'}`}>

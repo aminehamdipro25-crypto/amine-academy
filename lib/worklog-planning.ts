@@ -97,7 +97,12 @@ export interface FreeWindow {
   earliest: string
   latest: string
 }
-export interface FreeDay { date: string; windows: FreeWindow[] }
+export interface FreeDay {
+  date: string
+  windows: FreeWindow[]
+  /** The lessons already that day — said when a day has no room, so it does not just vanish. */
+  booked: { start: string; end: string }[]
+}
 
 export interface FreeSlotOptions {
   from: string
@@ -112,6 +117,8 @@ export interface FreeSlotOptions {
   nowMin?: number
   /** Start times are offered on this grid (minutes). */
   step?: number
+  /** Also return working days with no room left (windows: []), to explain them. */
+  includeFull?: boolean
 }
 
 /**
@@ -161,7 +168,9 @@ export function freeSlots(lessons: WorkLesson[], o: FreeSlotOptions): FreeDay[] 
       const latest = down(Math.min(e, close) - o.durationMin)
       if (latest >= earliest) windows.push({ earliest: hhmm(earliest), latest: hhmm(latest) })
     }
-    if (windows.length) out.push({ date, windows })
+    if (windows.length || o.includeFull) {
+      out.push({ date, windows, booked: busy.map(b => ({ start: b.start, end: hhmm(minutesOf(b.start) + b.durationMin) })) })
+    }
   }
   return out
 }
@@ -177,8 +186,8 @@ export function availabilityText(
   const lines = parentOpening(o.client ?? { name: '' })
   lines.push(`يسعدنا تواصلكم. هذه الأوقات المتاحة لدينا لبدء الحصة (مدتها ${durationText(o.durationMin)}):`)
   lines.push('')
-  if (!days.length) lines.push('لا أوقات متاحة في الأيام القادمة، وسنعلمكم فور توفّر موعد.')
-  for (const d of days) lines.push(`• ${o.formatDay(d.date)}: ${d.windows.map(windowText).join('، أو ')}`)
+  if (!days.some(d => d.windows.length)) lines.push('لا أوقات متاحة في الأيام القادمة، وسنعلمكم فور توفّر موعد.')
+  for (const d of days) if (d.windows.length) lines.push(`• ${o.formatDay(d.date)}: ${d.windows.map(windowText).join('، أو ')}`)
   lines.push('')
   lines.push('نرجو التكرّم باختيار الوقت الذي يناسبكم، وسنؤكّد الموعد مباشرة.')
   lines.push(...parentClosing('مع خالص الشكر والتقدير 🌷', o.sender))

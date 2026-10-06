@@ -107,9 +107,21 @@ export interface WorkExpense {
   amount: number
   category: ExpenseCategory
   note?: string
+  /**
+   * What the amount is made of — «أوبر 12 · قهوة 8 · مقتنيات 15». When present
+   * the amount is their sum, recomputed by the server, so the two cannot differ.
+   */
+  items?: ExpenseItem[]
   /** Set when the expense was written by a monthly fixed expense (rent…). */
   recurringId?: string
   createdAt: string
+}
+
+export interface ExpenseItem { label?: string; amount: number }
+
+/** «أوبر 12 · قهوة 8» — how an itemised expense reads in a list, a sheet or Notion. */
+export function expenseItemsText(items: ExpenseItem[] | undefined, currency?: WorkCurrency): string {
+  return (items ?? []).map(i => `${i.label ? `${i.label} ` : ''}${currency ? formatMoney(i.amount, currency) : i.amount}`).join(' · ')
 }
 
 /**
@@ -165,8 +177,8 @@ export interface Availability {
   /** Minimum free minutes after a lesson before the next one at another home — the drive can be long. Absent = 45. */
   gapMin?: number
 }
-/** Every day but Friday, 14:00–21:00 — home lessons are after school. */
-export const AVAILABILITY_DEFAULT: Availability = { days: [0, 1, 2, 3, 5, 6], start: '14:00', end: '21:00', gapMin: 45 }
+/** Every day but Friday, 08:00–21:00 — the owner narrows it in «أوقات عملي». */
+export const AVAILABILITY_DEFAULT: Availability = { days: [0, 1, 2, 3, 5, 6], start: '08:00', end: '21:00', gapMin: 45 }
 
 export const DEFAULT_SETTINGS: WorkSettings = {
   currency: 'QAR',
@@ -877,11 +889,25 @@ export function sanitizePayment(body: Record<string, unknown>): Clean<Omit<WorkP
 
 export function sanitizeExpense(body: Record<string, unknown>): Clean<Omit<WorkExpense, 'id' | 'createdAt'>> {
   if (!isValidDate(body.date)) return { ok: false, error: 'التاريخ غير صالح' }
-  const amount = cleanAmount(body.amount)
-  if (amount === null || amount === 0) return { ok: false, error: 'المبلغ غير صالح' }
   const category = (Object.keys(EXPENSE_LABEL) as ExpenseCategory[]).includes(body.category as ExpenseCategory)
     ? body.category as ExpenseCategory : 'other'
-  return { ok: true, value: { date: body.date, amount, category, note: cleanText(body.note, 300) } }
+  // Items, when sent, decide the amount: the client's total is never trusted over its parts.
+  let items: ExpenseItem[] | undefined
+  if (Array.isArray(body.items) && body.items.length) {
+    if (body.items.length > 40) return { ok: false, error: 'عدد البنود كبير جداً' }
+    items = []
+    for (const raw of body.items as Record<string, unknown>[]) {
+      const amount = cleanAmount(raw?.amount)
+      if (amount === null || amount === 0) return { ok: false, error: 'مبلغ أحد البنود غير صالح' }
+      const label = cleanText(raw?.label, 40)
+      items.push(label ? { label, amount } : { amount })
+    }
+  }
+  const amount = items ? round2(items.reduce((s, i) => s + i.amount, 0)) : cleanAmount(body.amount)
+  if (amount === null || amount === 0) return { ok: false, error: 'المبلغ غير صالح' }
+  // A single unnamed part is just an amount; the key is still written so an edit can clear old items.
+  const keep = items && (items.length > 1 || items[0].label) ? items : undefined
+  return { ok: true, value: { date: body.date, amount, category, note: cleanText(body.note, 300), items: keep } }
 }
 
 export function sanitizeSettings(body: Record<string, unknown>, current: WorkSettings): Clean<WorkSettings> {

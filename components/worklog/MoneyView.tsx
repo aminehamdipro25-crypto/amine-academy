@@ -2,7 +2,7 @@
 import { useMemo, useState } from 'react'
 import { ArrowDownLeft, ArrowUpRight, ChevronLeft, ChevronRight, Plus, Receipt, Wallet } from 'lucide-react'
 import {
-  EXPENSE_LABEL, PAYMENT_METHOD_LABEL, endOfMonth, formatMoney, startOfMonth,
+  EXPENSE_LABEL, PAYMENT_METHOD_LABEL, endOfMonth, expenseItemsText, formatMoney, startOfMonth,
   type ExpenseCategory, type WorkExpense, type WorkPayment,
 } from '@/lib/worklog'
 import { clientLabel, useWorkLog } from './useWorkLog'
@@ -129,8 +129,8 @@ export default function MoneyView({ mode, onAdd, onEditPayment, onEditExpense }:
                           <span className="block font-bold text-sm text-gray-900 truncate">
                             {p ? clientLabel(clientsById.get(p.clientId)) : EXPENSE_LABEL[e!.category]}
                           </span>
-                          <span className="block text-[11px] text-gray-400 truncate">
-                            {p ? PAYMENT_METHOD_LABEL[p.method] + (p.lessonId ? ' · عند انتهاء الحصة' : '') : e!.recurringId ? '🔁 ثابت شهري' : 'مصروف'}{r.note ? ` · ${r.note}` : ''}
+                          <span className="block text-[11px] text-gray-500 line-clamp-2">
+                            {p ? PAYMENT_METHOD_LABEL[p.method] + (p.lessonId ? ' · عند انتهاء الحصة' : '') : e!.recurringId ? '🔁 ثابت شهري' : e!.items?.length ? expenseItemsText(e!.items) : 'مصروف'}{r.note ? ` · ${r.note}` : ''}
                           </span>
                         </span>
                         <span className={`font-black text-sm ${isIn ? 'text-emerald-700' : 'text-orange-600'}`}>

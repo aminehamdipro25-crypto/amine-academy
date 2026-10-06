@@ -13,7 +13,7 @@
 
 import { zipSync, strToU8 } from 'fflate'
 import {
-  CURRENCY_LABEL, EXPENSE_LABEL, PAYMENT_METHOD_LABEL, STATUS_META,
+  CURRENCY_LABEL, EXPENSE_LABEL, expenseItemsText, PAYMENT_METHOD_LABEL, STATUS_META,
   clientBalances, endTime, isBillable, periodStats, sortLessons,
   type WorkClient, type WorkExpense, type WorkLesson, type WorkPayment, type WorkSettings,
 } from './worklog'
@@ -192,7 +192,7 @@ export function ledgerSheets(
     rows: [
       [S('التاريخ'), S('الفئة'), S(`المبلغ (${cur})`), S('ملاحظة')],
       ...inRange(expenses).sort((a, b) => a.date.localeCompare(b.date)).map(e => [
-        D(e.date), S(EXPENSE_LABEL[e.category]), N(e.amount, 'money'), S(e.note),
+        D(e.date), S(EXPENSE_LABEL[e.category]), N(e.amount, 'money'), S([expenseItemsText(e.items), e.note].filter(Boolean).join(' — ')),
       ]),
     ],
   }

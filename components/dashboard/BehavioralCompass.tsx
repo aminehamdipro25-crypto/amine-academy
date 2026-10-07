@@ -7,6 +7,7 @@ import {
   Compass, ArrowRight, ArrowLeft, Printer, RotateCcw, CheckCircle2,
   ClipboardList, Brain, HeartPulse, HandHelping, Sparkles, AlertTriangle, CalendarClock,
   Search, Save, Loader2, Link2, X, TrendingUp, TrendingDown, Minus, History as HistoryIcon,
+  Play, Pause, Timer,
 } from 'lucide-react'
 import {
   AXES, SELF_REPORT, ANSWER_SCALE, TASKS, CATEGORY_META, PARENT_INTERVIEW, OPEN_QUESTIONS,
@@ -375,6 +376,9 @@ export default function BehavioralCompass() {
       {/* ── المهام ── */}
       {step === 'tasks' && (
         <div className="space-y-4">
+          {/* مؤقّت الملاحظة — يقيس الأزمنة تلقائياً بدل إدخالها يدوياً */}
+          <ObservationStopwatch obs={obs} setObs={setObs} />
+
           {/* مفتاح عرض القواعد — للمختص فقط */}
           <label className="flex items-center justify-between gap-3 bg-white rounded-xl border border-slate-200 px-4 py-2.5 cursor-pointer">
             <span className="text-xs font-bold text-slate-600">عرض القاعدة والحلّ لكل بند <span className="text-slate-400">(للمختص فقط — أخفِها أمام الطفل)</span></span>
@@ -444,6 +448,7 @@ export default function BehavioralCompass() {
         <div className="space-y-4">
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-3">
             <p className="font-black text-slate-800 text-sm mb-1">ورقة التسجيل أثناء المهام</p>
+            <p className="text-[11px] text-emerald-600 font-bold mb-1">⏱ حقول الزمن تُملأ تلقائياً من «مؤقّت الملاحظة» في خطوة المهام — ويمكنك تعديلها.</p>
             <div className="grid sm:grid-cols-2 gap-3">
               <Field label="زمن البدء بعد التعليمة (ث)"><input value={obs.startDelaySec} onChange={e => setObs(o => ({ ...o, startDelaySec: e.target.value }))} className="af-in" inputMode="numeric" /></Field>
               <Field label="زمن الاستمرار قبل أول توقّف (ث)"><input value={obs.persistenceSec} onChange={e => setObs(o => ({ ...o, persistenceSec: e.target.value }))} className="af-in" inputMode="numeric" /></Field>
@@ -557,6 +562,88 @@ export default function BehavioralCompass() {
         .af-in { width: 100%; border: 1px solid #e2e8f0; border-radius: 0.75rem; padding: 0.6rem 0.8rem; font-size: 0.875rem; outline: none; background: #fff; }
         .af-in:focus { border-color: #7c5cfc; box-shadow: 0 0 0 3px rgba(124,92,252,.12); }
       `}</style>
+    </div>
+  )
+}
+
+// ── مؤقّت الملاحظة — يقيس الأزمنة تلقائياً من لحظات مُعلَّمة ──────────────────────
+// يبدأ المختص المؤقّت عند إعطاء التعليمة، ثم يضغط اللحظات كما تحدث؛ فتُحسب
+// الأزمنة (البدء، الاستمرار، حتى الانغلاق) تلقائياً وتُملأ ورقة الملاحظة.
+function fmtClock(sec: number) {
+  const m = Math.floor(sec / 60), s = sec % 60
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+}
+function ObservationStopwatch({ obs, setObs }: { obs: ObservationRecord; setObs: React.Dispatch<React.SetStateAction<ObservationRecord>> }) {
+  const [running, setRunning] = useState(false)
+  const [elapsed, setElapsed] = useState(0)
+  const [marks, setMarks] = useState<{ start?: number; difficulty?: number; stop?: number; closure?: number }>({})
+
+  useEffect(() => {
+    if (!running) return
+    const id = setInterval(() => setElapsed(e => e + 1), 1000)
+    return () => clearInterval(id)
+  }, [running])
+
+  function applyMarks(nm: typeof marks) {
+    // احسب الأزمنة من اللحظات المُعلَّمة واملأ ورقة الملاحظة تلقائياً.
+    const patch: Partial<ObservationRecord> = {}
+    if (nm.start != null) patch.startDelaySec = String(nm.start)
+    if (nm.start != null && nm.stop != null) patch.persistenceSec = String(Math.max(0, nm.stop - nm.start))
+    if (nm.difficulty != null && nm.closure != null) patch.timeToClosureSec = String(Math.max(0, nm.closure - nm.difficulty))
+    if (Object.keys(patch).length) setObs(o => ({ ...o, ...patch }))
+  }
+  function mark(key: keyof typeof marks) {
+    if (!running && elapsed === 0) setRunning(true) // أول لحظة تُشغّل المؤقّت تلقائياً
+    setMarks(m => { const nm = { ...m, [key]: elapsed }; applyMarks(nm); return nm })
+  }
+  function reset() {
+    setRunning(false); setElapsed(0); setMarks({})
+    setObs(o => ({ ...o, startDelaySec: '', persistenceSec: '', timeToClosureSec: '' }))
+  }
+
+  const EVENTS: { key: keyof typeof marks; label: string; hint: string }[] = [
+    { key: 'start',      label: 'بدأ الطفل',   hint: 'يُحسب زمن البدء بعد التعليمة' },
+    { key: 'difficulty', label: 'ظهرت صعوبة',  hint: 'بداية احتساب زمن الانغلاق' },
+    { key: 'stop',       label: 'أوّل توقّف',   hint: 'يُحسب زمن الاستمرار' },
+    { key: 'closure',    label: 'انغلاق',      hint: 'يُحسب الزمن حتى الانغلاق' },
+  ]
+
+  return (
+    <div className="bg-white rounded-2xl border border-brand-100 shadow-sm overflow-hidden">
+      <div className="px-4 py-2.5 bg-brand-50 border-b border-brand-100 flex items-center gap-2">
+        <Timer className="w-4 h-4 text-brand-600" />
+        <p className="text-xs font-black text-brand-700">مؤقّت الملاحظة — يقيس الأزمنة تلقائياً</p>
+      </div>
+      <div className="p-4">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="text-3xl font-black text-slate-800 tabular-nums" dir="ltr">{fmtClock(elapsed)}</div>
+          <button type="button" onClick={() => setRunning(r => !r)}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white ${running ? 'bg-amber-500 hover:bg-amber-600' : 'bg-brand-500 hover:bg-brand-600'}`}>
+            {running ? <><Pause className="w-4 h-4" /> إيقاف مؤقّت</> : <><Play className="w-4 h-4" /> {elapsed === 0 ? 'ابدأ (عند التعليمة)' : 'استئناف'}</>}
+          </button>
+          <button type="button" onClick={reset} className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-slate-500 border border-slate-200 hover:bg-slate-50">
+            <RotateCcw className="w-3.5 h-3.5" /> صفّر
+          </button>
+        </div>
+        <p className="text-[11px] text-slate-400 mb-2">اضغط اللحظة فور حدوثها (أوّل ضغطة تُشغّل المؤقّت):</p>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {EVENTS.map(ev => (
+            <button key={ev.key} type="button" onClick={() => mark(ev.key)} title={ev.hint}
+              className={`py-2 rounded-xl text-xs font-bold border transition ${marks[ev.key] != null ? 'bg-brand-500 text-white border-brand-500' : 'bg-white text-slate-600 border-slate-200 hover:border-brand-300'}`}>
+              {ev.label}
+              {marks[ev.key] != null && <span className="block text-[10px] font-black mt-0.5" dir="ltr">{fmtClock(marks[ev.key]!)}</span>}
+            </button>
+          ))}
+        </div>
+        {(obs.startDelaySec || obs.persistenceSec || obs.timeToClosureSec) && (
+          <div className="flex flex-wrap gap-2 mt-3 text-[11px]">
+            {obs.startDelaySec && <span className="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 font-bold">البدء: {obs.startDelaySec} ث</span>}
+            {obs.persistenceSec && <span className="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 font-bold">الاستمرار: {obs.persistenceSec} ث</span>}
+            {obs.timeToClosureSec && <span className="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 font-bold">حتى الانغلاق: {obs.timeToClosureSec} ث</span>}
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-500">تُملأ ورقة الملاحظة تلقائياً — يمكن تعديلها.</span>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

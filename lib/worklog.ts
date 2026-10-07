@@ -699,15 +699,38 @@ function icsFold(line: string): string {
   return out.join('\r\n ')
 }
 
-const icsDate = (date: string, time: string) => `${date.replace(/-/g, '')}T${time.replace(':', '')}00`
+/** Minutes the zone is ahead of UTC at this instant (Doha: +180). */
+function zoneOffsetMin(timeZone: string, at: Date): number {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23',
+  }).formatToParts(at)
+  const n = (t: string) => Number(parts.find(p => p.type === t)?.value)
+  return (Date.UTC(n('year'), n('month') - 1, n('day'), n('hour'), n('minute'), n('second')) - at.getTime()) / 60000
+}
 
 /**
- * The lessons as a calendar the phone subscribes to. This is what makes
- * reminders work when the dashboard is closed: the phone's own calendar raises
- * the alarm. Times are written as "floating" local times, so a lesson at 16:00
- * stays at 16:00 on the phone without any time-zone conversion to get wrong.
+ * A wall-clock time in the ledger's zone as an absolute UTC instant. Two
+ * passes, so a lesson on a daylight-saving changeover day lands right too.
  */
-export function buildIcs(lessons: WorkLesson[], clients: WorkClient[], now: Date = new Date()): string {
+export function zonedToUtc(date: string, time: string, timeZone: string): Date {
+  const [y, mo, d] = date.split('-').map(Number)
+  const [h, mi] = time.split(':').map(Number)
+  const wall = Date.UTC(y, mo - 1, d, h, mi)
+  let t = wall - zoneOffsetMin(timeZone, new Date(wall)) * 60000
+  t = wall - zoneOffsetMin(timeZone, new Date(t)) * 60000
+  return new Date(t)
+}
+
+const icsUtc = (d: Date) => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')
+
+/**
+ * The lessons as a calendar the phone subscribes to.
+ *
+ * Times are absolute UTC instants («…Z»), converted from the ledger's zone.
+ * They used to be «floating» local times, which iPhone reads as local but
+ * Google Calendar reads as UTC — so a 10:00 lesson in Doha showed at 13:00.
+ */
+export function buildIcs(lessons: WorkLesson[], clients: WorkClient[], timeZone: string, now: Date = new Date()): string {
   const byId = new Map(clients.map(c => [c.id, c]))
   const stamp = now.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')
   const lines = [
@@ -732,7 +755,7 @@ export function buildIcs(lessons: WorkLesson[], clients: WorkClient[], now: Date
       'BEGIN:VEVENT',
       `UID:${l.id}@amine-academy-worklog`,
       `DTSTAMP:${stamp}`,
-      `DTSTART:${icsDate(l.date, l.start)}`,
+      `DTSTART:${icsUtc(zonedToUtc(l.date, l.start, timeZone))}`,
       `DURATION:PT${l.durationMin}M`,
       `SUMMARY:${icsEscape((l.status === 'cancelled' ? '✕ ملغاة — ' : '') + 'حصة: ' + who)}`,
       `STATUS:${l.status === 'cancelled' ? 'CANCELLED' : 'CONFIRMED'}`,

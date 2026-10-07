@@ -21,7 +21,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ tok
     const [lessons, clients] = await Promise.all([listWork('lessons'), listWork('clients')])
     // Recent past + everything ahead: enough for the phone, without years of history.
     const from = addDays(todayIn(settings.timezone), -60)
-    const ics = buildIcs(lessons.filter(l => l.date >= from), clients)
+    const ics = buildIcs(lessons.filter(l => l.date >= from), clients, settings.timezone)
     return new Response(ics, {
       headers: {
         'Content-Type': 'text/calendar; charset=utf-8',

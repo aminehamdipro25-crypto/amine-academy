@@ -5,7 +5,7 @@ import {
   type SeriesPatch, type WorkLesson,
 } from '@/lib/worklog'
 import { deleteWork, getWork, listWork, putManyWork, putWork, type WorkKind } from '@/lib/worklog-store'
-import { archiveLessonsInNotion, resyncFamilyInNotion, syncLessonsToNotion } from '@/lib/worklog-notion-sync'
+import { mirrorLessons, remirrorFamily, unmirrorLessons } from '@/lib/worklog-mirror'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -30,10 +30,11 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
       if (!c.ok) return bad(c.error)
       const row = { ...(current as object), ...c.value, id }
       await putWork('clients', row as never)
-      // Notion row titles carry the family and child names.
-      const was = current as { name?: string; childName?: string }
-      if (('name' in c.value && c.value.name !== was.name) || ('childName' in c.value && c.value.childName !== was.childName)) {
-        after(() => resyncFamilyInNotion(id))
+      // Notion rows carry the names; calendar events also the address, phone and route.
+      const was = current as unknown as Record<string, unknown>
+      const next = c.value as unknown as Record<string, unknown>
+      if (['name', 'childName', 'address', 'phone', 'location'].some(k => k in next && JSON.stringify(next[k]) !== JSON.stringify(was[k]))) {
+        after(() => remirrorFamily(id))
       }
       return NextResponse.json(row)
     }
@@ -53,12 +54,12 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
         const targets = seriesEditTargets(await listWork('lessons'), lesson, patch)
           .map(t => (t.id === id ? { ...t, ...l.value, id, updatedAt: now } : { ...t, updatedAt: now }))
         await putManyWork('lessons', targets)
-        after(() => syncLessonsToNotion(targets))
+        after(() => mirrorLessons(targets))
         return NextResponse.json(targets)
       }
       const row = { ...(current as object), ...l.value, id, updatedAt: new Date().toISOString() }
       await putWork('lessons', row as never)
-      after(() => syncLessonsToNotion([row as WorkLesson]))
+      after(() => mirrorLessons([row as WorkLesson]))
       return NextResponse.json(row)
     }
     // Payments and expenses are re-validated whole: a partial edit must not
@@ -107,7 +108,7 @@ export async function DELETE(req: NextRequest, { params }: Ctx) {
         await deleteWork('lessons', ownLessons)
         await deleteWork('payments', ownPayments)
         await deleteWork('clients', [id])
-        after(() => archiveLessonsInNotion(ownLessons))
+        after(() => unmirrorLessons(ownLessons))
         return NextResponse.json({ deleted: [id], lessons: ownLessons, payments: ownPayments })
       }
       await deleteWork('clients', [id])
@@ -124,12 +125,12 @@ export async function DELETE(req: NextRequest, { params }: Ctx) {
         : []
       const all = [...new Set([id, ...ids])]
       await deleteWork('lessons', all)
-      after(() => archiveLessonsInNotion(all))
+      after(() => unmirrorLessons(all))
       return NextResponse.json({ deleted: all })
     }
 
     await deleteWork(kind as WorkKind, [id])
-    if (kind === 'lessons') after(() => archiveLessonsInNotion([id]))
+    if (kind === 'lessons') after(() => unmirrorLessons([id]))
     return NextResponse.json({ deleted: [id] })
   } catch (err) {
     console.error(`[worklog DELETE ${kind}]`, err)

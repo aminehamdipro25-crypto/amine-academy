@@ -6,7 +6,7 @@ import { useWorkLog } from './useWorkLog'
 import { Field, Segmented, ghostBtn, inputCls, localToday, primaryBtn } from './ui'
 import { notificationState, requestNotifications, showLessonNotification } from './notify'
 import { downloadLedgerXlsx } from './exportXlsx'
-import { NotionSection, TelegramReminderStatus, useIntegrations } from './IntegrationsPanel'
+import { GoogleCalendarSection, NotionSection, TelegramReminderStatus, useIntegrations } from './IntegrationsPanel'
 
 const ZONES = ['Asia/Qatar', 'Africa/Tunis', 'Asia/Riyadh', 'Asia/Dubai', 'Africa/Cairo', 'Europe/Paris']
 
@@ -108,7 +108,7 @@ export default function SettingsView() {
               <ul className="text-[11px] text-gray-500 space-y-1 leading-relaxed list-disc pr-4">
                 <li><b>iPhone:</b> اضغط «إضافة إلى تقويم هذا الجهاز» ← اشتراك، واختر «تحديث تلقائي: كل ساعة». ليرنّ التقويم أيضاً أطفئ «إزالة التنبيهات» في صفحة الاشتراك.</li>
                 <li><b>Android / Google:</b> افتح «Google Calendar» من الحاسوب ← إضافة تقويم ← من رابط. Google يحدّث الاشتراكات ببطء (عدة ساعات حتى يوم) <b>ويتجاهل تنبيهاتها</b> — فهو للعرض فقط.</li>
-                <li><b>Notion Calendar:</b> بعد إضافته إلى Google يظهر تلقائياً في Notion Calendar المربوط بنفس حساب Google.</li>
+                <li><b>Notion Calendar:</b> الأسرع والأصح هو قسم «تقويم Google و Notion Calendar» أدناه — يكتب كل حصة فوراً بدل انتظار تحديث الاشتراك.</li>
                 <li>الرابط يحوي أسماء العائلات وعناوينها: لا تشاركه. إن تسرّب، أنشئ رابطاً جديداً فيتوقف القديم فوراً.</li>
               </ul>
               <div className="flex flex-wrap gap-2">
@@ -136,6 +136,12 @@ export default function SettingsView() {
           </div>
           <p className="text-[11px] text-gray-500 leading-relaxed">كل أحد (7:15 بتوقيت قطر): الأسبوع الماضي بالأرقام (الحصص والساعات وقيمة العمل والمستلم والمصاريف)، الأسبوع القادم، ومن عليه مبالغ ومنذ متى. عبر تيليغرام والبريد.</p>
         </div>
+      </section>
+
+      {/* Google Calendar */}
+      <section className="rounded-3xl bg-white border border-gray-100 shadow-sm p-5 space-y-3">
+        <h3 className="font-black text-gray-900">📅 تقويم Google و Notion Calendar</h3>
+        <GoogleCalendarSection status={integrations.status} reload={integrations.reload} />
       </section>
 
       {/* Notion */}

@@ -29,8 +29,16 @@ function registerFonts() {
   fontsReady = true
 }
 
+// Strip emoji / pictographs / arrows / variation-selectors: the Tajawal font
+// embedded in the PDF has no glyphs for them, so react-pdf renders a wrong
+// glyph (e.g. the ℹ️ prefix on a recommendation showed up as a stray "9").
+// They are only decorative prefixes meant for the on-screen report.
+const EMOJI_RE = /[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{2190}-\u{21FF}\u{2139}\u{2122}\u{FE00}-\u{FE0F}\u{200D}]/gu
+function stripGlyphs(s: string): string {
+  return s.replace(EMOJI_RE, '').replace(/\s{2,}/g, ' ').trim()
+}
 function str(v: unknown, max = 400): string {
-  return typeof v === 'string' ? v.slice(0, max) : ''
+  return typeof v === 'string' ? stripGlyphs(v.slice(0, max)) : ''
 }
 function strList(v: unknown, maxItems = 40): string[] {
   return Array.isArray(v) ? v.slice(0, maxItems).map(x => str(x)).filter(Boolean) : []

@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import { BarChart3, CalendarDays, Navigation, NotebookPen, Plus, Receipt, RefreshCw, Settings2, Users, Wallet } from 'lucide-react'
 import {
   addDays, clientBalances, lessonsCount, endOfMonth, hoursIn, monthForecast, startOfWeek, endTime, formatDuration, formatMoney, googleDirectionsUrl, lessonStartLocal,
-  periodStats, sortLessons, startOfMonth, type WorkClient, type WorkExpense, type WorkLesson, type WorkPayment,
+  periodBreakdown, periodStats, sortLessons, startOfMonth, type WorkClient, type WorkExpense, type WorkLesson, type WorkPayment,
 } from '@/lib/worklog'
 import { readStorage, writeStorage } from '@/lib/safe-storage'
 import { WorkLogContext, clientLabel, useWorkLog, useWorkLogState } from './useWorkLog'
@@ -12,6 +12,7 @@ import AgendaView from './AgendaView'
 import ClientsView from './ClientsView'
 import MoneyView from './MoneyView'
 import StatsView from './StatsView'
+import StatDetailSheet, { type StatDetail } from './StatDetailSheet'
 import SettingsView from './SettingsView'
 import LessonForm, { type LessonDraft } from './LessonForm'
 import ClientForm from './ClientForm'
@@ -169,6 +170,7 @@ function Overview({ onAddClient, onAddLesson }: { onAddClient: () => void; onAdd
   const { clients, lessons, payments, expenses, settings, clientsById } = useWorkLog()
   const today = localToday()
   const [now, setNow] = useState(() => Date.now())
+  const [detail, setDetail] = useState<StatDetail | null>(null)
   useEffect(() => { const t = setInterval(() => setNow(Date.now()), 30_000); return () => clearInterval(t) }, [])
 
   const next = useMemo(
@@ -179,7 +181,9 @@ function Overview({ onAddClient, onAddLesson }: { onAddClient: () => void; onAdd
   const week = hoursIn(lessons, startOfWeek(today), addDays(startOfWeek(today), 6))
   const month = useMemo(() => periodStats(lessons, payments, expenses, startOfMonth(today), endOfMonth(today)), [lessons, payments, expenses, today])
   // Income from completed lessons only — what is still scheduled is not income yet.
-  const weekEarned = useMemo(() => periodStats(lessons, [], [], startOfWeek(today), addDays(startOfWeek(today), 6)), [lessons, today])
+  // The same breakdown the detail sheet lists, so tile and sheet can never disagree.
+  const weekIncome = useMemo(() => periodBreakdown(lessons, clients, startOfWeek(today), addDays(startOfWeek(today), 6), today), [lessons, clients, today])
+  const monthIncome = useMemo(() => periodBreakdown(lessons, clients, startOfMonth(today), endOfMonth(today), today), [lessons, clients, today])
   const owed = useMemo(() => clientBalances(clients, lessons, payments, today).reduce((s, b) => s + Math.max(0, b.balance), 0), [clients, lessons, payments, today])
 
   if (!clients.length) {
@@ -233,17 +237,18 @@ function Overview({ onAddClient, onAddLesson }: { onAddClient: () => void; onAdd
         )}
       </div>
       <div className="lg:col-span-2 grid grid-cols-2 gap-3">
-        <MiniStat label="دخل الأسبوع (حصص منجزة)" value={formatMoney(weekEarned.earned, settings.currency)}
-          sub={`${lessonsCount(weekEarned.lessonsDone)} منجزة — المجدولة لا تُحتسب`} good />
-        <MiniStat label="دخل الشهر (حصص منجزة)" value={formatMoney(month.earned, settings.currency)}
-          sub={`${lessonsCount(month.lessonsDone)} منجزة — المجدولة لا تُحتسب`} good />
-        <MiniStat label="ساعات الأسبوع (منجزة)" value={formatDuration(week.done)}
+        <MiniStat onOpen={() => setDetail('income-week')} label="دخل الأسبوع (حصص منجزة)" value={formatMoney(weekIncome.total, settings.currency)}
+          sub={`المحتسب: ${weekIncome.counted.length ? lessonsCount(weekIncome.counted.length) : 'لا شيء بعد'}`} good />
+        <MiniStat onOpen={() => setDetail('income-month')} label="دخل الشهر (حصص منجزة)" value={formatMoney(monthIncome.total, settings.currency)}
+          sub={`المحتسب: ${monthIncome.counted.length ? lessonsCount(monthIncome.counted.length) : 'لا شيء بعد'}`} good />
+        <MiniStat onOpen={() => setDetail('hours-week')} label="ساعات الأسبوع (منجزة)" value={formatDuration(week.done)}
           sub={hoursSub(week.scheduled, week.cancelled)} />
-        <MiniStat label="ساعات الشهر (منجزة)" value={formatDuration(month.minutesDone)}
+        <MiniStat onOpen={() => setDetail('hours-month')} label="ساعات الشهر (منجزة)" value={formatDuration(month.minutesDone)}
           sub={hoursSub(month.minutesScheduled, month.minutesCancelled)} />
-        <MiniStat label="صافي الشهر" value={formatMoney(month.net, settings.currency)}
+        <MiniStat onOpen={() => setDetail('net-month')} label="صافي الشهر" value={formatMoney(month.net, settings.currency)}
           sub={`مستلم ${formatMoney(month.collected, settings.currency)} − مصاريف ${formatMoney(month.expenses, settings.currency)}`} />
-        <MiniStat label="مستحقات معلّقة" value={formatMoney(owed, settings.currency)} sub="لدى العائلات" warn={owed > 0} />
+        <MiniStat onOpen={() => setDetail('dues')} label="مستحقات معلّقة" value={formatMoney(owed, settings.currency)} sub="لدى العائلات" warn={owed > 0} />
+        <StatDetailSheet kind={detail} onClose={() => setDetail(null)} />
       </div>
     </div>
   )
@@ -258,13 +263,15 @@ function hoursSub(scheduled: number, cancelled: number): string {
   return parts.length ? parts.join(' · ') : 'لا مجدولة ولا ملغاة'
 }
 
-function MiniStat({ label, value, sub, warn, good }: { label: string; value: string; sub: string; warn?: boolean; good?: boolean }) {
+function MiniStat({ label, value, sub, warn, good, onOpen }: { label: string; value: string; sub: string; warn?: boolean; good?: boolean; onOpen?: () => void }) {
   return (
-    <div className={`rounded-2xl border p-3.5 shadow-sm ${warn ? 'bg-amber-50 border-amber-100' : good ? 'bg-emerald-50 border-emerald-100' : 'bg-white border-gray-100'}`}>
+    <button type="button" onClick={onOpen} aria-label={`${label}: ${value} — اضغط لترى كيف حُسب`}
+      className={`text-right w-full rounded-2xl border p-3.5 shadow-sm active:scale-[0.98] transition hover:shadow-md ${warn ? 'bg-amber-50 border-amber-100' : good ? 'bg-emerald-50 border-emerald-100' : 'bg-white border-gray-100'}`}>
       <p className={`text-[10px] font-bold ${warn ? 'text-amber-700' : good ? 'text-emerald-700' : 'text-gray-400'}`}>{label}</p>
       <p className="text-base sm:text-lg font-black text-gray-900 mt-0.5 leading-tight">{value}</p>
       <p className="text-[10px] text-gray-400 mt-0.5 truncate">{sub}</p>
-    </div>
+      <p className="text-[10px] font-bold text-brand-600 mt-1">التفاصيل ‹</p>
+    </button>
   )
 }
 

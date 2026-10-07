@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_SETTINGS, sanitizeSettings, seriesPlan, type GeoPoint, type WorkClient, type WorkLesson, type WorkPayment } from '@/lib/worklog'
+import { DEFAULT_SETTINGS, sanitizeSettings, seriesPlan, periodBreakdown, periodStats, type GeoPoint, type WorkClient, type WorkLesson, type WorkPayment } from '@/lib/worklog'
 import {
   UNKNOWN_TRAVEL_MIN, availabilityText, daysText, debtAge, familiesText, freeSlots, receivables, weeklyDigest, weeklyDigestLines,
 } from '@/lib/worklog-planning'
@@ -228,5 +228,46 @@ describe('weekly repeat over weeks the agenda already holds', () => {
   it('an overlap of part of the hour is still the same lesson', () => {
     const p = seriesPlan([ls('2026-10-14', '16:00')], { clientId: 'hamad', date: '2026-10-14', start: '15:30', durationMin: 60 }, 1)
     expect(p.skipped).toEqual(['2026-10-14'])
+  })
+})
+
+describe('the rows behind an income tile', () => {
+  const L = (id: string, date: string, status: WorkLesson['status'], extra: Partial<WorkLesson> = {}) =>
+    ({ id, clientId: 'h', date, start: '15:30', durationMin: 60, price: 150, status, reminderMin: null, createdAt: '', updatedAt: '', ...extra }) as WorkLesson
+  const fam = [{ id: 'h', name: 'أم حمد', childName: 'حمد' }] as unknown as WorkClient[]
+  const lessons = [
+    L('a', '2026-10-05', 'done'),
+    L('b', '2026-10-06', 'cancelled', { charged: true }),
+    L('c', '2026-10-07', 'cancelled', { cancelReason: 'سفر' }),
+    L('d', '2026-10-07', 'scheduled'),              // yesterday, never marked
+    L('e', '2026-10-09', 'scheduled'),              // ahead
+    L('f', '2026-10-13', 'done', { durationMin: 120, price: 300 }),
+    L('g', '2026-11-02', 'done'),                   // outside the month
+  ]
+
+  it('counts done lessons and charged cancellations only — the tile total is the sum of its lines', () => {
+    const b = periodBreakdown(lessons, fam, '2026-10-01', '2026-10-31', '2026-10-08')
+    expect(b.counted.map(x => x.id)).toEqual(['a', 'b', 'f'])
+    expect(b.total).toBe(600)
+    expect(b.total).toBe(b.counted.reduce((s, x) => s + x.amount, 0))
+    expect(b.unmarked.map(x => x.id)).toEqual(['d'])
+    expect(b.ahead.map(x => x.id)).toEqual(['e'])
+    expect(b.cancelledFree[0].note).toBe('سبب الإلغاء: سفر')
+    expect(b.counted[0].who).toBe('حمد — أم حمد')
+    expect(b.minutesDone).toBe(180)
+  })
+
+  it('the sheet total is exactly the statistics page figure for the same period', () => {
+    const b = periodBreakdown(lessons, fam, '2026-10-01', '2026-10-31', '2026-10-08')
+    expect(b.total).toBe(periodStats(lessons, [], [], '2026-10-01', '2026-10-31').earned)
+  })
+
+  it('a month is split into its Monday-to-Sunday weeks, clipped to the month, adding up to the month', () => {
+    const b = periodBreakdown(lessons, fam, '2026-10-01', '2026-10-31', '2026-10-08')
+    expect(b.weeks[0]).toMatchObject({ from: '2026-10-01', to: '2026-10-04', total: 0 })
+    expect(b.weeks[1]).toMatchObject({ from: '2026-10-05', to: '2026-10-11', total: 300, count: 2 })
+    expect(b.weeks[2]).toMatchObject({ from: '2026-10-12', to: '2026-10-18', total: 300, count: 1, minutes: 120 })
+    expect(b.weeks.at(-1)!.to).toBe('2026-10-31')
+    expect(b.weeks.reduce((s, w) => s + w.total, 0)).toBe(b.total)
   })
 })

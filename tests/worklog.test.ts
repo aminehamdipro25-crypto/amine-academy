@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  buildIcs, clientBalances, dueReminders, endTime, findConflicts, formatMoney, isAllowedMapHost, isValidDate,
+  buildIcs, zonedToUtc, clientBalances, dueReminders, endTime, findConflicts, formatMoney, isAllowedMapHost, isValidDate,
   lessonValue, monthlyMoney, parseGeocodeResults, parseMapLink, periodStats, phoneDigits, priceFor, sanitizeClient, sanitizeLesson,
   sanitizePayment, todayIn, weeklyHours, weeklySeries,
   type WorkClient, type WorkLesson, type WorkPayment, type WorkExpense,
@@ -247,12 +247,20 @@ describe('calendar feed', () => {
   const ics = buildIcs([
     lesson({ id: 'k1', status: 'scheduled', reminderMin: 30, date: '2026-09-10', start: '16:05', durationMin: 90 }),
     lesson({ id: 'k2', status: 'cancelled', date: '2026-09-11' }),
-  ], [c], new Date('2026-09-01T00:00:00Z'))
+  ], [c], 'Asia/Qatar', new Date('2026-09-01T00:00:00Z'))
 
-  it('uses floating local times, so 16:05 stays 16:05 on the phone', () => {
-    expect(ics).toContain('DTSTART:20260910T160500')
-    expect(ics).not.toMatch(/DTSTART:\d{8}T\d{6}Z/)
+  it('writes absolute UTC times, so Google shows a 16:05 Doha lesson at 16:05 (not 19:05)', () => {
+    expect(ics).toContain('DTSTART:20260910T130500Z')
+    expect(ics).not.toMatch(/DTSTART:\d{8}T\d{6}\r/)
     expect(ics).toContain('DURATION:PT90M')
+  })
+
+  it('converts from the ledger\'s own zone, across midnight and daylight saving', () => {
+    expect(zonedToUtc('2026-10-05', '10:00', 'Asia/Qatar').toISOString()).toBe('2026-10-05T07:00:00.000Z')
+    expect(zonedToUtc('2026-10-05', '01:30', 'Asia/Qatar').toISOString()).toBe('2026-10-04T22:30:00.000Z')
+    expect(zonedToUtc('2026-07-01', '16:00', 'Europe/Paris').toISOString()).toBe('2026-07-01T14:00:00.000Z')
+    expect(zonedToUtc('2026-01-15', '16:00', 'Europe/Paris').toISOString()).toBe('2026-01-15T15:00:00.000Z')
+    expect(zonedToUtc('2026-10-05', '16:00', 'Africa/Tunis').toISOString()).toBe('2026-10-05T15:00:00.000Z')
   })
 
   it('has an alarm only for scheduled lessons, and cancels cancelled ones', () => {

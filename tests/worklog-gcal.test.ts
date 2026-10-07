@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest'
 import fs from 'node:fs'
 import path from 'node:path'
 import type { WorkClient, WorkLesson } from '@/lib/worklog'
-import { GCAL_SCOPE, buildCalendarAuthUrl, gcalRedirectUri, lessonGcalEvent } from '@/lib/worklog-gcal'
+import { CLIENT_COLORS } from '@/lib/worklog'
+import { FAMILY_GCAL_COLOR, GCAL_SCOPE, buildCalendarAuthUrl, gcalRedirectUri, lessonGcalEvent } from '@/lib/worklog-gcal'
 
 const lesson = (over: Partial<WorkLesson> = {}): WorkLesson => ({
   id: 'l1', clientId: 'k', date: '2026-10-10', start: '11:30', durationMin: 60, price: 120,
@@ -37,6 +38,19 @@ describe('a lesson becomes a Google Calendar event', () => {
     expect(e.description).toContain('سبب الإلغاء: ظرف طارئ')
     expect(e.transparency).toBe('transparent')
     expect(lessonGcalEvent(lesson({ status: 'done' }), client, tz).summary.startsWith('✓ ')).toBe(true)
+  })
+
+  it('each event carries its family\'s colour from the work log, whatever its status', () => {
+    const orange = { ...client, color: '#F97316' } as WorkClient
+    for (const status of ['scheduled', 'done', 'cancelled'] as const) {
+      expect(lessonGcalEvent(lesson({ status }), orange, tz).colorId).toBe('6')
+    }
+    expect(lessonGcalEvent(lesson(), { ...client, color: '#e11d48' } as WorkClient, tz).colorId).toBe('11')
+    expect(lessonGcalEvent(lesson(), undefined, tz).colorId).toBe('9')
+  })
+
+  it('every colour a family can be given has a Google colour', () => {
+    for (const c of CLIENT_COLORS) expect(FAMILY_GCAL_COLOR[c]).toMatch(/^([1-9]|1[01])$/)
   })
 
   it('a second child of the family is named on the event', () => {

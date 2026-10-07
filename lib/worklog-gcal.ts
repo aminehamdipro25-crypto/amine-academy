@@ -48,9 +48,26 @@ function nextDate(date: string): string {
   return d.toISOString().slice(0, 10)
 }
 
-// Google's event colours: blueberry for a lesson still ahead, basil once it
-// happened, graphite when cancelled — the same reading as the agenda's colours.
-const COLOR = { scheduled: '9', done: '10', cancelled: '8' } as const
+// Google offers eleven fixed event colours, not any hex. Each family colour in
+// the work log maps to the nearest one, so a family looks the same in the
+// agenda, in Google Calendar and in Notion Calendar. The status stays legible
+// without colour: «✓» and «✕ ملغاة» lead the title.
+//   1 Lavender · 2 Sage · 3 Grape · 4 Flamingo · 5 Banana · 6 Tangerine
+//   7 Peacock · 8 Graphite · 9 Blueberry · 10 Basil · 11 Tomato
+export const FAMILY_GCAL_COLOR: Record<string, string> = {
+  '#7C5CFC': '1',  // violet → Lavender
+  '#0EA5E9': '7',  // sky → Peacock
+  '#F97316': '6',  // orange → Tangerine
+  '#14B8A6': '2',  // teal → Sage
+  '#E11D48': '11', // rose → Tomato
+  '#84CC16': '10', // lime → Basil
+  '#A855F7': '3',  // purple → Grape
+  '#F59E0B': '5',  // amber → Banana
+  '#06B6D4': '7',  // cyan → Peacock
+  '#64748B': '8',  // slate → Graphite
+}
+/** A family with no colour (or one not in the palette): Google's blueberry. */
+const FALLBACK_COLOR = '9'
 
 export interface GcalEvent {
   summary: string
@@ -93,7 +110,7 @@ export function lessonGcalEvent(
     description,
     start: { dateTime: `${l.date}T${l.start}:00`, timeZone: settings.timezone },
     end: { dateTime: `${endDate}T${end}:00`, timeZone: settings.timezone },
-    colorId: COLOR[l.status],
+    colorId: (c?.color && FAMILY_GCAL_COLOR[c.color.toUpperCase()]) || FALLBACK_COLOR,
     // A cancelled lesson does not block the hour in «free / busy».
     transparency: l.status === 'cancelled' ? 'transparent' : 'opaque',
     reminders: {

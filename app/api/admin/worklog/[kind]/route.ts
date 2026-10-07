@@ -2,7 +2,7 @@ import { NextRequest, NextResponse, after } from 'next/server'
 import { randomUUID } from 'crypto'
 import { isOwnerUser } from '@/lib/auth'
 import {
-  sanitizeClient, sanitizeExpense, sanitizeLesson, sanitizePayment, weeklySeries,
+  sanitizeClient, sanitizeExpense, sanitizeLesson, sanitizePayment, seriesPlan,
   type WorkClient, type WorkLesson,
 } from '@/lib/worklog'
 import { getWork, listWork, newWorkId, nextClientColor, putManyWork, putWork, type WorkKind } from '@/lib/worklog-store'
@@ -42,8 +42,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ kin
       if (!l.ok) return bad(l.error)
       if (!(await getWork('clients', l.value.clientId!))) return bad('العائلة غير موجودة', 404)
       const repeat = Math.min(52, Math.max(1, Math.floor(Number(body.repeatWeeks) || 1)))
-      const seriesId = repeat > 1 ? `ser_${randomUUID()}` : undefined
-      const rows: WorkLesson[] = weeklySeries(l.value.date!, repeat).map(date => ({
+      // A repeat skips the weeks where this family already has that hour, so
+      // repeating over weeks the agenda already holds never books them twice.
+      const plan = repeat > 1
+        ? seriesPlan(await listWork('lessons'), l.value as WorkLesson, repeat)
+        : { dates: [l.value.date!], skipped: [] as string[] }
+      if (!plan.dates.length) return bad('كل هذه الأسابيع فيها حصة لهذه العائلة في الوقت نفسه أصلاً — لم يُضف شيء', 409)
+      const seriesId = plan.dates.length > 1 ? `ser_${randomUUID()}` : undefined
+      const rows: WorkLesson[] = plan.dates.map(date => ({
         ...(l.value as Omit<WorkLesson, 'id' | 'createdAt' | 'updatedAt' | 'date'>),
         id: newWorkId('lessons'),
         date,

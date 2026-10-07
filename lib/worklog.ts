@@ -1493,3 +1493,66 @@ export function dueRecurring(items: RecurringExpense[], today: string): { item: 
   }
   return out
 }
+
+// ── «How was this number made?» — the rows behind a dashboard tile ──────────
+
+export interface BreakdownLine {
+  id: string
+  date: string
+  start: string
+  who: string
+  durationMin: number
+  amount: number
+  /** Why it is in this list, when the list name alone does not say it. */
+  note?: string
+}
+
+export interface PeriodBreakdown {
+  from: string
+  to: string
+  /** Done lessons and cancellations you chose to charge: the income. */
+  counted: BreakdownLine[]
+  /** Still ahead: not income until they happen. */
+  ahead: BreakdownLine[]
+  /** In the past but never marked done or cancelled: not counted until you mark them. */
+  unmarked: BreakdownLine[]
+  /** Cancelled and not charged. */
+  cancelledFree: BreakdownLine[]
+  total: number
+  minutesDone: number
+  /** For a month: subtotal of each Monday-to-Sunday week that touches it. */
+  weeks: { from: string; to: string; total: number; count: number; minutes: number }[]
+}
+
+/**
+ * Every lesson of the period, sorted into what the income tile counts and
+ * what it leaves out — so the number on the tile can be checked line by line.
+ */
+export function periodBreakdown(
+  lessons: WorkLesson[], clients: WorkClient[], from: string, to: string, today: string,
+): PeriodBreakdown {
+  const byId = new Map(clients.map(c => [c.id, c]))
+  const line = (l: WorkLesson, note?: string): BreakdownLine => ({
+    id: l.id, date: l.date, start: l.start, who: lessonWho(l, byId.get(l.clientId), ' — '),
+    durationMin: l.durationMin, amount: l.price, ...(note ? { note } : {}),
+  })
+  const out: PeriodBreakdown = { from, to, counted: [], ahead: [], unmarked: [], cancelledFree: [], total: 0, minutesDone: 0, weeks: [] }
+  for (const l of sortLessons(lessons.filter(l => l.date >= from && l.date <= to))) {
+    if (l.status === 'done') { out.counted.push(line(l)); out.minutesDone += l.durationMin }
+    else if (l.status === 'cancelled' && l.charged) out.counted.push(line(l, 'ملغاة ومحتسبة'))
+    else if (l.status === 'cancelled') out.cancelledFree.push(line(l, l.cancelReason ? `سبب الإلغاء: ${l.cancelReason}` : undefined))
+    else if (l.date < today) out.unmarked.push(line(l))
+    else out.ahead.push(line(l))
+  }
+  out.total = round2(out.counted.reduce((s, x) => s + x.amount, 0))
+  for (let w = startOfWeek(from); w <= to; w = addDays(w, 7)) {
+    const wTo = addDays(w, 6)
+    const inW = out.counted.filter(x => x.date >= w && x.date <= wTo && x.date >= from && x.date <= to)
+    out.weeks.push({
+      from: w < from ? from : w, to: wTo > to ? to : wTo, count: inW.length,
+      total: round2(inW.reduce((s, x) => s + x.amount, 0)),
+      minutes: inW.filter(x => !x.note).reduce((s, x) => s + x.durationMin, 0),
+    })
+  }
+  return out
+}

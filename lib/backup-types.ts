@@ -12,6 +12,9 @@ export const BACKUP_RECORD_TYPES = [
   'worklogClients', 'worklogLessons', 'worklogPayments', 'worklogExpenses',
   // Which Notion row holds which lesson: lose it and a re-sync duplicates every row.
   'worklogNotionPages',
+  // Which Google Calendar event holds which lesson — the same reason. The
+  // calendar's refresh token is deliberately NOT here: a backup is not a key.
+  'worklogGcalEvents',
 ] as const
 
 export type BackupRecordType = (typeof BACKUP_RECORD_TYPES)[number]

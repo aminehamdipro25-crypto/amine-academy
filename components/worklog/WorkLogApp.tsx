@@ -49,6 +49,8 @@ export default function WorkLogApp() {
   const [findTime, setFindTime] = useState(false)
 
   useEffect(() => {
+    // Back from Google's calendar consent: open Settings, where the outcome is shown.
+    if (new URLSearchParams(window.location.search).has('gcal')) { setTab('settings'); return }
     const saved = readStorage(TAB_KEY) as Tab | null
     if (saved && TABS.some(t => t.id === saved)) setTab(saved)
   }, [])

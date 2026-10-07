@@ -6,7 +6,7 @@ import {
   type WorkClient, type WorkLesson,
 } from '@/lib/worklog'
 import { getWork, listWork, newWorkId, nextClientColor, putManyWork, putWork, type WorkKind } from '@/lib/worklog-store'
-import { syncLessonsToNotion } from '@/lib/worklog-notion-sync'
+import { mirrorLessons } from '@/lib/worklog-mirror'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -56,7 +56,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ kin
       }))
       await putManyWork('lessons', rows)
       // Copied to the owner's Notion after the response: a slow Notion never slows a save.
-      after(() => syncLessonsToNotion(rows))
+      after(() => mirrorLessons(rows))
       return NextResponse.json(rows, { status: 201 })
     }
 

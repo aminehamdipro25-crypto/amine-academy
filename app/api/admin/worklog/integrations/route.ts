@@ -6,6 +6,9 @@ import { guessNotionMap, parseNotionDbId, validNotionMap, type NotionMap } from 
 import {
   NOTION_LAST_KEY, fetchNotionSchema, notionTokenConfigured, syncLessonsToNotion, type NotionLast,
 } from '@/lib/worklog-notion-sync'
+import {
+  GCAL_LAST_KEY, forgetGcalAuth, gcalClientConfigured, gcalConnection, syncLessonsToGcal, type GcalLast,
+} from '@/lib/worklog-gcal-sync'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -19,9 +22,11 @@ const BATCH = 20
 export async function GET() {
   if (!(await isOwnerUser())) return bad('غير مصرح', 401)
   const settings = await getWorkSettings()
-  const [last, lastRun] = await Promise.all([
+  const [last, lastRun, gcalLast, gcalConn] = await Promise.all([
     redis.get<NotionLast>(NOTION_LAST_KEY).catch(() => null),
     redis.get<RemindersLastRun>(REMINDERS_LAST_RUN_KEY).catch(() => null),
+    redis.get<GcalLast>(GCAL_LAST_KEY).catch(() => null),
+    gcalConnection(),
   ])
 
   const notion: Record<string, unknown> = { tokenConfigured: notionTokenConfigured(), last }
@@ -39,6 +44,8 @@ export async function GET() {
 
   return NextResponse.json({
     notion,
+    // Never the token itself — only whether one is held and for which address.
+    gcal: { clientConfigured: gcalClientConfigured(), ...gcalConn, last: gcalLast },
     reminders: {
       telegramConfigured: !!(process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_CHAT_ID),
       cronConfigured: !!process.env.CRON_SECRET,
@@ -84,6 +91,20 @@ export async function POST(req: NextRequest) {
         if (r.error) return bad(`توقّفت المزامنة عند ${from + r.synced} من ${all.length}: ${r.error}`, 502)
         const next = from + batch.length
         return NextResponse.json({ total: all.length, done: next, next: next < all.length ? next : null })
+      }
+      case 'gcal-sync': {
+        if (!(await gcalConnection()).connected) return bad('اربط تقويم Google أولاً')
+        const all = (await listWork('lessons')).sort((a, b) => (a.date + a.start).localeCompare(b.date + b.start))
+        const from = Math.max(0, Math.floor(Number(body.cursor) || 0))
+        const batch = all.slice(from, from + BATCH)
+        const r = await syncLessonsToGcal(batch)
+        if (r.error) return bad(`توقّف النسخ عند ${from + r.synced} من ${all.length}: ${r.error}`, 502)
+        const next = from + batch.length
+        return NextResponse.json({ total: all.length, done: next, next: next < all.length ? next : null })
+      }
+      case 'gcal-disconnect': {
+        await forgetGcalAuth()
+        return NextResponse.json({ ok: true })
       }
       case 'disconnect': {
         const { notion: _drop, ...rest } = settings

@@ -12,6 +12,10 @@ interface Status {
     databaseId?: string; title?: string; props?: NotionProp[]; map?: NotionMap; error?: string
     last?: { at: string; ok: boolean; error?: string } | null
   }
+  gcal: {
+    clientConfigured: boolean; connected: boolean; email?: string; connectedAt?: string
+    last?: { at: string; ok: boolean; error?: string } | null
+  }
   reminders: { telegramConfigured: boolean; cronConfigured: boolean; lastRun: { at: string; sent: number; failed: number } | null }
 }
 
@@ -174,6 +178,99 @@ export function NotionSection({ status, reload }: { status: Status | null; reloa
           : <p className="text-[11px] text-rose-700">✕ آخر محاولة فشلت {when(n.last.at)}: {n.last.error} — «نسخ كل الحصص الآن» يُكمل ما فات.</p>
       )}
       <p className="text-[11px] text-gray-400">الاتجاه واحد: من الدفتر إلى نوشن. تعديل صف في نوشن لا يعود إلى الدفتر، والتعديل التالي للحصة هنا يكتب فوقه.</p>
+    </div>
+  )
+}
+
+/**
+ * Every lesson written straight into the owner's Google Calendar — and from
+ * there into Notion Calendar, which shows that Google account.
+ */
+export function GoogleCalendarSection({ status, reload }: { status: Status | null; reload: () => Promise<void> }) {
+  const { toast } = useToast()
+  const [busy, setBusy] = useState(false)
+  const [progress, setProgress] = useState('')
+  const g = status?.gcal
+
+  // The consent screen sends the owner back with ?gcal=…; say what happened, once.
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get('gcal')
+    if (!q) return
+    const msg: Record<string, [string, 'success' | 'error']> = {
+      connected: ['رُبط تقويم Google — الحصص القادمة تُكتب فيه الآن', 'success'],
+      cancelled: ['أُلغي الربط من شاشة Google', 'error'],
+      'bad-state': ['انتهت مهلة الربط — أعد المحاولة', 'error'],
+      failed: ['رفض Google الربط — راجع الخطوات تحت الزر', 'error'],
+      'not-configured': ['مفاتيح Google غير مضبوطة في Vercel', 'error'],
+    }
+    if (msg[q]) toast(msg[q][0], msg[q][1])
+    const u = new URL(window.location.href); u.searchParams.delete('gcal'); window.history.replaceState(null, '', u.toString())
+  }, [toast])
+
+  async function syncAll() {
+    setBusy(true)
+    let cursor: number | null = 0
+    try {
+      while (cursor !== null) {
+        const r: { total: number; done: number; next: number | null } = await call({ method: 'POST', body: JSON.stringify({ action: 'gcal-sync', cursor }) })
+        setProgress(`${r.done} من ${r.total}`)
+        cursor = r.next
+      }
+      toast('نُسخت كل الحصص إلى تقويم Google')
+    } catch (e) { toast((e as Error).message, 'error') } finally { setBusy(false); await reload() }
+  }
+  async function disconnect() {
+    if (!window.confirm('إيقاف الكتابة في تقويم Google؟ الأحداث المكتوبة سابقاً تبقى في التقويم.')) return
+    setBusy(true)
+    try { await call({ method: 'POST', body: JSON.stringify({ action: 'gcal-disconnect' }) }); toast('أُوقف الربط'); await reload() }
+    catch (e) { toast((e as Error).message, 'error') } finally { setBusy(false) }
+  }
+
+  if (!g) return <p className="text-xs text-gray-400">جارٍ التحقق…</p>
+
+  const setup = (
+    <ol className="list-decimal pr-4 space-y-1 text-[11px] text-gray-500 leading-relaxed">
+      <li>في <b dir="ltr">console.cloud.google.com</b> (مشروع الدخول بحساب Google نفسه): APIs &amp; Services ← Library ← <b dir="ltr">Google Calendar API</b> ← Enable.</li>
+      <li>Credentials ← عميل OAuth ← Authorized redirect URIs ← أضف: <code dir="ltr" className="break-all">{typeof window !== 'undefined' ? `${window.location.origin}/api/admin/worklog/gcal/callback` : ''}</code></li>
+      <li>OAuth consent screen ← Publish app (Production). في وضع Testing يُلغي Google الإذن كل 7 أيام.</li>
+      <li>عند الربط قد تظهر «Google hasn&apos;t verified this app» — هذا تطبيقك أنت: Advanced ← المتابعة.</li>
+    </ol>
+  )
+
+  if (!g.clientConfigured) {
+    return (
+      <div className="space-y-2 text-xs text-gray-600">
+        <p>يحتاج مفتاحي الدخول بحساب Google في Vercel: <code dir="ltr">NEXT_PUBLIC_GOOGLE_CLIENT_ID</code> و<code dir="ltr">GOOGLE_CLIENT_SECRET</code>، ثم إعادة النشر.</p>
+        {setup}
+      </div>
+    )
+  }
+
+  if (!g.connected) {
+    return (
+      <div className="space-y-3">
+        <p className="text-xs text-gray-600 leading-relaxed">كل حصة تُضاف أو تُعدَّل أو تُحذف تُكتب فوراً في تقويمك الأساسي في Google — فتظهر في Google Calendar وفي <b>Notion Calendar</b> المربوط به، مع تذكير يرنّ في وقته. الإذن للأحداث فقط، لا البريد ولا الملفات.</p>
+        <a href="/api/admin/worklog/gcal/connect" className={primaryBtn('text-xs')}><Link2 className="w-4 h-4" /> ربط تقويم Google</a>
+        <p className="text-[11px] text-gray-500">اختر في Google الحساب المربوط بـNotion Calendar.</p>
+        {setup}
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-3 text-xs">
+      <p className="flex items-center gap-1.5 font-bold text-emerald-700">
+        <CheckCircle2 className="w-4 h-4" /> مربوط{g.email ? <span dir="ltr" className="font-mono">{g.email}</span> : null}
+      </p>
+      {g.last && (g.last.ok
+        ? <p className="text-gray-500">آخر نسخ ناجح: {when(g.last.at)}</p>
+        : <p className="flex items-start gap-1.5 font-bold text-rose-700"><AlertTriangle className="w-4 h-4 flex-shrink-0" /> آخر محاولة ({when(g.last.at)}): {g.last.error}</p>)}
+      <div className="flex flex-wrap gap-2">
+        <button disabled={busy} onClick={syncAll} className={primaryBtn('text-xs')}><RefreshCw className="w-4 h-4" /> {busy && progress ? progress : 'نسخ كل الحصص الآن'}</button>
+        <a href="/api/admin/worklog/gcal/connect" className={ghostBtn('text-xs')}><Link2 className="w-3.5 h-3.5" /> إعادة الربط</a>
+        <button disabled={busy} onClick={disconnect} className={ghostBtn('text-xs text-rose-600')}><Unlink className="w-3.5 h-3.5" /> إيقاف</button>
+      </div>
+      <p className="text-[11px] text-gray-500 leading-relaxed">عدّل الحصص من الدفتر لا من التقويم: الحفظ التالي يكتب فوق أي تعديل في التقويم. الحصص القديمة (قبل اليوم) لا تُنسخ إلا بـ«نسخ كل الحصص الآن».</p>
     </div>
   )
 }

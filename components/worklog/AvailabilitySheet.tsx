@@ -197,7 +197,7 @@ export default function AvailabilitySheet({ open, onClose, onPick }: {
                   <div className="flex flex-wrap gap-1.5">
                     {d.windows.map((w, i) => (
                       <button key={i} onClick={() => { onPick({ clientId: clientId || undefined, date: d.date, start: w.earliest, durationMin: duration }); onClose() }}
-                        title="افتح حصة جديدة في هذا الوقت"
+                        title="افتح حصة جديدة في أول هذه الفترة"
                         className="rounded-xl bg-emerald-50 border border-emerald-100 px-3 py-1.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100">
                         {windowText(w)}
                       </button>
@@ -210,7 +210,7 @@ export default function AvailabilitySheet({ open, onClose, onPick }: {
         )}
 
         <p className="text-[11px] text-gray-400 leading-relaxed">
-          الأوقات هي أوقات <b>بدء</b> الحصة. بعد كل حصة وقبل التالية في منزل آخر يُترك {gapOf(av)} دقيقة على الأقل، أو أكثر إن كانت المسافة أبعد{client?.location ? '' : ' (لا موقع مسجّل لهذه العائلة، فالمسافة غير معروفة)'}. اضغط وقتاً لفتح حصة فيه.
+          كل فترة وقتٌ فارغ يتّسع لحصة مدتها {durationText(duration)}. قبل كل حصة مسجّلة في منزل آخر وبعدها يُترك {gapOf(av)} دقيقة على الأقل، أو أكثر إن كانت المسافة أبعد{client?.location ? '' : ' (لا موقع مسجّل لهذه العائلة، فالمسافة غير معروفة)'}. اضغط فترة لفتح حصة في أولها.
         </p>
 
         <div>

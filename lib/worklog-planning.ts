@@ -93,9 +93,15 @@ export function debtAge(days: number | null): 'fresh' | 'due' | 'late' {
 export const UNKNOWN_TRAVEL_MIN = 15
 
 export interface FreeWindow {
-  /** Earliest and latest time the lesson can START — the whole lesson fits between earliest and latest + duration. */
+  /** Earliest and latest time the lesson can START. */
   earliest: string
   latest: string
+  /**
+   * The end of the free span (latest start + the lesson's length). This is what
+   * is shown: «08:00 – 09:15» reads as free time; the start-time range
+   * «08:00 – 08:15» read as a quarter-hour gap that fits nothing.
+   */
+  until: string
 }
 export interface FreeDay {
   date: string
@@ -166,7 +172,7 @@ export function freeSlots(lessons: WorkLesson[], o: FreeSlotOptions): FreeDay[] 
     for (const [s, e] of gaps) {
       const earliest = up(Math.max(s, open))
       const latest = down(Math.min(e, close) - o.durationMin)
-      if (latest >= earliest) windows.push({ earliest: hhmm(earliest), latest: hhmm(latest) })
+      if (latest >= earliest) windows.push({ earliest: hhmm(earliest), latest: hhmm(latest), until: hhmm(latest + o.durationMin) })
     }
     if (windows.length || o.includeFull) {
       out.push({ date, windows, booked: busy.map(b => ({ start: b.start, end: hhmm(minutesOf(b.start) + b.durationMin) })) })
@@ -175,16 +181,17 @@ export function freeSlots(lessons: WorkLesson[], o: FreeSlotOptions): FreeDay[] 
   return out
 }
 
+/** «من 08:00 إلى 09:15» — the free span, which fits one lesson of the chosen length. */
 export function windowText(w: FreeWindow): string {
-  return w.earliest === w.latest ? `الساعة ${w.earliest}` : `بين ${w.earliest} و${w.latest}`
+  return `من ${w.earliest} إلى ${w.until}`
 }
 
-/** The reply to a family asking for a time. Start times, not ranges: «بين 16:00 و18:00» means the lesson may start then. */
+/** The reply to a family asking for a time: free spans, each long enough for one lesson. */
 export function availabilityText(
   days: FreeDay[], o: { client?: Pick<WorkClient, 'name'>; durationMin: number; formatDay: (d: string) => string; sender?: string },
 ): string {
   const lines = parentOpening(o.client ?? { name: '' })
-  lines.push(`يسعدنا تواصلكم. هذه الأوقات المتاحة لدينا لبدء الحصة (مدتها ${durationText(o.durationMin)}):`)
+  lines.push(`يسعدنا تواصلكم. هذه الفترات المتاحة لدينا، وتتّسع كل منها لحصة مدتها ${durationText(o.durationMin)}:`)
   lines.push('')
   if (!days.some(d => d.windows.length)) lines.push('لا أوقات متاحة في الأيام القادمة، وسنعلمكم فور توفّر موعد.')
   for (const d of days) if (d.windows.length) lines.push(`• ${o.formatDay(d.date)}: ${d.windows.map(windowText).join('، أو ')}`)

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_SETTINGS, sanitizeSettings, type GeoPoint, type WorkClient, type WorkLesson, type WorkPayment } from '@/lib/worklog'
+import { DEFAULT_SETTINGS, sanitizeSettings, seriesPlan, type GeoPoint, type WorkClient, type WorkLesson, type WorkPayment } from '@/lib/worklog'
 import {
   UNKNOWN_TRAVEL_MIN, availabilityText, daysText, debtAge, familiesText, freeSlots, receivables, weeklyDigest, weeklyDigestLines,
 } from '@/lib/worklog-planning'
@@ -205,4 +205,28 @@ describe('available times as a PDF', () => {
     const buf = await renderToBuffer(React.createElement(AvailabilityPdf, { m }) as never)
     expect(buf.subarray(0, 5).toString()).toBe('%PDF-')
   }, 30_000)
+})
+
+describe('weekly repeat over weeks the agenda already holds', () => {
+  const ls = (date: string, start = '15:30', status: WorkLesson['status'] = 'scheduled', clientId = 'hamad') =>
+    ({ id: `${clientId}-${date}-${start}`, clientId, date, start, durationMin: 60, price: 150, status, reminderMin: 60, createdAt: '', updatedAt: '' }) as WorkLesson
+
+  it('skips the weeks where the family already has that hour, and extends the series past them', () => {
+    const existing = [ls('2026-10-07'), ls('2026-10-14')]
+    const p = seriesPlan(existing, { clientId: 'hamad', date: '2026-10-14', start: '15:30', durationMin: 60 }, 3)
+    expect(p.skipped).toEqual(['2026-10-14'])
+    expect(p.dates).toEqual(['2026-10-21', '2026-10-28'])
+  })
+
+  it('a cancelled lesson, another family, or another hour does not hold the slot', () => {
+    const existing = [ls('2026-10-14', '15:30', 'cancelled'), ls('2026-10-21', '15:30', 'scheduled', 'saif'), ls('2026-10-28', '18:30')]
+    const p = seriesPlan(existing, { clientId: 'hamad', date: '2026-10-14', start: '15:30', durationMin: 60 }, 3)
+    expect(p.skipped).toEqual([])
+    expect(p.dates).toHaveLength(3)
+  })
+
+  it('an overlap of part of the hour is still the same lesson', () => {
+    const p = seriesPlan([ls('2026-10-14', '16:00')], { clientId: 'hamad', date: '2026-10-14', start: '15:30', durationMin: 60 }, 1)
+    expect(p.skipped).toEqual(['2026-10-14'])
+  })
 })

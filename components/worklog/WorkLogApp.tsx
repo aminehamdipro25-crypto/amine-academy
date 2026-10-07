@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { BarChart3, CalendarDays, Navigation, NotebookPen, Plus, Receipt, RefreshCw, Settings2, Users, Wallet } from 'lucide-react'
 import {
-  addDays, clientBalances, endOfMonth, hoursIn, monthForecast, startOfWeek, endTime, formatDuration, formatMoney, googleDirectionsUrl, lessonStartLocal,
+  addDays, clientBalances, lessonsCount, endOfMonth, hoursIn, monthForecast, startOfWeek, endTime, formatDuration, formatMoney, googleDirectionsUrl, lessonStartLocal,
   periodStats, sortLessons, startOfMonth, type WorkClient, type WorkExpense, type WorkLesson, type WorkPayment,
 } from '@/lib/worklog'
 import { readStorage, writeStorage } from '@/lib/safe-storage'
@@ -178,6 +178,8 @@ function Overview({ onAddClient, onAddLesson }: { onAddClient: () => void; onAdd
   )
   const week = hoursIn(lessons, startOfWeek(today), addDays(startOfWeek(today), 6))
   const month = useMemo(() => periodStats(lessons, payments, expenses, startOfMonth(today), endOfMonth(today)), [lessons, payments, expenses, today])
+  // Income from completed lessons only — what is still scheduled is not income yet.
+  const weekEarned = useMemo(() => periodStats(lessons, [], [], startOfWeek(today), addDays(startOfWeek(today), 6)), [lessons, today])
   const owed = useMemo(() => clientBalances(clients, lessons, payments, today).reduce((s, b) => s + Math.max(0, b.balance), 0), [clients, lessons, payments, today])
 
   if (!clients.length) {
@@ -231,6 +233,10 @@ function Overview({ onAddClient, onAddLesson }: { onAddClient: () => void; onAdd
         )}
       </div>
       <div className="lg:col-span-2 grid grid-cols-2 gap-3">
+        <MiniStat label="دخل الأسبوع (حصص منجزة)" value={formatMoney(weekEarned.earned, settings.currency)}
+          sub={`${lessonsCount(weekEarned.lessonsDone)} منجزة — المجدولة لا تُحتسب`} good />
+        <MiniStat label="دخل الشهر (حصص منجزة)" value={formatMoney(month.earned, settings.currency)}
+          sub={`${lessonsCount(month.lessonsDone)} منجزة — المجدولة لا تُحتسب`} good />
         <MiniStat label="ساعات الأسبوع (منجزة)" value={formatDuration(week.done)}
           sub={hoursSub(week.scheduled, week.cancelled)} />
         <MiniStat label="ساعات الشهر (منجزة)" value={formatDuration(month.minutesDone)}
@@ -252,10 +258,10 @@ function hoursSub(scheduled: number, cancelled: number): string {
   return parts.length ? parts.join(' · ') : 'لا مجدولة ولا ملغاة'
 }
 
-function MiniStat({ label, value, sub, warn }: { label: string; value: string; sub: string; warn?: boolean }) {
+function MiniStat({ label, value, sub, warn, good }: { label: string; value: string; sub: string; warn?: boolean; good?: boolean }) {
   return (
-    <div className={`rounded-2xl border p-3.5 shadow-sm ${warn ? 'bg-amber-50 border-amber-100' : 'bg-white border-gray-100'}`}>
-      <p className={`text-[10px] font-bold ${warn ? 'text-amber-700' : 'text-gray-400'}`}>{label}</p>
+    <div className={`rounded-2xl border p-3.5 shadow-sm ${warn ? 'bg-amber-50 border-amber-100' : good ? 'bg-emerald-50 border-emerald-100' : 'bg-white border-gray-100'}`}>
+      <p className={`text-[10px] font-bold ${warn ? 'text-amber-700' : good ? 'text-emerald-700' : 'text-gray-400'}`}>{label}</p>
       <p className="text-base sm:text-lg font-black text-gray-900 mt-0.5 leading-tight">{value}</p>
       <p className="text-[10px] text-gray-400 mt-0.5 truncate">{sub}</p>
     </div>

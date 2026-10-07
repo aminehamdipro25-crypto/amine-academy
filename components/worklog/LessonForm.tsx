@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AlertTriangle, Car, Copy, MapPin, Repeat, Trash2 } from 'lucide-react'
 import {
-  CURRENCY_LABEL, STATUS_META, addDays, durationText, familyChildren, lessonsCount, minutesOf, travelWarnings, endTime, findConflicts, formatMoney, priceFor,
+  CURRENCY_LABEL, STATUS_META, addDays, seriesPlan, durationText, familyChildren, lessonsCount, minutesOf, travelWarnings, endTime, findConflicts, formatMoney, priceFor,
   type LessonStatus, type WorkLesson,
 } from '@/lib/worklog'
 import { useToast } from '@/components/ui/Toast'
@@ -136,6 +136,12 @@ export default function LessonForm({ open, onClose, lesson, draft, onNewClient, 
   const scheduleChanged = !!lesson && (date !== lesson.date || start !== lesson.start || duration !== lesson.durationMin
     || Number(price || 0) !== lesson.price || (reminder === 'none' ? null : Number(reminder)) !== lesson.reminderMin)
 
+  // Weeks of a repeat that this family already has at that hour: skipped, not doubled.
+  const repeatSkips = useMemo(
+    () => (!lesson && repeat > 1 && clientId ? seriesPlan(lessons, { clientId, date, start, durationMin: duration }, repeat).skipped : []),
+    [lesson, repeat, clientId, lessons, date, start, duration],
+  )
+
   async function save() {
     setError('')
     if (!clientId) { setError('اختر العائلة أولاً'); return }
@@ -163,7 +169,11 @@ export default function LessonForm({ open, onClose, lesson, draft, onNewClient, 
       } else {
         const rows = await create<WorkLesson[]>('lessons', { ...body, repeatWeeks: repeat })
         saved = rows[0] // the series starts with the lesson as entered; later repeats are scheduled
-        toast(rows.length > 1 ? `أُضيفت ${rows.length} حصة أسبوعية` : 'أُضيفت الحصة')
+        const added = new Set(rows.map(r => r.date))
+        const skipped = repeat > 1 ? Array.from({ length: repeat }, (_, i) => addDays(date, i * 7)).filter(d => !added.has(d)) : []
+        toast(skipped.length
+          ? `أُضيفت ${lessonsCount(rows.length)} — وتُرك ${skipped.map(shortDate).join('، ')} لأن فيه حصة لهذه العائلة أصلاً`
+          : rows.length > 1 ? `أُضيفت ${lessonsCount(rows.length)} أسبوعياً` : 'أُضيفت الحصة')
       }
       if (status === 'done' && paidNow && !alreadyPaid) {
         const amount = Number(paidAmount || price || 0)
@@ -208,7 +218,7 @@ export default function LessonForm({ open, onClose, lesson, draft, onNewClient, 
       footer={
         <div className="flex items-center gap-2">
           <button onClick={save} disabled={saving} className={primaryBtn('flex-1')}>
-            {saving ? 'جارٍ الحفظ…' : lesson ? (scope === 'future' && seriesAfter > 0 && scheduleChanged ? `حفظ لـ${lessonsCount(seriesAfter + 1)}` : 'حفظ التعديلات') : repeat > 1 ? `إضافة ${repeat} حصص` : 'إضافة الحصة'}
+            {saving ? 'جارٍ الحفظ…' : lesson ? (scope === 'future' && seriesAfter > 0 && scheduleChanged ? `حفظ لـ${lessonsCount(seriesAfter + 1)}` : 'حفظ التعديلات') : repeat > 1 ? `إضافة ${lessonsCount(repeat - repeatSkips.length)}` : 'إضافة الحصة'}
           </button>
           {lesson && !confirmDelete && (
             <button onClick={() => onCopy(lesson)} className={ghostBtn()} title="نسخ إلى تاريخ آخر">
@@ -467,6 +477,13 @@ export default function LessonForm({ open, onClose, lesson, draft, onNewClient, 
               </div>
             )}
           </Field>
+        )}
+        {!lesson && repeatSkips.length > 0 && (
+          <p className="rounded-xl bg-amber-50 border border-amber-100 px-3 py-2 text-xs font-bold text-amber-800" role="status">
+            {repeatSkips.length === repeat
+              ? `كل هذه الأسابيع فيها حصة لهذه العائلة في الوقت نفسه أصلاً — اختر تاريخاً بعد آخر حصة.`
+              : `${repeatSkips.map(shortDate).join('، ')} فيه حصة لهذه العائلة أصلاً — سيُتخطّى ولن تتكرّر الحصة. تُضاف ${lessonsCount(repeat - repeatSkips.length)} فقط.`}
+          </p>
         )}
 
         {status === 'done' && (

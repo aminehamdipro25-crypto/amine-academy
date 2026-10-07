@@ -528,6 +528,27 @@ export function weeklySeries(firstDate: string, count: number): string[] {
   return Array.from({ length: n }, (_, i) => addDays(firstDate, i * 7))
 }
 
+/**
+ * The dates a weekly repeat should create. A week where this family already
+ * has a lesson overlapping that time is skipped, not doubled: repeating
+ * «Hamad, Wednesday 15:30» over weeks the agenda already holds must extend the
+ * series, not book the same hour twice. Cancelled lessons don't hold the slot.
+ */
+export function seriesPlan(
+  existing: WorkLesson[],
+  candidate: Pick<WorkLesson, 'clientId' | 'date' | 'start' | 'durationMin'>,
+  count: number,
+): { dates: string[]; skipped: string[] } {
+  const dates: string[] = [], skipped: string[] = []
+  const s = minutesOf(candidate.start), e = s + candidate.durationMin
+  for (const date of weeklySeries(candidate.date, count)) {
+    const taken = existing.some(l => l.clientId === candidate.clientId && l.date === date && l.status !== 'cancelled'
+      && minutesOf(l.start) < e && s < minutesOf(l.start) + l.durationMin)
+    ;(taken ? skipped : dates).push(date)
+  }
+  return { dates, skipped }
+}
+
 /** Lessons that overlap `candidate` on the same day (cancelled ones free the slot). */
 export function findConflicts(
   candidate: Pick<WorkLesson, 'date' | 'start' | 'durationMin'> & { id?: string },

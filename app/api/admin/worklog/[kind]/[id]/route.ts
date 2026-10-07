@@ -30,10 +30,10 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
       if (!c.ok) return bad(c.error)
       const row = { ...(current as object), ...c.value, id }
       await putWork('clients', row as never)
-      // Notion rows carry the names; calendar events also the address, phone and route.
+      // Notion rows carry the names; calendar events also the address, phone, route and colour.
       const was = current as unknown as Record<string, unknown>
       const next = c.value as unknown as Record<string, unknown>
-      if (['name', 'childName', 'address', 'phone', 'location'].some(k => k in next && JSON.stringify(next[k]) !== JSON.stringify(was[k]))) {
+      if (['name', 'childName', 'address', 'phone', 'location', 'color'].some(k => k in next && JSON.stringify(next[k]) !== JSON.stringify(was[k]))) {
         after(() => remirrorFamily(id))
       }
       return NextResponse.json(row)

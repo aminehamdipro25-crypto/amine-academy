@@ -249,7 +249,7 @@ export function GoogleCalendarSection({ status, reload }: { status: Status | nul
   if (!g.connected) {
     return (
       <div className="space-y-3">
-        <p className="text-xs text-gray-600 leading-relaxed">كل حصة تُضاف أو تُعدَّل أو تُحذف تُكتب فوراً في تقويمك الأساسي في Google — فتظهر في Google Calendar وفي <b>Notion Calendar</b> المربوط به، مع تذكير يرنّ في وقته. الإذن للأحداث فقط، لا البريد ولا الملفات.</p>
+        <p className="text-xs text-gray-600 leading-relaxed">كل حصة تُضاف أو تُعدَّل أو تُحذف تُكتب فوراً في تقويمك الأساسي في Google — فتظهر في Google Calendar وفي <b>Notion Calendar</b> المربوط به، بلون كل عائلة كما اخترته هنا، مع تذكير يرنّ في وقته. الإذن للأحداث فقط، لا البريد ولا الملفات.</p>
         <a href="/api/admin/worklog/gcal/connect" className={primaryBtn('text-xs')}><Link2 className="w-4 h-4" /> ربط تقويم Google</a>
         <p className="text-[11px] text-gray-500">اختر في Google الحساب المربوط بـNotion Calendar.</p>
         {setup}

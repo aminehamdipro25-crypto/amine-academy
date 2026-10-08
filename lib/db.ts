@@ -38,7 +38,7 @@ import crypto from 'crypto'
 import { redis } from './redis'
 import { generateId } from './auth'
 import { weekKeyOf } from './week'
-import type { Parent, Student, Exercise, Program, Appointment, ProgressReport, PendingPayment, Message, Achievement, StudentAssessmentProfile, GameResult, WeeklyProgress, Staff, Story, AssessmentResult, ApaSessionRecord } from './types'
+import type { Parent, Student, Exercise, Program, Appointment, ProgressReport, PendingPayment, Message, Achievement, StudentAssessmentProfile, GameResult, WeeklyProgress, Staff, Story, AssessmentResult, ApaSessionRecord, SessionSummary } from './types'
 
 // ── Staff (multi-therapist accounts) ────────────────────────────
 
@@ -357,6 +357,26 @@ export async function getStudentReports(studentId: string): Promise<ProgressRepo
   const ids = await redis.lrange(`reports:student:${studentId}`, 0, -1)
   const reports = await Promise.all(ids.map(id => redis.get<ProgressReport>(`report:${id}`)))
   return reports.filter(Boolean) as ProgressReport[]
+}
+
+// ── In-person session summaries (one-tap, parent-facing) ──────
+export async function createSessionSummary(data: Omit<SessionSummary, 'id' | 'createdAt'>): Promise<SessionSummary> {
+  const summary: SessionSummary = {
+    ...data,
+    id: `SS-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
+    createdAt: new Date().toISOString(),
+  }
+  await redis.pipeline([
+    ['SET', `session-summary:${summary.id}`, JSON.stringify(summary)],
+    ['LPUSH', `session-summaries:student:${data.studentId}`, summary.id],
+  ])
+  return summary
+}
+
+export async function getSessionSummaries(studentId: string): Promise<SessionSummary[]> {
+  const ids = await redis.lrange(`session-summaries:student:${studentId}`, 0, 200)
+  const rows = await Promise.all(ids.map(id => redis.get<SessionSummary>(`session-summary:${id}`)))
+  return (rows.filter(Boolean) as SessionSummary[]).sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
 }
 
 // ── APA session records ───────────────────────────────────────

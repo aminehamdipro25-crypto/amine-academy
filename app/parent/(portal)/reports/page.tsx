@@ -22,6 +22,69 @@ interface ParentSessionSummary {
 }
 interface ChildSessions { child: Student; sessions: ParentSessionSummary[] }
 
+interface InPersonSummary {
+  id: string; studentId: string; date: string; durationMin: number
+  engagement: 'high' | 'medium' | 'low'; activities: string[]
+  note: string; nextFocus?: string; createdAt: string; childName?: string
+}
+
+// One-tap session summaries the specialist files after a face-to-face session.
+function InPersonSummaries({ summaries }: { summaries: InPersonSummary[] }) {
+  const { lang } = useLang()
+  const locale = localeFor(lang)
+  if (summaries.length === 0) return null
+
+  const L = ({
+    ar: { title: 'ملخّصات الحصص الحضورية', sub: 'ملاحظات المختص بعد كل حصة حضورية', min: 'دقيقة', did: 'ما عملنا عليه', next: 'التركيز القادم',
+      eng: { high: '🌟 تفاعل مرتفع', medium: '🙂 تفاعل متوسط', low: '😕 تفاعل منخفض' } },
+    en: { title: 'In-person session notes', sub: 'The specialist’s notes after each face-to-face session', min: 'min', did: 'Worked on', next: 'Next focus',
+      eng: { high: '🌟 High engagement', medium: '🙂 Moderate', low: '😕 Low engagement' } },
+    fr: { title: 'Résumés des séances', sub: 'Les notes du spécialiste après chaque séance', min: 'min', did: 'Travaillé', next: 'Prochain objectif',
+      eng: { high: '🌟 Forte implication', medium: '🙂 Modérée', low: '😕 Faible implication' } },
+  } as const)[lang] ?? ({ title: 'ملخّصات الحصص الحضورية', sub: '', min: 'دقيقة', did: 'ما عملنا عليه', next: 'التركيز القادم', eng: { high: '🌟', medium: '🙂', low: '😕' } } as const)
+
+  const engBg = { high: '#ECFDF5', medium: '#FFFBEB', low: '#FEF2F2' }
+  const engFg = { high: '#047857', medium: '#B45309', low: '#B91C1C' }
+
+  return (
+    <div className="space-y-3">
+      <div>
+        <h2 className="font-black text-gray-900 text-sm">{L.title}</h2>
+        <p className="text-gray-400 text-xs mt-0.5">{L.sub}</p>
+      </div>
+      <div className="space-y-3">
+        {summaries.map(s => (
+          <div key={s.id} className="bg-white rounded-2xl p-4" style={{ border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+            <div className="flex items-center justify-between gap-2 flex-wrap mb-2">
+              <span className="text-sm font-bold text-gray-800 ltr-num">
+                {formatDateOnly(s.date, locale, { year: 'numeric', month: 'long', day: 'numeric' })}
+                {s.durationMin > 0 ? ` · ${s.durationMin} ${L.min}` : ''}
+              </span>
+              <span className="text-xs font-bold rounded-full px-2.5 py-1" style={{ background: engBg[s.engagement], color: engFg[s.engagement] }}>
+                {L.eng[s.engagement]}
+              </span>
+            </div>
+            <p className="text-sm text-gray-700 leading-relaxed">{s.note}</p>
+            {s.activities.length > 0 && (
+              <div className="mt-2.5">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-1.5">{L.did}</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {s.activities.map((a, i) => (
+                    <span key={i} className="text-xs rounded-full px-2.5 py-1 font-medium" style={{ background: '#F3EEFF', color: '#6B46F0' }}>{a}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {s.nextFocus && (
+              <p className="text-xs text-gray-500 mt-2.5"><span className="font-bold">{L.next}:</span> {s.nextFocus}</p>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function RecentSessions({ sessions }: { sessions: ParentSessionSummary[] }) {
   const { lang } = useLang()
   const t = tr[lang].parentReports
@@ -579,6 +642,7 @@ export default function ReportsPage() {
   const coachName = tr[lang].portal.common.coachName
   const [data, setData] = useState<ChildReports[]>([])
   const [sessionData, setSessionData] = useState<ChildSessions[]>([])
+  const [summaries, setSummaries] = useState<InPersonSummary[]>([])
   const [assessments, setAssessments] = useState<ParentAssessmentView[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedChild, setSelectedChild] = useState('')
@@ -594,6 +658,10 @@ export default function ReportsPage() {
     fetch('/api/parent/sessions')
       .then(r => r.json())
       .then(d => setSessionData(d.sessionsPerChild || []))
+      .catch(() => {})
+    fetch('/api/parent/session-summaries')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => setSummaries(d?.summaries ?? []))
       .catch(() => {})
     // The specialist's toolkit assessments live here too. A failure must leave
     // the rest of the page intact rather than blanking the reports.
@@ -615,6 +683,7 @@ export default function ReportsPage() {
   const current = data.find(d => d.child.id === selectedChild)
   const reports  = current?.reports ?? []
   const currentSessions = sessionData.find(d => d.child.id === selectedChild)?.sessions ?? []
+  const currentSummaries = summaries.filter(s => s.studentId === selectedChild)
   const currentAssessments = assessments.filter(a => a.studentId === selectedChild)
 
   return (
@@ -655,6 +724,9 @@ export default function ReportsPage() {
 
       {/* ── Recent session summaries ── */}
       <RecentSessions sessions={currentSessions} />
+
+      {/* ── In-person session summaries (one-tap notes from the specialist) ── */}
+      <InPersonSummaries summaries={currentSummaries} />
 
       {/* ── Report count strip ── */}
       {reports.length > 0 && (

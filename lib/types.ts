@@ -346,6 +346,25 @@ export interface SessionLog {
   createdAt:       string
 }
 
+// ── In-person session summary (one-tap) ──────────────────────
+// A lightweight, parent-facing note the specialist files right after a
+// face-to-face session — distinct from the full live-session SessionLog (which
+// is tied to an appointment and the synced session UI). Keeps the "attendance +
+// what we did + a short note" that bridges the in-person work to the parent.
+export interface SessionSummary {
+  id:          string
+  studentId:   string
+  parentId:    string
+  date:        string          // YYYY-MM-DD (session date)
+  durationMin: number
+  engagement:  'high' | 'medium' | 'low'
+  activities:  string[]        // what we worked on
+  note:        string          // short message to the parent
+  nextFocus?:  string          // optional focus for next time / home
+  specialist?: string
+  createdAt:   string
+}
+
 export type AssessmentType = 'adhd' | 'autism' | 'learning-difficulties' | 'motor' | 'cognitive' | 'attention-domains' | 'vanderbilt-adhd' | 'psc17'
 
 export interface AssessmentAnswer {

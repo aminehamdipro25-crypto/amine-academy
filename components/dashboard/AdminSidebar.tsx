@@ -43,6 +43,7 @@ export default function AdminSidebar({ onClose, unreadMessages = 0 }: { onClose?
     { href: '/dashboard/treatment-plan',          label: navT.treatmentPlan, icon: Target, ownerOnly: false },
     { href: '/dashboard/specialist-toolkit',     label: navT.specialistToolkit, icon: PersonStanding, ownerOnly: false },
     { href: '/dashboard/behavioral-compass',     label: lang === 'ar' ? 'البوصلة السلوكية' : lang === 'fr' ? 'Boussole comport.' : 'Behavioral compass', icon: Compass, ownerOnly: false },
+    { href: '/dashboard/session-summary',        label: lang === 'ar' ? 'ملخّص الحصة' : lang === 'fr' ? 'Résumé de séance' : 'Session summary', icon: NotebookPen, ownerOnly: false, lang: true },
     { href: '/dashboard/apa-planner',            label: navT.apaPlanner, icon: Zap, ownerOnly: false },
     { href: '/dashboard/curriculum',             label: lang === 'ar' ? 'المنهج الفرنسي' : lang === 'fr' ? 'Programme FR' : 'Curriculum', icon: BookOpen, ownerOnly: false, lang: true },
     { href: '/dashboard/my-lessons',             label: lang === 'ar' ? 'دروسي الخاصّة' : lang === 'fr' ? 'Mes leçons' : 'My lessons', icon: BookMarked, ownerOnly: false, lang: true, staffOnly: true },

@@ -2,6 +2,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
 import type { ExerciseResult, ExerciseProgressUpdate } from '@/lib/types'
 import { createRng, shuffleWithRng } from '@/lib/seeded-random'
+import { QuizProgress, PromptCard, choiceStyle, CHOICE_CLASS, staggerDelay, type ChoiceState } from './quiz-ui'
 
 interface Props {
   onComplete: (r: ExerciseResult) => void
@@ -105,27 +106,26 @@ export default function IfThen({ onComplete, onCancel, difficulty = 1, seed, onP
         </div>
       </div>
 
+      <QuizProgress value={(idx / count) * 100} />
+
       {/* Cause */}
-      <div className="w-full max-w-sm rounded-2xl p-5 text-center"
-        style={{ background: 'rgba(124,92,252,0.1)', border: '1px solid rgba(124,92,252,0.25)' }}>
-        <div className="text-5xl mb-3">{q.emoji}</div>
+      <PromptCard emoji={q.emoji}>
         <div className="text-white font-black text-lg">{q.cause}</div>
         <div className="text-white/50 text-sm mt-1">ماذا سيحدث؟</div>
-      </div>
+      </PromptCard>
 
       {/* Choices */}
       <div className="flex flex-col gap-3 w-full max-w-sm">
-        {choices.map(c => {
+        {choices.map((c, i) => {
           const isChosen  = c === chosen
           const isCorrect = c === q.correct
-          let cls = 'bg-white/5 border-white/15 hover:bg-white/15'
-          if (isChosen && isCorrect)  cls = 'bg-green-500/25 border-green-400'
-          if (isChosen && !isCorrect) cls = 'bg-red-500/25 border-red-400'
-          if (chosen && !isChosen && isCorrect) cls = 'bg-green-500/10 border-green-400/40'
+          let state: ChoiceState = 'idle'
+          if (isChosen && isCorrect)  state = 'correct'
+          else if (isChosen)          state = 'wrong'
+          else if (chosen && isCorrect) state = 'reveal'
           return (
-            <button key={c} onClick={() => handleChoice(c)} disabled={!!chosen}
-              className={`w-full py-3 px-4 rounded-2xl text-right text-sm font-bold text-white border-2
-                transition-all disabled:cursor-not-allowed ${cls}`}>
+            <button key={`${idx}-${c}`} onClick={() => handleChoice(c)} disabled={!!chosen}
+              className={CHOICE_CLASS} style={{ ...choiceStyle(state), ...staggerDelay(i) }}>
               {c}
             </button>
           )

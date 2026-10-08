@@ -2,6 +2,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
 import type { ExerciseResult, ExerciseProgressUpdate } from '@/lib/types'
 import { createRng, shuffleWithRng } from '@/lib/seeded-random'
+import { QuizProgress, PromptCard, choiceStyle, CHOICE_CLASS, staggerDelay, type ChoiceState } from './quiz-ui'
 
 interface Props {
   onComplete: (r: ExerciseResult) => void
@@ -104,27 +105,26 @@ export default function ConversationStarter({ onComplete, onCancel, difficulty =
         </div>
       </div>
 
+      <QuizProgress value={(idx / count) * 100} />
+
       {/* Situation */}
-      <div className="w-full max-w-md rounded-2xl p-5 text-center"
-        style={{ background: 'rgba(124,92,252,0.12)', border: '1px solid rgba(124,92,252,0.3)' }}>
-        <div className="text-5xl mb-3">{q.emoji}</div>
+      <PromptCard emoji={q.emoji}>
         <div className="text-white font-bold text-lg">{q.situation}</div>
         <div className="text-white/50 text-sm mt-1">ماذا تقول؟</div>
-      </div>
+      </PromptCard>
 
       {/* Choices */}
       <div className="flex flex-col gap-3 w-full max-w-md">
         {choices.map((c, i) => {
           const isCorrectChoice = c === q.correct
           const isChosen        = c === chosen
-          let cls = 'bg-white/10 hover:bg-white/20 border-transparent'
-          if (isChosen && isCorrectChoice)  cls = 'bg-green-500/30 border-green-400'
-          if (isChosen && !isCorrectChoice) cls = 'bg-red-500/30 border-red-400'
-          if (chosen && !isChosen && isCorrectChoice) cls = 'bg-green-500/15 border-green-400/40'
+          let state: ChoiceState = 'idle'
+          if (isChosen && isCorrectChoice)  state = 'correct'
+          else if (isChosen)                state = 'wrong'
+          else if (chosen && isCorrectChoice) state = 'reveal'
           return (
-            <button key={i} onClick={() => handleChoice(c)} disabled={!!chosen}
-              className={`w-full py-3 px-4 rounded-2xl text-sm font-bold text-right text-white border-2 transition-all
-                disabled:cursor-not-allowed ${cls}`}>
+            <button key={`${idx}-${i}`} onClick={() => handleChoice(c)} disabled={!!chosen}
+              className={CHOICE_CLASS} style={{ ...choiceStyle(state), ...staggerDelay(i) }}>
               {c}
             </button>
           )

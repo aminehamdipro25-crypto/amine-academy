@@ -2,6 +2,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
 import type { ExerciseResult, ExerciseProgressUpdate } from '@/lib/types'
 import { createRng, shuffleWithRng } from '@/lib/seeded-random'
+import { QuizProgress, choiceStyle, staggerDelay, type ChoiceState } from './quiz-ui'
 
 interface Props {
   onComplete: (r: ExerciseResult) => void
@@ -94,13 +95,17 @@ export default function EmotionMirror({ onComplete, onCancel, difficulty = 1, se
         </div>
       </div>
 
+      <QuizProgress value={(idx / count) * 100} />
+
       <div className="text-sm text-white/50">ما هذا الشعور؟</div>
 
-      {/* Big emoji */}
-      <div className="flex items-center justify-center rounded-3xl"
+      {/* Big emoji — spotlight tile that re-animates on each new face */}
+      <div key={idx} className="flex items-center justify-center rounded-[2rem] quiz-choice-in"
         style={{ fontSize: 120, width: 180, height: 180,
-          background: 'rgba(255,255,255,0.05)', border: '2px solid rgba(255,255,255,0.1)' }}>
-        {q.emoji}
+          background: 'radial-gradient(circle at 42% 35%, rgba(139,92,246,0.38), rgba(139,92,246,0.06) 72%)',
+          border: '1px solid rgba(255,255,255,0.14)',
+          boxShadow: '0 0 42px rgba(139,92,246,0.35), inset 0 2px 12px rgba(255,255,255,0.10)' }}>
+        <span style={{ filter: 'drop-shadow(0 6px 14px rgba(0,0,0,0.30))' }}>{q.emoji}</span>
       </div>
 
       {/* After answer: show label */}
@@ -112,18 +117,18 @@ export default function EmotionMirror({ onComplete, onCancel, difficulty = 1, se
 
       {/* Choices */}
       <div className="flex flex-col gap-3 w-full max-w-xs">
-        {choices.map(c => {
+        {choices.map((c, i) => {
           const isCorrectChoice = c === q.label
           const isChosen        = c === chosen
-          let bg = 'bg-white/10 hover:bg-white/20'
-          if (isChosen && isCorrectChoice) bg = 'bg-green-500/30 border-green-400'
-          if (isChosen && !isCorrectChoice) bg = 'bg-red-500/30 border-red-400'
-          if (chosen && !isChosen && isCorrectChoice) bg = 'bg-green-500/20 border-green-400/50'
+          let state: ChoiceState = 'idle'
+          if (isChosen && isCorrectChoice) state = 'correct'
+          else if (isChosen)               state = 'wrong'
+          else if (chosen && isCorrectChoice) state = 'reveal'
           return (
-            <button key={c} onClick={() => handleChoice(c)}
+            <button key={`${idx}-${c}`} onClick={() => handleChoice(c)}
               disabled={!!chosen}
-              className={`w-full py-4 rounded-2xl text-xl font-black text-white border-2 transition-all
-                disabled:cursor-not-allowed border-transparent ${bg}`}>
+              className="w-full py-4 rounded-2xl text-xl font-black text-white border-2 transition-all duration-200 enabled:hover:brightness-110 enabled:active:scale-[.97] disabled:cursor-not-allowed quiz-choice-in"
+              style={{ ...choiceStyle(state), ...staggerDelay(i) }}>
               {c}
             </button>
           )

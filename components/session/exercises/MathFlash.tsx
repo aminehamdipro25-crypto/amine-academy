@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import type { ExerciseResult, ExerciseProgressUpdate } from '@/lib/types'
 import { createRng, shuffleWithRng, pickWithRng, randIntWithRng, randBoolWithRng, type Rng } from '@/lib/seeded-random'
+import { QuizProgress, choiceStyle, staggerDelay, type ChoiceState } from './quiz-ui'
 
 interface Props {
   onComplete: (r: ExerciseResult) => void
@@ -116,30 +117,35 @@ export default function MathFlash({ onComplete, onCancel, difficulty = 1, seed, 
         </div>
       </div>
 
-      {/* Equation */}
-      <div className="w-full max-w-xs rounded-3xl flex items-center justify-center"
-        style={{ height: 160, background: 'rgba(124,92,252,0.12)', border: '2px solid rgba(124,92,252,0.3)' }}>
+      <QuizProgress value={(idx / TOTAL) * 100} />
+
+      {/* Equation — a glowing flashcard */}
+      <div className="w-full max-w-xs rounded-3xl flex items-center justify-center relative overflow-hidden"
+        style={{ height: 160,
+          background: 'linear-gradient(145deg, rgba(124,92,252,0.30), rgba(124,92,252,0.10))',
+          border: '1px solid rgba(124,92,252,0.5)',
+          boxShadow: '0 12px 36px rgba(124,92,252,0.28), inset 0 1px 0 rgba(255,255,255,0.12)' }}>
         {phase !== 'answer' || chosen !== null ? (
-          <div className="text-4xl font-black text-white">{q.text}</div>
+          <div className="text-5xl font-black text-white" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.3)' }}>{q.text}</div>
         ) : (
-          <div className="text-white/30 text-lg font-bold">؟</div>
+          <div className="text-white/35 text-2xl font-black">؟</div>
         )}
       </div>
 
       {/* Choices */}
       <div className="grid grid-cols-3 gap-3 w-full max-w-xs">
-        {q.choices.map(c => {
+        {q.choices.map((c, i) => {
           const isChosen  = c === chosen
           const isCorrect = c === q.answer
-          let cls = 'bg-white/10 hover:bg-white/20 border-transparent'
-          if (isChosen && isCorrect)  cls = 'bg-green-500/30 border-green-400'
-          if (isChosen && !isCorrect) cls = 'bg-red-500/30 border-red-400'
-          if (chosen && !isChosen && isCorrect) cls = 'bg-green-500/15 border-green-400/40'
+          let state: ChoiceState = 'idle'
+          if (isChosen && isCorrect)  state = 'correct'
+          else if (isChosen)          state = 'wrong'
+          else if (chosen !== null && isCorrect) state = 'reveal'
           return (
-            <button key={c} onClick={() => handleChoice(c)}
+            <button key={`${idx}-${c}`} onClick={() => handleChoice(c)}
               disabled={phase === 'feedback' || chosen !== null}
-              className={`py-4 rounded-2xl text-2xl font-black text-white border-2 transition-all
-                disabled:cursor-not-allowed ${cls}`}>
+              className="py-4 rounded-2xl text-2xl font-black text-white border-2 transition-all duration-200 enabled:hover:brightness-110 enabled:active:scale-[.97] disabled:cursor-not-allowed quiz-choice-in"
+              style={{ ...choiceStyle(state), ...staggerDelay(i) }}>
               {c}
             </button>
           )

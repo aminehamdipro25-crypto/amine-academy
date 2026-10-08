@@ -227,6 +227,21 @@ html.a11y-contrast-high button, html.a11y-contrast-high .card-lift, html.a11y-co
 }
 .palette-enter { animation: palette-in 0.2s ease forwards; }
 
+/* ── Exercise quiz-choice entrance (shared by the choice-style games) ── */
+@keyframes quiz-choice-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);    }
+}
+.quiz-choice-in { animation: quiz-choice-in 0.35s cubic-bezier(0.16,1,0.3,1) both; }
+
+/* ── Tap-target spawn pop (no fill-mode so active:scale press still works) ── */
+@keyframes tap-pop {
+  from { transform: scale(0);    opacity: 0; }
+  60%  { transform: scale(1.12);             }
+  to   { transform: scale(1);    opacity: 1; }
+}
+.tap-orb { animation: tap-pop 0.25s cubic-bezier(0.34,1.56,0.64,1); }
+
 /* ── Tablet / touch optimisation ─────────────────────────────── */
 /* All interactive elements must meet WCAG 2.5.8 minimum 24×24px target */
 @media (pointer: coarse) {

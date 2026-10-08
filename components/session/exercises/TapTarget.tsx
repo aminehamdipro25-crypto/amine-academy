@@ -139,8 +139,12 @@ export default function TapTarget({ onComplete, onCancel, studentAge, difficulty
         </div>
       </div>
 
-      <div ref={areaRef} className="relative flex-1 bg-gray-900/50 rounded-2xl mx-4 mb-4 overflow-hidden"
-        style={{ minHeight: 400 }}>
+      <div ref={areaRef} className="relative flex-1 rounded-3xl mx-4 mb-4 overflow-hidden"
+        style={{
+          minHeight: 400,
+          background: 'radial-gradient(circle at 50% 38%, rgba(124,92,252,0.10), rgba(17,24,39,0.65) 70%)',
+          boxShadow: 'inset 0 0 70px rgba(0,0,0,0.45), inset 0 0 0 1px rgba(255,255,255,0.05)',
+        }}>
         <p className="absolute inset-x-0 top-1/2 -translate-y-1/2 text-center text-white/20 font-bold select-none pointer-events-none">
           اضغط الأهداف!
         </p>
@@ -148,16 +152,19 @@ export default function TapTarget({ onComplete, onCancel, studentAge, difficulty
           <button
             key={t.id}
             onClick={() => hit(t.id)}
-            className="absolute flex items-center justify-center rounded-full bg-brand-500 hover:bg-brand-400 active:scale-90 transition-all animate-pulse"
+            className="absolute flex items-center justify-center rounded-full active:scale-90 transition-transform tap-orb"
             style={{
               left: t.x - t.size / 2,
               top: t.y - t.size / 2,
               width: t.size,
               height: t.size,
-              fontSize: t.size * 0.5,
+              fontSize: t.size * 0.46,
+              background: 'radial-gradient(circle at 38% 30%, #A78BFA, #7C3AED 72%)',
+              border: '1px solid rgba(255,255,255,0.35)',
+              boxShadow: '0 0 22px rgba(139,92,246,0.60), inset 0 2px 8px rgba(255,255,255,0.45), 0 6px 16px rgba(0,0,0,0.35)',
             }}
           >
-            {t.emoji}
+            <span style={{ filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.3))' }}>{t.emoji}</span>
           </button>
         ))}
       </div>

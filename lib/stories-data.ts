@@ -370,9 +370,18 @@ const RAW_STORIES: Omit<Story, 'order' | 'createdAt'>[] = [
   },
 ]
 
-// One-time seed content — order matches the array position; createdAt is a
-// fixed placeholder (real edits get a real timestamp via updateStory).
-export const DEFAULT_STORIES: Story[] = RAW_STORIES.map((s, i) => ({
+// The newer, behaviourally-focused stories (anger regulation, empathy,
+// perseverance) are featured FIRST so children — and the specialist previewing
+// — meet them early, inside the free zone, instead of behind star gates.
+export const FEATURED_STORY_IDS = ['calm-karim', 'friend-ahmad', 'patient-butterfly']
+const ORDERED_RAW = [
+  ...FEATURED_STORY_IDS.map(id => RAW_STORIES.find(st => st.id === id)).filter(Boolean) as typeof RAW_STORIES,
+  ...RAW_STORIES.filter(st => !FEATURED_STORY_IDS.includes(st.id)),
+]
+
+// One-time seed content — order matches the (featured-first) array position;
+// createdAt is a fixed placeholder (real edits get a real timestamp via updateStory).
+export const DEFAULT_STORIES: Story[] = ORDERED_RAW.map((s, i) => ({
   ...s,
   order: i,
   createdAt: '2025-01-01T00:00:00.000Z',

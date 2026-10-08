@@ -17,8 +17,10 @@ function plainPageText(page: string): string {
 
 // Unlock rules — stories open as the child earns stars in their sessions.
 // The first FREE_STORIES are always open so there's content from day one;
-// after that each story costs STARS_PER_STEP more.
-const FREE_STORIES = 3
+// after that each story costs STARS_PER_STEP more. Six are free so the three
+// featured behavioural stories AND the three original easy ones all open from
+// day one (see FEATURED_STORY_IDS in lib/stories-data).
+const FREE_STORIES = 6
 const STARS_PER_STEP = 3
 function unlockAt(index: number): number {
   return Math.max(0, index - (FREE_STORIES - 1)) * STARS_PER_STEP

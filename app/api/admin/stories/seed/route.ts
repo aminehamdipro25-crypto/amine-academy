@@ -32,8 +32,10 @@ export async function POST(req: NextRequest) {
           count: existing.length,
         })
       }
-      // Append after the current maximum order so the new stories land last.
-      let order = existing.reduce((mx, s) => Math.max(mx, s.order ?? 0), -1) + 1
+      // Place the new stories BEFORE the current minimum order so they appear
+      // early (inside the free zone), not gated behind stars at the end.
+      const minOrder = existing.reduce((mn, s) => Math.min(mn, s.order ?? 0), 0)
+      let order = minOrder - missing.length
       const added: string[] = []
       for (const s of missing) {
         await createStoryWithId({ ...s, order: order++, createdAt: new Date().toISOString() })

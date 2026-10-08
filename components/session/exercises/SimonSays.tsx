@@ -4,10 +4,10 @@ import type { ExerciseResult, ExerciseProgressUpdate } from '@/lib/types'
 import { createRng, randIntWithRng } from '@/lib/seeded-random'
 
 const COLORS = [
-  { id: 0, bg: 'bg-red-500',    active: 'bg-red-300',    label: 'أحمر',   emoji: '🔴' },
-  { id: 1, bg: 'bg-blue-500',   active: 'bg-blue-300',   label: 'أزرق',   emoji: '🔵' },
-  { id: 2, bg: 'bg-green-500',  active: 'bg-green-300',  label: 'أخضر',   emoji: '🟢' },
-  { id: 3, bg: 'bg-yellow-400', active: 'bg-yellow-200', label: 'أصفر',   emoji: '🟡' },
+  { id: 0, label: 'أحمر', emoji: '🔴', base: '#EF4444', lite: '#FCA5A5' },
+  { id: 1, label: 'أزرق', emoji: '🔵', base: '#3B82F6', lite: '#93C5FD' },
+  { id: 2, label: 'أخضر', emoji: '🟢', base: '#22C55E', lite: '#86EFAC' },
+  { id: 3, label: 'أصفر', emoji: '🟡', base: '#EAB308', lite: '#FDE047' },
 ]
 
 interface Props {
@@ -138,19 +138,30 @@ export default function SimonSays({ onComplete, onCancel, studentAge, difficulty
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        {COLORS.map(c => (
-          <button
-            key={c.id}
-            onClick={() => press(c.id)}
-            disabled={phase !== 'input'}
-            className={`w-36 h-36 rounded-3xl text-4xl font-black flex items-center justify-center transition-all duration-150
-              ${activeBtn === c.id ? c.active + ' scale-110 shadow-2xl' : c.bg + ' opacity-70'}
-              ${phase === 'input' ? 'cursor-pointer hover:opacity-100 active:scale-95' : 'cursor-default'}
-            `}
-          >
-            {c.emoji}
-          </button>
-        ))}
+        {COLORS.map(c => {
+          const lit = activeBtn === c.id
+          return (
+            <button
+              key={c.id}
+              onClick={() => press(c.id)}
+              disabled={phase !== 'input'}
+              className={`w-36 h-36 rounded-3xl text-4xl flex items-center justify-center transition-all duration-150 border border-white/20
+                ${phase === 'input' ? 'cursor-pointer active:scale-95' : 'cursor-default'}`}
+              style={{
+                background: lit
+                  ? `radial-gradient(circle at 35% 28%, ${c.lite}, ${c.base})`
+                  : `linear-gradient(145deg, ${c.base}, ${c.base}CC)`,
+                boxShadow: lit
+                  ? `0 0 32px 7px ${c.base}99, inset 0 2px 10px rgba(255,255,255,0.45)`
+                  : 'inset 0 2px 6px rgba(255,255,255,0.22), 0 8px 18px rgba(0,0,0,0.30)',
+                transform: lit ? 'scale(1.08)' : 'scale(1)',
+                opacity: lit ? 1 : phase === 'input' ? 0.94 : 0.72,
+              }}
+            >
+              <span style={{ filter: lit ? 'drop-shadow(0 0 8px rgba(255,255,255,0.7))' : 'none' }}>{c.emoji}</span>
+            </button>
+          )
+        })}
       </div>
 
       <button onClick={onCancel} className="text-white/40 hover:text-white/70 text-sm transition-colors">

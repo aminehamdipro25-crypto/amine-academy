@@ -1,9 +1,19 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { BookOpen, Lock, Star, X, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react'
+import { BookOpen, Lock, Star, X, ChevronLeft, ChevronRight, Sparkles, Volume2, Square } from 'lucide-react'
 import { type Story, parseStoryText } from '@/lib/stories-data'
+import { speakArabic, cancelSpeech } from '@/lib/speech'
+
+// Strip the {{word|#hex}} colour markup to plain text for narration.
+function plainPageText(page: string): string {
+  return page
+    .replace(/\{\{([^|}]+)\|[^}]*\}\}/g, '$1')
+    .replace(/\{\{([^}]+)\}\}/g, '$1')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
 
 // Unlock rules — stories open as the child earns stars in their sessions.
 // The first FREE_STORIES are always open so there's content from day one;
@@ -36,18 +46,6 @@ const DIFF_LABEL: Record<number, { label: string; color: string }> = {
   1: { label: 'سهل', color: 'bg-emerald-100 text-emerald-700' },
   2: { label: 'متوسط', color: 'bg-amber-100 text-amber-700' },
   3: { label: 'متقدّم', color: 'bg-rose-100 text-rose-700' },
-}
-
-// Renders one line of story-page text, applying inline `{{word|#hex}}` color
-// markup authored in the dashboard's story editor.
-function ColoredText({ text }: { text: string }) {
-  return (
-    <>
-      {parseStoryText(text).map((seg, i) =>
-        seg.color ? <span key={i} style={{ color: seg.color }}>{seg.text}</span> : <span key={i}>{seg.text}</span>
-      )}
-    </>
-  )
 }
 
 export default function StoryLibraryPage() {
@@ -237,10 +235,44 @@ export default function StoryLibraryPage() {
 function StoryReaderModal({ story, onClose }: { story: Story; onClose: () => void }) {
   const [page, setPage] = useState(0)
   const [imgBroken, setImgBroken] = useState(false)
+  const [reading, setReading] = useState(false)
+  const [wordIdx, setWordIdx] = useState(-1)
+  const karaokeRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const total = story.pages.length
   const last = page >= total - 1
   const image = story.pageImages?.[page] ?? null
+  const lines = story.pages[page].split('\n')
   useEffect(() => { setImgBroken(false) }, [image])
+
+  function stopKaraoke() {
+    if (karaokeRef.current) { clearInterval(karaokeRef.current); karaokeRef.current = null }
+    setWordIdx(-1)
+  }
+
+  // Read-aloud with a timed word highlight (SpeechSynthesis boundary events are
+  // unreliable for Arabic, so the highlight advances proportionally to word
+  // length). The global word index matches plainPageText(...).split(/\s+/).
+  function readPage() {
+    if (reading) { cancelSpeech(); stopKaraoke(); setReading(false); return }
+    const text = plainPageText(story.pages[page])
+    const words = text.split(/\s+/).filter(Boolean)
+    if (!words.length) return
+    setReading(true); setWordIdx(0)
+    const perMs = Math.max(240, Math.round((text.length / words.length) * 92))
+    let i = 0
+    karaokeRef.current = setInterval(() => {
+      i++
+      if (i >= words.length) stopKaraoke()
+      else setWordIdx(i)
+    }, perMs)
+    speakArabic(text, 0.8)
+      .then(() => { stopKaraoke(); setReading(false) })
+      .catch(() => { stopKaraoke(); setReading(false) })
+  }
+
+  // Stop narration whenever the page changes or the modal unmounts.
+  useEffect(() => { cancelSpeech(); stopKaraoke(); setReading(false) }, [page])
+  useEffect(() => () => { cancelSpeech(); stopKaraoke() }, [])
 
   return (
     <motion.div
@@ -272,24 +304,77 @@ function StoryReaderModal({ story, onClose }: { story: Story; onClose: () => voi
             // eslint-disable-next-line @next/next/no-img-element -- dashboard-uploaded, arbitrary source
             <img src={image} alt="" className="w-full h-full object-cover" onError={() => setImgBroken(true)} />
           ) : (
-            <span className="text-7xl">{story.icon}</span>
+            <motion.span key={page} initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-7xl">{story.icon}</motion.span>
           )}
         </div>
 
-        {/* Page text */}
-        <div className="p-6 min-h-[140px] flex items-center justify-center">
-          <p className="text-gray-800 text-xl leading-loose text-center font-bold" style={{ lineHeight: 2 }}>
-            {story.pages[page].split('\n').map((line, i) => (
-              <span key={i} className="block"><ColoredText text={line} /></span>
-            ))}
-          </p>
+        {/* Page text — word-level render so the active word highlights while reading */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={page}
+            initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -24 }}
+            transition={{ duration: 0.25 }}
+            className="p-6 min-h-[150px] flex items-center justify-center"
+          >
+            <p className="text-gray-800 text-xl text-center font-bold" style={{ lineHeight: 2.1 }}>
+              {(() => {
+                // Global word counter that matches plainPageText word-splitting:
+                // a colour boundary mid-word must NOT advance it (track inWord).
+                let wordCounter = -1
+                let inWord = false
+                return lines.map((line, li) => {
+                  const node = (
+                    <span key={li} className="block">
+                      {parseStoryText(line).map((seg, si) => {
+                        const parts = seg.text.split(/(\s+)/)
+                        return parts.map((part, pi) => {
+                          if (part === '') return null
+                          if (/^\s+$/.test(part)) { inWord = false; return <span key={`${si}-${pi}`}>{part}</span> }
+                          if (!inWord) { wordCounter++; inWord = true }
+                          const active = reading && wordCounter === wordIdx
+                          return (
+                            <span
+                              key={`${si}-${pi}`}
+                              style={{
+                                color: seg.color || undefined,
+                                background: active ? `${story.accent}2E` : 'transparent',
+                                boxShadow: active ? `0 0 0 2px ${story.accent}` : 'none',
+                                borderRadius: 8,
+                                padding: active ? '1px 6px' : 0,
+                                transition: 'background .15s ease, box-shadow .15s ease, padding .15s ease',
+                              }}
+                            >{part}</span>
+                          )
+                        })
+                      })}
+                    </span>
+                  )
+                  inWord = false // a line break separates words
+                  return node
+                })
+              })()}
+            </p>
+          </motion.div>
+        </AnimatePresence>
+
+        {/* Read-aloud — the main interactivity for a child */}
+        <div className="px-6 pb-1">
+          <button
+            onClick={readPage}
+            className="w-full py-2.5 rounded-2xl font-black text-sm flex items-center justify-center gap-2 transition-all active:scale-95"
+            style={reading
+              ? { background: '#FEE2E2', border: '2px solid #FCA5A5', color: '#B91C1C' }
+              : { background: `${story.accent}15`, border: `2px solid ${story.accent}`, color: story.accent }}
+          >
+            {reading ? <><Square className="w-4 h-4 fill-current" /> إِيقاف القِراءة</> : <><Volume2 className="w-4 h-4" /> اِقرَأ لي</>}
+          </button>
         </div>
 
         {/* Progress dots */}
-        <div className="flex items-center justify-center gap-1.5 pb-3">
+        <div className="flex items-center justify-center gap-1.5 py-3">
           {story.pages.map((_, i) => (
-            <span key={i} className="w-2 h-2 rounded-full transition-colors"
-              style={{ background: i === page ? story.accent : '#E5E7EB' }} />
+            <span key={i} className="rounded-full transition-all duration-300"
+              style={{ width: i === page ? 20 : 8, height: 8, background: i <= page ? story.accent : '#E5E7EB' }} />
           ))}
         </div>
 

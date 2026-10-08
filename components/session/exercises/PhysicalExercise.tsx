@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import type { ExerciseResult } from '@/lib/types'
+import { speakArabic, cancelSpeech } from '@/lib/speech'
 
 interface PhysicalExerciseProps {
   id: string
@@ -137,7 +138,9 @@ export default function PhysicalExercise({ id, onComplete, onCancel, difficulty 
   const [secsLeft, setSecsLeft]   = useState(totalSec)
   const [running, setRunning]     = useState(false)
   const [completed, setCompleted] = useState(false)
+  const [muted, setMuted]         = useState(false)
   const intervalRef               = useRef<ReturnType<typeof setInterval> | null>(null)
+  const spokenStepRef             = useRef<number>(-1)
 
   const elapsed = totalSec - secsLeft
   const pct     = Math.min(100, Math.round((elapsed / totalSec) * 100))
@@ -161,6 +164,18 @@ export default function PhysicalExercise({ id, onComplete, onCancel, difficulty 
     }
   }, [secsLeft, running])
 
+  // Hands-free voice guidance: read the active step aloud the moment it becomes
+  // active (so the coach/child need not look at the screen during the movement).
+  useEffect(() => {
+    if (!ex || muted || !running || currentStep < 0) return
+    if (spokenStepRef.current === currentStep) return
+    spokenStepRef.current = currentStep
+    speakArabic(`الخطوة ${currentStep + 1}. ${ex.steps[currentStep]}`).catch(() => {})
+  }, [currentStep, running, muted, ex])
+
+  // Stop any narration when the exercise closes.
+  useEffect(() => () => { cancelSpeech() }, [])
+
   if (!ex) return null
 
   function finish(score: number) {
@@ -180,31 +195,41 @@ export default function PhysicalExercise({ id, onComplete, onCancel, difficulty 
     <div className="bg-gray-800/90 rounded-3xl p-6 max-w-xl mx-auto border border-white/10" dir="rtl">
       {/* Header */}
       <div className="flex items-start justify-between mb-5">
-        <button
-          onClick={onCancel}
-          className="text-white/30 hover:text-white/60 transition-colors text-xs mt-1"
-        >
-          ✕ إلغاء
-        </button>
+        <div className="flex flex-col gap-2 items-start">
+          <button
+            onClick={onCancel}
+            className="text-white/30 hover:text-white/60 transition-colors text-xs"
+          >
+            ✕ إلغاء
+          </button>
+          <button
+            onClick={() => { setMuted(m => { if (!m) cancelSpeech(); return !m }) }}
+            title={muted ? 'تشغيل القراءة الصوتيّة' : 'كتم القراءة الصوتيّة'}
+            className={`text-xs transition-colors ${muted ? 'text-white/30 hover:text-white/60' : 'text-cyan-400 hover:text-cyan-300'}`}
+          >
+            {muted ? '🔇 صوت' : '🔊 صوت'}
+          </button>
+        </div>
         <div className="text-center flex-1 mx-4">
           <div className="text-5xl mb-2 leading-none">{ex.emoji}</div>
           <h2 className="text-white font-black text-xl leading-tight">{ex.labelAr}</h2>
           <p className="text-white/50 text-xs mt-1 leading-relaxed">{ex.descAr}</p>
         </div>
-        <div className="text-left min-w-[56px]">
-          <div className={`font-black text-xl ltr-num ${secsLeft <= 30 && running ? 'text-red-400' : 'text-cyan-400'}`}>
-            {fmt(secsLeft)}
+        {/* Circular progress ring with remaining time */}
+        <div className="relative w-16 h-16 flex-shrink-0">
+          <svg className="w-16 h-16 -rotate-90" viewBox="0 0 56 56" aria-hidden>
+            <circle cx="28" cy="28" r="24" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="5" />
+            <circle cx="28" cy="28" r="24" fill="none"
+              stroke={secsLeft <= 30 && running ? '#f87171' : '#22d3ee'} strokeWidth="5" strokeLinecap="round"
+              strokeDasharray={2 * Math.PI * 24}
+              strokeDashoffset={(2 * Math.PI * 24) * (1 - pct / 100)}
+              style={{ transition: 'stroke-dashoffset 1s linear' }} />
+          </svg>
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <span className={`font-black text-xs ltr-num ${secsLeft <= 30 && running ? 'text-red-400' : 'text-cyan-300'}`}>{fmt(secsLeft)}</span>
+            <span className="text-white/30 text-[8px]">المتبقي</span>
           </div>
-          <div className="text-white/30 text-[9px] text-right">المتبقي</div>
         </div>
-      </div>
-
-      {/* Progress bar */}
-      <div className="h-1.5 bg-white/10 rounded-full mb-5 overflow-hidden">
-        <div
-          className="h-full rounded-full bg-gradient-to-l from-brand-400 to-cyan-500 transition-all duration-1000"
-          style={{ width: `${pct}%` }}
-        />
       </div>
 
       {/* Steps — active step glows as timer progresses */}

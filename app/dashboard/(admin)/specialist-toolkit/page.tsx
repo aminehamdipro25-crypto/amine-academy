@@ -418,6 +418,7 @@ export default function SpecialistToolkitPage() {
             profile: {
               name: name.trim() || undefined,
               ageGroup: inferAgeGroup(age),
+              exactAge: parseInt(age, 10) || undefined,
               diagnosis: inferDiagnosis(concerns),
               severityLevel: inferSeverityLevel(results),
             },

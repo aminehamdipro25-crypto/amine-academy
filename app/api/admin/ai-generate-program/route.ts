@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isDashboardUser, getDashboardActorId } from '@/lib/auth'
 import { getStudent, getAllExercises } from '@/lib/db'
+import { ageYearsFromBirthDate } from '@/lib/age'
 import { redis } from '@/lib/redis'
 import Anthropic from '@anthropic-ai/sdk'
 import type { AssessmentResult, AgeGroup, Diagnosis } from '@/lib/types'
@@ -90,6 +91,7 @@ export async function POST(req: NextRequest) {
     // the client sent instead, so the toolkit stays usable end-to-end without forcing a link.
     let fullName: string
     let ageGroup: AgeGroup
+    let exactAge: number | null = null
     let diagnosis: Diagnosis
     let severityLevel: 1 | 2 | 3
     let sensoryLabels: { visual: string; audio: string; touch: string }
@@ -100,6 +102,7 @@ export async function POST(req: NextRequest) {
       if (!student) return NextResponse.json({ error: 'الطالب غير موجود' }, { status: 404 })
       fullName = `${student.firstName} ${student.lastName}`.trim()
       ageGroup = student.ageGroup
+      exactAge = student.birthDate ? ageYearsFromBirthDate(student.birthDate) : null
       diagnosis = student.diagnosis
       severityLevel = student.severityLevel
       sensoryLabels = {
@@ -115,6 +118,7 @@ export async function POST(req: NextRequest) {
       }
       fullName = typeof profile.name === 'string' && profile.name.trim() ? profile.name.trim() : 'الطفل'
       ageGroup = profile.ageGroup
+      exactAge = /^\d{1,2}$/.test(String(profile.exactAge ?? body.exactAge ?? '')) ? Number(profile.exactAge ?? body.exactAge) : null
       diagnosis = profile.diagnosis
       severityLevel = [1, 2, 3].includes(profile.severityLevel) ? profile.severityLevel : 2
       // No formal sensory profile is collected for an unlinked walk-in — assume medium across the board
@@ -124,9 +128,11 @@ export async function POST(req: NextRequest) {
 
     const allExercises = await getAllExercises()
 
-    // Filter exercises relevant to this child
+    // Filter exercises relevant to this child — honour the EXACT age window when
+    // known so young-child content is never offered to an older child.
     const relevant = allExercises.filter(ex =>
       ex.ageGroups.includes(ageGroup) &&
+      (exactAge == null || ((ex.minAge == null || exactAge >= ex.minAge) && (ex.maxAge == null || exactAge <= ex.maxAge))) &&
       (ex.diagnoses.includes(diagnosis) || ex.diagnoses.includes('OTHER') ||
        ex.diagnoses.length === 0)
     )

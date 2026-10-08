@@ -365,6 +365,27 @@ export interface SessionSummary {
   createdAt:   string
 }
 
+// ── Home practice plan (الخطة المنزلية) ───────────────────────
+// The specialist assigns specific home exercises/stories for the child to do
+// between sessions. The parent sees the active (latest) assignment as
+// "واجب هذا الأسبوع" and plays it from the practice page.
+export interface HomeAssignmentItem {
+  kind:    'exercise' | 'story'
+  id:      string        // home-exercise id (gameId) or story id
+  labelAr: string
+  icon?:   string
+}
+export interface HomeAssignment {
+  id:          string
+  studentId:   string
+  parentId:    string
+  items:       HomeAssignmentItem[]
+  note?:       string
+  dueDate?:    string     // YYYY-MM-DD
+  specialist?: string
+  createdAt:   string
+}
+
 export type AssessmentType = 'adhd' | 'autism' | 'learning-difficulties' | 'motor' | 'cognitive' | 'attention-domains' | 'vanderbilt-adhd' | 'psc17'
 
 export interface AssessmentAnswer {

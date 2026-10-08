@@ -38,7 +38,7 @@ import crypto from 'crypto'
 import { redis } from './redis'
 import { generateId } from './auth'
 import { weekKeyOf } from './week'
-import type { Parent, Student, Exercise, Program, Appointment, ProgressReport, PendingPayment, Message, Achievement, StudentAssessmentProfile, GameResult, WeeklyProgress, Staff, Story, AssessmentResult, ApaSessionRecord, SessionSummary } from './types'
+import type { Parent, Student, Exercise, Program, Appointment, ProgressReport, PendingPayment, Message, Achievement, StudentAssessmentProfile, GameResult, WeeklyProgress, Staff, Story, AssessmentResult, ApaSessionRecord, SessionSummary, HomeAssignment } from './types'
 
 // ── Staff (multi-therapist accounts) ────────────────────────────
 
@@ -377,6 +377,27 @@ export async function getSessionSummaries(studentId: string): Promise<SessionSum
   const ids = await redis.lrange(`session-summaries:student:${studentId}`, 0, 200)
   const rows = await Promise.all(ids.map(id => redis.get<SessionSummary>(`session-summary:${id}`)))
   return (rows.filter(Boolean) as SessionSummary[]).sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
+}
+
+// ── Home practice assignments (الخطة المنزلية) ────────────────
+export async function createHomeAssignment(data: Omit<HomeAssignment, 'id' | 'createdAt'>): Promise<HomeAssignment> {
+  const assignment: HomeAssignment = {
+    ...data,
+    id: `HA-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
+    createdAt: new Date().toISOString(),
+  }
+  await redis.pipeline([
+    ['SET', `home-assignment:${assignment.id}`, JSON.stringify(assignment)],
+    ['LPUSH', `home-assignments:student:${data.studentId}`, assignment.id],
+  ])
+  return assignment
+}
+
+// Newest first; the first element is the "active" plan the parent sees.
+export async function getHomeAssignments(studentId: string): Promise<HomeAssignment[]> {
+  const ids = await redis.lrange(`home-assignments:student:${studentId}`, 0, 100)
+  const rows = await Promise.all(ids.map(id => redis.get<HomeAssignment>(`home-assignment:${id}`)))
+  return (rows.filter(Boolean) as HomeAssignment[]).sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
 }
 
 // ── APA session records ───────────────────────────────────────

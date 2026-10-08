@@ -3,43 +3,7 @@ import { useState, useEffect, lazy, Suspense } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { fadeUp } from '@/lib/motion'
 import type { ExerciseResult } from '@/lib/types'
-
-// Lightweight exercise subset suitable for home use
-const HOME_EXERCISES: Array<{
-  id: string
-  labelAr: string
-  icon: string
-  description: string
-  ageMin: number
-  category: string
-}> = [
-  { id: 'memory-cards',       labelAr: 'بطاقات الذاكرة',      icon: '🃏', description: 'لعبة الذاكرة الكلاسيكية — اقلب البطاقات وابحث عن أزواج',     ageMin: 4,  category: 'ذاكرة' },
-  { id: 'breathing',          labelAr: 'تمرين التنفس',         icon: '🫁', description: 'تنفس عميق موجَّه للاسترخاء والهدوء',                            ageMin: 4,  category: 'استرخاء' },
-  { id: 'emotion-cards',      labelAr: 'بطاقات المشاعر',       icon: '😊', description: 'تعرّف على المشاعر المختلفة وتعلّم كيف تعبّر عنها',              ageMin: 4,  category: 'عاطفي' },
-  { id: 'balloon-control',    labelAr: 'تحكّم بالبالون',       icon: '🎈', description: 'تمرين التنفس البطني بطريقة ممتعة',                              ageMin: 5,  category: 'استرخاء' },
-  { id: 'simon-says',         labelAr: 'سايمون يقول',          icon: '🎮', description: 'لعبة اتباع التعليمات والانتباه',                                ageMin: 5,  category: 'انتباه' },
-  { id: 'calm-corner',        labelAr: 'زاوية الهدوء',         icon: '🧘', description: 'نشاط مريح للتهدئة والاسترخاء',                                  ageMin: 4,  category: 'استرخاء' },
-  { id: 'reading-cards',      labelAr: 'بطاقات القراءة',       icon: '📚', description: 'قراءة كلمات وجمل بسيطة بصوت عالٍ',                             ageMin: 5,  category: 'قراءة' },
-  { id: 'emotion-volume',     labelAr: 'مقياس المشاعر',        icon: '📊', description: 'تعلّم التعبير عن شدة المشاعر',                                  ageMin: 5,  category: 'عاطفي' },
-  { id: 'body-scan',          labelAr: 'مسح الجسم',            icon: '🧘', description: 'تمرين وعي الجسم والاسترخاء التدريجي',                          ageMin: 6,  category: 'استرخاء' },
-  { id: 'word-recall',        labelAr: 'تذكّر الكلمات',        icon: '🧠', description: 'احفظ قائمة كلمات وأعد ترديدها',                                ageMin: 6,  category: 'ذاكرة' },
-  { id: 'sequence-memory',    labelAr: 'تسلسل الذاكرة',        icon: '🔢', description: 'تذكّر تسلسل الألوان والأرقام وأعده بنفس الترتيب',              ageMin: 5,  category: 'ذاكرة' },
-  { id: 'letter-match',       labelAr: 'مطابقة الحروف',        icon: '🔤', description: 'طابق الحرف مع شكله وصوته',                                      ageMin: 5,  category: 'قراءة' },
-  { id: 'math-flash',         labelAr: 'ومضات الحساب',         icon: '➕', description: 'عمليات حسابية سريعة تناسب عمر الطفل',                           ageMin: 6,  category: 'حساب' },
-  { id: 'pattern-match',      labelAr: 'مطابقة الأنماط',       icon: '🧩', description: 'اكتشف النمط وأكمله',                                            ageMin: 5,  category: 'تفكير' },
-  { id: 'category-sort',      labelAr: 'تصنيف الفئات',         icon: '🗂️', description: 'رتّب الصور في فئاتها الصحيحة',                                  ageMin: 5,  category: 'تفكير' },
-  { id: 'first-then',         labelAr: 'أولاً ثم',             icon: '➡️', description: 'لوحة «أولاً–ثم» لتسهيل الانتقال بين الأنشطة',                   ageMin: 4,  category: 'تنظيم' },
-  { id: 'visual-schedule',    labelAr: 'الجدول المرئي',        icon: '📅', description: 'جدول مصوّر لخطوات اليوم',                                       ageMin: 4,  category: 'تنظيم' },
-  { id: 'mood-meter',         labelAr: 'مقياس المزاج',         icon: '🌡️', description: 'حدّد مزاجك اليوم وتعرّف على درجته',                             ageMin: 5,  category: 'عاطفي' },
-  { id: 'jumping-jacks',      labelAr: 'قفز النجمة',           icon: '⭐', description: 'تمرين هوائي ينشّط الجسم ويرفع التركيز',                          ageMin: 5,  category: 'حركي' },
-  { id: 'mood-activation',    labelAr: 'نشاط ومزاج',           icon: '🌤️', description: 'قِس مزاجك، جرّب نشاطاً ممتعاً، ثم قِسه مجدداً — واكتشف ما يرفع مزاجك', ageMin: 5, category: 'عاطفي' },
-]
-
-// Deliberately NOT here: the assessment battery (span-extension, backward span,
-// sustained-attention, visual-search, auditory-memory). Those are measurement
-// instruments — practising them at home inflates the score and destroys the
-// baseline the specialist compares against. They stay in the specialist's
-// toolkit only.
+import { HOME_EXERCISES } from '@/lib/home-exercises'
 
 const CATEGORY_COLORS: Record<string, string> = {
   'ذاكرة':    '#3B82F6',
@@ -81,6 +45,12 @@ interface SessionResult {
   duration: number
 }
 
+interface HomePlanItem { kind: 'exercise' | 'story'; id: string; labelAr: string; icon?: string }
+interface HomePlan { studentId: string; items: HomePlanItem[]; note?: string; dueDate?: string; createdAt: string }
+
+// Exercise ids the practice page can launch inline (must match the render map).
+const LAUNCHABLE = new Set(HOME_EXERCISES.map(e => e.id))
+
 export default function PracticePage() {
   const [activeId, setActiveId]     = useState<string | null>(null)
   const [results, setResults]       = useState<SessionResult[]>([])
@@ -90,6 +60,7 @@ export default function PracticePage() {
   // exercise has nowhere to go and the session is lost on refresh.
   const [studentId, setStudentId]   = useState('')
   const [saveState, setSaveState]   = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+  const [plans, setPlans]           = useState<HomePlan[]>([])
 
   // Fetch child's age from profile
   useEffect(() => {
@@ -101,7 +72,13 @@ export default function PracticePage() {
         setChildAge(age)
       }
     }).catch(() => {})
+    // The specialist's assigned home plan — shown as "واجب هذا الأسبوع".
+    fetch('/api/parent/home-assignment').then(r => r.ok ? r.json() : null)
+      .then(d => setPlans(d?.assignments ?? []))
+      .catch(() => {})
   }, [])
+
+  const plan = plans.find(p => p.studentId === studentId) ?? plans[0]
 
   async function handleComplete(r: ExerciseResult) {
     const playedId = activeId
@@ -230,7 +207,46 @@ export default function PracticePage() {
         </motion.div>
       </div>
 
+      {/* ── واجب هذا الأسبوع — the specialist's assigned home plan ── */}
+      {plan && plan.items.length > 0 && (
+        <div className="max-w-2xl mx-auto px-4 pt-6">
+          <div className="rounded-3xl p-5" style={{ background: 'linear-gradient(135deg, #EEF2FF, #F5F3FF)', border: '1.5px solid #E0D0FF' }}>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="font-black text-gray-900 flex items-center gap-2">⭐ واجب هذا الأسبوع</h2>
+              {plan.dueDate && <span className="text-xs font-bold text-brand-600 bg-white/70 rounded-full px-2.5 py-1 ltr-num">حتى {plan.dueDate}</span>}
+            </div>
+            {plan.note && <p className="text-sm text-gray-600 mb-3">{plan.note}</p>}
+            <div className="space-y-2">
+              {plan.items.map((it, i) => {
+                const done = results.some(r => r.exerciseLabelAr === it.labelAr)
+                const canLaunch = it.kind === 'exercise' && LAUNCHABLE.has(it.id)
+                const content = (
+                  <div className="w-full flex items-center gap-3 bg-white rounded-2xl p-3 border-2 text-right shadow-sm transition-all hover:shadow-md active:scale-[0.98]"
+                    style={{ borderColor: done ? '#34D39955' : '#F3F4F6' }}>
+                    <span className="text-2xl flex-shrink-0">{it.icon || (it.kind === 'story' ? '📖' : '🎮')}</span>
+                    <span className="flex-1 font-bold text-gray-800 text-sm">{it.labelAr}</span>
+                    <span className="text-xs font-bold flex-shrink-0" style={{ color: done ? '#059669' : '#7C5CFC' }}>
+                      {done ? '✓ تمّ' : it.kind === 'story' ? 'اقرأ' : 'ابدأ'}
+                    </span>
+                  </div>
+                )
+                return canLaunch ? (
+                  <button key={i} onClick={() => { setFinished(null); setActiveId(it.id) }} className="w-full">{content}</button>
+                ) : it.kind === 'story' ? (
+                  <a key={i} href="/parent/stories" className="block">{content}</a>
+                ) : (
+                  <div key={i}>{content}</div>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-3">
+        {suitableExercises.length > 0 && (
+          <h2 className="font-black text-gray-900 text-sm px-1">كل التمارين المنزلية</h2>
+        )}
         {suitableExercises.map((ex, i) => {
           const done = results.some(r => r.exerciseLabelAr === ex.labelAr)
           const justFinished = finished === ex.id

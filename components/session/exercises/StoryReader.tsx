@@ -14,18 +14,6 @@ function plainPageText(page: string): string {
     .trim()
 }
 
-// Renders one line of story-page text, applying inline `{{word|#hex}}` color
-// markup (authored in the dashboard's story editor) as colored spans.
-function ColoredText({ text }: { text: string }) {
-  return (
-    <>
-      {parseStoryText(text).map((seg, i) =>
-        seg.color ? <span key={i} style={{ color: seg.color }}>{seg.text}</span> : <span key={i}>{seg.text}</span>
-      )}
-    </>
-  )
-}
-
 type DecorType = 'forest' | 'water' | 'meadow' | 'school' | 'home' | 'stars'
 interface SceneDef { skyTop: string; skyBot: string; ground: string; chars: string[]; decor: DecorType }
 
@@ -395,19 +383,37 @@ export default function StoryReader({ onComplete, onCancel, studentAge, difficul
   const [showFB, setShowFB]     = useState(false)
   const [correct, setCorrect]   = useState(0)
   const [reading, setReading]   = useState(false)
+  const [wordIdx, setWordIdx]   = useState(-1)   // karaoke highlight: active word
+  const karaokeRef              = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  // Read the current page aloud in Arabic — the key interactivity for a child.
+  function stopKaraoke() {
+    if (karaokeRef.current) { clearInterval(karaokeRef.current); karaokeRef.current = null }
+    setWordIdx(-1)
+  }
+  // Read the current page aloud in Arabic with word-by-word highlighting — the
+  // key interactivity for a child (follow the words as they are read).
   function readCurrentPage() {
     if (!story) return
-    if (reading) { cancelSpeech(); setReading(false); return }
-    setReading(true)
-    speakArabic(plainPageText(story.pages[pageIdx]), 0.8)
-      .then(() => setReading(false))
-      .catch(() => setReading(false))
+    if (reading) { cancelSpeech(); stopKaraoke(); setReading(false); return }
+    const text  = plainPageText(story.pages[pageIdx])
+    const words = text.split(/\s+/).filter(Boolean)
+    setReading(true); setWordIdx(0)
+    // Timed karaoke (SpeechSynthesis boundary events are unreliable for Arabic):
+    // advance the highlight proportionally to average word length.
+    const perMs = Math.max(240, Math.round((text.length / Math.max(1, words.length)) * 92))
+    let i = 0
+    karaokeRef.current = setInterval(() => {
+      i++
+      if (i >= words.length) stopKaraoke()
+      else setWordIdx(i)
+    }, perMs)
+    speakArabic(text, 0.8)
+      .then(() => { stopKaraoke(); setReading(false) })
+      .catch(() => { stopKaraoke(); setReading(false) })
   }
   // Stop narration when the page changes or the reader closes.
-  useEffect(() => { cancelSpeech(); setReading(false) }, [pageIdx, phase, story?.id])
-  useEffect(() => () => { cancelSpeech() }, [])
+  useEffect(() => { cancelSpeech(); stopKaraoke(); setReading(false) }, [pageIdx, phase, story?.id])
+  useEffect(() => () => { cancelSpeech(); stopKaraoke() }, [])
 
   const cleanTimer = () => { if (timerRef.current) clearTimeout(timerRef.current) }
   useEffect(() => () => { cleanTimer() }, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -676,21 +682,56 @@ export default function StoryReader({ onComplete, onCancel, studentAge, difficul
             boxShadow:`0 4px 20px ${story.accent}22`,
           }}
         >
-          {lines.map((line, i) => (
-            <p
-              key={i}
-              className="text-center font-black"
-              style={{
-                color:'#1E293B',
-                fontSize: 26,
-                lineHeight: 1.9,
-                marginBottom: i < lines.length - 1 ? 8 : 0,
-                letterSpacing: '0.01em',
-              }}
-            >
-              <ColoredText text={line} />
-            </p>
-          ))}
+          {(() => {
+            // Word-level render that preserves {{word|#hex}} colour markup AND
+            // highlights the word currently being narrated. The global word
+            // index must match `plainPageText(page).split(/\s+/)` used by the
+            // karaoke timer — so a colour boundary mid-word does NOT advance
+            // the counter (track `inWord` across segments; newline ends a word).
+            let wordCounter = -1
+            let inWord = false
+            return lines.map((line, li) => {
+              const segs = parseStoryText(line)
+              const node = (
+                <p
+                  key={li}
+                  className="text-center font-black"
+                  style={{
+                    color:'#1E293B',
+                    fontSize: 26,
+                    lineHeight: 1.9,
+                    marginBottom: li < lines.length - 1 ? 8 : 0,
+                    letterSpacing: '0.01em',
+                  }}
+                >
+                  {segs.map((seg, si) => {
+                    const parts = seg.text.split(/(\s+)/)
+                    return parts.map((part, pi) => {
+                      if (part === '') return null
+                      if (/^\s+$/.test(part)) { inWord = false; return <span key={`${si}-${pi}`}>{part}</span> }
+                      if (!inWord) { wordCounter++; inWord = true }
+                      const active = reading && wordCounter === wordIdx
+                      return (
+                        <span
+                          key={`${si}-${pi}`}
+                          style={{
+                            color: seg.color || '#1E293B',
+                            background: active ? `${story.accent}2E` : 'transparent',
+                            boxShadow: active ? `0 0 0 2px ${story.accent}` : 'none',
+                            borderRadius: 7,
+                            padding: active ? '1px 5px' : 0,
+                            transition: 'background .15s ease, box-shadow .15s ease, padding .15s ease',
+                          }}
+                        >{part}</span>
+                      )
+                    })
+                  })}
+                </p>
+              )
+              inWord = false // a line break separates words
+              return node
+            })
+          })()}
         </div>
 
         {/* Page counter */}

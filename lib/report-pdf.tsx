@@ -52,6 +52,12 @@ export interface PdfReportData {
   frequency?: string
   actionPlan: string[]
   redFlags: string[]
+  // Scientific reading aids (optional). The legend explains what each severity
+  // band means so a parent reads "متوسط" the same way the specialist intends;
+  // the methodology note states how scores are derived and their limits.
+  readingGuideTitle?: string
+  severityLegend?: { severity: PdfSeverity; label: string; meaning: string }[]
+  methodologyNote?: string
 }
 
 const C = {
@@ -109,6 +115,14 @@ const s = StyleSheet.create({
   bulletDot: { width: 2.6, height: 2.6, borderRadius: 1.3, backgroundColor: C.teal, marginLeft: 5, marginTop: 4.5 },
   bulletTxt: { fontSize: 8.5, color: C.mute, textAlign: 'right', direction: 'rtl', flex: 1, lineHeight: 1.6 },
   sectionTitle: { fontSize: 11, fontWeight: 700, textAlign: 'right', direction: 'rtl', marginTop: 6, marginBottom: 6 },
+  // Reading-guide block: severity legend + methodology note.
+  guide: { borderWidth: 1, borderColor: C.line, borderRadius: 5, backgroundColor: C.brandSoft, padding: 9, marginBottom: 12 },
+  guideTitle: { fontSize: 9.5, fontWeight: 700, color: C.brand, textAlign: 'right', direction: 'rtl', marginBottom: 3 },
+  legendItem: { flexDirection: 'row-reverse', alignItems: 'flex-start', marginTop: 3.5 },
+  legendDot: { width: 7, height: 7, borderRadius: 3.5, marginLeft: 6, marginTop: 2.5 },
+  legendLabel: { fontSize: 8.5, fontWeight: 700, textAlign: 'right', marginLeft: 5 },
+  legendMeaning: { fontSize: 8.5, color: C.mute, textAlign: 'right', direction: 'rtl', flex: 1, lineHeight: 1.55 },
+  methodTxt: { fontSize: 8, color: C.mute, textAlign: 'right', direction: 'rtl', lineHeight: 1.65, marginTop: 7, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 6 },
   taskCard: { borderWidth: 1, borderColor: C.line, borderRadius: 5, padding: 8, marginBottom: 7, backgroundColor: C.indigoBg },
   taskName: { fontSize: 9.5, fontWeight: 700, textAlign: 'right', direction: 'rtl' },
   taskDomain: { fontSize: 7.5, color: C.faint, textAlign: 'right', direction: 'rtl' },
@@ -152,6 +166,20 @@ export function ReportPdf({ d }: { d: PdfReportData }) {
         </View>
 
         <Text style={s.intro}>{d.intro}</Text>
+
+        {(d.severityLegend?.length || d.methodologyNote) ? (
+          <View style={s.guide} wrap={false}>
+            <Text style={s.guideTitle}>{d.readingGuideTitle || 'دليل قراءة النتائج'}</Text>
+            {d.severityLegend?.map((lg, i) => (
+              <View key={i} style={s.legendItem}>
+                <View style={[s.legendDot, { backgroundColor: SEV[lg.severity].fg }]} />
+                <Text style={[s.legendLabel, { color: SEV[lg.severity].fg }]}>{lg.label}</Text>
+                <Text style={s.legendMeaning}>{lg.meaning}</Text>
+              </View>
+            ))}
+            {d.methodologyNote ? <Text style={s.methodTxt}>{d.methodologyNote}</Text> : null}
+          </View>
+        ) : null}
 
         {d.scales.map((sc, i) => (
           <View key={i} style={s.card}>

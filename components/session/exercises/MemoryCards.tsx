@@ -162,10 +162,34 @@ export default function MemoryCards({ onComplete, onCancel, difficulty = 1, seed
   return (
     <div className="flex flex-col items-center gap-4 p-4 select-none" dir="rtl">
       <style>{`
-        .mc-inner{transition:transform .45s cubic-bezier(0.16, 1, 0.3, 1);transform-style:preserve-3d;position:relative;width:100%;height:100%}
+        .mc-inner{transition:transform .5s cubic-bezier(0.16,1,0.3,1);transform-style:preserve-3d;position:relative;width:100%;height:100%}
         .mc-inner.mc-flipped{transform:rotateY(180deg)}
-        .mc-front,.mc-back{position:absolute;inset:0;backface-visibility:hidden;border-radius:14px;display:flex;align-items:center;justify-content:center}
+        .mc-front,.mc-back{position:absolute;inset:0;backface-visibility:hidden;border-radius:16px;display:flex;align-items:center;justify-content:center;overflow:hidden}
         .mc-back{transform:rotateY(180deg)}
+        .mc-cell{animation:mcIn .4s cubic-bezier(0.16,1,0.3,1) both}
+        @keyframes mcIn{from{opacity:0;transform:translateY(10px) scale(.85)}to{opacity:1;transform:none}}
+        @keyframes mcMatch{0%{transform:scale(1)}45%{transform:scale(1.09)}100%{transform:scale(1)}}
+        .mc-matched{animation:mcMatch .5s cubic-bezier(0.34,1.56,0.64,1)}
+        /* Face-down card back: layered guilloché-style pattern, not a flat "?" */
+        .mc-facedown{
+          background:
+            radial-gradient(circle at 28% 24%, rgba(255,255,255,0.18), transparent 42%),
+            repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0 7px, transparent 7px 14px),
+            repeating-linear-gradient(-45deg, rgba(0,0,0,0.05) 0 7px, transparent 7px 14px),
+            linear-gradient(150deg, #6366F1 0%, #4F46E5 55%, #4338CA 100%);
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -3px 8px rgba(0,0,0,0.22);
+          border:1px solid rgba(255,255,255,0.18);
+        }
+        .mc-revealed{
+          background:linear-gradient(150deg,#FFFFFF 0%,#EEF2FF 100%);
+          box-shadow:inset 0 1px 3px rgba(79,70,229,0.08), 0 2px 6px rgba(79,70,229,0.10);
+          border:2px solid #C7D2FE;
+        }
+        .mc-done{
+          background:linear-gradient(150deg,#ECFDF5 0%,#D1FAE5 100%);
+          border:2px solid #34D399;
+          box-shadow:0 0 0 3px rgba(52,211,153,0.28), 0 6px 20px rgba(16,185,129,0.28);
+        }
       `}</style>
 
       {/* Header */}
@@ -213,27 +237,51 @@ export default function MemoryCards({ onComplete, onCancel, difficulty = 1, seed
       </div>
 
       {/* Card grid */}
-      <div className="grid gap-2.5" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0,1fr))`, maxWidth: 440 }}>
-        {cards.map(card => (
-          <div key={card.id}
-            onClick={() => handleFlip(card.id)}
-            style={{ width: 76, height: 76, perspective: '600px', cursor: previewing || card.matched || card.flipped ? 'default' : 'pointer' }}
-          >
-            <div className={`mc-inner ${card.flipped || card.matched ? 'mc-flipped' : ''}`}>
-              {/* Front */}
-              <div className="mc-front bg-white/10 border-2 border-white/20 hover:bg-white/20 hover:border-white/40 transition-colors">
-                <span className="text-3xl">❓</span>
-              </div>
-              {/* Back */}
-              <div
-                className={`mc-back border-2 text-4xl ${card.matched ? 'bg-green-500/30 border-green-400' : 'bg-brand-700 border-brand-400'}`}
-                style={card.matched ? { boxShadow: '0 0 22px rgba(74,222,128,0.45)' } : {}}
-              >
-                {card.emoji}
+      <div className="grid gap-2.5" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0,1fr))`, maxWidth: 460 }}>
+        {cards.map((card, i) => {
+          const revealed = card.flipped || card.matched
+          const tappable = !(previewing || card.matched || card.flipped)
+          return (
+            <div key={card.id}
+              className="mc-cell"
+              onClick={() => handleFlip(card.id)}
+              style={{
+                width: 80, height: 80, perspective: '700px',
+                animationDelay: `${Math.min(i * 28, 340)}ms`,
+                cursor: tappable ? 'pointer' : 'default',
+              }}
+            >
+              <div className={`mc-inner ${revealed ? 'mc-flipped' : ''}`}>
+                {/* Front — elegant patterned card back */}
+                <div className="mc-front mc-facedown">
+                  <svg width="30" height="30" viewBox="0 0 24 24" fill="none" style={{ opacity: 0.55 }}>
+                    <path d="M12 2.5l2.6 6.3 6.8.5-5.2 4.4 1.7 6.6L12 16.9 6.3 20.8 8 14.2 2.8 9.8l6.8-.5z"
+                          fill="rgba(255,255,255,0.9)" />
+                  </svg>
+                </div>
+                {/* Back — polished tile showing the symbol */}
+                <div
+                  className={`mc-back ${card.matched ? 'mc-done' : 'mc-revealed'}`}
+                  style={{ fontSize: 40, lineHeight: 1 }}
+                >
+                  <span className={card.matched ? 'mc-matched' : ''} style={{ display: 'inline-block', filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.12))' }}>
+                    {card.emoji}
+                  </span>
+                  {card.matched && (
+                    <span style={{
+                      position: 'absolute', top: 4, insetInlineEnd: 4,
+                      width: 18, height: 18, borderRadius: 9,
+                      background: '#10B981', color: '#fff',
+                      fontSize: 11, fontWeight: 900,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.25)',
+                    }}>✓</span>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
 
       <button onClick={onCancel} className="text-white/30 hover:text-white/60 text-xs transition-colors mt-1">

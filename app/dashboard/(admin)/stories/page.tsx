@@ -156,13 +156,13 @@ export default function StoryLibraryAdminPage() {
     }
   }
 
-  async function handleSeed(force: boolean) {
+  async function handleSeed(force: boolean, addNew = false) {
     setSeeding(true); setSeedMsg('')
     try {
       const res = await fetch('/api/admin/stories/seed', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ force }),
+        body: JSON.stringify({ force, addNew }),
       })
       const data = await res.json().catch(() => ({}))
       setSeedMsg(data.message || 'حدث خطأ')
@@ -329,7 +329,7 @@ export default function StoryLibraryAdminPage() {
       {!loading && stories.length === 0 && (
         <div className="rounded-2xl border border-brand-100 bg-brand-50/50 p-5 mb-6 text-center">
           <BookOpen className="w-8 h-8 mx-auto text-brand-400 mb-2" />
-          <p className="font-bold text-gray-700 text-sm mb-3">لا توجد قصص بعد — ابدأ بتحميل 22 قصة افتراضية جاهزة، ثم عدّل عليها كما تشاء.</p>
+          <p className="font-bold text-gray-700 text-sm mb-3">لا توجد قصص بعد — ابدأ بتحميل مكتبة القصص الافتراضية الجاهزة، ثم عدّل عليها كما تشاء.</p>
           <button
             onClick={() => handleSeed(false)}
             disabled={seeding}
@@ -342,14 +342,26 @@ export default function StoryLibraryAdminPage() {
         </div>
       )}
       {!loading && stories.length > 0 && (
-        <div className="flex items-center justify-end mb-4">
-          <button
-            onClick={() => { if (window.confirm('هذا سيحذف كل القصص الحالية (بما فيها تعديلاتك) ويستبدلها بـ22 قصة افتراضية. متابعة؟')) handleSeed(true) }}
-            disabled={seeding}
-            className="text-xs text-gray-400 hover:text-red-500 font-bold transition-colors disabled:opacity-50"
-          >
-            {seeding ? 'جارٍ التحميل…' : 'إعادة التحميل الكامل من القصص الافتراضية'}
-          </button>
+        <div className="flex flex-col items-end gap-1.5 mb-4">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => handleSeed(false, true)}
+              disabled={seeding}
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-600 hover:text-brand-700 bg-brand-50 hover:bg-brand-100 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+              title="تضيف القصص الجديدة الافتراضية فقط دون حذف أو تعديل قصصك الحالية"
+            >
+              {seeding ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <BookOpen className="w-3.5 h-3.5" />}
+              إضافة القصص الجديدة فقط
+            </button>
+            <button
+              onClick={() => { if (window.confirm('هذا سيحذف كل القصص الحالية (بما فيها تعديلاتك) ويستبدلها بالقصص الافتراضية. متابعة؟')) handleSeed(true) }}
+              disabled={seeding}
+              className="text-xs text-gray-400 hover:text-red-500 font-bold transition-colors disabled:opacity-50"
+            >
+              {seeding ? 'جارٍ التحميل…' : 'إعادة التحميل الكامل'}
+            </button>
+          </div>
+          {seedMsg && <p className="text-xs text-gray-500">{seedMsg}</p>}
         </div>
       )}
 

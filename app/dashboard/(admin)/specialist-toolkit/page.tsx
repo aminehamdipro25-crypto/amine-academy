@@ -912,6 +912,16 @@ export default function SpecialistToolkitPage() {
         frequency: recommendedFrequency ? t.frequencyPlanOptions[recommendedFrequency] : undefined,
         actionPlan,
         redFlags,
+        // Scientific reading aids — a severity key and a methodology/limits note
+        // so the report reads as a professional clinical document.
+        readingGuideTitle: 'دليل قراءة النتائج',
+        severityLegend: [
+          { severity: 'none',     label: t.severityLabels.none,     meaning: 'ضمن المعدّل المتوقّع للعمر — لا مؤشرات لافتة.' },
+          { severity: 'mild',     label: t.severityLabels.mild,     meaning: 'مؤشرات بسيطة يُكتفى فيها بالمتابعة والتعزيز.' },
+          { severity: 'moderate', label: t.severityLabels.moderate, meaning: 'مؤشرات واضحة يُوصى بتدخّل مُنظَّم لها.' },
+          { severity: 'severe',   label: t.severityLabels.severe,   meaning: 'مؤشرات بارزة تستدعي تدخّلاً مكثّفاً وتنسيقاً مع مختصّين.' },
+        ],
+        methodologyNote: 'منهجية القياس وحدود التفسير: اعتمد هذا التقرير على مقاييس فرز معيارية موثّقة (مصدر كلٍّ منها مُبيَّن بجانب اسمه). تُعبّر النسبة المئوية في كل مجال عن شدّة المؤشرات المرصودة نسبةً إلى الحدّ الأقصى للمقياس؛ فكلّما ارتفعت النسبة دلّ ذلك على حضورٍ أوضح للمؤشر. هذه النتائج استرشادية لتصميم خطة التدخّل الفردي، وتتأثّر دقّتها بمن أجاب عن البنود وبحالة الطفل يوم التقييم، ولا تقوم مقام التشخيص السريري الرسمي.',
       }
       const res = await fetch('/api/admin/toolkit-report/pdf', {
         method: 'POST',

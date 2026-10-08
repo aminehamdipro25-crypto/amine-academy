@@ -97,6 +97,16 @@ export async function POST(req: NextRequest) {
       frequency: str(body.frequency, 400) || undefined,
       actionPlan: strList(body.actionPlan),
       redFlags: strList(body.redFlags, 12),
+      readingGuideTitle: str(body.readingGuideTitle, 80) || undefined,
+      severityLegend: Array.isArray(body.severityLegend)
+        ? (body.severityLegend as Record<string, unknown>[]).slice(0, 6).map(lg => ({
+            severity: (['none','mild','moderate','severe'].includes(String(lg?.severity))
+              ? String(lg?.severity) : 'none') as PdfSeverity,
+            label: str(lg?.label, 40),
+            meaning: str(lg?.meaning, 200),
+          })).filter(lg => lg.label && lg.meaning)
+        : undefined,
+      methodologyNote: str(body.methodologyNote, 900) || undefined,
     }
 
     registerFonts()

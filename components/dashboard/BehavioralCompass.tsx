@@ -376,8 +376,11 @@ export default function BehavioralCompass() {
       {/* ── المهام ── */}
       {step === 'tasks' && (
         <div className="space-y-4">
-          {/* مؤقّت الملاحظة — يقيس الأزمنة تلقائياً بدل إدخالها يدوياً */}
-          <ObservationStopwatch obs={obs} setObs={setObs} />
+          {/* مؤقّت الملاحظة — مثبّت أعلى الصفحة (sticky) حتى تبقى أزرار اللحظات
+              في متناول اليد أثناء اختبار الطفل دون الحاجة للتمرير للأعلى. */}
+          <div className="sticky top-14 z-20 -mx-1 px-1 pt-1 pb-2 bg-slate-50/95 backdrop-blur-sm rounded-b-2xl">
+            <ObservationStopwatch obs={obs} setObs={setObs} />
+          </div>
 
           {/* مفتاح عرض القواعد — للمختص فقط */}
           <label className="flex items-center justify-between gap-3 bg-white rounded-xl border border-slate-200 px-4 py-2.5 cursor-pointer">

@@ -210,14 +210,21 @@ export default function NBackTask({ onComplete, onCancel, difficulty = 1, seed, 
           const isNBackHint = !assessmentMode && nBackPos === i && phase === 'show'
           return (
             <div key={i}
-              className={`w-20 h-20 rounded-2xl border-2 transition-all duration-150 ${
+              className={`w-20 h-20 rounded-2xl border-2 transition-all duration-150 flex items-center justify-center ${
                 isActive
                   ? 'bg-brand-500 border-brand-300 scale-110 shadow-[0_0_24px_rgba(124,92,252,0.7)]'
                   : isNBackHint
                     ? 'bg-brand-900/70 border-brand-500/60'
-                    : 'bg-white/10 border-white/20'
+                    : 'border-white/10'
               }`}
-            />
+              style={isActive || isNBackHint ? undefined : {
+                background: 'radial-gradient(circle at 50% 35%, rgba(255,255,255,0.08), rgba(255,255,255,0.02))',
+                boxShadow: 'inset 0 1px 3px rgba(255,255,255,0.05)',
+              }}
+            >
+              {/* resting dot so empty cells read as a designed board, not blanks */}
+              {!isActive && !isNBackHint && <span className="w-1.5 h-1.5 rounded-full bg-white/10" />}
+            </div>
           )
         })}
       </div>

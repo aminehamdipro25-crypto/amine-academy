@@ -114,8 +114,22 @@ const SCALE_ICON: Record<ScaleKey, React.ComponentType<{ className?: string }>> 
 // specialist referrals or session frequency — otherwise the document tells the
 // reader "do not base a referral on this" and then lists three referrals.
 const LD_MIN_DECISION_AGE = 8
+// PSC-17 is a PEDIATRIC screen, normed for ages ~4–16. Above 17 it is not a
+// valid instrument, so its result is excluded from the clinical decision (with
+// a caution), exactly as learning-difficulties is excluded below 8.
+const PSC17_MAX_DECISION_AGE = 17
 function isAgeDiscounted(type: string, childAge: number): boolean {
-  return type === 'learning-difficulties' && childAge > 0 && childAge < LD_MIN_DECISION_AGE
+  if (childAge <= 0) return false
+  if (type === 'learning-difficulties') return childAge < LD_MIN_DECISION_AGE
+  if (type === 'psc17') return childAge > PSC17_MAX_DECISION_AGE
+  return false
+}
+function ageCautionText(type: string, childAge: number): string | undefined {
+  if (!isAgeDiscounted(type, childAge)) return undefined
+  if (type === 'psc17') {
+    return `عمر الطفل ${childAge} سنة: مقياس PSC-17 مُقنَّن للأعمار حتى 16 سنة تقريباً (أداة أطفال)، فلا تُعتمد نتيجته لمن تجاوز 17. استُبعدت من القرار — استعمل أدوات مناسبة للبالغين.`
+  }
+  return `عمر الطفل ${childAge} سنوات: عدة بنود تسأل عن مهارات لم تُدرَّس بعد في هذا العمر (جداول الضرب، القواعد الإملائية)، فترتفع الدرجات لأسباب نمائية طبيعية. لا تُبنَ على هذه النتيجة إحالة تشخيصية — تُعاد بعد سن 8.`
 }
 
 const SCALE_PROVENANCE: Record<ScaleKey, string> = {
@@ -879,9 +893,7 @@ export default function SpecialistToolkitPage() {
           provenance: SCALE_PROVENANCE[r.type as ScaleKey],
           severity: r.severity,
           severityLabel: t.severityLabels[r.severity],
-          ageCaution: isAgeDiscounted(r.type, childAge)
-            ? `عمر الطفل ${childAge} سنوات: عدة بنود تسأل عن مهارات لم تُدرَّس بعد في هذا العمر (جداول الضرب، القواعد الإملائية)، فترتفع الدرجات لأسباب نمائية طبيعية. لا تُبنَ على هذه النتيجة إحالة تشخيصية — تُعاد بعد سن 8.`
-            : undefined,
+          ageCaution: ageCautionText(r.type, childAge),
           domains: Object.entries(r.domainScores).map(([k, v]) => ({
             label: (t.domainLabels as Record<string, string>)[k] ?? k,
             score: v,
@@ -1736,11 +1748,9 @@ export default function SpecialistToolkitPage() {
                           <p className="text-[10px] text-gray-400 mt-0.5 leading-snug max-w-[420px]">
                             {SCALE_PROVENANCE[result.type as ScaleKey]}
                           </p>
-                          {result.type === 'learning-difficulties' && (parseInt(age, 10) || 0) > 0 && (parseInt(age, 10) || 0) < 8 && (
+                          {ageCautionText(result.type, parseInt(age, 10) || 0) && (
                             <p className="text-[10px] text-amber-700 bg-amber-50 rounded-md px-2 py-1 mt-1 leading-snug max-w-[420px]">
-                              ⚠️ عمر الطفل {parseInt(age, 10)} سنوات: عدة بنود تسأل عن مهارات لم تُدرَّس بعد في هذا العمر
-                              (جداول الضرب، القواعد الإملائية)، فترتفع الدرجات لأسباب نمائية طبيعية.
-                              لا تُبنَ على هذه النتيجة إحالة تشخيصية — تُعاد بعد سن 8.
+                              ⚠️ {ageCautionText(result.type, parseInt(age, 10) || 0)}
                             </p>
                           )}
                           {scaleSource[result.type as ScaleKey] && (

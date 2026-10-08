@@ -4,7 +4,15 @@ import dynamic from 'next/dynamic'
 import { motion } from 'framer-motion'
 import { Clock, CheckCircle, Play, X, Info, Volume2, Trophy, Flame, Zap } from 'lucide-react'
 import type { Exercise, Student, ExerciseResult } from '@/lib/types'
+import { ageYearsFromBirthDate } from '@/lib/age'
 import { useLang, tr } from '@/lib/i18n'
+
+// Query for /api/exercises including the child's EXACT age when derivable, so
+// precise age-window filtering (minAge/maxAge) can hide young-child content.
+function exerciseQuery(c: Student): string {
+  const years = c.birthDate ? ageYearsFromBirthDate(c.birthDate) : null
+  return `age=${c.ageGroup}&diagnosis=${c.diagnosis}${years != null ? `&exactAge=${years}` : ''}`
+}
 import { speakArabic, cancelSpeech, arabicDigitWord } from '@/lib/speech'
 
 // ── Category orbit geometry ────────────────────────────────────
@@ -596,7 +604,7 @@ export default function ExercisesPage() {
       setAllChildren(kids)
       const c = kids[0] || null
       setChild(c)
-      const q = c ? `age=${c.ageGroup}&diagnosis=${c.diagnosis}` : ''
+      const q = c ? exerciseQuery(c) : ''
       return fetch(`/api/exercises?${q}`)
     }).then(r => r.json()).then(d => setExercises(d.exercises || []))
     .finally(() => setLoading(false))
@@ -609,7 +617,7 @@ export default function ExercisesPage() {
     setSelected(null)
     setPhase('grid')
     setLoading(true)
-    const q = `age=${c.ageGroup}&diagnosis=${c.diagnosis}`
+    const q = exerciseQuery(c)
     fetch(`/api/exercises?${q}`)
       .then(r => r.json())
       .then(d => setExercises(d.exercises || []))

@@ -12,10 +12,19 @@ export async function GET(req: Request) {
     const ageGroup = searchParams.get('age') as AgeGroup | null
     const category = searchParams.get('category') as ExerciseCategory | null
     const diagnosis = searchParams.get('diagnosis') as Diagnosis | null
+    const exactAgeRaw = searchParams.get('exactAge')
+    const exactAge = exactAgeRaw && /^\d{1,2}$/.test(exactAgeRaw) ? Number(exactAgeRaw) : null
 
     let exercises = await getAllExercises()
 
     if (ageGroup)  exercises = exercises.filter(e => e.ageGroups.includes(ageGroup))
+    // Precise age window: when the child's real age is known, drop exercises whose
+    // minAge/maxAge excludes it (e.g. young-child play hidden from an 11-year-old).
+    if (exactAge !== null) {
+      exercises = exercises.filter(e =>
+        (e.minAge == null || exactAge >= e.minAge) &&
+        (e.maxAge == null || exactAge <= e.maxAge))
+    }
     if (category)  exercises = exercises.filter(e => e.category === category)
     if (diagnosis) exercises = exercises.filter(e => e.diagnoses.includes(diagnosis))
 

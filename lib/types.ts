@@ -104,6 +104,12 @@ export interface Exercise {
   descriptionAr: string
   category: ExerciseCategory
   ageGroups: AgeGroup[]
+  // Precise age window within the (wide) ageGroups band. When the child's exact
+  // age is known, an exercise is hidden if the age falls outside [minAge,maxAge].
+  // Keeps young-child content (e.g. "animal walks") out of an 11-year-old's plan
+  // without splitting the whole age model. Both optional and inclusive.
+  minAge?: number
+  maxAge?: number
   diagnoses: Diagnosis[]
   difficulty: ExerciseDifficulty
   durationMinutes: number

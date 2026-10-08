@@ -34,6 +34,7 @@
     "postcss": "^8.5.28",
     "pusher": "^5.3.4",
     "pusher-js": "^8.5.0",
+    "qrcode.react": "^4.2.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-hook-form": "^7.78.0",

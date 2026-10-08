@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import StudentProfileEditor from '@/components/dashboard/StudentProfileEditor'
 import { useParams, useRouter } from 'next/navigation'
+import { QRCodeSVG } from 'qrcode.react'
 import {
   ArrowRight, Mail, Phone, MapPin, Calendar, CheckCircle, Clock, XCircle,
   AlertCircle, Video, User, Brain, Star, Edit2, Save, X, Key, Copy,
@@ -444,6 +445,14 @@ export default function ClientDetailPage() {
               className="text-orange-500 hover:text-orange-700 flex-shrink-0">
               <Copy className="w-4 h-4" />
             </button>
+          </div>
+          {/* QR — the parent scans it with their phone during the first meeting,
+              no typing or copy-paste. Rendered client-side so the link token
+              never leaves the browser. */}
+          <div className="flex flex-col items-center gap-2 bg-white border border-orange-200 rounded-xl py-4">
+            <QRCodeSVG value={resetLinkData.url} size={168} level="M" marginSize={2}
+              style={{ background: '#fff', borderRadius: 8, padding: 6 }} />
+            <p className="text-xs font-bold text-orange-700">امسح الرمز بهاتف ولي الأمر للدخول مباشرةً</p>
           </div>
           <div className="flex gap-2">
             {resetLinkData.phone && (

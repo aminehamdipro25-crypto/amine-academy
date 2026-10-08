@@ -3,6 +3,16 @@ import { useState, useRef, useEffect } from 'react'
 import type { ExerciseResult } from '@/lib/types'
 import { subscribeSession, realtimeEnabled } from '@/lib/realtime-client'
 import { type Story, parseStoryText } from '@/lib/stories-data'
+import { speakArabic, cancelSpeech } from '@/lib/speech'
+
+// Strip the {{word|#hex}} colour markup to plain text for narration.
+function plainPageText(page: string): string {
+  return page
+    .replace(/\{\{([^|}]+)\|[^}]*\}\}/g, '$1')
+    .replace(/\{\{([^}]+)\}\}/g, '$1')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
 
 // Renders one line of story-page text, applying inline `{{word|#hex}}` color
 // markup (authored in the dashboard's story editor) as colored spans.
@@ -384,6 +394,20 @@ export default function StoryReader({ onComplete, onCancel, studentAge, difficul
   const [selected, setSelected] = useState<number|null>(null)
   const [showFB, setShowFB]     = useState(false)
   const [correct, setCorrect]   = useState(0)
+  const [reading, setReading]   = useState(false)
+
+  // Read the current page aloud in Arabic — the key interactivity for a child.
+  function readCurrentPage() {
+    if (!story) return
+    if (reading) { cancelSpeech(); setReading(false); return }
+    setReading(true)
+    speakArabic(plainPageText(story.pages[pageIdx]), 0.8)
+      .then(() => setReading(false))
+      .catch(() => setReading(false))
+  }
+  // Stop narration when the page changes or the reader closes.
+  useEffect(() => { cancelSpeech(); setReading(false) }, [pageIdx, phase, story?.id])
+  useEffect(() => () => { cancelSpeech() }, [])
 
   const cleanTimer = () => { if (timerRef.current) clearTimeout(timerRef.current) }
   useEffect(() => () => { cleanTimer() }, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -673,6 +697,19 @@ export default function StoryReader({ onComplete, onCancel, studentAge, difficul
         <p className="text-center text-xs font-bold pb-1 flex-shrink-0" style={{color:'#94A3B8'}}>
           {pageIdx + 1} / {totalPages}
         </p>
+
+        {/* Read-aloud — the main interactivity for a child */}
+        <div className="px-3 pb-2 flex-shrink-0">
+          <button
+            onClick={readCurrentPage}
+            className="w-full py-3 rounded-2xl font-black text-base active:scale-95 transition-all flex items-center justify-center gap-2"
+            style={reading
+              ? { background: '#FEE2E2', border: '2px solid #FCA5A5', color: '#B91C1C' }
+              : { background: `${story.accent}15`, border: `2px solid ${story.accent}`, color: story.accent }}
+          >
+            {reading ? <>⏹ إِيقاف القِراءة</> : <><span style={{ animation: 'none' }}>🔊</span> اِقرَأ لِي</>}
+          </button>
+        </div>
 
         {/* Navigation — big, easy to tap */}
         <div className="flex gap-2.5 px-3 pb-3 flex-shrink-0">

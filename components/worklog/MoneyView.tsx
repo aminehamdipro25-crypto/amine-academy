@@ -8,6 +8,7 @@ import {
 import { clientLabel, useWorkLog } from './useWorkLog'
 import { Empty, Stat, dayLabel, localToday, monthLabel, primaryBtn } from './ui'
 import RecurringExpenses from './RecurringExpenses'
+import BudgetCard from './BudgetCard'
 
 const EXPENSE_COLOR = '#E8890C'
 
@@ -42,6 +43,14 @@ export default function MoneyView({ mode, onAdd, onEditPayment, onEditExpense }:
       return acc
     }, [])
 
+  const today = localToday()
+  const dayTotal = (rs: { amount: number }[]) => Math.round(rs.reduce((s, r) => s + r.amount, 0) * 100) / 100
+  // The daily average leaves out fixed monthly costs (rent, phone): one 2,300 rent would swamp every coffee.
+  // It divides by the days something was spent, not the days of the month.
+  const daily = monthExpenses.filter(e => !e.recurringId)
+  const spendDays = new Set(daily.map(e => e.date)).size
+  const dailyAvg = spendDays ? Math.round((dayTotal(daily) / spendDays) * 100) / 100 : 0
+
   const byCategory = useMemo(() => {
     const m = new Map<ExpenseCategory, number>()
     for (const e of monthExpenses) m.set(e.category, (m.get(e.category) ?? 0) + e.amount)
@@ -74,10 +83,12 @@ export default function MoneyView({ mode, onAdd, onEditPayment, onEditExpense }:
 
       <div className="grid grid-cols-3 gap-2 sm:gap-3">
         <Stat label="المستلم" tone="green" icon={<ArrowDownLeft className="w-3.5 h-3.5" />} value={money(income)} sub={`${monthPayments.length} دفعة`} />
-        <Stat label="المصاريف" tone="rose" icon={<ArrowUpRight className="w-3.5 h-3.5" />} value={money(spent)} sub={`${monthExpenses.length} مصروف`} />
+        <Stat label="المصاريف" tone="rose" icon={<ArrowUpRight className="w-3.5 h-3.5" />} value={money(spent)}
+          sub={!isIn && spendDays ? `≈ ${money(dailyAvg)} يومياً (دون الثابتة)` : `${monthExpenses.length} مصروف`} />
         <Stat label="الصافي" tone="violet" icon={<Wallet className="w-3.5 h-3.5" />} value={money(income - spent)} sub="المستلم − المصاريف" />
       </div>
 
+      {!isIn && <BudgetCard month={month} />}
       {!isIn && <RecurringExpenses />}
 
       {/* Where it came from / went */}
@@ -113,7 +124,14 @@ export default function MoneyView({ mode, onAdd, onEditPayment, onEditExpense }:
         <div className="space-y-4">
           {groups.map(g => (
             <div key={g.date}>
-              <p className="text-[11px] font-bold text-gray-400 mb-1.5 px-1">{dayLabel(g.date)}</p>
+              <div className="flex items-baseline justify-between gap-2 mb-1.5 px-1">
+                <p className={`text-xs font-bold ${g.date === today ? 'text-gray-800' : 'text-gray-500'}`}>{g.date === today ? `اليوم · ${dayLabel(g.date)}` : dayLabel(g.date)}</p>
+                {/* The day's total, so a day of many small expenses still reads as one number. */}
+                <p className={`text-sm font-black whitespace-nowrap ${isIn ? 'text-emerald-700' : 'text-orange-600'}`}>
+                  <span className="text-[10px] font-bold text-gray-400">{isIn ? 'مجموع اليوم' : 'صرفت'}{g.rows.length > 1 ? ` (${g.rows.length})` : ''} </span>
+                  {isIn ? '+' : '−'}{money(dayTotal(g.rows))}
+                </p>
+              </div>
               <ul className="rounded-2xl bg-white border border-gray-100 shadow-sm divide-y divide-gray-50 overflow-hidden">
                 {g.rows.map(r => {
                   const p = isIn ? (r as WorkPayment) : null

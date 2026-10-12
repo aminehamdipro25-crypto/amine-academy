@@ -15,6 +15,7 @@ import StatsView from './StatsView'
 import StatDetailSheet, { type StatDetail } from './StatDetailSheet'
 import SettingsView from './SettingsView'
 import LessonForm, { type LessonDraft } from './LessonForm'
+import RepeatSheet from './RepeatSheet'
 import ClientForm from './ClientForm'
 import AvailabilitySheet from './AvailabilitySheet'
 import { ExpenseForm, PaymentForm } from './MoneyForms'
@@ -59,10 +60,13 @@ export default function WorkLogApp() {
 
   const openLesson = (d?: LessonDraft) => { setEditLesson(null); setDraft(d); setLessonOpen(true) }
   /** Same family, time, length, price and reminder — only the date is left to choose. */
-  const copyLesson = (l: WorkLesson) => openLesson({
+  const copyInForm = (l: WorkLesson) => openLesson({
     clientId: l.clientId, start: l.start, durationMin: l.durationMin, price: l.price,
     reminderMin: l.reminderMin, date: addDays(l.date, 7), child: l.child,
   })
+  /** «كرّر»: pick the days on a calendar; the form stays one tap away for a copy that changes more. */
+  const [repeatOf, setRepeatOf] = useState<WorkLesson | null>(null)
+  const copyLesson = (l: WorkLesson) => { setLessonOpen(false); setRepeatOf(l) }
   const editClientById = (id: string) => {
     const c = state.clientsById.get(id)
     if (!c) return
@@ -159,6 +163,7 @@ export default function WorkLogApp() {
           onCreated={c => { if (reopenLesson) setDraft(d => ({ ...d, clientId: c.id })) }} />
         <PaymentForm open={payOpen} onClose={() => setPayOpen(false)} payment={editPayment} clientId={payClient} />
         <ExpenseForm open={expOpen} onClose={() => setExpOpen(false)} expense={editExpense} />
+        <RepeatSheet lesson={repeatOf} onClose={() => setRepeatOf(null)} onOpenForm={copyInForm} />
         <AvailabilitySheet open={findTime} onClose={() => setFindTime(false)} onPick={d => openLesson(d)} />
       </div>
     </WorkLogContext.Provider>

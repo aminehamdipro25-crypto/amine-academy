@@ -1,6 +1,7 @@
 name: Work-log lesson reminders
 
-# Sends the «قبل ساعة» Telegram reminder for each home lesson. Vercel's cron
+# Sends the «قبل ساعة» Telegram reminder for each home lesson, and the evening
+# check of lessons left without a status (at the hour chosen in the settings). Vercel's cron
 # on this plan runs at most once a day, so the 5-minute tick comes from here.
 # GitHub may start a scheduled run a few minutes late; the endpoint sends any
 # reminder whose window is open until the lesson starts, so a late run still
@@ -36,3 +37,14 @@ jobs:
             -H "Authorization: Bearer $CRON_SECRET" "${APP_URL%/}/api/cron/worklog-reminders")
           cat body.json; echo
           if [ "$code" != "200" ]; then echo "::error::reminder endpoint returned $code"; exit 1; fi
+      - name: Call the evening check
+        if: always()
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$APP_URL" ] || [ -z "$CRON_SECRET" ]; then exit 0; fi
+          code=$(curl -sS -o body.json -w '%{http_code}' --max-time 60 \
+            -H "Authorization: Bearer $CRON_SECRET" "${APP_URL%/}/api/cron/worklog-evening")
+          cat body.json; echo
+          if [ "$code" != "200" ]; then echo "::error::evening endpoint returned $code"; exit 1; fi

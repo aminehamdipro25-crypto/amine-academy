@@ -8,12 +8,13 @@ import {
 } from 'lucide-react'
 import {
   STATUS_META, addDays, durationText, endOfMonth, endTime, formatDuration, formatMoney, googleDirectionsUrl, googleRouteUrl,
-  dayLegs, hoursIn, lessonChild, lessonReminderText, lessonValue, phoneDigits, sortLessons, startOfMonth, startOfWeek, weekdayMon0, type GeoPoint, type LessonStatus, type TravelLeg, type WorkLesson,
+  dayLegs, hoursIn, lessonChild, lessonReminderText, lessonsCount, lessonValue, phoneDigits, sortLessons, startOfMonth, startOfWeek, weekdayMon0, type GeoPoint, type LessonStatus, type TravelLeg, type WorkLesson,
 } from '@/lib/worklog'
 import { useToast } from '@/components/ui/Toast'
 import { clientLabel, useWorkLog } from './useWorkLog'
 import { Empty, Segmented, Sheet, StatusPill, dayLabel, ghostBtn, localToday, monthLabel, primaryBtn, shortDate } from './ui'
 import type { LessonDraft } from './LessonForm'
+import { unmarkedLessons } from '@/lib/worklog-evening'
 import { PaidPrompt } from './MoneyForms'
 
 const StopsMap = dynamic(() => import('./WorkMap').then(m => m.StopsMap), {
@@ -50,10 +51,16 @@ export default function AgendaView({ onAdd, onEdit, onCopy, onLocate, onFindTime
     return m
   }, [lessons])
 
-  const unconfirmed = useMemo(
-    () => sortLessons(lessons.filter(l => l.status === 'scheduled' && (l.date < today))),
-    [lessons, today],
-  )
+  // Over and still «مجدولة»: earlier days, and today's that have ended — the same list the evening message sends.
+  const [nowMin, setNowMin] = useState(() => { const d = new Date(); return d.getHours() * 60 + d.getMinutes() })
+  useEffect(() => {
+    const t = setInterval(() => { const d = new Date(); setNowMin(d.getHours() * 60 + d.getMinutes()) }, 60_000)
+    return () => clearInterval(t)
+  }, [])
+  const unconfirmed = useMemo(() => {
+    const u = unmarkedLessons(lessons, today, nowMin)
+    return [...u.earlier, ...u.today]
+  }, [lessons, today, nowMin])
 
   const dayLessons = byDate.get(selected) ?? []
   const active = dayLessons.filter(l => l.status !== 'cancelled')
@@ -110,7 +117,7 @@ export default function AgendaView({ onAdd, onEdit, onCopy, onLocate, onFindTime
           <button onClick={() => setReviewOpen(o => !o)} className="flex w-full items-center gap-2 text-right">
             <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0" />
             <span className="flex-1 text-sm font-bold text-amber-900">
-              {unconfirmed.length === 1 ? 'حصة سابقة لم تُحدَّد حالتها' : `${unconfirmed.length} حصص سابقة لم تُحدَّد حالتها`}
+              {`انتهت ولم تُحدَّد حالتها: ${lessonsCount(unconfirmed.length)}`}
               <span className="block text-[11px] font-medium text-amber-700">لا تدخل المستحقات ولا الإحصائيات حتى تعلّمها «تمّت» أو «ملغاة»</span>
             </span>
             <span className="text-xs font-bold text-amber-800 underline">{reviewOpen ? 'إخفاء' : 'مراجعة'}</span>
@@ -123,7 +130,7 @@ export default function AgendaView({ onAdd, onEdit, onCopy, onLocate, onFindTime
                     <span className="w-2 h-8 rounded-full" style={{ backgroundColor: clientsById.get(l.clientId)?.color }} />
                     <span className="flex-1 min-w-0">
                       <b className="block truncate text-gray-900">{clientLabel(clientsById.get(l.clientId))}</b>
-                      <span className="text-gray-400">{shortDate(l.date)} · {l.start}</span>
+                      <span className="text-gray-400">{l.date === today ? 'اليوم' : shortDate(l.date)} · {l.start}</span>
                     </span>
                     <button onClick={() => setStatus(l, 'done')} className="rounded-lg bg-emerald-600 px-2.5 py-1.5 font-bold text-white" aria-label="تمّت"><Check className="w-3.5 h-3.5" /></button>
                     <button onClick={() => setStatus(l, 'cancelled')} className="rounded-lg bg-rose-100 px-2.5 py-1.5 font-bold text-rose-700" aria-label="ملغاة"><X className="w-3.5 h-3.5" /></button>
@@ -428,7 +435,7 @@ function LessonCard({ lesson: l, paid, onPaid, onEdit, onCopy, onLocate, onStatu
               <BellRing className="w-3.5 h-3.5" /> {l.parentRemindedAt ? 'ذُكّر ✓' : 'ذكّر الولي'}
             </a>
           )}
-          <button onClick={onCopy} className="w-9 h-9 rounded-xl bg-gray-100 text-gray-700 flex items-center justify-center" aria-label="نسخ الحصة إلى تاريخ آخر" title="نسخ"><Copy className="w-4 h-4" /></button>
+          <button onClick={onCopy} className="inline-flex items-center gap-1 h-9 rounded-xl bg-brand-50 px-2.5 text-[11px] font-bold text-brand-700" aria-label="كرّر الحصة في أيام أخرى"><Copy className="w-3.5 h-3.5" /> كرّر</button>
           <button onClick={onEdit} className="w-9 h-9 rounded-xl bg-gray-100 text-gray-700 flex items-center justify-center" aria-label="تعديل"><Pencil className="w-4 h-4" /></button>
         </div>
       </div>

@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AlertTriangle, Car, Copy, MapPin, Repeat, Trash2 } from 'lucide-react'
 import {
-  CURRENCY_LABEL, STATUS_META, addDays, seriesPlan, durationText, familyChildren, lessonsCount, minutesOf, travelWarnings, endTime, findConflicts, formatMoney, priceFor,
+  CURRENCY_LABEL, STATUS_META, addDays, formatDuration, seriesPlan, durationText, familyChildren, lessonsCount, minutesOf, travelWarnings, endTime, findConflicts, formatMoney, priceFor,
   type LessonStatus, type WorkLesson,
 } from '@/lib/worklog'
 import { useToast } from '@/components/ui/Toast'
@@ -93,6 +93,24 @@ export default function LessonForm({ open, onClose, lesson, draft, onNewClient, 
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, lesson?.id, draft])
+
+  /**
+   * Picking a family on a new lesson brings its usual hour, length, child and
+   * reminder — from its most recent lesson (the price follows its rate) — so only the date is left to set.
+   * An edited lesson keeps what it has: changing its family changes nothing else.
+   */
+  function pickClient(cid: string) {
+    setClientId(cid)
+    if (lesson || !cid) return
+    const last = lessons.filter(l => l.clientId === cid)
+      .sort((a, b) => (a.date === b.date ? b.start.localeCompare(a.start) : b.date.localeCompare(a.date)))[0]
+    if (!last) { setChild(''); setOtherChild(false); return }
+    setStart(last.start); setDuration(last.durationMin)
+    setChild(last.child ?? ''); setOtherChild(false)
+    setReminder(last.reminderMin === null ? 'none' : String(last.reminderMin))
+    setPriceTouched(false) // the price follows the family's rate × this length
+    toast(`عُبّئ الوقت المعتاد لهذه العائلة: ${last.start}، ${formatDuration(last.durationMin)}`, 'info')
+  }
 
   // Price follows family × duration until the user types their own.
   useEffect(() => {
@@ -221,8 +239,8 @@ export default function LessonForm({ open, onClose, lesson, draft, onNewClient, 
             {saving ? 'جارٍ الحفظ…' : lesson ? (scope === 'future' && seriesAfter > 0 && scheduleChanged ? `حفظ لـ${lessonsCount(seriesAfter + 1)}` : 'حفظ التعديلات') : repeat > 1 ? `إضافة ${lessonsCount(repeat - repeatSkips.length)}` : 'إضافة الحصة'}
           </button>
           {lesson && !confirmDelete && (
-            <button onClick={() => onCopy(lesson)} className={ghostBtn()} title="نسخ إلى تاريخ آخر">
-              <Copy className="w-4 h-4" /><span className="hidden sm:inline">نسخ</span>
+            <button onClick={() => onCopy(lesson)} className={ghostBtn()} title="كرّر في أيام أخرى">
+              <Copy className="w-4 h-4" /><span>كرّر</span>
             </button>
           )}
           {lesson && !confirmDelete && (
@@ -253,7 +271,7 @@ export default function LessonForm({ open, onClose, lesson, draft, onNewClient, 
         <Field label="العائلة">
           {id => active.length ? (
             <div className="flex gap-2">
-              <select id={id} className={inputCls} value={clientId} onChange={e => setClientId(e.target.value)}>
+              <select id={id} className={inputCls} value={clientId} onChange={e => pickClient(e.target.value)}>
                 <option value="">— اختر —</option>
                 {active.map(c => <option key={c.id} value={c.id}>{clientLabel(c)}</option>)}
                 {lesson && clientsById.get(lesson.clientId)?.archived && (

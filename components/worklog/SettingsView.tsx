@@ -2,11 +2,15 @@
 import { useEffect, useState } from 'react'
 import { BellRing, CalendarPlus, Copy, FileSpreadsheet, RefreshCw, Send, ShieldOff } from 'lucide-react'
 import { useToast } from '@/components/ui/Toast'
+import { EVENING_CHECK_DEFAULT } from '@/lib/worklog'
 import { useWorkLog } from './useWorkLog'
 import { Field, Segmented, ghostBtn, inputCls, localToday, primaryBtn } from './ui'
 import { notificationState, requestNotifications, showLessonNotification } from './notify'
 import { downloadLedgerXlsx } from './exportXlsx'
 import { GoogleCalendarSection, NotionSection, TelegramReminderStatus, useIntegrations } from './IntegrationsPanel'
+
+/** Evening hours offered for the check of unmarked lessons. */
+const EVENING_TIMES = ['20:00', '20:30', '21:00', '21:30', '22:00', '22:30', '23:00']
 
 const ZONES = ['Asia/Qatar', 'Africa/Tunis', 'Asia/Riyadh', 'Asia/Dubai', 'Africa/Cairo', 'Europe/Paris']
 
@@ -135,6 +139,24 @@ export default function SettingsView() {
               options={[{ value: 'on', label: 'مفعّل' }, { value: 'off', label: 'متوقف' }]} />
           </div>
           <p className="text-[11px] text-gray-500 leading-relaxed">كل أحد (7:15 بتوقيت قطر): الأسبوع الماضي بالأرقام (الحصص والساعات وقيمة العمل والمستلم والمصاريف)، الأسبوع القادم، ومن عليه مبالغ ومنذ متى. عبر تيليغرام والبريد.</p>
+        </div>
+
+        <div className="rounded-2xl bg-gray-50 p-4 space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm font-bold text-gray-800">5 · التنبيه المسائي</p>
+            <Segmented size="sm" value={settings.eveningCheckAt === null ? 'off' : 'on'} onChange={v => save({ eveningCheckAt: v === 'on' ? EVENING_CHECK_DEFAULT : null })}
+              options={[{ value: 'on', label: 'مفعّل' }, { value: 'off', label: 'متوقف' }]} />
+          </div>
+          {settings.eveningCheckAt !== null && (
+            <div className="flex flex-wrap items-center gap-2">
+              <label htmlFor="evening-at" className="text-xs font-bold text-gray-600">يُرسَل بعد الساعة</label>
+              <select id="evening-at" disabled={busy} className={`${inputCls} max-w-[7rem] py-1.5`} value={settings.eveningCheckAt ?? EVENING_CHECK_DEFAULT}
+                onChange={e => save({ eveningCheckAt: e.target.value }, 'حُفظ وقت التنبيه المسائي')}>
+                {[...new Set([settings.eveningCheckAt ?? EVENING_CHECK_DEFAULT, ...EVENING_TIMES])].sort().map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+          )}
+          <p className="text-[11px] text-gray-500 leading-relaxed">مرة واحدة في المساء: الحصص التي انتهت وما زالت «مجدولة» — من اليوم ومن أيام سابقة — بقيمتها، لأنها لا تدخل الدخل ولا المستحقات حتى تضغط «تمّت» أو «ألغيت». ومعها ما صرفته اليوم وما بقي من ميزانية الشهر. لا يُرسَل شيء إن كانت كل الحصص محدّدة. عبر تيليغرام والبريد؛ يصل في الوقت الذي تختاره ما دام فحص الخمس دقائق مضبوطاً في GitHub، وإلا فنحو 22:45 بتوقيت قطر.</p>
         </div>
       </section>
 

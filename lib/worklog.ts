@@ -169,7 +169,21 @@ export interface WorkSettings {
   availability?: Availability
   /** Fixed monthly expenses (rent…), written as expenses on their day. */
   recurringExpenses?: RecurringExpense[]
+  /**
+   * Evening check of lessons left without a status, «HH:MM» in the ledger's
+   * zone. Absent = EVENING_CHECK_DEFAULT; null = off.
+   */
+  eveningCheckAt?: string | null
+  /** Monthly ceiling for day-to-day expenses (fixed monthly ones never count). Absent/null = none. */
+  expenseBudget?: ExpenseBudget | null
 }
+
+export interface ExpenseBudget {
+  amount: number
+  /** The categories it covers — never empty. */
+  categories: ExpenseCategory[]
+}
+export const EVENING_CHECK_DEFAULT = '21:30'
 
 /** Working days (Monday = 0 … Sunday = 6) and hours offered to families. */
 export interface Availability {
@@ -539,14 +553,50 @@ export function seriesPlan(
   candidate: Pick<WorkLesson, 'clientId' | 'date' | 'start' | 'durationMin'>,
   count: number,
 ): { dates: string[]; skipped: string[] } {
-  const dates: string[] = [], skipped: string[] = []
+  return copyPlan(existing, candidate, weeklySeries(candidate.date, count))
+}
+
+/** True when this family already has a lesson (not cancelled) overlapping that time on `date`. */
+export function familyHasLessonAt(
+  existing: WorkLesson[],
+  candidate: Pick<WorkLesson, 'clientId' | 'start' | 'durationMin'>,
+  date: string,
+): boolean {
   const s = minutesOf(candidate.start), e = s + candidate.durationMin
-  for (const date of weeklySeries(candidate.date, count)) {
-    const taken = existing.some(l => l.clientId === candidate.clientId && l.date === date && l.status !== 'cancelled'
-      && minutesOf(l.start) < e && s < minutesOf(l.start) + l.durationMin)
-    ;(taken ? skipped : dates).push(date)
+  return existing.some(l => l.clientId === candidate.clientId && l.date === date && l.status !== 'cancelled'
+    && minutesOf(l.start) < e && s < minutesOf(l.start) + l.durationMin)
+}
+
+/** The most days one «كرّر» may create at once. */
+export const MAX_COPY_DAYS = 31
+
+/**
+ * Copying one lesson to days picked by hand («كرّر»): same rule as a weekly
+ * repeat — a day where this family already has that hour is skipped, never
+ * doubled. Dates come back sorted and de-duplicated.
+ */
+export function copyPlan(
+  existing: WorkLesson[],
+  candidate: Pick<WorkLesson, 'clientId' | 'start' | 'durationMin'>,
+  dates: string[],
+): { dates: string[]; skipped: string[] } {
+  const out: string[] = [], skipped: string[] = []
+  for (const date of [...new Set(dates)].sort()) {
+    ;(familyHasLessonAt(existing, candidate, date) ? skipped : out).push(date)
   }
-  return { dates, skipped }
+  return { dates: out, skipped }
+}
+
+/**
+ * The status a copied lesson starts with: one already over (an earlier day, or
+ * today after its end) is recorded as done — a past lesson left «مجدولة»
+ * counts for nothing. `now` is the ledger's wall clock.
+ */
+export function copiedStatus(l: Pick<WorkLesson, 'date' | 'start' | 'durationMin'>, now: Date): LessonStatus {
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+  if (l.date < today) return 'done'
+  if (l.date > today) return 'scheduled'
+  return minutesOf(l.start) + l.durationMin <= now.getHours() * 60 + now.getMinutes() ? 'done' : 'scheduled'
 }
 
 /** Lessons that overlap `candidate` on the same day (cancelled ones free the slot). */
@@ -1010,6 +1060,23 @@ export function sanitizeSettings(body: Record<string, unknown>, current: WorkSet
       out.push({ id, label, category, amount, day, since, ...(old?.lastMonth ? { lastMonth: old.lastMonth } : {}), ...(raw.paused ? { paused: true } : {}) })
     }
     next.recurringExpenses = out
+  }
+  if ('eveningCheckAt' in body) {
+    if (body.eveningCheckAt === null || body.eveningCheckAt === 'off') next.eveningCheckAt = null
+    else if (isValidTime(body.eveningCheckAt) && minutesOf(body.eveningCheckAt) >= 12 * 60) next.eveningCheckAt = body.eveningCheckAt
+    else return { ok: false, error: 'وقت التنبيه المسائي غير صالح (من 12:00 إلى 23:59)' }
+  }
+  if ('expenseBudget' in body) {
+    const b = body.expenseBudget as Partial<ExpenseBudget> | null
+    if (b === null || (b && (b.amount as unknown) === 0)) next.expenseBudget = null
+    else {
+      const amount = cleanAmount(b?.amount, 10_000_000)
+      const all = Object.keys(EXPENSE_LABEL) as ExpenseCategory[]
+      const categories = Array.isArray(b?.categories) ? all.filter(c => (b!.categories as unknown[]).includes(c)) : []
+      if (!amount) return { ok: false, error: 'مبلغ الميزانية غير صالح' }
+      if (!categories.length) return { ok: false, error: 'اختر فئة واحدة على الأقل للميزانية' }
+      next.expenseBudget = { amount, categories }
+    }
   }
   if ('senderName' in body) {
     const v = sanitizePersonName(body.senderName)

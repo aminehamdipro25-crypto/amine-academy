@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_SETTINGS, sanitizeSettings, seriesPlan, periodBreakdown, periodStats, type GeoPoint, type WorkClient, type WorkLesson, type WorkPayment } from '@/lib/worklog'
+import { DEFAULT_SETTINGS, copiedStatus, copyPlan, sanitizeSettings, seriesPlan, periodBreakdown, periodStats, type GeoPoint, type WorkClient, type WorkLesson, type WorkPayment } from '@/lib/worklog'
 import {
   UNKNOWN_TRAVEL_MIN, availabilityText, daysText, debtAge, familiesText, freeSlots, receivables, weeklyDigest, weeklyDigestLines,
 } from '@/lib/worklog-planning'
@@ -228,6 +228,41 @@ describe('weekly repeat over weeks the agenda already holds', () => {
   it('an overlap of part of the hour is still the same lesson', () => {
     const p = seriesPlan([ls('2026-10-14', '16:00')], { clientId: 'hamad', date: '2026-10-14', start: '15:30', durationMin: 60 }, 1)
     expect(p.skipped).toEqual(['2026-10-14'])
+  })
+})
+
+describe('«كرّر» — one lesson copied to days picked by hand', () => {
+  const L = (date: string, start = '16:00', status: WorkLesson['status'] = 'scheduled', clientId = 'k') =>
+    ({ id: `${date}${start}${clientId}`, clientId, date, start, durationMin: 60, price: 120, status, reminderMin: 60, createdAt: '', updatedAt: '' }) as WorkLesson
+  const cand = { clientId: 'k', start: '10:30', durationMin: 60 }
+
+  it('adds any days, sorted and once each; a day the family already holds at that hour is skipped', () => {
+    const existing = [L('2026-10-17', '10:30'), L('2026-10-19', '18:00'), L('2026-10-20', '10:30', 'cancelled'), L('2026-10-21', '10:30', 'scheduled', 'other')]
+    const p = copyPlan(existing, cand, ['2026-10-21', '2026-10-17', '2026-10-19', '2026-10-20', '2026-10-19'])
+    expect(p.skipped).toEqual(['2026-10-17'])
+    // another hour, a cancelled lesson, or another family's lesson does not hold it
+    expect(p.dates).toEqual(['2026-10-19', '2026-10-20', '2026-10-21'])
+  })
+
+  it('a copy into a day already over is recorded done; today depends on whether it has ended', () => {
+    const now = new Date(2026, 9, 12, 11, 0) // 12 Oct, 11:00 on the ledger's clock
+    expect(copiedStatus({ date: '2026-10-10', start: '20:00', durationMin: 60 }, now)).toBe('done')
+    expect(copiedStatus({ date: '2026-10-12', start: '09:00', durationMin: 60 }, now)).toBe('done')
+    expect(copiedStatus({ date: '2026-10-12', start: '10:30', durationMin: 60 }, now)).toBe('scheduled')
+    expect(copiedStatus({ date: '2026-10-13', start: '08:00', durationMin: 60 }, now)).toBe('scheduled')
+  })
+
+  it('the route takes the days, checks every one and the limit, and recomputes the status itself', async () => {
+    const { readFileSync } = await import('fs')
+    const src = readFileSync('app/api/admin/worklog/[kind]/route.ts', 'utf8')
+    const block = src.slice(src.indexOf('Array.isArray(body.dates)'), src.indexOf("if (kind === 'lessons') {"))
+    expect(block).toContain('dates.every(isValidDate)')
+    expect(block).toContain('MAX_COPY_DAYS')
+    expect(block).toContain('copyPlan(')
+    expect(block).toContain('copiedStatus(')
+    // the browser cannot send a copy in as already done, rated or reminded
+    expect(block).toContain("status: 'scheduled'")
+    expect(block).toContain('rating: undefined')
   })
 })
 

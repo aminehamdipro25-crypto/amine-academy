@@ -428,7 +428,7 @@ function LessonCard({ lesson: l, paid, onPaid, onEdit, onCopy, onLocate, onStatu
               <BellRing className="w-3.5 h-3.5" /> {l.parentRemindedAt ? 'ذُكّر ✓' : 'ذكّر الولي'}
             </a>
           )}
-          <button onClick={onCopy} className="w-9 h-9 rounded-xl bg-gray-100 text-gray-700 flex items-center justify-center" aria-label="نسخ الحصة إلى تاريخ آخر" title="نسخ"><Copy className="w-4 h-4" /></button>
+          <button onClick={onCopy} className="inline-flex items-center gap-1 h-9 rounded-xl bg-brand-50 px-2.5 text-[11px] font-bold text-brand-700" aria-label="كرّر الحصة في أيام أخرى"><Copy className="w-3.5 h-3.5" /> كرّر</button>
           <button onClick={onEdit} className="w-9 h-9 rounded-xl bg-gray-100 text-gray-700 flex items-center justify-center" aria-label="تعديل"><Pencil className="w-4 h-4" /></button>
         </div>
       </div>

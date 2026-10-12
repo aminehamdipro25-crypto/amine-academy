@@ -539,14 +539,50 @@ export function seriesPlan(
   candidate: Pick<WorkLesson, 'clientId' | 'date' | 'start' | 'durationMin'>,
   count: number,
 ): { dates: string[]; skipped: string[] } {
-  const dates: string[] = [], skipped: string[] = []
+  return copyPlan(existing, candidate, weeklySeries(candidate.date, count))
+}
+
+/** True when this family already has a lesson (not cancelled) overlapping that time on `date`. */
+export function familyHasLessonAt(
+  existing: WorkLesson[],
+  candidate: Pick<WorkLesson, 'clientId' | 'start' | 'durationMin'>,
+  date: string,
+): boolean {
   const s = minutesOf(candidate.start), e = s + candidate.durationMin
-  for (const date of weeklySeries(candidate.date, count)) {
-    const taken = existing.some(l => l.clientId === candidate.clientId && l.date === date && l.status !== 'cancelled'
-      && minutesOf(l.start) < e && s < minutesOf(l.start) + l.durationMin)
-    ;(taken ? skipped : dates).push(date)
+  return existing.some(l => l.clientId === candidate.clientId && l.date === date && l.status !== 'cancelled'
+    && minutesOf(l.start) < e && s < minutesOf(l.start) + l.durationMin)
+}
+
+/** The most days one «كرّر» may create at once. */
+export const MAX_COPY_DAYS = 31
+
+/**
+ * Copying one lesson to days picked by hand («كرّر»): same rule as a weekly
+ * repeat — a day where this family already has that hour is skipped, never
+ * doubled. Dates come back sorted and de-duplicated.
+ */
+export function copyPlan(
+  existing: WorkLesson[],
+  candidate: Pick<WorkLesson, 'clientId' | 'start' | 'durationMin'>,
+  dates: string[],
+): { dates: string[]; skipped: string[] } {
+  const out: string[] = [], skipped: string[] = []
+  for (const date of [...new Set(dates)].sort()) {
+    ;(familyHasLessonAt(existing, candidate, date) ? skipped : out).push(date)
   }
-  return { dates, skipped }
+  return { dates: out, skipped }
+}
+
+/**
+ * The status a copied lesson starts with: one already over (an earlier day, or
+ * today after its end) is recorded as done — a past lesson left «مجدولة»
+ * counts for nothing. `now` is the ledger's wall clock.
+ */
+export function copiedStatus(l: Pick<WorkLesson, 'date' | 'start' | 'durationMin'>, now: Date): LessonStatus {
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+  if (l.date < today) return 'done'
+  if (l.date > today) return 'scheduled'
+  return minutesOf(l.start) + l.durationMin <= now.getHours() * 60 + now.getMinutes() ? 'done' : 'scheduled'
 }
 
 /** Lessons that overlap `candidate` on the same day (cancelled ones free the slot). */

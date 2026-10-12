@@ -2,10 +2,10 @@ import { NextRequest, NextResponse, after } from 'next/server'
 import { randomUUID } from 'crypto'
 import { isOwnerUser } from '@/lib/auth'
 import {
-  sanitizeClient, sanitizeExpense, sanitizeLesson, sanitizePayment, seriesPlan,
-  type WorkClient, type WorkLesson,
+  MAX_COPY_DAYS, copiedStatus, copyPlan, isValidDate, sanitizeClient, sanitizeExpense, sanitizeLesson, sanitizePayment, seriesPlan,
+  wallClockIn, type WorkClient, type WorkLesson,
 } from '@/lib/worklog'
-import { getWork, listWork, newWorkId, nextClientColor, putManyWork, putWork, type WorkKind } from '@/lib/worklog-store'
+import { getWork, getWorkSettings, listWork, newWorkId, nextClientColor, putManyWork, putWork, type WorkKind } from '@/lib/worklog-store'
 import { mirrorLessons } from '@/lib/worklog-mirror'
 
 export const runtime = 'nodejs'
@@ -35,6 +35,31 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ kin
       }
       await putWork('clients', row)
       return NextResponse.json(row, { status: 201 })
+    }
+
+    if (kind === 'lessons' && Array.isArray(body.dates)) {
+      // «كرّر»: one lesson copied to several days picked by hand.
+      const dates = body.dates as unknown[]
+      if (!dates.length || dates.length > MAX_COPY_DAYS || !dates.every(isValidDate)) return bad(`اختر من يوم إلى ${MAX_COPY_DAYS} يوماً بتواريخ صحيحة`)
+      const l = sanitizeLesson({ ...body, date: dates[0], status: 'scheduled' })
+      if (!l.ok) return bad(l.error)
+      if (!(await getWork('clients', l.value.clientId!))) return bad('العائلة غير موجودة', 404)
+      const plan = copyPlan(await listWork('lessons'), l.value as WorkLesson, dates as string[])
+      if (!plan.dates.length) return bad('كل هذه الأيام فيها حصة لهذه العائلة في الوقت نفسه أصلاً — لم يُضف شيء', 409)
+      const clock = wallClockIn((await getWorkSettings()).timezone)
+      const rows: WorkLesson[] = plan.dates.map(date => ({
+        ...(l.value as Omit<WorkLesson, 'id' | 'createdAt' | 'updatedAt' | 'date'>),
+        id: newWorkId('lessons'),
+        date,
+        status: copiedStatus({ date, start: l.value.start!, durationMin: l.value.durationMin! }, clock),
+        rating: undefined,
+        parentRemindedAt: undefined,
+        createdAt: now,
+        updatedAt: now,
+      }))
+      await putManyWork('lessons', rows)
+      after(() => mirrorLessons(rows))
+      return NextResponse.json({ rows, skipped: plan.skipped }, { status: 201 })
     }
 
     if (kind === 'lessons') {

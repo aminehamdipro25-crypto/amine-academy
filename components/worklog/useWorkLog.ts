@@ -60,6 +60,14 @@ export function useWorkLogState() {
     return row
   }, [])
 
+  /** «كرّر»: the same lesson on several days. Days this family already holds at that hour come back as skipped. */
+  const copyToDays = useCallback(async (body: object, dates: string[]): Promise<{ rows: WorkLesson[]; skipped: string[] }> => {
+    const res = await call<{ rows: WorkLesson[]; skipped: string[] }>('/api/admin/worklog/lessons', { method: 'POST', body: JSON.stringify({ ...body, dates }) })
+    setData(d => ({ ...d, lessons: [...d.lessons, ...res.rows] }))
+    changed()
+    return res
+  }, [])
+
   const update = useCallback(async <T extends { id: string },>(kind: Kind, id: string, body: object, optimistic = false): Promise<T> => {
     const before = (dataRef.current[kind] as { id: string }[]).find(r => r.id === id)
     if (optimistic) {
@@ -116,7 +124,7 @@ export function useWorkLogState() {
 
   const clientsById = useMemo(() => new Map(data.clients.map(c => [c.id, c])), [data.clients])
 
-  return { ...data, data, loading, error, reload, create, update, updateSeries, remove, removeFamily, saveSettings, clientsById }
+  return { ...data, data, loading, error, reload, create, copyToDays, update, updateSeries, remove, removeFamily, saveSettings, clientsById }
 }
 
 export type WorkLogCtx = ReturnType<typeof useWorkLogState>

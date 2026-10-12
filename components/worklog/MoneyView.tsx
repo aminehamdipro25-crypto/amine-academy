@@ -8,6 +8,7 @@ import {
 import { clientLabel, useWorkLog } from './useWorkLog'
 import { Empty, Stat, dayLabel, localToday, monthLabel, primaryBtn } from './ui'
 import RecurringExpenses from './RecurringExpenses'
+import BudgetCard from './BudgetCard'
 
 const EXPENSE_COLOR = '#E8890C'
 
@@ -87,6 +88,7 @@ export default function MoneyView({ mode, onAdd, onEditPayment, onEditExpense }:
         <Stat label="الصافي" tone="violet" icon={<Wallet className="w-3.5 h-3.5" />} value={money(income - spent)} sub="المستلم − المصاريف" />
       </div>
 
+      {!isIn && <BudgetCard month={month} />}
       {!isIn && <RecurringExpenses />}
 
       {/* Where it came from / went */}

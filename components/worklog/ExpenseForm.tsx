@@ -7,6 +7,7 @@ import {
 } from '@/lib/worklog'
 import { useToast } from '@/components/ui/Toast'
 import { useWorkLog } from './useWorkLog'
+import { budgetStatus } from '@/lib/worklog-evening'
 import { Field, Sheet, ghostBtn, inputCls, localToday, primaryBtn } from './ui'
 
 type Row = { key: number; label: string; amount: string }
@@ -77,6 +78,16 @@ export default function ExpenseForm({ open, onClose, expense }: { open: boolean;
     setRows(next); focusAmount(next[next.length - 1].key)
   }
 
+  /** «· بقي من ميزانية الشهر 180» after saving an expense the budget counts, this month. */
+  function budgetNote(replacing?: string): string {
+    const b = settings.expenseBudget
+    const today = localToday()
+    if (!b || date.slice(0, 7) !== today.slice(0, 7) || !b.categories.includes(category)) return ''
+    const was = expenses.find(e => e.id === replacing)
+    const st = budgetStatus([...expenses.filter(e => e.id !== replacing), { id: '', createdAt: '', ...was, date, category, amount: total }], b, today, today)
+    return st.state === 'over' ? ` · تجاوزت ميزانية الشهر بـ${money(-st.left)}` : ` · بقي من ميزانية الشهر ${money(st.left)}`
+  }
+
   async function save() {
     setError('')
     if (!filled.length) { setError('أدخل مبلغاً واحداً على الأقل'); return }
@@ -87,7 +98,7 @@ export default function ExpenseForm({ open, onClose, expense }: { open: boolean;
       const body = { date, category, note, items, amount: total }
       if (target) await update('expenses', target.id, body)
       else await create('expenses', body)
-      toast(target && !expense ? `أُضيف إلى مصروف اليوم — المجموع ${money(total)}` : 'حُفظ المصروف')
+      toast((target && !expense ? `أُضيف إلى مصروف اليوم — المجموع ${money(total)}` : 'حُفظ المصروف') + budgetNote(target?.id))
       onClose()
     } catch (e) { setError((e as Error).message) } finally { setSaving(false) }
   }

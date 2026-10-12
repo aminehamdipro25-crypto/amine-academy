@@ -169,7 +169,21 @@ export interface WorkSettings {
   availability?: Availability
   /** Fixed monthly expenses (rent…), written as expenses on their day. */
   recurringExpenses?: RecurringExpense[]
+  /**
+   * Evening check of lessons left without a status, «HH:MM» in the ledger's
+   * zone. Absent = EVENING_CHECK_DEFAULT; null = off.
+   */
+  eveningCheckAt?: string | null
+  /** Monthly ceiling for day-to-day expenses (fixed monthly ones never count). Absent/null = none. */
+  expenseBudget?: ExpenseBudget | null
 }
+
+export interface ExpenseBudget {
+  amount: number
+  /** The categories it covers — never empty. */
+  categories: ExpenseCategory[]
+}
+export const EVENING_CHECK_DEFAULT = '21:30'
 
 /** Working days (Monday = 0 … Sunday = 6) and hours offered to families. */
 export interface Availability {
@@ -1046,6 +1060,23 @@ export function sanitizeSettings(body: Record<string, unknown>, current: WorkSet
       out.push({ id, label, category, amount, day, since, ...(old?.lastMonth ? { lastMonth: old.lastMonth } : {}), ...(raw.paused ? { paused: true } : {}) })
     }
     next.recurringExpenses = out
+  }
+  if ('eveningCheckAt' in body) {
+    if (body.eveningCheckAt === null || body.eveningCheckAt === 'off') next.eveningCheckAt = null
+    else if (isValidTime(body.eveningCheckAt) && minutesOf(body.eveningCheckAt) >= 12 * 60) next.eveningCheckAt = body.eveningCheckAt
+    else return { ok: false, error: 'وقت التنبيه المسائي غير صالح (من 12:00 إلى 23:59)' }
+  }
+  if ('expenseBudget' in body) {
+    const b = body.expenseBudget as Partial<ExpenseBudget> | null
+    if (b === null || (b && (b.amount as unknown) === 0)) next.expenseBudget = null
+    else {
+      const amount = cleanAmount(b?.amount, 10_000_000)
+      const all = Object.keys(EXPENSE_LABEL) as ExpenseCategory[]
+      const categories = Array.isArray(b?.categories) ? all.filter(c => (b!.categories as unknown[]).includes(c)) : []
+      if (!amount) return { ok: false, error: 'مبلغ الميزانية غير صالح' }
+      if (!categories.length) return { ok: false, error: 'اختر فئة واحدة على الأقل للميزانية' }
+      next.expenseBudget = { amount, categories }
+    }
   }
   if ('senderName' in body) {
     const v = sanitizePersonName(body.senderName)

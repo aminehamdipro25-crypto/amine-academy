@@ -100,7 +100,12 @@ export default function ExpenseForm({ open, onClose, expense }: { open: boolean;
     if (!b || date.slice(0, 7) !== today.slice(0, 7) || !b.categories.includes(category)) return ''
     const was = expenses.find(e => e.id === replacing)
     const st = budgetStatus([...expenses.filter(e => e.id !== replacing), { id: '', createdAt: '', ...was, date, category, amount: total }], b, today, today)
-    return st.state === 'over' ? ` · تجاوزت ميزانية الشهر بـ${money(-st.left)}` : ` · بقي من ميزانية الشهر ${money(st.left)}`
+    if (st.state === 'over') return ` · تجاوزت ميزانية الشهر بـ${money(-st.left)}`
+    // Today's expense: what is left of today's share is the number that matters now.
+    if (date === today && st.todayLeft !== null) {
+      return st.todayLeft >= 0 ? ` · بقي لك اليوم ${money(st.todayLeft)}` : ` · تجاوزت حصّة اليوم بـ${money(-st.todayLeft)}`
+    }
+    return ` · بقي من ميزانية الشهر ${money(st.left)}`
   }
 
   async function save() {

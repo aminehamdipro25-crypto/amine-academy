@@ -93,7 +93,7 @@ function spendLine(spentToday: number, b: BudgetStatus | null | undefined, money
   if (b) {
     parts.push(b.state === 'over'
       ? `تجاوزت ميزانية الشهر بـ${money(-b.left)} (${money(b.spent)} من ${money(b.amount)})`
-      : `بقي من ميزانية الشهر ${money(b.left)} من ${money(b.amount)}${b.perDayLeft !== null ? ` (≈ ${money(b.perDayLeft)} لليوم)` : ''}`)
+      : `بقي من ميزانية الشهر ${money(b.left)} من ${money(b.amount)}${b.fromTomorrow !== null ? ` — ${money(b.fromTomorrow)} لكل يوم من الغد` : ''}`)
   }
   return parts.join(' · ')
 }
@@ -116,6 +116,15 @@ export interface BudgetStatus {
   projected: number | null
   /** Spent today in the budget's categories (0 outside the current month). */
   today: number
+  /**
+   * Today's fair share: what was left this morning (before today's spending)
+   * split evenly over the days left, today included. null outside the current month.
+   */
+  todayShare: number | null
+  /** That share minus what was spent today — negative once today's share is used up. */
+  todayLeft: number | null
+  /** What is left now, split over the days after today; null on the month's last day or outside it. */
+  fromTomorrow: number | null
 }
 
 /** A day-to-day expense the budget counts: one of its categories, never a fixed monthly one. */
@@ -136,6 +145,9 @@ export function budgetStatus(expenses: WorkExpense[], b: ExpenseBudget, monthDat
   const current = today >= from && today <= to
   const elapsed = current ? Number(today.slice(8)) : today > to ? daysInMonth : 0
   const daysLeft = current ? daysInMonth - elapsed + 1 : today < from ? daysInMonth : 0
+  const spentToday = current ? round2(counted.filter(e => e.date === today).reduce((s, e) => s + e.amount, 0)) : 0
+  // Measured from this morning, so spending today does not shrink today's own share.
+  const todayShare = current ? round2(Math.max(0, b.amount - (spent - spentToday)) / daysLeft) : null
   return {
     amount: b.amount,
     spent,
@@ -145,6 +157,9 @@ export function budgetStatus(expenses: WorkExpense[], b: ExpenseBudget, monthDat
     daysLeft,
     perDayLeft: daysLeft > 0 && left > 0 ? round2(left / daysLeft) : null,
     projected: current && elapsed >= BUDGET_PACE_FROM_DAY ? round2((spent / elapsed) * daysInMonth) : null,
-    today: current ? round2(counted.filter(e => e.date === today).reduce((s, e) => s + e.amount, 0)) : 0,
+    today: spentToday,
+    todayShare,
+    todayLeft: todayShare === null ? null : round2(todayShare - spentToday),
+    fromTomorrow: current && daysLeft > 1 ? round2(Math.max(0, left) / (daysLeft - 1)) : null,
   }
 }

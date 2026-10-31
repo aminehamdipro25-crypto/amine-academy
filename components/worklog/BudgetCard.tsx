@@ -107,13 +107,33 @@ export default function BudgetCard({ month }: { month: string }) {
       <div className="h-2.5 rounded-full bg-gray-100 overflow-hidden" role="progressbar" aria-valuenow={Math.min(b.pct, 100)} aria-valuemin={0} aria-valuemax={100} aria-label={`صُرف ${b.pct}% من الميزانية`}>
         <div className={`h-full rounded-full ${t.bar}`} style={{ width: `${Math.min(b.pct, 100)}%` }} />
       </div>
+      {b.todayShare !== null && b.state !== 'over' && b.todayLeft !== null && (
+        // Exact, not «≈»: today's share is measured from this morning, so spending today
+        // reduces what is left of it rather than quietly shrinking the share itself.
+        <div className="rounded-xl bg-white/80 border border-gray-100 p-3 space-y-1.5">
+          <div className="grid grid-cols-3 gap-2 text-center">
+            <div><p className="text-[10px] font-bold text-gray-500">حصّة اليوم</p><p className="text-sm font-black text-gray-900">{money(b.todayShare)}</p></div>
+            <div><p className="text-[10px] font-bold text-gray-500">صرفت اليوم</p><p className="text-sm font-black text-gray-900">{money(b.today)}</p></div>
+            <div>
+              <p className="text-[10px] font-bold text-gray-500">{b.todayLeft >= 0 ? 'بقي لك اليوم' : 'تجاوزت حصّة اليوم'}</p>
+              <p className={`text-base font-black ${b.todayLeft >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>{money(Math.abs(b.todayLeft))}</p>
+            </div>
+          </div>
+          <p className="text-[11px] text-gray-600">
+            {b.fromTomorrow !== null
+              ? <>من الغد: <b>{money(b.fromTomorrow)}</b> لكل يوم — بقي {b.daysLeft - 1 === 2 ? 'يومان' : daysText(b.daysLeft - 1)} بعد اليوم{b.todayLeft < 0 ? '، وتجاوز اليوم مقسوم عليها' : ''}.</>
+              : 'اليوم آخر يوم في الشهر.'}
+          </p>
+          <p className="text-[10px] text-gray-400">حصّة اليوم = ما بقي من الميزانية صباح اليوم ÷ الأيام المتبقية مع اليوم ({b.daysLeft}).</p>
+        </div>
+      )}
       <div className="text-[11px] text-gray-600 space-y-0.5">
-        {b.daysLeft > 0 && b.perDayLeft !== null && (
-          <p>يمكنك أن تصرف ≈ <b>{money(b.perDayLeft)}</b> لليوم فيما تبقّى من الشهر ({daysText(b.daysLeft)} مع اليوم){b.today > 0 ? ` — صرفت اليوم ${money(b.today)}` : ''}.</p>
+        {b.todayShare !== null && b.state === 'over' && (
+          <p className="font-bold text-rose-700">لم يبقَ شيء من ميزانية الشهر — كل ما تصرفه {b.daysLeft > 1 ? 'حتى نهاية الشهر' : 'اليوم'} يزيد التجاوز.{b.daysLeft === 1 ? ` غداً يبدأ شهر جديد بـ${money(b.amount)}.` : ''}</p>
         )}
-        {b.projected !== null
+        {b.projected !== null && b.daysLeft > 1
           ? <p className={b.projected > b.amount ? 'text-rose-700 font-bold' : ''}>بهذا الإيقاع سينتهي الشهر عند ≈ {money(b.projected)}{b.projected > b.amount ? ` — أعلى من الميزانية بـ${money(b.projected - b.amount)}` : ''}.</p>
-          : b.daysLeft > 0 && <p className="text-gray-400">التوقّع لآخر الشهر يظهر من اليوم {BUDGET_PACE_FROM_DAY} — قبله يقرّره يوم واحد كبير.</p>}
+          : b.daysLeft > 1 && b.projected === null && <p className="text-gray-400">التوقّع لآخر الشهر يظهر من اليوم {BUDGET_PACE_FROM_DAY} — قبله يقرّره يوم واحد كبير.</p>}
       </div>
     </section>
   )

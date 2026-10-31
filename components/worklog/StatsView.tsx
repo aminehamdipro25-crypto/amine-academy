@@ -5,7 +5,7 @@ import {
 } from 'recharts'
 import { Ban, CheckCircle2, FileDown, FileSpreadsheet, Clock, Coins, Hourglass, PiggyBank, TrendingDown, Wallet } from 'lucide-react'
 import {
-  EXPENSE_LABEL, STATUS_META, addDays, endOfMonth, formatHours, formatMoney, monthlyMoney, periodStats,
+  EXPENSE_LABEL, EXPENSE_META, STATUS_META, addDays, endOfMonth, formatHours, formatMoney, monthlyMoney, periodStats,
   startOfMonth, startOfWeek, weeklyHours,
 } from '@/lib/worklog'
 import { clientLabel, useWorkLog } from './useWorkLog'
@@ -248,7 +248,7 @@ export default function StatsView() {
             <ul className="space-y-2">
               {s.byExpenseCategory.map(c => (
                 <li key={c.category} className="flex items-center gap-2 text-xs">
-                  <span className="w-24 text-gray-500 font-bold truncate">{EXPENSE_LABEL[c.category]}</span>
+                  <span className="w-28 text-gray-500 font-bold truncate">{EXPENSE_META[c.category]?.icon} {EXPENSE_LABEL[c.category]}</span>
                   <span className="flex-1 h-2 rounded-full bg-gray-100 overflow-hidden">
                     <span className="block h-full rounded-full" style={{ width: `${(c.amount / totalExpenses) * 100}%`, backgroundColor: EXPENSE_COLOR }} />
                   </span>

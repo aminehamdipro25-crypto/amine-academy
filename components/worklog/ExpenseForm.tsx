@@ -2,8 +2,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Plus, Trash2, X } from 'lucide-react'
 import {
-  CURRENCY_LABEL, EXPENSE_LABEL, evalAmount, expenseItemsText, formatMoney,
-  type ExpenseCategory, type WorkExpense,
+  CURRENCY_LABEL, EXPENSE_CATEGORIES, EXPENSE_GROUP_LABEL, EXPENSE_LABEL, EXPENSE_META, evalAmount, expenseItemsText, formatMoney, frequentItems,
+  type ExpenseCategory, type ExpenseGroup, type WorkExpense,
 } from '@/lib/worklog'
 import { useToast } from '@/components/ui/Toast'
 import { useWorkLog } from './useWorkLog'
@@ -12,13 +12,20 @@ import { Field, Sheet, ghostBtn, inputCls, localToday, primaryBtn } from './ui'
 
 type Row = { key: number; label: string; amount: string }
 
-/** One tap names an item — the usual things, per category. */
+/** One tap names an item — the usual things, per category. The owner's own items come first (`frequentItems`). */
 const QUICK: Partial<Record<ExpenseCategory, string[]>> = {
   transport: ['أوبر', 'كريم', 'تاكسي', 'بنزين', 'مواقف', 'مترو'],
-  food: ['قهوة', 'ماء', 'عصير', 'غداء', 'وجبة خفيفة'],
-  materials: ['مقتنيات', 'أدوات', 'طباعة', 'ألعاب تعليمية'],
-  phone: ['رصيد', 'إنترنت'],
+  materials: ['مقتنيات', 'أدوات', 'طباعة', 'ألعاب تعليمية', 'كرات وأدوات رياضية'],
+  phone: ['رصيد', 'إنترنت', 'اشتراك تطبيق'],
+  marketing: ['إعلان واتساب', 'إعلان إنستغرام', 'إعلان فيسبوك', 'إعلان تيك توك', 'تصميم', 'طباعة منشورات', 'بطاقات عمل'],
+  learning: ['كتاب', 'دورة', 'ورشة', 'اشتراك تعليمي', 'شهادة'],
+  food: ['قهوة', 'ماء', 'عصير', 'غداء', 'عشاء', 'وجبة خفيفة'],
+  household: ['بقالة', 'فواتير', 'تنظيف', 'ملابس', 'أثاث'],
+  health: ['صيدلية', 'طبيب', 'تحاليل', 'نادي رياضي'],
+  family: ['تحويل للأهل', 'رسوم التحويل', 'هدية', 'مناسبة', 'مساعدة'],
+  rent: ['الكراء'],
 }
+const GROUPS: ExpenseGroup[] = ['work', 'personal', 'other']
 
 let seq = 0
 const row = (label = '', amount = ''): Row => ({ key: ++seq, label, amount })
@@ -41,13 +48,16 @@ export default function ExpenseForm({ open, onClose, expense }: { open: boolean;
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const amountRefs = useRef(new Map<number, HTMLInputElement>())
-  const focusAmount = (key: number) => requestAnimationFrame(() => amountRefs.current.get(key)?.focus())
+  const focusAmount = (key: number) => requestAnimationFrame(() => { const el = amountRefs.current.get(key); el?.focus(); el?.select() })
 
   useEffect(() => {
     if (!open) return
     setError(''); setSaving(false); setTarget(expense ?? null)
-    setDate(expense?.date ?? localToday()); setCategory(expense?.category ?? 'transport'); setNote(expense?.note ?? '')
+    // A new expense opens on the category used last — the next one is usually alike.
+    const lastUsed = expenses.filter(e => !e.recurringId).sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0]?.category
+    setDate(expense?.date ?? localToday()); setCategory(expense?.category ?? lastUsed ?? 'transport'); setNote(expense?.note ?? '')
     setRows(expense ? rowsOf(expense) : [row()])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, expense])
 
   // Today's expense of this category, to add to instead of starting another line.
@@ -66,10 +76,15 @@ export default function ExpenseForm({ open, onClose, expense }: { open: boolean;
     const n = row(label)
     setRows(rs => [...rs, n]); focusAmount(n.key)
   }
-  function quick(label: string) {
+  /** Names a row (and, for an item used before, fills its last amount — selected, to keep or overwrite). */
+  function quick(label: string, amount?: number) {
+    const patch = { label, ...(amount !== undefined ? { amount: String(amount) } : {}) }
     const empty = rows.find(r => !r.label.trim() && !r.amount.trim()) ?? rows.find(r => !r.label.trim())
-    if (empty) { setRow(empty.key, { label }); focusAmount(empty.key) } else addRow(label)
+    if (empty) { setRow(empty.key, patch); focusAmount(empty.key) }
+    else { const n = { ...row(), ...patch }; setRows(rs => [...rs, n]); focusAmount(n.key) }
   }
+  const mine = useMemo(() => frequentItems(expenses, category), [expenses, category])
+  const presets = (QUICK[category] ?? []).filter(q => !mine.some(m => m.label.toLowerCase() === q.toLowerCase()))
   function joinToday() {
     if (!sameDay) return
     const mine = rows.filter(r => r.amount.trim() || r.label.trim())
@@ -122,16 +137,19 @@ export default function ExpenseForm({ open, onClose, expense }: { open: boolean;
         </div>
       }>
       <div className="space-y-4">
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <p className="text-xs font-bold text-gray-600">الفئة</p>
-          <div className="flex flex-wrap gap-2">
-            {(Object.keys(EXPENSE_LABEL) as ExpenseCategory[]).map(c => (
-              <button key={c} type="button" onClick={() => setCategory(c)} aria-pressed={category === c} disabled={!!target && !expense}
-                className={`rounded-xl px-3 py-2 text-xs font-bold border transition ${category === c ? 'bg-gray-900 text-white border-gray-900' : 'bg-white border-gray-200 text-gray-600'} disabled:opacity-60`}>
-                {EXPENSE_LABEL[c]}
-              </button>
-            ))}
-          </div>
+          {GROUPS.map(g => (
+            <div key={g} className="flex flex-wrap items-center gap-1.5">
+              {g !== 'other' && <span className="w-12 text-[10px] font-bold text-gray-400">{EXPENSE_GROUP_LABEL[g]}</span>}
+              {EXPENSE_CATEGORIES.filter(c => EXPENSE_META[c].group === g).map(c => (
+                <button key={c} type="button" onClick={() => setCategory(c)} aria-pressed={category === c} disabled={!!target && !expense}
+                  className={`inline-flex items-center gap-1 rounded-xl px-2.5 py-1.5 text-xs font-bold border transition ${category === c ? 'bg-gray-900 text-white border-gray-900' : 'bg-white border-gray-200 text-gray-600'} disabled:opacity-60`}>
+                  <span aria-hidden>{EXPENSE_META[c].icon}</span>{EXPENSE_LABEL[c]}
+                </button>
+              ))}
+            </div>
+          ))}
         </div>
 
         {sameDay && (
@@ -148,13 +166,21 @@ export default function ExpenseForm({ open, onClose, expense }: { open: boolean;
 
         <div className="space-y-2">
           <p className="text-xs font-bold text-gray-600">البنود <span className="font-medium text-gray-400">— سمِّ كل مبلغ مهما كان صغيراً</span></p>
-          {QUICK[category] && (
+          {(mine.length > 0 || presets.length > 0) && (
             <div className="flex flex-wrap gap-1.5">
-              {QUICK[category]!.map(q => (
+              {mine.map(m => (
+                <button key={`m-${m.label}`} type="button" onClick={() => quick(m.label, m.lastAmount)}
+                  className="rounded-full bg-orange-50 border border-orange-200 px-3 py-1 text-xs font-bold text-orange-800 hover:bg-orange-100"
+                  title={`استعملته ${m.count} مرة — آخر مبلغ ${money(m.lastAmount)}`}>
+                  + {m.label} <span className="font-medium text-orange-600">{m.lastAmount}</span>
+                </button>
+              ))}
+              {presets.map(q => (
                 <button key={q} type="button" onClick={() => quick(q)} className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-700 hover:bg-gray-200">+ {q}</button>
               ))}
             </div>
           )}
+          {mine.length > 0 && <p className="text-[10px] text-gray-400">البرتقالية بنودك أنت بآخر مبلغ دفعته — اضغطها ثم عدّل المبلغ إن تغيّر.</p>}
           <ul className="space-y-2">
             {parsed.map((r, i) => {
               const bad = !!r.amount.trim() && (r.value === null || r.value <= 0)

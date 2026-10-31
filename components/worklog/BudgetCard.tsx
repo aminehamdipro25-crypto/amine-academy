@@ -136,10 +136,10 @@ export default function BudgetCard({ month }: { month: string }) {
         // reduces what is left of it rather than quietly shrinking the share itself.
         <div className="rounded-xl bg-white/80 border border-gray-100 p-3 space-y-1.5">
           <div className="grid grid-cols-3 gap-2 text-center">
-            <div><p className="text-[10px] font-bold text-gray-500">حصّة اليوم</p><p className="text-sm font-black text-gray-900">{money(b.todayShare)}</p></div>
+            <div><p className="text-[10px] font-bold text-gray-500">المسموح لك اليوم</p><p className="text-sm font-black text-gray-900">{money(b.todayShare)}</p></div>
             <div><p className="text-[10px] font-bold text-gray-500">صرفت اليوم</p><p className="text-sm font-black text-gray-900">{money(b.today)}</p></div>
             <div>
-              <p className="text-[10px] font-bold text-gray-500">{b.todayLeft >= 0 ? 'بقي لك اليوم' : 'تجاوزت حصّة اليوم'}</p>
+              <p className="text-[10px] font-bold text-gray-500">{b.todayLeft >= 0 ? 'بقي لك اليوم' : 'تجاوزت المسموح اليوم'}</p>
               <p className={`text-base font-black ${b.todayLeft >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>{money(Math.abs(b.todayLeft))}</p>
             </div>
           </div>
@@ -148,7 +148,7 @@ export default function BudgetCard({ month }: { month: string }) {
               ? <>من الغد: <b>{money(b.fromTomorrow)}</b> لكل يوم — بقي {b.daysLeft - 1 === 2 ? 'يومان' : daysText(b.daysLeft - 1)} بعد اليوم{b.todayLeft < 0 ? '، وتجاوز اليوم مقسوم عليها' : ''}.</>
               : 'اليوم آخر يوم في الشهر.'}
           </p>
-          <p className="text-[10px] text-gray-400">حصّة اليوم = ما بقي من الميزانية صباح اليوم ÷ الأيام المتبقية مع اليوم ({b.daysLeft}).</p>
+          <p className="text-[10px] text-gray-400">المسموح لك اليوم = ما بقي من الميزانية صباح اليوم (قبل مصاريف اليوم) ÷ عدد الأيام المتبقية من الشهر مع اليوم ({b.daysLeft}).</p>
         </div>
       )}
       <div className="text-[11px] text-gray-600 space-y-0.5">
@@ -177,7 +177,7 @@ export default function BudgetCard({ month }: { month: string }) {
                   </div>
                   {c.todayLeft !== null && c.state !== 'over' && (
                     <p className="mt-0.5 text-[10px] text-gray-500">
-                      اليوم: حصّتها {money(c.todayShare ?? 0)} · {c.todayLeft >= 0 ? `بقي ${money(c.todayLeft)}` : <span className="font-bold text-rose-700">تجاوزت حصّة اليوم بـ{money(-c.todayLeft)}</span>}
+                      المسموح لها اليوم {money(c.todayShare ?? 0)} · {c.todayLeft >= 0 ? `بقي ${money(c.todayLeft)}` : <span className="font-bold text-rose-700">تجاوزت المسموح اليوم بـ{money(-c.todayLeft)}</span>}
                     </p>
                   )}
                 </li>

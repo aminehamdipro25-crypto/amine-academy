@@ -1,16 +1,16 @@
 'use client'
 import { useState } from 'react'
 import { PiggyBank, Pencil } from 'lucide-react'
-import { EXPENSE_LABEL, formatMoney, type ExpenseCategory } from '@/lib/worklog'
+import { EXPENSE_CATEGORIES, EXPENSE_LABEL, EXPENSE_META, formatMoney, type ExpenseCategory } from '@/lib/worklog'
 import { BUDGET_PACE_FROM_DAY, budgetStatus } from '@/lib/worklog-evening'
 import { daysText } from '@/lib/worklog-planning'
 import { useToast } from '@/components/ui/Toast'
 import { useWorkLog } from './useWorkLog'
 import { ghostBtn, inputCls, localToday, primaryBtn } from './ui'
 
-const ALL = Object.keys(EXPENSE_LABEL) as ExpenseCategory[]
-/** Rent is a fixed monthly cost, not a day-to-day one. */
-const DEFAULT_CATEGORIES = ALL.filter(c => c !== 'rent')
+const ALL = EXPENSE_CATEGORIES
+/** Day-to-day spending — not rent, a family transfer or an ad campaign. */
+const DEFAULT_CATEGORIES = ALL.filter(c => EXPENSE_META[c].daily)
 
 const TONE = {
   ok: { bar: 'bg-emerald-500', text: 'text-emerald-700', box: 'border-gray-100 bg-white' },
@@ -62,7 +62,7 @@ export default function BudgetCard({ month }: { month: string }) {
               return (
                 <button key={c} type="button" aria-pressed={on} onClick={() => setCats(x => (on ? x.filter(y => y !== c) : [...x, c]))}
                   className={`rounded-lg px-3 py-1.5 text-xs font-bold border transition ${on ? 'bg-brand-600 text-white border-brand-600' : 'bg-white border-gray-200 text-gray-600'}`}>
-                  {EXPENSE_LABEL[c]}
+                  <span aria-hidden>{EXPENSE_META[c].icon}</span> {EXPENSE_LABEL[c]}
                 </button>
               )
             })}
@@ -89,7 +89,7 @@ export default function BudgetCard({ month }: { month: string }) {
 
   const b = budgetStatus(expenses, budget, month, localToday())
   const t = TONE[b.state]
-  const covers = budget.categories.length === DEFAULT_CATEGORIES.length && !budget.categories.includes('rent')
+  const covers = budget.categories.length === DEFAULT_CATEGORIES.length && DEFAULT_CATEGORIES.every(c => budget.categories.includes(c))
     ? 'كل المصاريف اليومية' : budget.categories.map(c => EXPENSE_LABEL[c]).join('، ')
   return (
     <section className={`rounded-2xl border shadow-sm p-4 space-y-2.5 ${t.box}`}>

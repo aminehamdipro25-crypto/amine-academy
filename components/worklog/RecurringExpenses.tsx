@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { Pause, Pencil, Play, Plus, Repeat, Trash2 } from 'lucide-react'
 import {
-  EXPENSE_LABEL, dueRecurring, formatMoney, recurringDate,
+  EXPENSE_LABEL, EXPENSE_META, dueRecurring, formatMoney, recurringDate,
   type ExpenseCategory, type RecurringExpense,
 } from '@/lib/worklog'
 import { useToast } from '@/components/ui/Toast'
@@ -110,7 +110,7 @@ export default function RecurringExpenses() {
           <div className="flex flex-wrap gap-1.5">
             {(Object.keys(EXPENSE_LABEL) as ExpenseCategory[]).map(c => (
               <button key={c} type="button" onClick={() => setDraft({ ...draft, category: c })} aria-pressed={draft.category === c}
-                className={`rounded-xl px-3 py-1.5 text-xs font-bold border ${draft.category === c ? 'bg-gray-900 text-white border-gray-900' : 'bg-white border-gray-200 text-gray-600'}`}>{EXPENSE_LABEL[c]}</button>
+                className={`rounded-xl px-3 py-1.5 text-xs font-bold border ${draft.category === c ? 'bg-gray-900 text-white border-gray-900' : 'bg-white border-gray-200 text-gray-600'}`}><span aria-hidden>{EXPENSE_META[c].icon}</span> {EXPENSE_LABEL[c]}</button>
             ))}
           </div>
           {draft.since < today.slice(0, 7) && !draft.id && (

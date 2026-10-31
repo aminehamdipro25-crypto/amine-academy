@@ -2,7 +2,7 @@
 import { useMemo, useState } from 'react'
 import { ArrowDownLeft, ArrowUpRight, ChevronLeft, ChevronRight, Plus, Receipt, Wallet } from 'lucide-react'
 import {
-  EXPENSE_LABEL, PAYMENT_METHOD_LABEL, endOfMonth, expenseItemsText, formatMoney, startOfMonth,
+  EXPENSE_GROUP_LABEL, EXPENSE_LABEL, EXPENSE_META, PAYMENT_METHOD_LABEL, expensesByGroup, endOfMonth, expenseItemsText, formatMoney, startOfMonth,
   type ExpenseCategory, type WorkExpense, type WorkPayment,
 } from '@/lib/worklog'
 import { clientLabel, useWorkLog } from './useWorkLog'
@@ -51,6 +51,7 @@ export default function MoneyView({ mode, onAdd, onEditPayment, onEditExpense }:
   const spendDays = new Set(daily.map(e => e.date)).size
   const dailyAvg = spendDays ? Math.round((dayTotal(daily) / spendDays) * 100) / 100 : 0
 
+  const byGroup = useMemo(() => expensesByGroup(monthExpenses), [monthExpenses])
   const byCategory = useMemo(() => {
     const m = new Map<ExpenseCategory, number>()
     for (const e of monthExpenses) m.set(e.category, (m.get(e.category) ?? 0) + e.amount)
@@ -95,13 +96,23 @@ export default function MoneyView({ mode, onAdd, onEditPayment, onEditExpense }:
       {(isIn ? byFamily.length : byCategory.length) > 0 && (
         <section className="rounded-2xl bg-white border border-gray-100 shadow-sm p-4">
           <h3 className="text-xs font-black text-gray-500 mb-3">{isIn ? 'حسب العائلة' : 'حسب الفئة'}</h3>
+          {!isIn && byGroup.length > 1 && (
+            // Work costs apart from personal spending: what the lessons cost is not what was sent home.
+            <div className="mb-3 flex flex-wrap gap-1.5">
+              {byGroup.map(g => (
+                <span key={g.group} className="rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-bold text-gray-700">
+                  {EXPENSE_GROUP_LABEL[g.group]}: {money(g.amount)} <span className="font-medium text-gray-400" dir="ltr">({Math.round((g.amount / (spent || 1)) * 100)}%)</span>
+                </span>
+              ))}
+            </div>
+          )}
           <ul className="space-y-2">
             {(isIn ? byFamily : byCategory).map(([key, amount]) => {
               const total = isIn ? income : spent
               const color = isIn ? clientsById.get(key as string)?.color ?? '#94a3b8' : EXPENSE_COLOR
               return (
                 <li key={key} className="flex items-center gap-2 text-xs">
-                  <span className="w-28 truncate font-bold text-gray-600">{isIn ? clientLabel(clientsById.get(key as string)) : EXPENSE_LABEL[key as ExpenseCategory]}</span>
+                  <span className="w-32 truncate font-bold text-gray-600">{isIn ? clientLabel(clientsById.get(key as string)) : `${EXPENSE_META[key as ExpenseCategory]?.icon ?? ''} ${EXPENSE_LABEL[key as ExpenseCategory]}`}</span>
                   <span className="flex-1 h-2 rounded-full bg-gray-100 overflow-hidden">
                     <span className="block h-full rounded-full" style={{ width: `${total ? (amount / total) * 100 : 0}%`, backgroundColor: color }} />
                   </span>
@@ -141,7 +152,7 @@ export default function MoneyView({ mode, onAdd, onEditPayment, onEditExpense }:
                       <button onClick={() => (p ? onEditPayment(p) : onEditExpense(e!))}
                         className="w-full flex items-center gap-3 px-4 py-3 text-right hover:bg-gray-50 transition">
                         <span className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${isIn ? 'bg-emerald-50 text-emerald-600' : 'bg-orange-50 text-orange-600'}`}>
-                          {isIn ? <ArrowDownLeft className="w-4 h-4" /> : <ArrowUpRight className="w-4 h-4" />}
+                          {isIn ? <ArrowDownLeft className="w-4 h-4" /> : <span aria-hidden className="text-base">{EXPENSE_META[(r as WorkExpense).category]?.icon ?? '🧾'}</span>}
                         </span>
                         <span className="flex-1 min-w-0">
                           <span className="block font-bold text-sm text-gray-900 truncate">

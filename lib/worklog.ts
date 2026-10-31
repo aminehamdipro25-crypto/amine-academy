@@ -23,7 +23,10 @@ import { sanitizePersonName } from './person-name'
 export type LessonStatus = 'scheduled' | 'done' | 'cancelled'
 export type CancelledBy = 'family' | 'me'
 export type PaymentMethod = 'cash' | 'transfer' | 'other'
-export type ExpenseCategory = 'transport' | 'materials' | 'phone' | 'food' | 'rent' | 'other'
+export type ExpenseCategory =
+  | 'transport' | 'materials' | 'phone' | 'marketing' | 'learning'
+  | 'food' | 'household' | 'health' | 'family' | 'rent'
+  | 'other'
 export type WorkCurrency = 'QAR' | 'TND'
 
 export interface GeoPoint { lat: number; lng: number }
@@ -225,8 +228,66 @@ export const PAYMENT_METHOD_LABEL: Record<PaymentMethod, string> = {
   cash: 'نقداً', transfer: 'تحويل', other: 'أخرى',
 }
 
+// The order here is the order everywhere: work first, then personal, then «أخرى».
 export const EXPENSE_LABEL: Record<ExpenseCategory, string> = {
-  transport: 'تنقّل ووقود', materials: 'أدوات ومواد', phone: 'هاتف وإنترنت', food: 'أكل', rent: 'الكراء', other: 'أخرى',
+  transport: 'تنقّل ووقود', materials: 'أدوات ومواد', phone: 'هاتف وإنترنت', marketing: 'إعلانات وتسويق', learning: 'كتب وتكوين',
+  food: 'أكل', household: 'البيت والمشتريات', health: 'صحة', family: 'للأهل والعائلة', rent: 'الكراء',
+  other: 'أخرى',
+}
+
+export type ExpenseGroup = 'work' | 'personal' | 'other'
+export const EXPENSE_GROUP_LABEL: Record<ExpenseGroup, string> = { work: 'للعمل', personal: 'شخصية', other: 'أخرى' }
+
+/**
+ * What each category is: an icon to find it at a glance, whether it is a cost
+ * of the work or personal spending (shown apart, so «what the lessons cost me»
+ * is not mixed with money sent home), and whether a new budget counts it by
+ * default — day-to-day spending, not rent, a family transfer or an ad campaign.
+ */
+export const EXPENSE_META: Record<ExpenseCategory, { icon: string; group: ExpenseGroup; daily: boolean }> = {
+  transport: { icon: '🚗', group: 'work', daily: true },
+  materials: { icon: '🧩', group: 'work', daily: true },
+  phone: { icon: '📱', group: 'work', daily: true },
+  marketing: { icon: '📣', group: 'work', daily: false },
+  learning: { icon: '📚', group: 'work', daily: true },
+  food: { icon: '☕', group: 'personal', daily: true },
+  household: { icon: '🛒', group: 'personal', daily: true },
+  health: { icon: '💊', group: 'personal', daily: true },
+  family: { icon: '👨‍👩‍👧', group: 'personal', daily: false },
+  rent: { icon: '🏠', group: 'personal', daily: false },
+  other: { icon: '🧾', group: 'other', daily: true },
+}
+export const EXPENSE_CATEGORIES = Object.keys(EXPENSE_LABEL) as ExpenseCategory[]
+
+/** Totals per group, in the fixed order work → personal → other; empty groups are left out. */
+export function expensesByGroup(expenses: Pick<WorkExpense, 'category' | 'amount'>[]): { group: ExpenseGroup; amount: number }[] {
+  const sums: Record<ExpenseGroup, number> = { work: 0, personal: 0, other: 0 }
+  for (const e of expenses) sums[(EXPENSE_META[e.category] ?? EXPENSE_META.other).group] += e.amount
+  return (['work', 'personal', 'other'] as ExpenseGroup[]).filter(g => sums[g] > 0).map(group => ({ group, amount: round2(sums[group]) }))
+}
+
+/**
+ * The items this owner actually writes in a category — «أوبر» with its last
+ * amount — most used first, then most recent. They are offered before the
+ * built-in suggestions, so the list learns from use instead of staying generic.
+ */
+export function frequentItems(expenses: WorkExpense[], category: ExpenseCategory, limit = 6): { label: string; lastAmount: number; count: number }[] {
+  const seen = new Map<string, { label: string; lastAmount: number; count: number; last: string }>()
+  const sorted = expenses.filter(e => e.category === category && !e.recurringId)
+    .sort((a, b) => (a.date === b.date ? a.createdAt.localeCompare(b.createdAt) : a.date.localeCompare(b.date)))
+  for (const e of sorted) {
+    for (const it of e.items ?? []) {
+      const label = it.label?.trim()
+      if (!label) continue
+      const key = label.toLowerCase()
+      const prev = seen.get(key)
+      seen.set(key, { label, lastAmount: it.amount, count: (prev?.count ?? 0) + 1, last: e.date })
+    }
+  }
+  return [...seen.values()]
+    .sort((a, b) => b.count - a.count || b.last.localeCompare(a.last))
+    .slice(0, limit)
+    .map(({ label, lastAmount, count }) => ({ label, lastAmount, count }))
 }
 
 export const CURRENCY_LABEL: Record<WorkCurrency, string> = { QAR: 'ر.ق', TND: 'د.ت' }

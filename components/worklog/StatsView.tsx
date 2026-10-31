@@ -11,6 +11,7 @@ import {
 import { clientLabel, useWorkLog } from './useWorkLog'
 import { useToast } from '@/components/ui/Toast'
 import { downloadLedgerXlsx } from './exportXlsx'
+import ProfitSection from './ProfitSection'
 import { Field, Segmented, Stat, ghostBtn, inputCls, localToday, monthLabel, shortDate } from './ui'
 
 type Preset = 'week' | 'month' | 'lastMonth' | 'quarter' | 'year' | 'custom'
@@ -110,6 +111,8 @@ export default function StatsView() {
           </button>
         </div>
       </div>
+
+      <ProfitSection from={from} to={to} />
 
       {/* Hours */}
       <section>

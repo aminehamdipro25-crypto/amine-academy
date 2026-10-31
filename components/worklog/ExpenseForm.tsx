@@ -111,7 +111,7 @@ export default function ExpenseForm({ open, onClose, expense }: { open: boolean;
     if (st.state === 'over') return ` · تجاوزت ميزانية الشهر بـ${money(-st.left)}`
     // Today's expense: what is left of today's share is the number that matters now.
     if (date === today && st.todayLeft !== null) {
-      return st.todayLeft >= 0 ? ` · بقي لك اليوم ${money(st.todayLeft)}` : ` · تجاوزت حصّة اليوم بـ${money(-st.todayLeft)}`
+      return st.todayLeft >= 0 ? ` · بقي لك اليوم ${money(st.todayLeft)}` : ` · تجاوزت المسموح اليوم بـ${money(-st.todayLeft)}`
     }
     return ` · بقي من ميزانية الشهر ${money(st.left)}`
   }

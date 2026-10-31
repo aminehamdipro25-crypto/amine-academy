@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { BarChart3, CalendarDays, Navigation, NotebookPen, Plus, Receipt, RefreshCw, Settings2, Users, Wallet } from 'lucide-react'
 import {
-  addDays, clientBalances, lessonsCount, endOfMonth, hoursIn, monthForecast, startOfWeek, endTime, formatDuration, formatMoney, googleDirectionsUrl, lessonStartLocal,
+  addDays, clientBalances, lessonWho, lessonsCount, endOfMonth, hoursIn, monthForecast, startOfWeek, endTime, formatDuration, formatMoney, googleDirectionsUrl, lessonStartLocal,
   periodBreakdown, periodStats, sortLessons, startOfMonth, type WorkClient, type WorkExpense, type WorkLesson, type WorkPayment,
 } from '@/lib/worklog'
 import { readStorage, writeStorage } from '@/lib/safe-storage'
@@ -20,6 +20,7 @@ import ClientForm from './ClientForm'
 import AvailabilitySheet from './AvailabilitySheet'
 import { ExpenseForm, PaymentForm } from './MoneyForms'
 import { dayLabel, localToday, primaryBtn } from './ui'
+import { budgetStatus, unmarkedLessons } from '@/lib/worklog-evening'
 
 type Tab = 'agenda' | 'clients' | 'payments' | 'expenses' | 'stats' | 'settings'
 const TABS: { id: Tab; label: string; icon: typeof CalendarDays }[] = [
@@ -105,7 +106,9 @@ export default function WorkLogApp() {
           </div>
         ) : (
           <>
-            <Overview onAddClient={() => openNewClient()} onAddLesson={() => openLesson()} />
+            <Overview onAddClient={() => openNewClient()} onAddLesson={() => openLesson()} onGo={go}
+              onAddExpense={() => { setEditExpense(null); setExpOpen(true) }}
+              onAddPayment={() => { setEditPayment(null); setPayClient(undefined); setPayOpen(true) }} />
             {state.clients.length > 0 && <GoalCard onSetGoal={() => go('settings')} />}
 
             <nav className="sticky top-0 z-30 -mx-4 md:-mx-6 lg:-mx-8 px-4 md:px-6 lg:px-8 py-2 mb-4 bg-slate-100/90 backdrop-blur" aria-label="أقسام الدفتر">
@@ -171,12 +174,15 @@ export default function WorkLogApp() {
 }
 
 /** Today at a glance: the next lesson, today's load, this month, what is owed. */
-function Overview({ onAddClient, onAddLesson }: { onAddClient: () => void; onAddLesson: () => void }) {
+function Overview({ onAddClient, onAddLesson, onAddExpense, onAddPayment, onGo }: {
+  onAddClient: () => void; onAddLesson: () => void; onAddExpense: () => void; onAddPayment: () => void; onGo: (t: Tab) => void
+}) {
   const { clients, lessons, payments, expenses, settings, clientsById } = useWorkLog()
   const today = localToday()
   const [now, setNow] = useState(() => Date.now())
   const [detail, setDetail] = useState<StatDetail | null>(null)
   useEffect(() => { const t = setInterval(() => setNow(Date.now()), 30_000); return () => clearInterval(t) }, [])
+  const money = (n: number) => formatMoney(n, settings.currency)
 
   const next = useMemo(
     () => sortLessons(lessons.filter(l => l.status === 'scheduled' && l.date >= today))
@@ -190,6 +196,12 @@ function Overview({ onAddClient, onAddLesson }: { onAddClient: () => void; onAdd
   const weekIncome = useMemo(() => periodBreakdown(lessons, clients, startOfWeek(today), addDays(startOfWeek(today), 6), today), [lessons, clients, today])
   const monthIncome = useMemo(() => periodBreakdown(lessons, clients, startOfMonth(today), endOfMonth(today), today), [lessons, clients, today])
   const owed = useMemo(() => clientBalances(clients, lessons, payments, today).reduce((s, b) => s + Math.max(0, b.balance), 0), [clients, lessons, payments, today])
+
+  // Today at a glance: the same numbers the agenda banner and the budget card show.
+  const todays = lessons.filter(l => l.date === today && l.status !== 'cancelled')
+  const nowMin = new Date(now).getHours() * 60 + new Date(now).getMinutes()
+  const unmarked = useMemo(() => { const u = unmarkedLessons(lessons, today, nowMin); return u.today.length + u.earlier.length }, [lessons, today, nowMin])
+  const budget = settings.expenseBudget ? budgetStatus(expenses, settings.expenseBudget, today, today) : null
 
   if (!clients.length) {
     return (
@@ -209,52 +221,91 @@ function Overview({ onAddClient, onAddLesson }: { onAddClient: () => void; onAdd
   const mins = next ? Math.round((start - now) / 60_000) : 0
   const nc = next ? clientsById.get(next.clientId) : undefined
   const countdown = !next ? '' : mins <= 0 ? 'جارية الآن' : mins < 60 ? `بعد ${mins} دقيقة` : mins < 24 * 60 ? `بعد ${formatDuration(mins)}` : ''
+  const quick = 'inline-flex items-center gap-1.5 rounded-xl bg-white/10 px-3 py-2 text-xs font-bold text-white hover:bg-white/20 active:scale-95 transition'
 
   return (
-    <div className="grid gap-3 lg:grid-cols-5 mb-4">
-      <div className="lg:col-span-3 rounded-3xl bg-gradient-to-br from-gray-900 to-gray-800 p-5 text-white shadow-lg">
-        <p className="text-[11px] font-bold text-gray-400">الحصة القادمة</p>
-        {next ? (
-          <>
-            <div className="mt-1 flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-xl font-black truncate">{clientLabel(nc)}</p>
-                <p className="text-sm text-gray-300 mt-0.5">
-                  {next.date === today ? 'اليوم' : next.date === addDays(today, 1) ? 'غداً' : dayLabel(next.date)} · {next.start}–{endTime(next.start, next.durationMin)}
-                  {countdown && <span className="mr-2 rounded-full bg-white/10 px-2 py-0.5 text-[11px] font-bold text-amber-300">{countdown}</span>}
-                </p>
-                {nc?.address && <p className="text-[11px] text-gray-400 mt-1 truncate">📍 {nc.address}</p>}
+    <div className="space-y-3 mb-4">
+      {/* Today: the next lesson, today's numbers, and the three things done most — one card, sized to its content. */}
+      <section className="rounded-3xl bg-gradient-to-br from-gray-900 to-gray-800 p-4 sm:p-5 text-white shadow-lg">
+        <div className="flex flex-col md:flex-row md:items-start gap-4">
+          <div className="flex-1 min-w-0">
+            <p className="text-[11px] font-bold text-gray-400">الحصة القادمة</p>
+            {next ? (
+              <div className="mt-1 flex items-start gap-2.5">
+                <span className="w-2.5 h-2.5 rounded-full mt-2 flex-shrink-0" style={{ backgroundColor: nc?.color }} />
+                <div className="min-w-0">
+                  <p className="text-lg sm:text-xl font-black truncate">{lessonWho(next, nc, ' · ')}</p>
+                  <p className="text-sm text-gray-300 mt-0.5">
+                    {next.date === today ? 'اليوم' : next.date === addDays(today, 1) ? 'غداً' : dayLabel(next.date)} · <span dir="ltr">{next.start}–{endTime(next.start, next.durationMin)}</span>
+                    {countdown && <span className="mr-2 rounded-full bg-white/10 px-2 py-0.5 text-[11px] font-bold text-amber-300">{countdown}</span>}
+                  </p>
+                  {nc?.address && <p className="text-[11px] text-gray-400 mt-1 truncate">📍 {nc.address}</p>}
+                </div>
               </div>
-              <span className="w-3 h-3 rounded-full mt-2 flex-shrink-0" style={{ backgroundColor: nc?.color }} />
-            </div>
-            {nc?.location && (
-              <a href={googleDirectionsUrl(nc.location)} target="_blank" rel="noopener noreferrer"
-                className="mt-4 inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-black text-gray-900 active:scale-95 transition">
-                <Navigation className="w-4 h-4" /> انطلق إلى المنزل
-              </a>
+            ) : (
+              <p className="mt-1 text-base font-bold text-gray-200">لا حصص مجدولة قادمة</p>
             )}
-          </>
-        ) : (
-          <div className="mt-2">
-            <p className="text-gray-300 text-sm">لا حصص مجدولة قادمة.</p>
-            <button onClick={onAddLesson} className="mt-3 rounded-xl bg-white px-4 py-2 text-sm font-black text-gray-900">+ جدولة حصة</button>
           </div>
-        )}
+
+          <div className="grid grid-cols-3 gap-2 md:w-[22rem] flex-shrink-0">
+            <button onClick={() => onGo('agenda')} className="rounded-2xl bg-white/5 px-2 py-2 text-center hover:bg-white/10 transition">
+              <p className="text-[10px] font-bold text-gray-400">حصص اليوم</p>
+              <p className="text-lg font-black leading-tight">{todays.length}</p>
+              <p className="text-[10px] text-gray-400 truncate">{todays.length ? money(todays.reduce((a, l) => a + l.price, 0)) : 'يوم فارغ'}</p>
+            </button>
+            <button onClick={() => onGo('agenda')} className={`rounded-2xl px-2 py-2 text-center transition ${unmarked ? 'bg-amber-400/15 hover:bg-amber-400/25' : 'bg-white/5 hover:bg-white/10'}`}>
+              <p className={`text-[10px] font-bold ${unmarked ? 'text-amber-300' : 'text-gray-400'}`}>بلا حالة</p>
+              <p className={`text-lg font-black leading-tight ${unmarked ? 'text-amber-300' : ''}`}>{unmarked}</p>
+              <p className="text-[10px] text-gray-400 truncate">{unmarked ? 'حدّدها «تمّت»' : 'كلها محدّدة ✓'}</p>
+            </button>
+            <button onClick={() => onGo('expenses')} className="rounded-2xl bg-white/5 px-2 py-2 text-center hover:bg-white/10 transition">
+              {budget && budget.todayLeft !== null ? (
+                <>
+                  <p className="text-[10px] font-bold text-gray-400">{budget.state === 'over' ? 'الميزانية' : budget.todayLeft >= 0 ? 'بقي لك اليوم' : 'تجاوزت اليوم'}</p>
+                  <p className={`text-lg font-black leading-tight ${budget.state === 'over' || budget.todayLeft < 0 ? 'text-rose-300' : 'text-emerald-300'}`}>
+                    {budget.state === 'over' ? 'متجاوزة' : money(Math.abs(budget.todayLeft))}
+                  </p>
+                  <p className="text-[10px] text-gray-400 truncate">صرفت اليوم {money(budget.today)}</p>
+                </>
+              ) : (
+                <>
+                  <p className="text-[10px] font-bold text-gray-400">ميزانية اليوم</p>
+                  <p className="text-sm font-black leading-tight mt-1">حدّدها</p>
+                  <p className="text-[10px] text-gray-400 truncate">من المصاريف</p>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          {next && nc?.location && (
+            <a href={googleDirectionsUrl(nc.location)} target="_blank" rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-white px-3.5 py-2 text-xs font-black text-gray-900 active:scale-95 transition">
+              <Navigation className="w-3.5 h-3.5" /> انطلق إلى المنزل
+            </a>
+          )}
+          <button onClick={onAddLesson} className={quick}><Plus className="w-3.5 h-3.5" /> حصة</button>
+          <button onClick={onAddExpense} className={quick}><Receipt className="w-3.5 h-3.5" /> مصروف</button>
+          <button onClick={onAddPayment} className={quick}><Wallet className="w-3.5 h-3.5" /> استلمت مبلغاً</button>
+        </div>
+      </section>
+
+      {/* Money first, then hours. One row on a wide screen, so the numbers have room to breathe. */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+        <MiniStat onOpen={() => setDetail('income-week')} label="دخل الأسبوع" hint="حصص منجزة" value={money(weekIncome.total)}
+          sub={weekIncome.counted.length ? lessonsCount(weekIncome.counted.length) : 'لا شيء بعد'} good />
+        <MiniStat onOpen={() => setDetail('income-month')} label="دخل الشهر" hint="حصص منجزة" value={money(monthIncome.total)}
+          sub={monthIncome.counted.length ? lessonsCount(monthIncome.counted.length) : 'لا شيء بعد'} good />
+        {/* A deficit is named, not signed: «-4,237» in Arabic text puts the minus after the number. */}
+        <MiniStat onOpen={() => setDetail('net-month')} label={month.net < 0 ? 'عجز الشهر' : 'صافي الشهر'}
+          hint={month.net < 0 ? 'المصاريف أكبر من المستلم' : 'مستلم − مصاريف'} value={money(Math.abs(month.net))}
+          sub={`مستلم ${money(month.collected)} · مصاريف ${money(month.expenses)}`} bad={month.net < 0} />
+        <MiniStat onOpen={() => setDetail('dues')} label="مستحقات معلّقة" hint="لدى العائلات" value={money(owed)} sub={owed > 0 ? 'اضغط لترى من' : 'الكل مسدّد ✓'} warn={owed > 0} />
+        <MiniStat onOpen={() => setDetail('hours-week')} label="ساعات الأسبوع" hint="منجزة" value={formatDuration(week.done)} sub={hoursSub(week.scheduled, week.cancelled)} />
+        <MiniStat onOpen={() => setDetail('hours-month')} label="ساعات الشهر" hint="منجزة" value={formatDuration(month.minutesDone)} sub={hoursSub(month.minutesScheduled, month.minutesCancelled)} />
       </div>
-      <div className="lg:col-span-2 grid grid-cols-2 gap-3">
-        <MiniStat onOpen={() => setDetail('income-week')} label="دخل الأسبوع (حصص منجزة)" value={formatMoney(weekIncome.total, settings.currency)}
-          sub={`المحتسب: ${weekIncome.counted.length ? lessonsCount(weekIncome.counted.length) : 'لا شيء بعد'}`} good />
-        <MiniStat onOpen={() => setDetail('income-month')} label="دخل الشهر (حصص منجزة)" value={formatMoney(monthIncome.total, settings.currency)}
-          sub={`المحتسب: ${monthIncome.counted.length ? lessonsCount(monthIncome.counted.length) : 'لا شيء بعد'}`} good />
-        <MiniStat onOpen={() => setDetail('hours-week')} label="ساعات الأسبوع (منجزة)" value={formatDuration(week.done)}
-          sub={hoursSub(week.scheduled, week.cancelled)} />
-        <MiniStat onOpen={() => setDetail('hours-month')} label="ساعات الشهر (منجزة)" value={formatDuration(month.minutesDone)}
-          sub={hoursSub(month.minutesScheduled, month.minutesCancelled)} />
-        <MiniStat onOpen={() => setDetail('net-month')} label="صافي الشهر" value={formatMoney(month.net, settings.currency)}
-          sub={`مستلم ${formatMoney(month.collected, settings.currency)} − مصاريف ${formatMoney(month.expenses, settings.currency)}`} />
-        <MiniStat onOpen={() => setDetail('dues')} label="مستحقات معلّقة" value={formatMoney(owed, settings.currency)} sub="لدى العائلات" warn={owed > 0} />
-        <StatDetailSheet kind={detail} onClose={() => setDetail(null)} />
-      </div>
+      <StatDetailSheet kind={detail} onClose={() => setDetail(null)} />
     </div>
   )
 }
@@ -268,14 +319,19 @@ function hoursSub(scheduled: number, cancelled: number): string {
   return parts.length ? parts.join(' · ') : 'لا مجدولة ولا ملغاة'
 }
 
-function MiniStat({ label, value, sub, warn, good, onOpen }: { label: string; value: string; sub: string; warn?: boolean; good?: boolean; onOpen?: () => void }) {
+function MiniStat({ label, hint, value, sub, warn, good, bad, onOpen }: {
+  label: string; hint?: string; value: string; sub: string; warn?: boolean; good?: boolean; bad?: boolean; onOpen?: () => void
+}) {
+  const tone = warn ? 'bg-amber-50 border-amber-100' : bad ? 'bg-rose-50 border-rose-100' : good ? 'bg-emerald-50 border-emerald-100' : 'bg-white border-gray-100'
+  const labelTone = warn ? 'text-amber-800' : bad ? 'text-rose-700' : good ? 'text-emerald-800' : 'text-gray-600'
   return (
-    <button type="button" onClick={onOpen} aria-label={`${label}: ${value} — اضغط لترى كيف حُسب`}
-      className={`text-right w-full rounded-2xl border p-3.5 shadow-sm active:scale-[0.98] transition hover:shadow-md ${warn ? 'bg-amber-50 border-amber-100' : good ? 'bg-emerald-50 border-emerald-100' : 'bg-white border-gray-100'}`}>
-      <p className={`text-[10px] font-bold ${warn ? 'text-amber-700' : good ? 'text-emerald-700' : 'text-gray-400'}`}>{label}</p>
-      <p className="text-base sm:text-lg font-black text-gray-900 mt-0.5 leading-tight">{value}</p>
-      <p className="text-[10px] text-gray-400 mt-0.5 truncate">{sub}</p>
-      <p className="text-[10px] font-bold text-brand-600 mt-1">التفاصيل ‹</p>
+    <button type="button" onClick={onOpen} aria-label={`${label}${hint ? ` (${hint})` : ''}: ${value} — اضغط لترى كيف حُسب`}
+      className={`group text-right w-full rounded-2xl border p-3 shadow-sm active:scale-[0.98] transition hover:shadow-md flex flex-col ${tone}`}>
+      <p className={`text-[11px] font-black ${labelTone}`}>{label}</p>
+      {hint && <p className="text-[10px] text-gray-400 leading-tight">{hint}</p>}
+      <p className="mt-1.5 text-lg font-black text-gray-900 leading-tight whitespace-nowrap">{value}</p>
+      <p className="text-[10px] text-gray-500 mt-0.5 line-clamp-2 leading-snug flex-1">{sub}</p>
+      <p className="text-[10px] font-bold text-brand-600 mt-1.5 opacity-70 group-hover:opacity-100">التفاصيل ‹</p>
     </button>
   )
 }

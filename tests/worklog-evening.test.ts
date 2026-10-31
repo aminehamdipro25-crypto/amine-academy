@@ -86,6 +86,24 @@ describe('the monthly budget for day-to-day expenses', () => {
     expect(s.projected).toBe(465) // 180 / 12 × 31
     expect(budgetStatus(ex, b, '2026-10-05', '2026-10-05').projected).toBeNull()
   })
+  it('today’s share is exact: measured from this morning, so spending today lowers what is left of it, not the share', () => {
+    // 600 for October; 180 spent before the 12th; 20 days left with today → 21 a day
+    const morning = [E('2026-10-03', 100, 'food'), E('2026-10-05', 80, 'transport')]
+    const before = budgetStatus(morning, b, '2026-10-12', '2026-10-12')
+    expect(before.todayShare).toBe(21); expect(before.todayLeft).toBe(21)
+    const after = budgetStatus([...morning, E('2026-10-12', 15, 'food')], b, '2026-10-12', '2026-10-12')
+    expect(after.todayShare).toBe(21)          // unchanged by today's spending
+    expect(after.todayLeft).toBe(6)            // 21 − 15
+    expect(after.fromTomorrow).toBe(21.32)     // (600 − 195) / 19 — spending under today's share raises tomorrow's
+    const overToday = budgetStatus([...morning, E('2026-10-12', 59, 'food')], b, '2026-10-12', '2026-10-12')
+    expect(overToday.todayLeft).toBe(-38)      // 21 − 59
+    expect(overToday.fromTomorrow).toBe(19)    // (600 − 239) / 19
+  })
+  it('the last day has no «from tomorrow»; outside the current month there is no daily share', () => {
+    const last = budgetStatus([E('2026-10-02', 590, 'food')], b, '2026-10-31', '2026-10-31')
+    expect(last.daysLeft).toBe(1); expect(last.todayShare).toBe(10); expect(last.fromTomorrow).toBeNull()
+    expect(budgetStatus([], b, '2026-09-10', '2026-10-12').todayShare).toBeNull()
+  })
   it('warns from 80% and says by how much it is over', () => {
     expect(budgetStatus([E('2026-10-03', 480)], b, '2026-10-12', '2026-10-12').state).toBe('near')
     const over = budgetStatus([E('2026-10-03', 650)], b, '2026-10-12', '2026-10-12')

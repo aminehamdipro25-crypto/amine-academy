@@ -1,8 +1,8 @@
 'use client'
 import { useState } from 'react'
 import { PiggyBank, Pencil } from 'lucide-react'
-import { EXPENSE_CATEGORIES, EXPENSE_LABEL, EXPENSE_META, formatMoney, type ExpenseCategory } from '@/lib/worklog'
-import { BUDGET_PACE_FROM_DAY, budgetStatus } from '@/lib/worklog-evening'
+import { EXPENSE_CATEGORIES, EXPENSE_LABEL, EXPENSE_META, formatMoney, type ExpenseBudget, type ExpenseCategory } from '@/lib/worklog'
+import { BUDGET_PACE_FROM_DAY, budgetStatus, categoryBudgets, limitsExceedTotal } from '@/lib/worklog-evening'
 import { daysText } from '@/lib/worklog-planning'
 import { useToast } from '@/components/ui/Toast'
 import { useWorkLog } from './useWorkLog'
@@ -30,13 +30,18 @@ export default function BudgetCard({ month }: { month: string }) {
   const [editing, setEditing] = useState(false)
   const [amount, setAmount] = useState('')
   const [cats, setCats] = useState<ExpenseCategory[]>(DEFAULT_CATEGORIES)
+  const [limits, setLimits] = useState<Partial<Record<ExpenseCategory, string>>>({})
   const [busy, setBusy] = useState(false)
   const money = (n: number) => formatMoney(n, settings.currency)
 
   const open = () => {
-    setAmount(budget ? String(budget.amount) : ''); setCats(budget?.categories ?? DEFAULT_CATEGORIES); setEditing(true)
+    setAmount(budget ? String(budget.amount) : ''); setCats(budget?.categories ?? DEFAULT_CATEGORIES)
+    setLimits(Object.fromEntries(Object.entries(budget?.limits ?? {}).map(([k, v]) => [k, String(v)])))
+    setEditing(true)
   }
-  async function save(value: { amount: number; categories: ExpenseCategory[] } | null) {
+  const limitValues = Object.fromEntries(Object.entries(limits).filter(([, v]) => v && Number(v) > 0).map(([k, v]) => [k, Number(v)])) as Partial<Record<ExpenseCategory, number>>
+  const draftOver = editing && Number(amount) > 0 ? limitsExceedTotal({ amount: Number(amount), categories: cats, limits: limitValues }) : null
+  async function save(value: ExpenseBudget | null) {
     setBusy(true)
     try {
       await saveSettings({ expenseBudget: value })
@@ -69,8 +74,25 @@ export default function BudgetCard({ month }: { month: string }) {
           </div>
           <p className="mt-1.5 text-[11px] text-gray-500">المصاريف الثابتة الشهرية (🔁 الكراء والاشتراكات) لا تُحتسب فيها أبداً.</p>
         </div>
+        <div>
+          <p className="text-xs font-bold text-gray-600">سقف لكل فئة <span className="font-medium text-gray-400">(اختياري — اتركه فارغاً لفئة بلا سقف خاص)</span></p>
+          <p className="text-[11px] text-gray-500 mb-1.5">مثلاً أكل 600 وتنقّل 400، فترى أيّها يسبّب التجاوز. ويمكن وضع سقف لفئة خارج الميزانية، كالإعلانات.</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+            {ALL.map(c => (
+              <label key={c} className="flex items-center gap-1.5 rounded-lg border border-gray-100 bg-gray-50 px-2 py-1">
+                <span className="flex-1 min-w-0 truncate text-[11px] font-bold text-gray-700"><span aria-hidden>{EXPENSE_META[c].icon}</span> {EXPENSE_LABEL[c]}</span>
+                <input type="number" inputMode="decimal" min={0} aria-label={`سقف ${EXPENSE_LABEL[c]}`} placeholder="—"
+                  className="w-24 rounded-md border border-gray-200 bg-white px-2 py-1 text-xs font-bold text-gray-900 outline-none focus:border-brand-400"
+                  value={limits[c] ?? ''} onChange={e => setLimits(l => ({ ...l, [c]: e.target.value }))} />
+              </label>
+            ))}
+          </div>
+          {draftOver !== null && (
+            <p className="mt-1.5 text-[11px] font-bold text-amber-700">مجموع سقوف الفئات داخل الميزانية ({money(draftOver)}) أكبر من الميزانية نفسها ({money(Number(amount))}) — ستنفد الميزانية قبل أن تبلغ الفئات سقوفها.</p>
+          )}
+        </div>
         <div className="flex flex-wrap gap-2">
-          <button disabled={busy || !(Number(amount) > 0) || !cats.length} onClick={() => save({ amount: Number(amount), categories: cats })} className={primaryBtn()}>حفظ</button>
+          <button disabled={busy || !(Number(amount) > 0) || !cats.length} onClick={() => save({ amount: Number(amount), categories: cats, ...(Object.keys(limitValues).length ? { limits: limitValues } : {}) })} className={primaryBtn()}>حفظ</button>
           {budget && <button disabled={busy} onClick={() => save(null)} className={ghostBtn('text-rose-600')}>إزالة الميزانية</button>}
           <button onClick={() => setEditing(false)} className={ghostBtn()}>إلغاء</button>
         </div>
@@ -88,6 +110,8 @@ export default function BudgetCard({ month }: { month: string }) {
   }
 
   const b = budgetStatus(expenses, budget, month, localToday())
+  const catRows = categoryBudgets(expenses, budget, month, localToday())
+  const over = limitsExceedTotal(budget)
   const t = TONE[b.state]
   const covers = budget.categories.length === DEFAULT_CATEGORIES.length && DEFAULT_CATEGORIES.every(c => budget.categories.includes(c))
     ? 'كل المصاريف اليومية' : budget.categories.map(c => EXPENSE_LABEL[c]).join('، ')
@@ -135,6 +159,33 @@ export default function BudgetCard({ month }: { month: string }) {
           ? <p className={b.projected > b.amount ? 'text-rose-700 font-bold' : ''}>بهذا الإيقاع سينتهي الشهر عند ≈ {money(b.projected)}{b.projected > b.amount ? ` — أعلى من الميزانية بـ${money(b.projected - b.amount)}` : ''}.</p>
           : b.daysLeft > 1 && b.projected === null && <p className="text-gray-400">التوقّع لآخر الشهر يظهر من اليوم {BUDGET_PACE_FROM_DAY} — قبله يقرّره يوم واحد كبير.</p>}
       </div>
+      {catRows.length > 0 && (
+        <div className="space-y-1.5 border-t border-gray-100 pt-2.5">
+          <p className="text-[11px] font-black text-gray-600">سقف كل فئة <span className="font-medium text-gray-400">— الأقرب إلى سقفها أولاً</span></p>
+          {over !== null && <p className="text-[10px] font-bold text-amber-700">مجموع سقوف الفئات داخل الميزانية ({money(over)}) أكبر من الميزانية ({money(b.amount)}).</p>}
+          <ul className="space-y-1.5">
+            {catRows.map(c => {
+              const ct = TONE[c.state]
+              return (
+                <li key={c.category} className="text-[11px]">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="font-bold text-gray-800 truncate"><span aria-hidden>{EXPENSE_META[c.category].icon}</span> {EXPENSE_LABEL[c.category]}{!c.inTotal && <span className="font-medium text-gray-400"> (خارج الميزانية)</span>}</span>
+                    <span className="whitespace-nowrap text-gray-600">{money(c.spent)} من {money(c.limit)} · <b className={ct.text}>{c.state === 'over' ? `تجاوزت بـ${money(-c.left)}` : `بقي ${money(c.left)}`}</b></span>
+                  </div>
+                  <div className="mt-0.5 h-1.5 rounded-full bg-gray-100 overflow-hidden">
+                    <div className={`h-full rounded-full ${ct.bar}`} style={{ width: `${Math.min(c.pct, 100)}%` }} />
+                  </div>
+                  {c.todayLeft !== null && c.state !== 'over' && (
+                    <p className="mt-0.5 text-[10px] text-gray-500">
+                      اليوم: حصّتها {money(c.todayShare ?? 0)} · {c.todayLeft >= 0 ? `بقي ${money(c.todayLeft)}` : <span className="font-bold text-rose-700">تجاوزت حصّة اليوم بـ{money(-c.todayLeft)}</span>}
+                    </p>
+                  )}
+                </li>
+              )
+            })}
+          </ul>
+        </div>
+      )}
     </section>
   )
 }

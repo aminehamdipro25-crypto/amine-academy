@@ -262,3 +262,33 @@ export function weeklyDigestLines(
   if (d.unconfirmed) lines.push(`⚠️ ${lessonsCount(d.unconfirmed)} سابقة لم تُحدَّد حالتها — لا تدخل الأرقام أعلاه`)
   return lines
 }
+
+// ── Reminding a family of what it owes ──────────────────────────────────────
+
+/**
+ * A polite reminder of a family's balance: the amount, how many lessons, and
+ * since when — the same numbers as «من عليه مبالغ» and the statement. It asks
+ * nothing sharper than «في الوقت الذي يناسبكم»; the statement is offered, not attached.
+ */
+export function duesReminderText(
+  client: Pick<WorkClient, 'name' | 'childName'>, r: Pick<Receivable, 'balance' | 'unpaidLessons' | 'oldestUnpaidDate'>,
+  currency: WorkCurrency, formatDay: (date: string) => string, sender?: string,
+): string {
+  const whom = client.childName?.trim() ? ` ${client.childName.trim()}` : ''
+  const since = r.oldestUnpaidDate ? ` منذ ${formatDay(r.oldestUnpaidDate)}` : ''
+  const count = r.unpaidLessons > 0 ? `، عن ${lessonsCount(r.unpaidLessons)}${since}` : ''
+  return [
+    ...parentOpening(client),
+    `نودّ التذكير بلطف بأن رصيد حصص${whom} المستحق حتى اليوم هو ${formatMoney(r.balance, currency)}${count}.`,
+    'نرجو التكرّم بتسويته في الوقت الذي يناسبكم، ويسعدنا إرسال كشف الحساب التفصيلي إن رغبتم.',
+    ...parentClosing('شاكرين لكم تعاونكم وثقتكم 🌷', sender),
+  ].join('\n')
+}
+
+/** Reminded within this many days: the family is shown as «ذُكّرت» and skipped by «ذكّر الكل». */
+export const DUES_REMIND_COOLDOWN_DAYS = 7
+
+export function remindedRecently(c: Pick<WorkClient, 'duesRemindedAt'>, today: string): boolean {
+  if (!c.duesRemindedAt) return false
+  return daysBetween(c.duesRemindedAt.slice(0, 10), today) < DUES_REMIND_COOLDOWN_DAYS
+}

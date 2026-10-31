@@ -129,7 +129,7 @@ export default function SettingsView() {
             <Segmented size="sm" value={settings.dailyDigest ? 'on' : 'off'} onChange={v => save({ dailyDigest: v === 'on' })}
               options={[{ value: 'on', label: 'مفعّل' }, { value: 'off', label: 'متوقف' }]} />
           </div>
-          <p className="text-[11px] text-gray-500 leading-relaxed">كل صباح (7:00 بتوقيت قطر): حصص اليوم بالترتيب، رابط الطريق لكل منزل، مسار اليوم كاملاً، والمستحقات. يصل عبر تيليغرام والبريد المضبوطين في المنصة. لا يُرسَل شيء في يوم فارغ.</p>
+          <p className="text-[11px] text-gray-500 leading-relaxed">كل صباح (7:00 بتوقيت قطر): حصص اليوم بالترتيب، رابط الطريق لكل منزل، مسار اليوم كاملاً، والمستحقات، وكم يمكنك أن تصرف اليوم إن حدّدت ميزانية (مع الفئات التي اقتربت من سقفها). يصل عبر تيليغرام والبريد المضبوطين في المنصة. لا يُرسَل شيء في يوم بلا حصص ولا ميزانية.</p>
         </div>
 
         <div className="rounded-2xl bg-gray-50 p-4 space-y-2">

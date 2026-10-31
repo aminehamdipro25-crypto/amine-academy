@@ -9,8 +9,8 @@
 
 import { ARABIC_LOCALE, formatDateOnly } from './format'
 import {
-  EVENING_CHECK_DEFAULT, endOfMonth, endTime, formatMoney, lessonWho, lessonsCount, minutesOf, round2, sortLessons, startOfMonth,
-  type ExpenseBudget, type WorkClient, type WorkCurrency, type WorkExpense, type WorkLesson,
+  EVENING_CHECK_DEFAULT, EXPENSE_LABEL, endOfMonth, endTime, formatMoney, lessonWho, lessonsCount, minutesOf, round2, sortLessons, startOfMonth,
+  type ExpenseBudget, type ExpenseCategory, type WorkClient, type WorkCurrency, type WorkExpense, type WorkLesson,
 } from './worklog'
 
 // ── Evening check ────────────────────────────────────────────────────────────
@@ -136,18 +136,93 @@ export function countsForBudget(e: Pick<WorkExpense, 'category' | 'recurringId'>
 export const BUDGET_NEAR = 0.8
 export const BUDGET_PACE_FROM_DAY = 7
 
-export function budgetStatus(expenses: WorkExpense[], b: ExpenseBudget, monthDate: string, today: string): BudgetStatus {
+/** The month's days around `today`: how many have passed (today included) and how many remain (today included). */
+function monthDays(monthDate: string, today: string) {
   const from = startOfMonth(monthDate), to = endOfMonth(monthDate)
-  const counted = expenses.filter(e => e.date >= from && e.date <= to && countsForBudget(e, b))
-  const spent = round2(counted.reduce((s, e) => s + e.amount, 0))
-  const left = round2(b.amount - spent)
   const daysInMonth = Number(to.slice(8))
   const current = today >= from && today <= to
   const elapsed = current ? Number(today.slice(8)) : today > to ? daysInMonth : 0
   const daysLeft = current ? daysInMonth - elapsed + 1 : today < from ? daysInMonth : 0
+  return { from, to, daysInMonth, current, elapsed, daysLeft }
+}
+
+/** Today's share of a ceiling, measured from this morning, and what is left of it. */
+function dailyShare(amount: number, spent: number, spentToday: number, daysLeft: number, current: boolean) {
+  const todayShare = current ? round2(Math.max(0, amount - (spent - spentToday)) / daysLeft) : null
+  return { todayShare, todayLeft: todayShare === null ? null : round2(todayShare - spentToday) }
+}
+
+export interface CategoryBudget {
+  category: ExpenseCategory
+  limit: number
+  spent: number
+  /** Negative once over. */
+  left: number
+  pct: number
+  state: 'ok' | 'near' | 'over'
+  /** Spent today in this category. */
+  today: number
+  todayShare: number | null
+  todayLeft: number | null
+  /** Whether the category is also counted in the total budget. */
+  inTotal: boolean
+}
+
+/**
+ * Each category that has its own ceiling, the most pressing first (highest
+ * share used). Same rules as the total: fixed monthly expenses never count,
+ * and today's share is measured from this morning.
+ */
+export function categoryBudgets(expenses: WorkExpense[], b: ExpenseBudget, monthDate: string, today: string): CategoryBudget[] {
+  const { from, to, current, daysLeft } = monthDays(monthDate, today)
+  return (Object.entries(b.limits ?? {}) as [ExpenseCategory, number][])
+    .filter(([, limit]) => limit > 0)
+    .map(([category, limit]) => {
+      const es = expenses.filter(e => e.date >= from && e.date <= to && e.category === category && !e.recurringId)
+      const spent = round2(es.reduce((s, e) => s + e.amount, 0))
+      const spentToday = current ? round2(es.filter(e => e.date === today).reduce((s, e) => s + e.amount, 0)) : 0
+      return {
+        category, limit, spent,
+        left: round2(limit - spent),
+        pct: Math.round((spent / limit) * 100),
+        state: spent > limit ? 'over' : spent >= limit * BUDGET_NEAR ? 'near' : 'ok',
+        today: spentToday,
+        ...dailyShare(limit, spent, spentToday, daysLeft, current),
+        inTotal: b.categories.includes(category),
+      } as CategoryBudget
+    })
+    .sort((a, c) => c.pct - a.pct)
+}
+
+/**
+ * Ceilings of categories inside the total that add up to more than the total —
+ * then the total runs out before the categories do, and one of the two is wrong.
+ */
+export function limitsExceedTotal(b: ExpenseBudget): number | null {
+  const sum = round2(b.categories.reduce((s, c) => s + (b.limits?.[c] ?? 0), 0))
+  return sum > b.amount ? sum : null
+}
+
+/** The morning message's budget lines: today's share, and the categories close to or over their ceiling. */
+export function budgetDigestLines(st: BudgetStatus, cats: CategoryBudget[], currency: WorkCurrency): string[] {
+  const money = (v: number) => formatMoney(v, currency)
+  const lines: string[] = []
+  if (st.state === 'over') lines.push(`💸 تجاوزت ميزانية الشهر بـ${money(-st.left)} — كل ما تصرفه حتى نهاية الشهر يزيد التجاوز`)
+  else if (st.todayShare !== null) lines.push(`💸 يمكنك أن تصرف اليوم ${money(st.todayShare)} (بقي من ميزانية الشهر ${money(st.left)} من ${money(st.amount)})`)
+  for (const c of cats.filter(x => x.state !== 'ok')) {
+    lines.push(c.state === 'over'
+      ? `• ${EXPENSE_LABEL[c.category]}: تجاوزت سقفها بـ${money(-c.left)}`
+      : `• ${EXPENSE_LABEL[c.category]}: بقي ${money(c.left)} من ${money(c.limit)}${c.todayShare !== null ? ` — ${money(c.todayShare)} لليوم` : ''}`)
+  }
+  return lines
+}
+
+export function budgetStatus(expenses: WorkExpense[], b: ExpenseBudget, monthDate: string, today: string): BudgetStatus {
+  const { from, to, daysInMonth, current, elapsed, daysLeft } = monthDays(monthDate, today)
+  const counted = expenses.filter(e => e.date >= from && e.date <= to && countsForBudget(e, b))
+  const spent = round2(counted.reduce((s, e) => s + e.amount, 0))
+  const left = round2(b.amount - spent)
   const spentToday = current ? round2(counted.filter(e => e.date === today).reduce((s, e) => s + e.amount, 0)) : 0
-  // Measured from this morning, so spending today does not shrink today's own share.
-  const todayShare = current ? round2(Math.max(0, b.amount - (spent - spentToday)) / daysLeft) : null
   return {
     amount: b.amount,
     spent,
@@ -158,8 +233,8 @@ export function budgetStatus(expenses: WorkExpense[], b: ExpenseBudget, monthDat
     perDayLeft: daysLeft > 0 && left > 0 ? round2(left / daysLeft) : null,
     projected: current && elapsed >= BUDGET_PACE_FROM_DAY ? round2((spent / elapsed) * daysInMonth) : null,
     today: spentToday,
-    todayShare,
-    todayLeft: todayShare === null ? null : round2(todayShare - spentToday),
+    // Measured from this morning, so spending today does not shrink today's own share.
+    ...dailyShare(b.amount, spent, spentToday, daysLeft, current),
     fromTomorrow: current && daysLeft > 1 ? round2(Math.max(0, left) / (daysLeft - 1)) : null,
   }
 }

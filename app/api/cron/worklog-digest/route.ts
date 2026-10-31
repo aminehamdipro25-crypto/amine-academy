@@ -9,6 +9,7 @@ import {
   lessonWho, sortLessons, todayIn, type GeoPoint,
 } from '@/lib/worklog'
 import { loadAllWork } from '@/lib/worklog-store'
+import { budgetDigestLines, budgetStatus, categoryBudgets } from '@/lib/worklog-evening'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -27,7 +28,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   }
 
-  const { clients, lessons, payments, settings } = await loadAllWork()
+  const { clients, lessons, payments, expenses, settings } = await loadAllWork()
   if (!settings.dailyDigest) return NextResponse.json({ ok: true, skipped: 'disabled' })
 
   const today = todayIn(settings.timezone)
@@ -40,8 +41,14 @@ export async function GET(req: Request) {
   const owed = clientBalances(clients, lessons, payments, today).filter(b => b.balance > 0)
   const owedTotal = owed.reduce((s, b) => s + b.balance, 0)
 
-  // Nothing to say on a free day with nothing pending: no message at all.
-  if (!todays.length && !unconfirmed) return NextResponse.json({ ok: true, skipped: 'nothing-today', date: today })
+  // Today's share of the budget — the number to know before going out.
+  const budget = settings.expenseBudget
+  const budgetLines = budget
+    ? budgetDigestLines(budgetStatus(expenses, budget, today, today), categoryBudgets(expenses, budget, today, today), settings.currency)
+    : []
+
+  // Nothing to say on a free day with nothing pending and no budget: no message at all.
+  if (!todays.length && !unconfirmed && !budgetLines.length) return NextResponse.json({ ok: true, skipped: 'nothing-today', date: today })
 
   const minutes = todays.reduce((s, l) => s + l.durationMin, 0)
   const value = todays.reduce((s, l) => s + l.price, 0)
@@ -56,7 +63,9 @@ export async function GET(req: Request) {
   })
 
   const tgText = [
-    `☀️ <b>حصص اليوم (${todays.length}) · ${formatDuration(minutes)} · ${tgEsc(formatMoney(value, settings.currency))}</b>`,
+    todays.length
+      ? `☀️ <b>حصص اليوم (${todays.length}) · ${formatDuration(minutes)} · ${tgEsc(formatMoney(value, settings.currency))}</b>`
+      : '☀️ <b>لا حصص مجدولة اليوم</b>',
     ...rows.map(({ l, c, who }) =>
       `\n🕐 <b>${l.start}–${endTime(l.start, l.durationMin)}</b> ${tgEsc(who)}` +
       (c?.address ? `\n📍 ${tgEsc(c.address)}` : '') +
@@ -64,12 +73,13 @@ export async function GET(req: Request) {
     route && stops.length > 1 ? `\n🗺️ <a href="${route}">مسار اليوم كاملاً</a>` : '',
     unconfirmed ? `\n⚠️ ${unconfirmed} حصة سابقة لم تُحدَّد حالتها (تمّت أم أُلغيت)` : '',
     owed.length ? `\n💰 مستحقات لدى ${owed.length} عائلة: ${tgEsc(formatMoney(owedTotal, settings.currency))}` : '',
+    budgetLines.length ? `\n${budgetLines.map(tgEsc).join('\n')}` : '',
     `\n<a href="${link}">فتح الدفتر</a>`,
   ].filter(Boolean).join('\n')
 
   const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
   const html = `<div dir="rtl" style="font-family:Tahoma,Arial,sans-serif;max-width:560px;margin:auto;color:#1f2937">
-<h2 style="margin:0 0 4px">حصص اليوم (${todays.length})</h2>
+<h2 style="margin:0 0 4px">${todays.length ? `حصص اليوم (${todays.length})` : 'لا حصص مجدولة اليوم'}</h2>
 <p style="margin:0 0 16px;color:#6b7280">${formatDuration(minutes)} · ${esc(formatMoney(value, settings.currency))}</p>
 ${rows.map(({ l, c, who }) => `<div style="border:1px solid #e5e7eb;border-radius:12px;padding:12px;margin-bottom:8px">
 <b>${l.start}–${endTime(l.start, l.durationMin)}</b> · ${esc(who)}
@@ -79,6 +89,7 @@ ${c?.location ? `<a href="${googleDirectionsUrl(c.location)}" style="font-size:1
 ${route && stops.length > 1 ? `<p><a href="${route}">مسار اليوم كاملاً</a></p>` : ''}
 ${unconfirmed ? `<p style="color:#b45309">${unconfirmed} حصة سابقة لم تُحدَّد حالتها بعد.</p>` : ''}
 ${owed.length ? `<p>مستحقات لدى ${owed.length} عائلة: <b>${esc(formatMoney(owedTotal, settings.currency))}</b></p>` : ''}
+${budgetLines.map(l => `<p style="margin:2px 0">${esc(l)}</p>`).join('')}
 <p><a href="${link}">فتح دفتر الحصص</a></p></div>`
 
   const channels: string[] = []
@@ -86,7 +97,7 @@ ${owed.length ? `<p>مستحقات لدى ${owed.length} عائلة: <b>${esc(fo
   const to = process.env.NOTIFY_EMAIL || process.env.ADMIN_EMAIL || process.env.GMAIL_USER
   if (to) {
     try {
-      await sendEmail({ to, subject: `☀️ حصص اليوم: ${todays.length} · ${formatDuration(minutes)}`, html })
+      await sendEmail({ to, subject: todays.length ? `☀️ حصص اليوم: ${todays.length} · ${formatDuration(minutes)}` : '☀️ يومك: لا حصص · ميزانية اليوم', html })
       channels.push('email')
     } catch (e) {
       console.error('[worklog-digest] email failed', (e as Error).message)

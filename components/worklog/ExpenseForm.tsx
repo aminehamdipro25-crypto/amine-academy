@@ -7,7 +7,7 @@ import {
 } from '@/lib/worklog'
 import { useToast } from '@/components/ui/Toast'
 import { useWorkLog } from './useWorkLog'
-import { budgetStatus } from '@/lib/worklog-evening'
+import { budgetStatus, categoryBudgets } from '@/lib/worklog-evening'
 import { Field, Sheet, ghostBtn, inputCls, localToday, primaryBtn } from './ui'
 
 type Row = { key: number; label: string; amount: string }
@@ -93,13 +93,21 @@ export default function ExpenseForm({ open, onClose, expense }: { open: boolean;
     setRows(next); focusAmount(next[next.length - 1].key)
   }
 
-  /** «· بقي من ميزانية الشهر 180» after saving an expense the budget counts, this month. */
+  /** «· بقي من ميزانية الشهر 180» after saving an expense the budget counts, this month — and its category's ceiling. */
   function budgetNote(replacing?: string): string {
     const b = settings.expenseBudget
     const today = localToday()
-    if (!b || date.slice(0, 7) !== today.slice(0, 7) || !b.categories.includes(category)) return ''
+    if (!b || date.slice(0, 7) !== today.slice(0, 7)) return ''
     const was = expenses.find(e => e.id === replacing)
-    const st = budgetStatus([...expenses.filter(e => e.id !== replacing), { id: '', createdAt: '', ...was, date, category, amount: total }], b, today, today)
+    const next = [...expenses.filter(e => e.id !== replacing), { id: '', createdAt: '', ...was, date, category, amount: total }]
+    const cat = b.limits?.[category] ? categoryBudgets(next, b, today, today).find(c => c.category === category) : undefined
+    const catNote = cat ? (cat.state === 'over' ? ` · ${EXPENSE_LABEL[category]}: تجاوزت سقفها بـ${money(-cat.left)}` : ` · ${EXPENSE_LABEL[category]}: بقي ${money(cat.left)} من ${money(cat.limit)}`) : ''
+    if (!b.categories.includes(category)) return catNote
+    const st = budgetStatus(next, b, today, today)
+    return totalNote(st) + catNote
+  }
+  function totalNote(st: ReturnType<typeof budgetStatus>): string {
+    const today = localToday()
     if (st.state === 'over') return ` · تجاوزت ميزانية الشهر بـ${money(-st.left)}`
     // Today's expense: what is left of today's share is the number that matters now.
     if (date === today && st.todayLeft !== null) {

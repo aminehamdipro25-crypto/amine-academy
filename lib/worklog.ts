@@ -45,6 +45,8 @@ export interface WorkClient {
   color: string
   notes?: string
   archived?: boolean
+  /** When the owner last sent this family a reminder of what it owes. Set by the server only. */
+  duesRemindedAt?: string
   createdAt: string
 }
 
@@ -185,6 +187,11 @@ export interface ExpenseBudget {
   amount: number
   /** The categories it covers — never empty. */
   categories: ExpenseCategory[]
+  /**
+   * Optional ceilings for single categories (أكل 600، تنقّل 400). A category
+   * may have one without being in the total — an ad budget kept apart.
+   */
+  limits?: Partial<Record<ExpenseCategory, number>>
 }
 export const EVENING_CHECK_DEFAULT = '21:30'
 
@@ -968,6 +975,8 @@ export function sanitizeClient(body: Record<string, unknown>, partial = false): 
     out.color = (CLIENT_COLORS as readonly string[]).includes(String(body.color)) ? String(body.color) : CLIENT_COLORS[0]
   }
   if ('archived' in body) out.archived = !!body.archived
+  // The timestamp is the server's, never the browser's: it records when the reminder was sent.
+  if ('duesReminded' in body) out.duesRemindedAt = body.duesReminded ? new Date().toISOString() : undefined
   return { ok: true, value: out }
 }
 
@@ -1136,7 +1145,16 @@ export function sanitizeSettings(body: Record<string, unknown>, current: WorkSet
       const categories = Array.isArray(b?.categories) ? all.filter(c => (b!.categories as unknown[]).includes(c)) : []
       if (!amount) return { ok: false, error: 'مبلغ الميزانية غير صالح' }
       if (!categories.length) return { ok: false, error: 'اختر فئة واحدة على الأقل للميزانية' }
-      next.expenseBudget = { amount, categories }
+      const limits: Partial<Record<ExpenseCategory, number>> = {}
+      const rawLimits = b?.limits && typeof b.limits === 'object' ? b.limits as Record<string, unknown> : {}
+      for (const c of all) {
+        const v = rawLimits[c]
+        if (v === undefined || v === null || v === '' || v === 0) continue
+        const n = cleanAmount(v, 10_000_000)
+        if (!n) return { ok: false, error: `سقف «${EXPENSE_LABEL[c]}» غير صالح` }
+        limits[c] = n
+      }
+      next.expenseBudget = { amount, categories, ...(Object.keys(limits).length ? { limits } : {}) }
     }
   }
   if ('senderName' in body) {

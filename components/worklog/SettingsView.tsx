@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { BellRing, CalendarPlus, Copy, FileSpreadsheet, RefreshCw, Send, ShieldOff } from 'lucide-react'
 import { useToast } from '@/components/ui/Toast'
-import { EVENING_CHECK_DEFAULT, INVOICE_PAYMENT_MAX, INVOICE_TITLE_MAX, type InvoiceInfo } from '@/lib/worklog'
+import { EVENING_CHECK_DEFAULT, INVOICE_TITLE_MAX, bidiRuns, buildPayment, parsePayment, type InvoiceInfo, type PaymentForm } from '@/lib/worklog'
 import { useWorkLog } from './useWorkLog'
 import { Field, Segmented, ghostBtn, inputCls, localToday, primaryBtn } from './ui'
 import { notificationState, requestNotifications, showLessonNotification } from './notify'
@@ -177,6 +177,7 @@ export default function SettingsView() {
       <section className="rounded-3xl bg-white border border-gray-100 shadow-sm p-5 space-y-3">
         <h3 className="font-black text-gray-900">✉️ رسائل أولياء الأمور وكشف الحساب</h3>
         <p className="text-xs text-gray-500 leading-relaxed">التذكير بالحصة، وكشف الحساب، وتجديد الباقة، وملخّص التقدّم — كلها تبدأ بـ«السلام عليكم ورحمة الله وبركاته، أسعد الله أوقاتكم» وتنتهي بعبارة شكر. اكتب هنا الاسم الذي تُوقَّع به الرسائل في آخرها، ويمكنك دائماً تعديل الرسالة في واتساب قبل إرسالها.</p>
+        <p className="text-xs font-black text-gray-700">التوقيع — اسمك فقط كما يظهر في آخر الرسائل والكشف</p>
         <SenderInput value={settings.senderName ?? ''} busy={busy}
           onSave={v => save({ senderName: v }, v ? 'حُفظ التوقيع' : 'أُزيل التوقيع')} />
         <InvoiceInputs value={settings.invoice} busy={busy}
@@ -242,25 +243,54 @@ function SenderInput({ value, busy, onSave }: { value: string; busy: boolean; on
 function InvoiceInputs({ value, busy, onSave }: { value?: InvoiceInfo; busy: boolean; onSave: (v: InvoiceInfo | null) => void }) {
   const [title, setTitle] = useState(value?.title ?? '')
   const [phone, setPhone] = useState(value?.phone ?? '')
-  const [payment, setPayment] = useState(value?.payment ?? '')
-  useEffect(() => { setTitle(value?.title ?? ''); setPhone(value?.phone ?? ''); setPayment(value?.payment ?? '') }, [value])
-  const changed = title.trim() !== (value?.title ?? '') || phone.trim() !== (value?.phone ?? '') || payment.trim() !== (value?.payment ?? '')
+  const [pay, setPay] = useState(() => parsePayment(value?.payment))
+  useEffect(() => { setTitle(value?.title ?? ''); setPhone(value?.phone ?? ''); setPay(parsePayment(value?.payment)) }, [value])
+  const set = (k: keyof PaymentForm) => (v: string | boolean) => setPay(p => ({ ...p, [k]: v }))
+  const payment = buildPayment(pay)
+  const lines = payment ? payment.split('\n') : []
+  const changed = title.trim() !== (value?.title ?? '') || phone.trim() !== (value?.phone ?? '') || payment !== (value?.payment ?? '')
   return (
     <div className="space-y-3 border-t border-gray-100 pt-3">
-      <p className="text-xs text-gray-500 leading-relaxed">ما يظهر في <b>كشف الحساب PDF</b>: صفتك ورقمك تحت اسمك في رأسه، وطرق الدفع في آخره — <b>فقط حين يكون على العائلة مبلغ</b>، ومعها في رسالة واتساب.</p>
+      <p className="text-xs text-gray-500 leading-relaxed">ما يظهر في <b>كشف الحساب PDF</b>: صفتك ورقمك تحت اسمك في رأسه، وطرق الدفع في آخره — <b>فقط حين يكون على العائلة مبلغ</b>، ومعها في رسالة واتساب. اترك فارغاً ما لا تستعمله.</p>
       <Field label="الصفة">
         {id => <input id={id} className={inputCls} maxLength={INVOICE_TITLE_MAX} value={title} onChange={e => setTitle(e.target.value)} placeholder="مثال: أخصائي نشاط بدني معدّل" />}
       </Field>
-      <Field label="رقم الهاتف">
-        {id => <input id={id} type="tel" dir="ltr" className={`${inputCls} max-w-[16rem]`} maxLength={30} value={phone} onChange={e => setPhone(e.target.value)} placeholder="+974 5555 5555" />}
+      <Field label="رقم هاتفك">
+        {id => <input id={id} type="tel" inputMode="tel" dir="ltr" className={`${inputCls} max-w-[16rem]`} maxLength={30} value={phone} onChange={e => setPhone(e.target.value)} placeholder="+974 5555 5555" />}
       </Field>
-      <Field label="طرق الدفع (سطر لكل طريقة)">
-        {id => <textarea id={id} rows={3} className={inputCls} maxLength={INVOICE_PAYMENT_MAX} value={payment} onChange={e => setPayment(e.target.value)}
-          placeholder={'فوران: 5555 5555\nتحويل بنكي — اسم البنك — IBAN …\nنقداً عند الحصة'} />}
-      </Field>
-      <p className="text-[11px] text-gray-400">انسخ رقم الحساب كما هو من تطبيق البنك — خطأ رقم واحد يرسل المال إلى غيرك.</p>
+
+      <div className="rounded-2xl border border-gray-100 bg-gray-50 p-3 space-y-3">
+        <p className="text-xs font-black text-gray-700">طرق الدفع</p>
+        <Field label="فوران — الرقم المسجّل">
+          {id => <input id={id} type="tel" inputMode="tel" dir="ltr" className={`${inputCls} max-w-[16rem]`} maxLength={30} value={pay.fawran} onChange={e => set('fawran')(e.target.value)} placeholder="5555 5555" />}
+        </Field>
+        <Field label="تحويل بنكي — اسم البنك">
+          {id => <input id={id} className={inputCls} maxLength={40} value={pay.bank} onChange={e => set('bank')(e.target.value)} placeholder="مثال: QNB" />}
+        </Field>
+        <Field label="رقم الحساب IBAN">
+          {id => <input id={id} dir="ltr" className={inputCls} maxLength={40} autoCapitalize="characters" spellCheck={false} value={pay.iban}
+            onChange={e => set('iban')(e.target.value.toUpperCase())} placeholder="QA00 XXXX 0000 0000 0000 0000 0000 0" />}
+        </Field>
+        <label className="flex items-center gap-2 text-sm text-gray-700">
+          <input type="checkbox" checked={pay.cash} onChange={e => set('cash')(e.target.checked)} className="w-4 h-4 accent-brand-600" />
+          نقداً عند الحصة
+        </label>
+        <Field label="طريقة أخرى (اختياري)">
+          {id => <textarea id={id} rows={2} className={inputCls} maxLength={200} value={pay.other} onChange={e => set('other')(e.target.value)} placeholder="مثال: Ooredoo Money: 5555 5555" />}
+        </Field>
+        <p className="text-[11px] text-gray-400">انسخ رقم الحساب من تطبيق البنك كما هو — خطأ رقم واحد يرسل المال إلى غيرك.</p>
+      </div>
+
+      {lines.length > 0 && (
+        <div className="rounded-xl border border-brand-100 bg-brand-50 p-3 text-xs">
+          <p className="font-black text-brand-700 mb-1">هكذا تظهر في الكشف:</p>
+          {lines.map(l => (
+            <p key={l} className="text-gray-800">• {bidiRuns(l).map((r, i) => <span key={i}>{i ? ' ' : ''}{r.ltr ? <bdi dir="ltr">{r.text}</bdi> : r.text}</span>)}</p>
+          ))}
+        </div>
+      )}
       <button disabled={busy || !changed} className={primaryBtn('text-xs')}
-        onClick={() => onSave(title.trim() || phone.trim() || payment.trim() ? { title: title.trim(), phone: phone.trim(), payment: payment.trim() } : null)}>
+        onClick={() => onSave(title.trim() || phone.trim() || payment ? { title: title.trim(), phone: phone.trim(), payment } : null)}>
         حفظ بيانات الكشف
       </button>
     </div>

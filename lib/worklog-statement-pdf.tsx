@@ -13,7 +13,7 @@ import React from 'react'
 import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer'
 import { ARABIC_LOCALE, formatDateOnly } from './format'
 import {
-  paymentLines, statementClosing, statementOwes, type InvoiceInfo, type StatementClosing,
+  bidiRuns, paymentLines, statementClosing, statementOwes, type InvoiceInfo, type StatementClosing,
   PAYMENT_METHOD_LABEL, endTime, formatDuration, formatMoney, isBillable, lessonChild, lessonsCount,
   type Statement, type WorkClient, type WorkCurrency,
 } from './worklog'
@@ -62,27 +62,7 @@ export interface StatementPdfModel {
   thanks: string
 }
 
-/**
- * A payment line split into Arabic and Latin runs, in reading order. The PDF
- * engine lays a mixed line out RTL as a whole, which reverses number groups —
- * «فوران: 5555 1234» came out «1234 5555», and an IBAN was scrambled. On an
- * account number that sends money to someone else, so each Latin run (digits,
- * IBAN, bank code) is drawn as its own left-to-right piece.
- */
-export function bidiRuns(line: string): { text: string; ltr: boolean }[] {
-  const out: { text: string; ltr: boolean }[] = []
-  const re = /[A-Za-z0-9+][A-Za-z0-9 .+\-/()#]*[A-Za-z0-9)]|[A-Za-z0-9]/g
-  let last = 0
-  for (const m of line.matchAll(re)) {
-    const before = line.slice(last, m.index).trim()
-    if (before) out.push({ text: before, ltr: false })
-    out.push({ text: m[0], ltr: true })
-    last = m.index! + m[0].length
-  }
-  const rest = line.slice(last).trim()
-  if (rest) out.push({ text: rest, ltr: false })
-  return out
-}
+export { bidiRuns }
 
 const longDay = (d: string) => formatDateOnly(d, ARABIC_LOCALE, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 const shortDay = (d: string) => formatDateOnly(d, ARABIC_LOCALE, { weekday: 'short', day: 'numeric', month: 'long' })

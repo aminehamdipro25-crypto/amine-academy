@@ -166,6 +166,66 @@ export function paymentLines(inv: InvoiceInfo | undefined | null): string[] {
   return (inv?.payment ?? '').split('\n').map(l => l.trim()).filter(Boolean).slice(0, INVOICE_PAYMENT_LINES)
 }
 
+/**
+ * A payment line split into Arabic and Latin runs, in reading order. The PDF
+ * engine lays a mixed line out RTL as a whole, which reverses number groups —
+ * «فوران: 5555 1234» came out «1234 5555», and an IBAN was scrambled. On an
+ * account number that sends money to someone else, so each Latin run (digits,
+ * IBAN, bank code) is drawn as its own left-to-right piece.
+ */
+export function bidiRuns(line: string): { text: string; ltr: boolean }[] {
+  const out: { text: string; ltr: boolean }[] = []
+  const re = /[A-Za-z0-9+][A-Za-z0-9 .+\-/()#]*[A-Za-z0-9)]|[A-Za-z0-9]/g
+  let last = 0
+  for (const m of line.matchAll(re)) {
+    const before = line.slice(last, m.index).trim()
+    if (before) out.push({ text: before, ltr: false })
+    out.push({ text: m[0], ltr: true })
+    last = m.index! + m[0].length
+  }
+  const rest = line.slice(last).trim()
+  if (rest) out.push({ text: rest, ltr: false })
+  return out
+}
+
+/** The payment methods as the settings form edits them; stored as lines in `InvoiceInfo.payment`. */
+export interface PaymentForm { fawran: string; bank: string; iban: string; cash: boolean; other: string }
+
+const CASH_LINE = 'نقداً عند الحصة'
+
+/** Form → the stored lines, one per method, in a fixed order. */
+export function buildPayment(f: PaymentForm): string {
+  const bank = f.bank.trim(), iban = f.iban.trim().replace(/\s+/g, ' ')
+  return [
+    f.fawran.trim() && `فوران: ${f.fawran.trim()}`,
+    (bank || iban) && ['تحويل بنكي', bank, iban && `IBAN ${iban}`].filter(Boolean).join(' — '),
+    f.cash && CASH_LINE,
+    ...f.other.split('\n').map(l => l.trim()),
+  ].filter(Boolean).join('\n')
+}
+
+/** Stored lines → the form. A line it does not recognise is kept, under «طريقة أخرى». */
+export function parsePayment(text: string | undefined): PaymentForm {
+  const f: PaymentForm = { fawran: '', bank: '', iban: '', cash: false, other: '' }
+  const other: string[] = []
+  for (const line of paymentLines({ payment: text })) {
+    const fw = line.match(/^فوران:\s*(.+)$/)
+    // «تحويل بنكي — البنك — IBAN …», either part optional.
+    const parts = line.split('—').map(x => x.trim())
+    const bankLine = parts[0] === 'تحويل بنكي' && parts.length >= 2 && parts.length <= 3
+    const iban = bankLine ? parts.slice(1).find(x => /^IBAN\s+/.test(x)) : undefined
+    const bank = bankLine ? parts.slice(1).find(x => !/^IBAN\s+/.test(x)) : undefined
+    if (fw && !f.fawran) f.fawran = fw[1].trim()
+    else if (bankLine && !f.bank && !f.iban && (parts.length === 2 || (bank && iban))) {
+      f.bank = bank ?? ''; f.iban = iban?.replace(/^IBAN\s+/, '') ?? ''
+    }
+    else if (line === CASH_LINE) f.cash = true
+    else other.push(line)
+  }
+  f.other = other.join('\n')
+  return f
+}
+
 /** Is anything owed at the end of this statement? Only then are the payment methods shown. */
 export function statementOwes(end: StatementClosing): boolean {
   return (end.total ?? end.period).tone === 'due'

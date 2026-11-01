@@ -149,6 +149,28 @@ export interface RecurringExpense {
   paused?: boolean
 }
 
+export interface InvoiceInfo {
+  /** e.g. «أخصائي نشاط بدني معدّل». */
+  title?: string
+  phone?: string
+  /** Free text, one line per method: «تحويل بنكي — QNB — IBAN …». */
+  payment?: string
+}
+
+export const INVOICE_TITLE_MAX = 80
+export const INVOICE_PAYMENT_MAX = 400
+export const INVOICE_PAYMENT_LINES = 8
+
+/** The payment lines, trimmed and without blanks. */
+export function paymentLines(inv: InvoiceInfo | undefined | null): string[] {
+  return (inv?.payment ?? '').split('\n').map(l => l.trim()).filter(Boolean).slice(0, INVOICE_PAYMENT_LINES)
+}
+
+/** Is anything owed at the end of this statement? Only then are the payment methods shown. */
+export function statementOwes(end: StatementClosing): boolean {
+  return (end.total ?? end.period).tone === 'due'
+}
+
 export interface WorkSettings {
   currency: WorkCurrency
   /** IANA zone used by the server for "today" (morning digest). */
@@ -162,6 +184,12 @@ export interface WorkSettings {
   monthlyGoal?: number | null
   /** How messages to parents are signed, e.g. «الأستاذ أمين». Absent = unsigned. */
   senderName?: string
+  /**
+   * What the statement carries so a family can pay from it directly: the
+   * owner's title and phone in its header, and how to pay (bank, IBAN,
+   * Fawran…) — shown only when something is owed. Absent = not shown.
+   */
+  invoice?: InvoiceInfo
   /**
    * The owner's Notion database lessons are copied into, and which column gets
    * what. Written only by /api/admin/worklog/notion (it validates the database
@@ -1162,6 +1190,24 @@ export function sanitizeSettings(body: Record<string, unknown>, current: WorkSet
     if (v) next.senderName = v
     else delete next.senderName
   }
+  if ('invoice' in body) {
+    const raw = body.invoice
+    if (raw === null) delete next.invoice
+    else if (typeof raw !== 'object' || Array.isArray(raw)) return { ok: false, error: 'بيانات الكشف غير صالحة' }
+    else {
+      const b = raw as Record<string, unknown>
+      const title = cleanText(b.title, INVOICE_TITLE_MAX)?.replace(/\s*\n\s*/g, ' ')
+      const phone = cleanText(b.phone, 30)
+      if (phone && !/^[+\d\s()-]{6,30}$/.test(phone)) return { ok: false, error: 'رقم الهاتف في الكشف غير صالح' }
+      if (typeof b.payment === 'string' && b.payment.length > INVOICE_PAYMENT_MAX) {
+        return { ok: false, error: `طرق الدفع أطول من ${INVOICE_PAYMENT_MAX} حرف` }
+      }
+      const payment = paymentLines({ payment: cleanText(b.payment, INVOICE_PAYMENT_MAX) }).join('\n')
+      const inv: InvoiceInfo = { ...(title ? { title } : {}), ...(phone ? { phone } : {}), ...(payment ? { payment } : {}) }
+      if (Object.keys(inv).length) next.invoice = inv
+      else delete next.invoice
+    }
+  }
   return { ok: true, value: next }
 }
 
@@ -1416,7 +1462,7 @@ export function statementClosing(st: Statement, currency: WorkCurrency): Stateme
 
 export function statementText(
   st: Statement, client: Pick<WorkClient, 'name' | 'childName'>, currency: WorkCurrency,
-  formatDay: (date: string) => string, sender?: string, opts: { notes?: boolean } = {},
+  formatDay: (date: string) => string, sender?: string, opts: { notes?: boolean; payment?: string[] } = {},
 ): string {
   const money = (n: number) => formatMoney(n, currency)
   const lines: string[] = parentOpening(client)
@@ -1447,6 +1493,10 @@ export function statementText(
   if (end.other) lines.push(`${end.other.label}: ${end.other.value}`)
   if (end.total) lines.push(`${end.total.label}: ${end.total.value}`)
   if (end.ask) lines.push(end.ask)
+  // How to pay — only when something is owed; a settled statement does not ask for money.
+  if (opts.payment?.length && statementOwes(end)) {
+    lines.push('', 'طرق الدفع:', ...opts.payment.map(l => `  - ${l}`))
+  }
   lines.push(...parentClosing('مع خالص الشكر والتقدير 🌷', sender))
   return lines.join('\n')
 }

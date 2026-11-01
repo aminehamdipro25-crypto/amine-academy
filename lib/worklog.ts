@@ -1295,6 +1295,10 @@ export interface Statement {
   paidInPeriod: number
   /** All-time: what is still owed today (negative = paid ahead). */
   balance: number
+  /** This period alone: its billable lessons − what was paid in it (negative = paid more than its lessons). */
+  periodBalance: number
+  /** What the rest of the account adds: balance − periodBalance (older unpaid months, or credit). */
+  otherBalance: number
   /** Past lessons in the period with no status yet — not in the totals. */
   unconfirmed: number
 }
@@ -1318,6 +1322,8 @@ export function buildStatement(
     billedCount: billable.length,
     paidInPeriod: round2(paid.reduce((s, p) => s + p.amount, 0)),
     balance: round2(allBilled - allPaid),
+    periodBalance: round2(billable.reduce((s, l) => s + l.price, 0) - paid.reduce((s, p) => s + p.amount, 0)),
+    otherBalance: round2(allBilled - allPaid - (billable.reduce((s, l) => s + l.price, 0) - paid.reduce((s, p) => s + p.amount, 0))),
     unconfirmed: own.filter(l => l.status === 'scheduled' && l.date >= from && l.date <= to && l.date < today).length,
   }
 }
@@ -1368,9 +1374,49 @@ export function parentClosing(thanks: string, sender?: string): string[] {
  * lesson, then three numbers. "المتبقي حتى اليوم" is the all-time balance on
  * purpose — a period total alone would hide an older unpaid month.
  */
+/**
+ * How a statement ends — the same lines in the WhatsApp text and the PDF.
+ * The period's own result comes first, under its own name. The rest of the
+ * account (an older unpaid month, or credit) is a separate line, and only when
+ * there is one: a period's statement must not present the all-time balance as
+ * if it were the period's.
+ */
+export interface StatementClosing {
+  /** «المتبقي عن هذه الفترة: 120» / «حصص هذه الفترة مسدّدة» … */
+  period: { label: string; value: string; tone: 'due' | 'credit' | 'settled' }
+  /** Present only when other periods change what is owed today. */
+  other?: { label: string; value: string; tone: 'due' | 'credit' }
+  total?: { label: string; value: string; tone: 'due' | 'credit' | 'settled' }
+  /** One polite sentence about what to do, or nothing. */
+  ask?: string
+}
+
+export function statementClosing(st: Statement, currency: WorkCurrency): StatementClosing {
+  const money = (n: number) => formatMoney(n, currency)
+  // A statement built before these fields existed reads as «the period is the whole account».
+  const p = st.periodBalance ?? st.balance, o = st.otherBalance ?? 0, t = st.balance
+  const period: StatementClosing['period'] = p > 0
+    ? { label: 'المتبقي عن هذه الفترة', value: money(p), tone: 'due' }
+    : p < 0
+      ? { label: 'المدفوع في هذه الفترة زائد عن حصصها', value: money(-p), tone: 'credit' }
+      : { label: 'حصص هذه الفترة', value: 'مسدّدة', tone: 'settled' }
+  if (o === 0) {
+    return { period, ...(p > 0 ? { ask: 'نرجو التكرّم بتسويته في الوقت الذي يناسبكم.' } : p < 0 ? { ask: 'يُخصم الفرق من الحصص القادمة.' } : {}) }
+  }
+  const other: StatementClosing['other'] = o > 0
+    ? { label: 'مستحق من فترات أخرى', value: money(o), tone: 'due' }
+    : { label: 'رصيد لصالحكم من فترات أخرى', value: money(-o), tone: 'credit' }
+  const total: StatementClosing['total'] = t > 0
+    ? { label: 'المجموع المستحق حتى اليوم', value: money(t), tone: 'due' }
+    : t < 0
+      ? { label: 'رصيد مدفوع مسبقاً لديكم حتى اليوم', value: money(-t), tone: 'credit' }
+      : { label: 'الحساب كله حتى اليوم', value: 'مسدّد', tone: 'settled' }
+  return { period, other, total, ...(t > 0 ? { ask: 'نرجو التكرّم بتسويته في الوقت الذي يناسبكم.' } : {}) }
+}
+
 export function statementText(
   st: Statement, client: Pick<WorkClient, 'name' | 'childName'>, currency: WorkCurrency,
-  formatDay: (date: string) => string, sender?: string,
+  formatDay: (date: string) => string, sender?: string, opts: { notes?: boolean } = {},
 ): string {
   const money = (n: number) => formatMoney(n, currency)
   const lines: string[] = parentOpening(client)
@@ -1387,6 +1433,7 @@ export function statementText(
     const whose = several && lessonChild(l, client) ? ` — ${lessonChild(l, client)}` : ''
     const why = l.status === 'cancelled' && l.cancelReason ? ` — ${l.cancelReason}` : ''
     lines.push(`• ${formatDay(l.date)} ${l.start}${whose} — ${formatDuration(l.durationMin)}${price} ${tag}${why}`)
+    if (opts.notes && l.note?.trim()) lines.push(`   ملاحظة: ${l.note.trim()}`)
   }
   lines.push('')
   lines.push(`مجموع الحصص المحتسبة: ${lessonsCount(st.billedCount)} · ${formatDuration(st.billedMinutes)} · ${money(st.billed)}`)
@@ -1395,11 +1442,11 @@ export function statementText(
     // One per line: a day label may itself contain «،», so a joined list reads ambiguously.
     for (const p of st.payments) lines.push(`  - ${formatDay(p.date)}: ${money(p.amount)}`)
   }
-  if (st.balance > 0) {
-    lines.push(`المتبقي حتى اليوم: ${money(st.balance)}`)
-    lines.push('نرجو التكرّم بتسويته في الوقت الذي يناسبكم.')
-  } else if (st.balance < 0) lines.push(`رصيد مدفوع مسبقاً لديكم: ${money(-st.balance)}`)
-  else lines.push('الحساب مسدّد بالكامل حتى اليوم.')
+  const end = statementClosing(st, currency)
+  lines.push(`${end.period.label}: ${end.period.value}`)
+  if (end.other) lines.push(`${end.other.label}: ${end.other.value}`)
+  if (end.total) lines.push(`${end.total.label}: ${end.total.value}`)
+  if (end.ask) lines.push(end.ask)
   lines.push(...parentClosing('مع خالص الشكر والتقدير 🌷', sender))
   return lines.join('\n')
 }

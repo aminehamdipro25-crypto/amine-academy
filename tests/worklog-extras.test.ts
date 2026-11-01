@@ -100,9 +100,11 @@ describe('family account statement', () => {
     expect(st.unconfirmed).toBe(1)
   })
 
-  it('"what is left" is the all-time balance, so an older unpaid lesson is not hidden', () => {
+  it('the period’s own result and the rest of the account are kept apart, so an older unpaid lesson is not hidden', () => {
     // billable all-time: 150 (Sep) + 150 + 150 (charged) = 450; paid 100
     expect(st.balance).toBe(350)
+    expect(st.periodBalance).toBe(200)  // 300 billed in October − 100 paid in October
+    expect(st.otherBalance).toBe(150)   // the unpaid September lesson
   })
 
   it('reads as a message to a parent, with Latin digits', () => {
@@ -111,7 +113,11 @@ describe('family account statement', () => {
     expect(text).toContain('كشف حصص سارة')
     expect(text).toContain('✕ ملغاة (محتسبة)')
     expect(text).toContain('✕ ملغاة (غير محتسبة)')
-    expect(text).toContain('المتبقي حتى اليوم: 350 ر.ق')
+    // the period first, under its own name; September on its own line; then the total
+    expect(text).toContain('المتبقي عن هذه الفترة: 200 ر.ق')
+    expect(text).toContain('مستحق من فترات أخرى: 150 ر.ق')
+    expect(text).toContain('المجموع المستحق حتى اليوم: 350 ر.ق')
+    expect(text.indexOf('عن هذه الفترة')).toBeLessThan(text.indexOf('المجموع المستحق'))
     expect(text).toContain('مجموع الحصص المحتسبة: حصتان')
     expect(text).toContain('  - 10-06: 100 ر.ق')
     expect(text).not.toMatch(/[٠-٩]/)
@@ -119,9 +125,35 @@ describe('family account statement', () => {
 
   it('says "paid ahead" or "fully paid" instead of a negative or zero debt', () => {
     const ahead = buildStatement('a', [lesson({})], [pay({ amount: 400 })], '2026-10-01', '2026-10-31', '2026-10-15')
-    expect(statementText(ahead, { name: 'X' }, 'QAR', d => d)).toContain('رصيد مدفوع مسبقاً لديكم: 250 ر.ق')
+    const aheadText = statementText(ahead, { name: 'X' }, 'QAR', d => d)
+    expect(aheadText).toContain('المدفوع في هذه الفترة زائد عن حصصها: 250 ر.ق')
+    expect(aheadText).not.toContain('المجموع المستحق') // nothing else in the account: no second figure
     const even = buildStatement('a', [lesson({})], [pay({})], '2026-10-01', '2026-10-31', '2026-10-15')
-    expect(statementText(even, { name: 'X' }, 'QAR', d => d)).toContain('مسدّد بالكامل')
+    const evenText = statementText(even, { name: 'X' }, 'QAR', d => d)
+    expect(evenText).toContain('حصص هذه الفترة: مسدّدة')
+    expect(evenText).not.toContain('نرجو التكرّم بتسويته')
+  })
+})
+
+describe('a statement for one period says only that period — unless another period changes what is owed', () => {
+  it('a period that is the whole account: one figure, and no «since the beginning» note', () => {
+    const st = buildStatement('a', [lesson({ date: '2026-11-01', price: 120 })], [], '2026-11-01', '2026-11-01', '2026-11-01')
+    const text = statementText(st, { name: 'أبو خالد', childName: 'خالد' }, 'QAR', d => d)
+    expect(text).toContain('المتبقي عن هذه الفترة: 120 ر.ق')
+    expect(text).not.toContain('فترات أخرى')
+    expect(text).not.toContain('منذ بداية')
+  })
+  it('credit from another period is shown as such and lowers the total', () => {
+    const st = buildStatement('a', [lesson({ date: '2026-11-01', price: 120 })], [pay({ date: '2026-10-20', amount: 200 })], '2026-11-01', '2026-11-30', '2026-11-05')
+    const text = statementText(st, { name: 'X' }, 'QAR', d => d)
+    expect(text).toContain('المتبقي عن هذه الفترة: 120 ر.ق')
+    expect(text).toContain('رصيد لصالحكم من فترات أخرى: 200 ر.ق')
+    expect(text).toContain('رصيد مدفوع مسبقاً لديكم حتى اليوم: 80 ر.ق')
+  })
+  it('lesson notes go under their lesson only when asked for', () => {
+    const st = buildStatement('a', [lesson({ date: '2026-11-01', note: 'صارت الحصة مع تميم' })], [], '2026-11-01', '2026-11-01', '2026-11-01')
+    expect(statementText(st, { name: 'X' }, 'QAR', d => d, undefined, { notes: true })).toContain('ملاحظة: صارت الحصة مع تميم')
+    expect(statementText(st, { name: 'X' }, 'QAR', d => d)).not.toContain('صارت الحصة مع تميم')
   })
 })
 

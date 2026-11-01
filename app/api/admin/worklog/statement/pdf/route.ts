@@ -35,7 +35,8 @@ export async function GET(req: NextRequest) {
 
     const today = todayIn(settings.timezone)
     const st = buildStatement(client.id, lessons, payments, from, to, today)
-    const model = statementPdfModel(st, client, settings.currency, { sender: settings.senderName, today })
+    // Notes are the owner's words on a lesson: included unless the page says not to.
+    const model = statementPdfModel(st, client, settings.currency, { sender: settings.senderName, today, notes: q.get('notes') !== '0' })
 
     registerTajawal()
     const el = React.createElement(StatementPdf, { m: model }) as React.ReactElement<DocumentProps>

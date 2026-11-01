@@ -162,8 +162,17 @@ export const INVOICE_PAYMENT_MAX = 400
 export const INVOICE_PAYMENT_LINES = 8
 
 /** The payment lines, trimmed and without blanks. */
+function rawPaymentLines(text: string | undefined): string[] {
+  return (text ?? '').split('\n').map(l => l.trim()).filter(Boolean).slice(0, INVOICE_PAYMENT_LINES)
+}
+
+/**
+ * The payment lines as a family sees them — read back through the form, so a
+ * line saved before a wording change («فوران:» → «فورًا FAWRAN:») is printed
+ * the current way without the owner having to save the settings again.
+ */
 export function paymentLines(inv: InvoiceInfo | undefined | null): string[] {
-  return (inv?.payment ?? '').split('\n').map(l => l.trim()).filter(Boolean).slice(0, INVOICE_PAYMENT_LINES)
+  return rawPaymentLines(buildPayment(parsePayment(inv?.payment)))
 }
 
 /**
@@ -208,7 +217,7 @@ export function buildPayment(f: PaymentForm): string {
 export function parsePayment(text: string | undefined): PaymentForm {
   const f: PaymentForm = { fawran: '', bank: '', iban: '', cash: false, other: '' }
   const other: string[] = []
-  for (const line of paymentLines({ payment: text })) {
+  for (const line of rawPaymentLines(text)) {
     // The service is «فورًا» / FAWRAN; an early version wrote «فوران:», still read.
     const fw = line.match(/^(?:فورًا\s+FAWRAN|فوران|فورا|فورًا|FAWRAN)\s*:\s*(.+)$/i)
     // «تحويل بنكي — البنك — IBAN …», either part optional.
@@ -1263,7 +1272,7 @@ export function sanitizeSettings(body: Record<string, unknown>, current: WorkSet
       if (typeof b.payment === 'string' && b.payment.length > INVOICE_PAYMENT_MAX) {
         return { ok: false, error: `طرق الدفع أطول من ${INVOICE_PAYMENT_MAX} حرف` }
       }
-      const payment = paymentLines({ payment: cleanText(b.payment, INVOICE_PAYMENT_MAX) }).join('\n')
+      const payment = rawPaymentLines(cleanText(b.payment, INVOICE_PAYMENT_MAX)).join('\n')
       const inv: InvoiceInfo = { ...(title ? { title } : {}), ...(phone ? { phone } : {}), ...(payment ? { payment } : {}) }
       if (Object.keys(inv).length) next.invoice = inv
       else delete next.invoice

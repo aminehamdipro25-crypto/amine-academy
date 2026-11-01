@@ -58,7 +58,7 @@ describe('payment methods on the statement — only when something is owed', () 
   it('the WhatsApp text lists them after the amount, and not on a settled statement', () => {
     const lines = paymentLines(invoice)
     const t = statementText(owed, client, 'QAR', d => d, 'أمين', { payment: lines })
-    expect(t).toContain('طرق الدفع:\n  - فوران: 5555 1234\n  - تحويل بنكي — QNB — IBAN QA00 TEST 0000')
+    expect(t).toContain('طرق الدفع:\n  - فورًا FAWRAN: 5555 1234\n  - تحويل بنكي — QNB — IBAN QA00 TEST 0000')
     expect(t.indexOf('طرق الدفع')).toBeGreaterThan(t.indexOf('المتبقي عن هذه الفترة'))
     expect(statementText(settled, client, 'QAR', d => d, 'أمين', { payment: lines })).not.toContain('طرق الدفع')
   })
@@ -66,7 +66,7 @@ describe('payment methods on the statement — only when something is owed', () 
     const a = statementPdfModel(owed, client, 'QAR', { sender: 'أمين', today: '2026-10-20', invoice })
     expect(a.issuerTitle).toBe(invoice.title)
     expect(a.issuerPhone).toBe(invoice.phone)
-    expect(a.payment).toEqual(['فوران: 5555 1234', 'تحويل بنكي — QNB — IBAN QA00 TEST 0000'])
+    expect(a.payment).toEqual(['فورًا FAWRAN: 5555 1234', 'تحويل بنكي — QNB — IBAN QA00 TEST 0000'])
     const b = statementPdfModel(settled, client, 'QAR', { sender: 'أمين', today: '2026-10-20', invoice })
     expect(b.issuerTitle).toBe(invoice.title)
     expect(b.payment).toBeUndefined()
@@ -115,6 +115,10 @@ describe('the payment form in settings', () => {
     expect(bidiRuns('فورًا FAWRAN: 5555 1234')).toEqual([
       { text: 'فورًا', ltr: false }, { text: 'FAWRAN', ltr: true }, { text: ':', ltr: false }, { text: '5555 1234', ltr: true },
     ])
+  })
+  it('a statement prints a line saved the old way in the current wording', async () => {
+    const { paymentLines } = await import('@/lib/worklog')
+    expect(paymentLines({ payment: 'فوران: 30653759\nتحويل بنكي — CBQ — IBAN QA65' })).toEqual(['فورًا FAWRAN: 30653759', 'تحويل بنكي — CBQ — IBAN QA65'])
   })
   it('keeps a hand-written line it does not recognise', async () => {
     const { parsePayment } = await import('@/lib/worklog')

@@ -99,12 +99,22 @@ describe('the payment form in settings', () => {
     const { buildPayment, parsePayment } = await import('@/lib/worklog')
     const f = { fawran: '5555 1234', bank: 'QNB', iban: 'qa58  dohb 0000'.toUpperCase(), cash: true, other: 'Ooredoo Money: 7777 8888' }
     const text = buildPayment(f)
-    expect(text).toBe('فوران: 5555 1234\nتحويل بنكي — QNB — IBAN QA58 DOHB 0000\nنقداً عند الحصة\nOoredoo Money: 7777 8888')
+    expect(text).toBe('فورًا FAWRAN: 5555 1234\nتحويل بنكي — QNB — IBAN QA58 DOHB 0000\nنقداً عند الحصة\nOoredoo Money: 7777 8888')
     expect(parsePayment(text)).toEqual({ ...f, iban: 'QA58 DOHB 0000' })
     expect(buildPayment({ fawran: '', bank: '', iban: 'QA00', cash: false, other: '' })).toBe('تحويل بنكي — IBAN QA00')
     expect(parsePayment('تحويل بنكي — IBAN QA00')).toMatchObject({ bank: '', iban: 'QA00' })
     expect(parsePayment('تحويل بنكي — QNB')).toMatchObject({ bank: 'QNB', iban: '' })
     expect(buildPayment({ fawran: '', bank: '', iban: '', cash: false, other: '' })).toBe('')
+  })
+  it('reads the service under any of its spellings, the early «فوران:» included', async () => {
+    const { parsePayment } = await import('@/lib/worklog')
+    for (const l of ['فوران: 5555 1234', 'فورا: 5555 1234', 'FAWRAN: 5555 1234', 'Fawran: 5555 1234', 'فورًا FAWRAN: 5555 1234']) {
+      expect(parsePayment(l).fawran).toBe('5555 1234')
+    }
+    const { bidiRuns } = await import('@/lib/worklog')
+    expect(bidiRuns('فورًا FAWRAN: 5555 1234')).toEqual([
+      { text: 'فورًا', ltr: false }, { text: 'FAWRAN', ltr: true }, { text: ':', ltr: false }, { text: '5555 1234', ltr: true },
+    ])
   })
   it('keeps a hand-written line it does not recognise', async () => {
     const { parsePayment } = await import('@/lib/worklog')

@@ -261,8 +261,8 @@ function InvoiceInputs({ value, busy, onSave }: { value?: InvoiceInfo; busy: boo
 
       <div className="rounded-2xl border border-gray-100 bg-gray-50 p-3 space-y-3">
         <p className="text-xs font-black text-gray-700">طرق الدفع</p>
-        <Field label="فوران — الرقم المسجّل">
-          {id => <input id={id} type="tel" inputMode="tel" dir="ltr" className={`${inputCls} max-w-[16rem]`} maxLength={30} value={pay.fawran} onChange={e => set('fawran')(e.target.value)} placeholder="5555 5555" />}
+        <Field label="فورًا FAWRAN — رقم الجوال أو الاسم المستعار (Alias)">
+          {id => <input id={id} dir="ltr" autoCapitalize="none" spellCheck={false} className={`${inputCls} max-w-[16rem]`} maxLength={40} value={pay.fawran} onChange={e => set('fawran')(e.target.value)} placeholder="5555 5555 / alias" />}
         </Field>
         <Field label="تحويل بنكي — اسم البنك">
           {id => <input id={id} className={inputCls} maxLength={40} value={pay.bank} onChange={e => set('bank')(e.target.value)} placeholder="مثال: QNB" />}

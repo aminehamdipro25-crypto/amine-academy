@@ -197,7 +197,7 @@ const CASH_LINE = 'نقداً عند الحصة'
 export function buildPayment(f: PaymentForm): string {
   const bank = f.bank.trim(), iban = f.iban.trim().replace(/\s+/g, ' ')
   return [
-    f.fawran.trim() && `فوران: ${f.fawran.trim()}`,
+    f.fawran.trim() && `فورًا FAWRAN: ${f.fawran.trim()}`,
     (bank || iban) && ['تحويل بنكي', bank, iban && `IBAN ${iban}`].filter(Boolean).join(' — '),
     f.cash && CASH_LINE,
     ...f.other.split('\n').map(l => l.trim()),
@@ -209,7 +209,8 @@ export function parsePayment(text: string | undefined): PaymentForm {
   const f: PaymentForm = { fawran: '', bank: '', iban: '', cash: false, other: '' }
   const other: string[] = []
   for (const line of paymentLines({ payment: text })) {
-    const fw = line.match(/^فوران:\s*(.+)$/)
+    // The service is «فورًا» / FAWRAN; an early version wrote «فوران:», still read.
+    const fw = line.match(/^(?:فورًا\s+FAWRAN|فوران|فورا|فورًا|FAWRAN)\s*:\s*(.+)$/i)
     // «تحويل بنكي — البنك — IBAN …», either part optional.
     const parts = line.split('—').map(x => x.trim())
     const bankLine = parts[0] === 'تحويل بنكي' && parts.length >= 2 && parts.length <= 3

@@ -18,7 +18,7 @@ const model = (ls: WorkLesson[], ps: WorkPayment[], sender?: string) =>
   statementPdfModel(buildStatement('a', ls, ps, '2026-10-01', '2026-10-31', '2026-10-20'), client, 'QAR', { sender, today: '2026-10-20' })
 
 describe('PDF statement — the figures', () => {
-  it('matches the ledger: billed, paid, and the all-time balance', () => {
+  it('matches the ledger: billed, paid, the period’s result, and the older month apart', () => {
     const m = model(
       [lesson({ date: '2026-10-02' }), lesson({ date: '2026-10-06' }), lesson({ date: '2026-09-20' })], // September is outside the period
       [pay({ date: '2026-10-03', amount: 150 })],
@@ -27,10 +27,12 @@ describe('PDF statement — the figures', () => {
     expect(m.tiles[0].value).toBe('حصتان')
     expect(m.billedTotal).toContain('300')
     expect(m.paidTotal).toContain('150')
-    // 3 lessons ever (450) − 150 paid: the unpaid September lesson is not hidden by the period.
-    expect(m.balanceTone).toBe('due')
-    expect(m.balanceValue).toContain('300')
-    expect(m.balanceNote).toContain('منذ بداية التعامل')
+    // October: 300 − 150 = 150; the unpaid September lesson on its own line; 300 in all.
+    expect(m.closing.period).toMatchObject({ label: 'المتبقي عن هذه الفترة', tone: 'due' })
+    expect(m.closing.period.value).toContain('150')
+    expect(m.closing.other?.value).toContain('150')
+    expect(m.closing.total?.value).toContain('300')
+    expect(m.tiles[3].label).toBe('المتبقي عن هذه الفترة') // the tile is the period's, not the all-time figure
   })
 
   it('shows a cancelled lesson with its reason, charged or not', () => {
@@ -51,9 +53,19 @@ describe('PDF statement — the figures', () => {
     expect(two.children).toBe('خالد وتميم')
   })
 
-  it('credit and settled read as such, not as a debt', () => {
-    expect(model([lesson({})], [pay({ amount: 300 })])).toMatchObject({ balanceTone: 'credit', balanceLabel: 'رصيد مدفوع مسبقاً لديكم' })
-    expect(model([lesson({})], [pay({ amount: 150 })])).toMatchObject({ balanceTone: 'settled', balanceValue: 'مسدّد بالكامل' })
+  it('credit and settled read as such, not as a debt; a period that is the whole account has one figure', () => {
+    const credit = model([lesson({})], [pay({ amount: 300 })])
+    expect(credit.closing.period.tone).toBe('credit'); expect(credit.closing.other).toBeUndefined(); expect(credit.closing.total).toBeUndefined()
+    const settled = model([lesson({})], [pay({ amount: 150 })])
+    expect(settled.closing.period).toMatchObject({ tone: 'settled', value: 'مسدّدة' })
+    expect(settled.closing.ask).toBeUndefined()
+  })
+
+  it('carries a lesson’s note into its row only when notes are included', () => {
+    const ls = [lesson({ note: 'صارت الحصة مع تميم' })]
+    const st = buildStatement('a', ls, [], '2026-10-01', '2026-10-31', '2026-10-20')
+    expect(statementPdfModel(st, client, 'QAR', { today: '2026-10-20', notes: true }).rows[0].note).toBe('صارت الحصة مع تميم')
+    expect(statementPdfModel(st, client, 'QAR', { today: '2026-10-20' }).rows[0].note).toBeUndefined()
   })
 
   it('warns about lessons with no status, and signs with the sender', () => {

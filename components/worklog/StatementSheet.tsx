@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { AlertTriangle, Copy, FileDown, Loader2, MessageCircle, Share2 } from 'lucide-react'
 import {
   addDays, buildStatement, clientBalances, endOfMonth, formatDuration, formatMoney, isBillable, lessonsCount, phoneDigits,
-  startOfMonth, statementText, type WorkClient,
+  startOfMonth, statementClosing, statementText, type WorkClient,
 } from '@/lib/worklog'
 import { ARABIC_LOCALE, formatDateOnly } from '@/lib/format'
 import { useToast } from '@/components/ui/Toast'
@@ -54,7 +54,11 @@ export default function StatementSheet({ client, onClose }: { client: WorkClient
     () => (client ? buildStatement(client.id, lessons, payments, range.from, range.to, today) : null),
     [client, lessons, payments, range, today],
   )
-  const text = client && st ? statementText(st, client, settings.currency, msgDay, settings.senderName) : ''
+  // Lesson notes travel with the statement unless the owner turns them off for this one.
+  const [withNotes, setWithNotes] = useState(true)
+  const hasNotes = !!st?.lessons.some(l => l.note?.trim())
+  const text = client && st ? statementText(st, client, settings.currency, msgDay, settings.senderName, { notes: withNotes }) : ''
+  const closing = st ? statementClosing(st, settings.currency) : null
   const tel = phoneDigits(client?.phone, settings.currency)
   const money = (n: number) => formatMoney(n, settings.currency)
 
@@ -65,7 +69,7 @@ export default function StatementSheet({ client, onClose }: { client: WorkClient
 
   /** The PDF is built on the server from the stored ledger — the page only says which family and period. */
   async function fetchPdf(): Promise<File> {
-    const q = new URLSearchParams({ client: client!.id, from: range.from, to: range.to })
+    const q = new URLSearchParams({ client: client!.id, from: range.from, to: range.to, notes: withNotes ? '1' : '0' })
     const res = await fetch(`/api/admin/worklog/statement/pdf?${q}`, { cache: 'no-store' })
     if (!res.ok) {
       const body = await res.json().catch(() => ({}))
@@ -150,8 +154,24 @@ export default function StatementSheet({ client, onClose }: { client: WorkClient
           <div className="grid grid-cols-3 gap-2 text-center">
             <div className="rounded-xl bg-gray-50 p-2.5"><p className="text-[10px] font-bold text-gray-500">الحصص المحتسبة</p><p className="font-black text-gray-900">{lessonsCount(st.billedCount)}</p><p className="text-[10px] text-gray-500">{formatDuration(st.billedMinutes)}</p><p className="text-[10px] text-gray-500">{money(st.billed)}</p></div>
             <div className="rounded-xl bg-emerald-50 p-2.5"><p className="text-[10px] font-bold text-emerald-700">مدفوع في الفترة</p><p className="font-black text-gray-900">{money(st.paidInPeriod)}</p></div>
-            <div className={`rounded-xl p-2.5 ${st.balance > 0 ? 'bg-amber-50' : 'bg-gray-50'}`}><p className={`text-[10px] font-bold ${st.balance > 0 ? 'text-amber-700' : 'text-gray-500'}`}>{st.balance < 0 ? 'رصيد مسبق' : 'المتبقي حتى اليوم'}</p><p className="font-black text-gray-900">{money(Math.abs(st.balance))}</p></div>
+            <div className={`rounded-xl p-2.5 ${closing?.period.tone === 'due' ? 'bg-amber-50' : 'bg-gray-50'}`}>
+              <p className={`text-[10px] font-bold ${closing?.period.tone === 'due' ? 'text-amber-700' : 'text-gray-500'}`}>{closing?.period.label}</p>
+              <p className="font-black text-gray-900">{closing?.period.value}</p>
+            </div>
           </div>
+          {closing?.other && closing.total && (
+            // Only when another period changes what is owed today — then said plainly, apart from the period.
+            <div className="rounded-xl border border-gray-100 bg-white px-3 py-2 text-xs space-y-1">
+              <p className="flex justify-between gap-2"><span className="text-gray-600">{closing.other.label}</span><b className={closing.other.tone === 'due' ? 'text-amber-700' : 'text-emerald-700'}>{closing.other.value}</b></p>
+              <p className="flex justify-between gap-2 border-t border-gray-100 pt-1"><span className="font-bold text-gray-800">{closing.total.label}</span><b className="text-gray-900">{closing.total.value}</b></p>
+            </div>
+          )}
+          {hasNotes && (
+            <label className="flex items-center gap-2 text-xs text-gray-700">
+              <input type="checkbox" checked={withNotes} onChange={e => setWithNotes(e.target.checked)} className="w-4 h-4 accent-brand-600" />
+              أظهر ملاحظات الحصص في الكشف <span className="text-gray-400">(تراها العائلة — أطفئها إن كانت لك وحدك)</span>
+            </label>
+          )}
 
           {st.unconfirmed > 0 && (
             <p className="flex gap-2 rounded-xl bg-amber-50 px-3 py-2 text-[12px] text-amber-800">
@@ -169,11 +189,14 @@ export default function StatementSheet({ client, onClose }: { client: WorkClient
               </li>
             )}
             {st.lessons.map(l => (
-              <li key={l.id} className="flex items-center justify-between gap-2 px-3 py-2">
-                <span className="text-gray-700">{msgDay(l.date)} · {l.start} · {formatDuration(l.durationMin)}</span>
-                <span className={isBillable(l) ? 'font-bold text-gray-900' : 'text-rose-600'}>
-                  {l.status === 'done' ? money(l.price) : l.charged ? `ملغاة · ${money(l.price)}` : 'ملغاة · غير محتسبة'}{l.status === 'cancelled' && l.cancelReason ? ` · ${l.cancelReason}` : ''}
-                </span>
+              <li key={l.id} className="px-3 py-2">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-gray-700">{msgDay(l.date)} · {l.start} · {formatDuration(l.durationMin)}</span>
+                  <span className={isBillable(l) ? 'font-bold text-gray-900' : 'text-rose-600'}>
+                    {l.status === 'done' ? money(l.price) : l.charged ? `ملغاة · ${money(l.price)}` : 'ملغاة · غير محتسبة'}{l.status === 'cancelled' && l.cancelReason ? ` · ${l.cancelReason}` : ''}
+                  </span>
+                </div>
+                {withNotes && l.note?.trim() && <p className="mt-0.5 text-[11px] text-gray-500">ملاحظة: {l.note.trim()}</p>}
               </li>
             ))}
           </ul>

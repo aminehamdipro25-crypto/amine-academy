@@ -13,6 +13,7 @@ import React from 'react'
 import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer'
 import { ARABIC_LOCALE, formatDateOnly } from './format'
 import {
+  statementClosing, type StatementClosing,
   PAYMENT_METHOD_LABEL, endTime, formatDuration, formatMoney, isBillable, lessonChild, lessonsCount,
   type Statement, type WorkClient, type WorkCurrency,
 } from './worklog'
@@ -31,6 +32,8 @@ export interface StatementPdfRow {
   tone: RowTone
   amount: string
   reason?: string
+  /** The owner's note on the lesson, when the statement includes notes. */
+  note?: string
 }
 
 export interface StatementPdfModel {
@@ -48,10 +51,8 @@ export interface StatementPdfModel {
   billedTotal: string
   payments: { day: string; method: string; amount: string; note?: string }[]
   paidTotal: string
-  balanceLabel: string
-  balanceValue: string
-  balanceTone: 'due' | 'credit' | 'settled'
-  balanceNote: string
+  /** The period's result, then (only when other periods change it) their part and the total. */
+  closing: StatementClosing
   unconfirmedNote?: string
   thanks: string
 }
@@ -68,7 +69,7 @@ export function statementReference(clientId: string, from: string, to: string): 
 
 export function statementPdfModel(
   st: Statement, client: Pick<WorkClient, 'id' | 'name' | 'childName'>, currency: WorkCurrency,
-  opts: { sender?: string; today: string },
+  opts: { sender?: string; today: string; notes?: boolean },
 ): StatementPdfModel {
   const money = (n: number) => formatMoney(n, currency)
   const kids = [...new Set(st.lessons.map(l => lessonChild(l, client)).filter(Boolean))]
@@ -87,10 +88,11 @@ export function statementPdfModel(
       tone,
       amount: billable ? money(l.price) : '—',
       ...(l.status === 'cancelled' && l.cancelReason ? { reason: l.cancelReason } : {}),
+      ...(opts.notes && l.note?.trim() ? { note: l.note.trim() } : {}),
     }
   })
 
-  const balanceTone = st.balance > 0 ? 'due' : st.balance < 0 ? 'credit' : 'settled'
+  const closing = statementClosing(st, currency)
   return {
     title: 'كشف حساب',
     issuer: opts.sender?.trim() || 'Amine Academy',
@@ -104,11 +106,8 @@ export function statementPdfModel(
       { label: 'الحصص المحتسبة', value: lessonsCount(st.billedCount), sub: formatDuration(st.billedMinutes), tone: 'plain' },
       { label: 'قيمة الحصص', value: money(st.billed), tone: 'plain' },
       { label: 'المبالغ المستلمة في الفترة', value: money(st.paidInPeriod), tone: 'paid' },
-      {
-        label: balanceTone === 'credit' ? 'رصيد مدفوع مسبقاً' : 'المتبقي حتى اليوم',
-        value: balanceTone === 'settled' ? 'مسدّد' : money(Math.abs(st.balance)),
-        tone: balanceTone === 'due' ? 'due' : balanceTone === 'credit' ? 'credit' : 'paid',
-      },
+      // The period's own result — not the all-time balance, which the closing box shows apart when it differs.
+      { label: closing.period.label, value: closing.period.value, tone: closing.period.tone === 'due' ? 'due' : closing.period.tone === 'credit' ? 'credit' : 'paid' },
     ],
     showChild,
     rows,
@@ -118,15 +117,7 @@ export function statementPdfModel(
       ...(p.lessonsCovered ? { note: `باقة ${lessonsCount(p.lessonsCovered)}` } : p.note ? { note: p.note.slice(0, 60) } : {}),
     })),
     paidTotal: money(st.paidInPeriod),
-    balanceLabel: balanceTone === 'credit' ? 'رصيد مدفوع مسبقاً لديكم' : balanceTone === 'due' ? 'المتبقي حتى اليوم' : 'الحساب',
-    balanceValue: balanceTone === 'settled' ? 'مسدّد بالكامل' : money(Math.abs(st.balance)),
-    balanceTone,
-    // The all-time balance, on purpose: a period total alone would hide an older unpaid month.
-    balanceNote: balanceTone === 'due'
-      ? 'يشمل كل الحصص والمبالغ منذ بداية التعامل، لا هذه الفترة وحدها. نرجو التكرّم بتسويته في الوقت الذي يناسبكم.'
-      : balanceTone === 'credit'
-        ? 'يُخصم تلقائياً من الحصص القادمة.'
-        : 'لا مبالغ مستحقة حتى تاريخ هذا الكشف.',
+    closing,
     ...(st.unconfirmed ? { unconfirmedNote: `${lessonsCount(st.unconfirmed)} في هذه الفترة لم تُحدَّد حالتها بعد، فلا تظهر في الكشف.` } : {}),
     thanks: 'شاكرين لكم حسن تعاونكم وثقتكم',
   }
@@ -176,6 +167,9 @@ const s = StyleSheet.create({
   balanceLabel: { ...r, fontSize: 11, fontWeight: 700 },
   balanceValue: { ...r, fontSize: 18, fontWeight: 700 },
   balanceNote: { ...r, fontSize: 8.5, color: C.mute, marginTop: 6, lineHeight: 1.5 },
+  balanceSub: { ...r, fontSize: 9.5, fontWeight: 700 },
+  balanceTotal: { marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#E5E7EB' },
+  note: { ...r, fontSize: 7.5, color: C.mute, marginTop: 2, lineHeight: 1.4 },
   warn: { ...r, fontSize: 8, color: C.amber, backgroundColor: C.amberBg, borderRadius: 6, padding: 7, marginBottom: 10 },
   thanks: { ...r, fontSize: 10, color: C.ink, marginTop: 14 },
   sign: { ...r, fontSize: 10, fontWeight: 700, color: C.brand, marginTop: 3 },
@@ -254,6 +248,7 @@ export function StatementPdf({ m }: { m: StatementPdfModel }) {
             <View style={{ flex: cols.day }}>
               <Text style={s.td}>{row.day}</Text>
               {row.reason ? <Text style={s.reason}>{`السبب: ${row.reason}`}</Text> : null}
+              {row.note ? <Text style={s.note}>{`ملاحظة: ${row.note}`}</Text> : null}
             </View>
             <Text style={[s.td, s.ltr, { flex: cols.time }]}>{row.time}</Text>
             {m.showChild ? <Text style={[s.td, { flex: cols.child }]}>{row.child ?? ''}</Text> : null}
@@ -295,12 +290,24 @@ export function StatementPdf({ m }: { m: StatementPdfModel }) {
           </View>
         ) : null}
 
-        <View style={[s.balance, { backgroundColor: BAL[m.balanceTone].bg }]} wrap={false}>
+        <View style={[s.balance, { backgroundColor: BAL[m.closing.total?.tone ?? m.closing.period.tone].bg }]} wrap={false}>
           <View style={s.balanceRow}>
-            <Text style={[s.balanceLabel, { color: BAL[m.balanceTone].fg }]}>{m.balanceLabel}</Text>
-            <Text style={[s.balanceValue, { color: BAL[m.balanceTone].fg }]}>{m.balanceValue}</Text>
+            <Text style={[s.balanceLabel, { color: BAL[m.closing.period.tone].fg }]}>{m.closing.period.label}</Text>
+            <Text style={[s.balanceValue, { color: BAL[m.closing.period.tone].fg }]}>{m.closing.period.value}</Text>
           </View>
-          <Text style={s.balanceNote}>{m.balanceNote}</Text>
+          {m.closing.other ? (
+            <View style={[s.balanceRow, { marginTop: 6 }]}>
+              <Text style={[s.balanceSub, { color: BAL[m.closing.other.tone].fg }]}>{m.closing.other.label}</Text>
+              <Text style={[s.balanceSub, { color: BAL[m.closing.other.tone].fg }]}>{m.closing.other.value}</Text>
+            </View>
+          ) : null}
+          {m.closing.total ? (
+            <View style={[s.balanceRow, s.balanceTotal]}>
+              <Text style={[s.balanceLabel, { color: BAL[m.closing.total.tone].fg }]}>{m.closing.total.label}</Text>
+              <Text style={[s.balanceValue, { color: BAL[m.closing.total.tone].fg }]}>{m.closing.total.value}</Text>
+            </View>
+          ) : null}
+          {m.closing.ask ? <Text style={s.balanceNote}>{m.closing.ask}</Text> : null}
         </View>
 
         <View wrap={false}>

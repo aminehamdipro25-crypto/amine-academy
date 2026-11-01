@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { BellRing, CalendarPlus, Copy, FileSpreadsheet, RefreshCw, Send, ShieldOff } from 'lucide-react'
 import { useToast } from '@/components/ui/Toast'
-import { EVENING_CHECK_DEFAULT } from '@/lib/worklog'
+import { EVENING_CHECK_DEFAULT, INVOICE_PAYMENT_MAX, INVOICE_TITLE_MAX, type InvoiceInfo } from '@/lib/worklog'
 import { useWorkLog } from './useWorkLog'
 import { Field, Segmented, ghostBtn, inputCls, localToday, primaryBtn } from './ui'
 import { notificationState, requestNotifications, showLessonNotification } from './notify'
@@ -175,10 +175,12 @@ export default function SettingsView() {
 
       {/* Messages to parents */}
       <section className="rounded-3xl bg-white border border-gray-100 shadow-sm p-5 space-y-3">
-        <h3 className="font-black text-gray-900">✉️ رسائل أولياء الأمور</h3>
+        <h3 className="font-black text-gray-900">✉️ رسائل أولياء الأمور وكشف الحساب</h3>
         <p className="text-xs text-gray-500 leading-relaxed">التذكير بالحصة، وكشف الحساب، وتجديد الباقة، وملخّص التقدّم — كلها تبدأ بـ«السلام عليكم ورحمة الله وبركاته، أسعد الله أوقاتكم» وتنتهي بعبارة شكر. اكتب هنا الاسم الذي تُوقَّع به الرسائل في آخرها، ويمكنك دائماً تعديل الرسالة في واتساب قبل إرسالها.</p>
         <SenderInput value={settings.senderName ?? ''} busy={busy}
           onSave={v => save({ senderName: v }, v ? 'حُفظ التوقيع' : 'أُزيل التوقيع')} />
+        <InvoiceInputs value={settings.invoice} busy={busy}
+          onSave={v => save({ invoice: v }, 'حُفظت بيانات الكشف')} />
       </section>
 
       {/* Goal */}
@@ -232,6 +234,35 @@ function SenderInput({ value, busy, onSave }: { value: string; busy: boolean; on
       <input className={`${inputCls} max-w-[16rem]`} aria-label="توقيع الرسائل" maxLength={60}
         value={v} onChange={e => setV(e.target.value)} placeholder="مثال: الأستاذ أمين" />
       <button disabled={busy || v.trim() === value} onClick={() => onSave(v.trim())} className={primaryBtn('text-xs')}>حفظ</button>
+    </div>
+  )
+}
+
+/** Title and phone in the statement's header; payment methods in its closing box (only when something is owed). */
+function InvoiceInputs({ value, busy, onSave }: { value?: InvoiceInfo; busy: boolean; onSave: (v: InvoiceInfo | null) => void }) {
+  const [title, setTitle] = useState(value?.title ?? '')
+  const [phone, setPhone] = useState(value?.phone ?? '')
+  const [payment, setPayment] = useState(value?.payment ?? '')
+  useEffect(() => { setTitle(value?.title ?? ''); setPhone(value?.phone ?? ''); setPayment(value?.payment ?? '') }, [value])
+  const changed = title.trim() !== (value?.title ?? '') || phone.trim() !== (value?.phone ?? '') || payment.trim() !== (value?.payment ?? '')
+  return (
+    <div className="space-y-3 border-t border-gray-100 pt-3">
+      <p className="text-xs text-gray-500 leading-relaxed">ما يظهر في <b>كشف الحساب PDF</b>: صفتك ورقمك تحت اسمك في رأسه، وطرق الدفع في آخره — <b>فقط حين يكون على العائلة مبلغ</b>، ومعها في رسالة واتساب.</p>
+      <Field label="الصفة">
+        {id => <input id={id} className={inputCls} maxLength={INVOICE_TITLE_MAX} value={title} onChange={e => setTitle(e.target.value)} placeholder="مثال: أخصائي نشاط بدني معدّل" />}
+      </Field>
+      <Field label="رقم الهاتف">
+        {id => <input id={id} type="tel" dir="ltr" className={`${inputCls} max-w-[16rem]`} maxLength={30} value={phone} onChange={e => setPhone(e.target.value)} placeholder="+974 5555 5555" />}
+      </Field>
+      <Field label="طرق الدفع (سطر لكل طريقة)">
+        {id => <textarea id={id} rows={3} className={inputCls} maxLength={INVOICE_PAYMENT_MAX} value={payment} onChange={e => setPayment(e.target.value)}
+          placeholder={'فوران: 5555 5555\nتحويل بنكي — اسم البنك — IBAN …\nنقداً عند الحصة'} />}
+      </Field>
+      <p className="text-[11px] text-gray-400">انسخ رقم الحساب كما هو من تطبيق البنك — خطأ رقم واحد يرسل المال إلى غيرك.</p>
+      <button disabled={busy || !changed} className={primaryBtn('text-xs')}
+        onClick={() => onSave(title.trim() || phone.trim() || payment.trim() ? { title: title.trim(), phone: phone.trim(), payment: payment.trim() } : null)}>
+        حفظ بيانات الكشف
+      </button>
     </div>
   )
 }

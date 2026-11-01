@@ -13,7 +13,7 @@ import React from 'react'
 import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer'
 import { ARABIC_LOCALE, formatDateOnly } from './format'
 import {
-  statementClosing, type StatementClosing,
+  paymentLines, statementClosing, statementOwes, type InvoiceInfo, type StatementClosing,
   PAYMENT_METHOD_LABEL, endTime, formatDuration, formatMoney, isBillable, lessonChild, lessonsCount,
   type Statement, type WorkClient, type WorkCurrency,
 } from './worklog'
@@ -39,6 +39,11 @@ export interface StatementPdfRow {
 export interface StatementPdfModel {
   title: string
   issuer: string
+  /** The owner's title and phone, under their name in the header. */
+  issuerTitle?: string
+  issuerPhone?: string
+  /** How to pay — present only when something is owed. */
+  payment?: string[]
   issuedOn: string
   reference: string
   family: string
@@ -57,6 +62,28 @@ export interface StatementPdfModel {
   thanks: string
 }
 
+/**
+ * A payment line split into Arabic and Latin runs, in reading order. The PDF
+ * engine lays a mixed line out RTL as a whole, which reverses number groups —
+ * «فوران: 5555 1234» came out «1234 5555», and an IBAN was scrambled. On an
+ * account number that sends money to someone else, so each Latin run (digits,
+ * IBAN, bank code) is drawn as its own left-to-right piece.
+ */
+export function bidiRuns(line: string): { text: string; ltr: boolean }[] {
+  const out: { text: string; ltr: boolean }[] = []
+  const re = /[A-Za-z0-9+][A-Za-z0-9 .+\-/()#]*[A-Za-z0-9)]|[A-Za-z0-9]/g
+  let last = 0
+  for (const m of line.matchAll(re)) {
+    const before = line.slice(last, m.index).trim()
+    if (before) out.push({ text: before, ltr: false })
+    out.push({ text: m[0], ltr: true })
+    last = m.index! + m[0].length
+  }
+  const rest = line.slice(last).trim()
+  if (rest) out.push({ text: rest, ltr: false })
+  return out
+}
+
 const longDay = (d: string) => formatDateOnly(d, ARABIC_LOCALE, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 const shortDay = (d: string) => formatDateOnly(d, ARABIC_LOCALE, { weekday: 'short', day: 'numeric', month: 'long' })
 
@@ -69,7 +96,7 @@ export function statementReference(clientId: string, from: string, to: string): 
 
 export function statementPdfModel(
   st: Statement, client: Pick<WorkClient, 'id' | 'name' | 'childName'>, currency: WorkCurrency,
-  opts: { sender?: string; today: string; notes?: boolean },
+  opts: { sender?: string; today: string; notes?: boolean; invoice?: InvoiceInfo },
 ): StatementPdfModel {
   const money = (n: number) => formatMoney(n, currency)
   const kids = [...new Set(st.lessons.map(l => lessonChild(l, client)).filter(Boolean))]
@@ -96,6 +123,9 @@ export function statementPdfModel(
   return {
     title: 'كشف حساب',
     issuer: opts.sender?.trim() || 'Amine Academy',
+    ...(opts.invoice?.title ? { issuerTitle: opts.invoice.title } : {}),
+    ...(opts.invoice?.phone ? { issuerPhone: opts.invoice.phone } : {}),
+    ...(statementOwes(closing) && paymentLines(opts.invoice).length ? { payment: paymentLines(opts.invoice) } : {}),
     issuedOn: longDay(opts.today),
     reference: statementReference(client.id, st.from, st.to),
     family: client.name,
@@ -140,6 +170,7 @@ const s = StyleSheet.create({
   bandRow: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'flex-end' },
   title: { ...r, fontSize: 22, fontWeight: 700, color: '#FFFFFF' },
   issuer: { ...r, fontSize: 10, color: '#EDE9FE', marginTop: 4 },
+  issuerSub: { ...r, fontSize: 8.5, color: '#DDD6FE', marginTop: 2 },
   bandMeta: { textAlign: 'left', fontSize: 8.5, color: '#DDD6FE', lineHeight: 1.6 },
   info: { flexDirection: 'row-reverse', borderWidth: 1, borderColor: C.line, borderRadius: 8, marginBottom: 14 },
   infoCell: { flex: 1, paddingVertical: 9, paddingHorizontal: 12 },
@@ -173,6 +204,11 @@ const s = StyleSheet.create({
   warn: { ...r, fontSize: 8, color: C.amber, backgroundColor: C.amberBg, borderRadius: 6, padding: 7, marginBottom: 10 },
   thanks: { ...r, fontSize: 10, color: C.ink, marginTop: 14 },
   sign: { ...r, fontSize: 10, fontWeight: 700, color: C.brand, marginTop: 3 },
+  signSub: { ...r, fontSize: 8.5, color: C.mute, marginTop: 1 },
+  payBox: { borderWidth: 1, borderColor: C.brandLine, backgroundColor: C.brandSoft, borderRadius: 10, paddingVertical: 10, paddingHorizontal: 14, marginBottom: 10 },
+  payTitle: { ...r, fontSize: 10, fontWeight: 700, color: C.brand, marginBottom: 4 },
+  payRow: { flexDirection: 'row-reverse', flexWrap: 'wrap', alignItems: 'center' },
+  payLine: { ...r, fontSize: 9.5, lineHeight: 1.6, marginLeft: 3 },
   footer: { position: 'absolute', bottom: 24, left: 36, right: 36, flexDirection: 'row-reverse', justifyContent: 'space-between', borderTopWidth: 0.6, borderTopColor: C.line, paddingTop: 7 },
   footText: { fontSize: 7.5, color: C.faint },
   // Times and the reference are Latin runs: laid out RTL, «16:00–17:00» came out «17:00-16:00».
@@ -206,6 +242,8 @@ export function StatementPdf({ m }: { m: StatementPdfModel }) {
             <View>
               <Text style={s.title}>{m.title}</Text>
               <Text style={s.issuer}>{m.issuer}</Text>
+              {m.issuerTitle ? <Text style={s.issuerSub}>{m.issuerTitle}</Text> : null}
+              {m.issuerPhone ? <Text style={[s.issuerSub, s.ltr]}>{m.issuerPhone}</Text> : null}
             </View>
             <View>
               <Text style={s.bandMeta}>{`No. ${m.reference}`}</Text>
@@ -310,9 +348,21 @@ export function StatementPdf({ m }: { m: StatementPdfModel }) {
           {m.closing.ask ? <Text style={s.balanceNote}>{m.closing.ask}</Text> : null}
         </View>
 
+        {m.payment ? (
+          <View style={s.payBox} wrap={false}>
+            <Text style={s.payTitle}>طرق الدفع</Text>
+            {m.payment.map((l, i) => (
+              <View key={i} style={s.payRow}>
+                {bidiRuns(l).map((run, j) => <Text key={j} style={[s.payLine, run.ltr ? s.ltr : {}]}>{run.text}</Text>)}
+              </View>
+            ))}
+          </View>
+        ) : null}
+
         <View wrap={false}>
           <Text style={s.thanks}>{m.thanks}</Text>
           <Text style={s.sign}>{m.issuer}</Text>
+          {m.issuerTitle ? <Text style={s.signSub}>{m.issuerTitle}</Text> : null}
         </View>
 
         <View style={s.footer} fixed>

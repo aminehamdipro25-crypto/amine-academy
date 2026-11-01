@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { AlertTriangle, Copy, FileDown, Loader2, MessageCircle, Share2 } from 'lucide-react'
 import {
   addDays, buildStatement, clientBalances, endOfMonth, formatDuration, formatMoney, isBillable, lessonsCount, phoneDigits,
-  startOfMonth, statementClosing, statementText, type WorkClient,
+  startOfMonth, paymentLines, statementClosing, statementOwes, statementText, type WorkClient,
 } from '@/lib/worklog'
 import { ARABIC_LOCALE, formatDateOnly } from '@/lib/format'
 import { useToast } from '@/components/ui/Toast'
@@ -57,7 +57,7 @@ export default function StatementSheet({ client, onClose }: { client: WorkClient
   // Lesson notes travel with the statement unless the owner turns them off for this one.
   const [withNotes, setWithNotes] = useState(true)
   const hasNotes = !!st?.lessons.some(l => l.note?.trim())
-  const text = client && st ? statementText(st, client, settings.currency, msgDay, settings.senderName, { notes: withNotes }) : ''
+  const text = client && st ? statementText(st, client, settings.currency, msgDay, settings.senderName, { notes: withNotes, payment: paymentLines(settings.invoice) }) : ''
   const closing = st ? statementClosing(st, settings.currency) : null
   const tel = phoneDigits(client?.phone, settings.currency)
   const money = (n: number) => formatMoney(n, settings.currency)
@@ -165,6 +165,11 @@ export default function StatementSheet({ client, onClose }: { client: WorkClient
               <p className="flex justify-between gap-2"><span className="text-gray-600">{closing.other.label}</span><b className={closing.other.tone === 'due' ? 'text-amber-700' : 'text-emerald-700'}>{closing.other.value}</b></p>
               <p className="flex justify-between gap-2 border-t border-gray-100 pt-1"><span className="font-bold text-gray-800">{closing.total.label}</span><b className="text-gray-900">{closing.total.value}</b></p>
             </div>
+          )}
+          {closing && statementOwes(closing) && (
+            paymentLines(settings.invoice).length
+              ? <p className="text-[11px] text-gray-500">طرق الدفع التي حدّدتها في الإعدادات تُضاف إلى الكشف والرسالة.</p>
+              : <p className="text-[11px] text-amber-700">لم تحدّد طرق الدفع بعد — أضفها من «إعدادات ← رسائل أولياء الأمور وكشف الحساب» فتظهر في الكشف وتدفع العائلة منه مباشرة.</p>
           )}
           {hasNotes && (
             <label className="flex items-center gap-2 text-xs text-gray-700">
